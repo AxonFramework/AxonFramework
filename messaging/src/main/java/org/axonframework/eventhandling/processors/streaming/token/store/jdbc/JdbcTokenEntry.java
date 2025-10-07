@@ -14,17 +14,15 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling.processors.streaming.token.store.jpa;
+package org.axonframework.eventhandling.processors.streaming.token.store.jdbc;
 
-import jakarta.persistence.Basic;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.IdClass;
-import jakarta.persistence.Lob;
 import org.axonframework.common.ClassUtils;
 import org.axonframework.common.DateTimeUtils;
+import org.axonframework.common.ReflectionUtils;
+import org.axonframework.common.TypeReference;
+import org.axonframework.common.TypeReflectionUtils;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.eventhandling.processors.streaming.token.store.jpa.TokenEntry;
 import org.axonframework.serialization.Converter;
 
 import java.time.Clock;
@@ -35,62 +33,61 @@ import java.util.Objects;
 import static org.axonframework.common.DateTimeUtils.formatInstant;
 
 /**
- * Implementation of a token entry compatible with JPA that stores its serialized token as a byte array.
+ * Jdbc class of an entry containing a serialized tracking token belonging to a given process. For use with
+ * Jakarta/Hibernate 6 use {@link TokenEntry} instead.
  *
  * @author Rene de Waele
- * @author Allard Buijze
  * @author Simon Zambrovski
  */
-@Entity
-@IdClass(TokenEntry.PK.class)
-public class TokenEntry {
+public class JdbcTokenEntry {
 
     /**
      * The clock used to persist timestamps in this entry. Defaults to UTC system time.
      */
     public static Clock clock = Clock.systemUTC();
 
-    @Lob
-    @Column(length = 10000)
     private byte[] token;
-    @Basic
     private String tokenType;
-
-    @Basic(optional = false)
     private String timestamp;
-
-    @Basic
     private String owner;
-
-    @Id
     private String processorName;
-    @Id
     private int segment;
 
     /**
-     * Initializes a new token entry for given {@code token}, {@code processorName} and {@code segment}. The given
-     * {@code converter} is used to serialize the token before it is stored.
+     * Initializes a new token entry for given {@code token}, {@code process} and {@code segment}. The given
+     * {@code converter} can be used to serialize the token before it is stored.
      *
-     * @param token         The tracking token to store
-     * @param processorName The name of the processor to store this token for
-     * @param segment       The segment index of the processor
-     * @param converter     The converter to use when storing a serialized token
+     * @param token     The tracking token to store
+     * @param converter The converter to use when storing a serialized token
      */
-    public TokenEntry(String processorName, int segment, TrackingToken token, Converter converter) {
-        this.timestamp = formatInstant(clock.instant());
-        if (token != null) {
-            this.token = converter.convert(token, byte[].class);
-            this.tokenType = token.getClass().getName();
-        }
+    public JdbcTokenEntry(TrackingToken token, Converter converter) {
+        updateToken(token, converter);
+    }
+
+    /**
+     * Initializes a token entry from existing data.
+     *
+     * @param token         the serialized token
+     * @param tokenType     the serialized type of the token
+     * @param timestamp     the timestamp of the token
+     * @param owner         the owner of the token
+     * @param processorName the processor name.
+     * @param segment       the token segment.
+     */
+    public JdbcTokenEntry(byte[] token, String tokenType, String timestamp, String owner, String processorName,
+                          int segment) {
+        this.token = token;
+        this.tokenType = tokenType;
+        this.timestamp = timestamp;
+        this.owner = owner;
         this.processorName = processorName;
         this.segment = segment;
     }
 
     /**
-     * Default constructor for JPA
+     * Default constructor required for JPA
      */
-    @SuppressWarnings("unused")
-    protected TokenEntry() {
+    protected JdbcTokenEntry() {
     }
 
     /**
@@ -100,7 +97,75 @@ public class TokenEntry {
      * @return the deserialized token stored in this entry
      */
     public TrackingToken getToken(Converter converter) {
-        return (token == null || tokenType == null) ? null : converter.convert(this.token, ClassUtils.loadClass(tokenType));
+        if (token == null || tokenType == null) {
+            return null;
+        }
+        Class<TrackingToken> type = ClassUtils.loadClass(this.tokenType);
+        return converter.convert(this.token, type);
+    }
+
+    /**
+     * Returns the storage timestamp of this token entry.
+     *
+     * @return The storage timestamp
+     */
+    public Instant timestamp() {
+        return DateTimeUtils.parseInstant(timestamp);
+    }
+
+    /**
+     * Returns the storage timestamp of this token entry as a String.
+     *
+     * @return The storage timestamp as string
+     */
+    public String timestampAsString() {
+        return timestamp;
+    }
+
+    /**
+     * Returns the name of the process to which this token belongs.
+     *
+     * @return the process name
+     */
+    public String getProcessorName() {
+        return processorName;
+    }
+
+    /**
+     * Returns the segment index of the process to which this token belongs.
+     *
+     * @return the segment index
+     */
+    public int getSegment() {
+        return segment;
+    }
+
+    /**
+     * Returns the identifier of the process (JVM) having a claim on this token, or {@code null} if the token isn't
+     * claimed.
+     *
+     * @return the process (JVM) that claimed this token
+     */
+    public String getOwner() {
+        return owner;
+    }
+
+    /**
+     * Retrieves serialized value of the token.
+     *
+     * @return Returns token value as bytes.
+     */
+    public byte[] getTokenData() {
+        return token;
+    }
+
+    /**
+     * Retrieves token type.
+     *
+     * @return Returns token type.
+     */
+    public String getTokenType() {
+        return tokenType;
     }
 
     /**
@@ -155,32 +220,14 @@ public class TokenEntry {
         return this.owner == null;
     }
 
-    /**
-     * Returns the storage timestamp of this token entry as a String.
-     *
-     * @return The storage timestamp as string
-     */
-    public String timestampAsString() {
-        return timestamp;
-    }
 
     /**
-     * Returns the storage timestamp of this token entry.
+     * Update the token data to the given {@code token}, using given {@code converter} to serialize it to bytes[].
      *
-     * @return The storage timestamp
+     * @param token     The token representing the state to update to
+     * @param converter The converter to update token to
      */
-    public Instant timestamp() {
-        return DateTimeUtils.parseInstant(timestamp);
-    }
-
-    /**
-     * Updates a token, using the provided token and serializer to update the serialized token and token type. It will
-     * also update the timestamp to the current time, using the inhirited static {@link java.time.Clock}.
-     *
-     * @param token     The new token that needs to be persisted
-     * @param converter The converter that will be used to serialize the token
-     */
-    public void updateToken(TrackingToken token, Converter converter) {
+    public final void updateToken(TrackingToken token, Converter converter) {
         this.timestamp = formatInstant(clock.instant());
         if (token != null) {
             this.token = converter.convert(token, byte[].class);
@@ -188,68 +235,6 @@ public class TokenEntry {
         } else {
             this.token = null;
             this.tokenType = null;
-        }
-    }
-
-    /**
-     * Returns the identifier of the process (JVM) having a claim on this token, or {@code null} if the token isn't
-     * claimed.
-     *
-     * @return the process (JVM) that claimed this token
-     */
-    public String getOwner() {
-        return owner;
-    }
-
-    public String getProcessorName() {
-        return processorName;
-    }
-
-    public int getSegment() {
-        return segment;
-    }
-
-    /**
-     * Primary key for token entries used by JPA
-     */
-    @SuppressWarnings("UnusedDeclaration")
-    public static class PK {
-
-        private String processorName;
-        private int segment;
-
-        /**
-         * Constructor for JPA
-         */
-        public PK() {
-        }
-
-        /**
-         * Constructs a primary key for a TokenEntry
-         *
-         * @param processorName The name of the processor
-         * @param segment       the index of the processing segment
-         */
-        public PK(String processorName, int segment) {
-            this.processorName = processorName;
-            this.segment = segment;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            PK pk = (PK) o;
-            return segment == pk.segment && Objects.equals(processorName, pk.processorName);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(processorName, segment);
         }
     }
 }

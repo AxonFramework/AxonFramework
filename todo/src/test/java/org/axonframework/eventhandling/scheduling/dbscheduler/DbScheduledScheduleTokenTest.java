@@ -17,7 +17,7 @@
 package org.axonframework.eventhandling.scheduling.dbscheduler;
 
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
-import org.axonframework.serialization.TestSerializer;
+import org.axonframework.serialization.TestConverter;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
@@ -52,12 +52,12 @@ class DbScheduledScheduleTokenTest {
 
     @MethodSource("serializers")
     @ParameterizedTest
-    void tokenShouldBeSerializable(TestSerializer serializer) {
+    void tokenShouldBeSerializable(TestConverter serializer) {
         ScheduleToken tokenToTest = new DbSchedulerScheduleToken(UUID.randomUUID().toString());
         assertEquals(tokenToTest, serializer.serializeDeserialize(tokenToTest));
     }
 
-    public static Collection<TestSerializer> serializers() {
-        return TestSerializer.all();
+    public static Collection<TestConverter> serializers() {
+        return TestConverter.all();
     }
 }

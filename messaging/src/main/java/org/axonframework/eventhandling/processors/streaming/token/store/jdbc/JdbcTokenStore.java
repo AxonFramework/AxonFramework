@@ -23,18 +23,13 @@ import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.JdbcException;
 import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
-import org.axonframework.eventhandling.processors.streaming.token.store.AbstractTokenEntry;
 import org.axonframework.eventhandling.processors.streaming.token.store.ConfigToken;
-import org.axonframework.eventhandling.processors.streaming.token.store.GenericTokenEntry;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.eventhandling.processors.streaming.token.store.UnableToClaimTokenException;
 import org.axonframework.eventhandling.processors.streaming.token.store.UnableToInitializeTokenException;
 import org.axonframework.eventhandling.processors.streaming.token.store.UnableToRetrieveIdentifierException;
-import org.axonframework.eventhandling.processors.streaming.token.store.jpa.TokenEntry;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.SerializedType;
-import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,7 +49,6 @@ import static java.lang.String.format;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.DateTimeUtils.formatInstant;
-import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.common.jdbc.JdbcUtils.*;
 
 /**
@@ -75,36 +69,34 @@ public class JdbcTokenStore implements TokenStore {
     private static final int CONFIG_SEGMENT = 0;
     private static final String COUNT_COLUMN_NAME = "segmentCount";
     private final ConnectionProvider connectionProvider;
-    private final Serializer serializer;
+    private final Converter converter;
     private final TokenSchema schema;
     private final TemporalAmount claimTimeout;
     private final String nodeId;
-    private final Class<?> contentType;
 
     /**
      * Instantiate a {@code JdbcTokenStore} based on the fields contained in the
      * {@link JdbcTokenStoreConfiguration configuration}.
      * <p>
-     * Will assert that the {@link ConnectionProvider}, {@link Serializer} and {@link JdbcTokenStoreConfiguration} are
+     * Will assert that the {@link ConnectionProvider}, {@link Converter} and {@link JdbcTokenStoreConfiguration} are
      * not {@code null}, otherwise an {@link AxonConfigurationException} will be thrown.
      *
      * @param connectionProvider The {@link ConnectionProvider} used to provide connections to the underlying database.
-     * @param serializer         The {@link Serializer} used to de-/serialize {@link TrackingToken}'s with.
+     * @param converter          The {@link Converter} used to de-/serialize {@link TrackingToken}'s with.
      * @param configuration      The {@link JdbcTokenStoreConfiguration} used to instantiate a {@code JdbcTokenStore}
      *                           instance
      */
     public JdbcTokenStore(@Nonnull ConnectionProvider connectionProvider,
-                          @Nonnull Serializer serializer,
+                          @Nonnull Converter converter,
                           @Nonnull JdbcTokenStoreConfiguration configuration) {
         assertNonNull(connectionProvider, "The ConnectionProvider is a hard requirement and should be provided");
-        assertNonNull(serializer, "The Serializer is a hard requirement and should be provided");
+        assertNonNull(converter, "The Converter is a hard requirement and should be provided");
         assertNonNull(configuration, "The JdbcTokenStoreConfiguration should be provided");
         this.connectionProvider = connectionProvider;
-        this.serializer = serializer;
+        this.converter = converter;
         this.schema = configuration.schema();
         this.claimTimeout = configuration.claimTimeout();
         this.nodeId = configuration.nodeId();
-        this.contentType = configuration.contentType();
     }
 
     /**
@@ -191,7 +183,7 @@ public class JdbcTokenStore implements TokenStore {
                                  c -> select(connection, CONFIG_TOKEN_ID, CONFIG_SEGMENT, false),
                                  resultSet -> {
                                      if (resultSet.next()) {
-                                         return readTokenEntry(resultSet).getToken(serializer);
+                                         return readTokenEntry(resultSet).getToken(converter);
                                      } else {
                                          return null;
                                      }
@@ -225,8 +217,8 @@ public class JdbcTokenStore implements TokenStore {
      *
      * @return the serializer used by the Token Store to serialize tokens
      */
-    public Serializer serializer() {
-        return serializer;
+    public Converter serializer() {
+        return converter;
     }
 
     @Nonnull
@@ -378,16 +370,16 @@ public class JdbcTokenStore implements TokenStore {
                                                                    @Nullable ProcessingContext context) {
         Connection connection = getConnection();
         try {
-            List<AbstractTokenEntry<?>> tokenEntries = executeQuery(connection,
-                                                                    c -> selectTokenEntries(c, processorName),
-                                                                    listResults(this::readTokenEntry),
-                                                                    e -> new JdbcException(format(
-                                                                            "Could not load segments for processor [%s]",
-                                                                            processorName
-                                                                    ), e)
+            List<JdbcTokenEntry> tokenEntries = executeQuery(connection,
+                                                                 c -> selectTokenEntries(c, processorName),
+                                                             listResults(this::readTokenEntry),
+                                                                 e -> new JdbcException(format(
+                                                                         "Could not load segments for processor [%s]",
+                                                                         processorName
+                                                                 ), e)
             );
             int[] allSegments = tokenEntries.stream()
-                                            .mapToInt(AbstractTokenEntry::getSegment)
+                                            .mapToInt(JdbcTokenEntry::getSegment)
                                             .toArray();
             return completedFuture(tokenEntries.stream()
                                                .filter(tokenEntry -> tokenEntry.mayClaim(nodeId, claimTimeout))
@@ -420,7 +412,7 @@ public class JdbcTokenStore implements TokenStore {
     }
 
     /**
-     * Returns a {@link PreparedStatement} to select all {@link TokenEntry TokenEntries} for a given processorName from
+     * Returns a {@link PreparedStatement} to select all {@link JdbcTokenEntry} for a given processorName from
      * the underlying storage.
      *
      * @param connection    The connection to the underlying database.
@@ -454,11 +446,7 @@ public class JdbcTokenStore implements TokenStore {
                                             TrackingToken token,
                                             String processorName,
                                             int segment) throws SQLException {
-        AbstractTokenEntry<?> tokenToStore =
-                new GenericTokenEntry<>(token, serializer, contentType, processorName, segment);
-        Object tokenDataToStore = getOrDefault(tokenToStore.getSerializedToken(), SerializedObject::getData, null);
-        String tokenTypeToStore = getOrDefault(tokenToStore.getTokenType(), SerializedType::getName, null);
-
+        JdbcTokenEntry tokenToStore = new JdbcTokenEntry(token, converter);
         final String sql = "UPDATE " + schema.tokenTable() + " SET "
                 + schema.tokenColumn() + " = ?, "
                 + schema.tokenTypeColumn() + " = ?, "
@@ -469,8 +457,8 @@ public class JdbcTokenStore implements TokenStore {
         PreparedStatement preparedStatement = connection.prepareStatement(
                 sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY
         );
-        preparedStatement.setObject(1, tokenDataToStore);
-        preparedStatement.setString(2, tokenTypeToStore);
+        preparedStatement.setBytes(1, tokenToStore.getTokenData());
+        preparedStatement.setString(2, tokenToStore.getTokenType());
         preparedStatement.setString(3, tokenToStore.timestampAsString());
         preparedStatement.setString(4, nodeId);
         preparedStatement.setString(5, processorName);
@@ -536,12 +524,10 @@ public class JdbcTokenStore implements TokenStore {
                                TrackingToken token,
                                String processorName,
                                int segment) throws SQLException {
-        final String sql = "UPDATE " + schema.tokenTable() + " SET " + schema.ownerColumn() + " = ?, " +
-                schema.tokenColumn() + " = ?, " + schema.tokenTypeColumn() + " = ?, " + schema.timestampColumn() +
-                " = ? WHERE " + schema.processorNameColumn() + " = ? AND " + schema.segmentColumn() + " = ?";
+
         if (resultSet.next()) {
-            AbstractTokenEntry<?> entry = readTokenEntry(resultSet);
-            entry.updateToken(token, serializer);
+            JdbcTokenEntry entry = readTokenEntry(resultSet);
+            entry.updateToken(token, converter);
 
             if (!entry.claim(nodeId, claimTimeout)) {
                 throw new UnableToClaimTokenException(
@@ -549,10 +535,13 @@ public class JdbcTokenStore implements TokenStore {
                                entry.getSegment(), entry.getOwner()));
             }
 
+            final String sql = "UPDATE " + schema.tokenTable() + " SET " + schema.ownerColumn() + " = ?, " +
+                    schema.tokenColumn() + " = ?, " + schema.tokenTypeColumn() + " = ?, " + schema.timestampColumn() +
+                    " = ? WHERE " + schema.processorNameColumn() + " = ? AND " + schema.segmentColumn() + " = ?";
             try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
                 preparedStatement.setString(1, entry.getOwner());
-                preparedStatement.setObject(2, entry.getSerializedToken().getData());
-                preparedStatement.setString(3, entry.getSerializedToken().getType().getName());
+                preparedStatement.setObject(2, entry.getTokenData());
+                preparedStatement.setString(3, entry.getTokenType());
                 preparedStatement.setString(4, entry.timestampAsString());
                 preparedStatement.setString(5, processorName);
                 preparedStatement.setInt(6, segment);
@@ -579,10 +568,7 @@ public class JdbcTokenStore implements TokenStore {
      *                                     token.
      * @throws SQLException                When an exception occurs while claiming the token entry.
      */
-    protected TrackingToken claimToken(Connection connection, AbstractTokenEntry<?> entry) throws SQLException {
-        final String sql = "UPDATE " + schema.tokenTable() + " SET " + schema.ownerColumn() + " = ?, " +
-                schema.timestampColumn() + " = ? WHERE " + schema.processorNameColumn() + " = ? AND " +
-                schema.segmentColumn() + " = ?";
+    protected TrackingToken claimToken(Connection connection, JdbcTokenEntry entry) throws SQLException {
         if (!entry.claim(nodeId, claimTimeout)) {
             throw new UnableToClaimTokenException(format(
                     "Unable to claim token '%s[%s]'. It is owned by '%s'",
@@ -590,6 +576,9 @@ public class JdbcTokenStore implements TokenStore {
             ));
         }
 
+        final String sql = "UPDATE " + schema.tokenTable() + " SET " + schema.ownerColumn() + " = ?, " +
+                schema.timestampColumn() + " = ? WHERE " + schema.processorNameColumn() + " = ? AND " +
+                schema.segmentColumn() + " = ?";
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatement.setString(1, entry.getOwner());
             preparedStatement.setString(2, entry.timestampAsString());
@@ -602,7 +591,7 @@ public class JdbcTokenStore implements TokenStore {
             }
         }
 
-        return entry.getToken(serializer);
+        return entry.getToken(converter);
     }
 
     /**
@@ -664,7 +653,7 @@ public class JdbcTokenStore implements TokenStore {
                     format("Unable to claim token '%s[%s]'. It has not been initialized yet", processorName,
                            segment.getSegmentId()));
         }
-        AbstractTokenEntry<?> tokenEntry = readTokenEntry(resultSet);
+        JdbcTokenEntry tokenEntry = readTokenEntry(resultSet);
         validateSegment(processorName, segment);
         return claimToken(connection, tokenEntry);
     }
@@ -758,20 +747,21 @@ public class JdbcTokenStore implements TokenStore {
      * @throws SQLException When an exception occurs while inserting a token entry.
      */
     protected TrackingToken insertTokenEntry(Connection connection,
-                                             TrackingToken token,
+                                             @Nonnull TrackingToken token,
                                              String processorName,
                                              int segment) throws SQLException {
+        JdbcTokenEntry entry = new JdbcTokenEntry(token, converter);
+
         final String sql = "INSERT INTO " + schema.tokenTable() + " (" + schema.processorNameColumn() + "," +
                 schema.segmentColumn() + "," + schema.timestampColumn() + "," + schema.tokenColumn() + "," +
                 schema.tokenTypeColumn() + "," + schema.ownerColumn() + ") VALUES (?,?,?,?,?,?)";
-        AbstractTokenEntry<?> entry = new GenericTokenEntry<>(token, serializer, contentType, processorName, segment);
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatement.setString(1, processorName);
             preparedStatement.setInt(2, segment);
             preparedStatement.setString(3, entry.timestampAsString());
-            preparedStatement.setObject(4, token == null ? null : entry.getSerializedToken().getData());
-            preparedStatement.setString(5, token == null ? null : entry.getSerializedToken().getType().getName());
+            preparedStatement.setBytes(4, entry.getTokenData());
+            preparedStatement.setString(5, entry.getTokenType());
             preparedStatement.setString(6, entry.getOwner());
             preparedStatement.executeUpdate();
         }
@@ -780,19 +770,20 @@ public class JdbcTokenStore implements TokenStore {
     }
 
     /**
-     * Convert given {@code resultSet} to an {@link AbstractTokenEntry}. The result set contains a single token entry.
+     * Convert given {@code resultSet} to an {@link JdbcTokenEntry}. The result set contains a single token entry.
      *
      * @param resultSet The result set of a prior select statement containing a single token entry.
      * @return A token entry with data extracted from the result set.
      * @throws SQLException If the result set cannot be converted to an entry.
      */
-    protected AbstractTokenEntry<?> readTokenEntry(ResultSet resultSet) throws SQLException {
-        return new GenericTokenEntry<>(readSerializedData(resultSet, schema.tokenColumn()),
-                                       resultSet.getString(schema.tokenTypeColumn()),
-                                       resultSet.getString(schema.timestampColumn()),
-                                       resultSet.getString(schema.ownerColumn()),
-                                       resultSet.getString(schema.processorNameColumn()),
-                                       resultSet.getInt(schema.segmentColumn()), contentType);
+    protected JdbcTokenEntry readTokenEntry(ResultSet resultSet) throws SQLException {
+        return new JdbcTokenEntry(resultSet.getBytes(schema.tokenColumn()),
+                                  resultSet.getString(schema.tokenTypeColumn()),
+                                  resultSet.getString(schema.timestampColumn()),
+                                  resultSet.getString(schema.ownerColumn()),
+                                  resultSet.getString(schema.processorNameColumn()),
+                                  resultSet.getInt(schema.segmentColumn())
+        );
     }
 
     /**
@@ -814,7 +805,7 @@ public class JdbcTokenStore implements TokenStore {
                         " = ? AND " + schema.ownerColumn() + " = ?";
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
         preparedStatement.setString(1, null);
-        preparedStatement.setString(2, formatInstant(AbstractTokenEntry.clock.instant()));
+        preparedStatement.setString(2, formatInstant(JdbcTokenEntry.clock.instant()));
         preparedStatement.setString(3, processorName);
         preparedStatement.setInt(4, segment);
         preparedStatement.setString(5, nodeId);
@@ -843,24 +834,6 @@ public class JdbcTokenStore implements TokenStore {
         preparedStatement.setInt(2, segment);
         preparedStatement.setString(3, nodeId);
         return preparedStatement;
-    }
-
-
-    /**
-     * Returns the serialized token data from the given {@code resultSet} at given {@code columnName}.
-     *
-     * @param resultSet  The result set to get serialized data from.
-     * @param columnName The name of the column containing the serialized token.
-     * @param <T>        The type of data to return.
-     * @return The serialized data of the token.
-     * @throws SQLException If the token cannot be read from the entry.
-     */
-    @SuppressWarnings("unchecked")
-    protected <T> T readSerializedData(ResultSet resultSet, String columnName) throws SQLException {
-        if (byte[].class.equals(contentType)) {
-            return (T) resultSet.getBytes(columnName);
-        }
-        return (T) resultSet.getObject(columnName);
     }
 
     /**

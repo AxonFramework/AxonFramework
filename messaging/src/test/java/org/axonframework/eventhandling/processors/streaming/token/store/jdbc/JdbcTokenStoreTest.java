@@ -21,12 +21,11 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
-import org.axonframework.eventhandling.processors.streaming.token.store.AbstractTokenEntry;
 import org.axonframework.eventhandling.processors.streaming.token.store.ConfigToken;
 import org.axonframework.eventhandling.processors.streaming.token.store.UnableToClaimTokenException;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
-import org.axonframework.serialization.TestSerializer;
+import org.axonframework.serialization.TestConverter;
 import org.hsqldb.jdbc.JDBCDataSource;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
@@ -101,7 +100,7 @@ class JdbcTokenStoreTest {
 
     @AfterEach
     void tearDown() {
-        AbstractTokenEntry.clock = Clock.systemUTC();
+        JdbcTokenEntry.clock = Clock.systemUTC();
     }
 
     @Test
@@ -431,7 +430,7 @@ class JdbcTokenStoreTest {
 
         transactionManager.executeInTransaction(() -> joinAndUnwrap(
                 tokenStore.fetchToken("concurrent", 0, null)));
-        AbstractTokenEntry.clock = Clock.offset(Clock.systemUTC(), Duration.ofHours(1));
+        JdbcTokenEntry.clock = Clock.offset(Clock.systemUTC(), Duration.ofHours(1));
         transactionManager.executeInTransaction(() -> assertNull(joinAndUnwrap(
                 concurrentTokenStore.fetchToken("concurrent", 0, null))));
     }
@@ -568,7 +567,7 @@ class JdbcTokenStoreTest {
         ps.setString(1, "__config");
         ps.setInt(2, 0);
         ps.setString(3, ConfigToken.class.getName());
-        ps.setBytes(4, tokenStore.serializer().serialize(token, byte[].class).getData());
+        ps.setBytes(4, tokenStore.serializer().convert(token, byte[].class));
         ps.executeUpdate();
 
         Optional<String> id1 = joinAndUnwrap(tokenStore.retrieveStorageIdentifier(mock()));
@@ -605,7 +604,7 @@ class JdbcTokenStoreTest {
         @Bean
         public JdbcTokenStore tokenStore(DataSource dataSource) {
             return new JdbcTokenStore(dataSource::getConnection,
-                                      TestSerializer.JACKSON.getSerializer(),
+                                      TestConverter.JACKSON.getConverter(),
                                       JdbcTokenStoreConfiguration.DEFAULT);
         }
 
@@ -615,7 +614,7 @@ class JdbcTokenStoreTest {
                     .claimTimeout(Duration.ofSeconds(2))
                     .nodeId("concurrent");
             return new JdbcTokenStore(dataSource::getConnection,
-                                      TestSerializer.JACKSON.getSerializer(),
+                                      TestConverter.JACKSON.getConverter(),
                                       config);
         }
 
@@ -625,7 +624,7 @@ class JdbcTokenStoreTest {
                     .claimTimeout(Duration.ofSeconds(-1))
                     .nodeId("stealing");
             return new JdbcTokenStore(dataSource::getConnection,
-                                      TestSerializer.JACKSON.getSerializer(),
+                                      TestConverter.JACKSON.getConverter(),
                                       config);
         }
 

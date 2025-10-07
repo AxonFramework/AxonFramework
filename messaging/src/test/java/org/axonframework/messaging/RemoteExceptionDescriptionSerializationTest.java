@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging;
 
-import org.axonframework.serialization.TestSerializer;
+import org.axonframework.serialization.TestConverter;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -31,13 +31,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 class RemoteExceptionDescriptionSerializationTest {
 
-    static Collection<TestSerializer> serializers() {
-        return TestSerializer.all();
+    static Collection<TestConverter> serializers() {
+        return TestConverter.all();
     }
 
     @MethodSource("serializers")
     @ParameterizedTest
-    void tokenShouldBeSerializableWithJackson(TestSerializer serializer) {
+    void tokenShouldBeSerializableWithJackson(TestConverter serializer) {
         Throwable cause = new IllegalArgumentException("This is a test");
         Throwable exception = new IllegalStateException("Test with cause", cause);
         RemoteExceptionDescription descriptionToTest = RemoteExceptionDescription.describing(exception);

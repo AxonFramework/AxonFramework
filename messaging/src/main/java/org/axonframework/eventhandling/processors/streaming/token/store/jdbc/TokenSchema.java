@@ -17,7 +17,7 @@
 package org.axonframework.eventhandling.processors.streaming.token.store.jdbc;
 
 /**
- * Schema of an token entry to be stored using Jdbc.
+ * Schema of a token entry to be stored using Jdbc.
  *
  * @author Rene de Waele
  * @since 3.0

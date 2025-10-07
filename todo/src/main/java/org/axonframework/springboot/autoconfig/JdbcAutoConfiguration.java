@@ -23,7 +23,6 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.deadletter.jdbc.DeadLetterSchema;
-import org.axonframework.eventhandling.deadletter.jdbc.JdbcSequencedDeadLetterQueue;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.eventhandling.processors.streaming.token.store.jdbc.JdbcTokenStore;
 import org.axonframework.eventhandling.processors.streaming.token.store.jdbc.JdbcTokenStoreConfiguration;
@@ -34,6 +33,7 @@ import org.axonframework.eventsourcing.eventstore.jdbc.EventSchema;
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcSQLErrorCodesResolver;
 import org.axonframework.eventsourcing.eventstore.jdbc.LegacyJdbcEventStorageEngine;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.json.JacksonConverter;
 import org.axonframework.spring.jdbc.SpringDataSourceConnectionProvider;
 import org.axonframework.springboot.EventProcessorProperties;
 import org.axonframework.springboot.TokenStoreProperties;
@@ -116,12 +116,12 @@ public class JdbcAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(TokenStore.class)
     public TokenStore tokenStore(ConnectionProvider connectionProvider,
-                                 Serializer serializer,
                                  TokenSchema tokenSchema) {
         var config = JdbcTokenStoreConfiguration.DEFAULT
-                             .schema(tokenSchema)
-                             .claimTimeout(tokenStoreProperties.getClaimTimeout());
-        return new JdbcTokenStore(connectionProvider::getConnection, serializer, config);
+                .schema(tokenSchema)
+                .claimTimeout(tokenStoreProperties.getClaimTimeout());
+        var converter = new JacksonConverter(); // FIXME How to configure object mapper here?
+        return new JdbcTokenStore(connectionProvider::getConnection, converter, config);
     }
 
 //    @Bean

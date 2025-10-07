@@ -31,9 +31,8 @@ import org.axonframework.eventhandling.processors.streaming.token.store.UnableTo
 import org.axonframework.eventhandling.processors.streaming.token.store.UnableToInitializeTokenException;
 import org.axonframework.eventhandling.processors.streaming.token.store.UnableToRetrieveIdentifierException;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.SerializedType;
-import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.Converter;
+import org.axonframework.serialization.json.JacksonConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,7 +49,6 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.DateTimeUtils.formatInstant;
 import static org.axonframework.common.FutureUtils.joinAndUnwrap;
-import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.eventhandling.processors.streaming.token.store.jpa.TokenEntry.clock;
 
 /**
@@ -72,7 +70,7 @@ public class JpaTokenStore implements TokenStore {
     private static final String SEGMENT_PARAM = "segment";
 
     private final EntityManagerProvider entityManagerProvider;
-    private final Serializer serializer;
+    private final Converter converter;
     private final TemporalAmount claimTimeout;
     private final String nodeId;
     private final LockModeType loadingLockMode;
@@ -80,21 +78,21 @@ public class JpaTokenStore implements TokenStore {
     /**
      * Instantiate a {@link JpaTokenStore} based on the fields contained in the {@link JpaTokenStoreConfiguration}.
      * <p>
-     * Will assert that the {@link EntityManagerProvider}, {@link Serializer} and {@link JpaTokenStoreConfiguration} are
-     * not {@code null}, otherwise an {@link AxonConfigurationException} will be thrown.
+     * Will assert that the {@link EntityManagerProvider} and {@link JpaTokenStoreConfiguration} are not {@code null},
+     * otherwise an {@link AxonConfigurationException} will be thrown.
      *
      * @param entityManagerProvider The {@link EntityManagerProvider} used to obtain an {@link EntityManager} for.
-     * @param serializer            The {@link Serializer} used to de-/serialize {@link TrackingToken}'s with.
-     * @param configuration
+     * @param configuration         configuration for JPA token store.
      */
     public JpaTokenStore(@Nonnull EntityManagerProvider entityManagerProvider,
-                         @Nonnull Serializer serializer,
-                         @Nonnull JpaTokenStoreConfiguration configuration) {
+                         @Nonnull Converter converter,
+                         @Nonnull JpaTokenStoreConfiguration configuration
+    ) {
         assertNonNull(entityManagerProvider, "EntityManagerProvider is a hard requirement and should be provided");
-        assertNonNull(serializer, "The Serializer is a hard requirement and should be provided");
+        assertNonNull(converter, "The Converter is a hard requirement and should be provided");
         assertNonNull(configuration, "The JpaTokenStoreConfiguration should be provided");
         this.entityManagerProvider = entityManagerProvider;
-        this.serializer = serializer;
+        this.converter = converter;
         this.claimTimeout = configuration.claimTimeout();
         this.nodeId = configuration.nodeId();
         this.loadingLockMode = configuration.loadingLockMode();
@@ -113,7 +111,7 @@ public class JpaTokenStore implements TokenStore {
             throw new UnableToClaimTokenException("Could not initialize segments. Some segments were already present.");
         }
         for (int segment = 0; segment < segmentCount; segment++) {
-            TokenEntry token = new TokenEntry(processorName, segment, initialToken, serializer);
+            TokenEntry token = new TokenEntry(processorName, segment, initialToken, converter);
             entityManager.persist(token);
         }
         entityManager.flush();
@@ -127,11 +125,17 @@ public class JpaTokenStore implements TokenStore {
                                               int segment,
                                               @Nullable ProcessingContext context) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
-        TokenEntry tokenToStore = new TokenEntry(processorName, segment, token, serializer);
-        byte[] tokenDataToStore =
-                getOrDefault(tokenToStore.getSerializedToken(), SerializedObject::getData, null);
-        String tokenTypeToStore = getOrDefault(tokenToStore.getTokenType(), SerializedType::getName, null);
+        TokenEntry tokenToStore = new TokenEntry(processorName, segment, token, converter);
 
+        final byte[] tokenDataToStore;
+        final String tokenTypeToStore;
+        if (token != null) {
+            tokenDataToStore = converter.convert(token, byte[].class);
+            tokenTypeToStore = token.getClass().getName();
+        } else {
+            tokenDataToStore = null;
+            tokenTypeToStore = TrackingToken.class.getName();
+        }
         int updatedTokens = entityManager.createQuery("UPDATE TokenEntry te SET "
                                                               + "te.token = :token, "
                                                               + "te.tokenType = :tokenType, "
@@ -152,7 +156,7 @@ public class JpaTokenStore implements TokenStore {
                                  + "Trying load-then-save approach instead.",
                          token, processorName, segment);
             TokenEntry tokenEntry = loadToken(processorName, segment, entityManager);
-            tokenEntry.updateToken(token, serializer);
+            tokenEntry.updateToken(token, converter);
         }
         return FutureUtils.emptyCompletedFuture();
     }
@@ -184,7 +188,7 @@ public class JpaTokenStore implements TokenStore {
     ) throws UnableToInitializeTokenException {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
 
-        TokenEntry entry = new TokenEntry(processorName, segment, token, serializer);
+        TokenEntry entry = new TokenEntry(processorName, segment, token, converter);
         entityManager.persist(entry);
         entityManager.flush();
         return FutureUtils.emptyCompletedFuture();
@@ -219,7 +223,7 @@ public class JpaTokenStore implements TokenStore {
                                                        int segment,
                                                        @Nullable ProcessingContext context) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
-        return completedFuture(loadToken(processorName, segment, entityManager).getToken(serializer));
+        return completedFuture(loadToken(processorName, segment, entityManager).getToken(converter));
     }
 
     @Nonnull
@@ -230,7 +234,7 @@ public class JpaTokenStore implements TokenStore {
             @Nullable ProcessingContext context
     ) throws UnableToClaimTokenException {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
-        return completedFuture(loadToken(processorName, segment, entityManager).getToken(serializer));
+        return completedFuture(loadToken(processorName, segment, entityManager).getToken(converter));
     }
 
     @Nonnull
@@ -410,11 +414,11 @@ public class JpaTokenStore implements TokenStore {
             token = new TokenEntry(CONFIG_TOKEN_ID,
                                    CONFIG_SEGMENT,
                                    new ConfigToken(Collections.singletonMap("id", UUID.randomUUID().toString())),
-                                   serializer);
+                                   converter);
             em.persist(token);
             em.flush();
         }
-        return (ConfigToken) token.getToken(serializer);
+        return (ConfigToken) token.getToken(converter);
     }
 
     /**
@@ -422,8 +426,8 @@ public class JpaTokenStore implements TokenStore {
      *
      * @return the serializer used by the Token Store to serialize tokens
      */
-    public Serializer serializer() {
-        return serializer;
+    public Converter serializer() {
+        return converter;
     }
 
 //    /**

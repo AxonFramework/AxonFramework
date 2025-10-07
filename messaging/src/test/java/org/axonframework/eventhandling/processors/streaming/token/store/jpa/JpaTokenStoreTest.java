@@ -31,7 +31,7 @@ import org.axonframework.eventhandling.processors.streaming.token.store.ConfigTo
 import org.axonframework.eventhandling.processors.streaming.token.store.UnableToClaimTokenException;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
-import org.axonframework.serialization.TestSerializer;
+import org.axonframework.serialization.TestConverter;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;
@@ -89,7 +89,7 @@ class JpaTokenStoreTest {
                                                .getResultList();
         assertEquals(1, tokens.size());
         assertNotNull(tokens.getFirst().getOwner());
-        assertNull(tokens.getFirst().getToken(TestSerializer.JACKSON.getSerializer()));
+        assertNull(tokens.getFirst().getToken(TestConverter.JACKSON.getConverter()));
     }
 
     @Test
@@ -133,7 +133,7 @@ class JpaTokenStoreTest {
 
         var config = JpaTokenStoreConfiguration.DEFAULT.loadingLockMode(LockModeType.NONE).nodeId("test");
         JpaTokenStore testSubject = new JpaTokenStore(new SimpleEntityManagerProvider(spyEntityManager),
-                                                      TestSerializer.JACKSON.getSerializer(),
+                                                      TestConverter.JACKSON.getConverter(),
                                                       config);
 
         try {
@@ -440,7 +440,7 @@ class JpaTokenStoreTest {
         if (claimTimeOut != null) {
             config = config.claimTimeout(claimTimeOut);
         }
-        return new JpaTokenStore(entityManagerProvider, TestSerializer.JACKSON.getSerializer(), config);
+        return new JpaTokenStore(entityManagerProvider, TestConverter.JACKSON.getConverter(), config);
     }
 
     private void newTransaction() {

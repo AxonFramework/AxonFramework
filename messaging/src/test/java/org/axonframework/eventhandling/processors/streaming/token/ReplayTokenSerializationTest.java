@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.processors.streaming.token;
 
-import org.axonframework.serialization.TestSerializer;
+import org.axonframework.serialization.TestConverter;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -32,13 +32,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 class ReplayTokenSerializationTest {
 
-    static Collection<TestSerializer> serializers() {
-        return TestSerializer.all();
+    static Collection<TestConverter> serializers() {
+        return TestConverter.all();
     }
 
     @MethodSource("serializers")
     @ParameterizedTest
-    void tokenShouldBeSerializable(TestSerializer serializer) {
+    void tokenShouldBeSerializable(TestConverter serializer) {
         TrackingToken innerToken = GapAwareTrackingToken.newInstance(10, Collections.singleton(9L));
         TrackingToken token = ReplayToken.createReplayToken(innerToken);
         assertEquals(token, serializer.serializeDeserialize(token));

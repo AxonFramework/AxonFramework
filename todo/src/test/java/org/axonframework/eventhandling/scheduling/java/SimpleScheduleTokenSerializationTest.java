@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.scheduling.java;
 
-import org.axonframework.serialization.TestSerializer;
+import org.axonframework.serialization.TestConverter;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -26,18 +26,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests serialization capabilities of {@link SimpleScheduleToken}.
- * 
+ *
  * @author JohT
  */
 class SimpleScheduleTokenSerializationTest {
 
-    static Collection<TestSerializer> serializers() {
-       return TestSerializer.all();
+    static Collection<TestConverter> serializers() {
+       return TestConverter.all();
     }
 
     @MethodSource("serializers")
     @ParameterizedTest
-    void tokenShouldBeSerializable(TestSerializer serializer) {
+    void tokenShouldBeSerializable(TestConverter serializer) {
         SimpleScheduleToken tokenToTest = new SimpleScheduleToken("28bda08d-2dd5-4420-98cb-75ca073446b4");
         assertEquals(tokenToTest, serializer.serializeDeserialize(tokenToTest));
     }

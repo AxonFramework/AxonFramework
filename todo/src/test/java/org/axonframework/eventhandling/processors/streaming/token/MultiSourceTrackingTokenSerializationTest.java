@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.processors.streaming.token;
 
-import org.axonframework.serialization.TestSerializer;
+import org.axonframework.serialization.TestConverter;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 
@@ -33,13 +33,13 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class MultiSourceTrackingTokenSerializationTest {
 
-    static Collection<TestSerializer> serializers() {
-        return TestSerializer.all();
+    static Collection<TestConverter> serializers() {
+        return TestConverter.all();
     }
 
     @MethodSource("serializers")
     @ParameterizedTest
-    void tokenShouldBeSerializable(TestSerializer serializer) {
+    void tokenShouldBeSerializable(TestConverter serializer) {
         Map<String, TrackingToken> tokenMap = new HashMap<>();
         tokenMap.put("token1", new GlobalSequenceTrackingToken(0));
         tokenMap.put("token2", new GlobalSequenceTrackingToken(0));

@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.processors.streaming.token.store;
 
-import org.axonframework.serialization.TestSerializer;
+import org.axonframework.serialization.TestConverter;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 
@@ -33,13 +33,13 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class ConfigTokenTest {
 
-    static Collection<TestSerializer> serializers() {
-        return TestSerializer.all();
+    static Collection<TestConverter> serializers() {
+        return TestConverter.all();
     }
 
     @MethodSource("serializers")
     @ParameterizedTest
-    void tokenShouldBeSerializable(TestSerializer serializer) {
+    void tokenShouldBeSerializable(TestConverter serializer) {
         Map<String, String> configMap = Collections.singletonMap("some-key", "some-value");
         ConfigToken token = new ConfigToken(configMap);
         assertEquals(token, serializer.serializeDeserialize(token));

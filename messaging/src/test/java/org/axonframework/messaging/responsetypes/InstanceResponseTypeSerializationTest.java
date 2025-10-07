@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.responsetypes;
 
-import org.axonframework.serialization.TestSerializer;
+import org.axonframework.serialization.TestConverter;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests serialization capabilities of {@link InstanceResponseType}.
- * 
+ *
  * @author JohT
  */
 class InstanceResponseTypeSerializationTest extends AbstractResponseTypeTest<AbstractResponseTypeTest.QueryResponse> {
@@ -34,14 +34,14 @@ class InstanceResponseTypeSerializationTest extends AbstractResponseTypeTest<Abs
     InstanceResponseTypeSerializationTest() {
         super(new InstanceResponseType<>(QueryResponse.class));
     }
-    
-    static Collection<TestSerializer> serializers() {
-       return TestSerializer.all();
+
+    static Collection<TestConverter> serializers() {
+       return TestConverter.all();
     }
-       
+
     @MethodSource("serializers")
     @ParameterizedTest
-    void responseTypeShouldBeSerializable(TestSerializer serializer) {
+    void responseTypeShouldBeSerializable(TestConverter serializer) {
         assertEquals(testSubject.getExpectedResponseType(), serializer.serializeDeserialize(testSubject).getExpectedResponseType());
     }
 }
