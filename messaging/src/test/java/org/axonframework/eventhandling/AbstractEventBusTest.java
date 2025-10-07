@@ -55,7 +55,7 @@ class AbstractEventBusTest {
     void setUp() {
         ApplicationContext appContext = EmptyApplicationContext.INSTANCE;
         unitOfWorkFactory = new SimpleUnitOfWorkFactory(appContext);
-        testSubject = StubPublishingEventBus.builder().build();
+        testSubject = new StubPublishingEventBus(false);
     }
 
     @Nested
@@ -169,9 +169,7 @@ class AbstractEventBusTest {
         @Test
         void errorDuringPrepareCommitPreventsCommit() {
             // given
-            StubPublishingEventBus failingBus = StubPublishingEventBus.builder()
-                                                                       .throwExceptionDuringPrepare(true)
-                                                                       .build();
+            StubPublishingEventBus failingBus = new StubPublishingEventBus(true);
             UnitOfWork uow = unitOfWorkFactory.create();
 
             // when
@@ -197,13 +195,8 @@ class AbstractEventBusTest {
         private final List<EventMessage> committedEvents = new ArrayList<>();
         private final boolean throwExceptionDuringPrepare;
 
-        private StubPublishingEventBus(Builder builder) {
-            super(builder);
-            this.throwExceptionDuringPrepare = builder.throwExceptionDuringPrepare;
-        }
-
-        private static Builder builder() {
-            return new Builder();
+        private StubPublishingEventBus(boolean throwExceptionDuringPrepare) {
+            this.throwExceptionDuringPrepare = throwExceptionDuringPrepare;
         }
 
         @Override
@@ -232,20 +225,6 @@ class AbstractEventBusTest {
         public Registration subscribe(
                 @Nonnull BiConsumer<List<? extends EventMessage>, ProcessingContext> eventsBatchConsumer) {
             throw new UnsupportedOperationException();
-        }
-
-        private static class Builder extends AbstractEventBus.Builder {
-
-            private boolean throwExceptionDuringPrepare = false;
-
-            private Builder throwExceptionDuringPrepare(boolean throwExceptionDuringPrepare) {
-                this.throwExceptionDuringPrepare = throwExceptionDuringPrepare;
-                return this;
-            }
-
-            private StubPublishingEventBus build() {
-                return new StubPublishingEventBus(this);
-            }
         }
     }
 

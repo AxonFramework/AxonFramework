@@ -249,8 +249,7 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
     }
 
     private static EventBus defaultEventBus(Configuration config) {
-        return SimpleEventBus.builder()
-                             .build();
+        return new SimpleEventBus();
     }
 
     // TODO #3392 - Replace for actual EventSink implementation.

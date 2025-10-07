@@ -17,6 +17,7 @@
 package org.axonframework.integrationtests.modelling.command;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.AbstractEventBus;
 import org.axonframework.eventhandling.DomainEventMessage;
@@ -50,7 +51,7 @@ class CommandHandlingTest {
 
     @BeforeEach
     void setUp() {
-        stubEventStore = StubEventStore.builder().build();
+        stubEventStore = new StubEventStore();
         repository = LegacyEventSourcingRepository.builder(StubAggregate.class)
 //                                                  .eventStore(stubEventStore)
                                                   .build();
@@ -83,21 +84,13 @@ class CommandHandlingTest {
 
         private final List<DomainEventMessage> storedEvents = new LinkedList<>();
 
-        private StubEventStore(Builder builder) {
-            super(builder);
-        }
-
-        private static Builder builder() {
-            return new Builder();
-        }
-
         public DomainEventStream readEvents(@Nonnull String identifier) {
             return DomainEventStream.of(new ArrayList<>(storedEvents));
         }
 
         @Override
-        protected void commit(List<? extends EventMessage> events) {
-            storedEvents.addAll(events.stream().map(StubEventStore::asDomainEventMessage).collect(Collectors.toList()));
+        protected void commit(@Nonnull List<? extends EventMessage> events, @Nullable ProcessingContext context) {
+            storedEvents.addAll(events.stream().map(StubEventStore::asDomainEventMessage).toList());
         }
 
         private static DomainEventMessage asDomainEventMessage(EventMessage event) {
@@ -119,11 +112,5 @@ class CommandHandlingTest {
             throw new UnsupportedOperationException();
         }
 
-        private static class Builder extends AbstractEventBus.Builder {
-
-            private StubEventStore build() {
-                return new StubEventStore(this);
-            }
-        }
     }
 }

@@ -32,8 +32,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 
 /**
- * Base class for the Event Bus. In case events are published while a ProcessingContext is active, the events are
- * queued and published during the commit phase of the ProcessingContext.
+ * Base class for the Event Bus. In case events are published while a ProcessingContext is active, the events are queued
+ * and published during the commit phase of the ProcessingContext.
  * <p>
  * This implementation of the {@link EventBus} directly forwards all published events (in the callers' thread) to
  * subscribed event processors.
@@ -45,16 +45,14 @@ import java.util.function.BiConsumer;
 public abstract class AbstractEventBus implements EventBus {
 
     private final Context.ResourceKey<List<EventMessage>> eventsKey = Context.ResourceKey.withLabel("EventBus_Events");
-    private final Context.ResourceKey<Boolean> handlersRegistered = Context.ResourceKey.withLabel("EventBus_HandlersRegistered");
+    private final Context.ResourceKey<Boolean> handlersRegistered = Context.ResourceKey.withLabel(
+            "EventBus_HandlersRegistered");
     private final EventSubscribers eventSubscribers = new EventSubscribers();
 
     /**
-     * Instantiate an {@link AbstractEventBus} based on the fields contained in the {@link Builder}.
-     *
-     * @param builder the {@link Builder} used to instantiate an {@link AbstractEventBus} instance
-     */
-    protected AbstractEventBus(Builder builder) {
-        builder.validate();
+     * Instantiate an {@link AbstractEventBus}.
+     **/
+    public AbstractEventBus() {
     }
 
     @Override
@@ -169,21 +167,5 @@ public abstract class AbstractEventBus implements EventBus {
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("eventsKey", eventsKey);
         descriptor.describeProperty("eventSubscribers", eventSubscribers);
-    }
-
-    /**
-     * Abstract Builder class to instantiate {@link AbstractEventBus} implementations.
-     */
-    public abstract static class Builder {
-
-        /**
-         * Validates whether the fields contained in this Builder are set accordingly.
-         *
-         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
-         *                                    specifications
-         */
-        protected void validate() throws AxonConfigurationException {
-            // Method kept for overriding
-        }
     }
 }

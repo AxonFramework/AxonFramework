@@ -134,7 +134,7 @@ class SubscribingEventProcessorModuleTest {
         @Test
         void shouldHandleTheEventInEachEventHandlingComponent() {
             // given
-            SimpleEventBus eventBus = SimpleEventBus.builder().build();
+            SimpleEventBus eventBus = new SimpleEventBus();
 
             var configurer = MessagingConfigurer.create();
             RecordingEventHandlingComponent component1 = simpleRecordingTestComponent();
@@ -183,7 +183,7 @@ class SubscribingEventProcessorModuleTest {
         void registeredInterceptorsShouldBeInvoked() {
             // given...
             MessagingConfigurer configurer = MessagingConfigurer.create();
-            SimpleEventBus eventBus = SimpleEventBus.builder().build();
+            SimpleEventBus eventBus = new SimpleEventBus();
             // Build a global interceptor on the configurer, a default used by both modules, and a specific interceptor per module
             AtomicInteger invokedGlobal = new AtomicInteger(0);
             AtomicInteger invokedDefault = new AtomicInteger(0);
@@ -314,7 +314,7 @@ class SubscribingEventProcessorModuleTest {
 
             // and - type-specific customization
             UnitOfWorkFactory typeUnitOfWorkFactory = aTransactionalUnitOfWork();
-            SimpleEventBus typeMessageSource = SimpleEventBus.builder().build();
+            SimpleEventBus typeMessageSource = new SimpleEventBus();
             ErrorHandler typeErrorHandler = exception -> {};
             configurer.eventProcessing(ep ->
                                                ep.subscribing(sp -> sp.defaults(
@@ -367,7 +367,7 @@ class SubscribingEventProcessorModuleTest {
 
             // and - type-specific customization
             UnitOfWorkFactory typeUnitOfWorkFactory = aTransactionalUnitOfWork();
-            SimpleEventBus typeMessageSource = SimpleEventBus.builder().build();
+            SimpleEventBus typeMessageSource = new SimpleEventBus();
             ErrorHandler typeErrorHandler = exception -> {};
             configurer.eventProcessing(ep ->
                                                ep.subscribing(sp -> sp.defaults(
@@ -421,7 +421,7 @@ class SubscribingEventProcessorModuleTest {
 
             // and - type-specific customization
             UnitOfWorkFactory typeUnitOfWorkFactory = aTransactionalUnitOfWork();
-            SimpleEventBus typeMessageSource = SimpleEventBus.builder().build();
+            SimpleEventBus typeMessageSource = new SimpleEventBus();
             ErrorHandler typeErrorHandler = exception -> {};
             configurer.eventProcessing(ep ->
                                                ep.subscribing(sp -> sp.defaults(
@@ -461,7 +461,7 @@ class SubscribingEventProcessorModuleTest {
             var configurer = MessagingConfigurer.create();
             var processorName = "testProcessor";
 
-            SimpleEventBus globalMessageSource = SimpleEventBus.builder().build();
+            SimpleEventBus globalMessageSource = new SimpleEventBus();
             configurer.componentRegistry(cr -> cr.registerComponent(SubscribableEventSource.class,
                                                                     cfg -> globalMessageSource));
 
@@ -492,12 +492,12 @@ class SubscribingEventProcessorModuleTest {
             var configurer = MessagingConfigurer.create();
             var processorName = "testProcessor";
 
-            SimpleEventBus globalMessageSource = SimpleEventBus.builder().build();
+            SimpleEventBus globalMessageSource = new SimpleEventBus();
             configurer.componentRegistry(cr -> cr.registerComponent(SubscribableEventSource.class,
                                                                     cfg -> globalMessageSource));
 
             // and - type-specific customization
-            SimpleEventBus typeMessageSource = SimpleEventBus.builder().build();
+            SimpleEventBus typeMessageSource = new SimpleEventBus();
             configurer.eventProcessing(ep -> ep.subscribing(
                                                sp -> sp.defaults((cfg, d) -> d.eventSource(typeMessageSource))
                                        )
@@ -571,7 +571,7 @@ class SubscribingEventProcessorModuleTest {
                 .subscribing(processorName)
                 .eventHandlingComponents(singleTestEventHandlingComponent())
                 .customized((cfg, c) -> c.eventSource(cfg.getOptionalComponent(SubscribableEventSource.class)
-                                                         .orElse(SimpleEventBus.builder().build())));
+                                                         .orElse(new SimpleEventBus())));
     }
 
     @Nonnull
