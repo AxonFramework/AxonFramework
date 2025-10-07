@@ -1,12 +1,12 @@
 package io.axoniq.demo.university.faculty.write.enroll_student
 
-import io.axoniq.demo.university.faculty.Faculty.Tag
+import io.axoniq.demo.university.faculty.FacultyTags
 import io.axoniq.demo.university.faculty.events.StudentEnrolledInFaculty
 import org.axonframework.eventsourcing.annotations.EventSourcedEntity
 import org.axonframework.eventsourcing.annotations.EventSourcingHandler
 import org.axonframework.eventsourcing.annotations.reflection.EntityCreator
 
-@EventSourcedEntity(tagKey = Tag.STUDENT_ID)
+@EventSourcedEntity(tagKey = FacultyTags.STUDENT_ID)
 class EnrollStudentState @EntityCreator constructor() {
   var enrolled = false
 

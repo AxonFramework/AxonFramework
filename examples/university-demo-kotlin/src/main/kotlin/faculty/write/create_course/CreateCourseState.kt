@@ -1,6 +1,6 @@
 package io.axoniq.demo.university.faculty.write.create_course
 
-import io.axoniq.demo.university.faculty.Faculty.Tag.COURSE_ID
+import io.axoniq.demo.university.faculty.FacultyTags.COURSE_ID
 import io.axoniq.demo.university.faculty.events.CourseCreated
 import org.axonframework.eventsourcing.annotations.EventSourcedEntity
 import org.axonframework.eventsourcing.annotations.EventSourcingHandler
