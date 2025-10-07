@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling.processors.subscribing;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
@@ -34,6 +35,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.SubscribableEventSource;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import java.util.List;
 import java.util.Objects;
@@ -108,7 +110,10 @@ public class SubscribingEventProcessor implements EventProcessor {
             // This event processor has already been started
             return FutureUtils.emptyCompletedFuture();
         }
-        eventBusRegistration = eventSource.subscribe(this::process);
+        eventBusRegistration = eventSource.subscribe((events, context) -> this.process(
+                events.stream().map(it -> (EventMessage) it).toList(),
+                context)
+        );
         return FutureUtils.emptyCompletedFuture();
     }
 
@@ -130,12 +135,18 @@ public class SubscribingEventProcessor implements EventProcessor {
      *
      * @param eventMessages The messages to process
      */
-    protected void process(List<? extends EventMessage> eventMessages) {
+    protected void process(@Nonnull List<EventMessage> eventMessages, @Nullable ProcessingContext context) {
         try {
-            var unitOfWork = this.configuration.unitOfWorkFactory().create();
-            unitOfWork.onInvocation(processingContext -> processWithErrorHandling(eventMessages,
-                                                                                  processingContext).asCompletableFuture());
-            FutureUtils.joinAndUnwrap(unitOfWork.execute());
+            if (context
+                    != null) { // if ProcessingContext is provided from the outside, the events will be processed in that context
+                context.onInvocation(processingContext -> processWithErrorHandling(eventMessages,
+                                                                                   processingContext).asCompletableFuture());
+            } else { // otherwise new UnitOfWork is created
+                UnitOfWork unitOfWork = this.configuration.unitOfWorkFactory().create();
+                unitOfWork.onInvocation(processingContext -> processWithErrorHandling(eventMessages,
+                                                                                      processingContext).asCompletableFuture());
+                FutureUtils.joinAndUnwrap(unitOfWork.execute());
+            }
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
@@ -143,7 +154,7 @@ public class SubscribingEventProcessor implements EventProcessor {
         }
     }
 
-    private MessageStream.Empty<Message> processWithErrorHandling(List<? extends EventMessage> events,
+    private MessageStream.Empty<Message> processWithErrorHandling(List<EventMessage> events,
                                                                   ProcessingContext context) {
         return eventHandlingComponents.handle(events, context)
                                       .onErrorContinue(ex -> {

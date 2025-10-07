@@ -45,13 +45,13 @@ class InboundEventMessageChannelAdapterTest {
         StubDomainEvent event = new StubDomainEvent();
         testSubject.handleMessage(new GenericMessage(event));
 
-        verify(mockEventBus, never()).publish(isA(EventMessage.class));
+        verify(mockEventBus, never()).publish(null, isA(EventMessage.class));
 
-        testSubject.subscribe(mockEventBus::publish);
+        testSubject.subscribe((events, context) -> mockEventBus.publish(context, events.stream().map(it -> (EventMessage) it).toList()));
 
         testSubject.handleMessage(new GenericMessage(event));
 
-        verify(mockEventBus).publish(ArgumentMatchers.anyList());
+        verify(mockEventBus).publish(null, ArgumentMatchers.anyList());
     }
 
 }

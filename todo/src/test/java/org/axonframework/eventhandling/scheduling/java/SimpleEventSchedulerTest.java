@@ -72,10 +72,10 @@ class SimpleEventSchedulerTest {
         doAnswer(invocation -> {
             latch.countDown();
             return null;
-        }).when(eventBus).publish(isA(EventMessage.class));
+        }).when(eventBus).publish(null, isA(EventMessage.class));
         testSubject.schedule(Duration.ofMillis(30), new Object());
         latch.await(1, TimeUnit.SECONDS);
-        verify(eventBus).publish(isA(EventMessage.class));
+        verify(eventBus).publish(null, isA(EventMessage.class));
     }
 
     @Test
@@ -84,15 +84,15 @@ class SimpleEventSchedulerTest {
         doAnswer(invocation -> {
             latch.countDown();
             return null;
-        }).when(eventBus).publish(isA(EventMessage.class));
+        }).when(eventBus).publish(null, isA(EventMessage.class));
         EventMessage event1 = createEvent();
         final EventMessage event2 = createEvent();
         ScheduleToken token1 = testSubject.schedule(Duration.ofMillis(100), event1);
         testSubject.schedule(Duration.ofMillis(120), event2);
         testSubject.cancelSchedule(token1);
         latch.await(1, TimeUnit.SECONDS);
-        verify(eventBus, never()).publish(event1);
-        verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage>) item -> (item != null)
+        verify(eventBus, never()).publish(null, event1);
+        verify(eventBus).publish(null, argThat((ArgumentMatcher<EventMessage>) item -> (item != null)
                 && event2.payload().equals(item.payload())
                 && event2.metadata().equals(item.metadata())));
         scheduledExecutorService.shutdown();

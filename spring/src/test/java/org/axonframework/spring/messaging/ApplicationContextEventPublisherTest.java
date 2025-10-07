@@ -49,7 +49,7 @@ public class ApplicationContextEventPublisherTest {
 
     @Test
     void eventsForwardedToListenerBean() {
-        eventBus.publish(asEventMessage("test"));
+        eventBus.publish(null, asEventMessage("test"));
 
         assertEquals("test", listenerBean.getEvents().get(0));
     }

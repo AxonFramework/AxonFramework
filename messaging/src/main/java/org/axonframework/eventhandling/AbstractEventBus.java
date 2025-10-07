@@ -17,9 +17,12 @@
 package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.tracing.DefaultEventBusSpanFactory;
 import org.axonframework.eventhandling.tracing.EventBusSpanFactory;
 import org.axonframework.messaging.DefaultMessageDispatchInterceptorChain;
@@ -27,6 +30,7 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.tracing.NoOpSpanFactory;
@@ -41,7 +45,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -66,7 +72,7 @@ public abstract class AbstractEventBus implements EventBus {
     private final MessageMonitor<? super EventMessage> messageMonitor;
 
     private final String eventsKey = this + "_EVENTS";
-    private final Set<Consumer<List<? extends EventMessage>>> eventProcessors = new CopyOnWriteArraySet<>();
+    private final Set<BiConsumer<List<? extends EventMessage>, ProcessingContext>> eventProcessors = new CopyOnWriteArraySet<>();
     private final Set<MessageDispatchInterceptor<? super EventMessage>> dispatchInterceptors = new CopyOnWriteArraySet<>();
     private final EventBusSpanFactory spanFactory;
 
@@ -82,7 +88,8 @@ public abstract class AbstractEventBus implements EventBus {
     }
 
     @Override
-    public Registration subscribe(@Nonnull Consumer<List<? extends EventMessage>> eventsBatchConsumer) {
+    public Registration subscribe(
+            @Nonnull BiConsumer<List<? extends EventMessage>, ProcessingContext> eventsBatchConsumer) {
         if (this.eventProcessors.add(eventsBatchConsumer)) {
             if (logger.isDebugEnabled()) {
                 logger.debug("Event Processor [{}] subscribed successfully", eventsBatchConsumer);
@@ -103,22 +110,8 @@ public abstract class AbstractEventBus implements EventBus {
         };
     }
 
-    /**
-     * {@inheritDoc}
-     * <p/>
-     * In case a Unit of Work is active, the {@code preprocessor} is not invoked by this Event Bus until the Unit of
-     * Work root is committed.
-     *
-     * @param dispatchInterceptor
-     */
-    public Registration registerDispatchInterceptor(
-            @Nonnull MessageDispatchInterceptor<? super EventMessage> dispatchInterceptor) {
-        dispatchInterceptors.add(dispatchInterceptor);
-        return () -> dispatchInterceptors.remove(dispatchInterceptor);
-    }
-
     @Override
-    public void publish(@Nonnull List<? extends EventMessage> events) {
+    public CompletableFuture<Void> publish(@Nullable ProcessingContext context, @Nonnull List<EventMessage> events) {
         List<? extends EventMessage> eventsWithContext = events
                 .stream()
                 .map(e -> spanFactory.createPublishEventSpan(e)
@@ -156,6 +149,7 @@ public abstract class AbstractEventBus implements EventBus {
                 }
             });
         }
+        return FutureUtils.emptyCompletedFuture();
     }
 
     private List<EventMessage> eventsQueue(LegacyUnitOfWork<?> unitOfWork) {
@@ -275,7 +269,7 @@ public abstract class AbstractEventBus implements EventBus {
      * @param events Events to be published by this Event Bus
      */
     protected void prepareCommit(List<? extends EventMessage> events) {
-        eventProcessors.forEach(eventProcessor -> eventProcessor.accept(events));
+        eventProcessors.forEach(eventProcessor -> eventProcessor.accept(events, null));
     }
 
     /**
@@ -293,6 +287,12 @@ public abstract class AbstractEventBus implements EventBus {
      * @param events Events to be published by this Event Bus
      */
     protected void afterCommit(List<? extends EventMessage> events) {
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("eventsKey", eventsKey);
+        descriptor.describeProperty("eventProcessors", eventProcessors);
     }
 
     /**

@@ -41,7 +41,7 @@ import java.util.concurrent.CompletableFuture;
  * @author Steven van Beelen
  * @since 3.0.0
  */
-public class SimpleEventStore implements EventStore {
+public class SimpleEventStore implements EventStore { // SubscribableEventSource { // todo: wrap EventStore inside impl of SubscribableEventSource
 
     private final EventStorageEngine eventStorageEngine;
     private final TagResolver tagResolver;
