@@ -1471,6 +1471,18 @@ usages of a `MessageConverter` and `EventConverter` whenever Axon Framework expe
 For example, an `EventStorageEngine` would **always** need an `EventConverter` and nothing else. Hence, constructors of
 the `EventStorageEngines` expect an `EventConverter`.
 
+### Revision / Version Resolution
+
+As of Axon Framework 5, the `RevisionResolver`, it's implementations, and `@Revision` annotation have been removed.
+The `RevisionResolver` used to be an integral part of the `Serializers` in Axon Framework since 2.0. With the shift
+towards a [Message Type](#message-type-and-qualified-name) carrying the `version`, defining the version is no longer
+just a `Serializer` concern. Instead, it's a concern for any `Message` implementation, at all times.
+
+Due to this shift, the `RevisionResolver` has been replaced by the `MessageTypeResolver`. Furthermore, the `@Revision`
+annotation has been replaced by the `@Command`, `@Event`, and `@Query` for commands, events, and queries respectively
+with their `version` field. For snapshots, through the default `RevisionSnapshotFilter`, this will be replaced (likely)
+by a dedicated `@Snapshot` annotation.
+
 ## Message Handler Interceptors and Dispatch Interceptors
 
 Axon Framework's message interceptor supports is split in two main parts:
@@ -2110,6 +2122,11 @@ This section contains five tables:
 | org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler                       | Removed together with scatter-gather query removal, as described [here](#query-dispatching-and-handling)                                       |
 | org.axonframework.eventhandling.processors.subscribing.EventProcessingStrategy           | The sync/async processing is supported on `EventHandlingComponent` level                                                                       |
 | org.axonframework.eventhandling.processors.subscribing.DirectEventProcessingStrategy     | The sync/async processing is supported on `EventHandlingComponent` level                                                                       |
+| org.axonframework.serialization.Revision                                                 | See [here](#revision--version-resolution)                                                                                                      |
+| org.axonframework.serialization.RevisionResolver                                         | See [here](#revision--version-resolution)                                                                                                      |
+| org.axonframework.serialization.FixedValueRevisionResolver                               | See [here](#revision--version-resolution)                                                                                                      |
+| org.axonframework.serialization.MavenArtifactRevisionResolver                            | See [here](#revision--version-resolution)                                                                                                      |
+| org.axonframework.serialization.AnnotationRevisionResolver                               | See [here](#revision--version-resolution)                                                                                                      |
 
 ### Marked for removal Classes
 
