@@ -17,17 +17,14 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.Registration;
-import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.MessageDispatchInterceptorChain;
-import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.ApplicationContext;
+import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.junit.jupiter.api.*;
-import org.mockito.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,178 +32,157 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
+import java.util.concurrent.CompletableFuture;
+
 import jakarta.annotation.Nonnull;
 
-import static java.util.Collections.emptyList;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link AbstractEventBus}.
  *
  * @author Rene de Waele
+ * @author Mateusz Nowak
  */
 class AbstractEventBusTest {
 
     private static final MessageType TEST_EVENT_NAME = new MessageType("event");
 
-    private LegacyUnitOfWork<?> unitOfWork;
+    private UnitOfWorkFactory unitOfWorkFactory;
     private StubPublishingEventBus testSubject;
 
     @BeforeEach
     void setUp() {
-        (unitOfWork = spy(new LegacyDefaultUnitOfWork<>(null))).start();
-        testSubject = spy(StubPublishingEventBus.builder().build());
+        ApplicationContext appContext = EmptyApplicationContext.INSTANCE;
+        unitOfWorkFactory = new SimpleUnitOfWorkFactory(appContext);
+        testSubject = StubPublishingEventBus.builder().build();
     }
 
-    @AfterEach
-    void tearDown() {
-        while (CurrentUnitOfWork.isStarted()) {
-            CurrentUnitOfWork.get().rollback();
+    @Nested
+    class WithProcessingContext {
+
+        @Test
+        void eventsAreQueuedAndPublishedDuringPrepareCommit() {
+            // given
+            EventMessage event = newEvent();
+            UnitOfWork uow = unitOfWorkFactory.create();
+
+            // when
+            uow.runOnInvocation(ctx -> testSubject.publish(ctx, event));
+            CompletableFuture<Void> result = uow.execute();
+
+            // then
+            assertTrue(result.isDone());
+            assertFalse(result.isCompletedExceptionally());
+            assertEquals(Collections.singletonList(event), testSubject.committedEvents);
+        }
+
+        @Test
+        void multipleEventsArePublishedInOrder() {
+            // given
+            EventMessage eventA = newEvent();
+            EventMessage eventB = newEvent();
+            UnitOfWork uow = unitOfWorkFactory.create();
+
+            // when
+            uow.runOnInvocation(ctx -> {
+                testSubject.publish(ctx, eventA);
+                testSubject.publish(ctx, eventB);
+            });
+            uow.execute().join();
+
+            // then
+            assertEquals(Arrays.asList(eventA, eventB), testSubject.committedEvents);
+        }
+
+        @Test
+        void eventsPublishedDuringPrepareCommitAreAlsoProcessed() {
+            // given
+            UnitOfWork uow = unitOfWorkFactory.create();
+
+            // when
+            uow.runOnInvocation(ctx -> testSubject.publish(ctx, numberedEvent(2)));
+            uow.execute().join();
+
+            // then
+            // Events should be: 2, 1, 0 (each prepareCommit publishes N-1)
+            assertEquals(
+                    Arrays.asList(numberedEvent(2), numberedEvent(1), numberedEvent(0)),
+                    testSubject.committedEvents
+            );
+        }
+
+        @Test
+        void nestedUnitOfWorkPublishesEventsCorrectly() {
+            // given
+            UnitOfWork outerUow = unitOfWorkFactory.create();
+
+            // when
+            outerUow.runOnInvocation(outerCtx -> {
+                testSubject.publish(outerCtx, numberedEvent(2));
+
+                // Create nested UnitOfWork
+                UnitOfWork innerUow = unitOfWorkFactory.create();
+                innerUow.runOnInvocation(innerCtx -> testSubject.publish(innerCtx, numberedEvent(5)));
+                innerUow.execute().join();
+            });
+            outerUow.execute().join();
+
+            // then
+            // Outer UoW: publishes 2, which triggers 1, 0
+            // Inner UoW: publishes 5, which triggers 4, 3, 2, 1, 0
+            assertTrue(testSubject.committedEvents.contains(numberedEvent(2)));
+            assertTrue(testSubject.committedEvents.contains(numberedEvent(5)));
+        }
+
+        @Test
+        void eventsPublishedWithoutContextAreProcessedImmediately() {
+            // given
+            EventMessage event = newEvent();
+
+            // when
+            testSubject.publish(null, event).join();
+
+            // then
+            assertEquals(Collections.singletonList(event), testSubject.committedEvents);
+        }
+
+        @Test
+        void subsequentPublicationsInSameContextReuseHandlers() {
+            // given
+            EventMessage event1 = newEvent();
+            EventMessage event2 = newEvent();
+            UnitOfWork uow = unitOfWorkFactory.create();
+
+            // when
+            uow.runOnInvocation(ctx -> {
+                testSubject.publish(ctx, event1);
+                testSubject.publish(ctx, event2);
+            });
+            uow.execute().join();
+
+            // then
+            // Both events should be queued and published together
+            assertEquals(Arrays.asList(event1, event2), testSubject.committedEvents);
+        }
+
+        @Test
+        void errorDuringPrepareCommitPreventsCommit() {
+            // given
+            StubPublishingEventBus failingBus = StubPublishingEventBus.builder()
+                                                                       .throwExceptionDuringPrepare(true)
+                                                                       .build();
+            UnitOfWork uow = unitOfWorkFactory.create();
+
+            // when
+            uow.runOnInvocation(ctx -> failingBus.publish(ctx, newEvent()));
+            CompletableFuture<Void> result = uow.execute();
+
+            // then
+            assertTrue(result.isCompletedExceptionally());
+            assertTrue(failingBus.committedEvents.isEmpty());
         }
     }
-
-    @Test
-    void consumersRegisteredWithUnitOfWorkWhenFirstEventIsPublished() {
-        EventMessage event = newEvent();
-        testSubject.publish(null, event);
-        verify(unitOfWork).onPrepareCommit(any());
-        verify(unitOfWork).onCommit(any());
-        // the monitor callback is also registered
-        verify(unitOfWork, times(2)).afterCommit(any());
-        assertEquals(emptyList(), testSubject.committedEvents);
-        unitOfWork.commit();
-        assertEquals(Collections.singletonList(event), testSubject.committedEvents);
-    }
-
-    @Test
-    void noMoreConsumersRegisteredWithUnitOfWorkWhenSecondEventIsPublished() {
-        EventMessage event = newEvent();
-        testSubject.publish(null, event);
-        verify(unitOfWork).onPrepareCommit(any());
-        verify(unitOfWork).onCommit(any());
-        // the monitor callback is also registered
-        verify(unitOfWork, times(2)).afterCommit(any());
-        //noinspection unchecked
-        reset(unitOfWork);
-
-        testSubject.publish(null, event);
-        verify(unitOfWork, never()).onPrepareCommit(any());
-        verify(unitOfWork, never()).onCommit(any());
-        // the monitor callback should still be registered
-        verify(unitOfWork).afterCommit(any());
-
-        unitOfWork.commit();
-        List<EventMessage> actual = testSubject.committedEvents;
-        assertEquals(Arrays.asList(event, event), actual);
-    }
-
-    @Test
-    void commitOnUnitOfWork() {
-        EventMessage event = newEvent();
-        testSubject.publish(null, event);
-        unitOfWork.commit();
-        assertEquals(Collections.singletonList(event), testSubject.committedEvents);
-    }
-
-    @Test
-    void publicationOrder() {
-        EventMessage eventA = newEvent(), eventB = newEvent();
-        testSubject.publish(null, eventA);
-        testSubject.publish(null, eventB);
-        unitOfWork.commit();
-        assertEquals(Arrays.asList(eventA, eventB), testSubject.committedEvents);
-    }
-
-    @Test
-    void publicationWithNestedUow() {
-        testSubject.publish(null, numberedEvent(5));
-        unitOfWork.commit();
-        assertEquals(Arrays.asList(numberedEvent(5), numberedEvent(4), numberedEvent(3), numberedEvent(2),
-                                   numberedEvent(1), numberedEvent(0)), testSubject.committedEvents);
-        verify(testSubject, times(6)).prepareCommit(any());
-        verify(testSubject, times(6)).commit(any());
-        verify(testSubject, times(6)).afterCommit(any());
-
-        // each UoW will register onPrepareCommit on the parent
-        verify(unitOfWork, times(1)).onPrepareCommit(any());
-        // each UoW will register onCommit with the root
-        verify(unitOfWork, times(6)).onCommit(any());
-    }
-
-    @Test
-    void publicationForbiddenDuringUowCommitPhase() {
-        StubPublishingEventBus.builder()
-                              .publicationPhase(LegacyUnitOfWork.Phase.COMMIT)
-                              .startNewUowBeforePublishing(false)
-                              .build()
-                              .publish(null, numberedEvent(5));
-
-        assertThrows(IllegalStateException.class, unitOfWork::commit);
-    }
-
-    @Test
-    void publicationForbiddenDuringRootUowCommitPhase() {
-        testSubject = spy(StubPublishingEventBus.builder().publicationPhase(LegacyUnitOfWork.Phase.COMMIT).build());
-        testSubject.publish(null, numberedEvent(1));
-
-        assertThrows(IllegalStateException.class, unitOfWork::commit);
-    }
-
-    @Test
-    void messageMonitorRecordsIngestionAndPublication_InUnitOfWork() {
-        //noinspection unchecked
-        MessageMonitor<? super EventMessage> mockMonitor = mock(MessageMonitor.class);
-        MessageMonitor.MonitorCallback mockMonitorCallback = mock(MessageMonitor.MonitorCallback.class);
-        when(mockMonitor.onMessageIngested(any())).thenReturn(mockMonitorCallback);
-        testSubject = spy(StubPublishingEventBus.builder().messageMonitor(mockMonitor).build());
-
-        testSubject.publish(null, EventTestUtils.asEventMessage("test1"), EventTestUtils.asEventMessage("test2"));
-
-        verify(mockMonitor, times(2)).onMessageIngested(any());
-        verify(mockMonitorCallback, never()).reportSuccess();
-
-        unitOfWork.commit();
-        verify(mockMonitorCallback, times(2)).reportSuccess();
-    }
-
-    // todo: discuss that
-//    @Test
-//    void dispatchInterceptor() {
-//
-//        final List<Integer> seenMessages = new ArrayList<>();
-//
-//        //noinspection unchecked
-//        MessageDispatchInterceptor<EventMessage> dispatchInterceptorMock = mock(MessageDispatchInterceptor.class);
-//        String key = "additional", value = "metadata";
-//        when(dispatchInterceptorMock.interceptOnDispatch(any(), any(), any())).thenAnswer(invocation -> {
-//            EventMessage message = invocation.getArgument(0);
-//            synchronized (seenMessages) {
-//                if (seenMessages.contains(message.hashCode())) {
-//                    return MessageStream.failed(
-//                            new AssertionError("MessageProcessor is asked to process the same event message twice")
-//                    );
-//                } else {
-//                    seenMessages.add(message.hashCode());
-//                }
-//            }
-//            ProcessingContext processingContext = invocation.getArgument(1);
-//            MessageDispatchInterceptorChain<EventMessage> chain = invocation.getArgument(2);
-//            return chain.proceed(message, processingContext);
-//        });
-//        testSubject.registerDispatchInterceptor(dispatchInterceptorMock);
-//        testSubject.publish(null, newEvent(), newEvent());
-//        verifyNoInteractions(dispatchInterceptorMock);
-//
-//        unitOfWork.commit();
-//        //noinspection unchecked
-//        ArgumentCaptor<EventMessage> argumentCaptor = ArgumentCaptor.forClass(EventMessage.class);
-//        verify(dispatchInterceptorMock, times(2)).interceptOnDispatch(argumentCaptor.capture(), any(), any()); //prepare commit, commit, and after commit
-//        assertEquals(2, argumentCaptor.getAllValues().size());
-//        assertEquals(2, seenMessages.size());
-//    }
 
     private static EventMessage newEvent() {
         return new GenericEventMessage(TEST_EVENT_NAME, new Object());
@@ -219,14 +195,11 @@ class AbstractEventBusTest {
     private static class StubPublishingEventBus extends AbstractEventBus {
 
         private final List<EventMessage> committedEvents = new ArrayList<>();
-
-        private final LegacyUnitOfWork.Phase publicationPhase;
-        private final boolean startNewUowBeforePublishing;
+        private final boolean throwExceptionDuringPrepare;
 
         private StubPublishingEventBus(Builder builder) {
             super(builder);
-            this.publicationPhase = builder.publicationPhase;
-            this.startNewUowBeforePublishing = builder.startNewUowBeforePublishing;
+            this.throwExceptionDuringPrepare = builder.throwExceptionDuringPrepare;
         }
 
         private static Builder builder() {
@@ -234,45 +207,24 @@ class AbstractEventBusTest {
         }
 
         @Override
-        protected void prepareCommit(List<? extends EventMessage> events) {
-            if (publicationPhase == LegacyUnitOfWork.Phase.PREPARE_COMMIT) {
-                onEvents(events);
+        protected void prepareCommit(List<? extends EventMessage> events, ProcessingContext context) {
+            if (throwExceptionDuringPrepare) {
+                throw new RuntimeException("Simulated failure during prepare commit");
             }
-        }
 
-        @Override
-        protected void commit(List<? extends EventMessage> events) {
-            if (publicationPhase == LegacyUnitOfWork.Phase.COMMIT) {
-                onEvents(events);
-            }
-        }
-
-        @Override
-        protected void afterCommit(List<? extends EventMessage> events) {
-            if (publicationPhase == LegacyUnitOfWork.Phase.AFTER_COMMIT) {
-                onEvents(events);
-            }
-        }
-
-        private void onEvents(List<? extends EventMessage> events) {
-            //if the event payload is a number > 0, a new number is published that is 1 smaller than the first number
-            Object payload = events.get(0).payload();
-            if (payload instanceof Integer) {
-                int number = (int) payload;
-                if (number > 0) {
-                    EventMessage nextEvent = numberedEvent(number - 1);
-                    if (startNewUowBeforePublishing) {
-                        LegacyUnitOfWork<?> nestedUnitOfWork = LegacyDefaultUnitOfWork.startAndGet(null);
-                        try {
-                            publish(null, nextEvent);
-                        } finally {
-                            nestedUnitOfWork.commit();
-                        }
-                    } else {
-                        publish(null, nextEvent);
+            // For numbered events, publish event with N-1 during prepareCommit
+            for (EventMessage event : new ArrayList<>(events)) {
+                Object payload = event.payload();
+                if (payload instanceof Integer) {
+                    int number = (int) payload;
+                    if (number > 0) {
+                        // Publish additional event using the provided context
+                        // This event should be queued if context is active
+                        publish(context, numberedEvent(number - 1));
                     }
                 }
             }
+
             committedEvents.addAll(events);
         }
 
@@ -284,24 +236,10 @@ class AbstractEventBusTest {
 
         private static class Builder extends AbstractEventBus.Builder {
 
-            private LegacyUnitOfWork.Phase publicationPhase = LegacyUnitOfWork.Phase.PREPARE_COMMIT;
-            private boolean startNewUowBeforePublishing = true;
+            private boolean throwExceptionDuringPrepare = false;
 
-            @SuppressWarnings("SameParameterValue")
-            private Builder publicationPhase(LegacyUnitOfWork.Phase publicationPhase) {
-                this.publicationPhase = publicationPhase;
-                return this;
-            }
-
-            @Override
-            public Builder messageMonitor(@Nonnull MessageMonitor<? super EventMessage> messageMonitor) {
-                super.messageMonitor(messageMonitor);
-                return this;
-            }
-
-            @SuppressWarnings("SameParameterValue")
-            private Builder startNewUowBeforePublishing(boolean startNewUowBeforePublishing) {
-                this.startNewUowBeforePublishing = startNewUowBeforePublishing;
+            private Builder throwExceptionDuringPrepare(boolean throwExceptionDuringPrepare) {
+                this.throwExceptionDuringPrepare = throwExceptionDuringPrepare;
                 return this;
             }
 
