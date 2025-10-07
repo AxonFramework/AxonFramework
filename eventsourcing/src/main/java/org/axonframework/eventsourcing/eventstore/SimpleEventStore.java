@@ -29,15 +29,11 @@ import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.SubscribableEventSource;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.BiConsumer;
 
 /**
@@ -50,13 +46,11 @@ import java.util.function.BiConsumer;
  */
 public class SimpleEventStore implements EventStore, SubscribableEventSource {
 
-    private static final Logger logger = LoggerFactory.getLogger(SimpleEventStore.class);
-
     private final EventStorageEngine eventStorageEngine;
     private final TagResolver tagResolver;
 
     private final ResourceKey<EventStoreTransaction> eventStoreTransactionKey;
-    private final Set<BiConsumer<List<? extends EventMessage>, ProcessingContext>> eventSubscribers = new CopyOnWriteArraySet<>();
+    private final EventSubscribers eventSubscribers = new EventSubscribers();
 
     /**
      * Constructs a {@code SimpleEventStore} using the given {@code eventStorageEngine} to start
@@ -137,33 +131,12 @@ public class SimpleEventStore implements EventStore, SubscribableEventSource {
     }
 
     private void notifySubscribers(List<EventMessage> events, ProcessingContext context) {
-        if (!eventSubscribers.isEmpty()) {
-            eventSubscribers.forEach(subscriber -> subscriber.accept(events, context));
-        }
+        eventSubscribers.notifySubscribers(events, context);
     }
 
     @Override
-    public Registration subscribe(
-            @Nonnull BiConsumer<List<? extends EventMessage>, ProcessingContext> eventsBatchConsumer
-    ) {
-        if (this.eventSubscribers.add(eventsBatchConsumer)) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Event subscriber [{}] subscribed successfully", eventsBatchConsumer);
-            }
-        } else {
-            logger.info("Event subscriber [{}] not added. It was already subscribed", eventsBatchConsumer);
-        }
-        return () -> {
-            if (eventSubscribers.remove(eventsBatchConsumer)) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Event subscriber {} unsubscribed successfully", eventsBatchConsumer);
-                }
-                return true;
-            } else {
-                logger.info("Event subscriber {} not removed. It was already unsubscribed", eventsBatchConsumer);
-                return false;
-            }
-        };
+    public Registration subscribe(@Nonnull BiConsumer<List<? extends EventMessage>, ProcessingContext> eventsBatchConsumer) {
+        return eventSubscribers.subscribe(eventsBatchConsumer);
     }
 
     @Override
