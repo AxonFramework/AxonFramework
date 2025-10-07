@@ -167,6 +167,27 @@ class DefaultCommandGatewayTest {
         ));
         TestPayload payload = new TestPayload();
         // when...
+        Object result = testSubject.sendAndWait(payload);
+        // then...
+        assertThat(result).isEqualTo(expectedResult);
+        verify(mockCommandBus).dispatch(
+                argThat(m -> {
+                    Object resultPayload = m.payload();
+                    return resultPayload != null && resultPayload.equals(payload);
+                }),
+                isNull()
+        );
+    }
+
+    @Test
+    void sendAndWaitForResultTypeReturnsExpectedResult() {
+        // given...
+        String expectedResult = "OK";
+        when(mockCommandBus.dispatch(any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(
+                new GenericCommandResultMessage(new MessageType("result"), expectedResult)
+        ));
+        TestPayload payload = new TestPayload();
+        // when...
         String result = testSubject.sendAndWait(payload, String.class);
         // then...
         assertThat(result).isEqualTo(expectedResult);

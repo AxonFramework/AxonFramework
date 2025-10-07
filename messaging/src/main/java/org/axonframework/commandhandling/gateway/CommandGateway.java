@@ -55,21 +55,22 @@ public interface CommandGateway extends DescribableComponent {
      * {@code CommandMessage} is constructed from that message's payload and
      * {@link org.axonframework.messaging.Metadata}.
      *
-     * @param command    The command payload or {@link org.axonframework.commandhandling.CommandMessage} to send.
-     * @param context    The processing context, if any, to dispatch the given {@code command} in.
-     * @param resultType The class representing the type of the expected command result.
      * @param <R>        The generic type of the expected response.
+     * @param command    The command payload or {@link CommandMessage} to send.
+     * @param resultType The class representing the type of the expected command result.
+     * @param context    The processing context, if any, to dispatch the given {@code command} in.
      * @return A {@link CompletableFuture} that will be resolved successfully or exceptionally based on the eventual
      * command execution result.
      */
+    @Nonnull
     default <R> CompletableFuture<R> send(@Nonnull Object command,
-                                          @Nullable ProcessingContext context,
-                                          @Nonnull Class<R> resultType) {
+                                          @Nonnull Class<R> resultType,
+                                          @Nullable ProcessingContext context) {
         return send(command, context).resultAs(resultType);
     }
 
     /**
-     * Send the given command and waits for completion.
+     * Send the given {@code command} and waits for completion.
      * <p>
      * If the command was successful, its result (if any) is discarded. If it was unsuccessful an exception is thrown.
      * Any checked exceptions that may occur as the result of running the command will be wrapped in a
@@ -79,14 +80,16 @@ public interface CommandGateway extends DescribableComponent {
      * result payload.
      *
      * @param command The command payload or {@link org.axonframework.commandhandling.CommandMessage} to send.
+     * @return The payload of the result message, or {@code null} when none is present.
      * @throws CommandExecutionException When a checked exception occurs while handling the command.
      */
-    default void sendAndWait(@Nonnull Object command) {
-        sendAndWait(command, Object.class);
+    @Nullable
+    default Object sendAndWait(@Nonnull Object command) {
+        return sendAndWait(command, Object.class);
     }
 
     /**
-     * Send the given command and waits for the result.
+     * Send the given {@code command} and waits for the result converted to the {@code resultType}.
      * <p>
      * If the command was successful, its result will be converted to the specified {@code returnType} and returned. If
      * it was unsuccessful or conversion failed, an exception is thrown. Any checked exceptions that may occur as the
@@ -95,9 +98,10 @@ public interface CommandGateway extends DescribableComponent {
      * @param command    The command payload or {@link org.axonframework.commandhandling.CommandMessage} to send.
      * @param resultType The class representing the type of the expected command result.
      * @param <R>        The generic type of the expected response.
-     * @return The payload of the result message of type {@code R}.
+     * @return The payload of the result message of type {@code R}, or {@code null} when none is present.
      * @throws CommandExecutionException When a checked exception occurs while handling the command.
      */
+    @Nullable
     default <R> R sendAndWait(@Nonnull Object command,
                               @Nonnull Class<R> resultType) {
         return send(command, null).wait(resultType);
@@ -126,6 +130,7 @@ public interface CommandGateway extends DescribableComponent {
      * @return A command result success and failure hooks can be registered. The
      * {@link CommandResult#getResultMessage()} serves as a shorthand to retrieve the response.
      */
+    @Nonnull
     CommandResult send(@Nonnull Object command,
                        @Nullable ProcessingContext context);
 
@@ -154,6 +159,7 @@ public interface CommandGateway extends DescribableComponent {
      * @return A command result success and failure hooks can be registered. The
      * {@link CommandResult#getResultMessage()} serves as a shorthand to retrieve the response.
      */
+    @Nonnull
     CommandResult send(@Nonnull Object command,
                        @Nonnull Metadata metadata,
                        @Nullable ProcessingContext context);
