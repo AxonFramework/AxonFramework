@@ -45,8 +45,6 @@ import java.util.function.BiConsumer;
 public abstract class AbstractEventBus implements EventBus {
 
     private final Context.ResourceKey<List<EventMessage>> eventsKey = Context.ResourceKey.withLabel("EventBus_Events");
-    private final Context.ResourceKey<Boolean> handlersRegistered = Context.ResourceKey.withLabel(
-            "EventBus_HandlersRegistered");
     private final EventSubscribers eventSubscribers = new EventSubscribers();
 
     /**
@@ -72,9 +70,9 @@ public abstract class AbstractEventBus implements EventBus {
             return FutureUtils.emptyCompletedFuture();
         }
 
-        // Register lifecycle handlers on first publish in this context
-        context.computeResourceIfAbsent(handlersRegistered, () -> {
-            context.putResource(eventsKey, new ArrayList<>());
+        // Register lifecycle handlers and create event queue on first publish in this context
+        List<EventMessage> eventQueue = context.computeResourceIfAbsent(eventsKey, () -> {
+            ArrayList<EventMessage> queue = new ArrayList<>();
 
             context.runOnPrepareCommit(ctx -> {
                 List<EventMessage> queuedEvents = ctx.getResource(eventsKey);
@@ -97,13 +95,10 @@ public abstract class AbstractEventBus implements EventBus {
                 }
             });
 
-            return Boolean.TRUE;
+            return queue;
         });
 
-        List<EventMessage> eventQueue = context.getResource(eventsKey);
-        if (eventQueue != null) {
-            eventQueue.addAll(events);
-        }
+        eventQueue.addAll(events);
 
         return FutureUtils.emptyCompletedFuture();
     }
