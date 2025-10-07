@@ -260,7 +260,7 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
             @Override
             public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
                                                    @Nonnull List<EventMessage> events) {
-                eventBus.publish(events);
+                eventBus.publish(context, events);
                 return FutureUtils.emptyCompletedFuture();
             }
 

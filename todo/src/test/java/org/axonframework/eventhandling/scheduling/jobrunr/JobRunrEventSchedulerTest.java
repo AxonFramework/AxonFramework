@@ -16,7 +16,10 @@
 
 package org.axonframework.eventhandling.scheduling.jobrunr;
 
+import jakarta.annotation.Nullable;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -24,6 +27,7 @@ import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventhandling.scheduling.java.SimpleScheduleToken;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.serialization.Revision;
 import org.axonframework.serialization.TestConverter;
 import org.axonframework.serialization.json.JacksonSerializer;
@@ -42,6 +46,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import jakarta.annotation.Nonnull;
 
@@ -217,17 +223,20 @@ class JobRunrEventSchedulerTest {
         }
 
         @Override
-        public void publish(@Nonnull List<? extends EventMessage> events) {
+        public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
+                                               @Nonnull List<EventMessage> events) {
             publishedMessages.addAll(events);
+            return FutureUtils.emptyCompletedFuture();
         }
 
         @Override
-        public Registration subscribe(@Nonnull Consumer<List<? extends EventMessage>> eventsBatchConsumer) {
+        public Registration subscribe(
+                @Nonnull BiConsumer<List<? extends EventMessage>, ProcessingContext> eventsBatchConsumer) {
             throw new UnsupportedOperationException();
         }
 
-        public Registration registerDispatchInterceptor(
-                @Nonnull MessageDispatchInterceptor<? super EventMessage> dispatchInterceptor) {
+        @Override
+        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
             throw new UnsupportedOperationException();
         }
     }

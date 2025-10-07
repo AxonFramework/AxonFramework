@@ -27,8 +27,9 @@ import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventhandling.scheduling.SchedulingException;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.serialization.TestConverter;
 import org.axonframework.serialization.json.JacksonSerializer;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.serialization.TestSerializer;
 import org.axonframework.utils.AssertUtils;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
@@ -88,7 +89,7 @@ class QuartzEventSchedulerTest {
         doAnswer(invocation -> {
             latch.countDown();
             return null;
-        }).when(eventBus).publish(isA(EventMessage.class));
+        }).when(eventBus).publish(eq(null), isA(EventMessage.class));
 
         ScheduleToken token = testSubject.schedule(Duration.ofMillis(30), buildTestEvent());
 
@@ -96,7 +97,7 @@ class QuartzEventSchedulerTest {
         assertTrue(token.toString().contains(GROUP_ID));
         latch.await(1, TimeUnit.SECONDS);
 
-        verify(eventBus).publish(isA(EventMessage.class));
+        verify(eventBus).publish(eq(null), isA(EventMessage.class));
     }
 
     @Test
@@ -124,7 +125,7 @@ class QuartzEventSchedulerTest {
         AssertUtils.assertWithin(1, TimeUnit.SECONDS, () -> verify(mockTransaction).commit());
         InOrder inOrder = inOrder(transactionManager, eventBus, mockTransaction);
         inOrder.verify(transactionManager).startTransaction();
-        inOrder.verify(eventBus).publish(isA(EventMessage.class));
+        inOrder.verify(eventBus).publish(eq(null), isA(EventMessage.class));
         inOrder.verify(mockTransaction).commit();
         inOrder.verifyNoMoreInteractions();
     }
@@ -165,7 +166,7 @@ class QuartzEventSchedulerTest {
         testSubject.cancelSchedule(token);
         assertEquals(0, scheduler.getJobKeys(GroupMatcher.groupEquals(GROUP_ID)).size());
         scheduler.shutdown(true);
-        verify(eventBus, never()).publish(isA(EventMessage.class));
+        verify(eventBus, never()).publish(eq(null), isA(EventMessage.class));
     }
 
     @Test

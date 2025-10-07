@@ -18,9 +18,11 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import static org.mockito.Mockito.*;
@@ -32,45 +34,45 @@ import static org.mockito.Mockito.*;
  */
 class SimpleEventBusTest {
 
-    private Consumer<List<? extends EventMessage>> listener1;
-    private Consumer<List<? extends EventMessage>> listener2;
-    private Consumer<List<? extends EventMessage>> listener3;
+    private BiConsumer<List<? extends EventMessage>, ProcessingContext> listener1;
+    private BiConsumer<List<? extends EventMessage>, ProcessingContext> listener2;
+    private BiConsumer<List<? extends EventMessage>, ProcessingContext> listener3;
 
     private EventBus testSubject;
 
     @BeforeEach
     void setUp() {
         //noinspection unchecked
-        listener1 = mock(Consumer.class);
+        listener1 = mock(BiConsumer.class);
         //noinspection unchecked
-        listener2 = mock(Consumer.class);
+        listener2 = mock(BiConsumer.class);
         //noinspection unchecked
-        listener3 = mock(Consumer.class);
+        listener3 = mock(BiConsumer.class);
 
         testSubject = SimpleEventBus.builder().build();
     }
 
     @Test
     void eventIsDispatchedToSubscribedListeners() {
-        testSubject.publish(newEvent());
+        testSubject.publish(null, newEvent());
         testSubject.subscribe(listener1);
         // subscribing twice should not make a difference
         Registration subscription1 = testSubject.subscribe(listener1);
-        testSubject.publish(newEvent());
+        testSubject.publish(null, newEvent());
         Registration subscription2 = testSubject.subscribe(listener2);
         Registration subscription3 = testSubject.subscribe(listener3);
-        testSubject.publish(newEvent());
+        testSubject.publish(null, newEvent());
         subscription1.cancel();
-        testSubject.publish(newEvent());
+        testSubject.publish(null, newEvent());
         subscription2.cancel();
         subscription3.cancel();
         // unsubscribe a non-subscribed listener should not fail
         subscription3.cancel();
-        testSubject.publish(newEvent());
+        testSubject.publish(null, newEvent());
 
-        verify(listener1, times(2)).accept(anyList());
-        verify(listener2, times(2)).accept(anyList());
-        verify(listener3, times(2)).accept(anyList());
+        verify(listener1, times(2)).accept(anyList(), null);
+        verify(listener2, times(2)).accept(anyList(), null);
+        verify(listener3, times(2)).accept(anyList(), null);
     }
 
     private EventMessage newEvent() {
