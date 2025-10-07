@@ -70,9 +70,9 @@ class SimpleEventBusTest {
         subscription3.cancel();
         testSubject.publish(null, newEvent());
 
-        verify(listener1, times(2)).accept(anyList(), null);
-        verify(listener2, times(2)).accept(anyList(), null);
-        verify(listener3, times(2)).accept(anyList(), null);
+        verify(listener1, times(2)).accept(anyList(), eq(null));
+        verify(listener2, times(2)).accept(anyList(), eq(null));
+        verify(listener3, times(2)).accept(anyList(), eq(null));
     }
 
     private EventMessage newEvent() {
