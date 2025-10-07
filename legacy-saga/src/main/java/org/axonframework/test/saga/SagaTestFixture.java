@@ -119,7 +119,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
      */
     public SagaTestFixture(Class<T> sagaType) {
         commandBus = new RecordingCommandBus();
-        eventBus = SimpleEventBus.builder().build();
+        eventBus = new SimpleEventBus();
 //        eventScheduler = new StubEventScheduler();
 //        deadlineManager = new StubDeadlineManager();
         registeredParameterResolverFactories.add(new SimpleResourceParameterResolverFactory(registeredResources));

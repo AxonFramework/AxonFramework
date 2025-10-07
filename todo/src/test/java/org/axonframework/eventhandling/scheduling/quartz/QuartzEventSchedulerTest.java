@@ -206,7 +206,7 @@ class QuartzEventSchedulerTest {
 
     @Test
     void buildWithoutSchedulerThrowsAxonConfigurationException() {
-        EventBus eventBus = SimpleEventBus.builder().build();
+        EventBus eventBus = new SimpleEventBus();
         QuartzEventScheduler.Builder builderTestSubject =
                 QuartzEventScheduler.builder()
                                     .eventBus(eventBus)

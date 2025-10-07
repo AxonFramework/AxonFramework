@@ -239,7 +239,7 @@ class GenericJpaRepositoryIntegrationTest implements EventMessageHandler {
 
         @Bean
         public EventBus eventBus() {
-            return SimpleEventBus.builder().build();
+            return new SimpleEventBus();
         }
 
         @Bean("simpleRepository")

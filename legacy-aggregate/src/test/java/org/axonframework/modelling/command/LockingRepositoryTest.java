@@ -60,7 +60,7 @@ class LockingRepositoryTest {
     @BeforeEach
     void setUp() {
         spanFactory = new TestSpanFactory();
-        eventBus = spy(SimpleEventBus.builder().build());
+        eventBus = spy(new SimpleEventBus());
         lockFactory = spy(PessimisticLockFactory.usingDefaults());
         when(lockFactory.obtainLock(anyString()))
                 .thenAnswer(invocation -> lock = spy((Lock) invocation.callRealMethod()));
