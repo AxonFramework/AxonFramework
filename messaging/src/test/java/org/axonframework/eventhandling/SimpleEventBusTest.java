@@ -49,7 +49,7 @@ class SimpleEventBusTest {
         //noinspection unchecked
         listener3 = mock(BiConsumer.class);
 
-        testSubject = SimpleEventBus.builder().build();
+        testSubject = new SimpleEventBus();
     }
 
     @Test

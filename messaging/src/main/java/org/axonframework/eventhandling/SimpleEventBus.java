@@ -28,48 +28,4 @@ import jakarta.annotation.Nonnull;
  */
 public class SimpleEventBus extends AbstractEventBus {
 
-    /**
-     * Instantiate a Builder to be able to create a {@link SimpleEventBus}.
-     *
-     * @return a Builder to be able to create a {@link SimpleEventBus}
-     */
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    /**
-     * Instantiate a {@link SimpleEventBus} based on the fields contained in the {@link Builder}.
-     *
-     * @param builder the {@link Builder} used to instantiate a {@link SimpleEventBus} instance
-     */
-    protected SimpleEventBus(Builder builder) {
-        super(builder);
-    }
-
-    /**
-     * Builder class to instantiate a {@link SimpleEventBus}.
-     */
-    public static class Builder extends AbstractEventBus.Builder {
-
-        /**
-         * Initializes a {@link SimpleEventBus} as specified through this Builder.
-         *
-         * @return a {@link SimpleEventBus} as specified through this Builder
-         */
-        public SimpleEventBus build() {
-            return new SimpleEventBus(this);
-        }
-
-        /**
-         * Validates whether the fields contained in this Builder are set accordingly.
-         *
-         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
-         *                                    specifications
-         */
-        @Override
-        protected void validate() throws AxonConfigurationException {
-            super.validate();
-        }
-    }
-
 }
