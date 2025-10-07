@@ -18,31 +18,26 @@ package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.Context;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.ProcessingLifecycle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-
-import static org.axonframework.messaging.unitofwork.LegacyUnitOfWork.Phase.*;
 
 /**
- * Base class for the Event Bus. In case events are published while a Unit of Work is active the Unit of Work root
- * coordinates the timing and order of the publication.
+ * Base class for the Event Bus. In case events are published while a ProcessingContext is active, the events are
+ * queued and published during the commit phase of the ProcessingContext.
  * <p>
  * This implementation of the {@link EventBus} directly forwards all published events (in the callers' thread) to
  * subscribed event processors.
@@ -55,7 +50,8 @@ public abstract class AbstractEventBus implements EventBus {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractEventBus.class);
 
-    private final String eventsKey = this + "_EVENTS";
+    private final Context.ResourceKey<List<EventMessage>> eventsKey = Context.ResourceKey.withLabel("EventBus_Events");
+    private final Context.ResourceKey<Boolean> handlersRegistered = Context.ResourceKey.withLabel("EventBus_HandlersRegistered");
     private final Set<BiConsumer<List<? extends EventMessage>, ProcessingContext>> eventProcessors = new CopyOnWriteArraySet<>();
 
     /**
@@ -92,110 +88,91 @@ public abstract class AbstractEventBus implements EventBus {
 
     @Override
     public CompletableFuture<Void> publish(@Nullable ProcessingContext context, @Nonnull List<EventMessage> events) {
-        if (CurrentUnitOfWork.isStarted()) {
-            LegacyUnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
-            Assert.state(!unitOfWork.phase().isAfter(PREPARE_COMMIT),
-                         () -> "It is not allowed to publish events when the current Unit of Work has already been " +
-                                 "committed. Please start a new Unit of Work before publishing events.");
-            Assert.state(!unitOfWork.root().phase().isAfter(PREPARE_COMMIT),
-                         () -> "It is not allowed to publish events when the root Unit of Work has already been " +
-                                 "committed.");
-
-            eventsQueue(unitOfWork).addAll(events);
-        } else {
-            prepareCommit(events);
+        if (context == null || !(context instanceof ProcessingLifecycle)) {
+            // No processing context, publish immediately
+            prepareCommit(events, null);
             commit(events);
             afterCommit(events);
+            return FutureUtils.emptyCompletedFuture();
         }
+
+        ProcessingLifecycle lifecycle = (ProcessingLifecycle) context;
+
+        // Check if we've already registered handlers for this context
+        Boolean registered = context.getResource(handlersRegistered);
+        if (registered == null) {
+            // First time publishing in this context, register lifecycle handlers
+            context.putResource(handlersRegistered, Boolean.TRUE);
+            context.putResource(eventsKey, new ArrayList<>());
+
+            lifecycle.runOnPrepareCommit(ctx -> {
+                List<EventMessage> queuedEvents = ctx.getResource(eventsKey);
+                if (queuedEvents != null && !queuedEvents.isEmpty()) {
+                    processEventsInPhase(queuedEvents, ctx, this::prepareCommit);
+                }
+            });
+
+            lifecycle.runOnCommit(ctx -> {
+                List<EventMessage> queuedEvents = ctx.getResource(eventsKey);
+                if (queuedEvents != null && !queuedEvents.isEmpty()) {
+                    commit(new ArrayList<>(queuedEvents));
+                }
+            });
+
+            lifecycle.runOnAfterCommit(ctx -> {
+                List<EventMessage> queuedEvents = ctx.getResource(eventsKey);
+                if (queuedEvents != null && !queuedEvents.isEmpty()) {
+                    afterCommit(new ArrayList<>(queuedEvents));
+                }
+            });
+        }
+
+        // Add events to the queue
+        List<EventMessage> eventQueue = context.getResource(eventsKey);
+        if (eventQueue != null) {
+            eventQueue.addAll(events);
+        }
+
         return FutureUtils.emptyCompletedFuture();
     }
 
-    private List<EventMessage> eventsQueue(LegacyUnitOfWork<?> unitOfWork) {
-        return unitOfWork.getOrComputeResource(eventsKey, r -> {
-            List<EventMessage> eventQueue = new ArrayList<>();
-
-            unitOfWork.onPrepareCommit(u -> {
-                if (u.parent().isPresent() && !u.parent().get().phase().isAfter(PREPARE_COMMIT)) {
-                    eventsQueue(u.parent().get()).addAll(eventQueue);
-                } else {
-                    int processedItems = eventQueue.size();
-                    doWithEvents(this::prepareCommit, new ArrayList<>(eventQueue));
-                    // Make sure events published during publication prepare commit phase are also published
-                    while (processedItems < eventQueue.size()) {
-                        List<? extends EventMessage> newMessages = new ArrayList<>(
-                                eventQueue.subList(processedItems, eventQueue.size())
-                        );
-                        processedItems = eventQueue.size();
-                        doWithEvents(this::prepareCommit, newMessages);
-                    }
-                }
-            });
-            unitOfWork.onCommit(u -> {
-                if (u.parent().isPresent() && !u.root().phase().isAfter(COMMIT)) {
-                    u.root().onCommit(w -> doWithEvents(this::commit, eventQueue));
-                } else {
-                    doWithEvents(this::commit, eventQueue);
-                }
-            });
-            unitOfWork.afterCommit(u -> {
-                if (u.parent().isPresent() && !u.root().phase().isAfter(AFTER_COMMIT)) {
-                    u.root().afterCommit(w -> doWithEvents(this::afterCommit, eventQueue));
-                } else {
-                    doWithEvents(this::afterCommit, eventQueue);
-                }
-            });
-            unitOfWork.onCleanup(u -> u.resources().remove(eventsKey));
-            return eventQueue;
-        });
-    }
-
     /**
-     * Returns a list of all the events staged for publication in this Unit of Work. Changing this list will not affect
-     * the publication of events.
+     * Process events during a specific phase, handling events published during the phase.
      *
-     * @return a list of all the events staged for publication
+     * @param queuedEvents The events queued for processing
+     * @param context      The processing context
+     * @param processor    The processor to invoke for the events
      */
-    protected List<EventMessage> queuedMessages() {
-        if (!CurrentUnitOfWork.isStarted()) {
-            return Collections.emptyList();
-        }
-        List<EventMessage> messages = new ArrayList<>();
-        addStagedMessages(CurrentUnitOfWork.get(), messages);
-        return messages;
-    }
+    private void processEventsInPhase(List<EventMessage> queuedEvents,
+                                      ProcessingContext context,
+                                      BiConsumer<List<? extends EventMessage>, ProcessingContext> processor) {
+        int processedItems = queuedEvents.size();
+        // Create a copy to avoid concurrent modification during event publication
+        processor.accept(new ArrayList<>(queuedEvents), context);
 
-    private void addStagedMessages(LegacyUnitOfWork<?> unitOfWork, List<EventMessage> messages) {
-        unitOfWork.parent().ifPresent(parent -> addStagedMessages(parent, messages));
-        if (unitOfWork.isRolledBack()) {
-            // staged messages are irrelevant if the UoW has been rolled back
-            return;
+        // Make sure events published during this phase are also processed
+        while (processedItems < queuedEvents.size()) {
+            List<EventMessage> newMessages = new ArrayList<>(
+                    queuedEvents.subList(processedItems, queuedEvents.size())
+            );
+            processedItems = queuedEvents.size();
+            processor.accept(newMessages, context);
         }
-        List<EventMessage> stagedEvents = unitOfWork.getOrDefaultResource(eventsKey, Collections.emptyList());
-        for (EventMessage stagedEvent : stagedEvents) {
-            if (!messages.contains(stagedEvent)) {
-                messages.add(stagedEvent);
-            }
-        }
-    }
-
-
-    private void doWithEvents(Consumer<List<? extends EventMessage>> eventsConsumer,
-                              List<? extends EventMessage> events) {
-        eventsConsumer.accept(events);
     }
 
     /**
-     * Process given {@code events} while the Unit of Work root is preparing for commit. The default implementation
+     * Process given {@code events} while the ProcessingContext is preparing for commit. The default implementation
      * passes the events to each registered event processor.
      *
-     * @param events Events to be published by this Event Bus
+     * @param events  Events to be published by this Event Bus
+     * @param context The processing context, or {@code null} if no context is active
      */
-    protected void prepareCommit(List<? extends EventMessage> events) {
-        eventProcessors.forEach(eventProcessor -> eventProcessor.accept(events, null));
+    protected void prepareCommit(List<? extends EventMessage> events, @Nullable ProcessingContext context) {
+        eventProcessors.forEach(eventProcessor -> eventProcessor.accept(events, context));
     }
 
     /**
-     * Process given {@code events} while the Unit of Work root is being committed. The default implementation does
+     * Process given {@code events} while the ProcessingContext is being committed. The default implementation does
      * nothing.
      *
      * @param events Events to be published by this Event Bus
@@ -204,7 +181,8 @@ public abstract class AbstractEventBus implements EventBus {
     }
 
     /**
-     * Process given {@code events} after the Unit of Work has been committed. The default implementation does nothing.
+     * Process given {@code events} after the ProcessingContext has been committed. The default implementation does
+     * nothing.
      *
      * @param events Events to be published by this Event Bus
      */
