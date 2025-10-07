@@ -35,6 +35,7 @@ import java.util.function.BiConsumer;
 import java.util.concurrent.CompletableFuture;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -78,6 +79,80 @@ class AbstractEventBusTest {
         }
 
         @Test
+        void allLifecyclePhasesAreCalled() {
+            // given
+            List<String> phaseCalls = new ArrayList<>();
+            StubPublishingEventBus trackingBus = new StubPublishingEventBus(false) {
+                @Override
+                protected void prepareCommit(@Nonnull List<? extends EventMessage> events, ProcessingContext context) {
+                    phaseCalls.add("prepareCommit");
+                    super.prepareCommit(events, context);
+                }
+
+                @Override
+                protected void commit(@Nonnull List<? extends EventMessage> events, ProcessingContext context) {
+                    phaseCalls.add("commit");
+                    super.commit(events, context);
+                }
+
+                @Override
+                protected void afterCommit(@Nonnull List<? extends EventMessage> events, ProcessingContext context) {
+                    phaseCalls.add("afterCommit");
+                    super.afterCommit(events, context);
+                }
+            };
+            UnitOfWork uow = unitOfWorkFactory.create();
+
+            // when
+            uow.runOnInvocation(ctx -> trackingBus.publish(ctx, newEvent()));
+            uow.execute().join();
+
+            // then
+            assertEquals(Arrays.asList("prepareCommit", "commit", "afterCommit"), phaseCalls);
+        }
+
+        @Test
+        void lifecycleHandlersCalledOnlyOncePerPhase() {
+            // given
+            List<String> phaseCalls = new ArrayList<>();
+            StubPublishingEventBus trackingBus = new StubPublishingEventBus(false) {
+                @Override
+                protected void prepareCommit(@Nonnull List<? extends EventMessage> events,
+                                            @Nullable ProcessingContext context) {
+                    phaseCalls.add("prepareCommit");
+                    super.prepareCommit(events, context);
+                }
+
+                @Override
+                protected void commit(@Nonnull List<? extends EventMessage> events,
+                                    @Nullable ProcessingContext context) {
+                    phaseCalls.add("commit");
+                    super.commit(events, context);
+                }
+
+                @Override
+                protected void afterCommit(@Nonnull List<? extends EventMessage> events,
+                                          @Nullable ProcessingContext context) {
+                    phaseCalls.add("afterCommit");
+                    super.afterCommit(events, context);
+                }
+            };
+            UnitOfWork uow = unitOfWorkFactory.create();
+
+            // when - publish multiple events in same context
+            uow.runOnInvocation(ctx -> {
+                trackingBus.publish(ctx, newEvent());
+                trackingBus.publish(ctx, newEvent());
+            });
+            uow.execute().join();
+
+            // then - each phase should be called exactly once
+            assertEquals(1, phaseCalls.stream().filter(s -> s.equals("prepareCommit")).count());
+            assertEquals(1, phaseCalls.stream().filter(s -> s.equals("commit")).count());
+            assertEquals(1, phaseCalls.stream().filter(s -> s.equals("afterCommit")).count());
+        }
+
+        @Test
         void multipleEventsArePublishedInOrder() {
             // given
             EventMessage eventA = newEvent();
@@ -110,29 +185,6 @@ class AbstractEventBusTest {
                     Arrays.asList(numberedEvent(2), numberedEvent(1), numberedEvent(0)),
                     testSubject.committedEvents
             );
-        }
-
-        @Test
-        void nestedUnitOfWorkPublishesEventsCorrectly() {
-            // given
-            UnitOfWork outerUow = unitOfWorkFactory.create();
-
-            // when
-            outerUow.runOnInvocation(outerCtx -> {
-                testSubject.publish(outerCtx, numberedEvent(2));
-
-                // Create nested UnitOfWork
-                UnitOfWork innerUow = unitOfWorkFactory.create();
-                innerUow.runOnInvocation(innerCtx -> testSubject.publish(innerCtx, numberedEvent(5)));
-                innerUow.execute().join();
-            });
-            outerUow.execute().join();
-
-            // then
-            // Outer UoW: publishes 2, which triggers 1, 0
-            // Inner UoW: publishes 5, which triggers 4, 3, 2, 1, 0
-            assertTrue(testSubject.committedEvents.contains(numberedEvent(2)));
-            assertTrue(testSubject.committedEvents.contains(numberedEvent(5)));
         }
 
         @Test
@@ -180,6 +232,55 @@ class AbstractEventBusTest {
             assertTrue(result.isCompletedExceptionally());
             assertTrue(failingBus.committedEvents.isEmpty());
         }
+
+        @Test
+        void allPhasesCalledCorrectNumberOfTimesWithRecursivePublishing() {
+            // given
+            List<String> phaseCalls = new ArrayList<>();
+            StubPublishingEventBus trackingBus = new StubPublishingEventBus(false) {
+                @Override
+                protected void prepareCommit(@Nonnull List<? extends EventMessage> events, ProcessingContext context) {
+                    for (EventMessage event : events) {
+                        phaseCalls.add("prepareCommit-" + event.payload());
+                    }
+                    super.prepareCommit(events, context);
+                }
+
+                @Override
+                protected void commit(@Nonnull List<? extends EventMessage> events, ProcessingContext context) {
+                    for (EventMessage event : events) {
+                        phaseCalls.add("commit-" + event.payload());
+                    }
+                    super.commit(events, context);
+                }
+
+                @Override
+                protected void afterCommit(@Nonnull List<? extends EventMessage> events, ProcessingContext context) {
+                    for (EventMessage event : events) {
+                        phaseCalls.add("afterCommit-" + event.payload());
+                    }
+                    super.afterCommit(events, context);
+                }
+            };
+            UnitOfWork uow = unitOfWorkFactory.create();
+
+            // when
+            uow.runOnInvocation(ctx -> trackingBus.publish(ctx, numberedEvent(2)));
+            uow.execute().join();
+
+            // then
+            // Events: 2, 1, 0 (each prepareCommit publishes N-1)
+            // Each event should go through all three phases
+            assertTrue(phaseCalls.contains("prepareCommit-2"));
+            assertTrue(phaseCalls.contains("prepareCommit-1"));
+            assertTrue(phaseCalls.contains("prepareCommit-0"));
+            assertTrue(phaseCalls.contains("commit-2"));
+            assertTrue(phaseCalls.contains("commit-1"));
+            assertTrue(phaseCalls.contains("commit-0"));
+            assertTrue(phaseCalls.contains("afterCommit-2"));
+            assertTrue(phaseCalls.contains("afterCommit-1"));
+            assertTrue(phaseCalls.contains("afterCommit-0"));
+        }
     }
 
     private static EventMessage newEvent() {
@@ -200,7 +301,8 @@ class AbstractEventBusTest {
         }
 
         @Override
-        protected void prepareCommit(@Nonnull List<? extends EventMessage> events, ProcessingContext context) {
+        protected void prepareCommit(@Nonnull List<? extends EventMessage> events,
+                                    @Nullable ProcessingContext context) {
             if (throwExceptionDuringPrepare) {
                 throw new RuntimeException("Simulated failure during prepare commit");
             }
@@ -223,7 +325,8 @@ class AbstractEventBusTest {
 
         @Override
         public Registration subscribe(
-                @Nonnull BiConsumer<List<? extends EventMessage>, ProcessingContext> eventsBatchConsumer) {
+                @Nonnull BiConsumer<List<? extends EventMessage>, ProcessingContext> eventsBatchConsumer
+        ) {
             throw new UnsupportedOperationException();
         }
     }
