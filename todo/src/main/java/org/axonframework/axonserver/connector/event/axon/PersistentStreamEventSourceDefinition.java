@@ -18,9 +18,8 @@ package org.axonframework.axonserver.connector.event.axon;
 import io.axoniq.axonserver.connector.event.PersistentStream;
 import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
 import org.axonframework.configuration.Configuration;
-import org.axonframework.configuration.SubscribableMessageSourceDefinition;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.SubscribableMessageSource;
+import org.axonframework.eventhandling.configuration.SubscribableEventSourceDefinition;
+import org.axonframework.messaging.SubscribableEventSource;
 
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -33,7 +32,7 @@ import java.util.concurrent.ScheduledExecutorService;
  * @author Marc Gathier
  * @since 4.10.0
  */
-public class PersistentStreamMessageSourceDefinition implements SubscribableMessageSourceDefinition<EventMessage> {
+public class PersistentStreamEventSourceDefinition implements SubscribableEventSourceDefinition {
 
     private final String name;
     private final PersistentStreamProperties persistentStreamProperties;
@@ -54,12 +53,12 @@ public class PersistentStreamMessageSourceDefinition implements SubscribableMess
      * @param batchSize                  The batch size for collecting events.
      * @param context                    The context in which this persistent stream exists (or needs to be created).
      */
-    public PersistentStreamMessageSourceDefinition(String name,
-                                                   PersistentStreamProperties persistentStreamProperties,
-                                                   ScheduledExecutorService scheduler,
-                                                   int batchSize,
-                                                   String context,
-                                                   PersistentStreamMessageSourceFactory messageSourceFactory) {
+    public PersistentStreamEventSourceDefinition(String name,
+                                                 PersistentStreamProperties persistentStreamProperties,
+                                                 ScheduledExecutorService scheduler,
+                                                 int batchSize,
+                                                 String context,
+                                                 PersistentStreamMessageSourceFactory messageSourceFactory) {
         this.name = name;
         this.persistentStreamProperties = persistentStreamProperties;
         this.scheduler = scheduler;
@@ -69,7 +68,7 @@ public class PersistentStreamMessageSourceDefinition implements SubscribableMess
     }
 
     @Override
-    public SubscribableMessageSource<EventMessage> create(Configuration configuration) {
+    public SubscribableEventSource create(Configuration configuration) {
         return messageSourceFactory.build(name,
                                           persistentStreamProperties,
                                           scheduler,

@@ -2004,6 +2004,9 @@ This section contains five tables:
 | org.axonframework.queryhandling.DefaultSubscriptionQueryResult                                         | org.axonframework.queryhandling.GenericSubscriptionQueryResponse                                      | No                             |
 | org.axonframework.axonserver.connector.query.subscription.AxonServerSubscriptionQueryResult            | org.axonframework.axonserver.connector.query.subscription.AxonServerSubscriptionQueryResponseMessages | No                             |
 | org.axonframework.eventhandling.processors.streaming.token.store.GenericTokenEntry                     | org.axonframework.eventhandling.processors.streaming.token.store.jdbc.JdbcTokenEntry                  | No                             |
+| org.axonframework.messaging.SubscribableMessageSource                                                  | org.axonframework.messaging.SubscribableEventSource                                                   | No                             |
+| org.axonframework.configuration.SubscribableMessageSourceDefinition                                    | org.axonframework.eventhandling.configuration.SubscribableEventSourceDefinition                       | No                             |
+| org.axonframework.axonserver.connector.event.axon.PersistentStreamMessageSourceDefinition              | org.axonframework.axonserver.connector.event.axon.PersistentStreamEventSourceDefinition               | No                             |
 
 ### Removed Classes
 
@@ -2048,6 +2051,7 @@ This section contains five tables:
 | org.axonframework.eventhandling.TrackedEventData                                         | Removed in favor of adding a `TrackingToken` to the context of a `MessageStream.Entry`                                                         |
 | org.axonframework.eventhandling.TrackedDomainEventData                                   | Removed in favor of adding a `TrackingToken` to the context of a `MessageStream.Entry`                                                         |
 | org.axonframework.messaging.Headers                                                      | Removed due to lack of use and foreseen use.                                                                                                   |
+| org.axonframework.messaging.SubscribableMessageSource                                    | Replaced by `org.axonframework.messaging.SubscribableEventSource`, bacause just `EventMessage`s can be sourced.                                |
 | org.axonframework.config.EventProcessingModule                                           | Removed due to changes in the Configuration API (see [Event Processors](#event-processors)).                                                   |
 | org.axonframework.config.EventProcessingConfiguration                                    | Removed due to changes in the Configuration API (see [Event Processors](#event-processors)).                                                   |
 | org.axonframework.config.EventProcessingConfigurer                                       | Removed due to changes in the Configuration API (see [Event Processors](#event-processors)).                                                   |
@@ -2109,6 +2113,8 @@ This section contains five tables:
 | org.axonframework.queryhandling.QueryInvocationErrorHandler                              | Removed together with scatter-gather query removal, as described [here](#query-dispatching-and-handling)                                       |
 | org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler                       | Removed together with scatter-gather query removal, as described [here](#query-dispatching-and-handling)                                       |
 | org.axonframework.eventhandling.processors.streaming.token.store.AbstractTokenEntry      | Content of the methods pushed up into `JdbcTokenEntry` as the only implementer.                                                                |
+| org.axonframework.eventhandling.processors.subscribing.EventProcessingStrategy           | The sync/async processing is supported on `EventHandlingComponent` level                                                                       |
+| org.axonframework.eventhandling.processors.subscribing.DirectEventProcessingStrategy     | The sync/async processing is supported on `EventHandlingComponent` level                                                                       |
 
 ### Marked for removal Classes
 
@@ -2300,6 +2306,7 @@ This section contains four subsections, called:
 | `QueryUpdateEmitter#queryUpdateHandlerRegistered(SubscriptionQueryMessage)`                                       | Moved duplicate handler registration into `QueryUpdateEmitter#subscribeUpdateHandler` method.                               |
 | `UpdateHandlerRegistration#getRegistration()`                                                                     | Replaced for `UpdateHandler#cancel()`                                                                                       |
 | `QueryUpdateEmitter#activeSubscriptions()`                                                                        | Removed due to limited use (see [Query Dispatching and Handling](#query-dispatching-and-handling)                           |
+| `SubscribingEventProcessor#getMessageSource()`                                                                    | Removed due to no usages.                                                                                                   |
 
 ### Changed Method return types
 
