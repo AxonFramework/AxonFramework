@@ -288,14 +288,12 @@ class AbstractEventBusTest {
             UnitOfWork uow = unitOfWorkFactory.create();
 
             // when - try to publish during commit phase
-            uow.runOnCommit(ctx -> {
-                assertThrows(IllegalStateException.class, () -> testSubject.publish(ctx, newEvent()));
-            });
+            uow.runOnCommit(ctx -> testSubject.publish(ctx, newEvent()));
             CompletableFuture<Void> result = uow.execute();
 
             // then
             assertTrue(result.isDone());
-            assertFalse(result.isCompletedExceptionally());
+            assertTrue(result.isCompletedExceptionally());
         }
 
         @Test
@@ -304,14 +302,12 @@ class AbstractEventBusTest {
             UnitOfWork uow = unitOfWorkFactory.create();
 
             // when - try to publish during afterCommit phase
-            uow.runOnAfterCommit(ctx -> {
-                assertThrows(IllegalStateException.class, () -> testSubject.publish(ctx, newEvent()));
-            });
+            uow.runOnAfterCommit(ctx -> testSubject.publish(ctx, newEvent()));
             CompletableFuture<Void> result = uow.execute();
 
             // then
             assertTrue(result.isDone());
-            assertFalse(result.isCompletedExceptionally());
+            assertTrue(result.isCompletedExceptionally());
         }
     }
 
