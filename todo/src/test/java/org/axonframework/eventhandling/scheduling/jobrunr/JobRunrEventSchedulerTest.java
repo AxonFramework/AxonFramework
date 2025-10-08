@@ -25,7 +25,8 @@ import org.axonframework.eventhandling.scheduling.java.SimpleScheduleToken;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.serialization.Revision;
-import org.axonframework.serialization.TestSerializer;
+import org.axonframework.serialization.TestConverter;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.jobrunr.configuration.JobRunr;
 import org.jobrunr.scheduling.JobScheduler;
 import org.jobrunr.server.BackgroundJobServer;
@@ -77,7 +78,7 @@ class JobRunrEventSchedulerTest {
         eventScheduler = JobRunrEventScheduler
                 .builder()
                 .jobScheduler(jobScheduler)
-                .serializer(TestSerializer.JACKSON.getSerializer())
+                .serializer(JacksonSerializer.defaultSerializer())
                 .eventBus(eventBus)
                 .build();
         JobRunr.configure()

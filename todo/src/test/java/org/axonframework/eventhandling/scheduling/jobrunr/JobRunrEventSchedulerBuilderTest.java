@@ -19,7 +19,8 @@ package org.axonframework.eventhandling.scheduling.jobrunr;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.serialization.TestSerializer;
+import org.axonframework.serialization.TestConverter;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.jobrunr.scheduling.JobScheduler;
 import org.junit.jupiter.api.*;
 
@@ -42,7 +43,7 @@ class JobRunrEventSchedulerBuilderTest {
     void whenAllPropertiesAreSetCreatesManager() {
         JobRunrEventScheduler scheduler = builder.transactionManager(transactionManager)
                                                  .jobScheduler(jobScheduler)
-                                                 .serializer(TestSerializer.JACKSON.getSerializer())
+                                                 .serializer(JacksonSerializer.defaultSerializer())
                                                  .eventBus(eventBus)
                                                  .build();
 

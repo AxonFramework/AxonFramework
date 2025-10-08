@@ -20,7 +20,7 @@ import com.github.kagkarlsson.scheduler.Scheduler;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.ScopeAwareProvider;
-import org.axonframework.serialization.TestSerializer;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -43,7 +43,7 @@ class DbSchedulerDeadlineManagerBuilderTest {
         DbSchedulerDeadlineManager manager = builder.scopeAwareProvider(scopeAwareProvider)
                                                     .transactionManager(transactionManager)
                                                     .scheduler(scheduler)
-                                                    .serializer(TestSerializer.JACKSON.getSerializer())
+                                                    .serializer(JacksonSerializer.defaultSerializer())
                                                     .build();
 
         assertNotNull(manager);

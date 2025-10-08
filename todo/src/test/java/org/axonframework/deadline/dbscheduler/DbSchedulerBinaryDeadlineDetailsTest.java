@@ -24,7 +24,7 @@ import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.deadline.TestScopeDescriptor;
 import org.axonframework.messaging.*;
-import org.axonframework.serialization.TestSerializer;
+import org.axonframework.serialization.TestConverter;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 
@@ -65,8 +65,7 @@ class DbSchedulerBinaryDeadlineDetailsTest {
 
     @MethodSource("axonSerializers")
     @ParameterizedTest
-    void whenDataInPojoIsSerializedAndDeserializedItShouldBeTheSame(TestSerializer testSerializer) {
-        org.axonframework.serialization.Serializer serializer = testSerializer.getSerializer();
+    void whenDataInPojoIsSerializedAndDeserializedItShouldBeTheSame(org.axonframework.serialization.Serializer serializer) {
         String expectedType = "aggregateType";
         String expectedIdentifier = "identifier";
         ScopeDescriptor descriptor = new TestScopeDescriptor(expectedType, expectedIdentifier);
@@ -89,10 +88,10 @@ class DbSchedulerBinaryDeadlineDetailsTest {
         return serializers;
     }
 
-    public static Collection<TestSerializer> axonSerializers() {
-        List<TestSerializer> testSerializerList = new ArrayList<>();
-        testSerializerList.add(TestSerializer.JACKSON);
-        return testSerializerList;
+    public static Collection<org.axonframework.serialization.Serializer> axonSerializers() {
+        List<org.axonframework.serialization.Serializer> testConverterList = new ArrayList<>();
+        testConverterList.add(org.axonframework.serialization.json.JacksonSerializer.defaultSerializer());
+        return testConverterList;
     }
 
     private static Metadata getMetadata() {
