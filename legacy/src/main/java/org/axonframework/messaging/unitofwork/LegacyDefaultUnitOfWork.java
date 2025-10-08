@@ -91,7 +91,7 @@ public class LegacyDefaultUnitOfWork<T extends Message> extends AbstractLegacyUn
                 resultMessage = new GenericResultMessage(new MessageType(ObjectUtils.nullSafeTypeOf(result)), result);
             }
         } catch (Error | Exception e) {
-            resultMessage = asResultMessage(e);
+            resultMessage = GenericResultMessage.asResultMessage(e);
             if (rollbackConfiguration.rollBackOn(e)) {
                 rollback(e);
                 return resultMessage;
@@ -101,7 +101,7 @@ public class LegacyDefaultUnitOfWork<T extends Message> extends AbstractLegacyUn
         try {
             commit();
         } catch (Exception e) {
-            resultMessage = asResultMessage(e);
+            resultMessage = GenericResultMessage.asResultMessage(e);
         }
         return resultMessage;
     }

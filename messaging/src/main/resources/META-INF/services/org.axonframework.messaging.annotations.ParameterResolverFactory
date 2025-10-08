@@ -14,7 +14,6 @@
 # limitations under the License.
 #
 
-org.axonframework.eventhandling.annotations.ConcludesBatchParameterResolverFactory
 org.axonframework.eventhandling.annotations.SequenceNumberParameterResolverFactory
 org.axonframework.eventhandling.annotations.TimestampParameterResolverFactory
 org.axonframework.eventhandling.processors.streaming.token.annotations.TrackingTokenParameterResolverFactory

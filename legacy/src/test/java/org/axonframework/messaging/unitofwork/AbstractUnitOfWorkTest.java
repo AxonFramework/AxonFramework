@@ -19,6 +19,7 @@ package org.axonframework.messaging.unitofwork;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.GenericResultMessage;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.ResultMessage;
@@ -114,7 +115,7 @@ class AbstractUnitOfWorkTest {
     void executeFailingTask() {
         Consumer task = mock(Consumer.class);
         MockException mockException = new MockException();
-        doThrow(mockException).when(task).accept(any());
+        Mockito.doThrow(mockException).when(task).accept(any());
         try {
             subject.execute(task);
         } catch (MockException e) {
@@ -147,7 +148,7 @@ class AbstractUnitOfWorkTest {
 
     @Test
     void executeTaskReturnsResultMessage() throws Exception {
-        ResultMessage resultMessage = asResultMessage(new Object());
+        ResultMessage resultMessage = GenericResultMessage.asResultMessage(new Object());
         LegacyUnitOfWork.ProcessingContextCallable<ResultMessage> task = mock(LegacyUnitOfWork.ProcessingContextCallable.class);
         when(task.call(any())).thenReturn(resultMessage);
         ResultMessage actualResultMessage = subject.executeWithResult(task);
