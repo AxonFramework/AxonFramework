@@ -38,8 +38,6 @@ import java.util.concurrent.TimeUnit;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
-import static org.axonframework.messaging.responsetypes.ResponseTypes.multipleInstancesOf;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -50,6 +48,8 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class FutureAsResponseTypeToQueryHandlersTest {
 
+    private static final MessageType RESPONSE_TYPE = new MessageType(String.class);
+    private static final MessageType UPDATE_TYPE = new MessageType(String.class);
     private static final TypeReference<List<String>> LIST_OF_STRINGS = new TypeReference<>() {
     };
     private static final int FUTURE_RESOLVING_TIMEOUT = 500;
@@ -69,10 +69,8 @@ class FutureAsResponseTypeToQueryHandlersTest {
     @Disabled("TODO #3717")
     @Test
     void queryWithMultipleResponses() throws ExecutionException, InterruptedException {
-        QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType("myQueryWithMultipleResponses"), "criteria",
-                multipleInstancesOf(String.class)
-        );
+        QueryMessage testQuery =
+                new GenericQueryMessage(new MessageType("myQueryWithMultipleResponses"), "criteria", RESPONSE_TYPE);
 
         List<String> result = queryBus.query(testQuery, null)
                                       .reduce(new ArrayList<String>(), (list, entry) -> {
@@ -86,10 +84,8 @@ class FutureAsResponseTypeToQueryHandlersTest {
 
     @Test
     void queryWithSingleResponse() throws ExecutionException, InterruptedException {
-        QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType("myQueryWithSingleResponse"), "criteria",
-                instanceOf(String.class)
-        );
+        QueryMessage testQuery =
+                new GenericQueryMessage(new MessageType("myQueryWithSingleResponse"), "criteria", RESPONSE_TYPE);
 
         MessageStream<QueryResponseMessage> resultStream = queryBus.query(testQuery, null);
         Object result = resultStream.first()
@@ -106,7 +102,7 @@ class FutureAsResponseTypeToQueryHandlersTest {
     void subscriptionQueryWithMultipleResponses() {
         SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
                 new MessageType("myQueryWithMultipleResponses"), "criteria",
-                multipleInstancesOf(String.class), instanceOf(String.class)
+                RESPONSE_TYPE, RESPONSE_TYPE
         );
 
         Flux<List<String>> response = queryBus.subscriptionQuery(testQuery, null, 50)
@@ -121,8 +117,7 @@ class FutureAsResponseTypeToQueryHandlersTest {
     @Test
     void subscriptionQueryWithSingleResponse() {
         SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
-                new MessageType("myQueryWithSingleResponse"), "criteria",
-                instanceOf(String.class), instanceOf(String.class)
+                new MessageType("myQueryWithSingleResponse"), "criteria", RESPONSE_TYPE, UPDATE_TYPE
         );
 
         Flux<String> response = queryBus.subscriptionQuery(testQuery, null, 50)
@@ -138,8 +133,7 @@ class FutureAsResponseTypeToQueryHandlersTest {
     @Test
     void futureQueryWithMultipleResponses() throws ExecutionException, InterruptedException {
         QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType("myQueryFutureWithMultipleResponses"), "criteria",
-                multipleInstancesOf(String.class)
+                new MessageType("myQueryFutureWithMultipleResponses"), "criteria", RESPONSE_TYPE
         );
 
         List<String> result = queryBus.query(testQuery, null)
@@ -156,8 +150,7 @@ class FutureAsResponseTypeToQueryHandlersTest {
     @Test
     void futureSubscriptionQueryWithMultipleResponses() {
         SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
-                new MessageType("myQueryFutureWithMultipleResponses"), "criteria",
-                multipleInstancesOf(String.class), instanceOf(String.class)
+                new MessageType("myQueryFutureWithMultipleResponses"), "criteria", RESPONSE_TYPE, UPDATE_TYPE
         );
 
         Flux<List<String>> response = queryBus.subscriptionQuery(testQuery, null, 50)

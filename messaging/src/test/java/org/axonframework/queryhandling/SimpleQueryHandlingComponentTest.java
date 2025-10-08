@@ -19,8 +19,6 @@ package org.axonframework.queryhandling;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.responsetypes.ResponseType;
-import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
@@ -41,7 +39,7 @@ import static org.mockito.Mockito.*;
  */
 class SimpleQueryHandlingComponentTest {
 
-    private static final ResponseType<String> RESPONSE_TYPE = ResponseTypes.instanceOf(String.class);
+    private static final MessageType RESPONSE_TYPE = new MessageType(String.class);
 
     private final AtomicBoolean query1Handled = new AtomicBoolean(false);
     private final AtomicBoolean query2HandledParent = new AtomicBoolean(false);

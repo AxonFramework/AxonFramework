@@ -138,8 +138,7 @@ public class MethodQueryHandlerDefinition implements HandlerEnhancerDefinition {
         public boolean canHandle(@Nonnull Message message, @Nonnull ProcessingContext context) {
             return super.canHandle(message, context)
                     && message instanceof QueryMessage
-                    && queryName.equals(message.type().name())
-                    && ((QueryMessage) message).responseType().matches(resultType);
+                    && queryName.equals(message.type().name());
         }
 
         @Override

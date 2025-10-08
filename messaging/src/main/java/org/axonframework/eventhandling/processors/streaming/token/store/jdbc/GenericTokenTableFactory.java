@@ -28,7 +28,7 @@ import java.sql.SQLException;
 public class GenericTokenTableFactory implements TokenTableFactory {
 
     /**
-     * Creates a singleton reference the the GenericTokenTableFactory implementation.
+     * Creates a singleton reference the GenericTokenTableFactory implementation.
      */
     public static final GenericTokenTableFactory INSTANCE = new GenericTokenTableFactory();
 

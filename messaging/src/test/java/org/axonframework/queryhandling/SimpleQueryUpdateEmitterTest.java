@@ -35,7 +35,6 @@ import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
 import static org.mockito.Mockito.*;
 
 /**
@@ -47,8 +46,10 @@ import static org.mockito.Mockito.*;
  */
 class SimpleQueryUpdateEmitterTest {
 
-    private static final MessageType QUERY_TYPE = new MessageType("query-type");
-    private static final MessageType UPDATE_TYPE = new MessageType("update-type");
+    private static final MessageType QUERY_PAYLOAD_TYPE = new MessageType("query-type");
+    private static final MessageType RESPONSE_TYPE = new MessageType(String.class);
+    private static final MessageType UPDATE_TYPE = new MessageType(String.class);
+    private static final MessageType UPDATE_PAYLOAD_TYPE = new MessageType("update-type");
     private static final Exception CAUSE = new MockException("oops");
 
     private QueryBus queryBus = QueryBusTestUtils.aQueryBus();
@@ -121,11 +122,11 @@ class SimpleQueryUpdateEmitterTest {
         void emitForQueryType() {
             // given...
             SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
-                    QUERY_TYPE, "some-query", instanceOf(String.class), instanceOf(String.class)
+                    QUERY_PAYLOAD_TYPE, "some-query", RESPONSE_TYPE, UPDATE_TYPE
             );
             Update testUpdatePayload = new Update("some-update");
-            when(messageTypeResolver.resolveOrThrow(String.class)).thenReturn(QUERY_TYPE);
-            when(messageTypeResolver.resolveOrThrow(testUpdatePayload)).thenReturn(UPDATE_TYPE);
+            when(messageTypeResolver.resolveOrThrow(String.class)).thenReturn(QUERY_PAYLOAD_TYPE);
+            when(messageTypeResolver.resolveOrThrow(testUpdatePayload)).thenReturn(UPDATE_PAYLOAD_TYPE);
             // when...
             testSubject.emit(String.class, query -> true, testUpdatePayload);
             // then...
@@ -133,7 +134,7 @@ class SimpleQueryUpdateEmitterTest {
             assertThat(filterCaptor.getValue().test(testQuery)).isTrue();
             Supplier<SubscriptionQueryUpdateMessage> resultUpdateSupplier = updateCaptor.getValue();
             SubscriptionQueryUpdateMessage resultUpdate = resultUpdateSupplier.get();
-            assertThat(resultUpdate.type()).isEqualTo(UPDATE_TYPE);
+            assertThat(resultUpdate.type()).isEqualTo(UPDATE_PAYLOAD_TYPE);
             assertThat(resultUpdate.payload()).isEqualTo(testUpdatePayload);
             verify(messageTypeResolver).resolveOrThrow(testUpdatePayload);
             verifyNoInteractions(converter);
@@ -144,12 +145,12 @@ class SimpleQueryUpdateEmitterTest {
             // given...
             SubscriptionQuery testQueryPayload = new SubscriptionQuery("some-query");
             SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
-                    QUERY_TYPE, testQueryPayload, instanceOf(String.class), instanceOf(String.class)
+                    QUERY_PAYLOAD_TYPE, testQueryPayload, RESPONSE_TYPE, UPDATE_TYPE
             );
             Update testUpdatePayload = new Update("some-update");
 
-            when(messageTypeResolver.resolveOrThrow(String.class)).thenReturn(QUERY_TYPE);
-            when(messageTypeResolver.resolveOrThrow(testUpdatePayload)).thenReturn(UPDATE_TYPE);
+            when(messageTypeResolver.resolveOrThrow(String.class)).thenReturn(QUERY_PAYLOAD_TYPE);
+            when(messageTypeResolver.resolveOrThrow(testUpdatePayload)).thenReturn(UPDATE_PAYLOAD_TYPE);
             when(converter.convert(any(), (Type) eq(String.class))).thenReturn("some-query");
             // when...
             testSubject.emit(String.class, query -> query.equals("some-query"), testUpdatePayload);
@@ -158,7 +159,7 @@ class SimpleQueryUpdateEmitterTest {
             assertThat(filterCaptor.getValue().test(testQuery)).isTrue();
             Supplier<SubscriptionQueryUpdateMessage> resultUpdateSupplier = updateCaptor.getValue();
             SubscriptionQueryUpdateMessage resultUpdate = resultUpdateSupplier.get();
-            assertThat(resultUpdate.type()).isEqualTo(UPDATE_TYPE);
+            assertThat(resultUpdate.type()).isEqualTo(UPDATE_PAYLOAD_TYPE);
             assertThat(resultUpdate.payload()).isEqualTo(testUpdatePayload);
 
             verify(messageTypeResolver).resolveOrThrow(String.class);
@@ -171,13 +172,13 @@ class SimpleQueryUpdateEmitterTest {
             // given...
             SubscriptionQuery testQueryPayload = new SubscriptionQuery("some-query");
             SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
-                    QUERY_TYPE, testQueryPayload, instanceOf(String.class), instanceOf(String.class)
+                    QUERY_PAYLOAD_TYPE, testQueryPayload, RESPONSE_TYPE, UPDATE_TYPE
             );
             Update testUpdatePayload = new Update("some-update");
 
             when(messageTypeResolver.resolveOrThrow(any()))
                     .thenThrow(MessageTypeNotResolvedException.class);
-            when(messageTypeResolver.resolveOrThrow(testUpdatePayload)).thenReturn(UPDATE_TYPE);
+            when(messageTypeResolver.resolveOrThrow(testUpdatePayload)).thenReturn(UPDATE_PAYLOAD_TYPE);
             when(converter.convert(any(), (Type) eq(String.class))).thenReturn("some-query");
             // when...
             testSubject.emit(String.class, query -> query.equals("some-query"), testUpdatePayload);
@@ -193,12 +194,12 @@ class SimpleQueryUpdateEmitterTest {
             // given...
             SubscriptionQuery testQueryPayload = new SubscriptionQuery("some-query");
             SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
-                    QUERY_TYPE, testQueryPayload, instanceOf(String.class), instanceOf(String.class)
+                    QUERY_PAYLOAD_TYPE, testQueryPayload, RESPONSE_TYPE, UPDATE_TYPE
             );
             Update testUpdatePayload = new Update("some-update");
 
-            when(messageTypeResolver.resolveOrThrow(String.class)).thenReturn(QUERY_TYPE);
-            when(messageTypeResolver.resolveOrThrow(testUpdatePayload)).thenReturn(UPDATE_TYPE);
+            when(messageTypeResolver.resolveOrThrow(String.class)).thenReturn(QUERY_PAYLOAD_TYPE);
+            when(messageTypeResolver.resolveOrThrow(testUpdatePayload)).thenReturn(UPDATE_PAYLOAD_TYPE);
             when(converter.convert(any(), (Type) eq(String.class))).thenThrow(ConversionException.class);
             // when...
             testSubject.emit(String.class, query -> query.equals("some-query"), testUpdatePayload);
@@ -213,10 +214,10 @@ class SimpleQueryUpdateEmitterTest {
             // given...
             SubscriptionQuery testQueryPayload = new SubscriptionQuery("some-query");
             SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
-                    QUERY_TYPE, testQueryPayload, instanceOf(String.class), instanceOf(String.class)
+                    QUERY_PAYLOAD_TYPE, testQueryPayload, RESPONSE_TYPE, UPDATE_TYPE
             );
             AtomicBoolean updateSupplierInvoked = new AtomicBoolean(false);
-            when(messageTypeResolver.resolveOrThrow(String.class)).thenReturn(QUERY_TYPE);
+            when(messageTypeResolver.resolveOrThrow(String.class)).thenReturn(QUERY_PAYLOAD_TYPE);
             // when...
             testSubject.emit(String.class, query -> false, () -> {
                 updateSupplierInvoked.set(true);
@@ -232,18 +233,18 @@ class SimpleQueryUpdateEmitterTest {
         void emitForQueryName() {
             // given...
             SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
-                    QUERY_TYPE, "some-query", instanceOf(String.class), instanceOf(String.class)
+                    QUERY_PAYLOAD_TYPE, "some-query", RESPONSE_TYPE, UPDATE_TYPE
             );
             Update testUpdatePayload = new Update("some-update");
-            when(messageTypeResolver.resolveOrThrow(testUpdatePayload)).thenReturn(UPDATE_TYPE);
+            when(messageTypeResolver.resolveOrThrow(testUpdatePayload)).thenReturn(UPDATE_PAYLOAD_TYPE);
             // when...
-            testSubject.emit(QUERY_TYPE.qualifiedName(), query -> true, testUpdatePayload);
+            testSubject.emit(QUERY_PAYLOAD_TYPE.qualifiedName(), query -> true, testUpdatePayload);
             // then...
             verify(queryBus).emitUpdate(filterCaptor.capture(), updateCaptor.capture(), eq(context));
             assertThat(filterCaptor.getValue().test(testQuery)).isTrue();
             Supplier<SubscriptionQueryUpdateMessage> resultUpdateSupplier = updateCaptor.getValue();
             SubscriptionQueryUpdateMessage resultUpdate = resultUpdateSupplier.get();
-            assertThat(resultUpdate.type()).isEqualTo(UPDATE_TYPE);
+            assertThat(resultUpdate.type()).isEqualTo(UPDATE_PAYLOAD_TYPE);
             assertThat(resultUpdate.payload()).isEqualTo(testUpdatePayload);
             verify(messageTypeResolver).resolveOrThrow(testUpdatePayload);
             verifyNoInteractions(converter);
@@ -254,20 +255,22 @@ class SimpleQueryUpdateEmitterTest {
             // given...
             SubscriptionQuery testQueryPayload = new SubscriptionQuery("some-query");
             SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
-                    QUERY_TYPE, testQueryPayload, instanceOf(String.class), instanceOf(String.class)
+                    QUERY_PAYLOAD_TYPE, testQueryPayload, RESPONSE_TYPE, UPDATE_TYPE
             );
             Update testUpdatePayload = new Update("some-update");
 
-            when(messageTypeResolver.resolveOrThrow(String.class)).thenReturn(QUERY_TYPE);
-            when(messageTypeResolver.resolveOrThrow(testUpdatePayload)).thenReturn(UPDATE_TYPE);
+            when(messageTypeResolver.resolveOrThrow(String.class)).thenReturn(QUERY_PAYLOAD_TYPE);
+            when(messageTypeResolver.resolveOrThrow(testUpdatePayload)).thenReturn(UPDATE_PAYLOAD_TYPE);
             // when...
-            testSubject.emit(QUERY_TYPE.qualifiedName(), query -> query.equals(testQueryPayload), testUpdatePayload);
+            testSubject.emit(QUERY_PAYLOAD_TYPE.qualifiedName(),
+                             query -> query.equals(testQueryPayload),
+                             testUpdatePayload);
             // then...
             verify(queryBus).emitUpdate(filterCaptor.capture(), updateCaptor.capture(), eq(context));
             assertThat(filterCaptor.getValue().test(testQuery)).isTrue();
             Supplier<SubscriptionQueryUpdateMessage> resultUpdateSupplier = updateCaptor.getValue();
             SubscriptionQueryUpdateMessage resultUpdate = resultUpdateSupplier.get();
-            assertThat(resultUpdate.type()).isEqualTo(UPDATE_TYPE);
+            assertThat(resultUpdate.type()).isEqualTo(UPDATE_PAYLOAD_TYPE);
             assertThat(resultUpdate.payload()).isEqualTo(testUpdatePayload);
 
             verify(messageTypeResolver).resolveOrThrow(testUpdatePayload);
@@ -279,12 +282,12 @@ class SimpleQueryUpdateEmitterTest {
             // given...
             SubscriptionQuery testQueryPayload = new SubscriptionQuery("some-query");
             SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
-                    QUERY_TYPE, testQueryPayload, instanceOf(String.class), instanceOf(String.class)
+                    QUERY_PAYLOAD_TYPE, testQueryPayload, RESPONSE_TYPE, UPDATE_TYPE
             );
             AtomicBoolean updateSupplierInvoked = new AtomicBoolean(false);
-            when(messageTypeResolver.resolveOrThrow(String.class)).thenReturn(QUERY_TYPE);
+            when(messageTypeResolver.resolveOrThrow(String.class)).thenReturn(QUERY_PAYLOAD_TYPE);
             // when...
-            testSubject.emit(QUERY_TYPE.qualifiedName(), query -> false, () -> {
+            testSubject.emit(QUERY_PAYLOAD_TYPE.qualifiedName(), query -> false, () -> {
                 updateSupplierInvoked.set(true);
                 return "this should never be returned!";
             });
@@ -305,9 +308,9 @@ class SimpleQueryUpdateEmitterTest {
         void completeForQueryType() {
             // given...
             SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
-                    QUERY_TYPE, "some-query", instanceOf(String.class), instanceOf(String.class)
+                    QUERY_PAYLOAD_TYPE, "some-query", RESPONSE_TYPE, UPDATE_TYPE
             );
-            when(messageTypeResolver.resolveOrThrow(String.class)).thenReturn(QUERY_TYPE);
+            when(messageTypeResolver.resolveOrThrow(String.class)).thenReturn(QUERY_PAYLOAD_TYPE);
             // when...
             testSubject.complete(String.class, query -> true);
             // then...
@@ -322,10 +325,10 @@ class SimpleQueryUpdateEmitterTest {
             // given...
             SubscriptionQuery testQueryPayload = new SubscriptionQuery("some-query");
             SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
-                    QUERY_TYPE, testQueryPayload, instanceOf(String.class), instanceOf(String.class)
+                    QUERY_PAYLOAD_TYPE, testQueryPayload, RESPONSE_TYPE, UPDATE_TYPE
             );
 
-            when(messageTypeResolver.resolveOrThrow(String.class)).thenReturn(QUERY_TYPE);
+            when(messageTypeResolver.resolveOrThrow(String.class)).thenReturn(QUERY_PAYLOAD_TYPE);
             when(converter.convert(any(), (Type) eq(String.class))).thenReturn("some-query");
             // when...
             testSubject.complete(String.class, query -> query.equals("some-query"));
@@ -341,7 +344,7 @@ class SimpleQueryUpdateEmitterTest {
             // given...
             SubscriptionQuery testQueryPayload = new SubscriptionQuery("some-query");
             SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
-                    QUERY_TYPE, testQueryPayload, instanceOf(String.class), instanceOf(String.class)
+                    QUERY_PAYLOAD_TYPE, testQueryPayload, RESPONSE_TYPE, UPDATE_TYPE
             );
 
             when(messageTypeResolver.resolveOrThrow(any()))
@@ -360,10 +363,10 @@ class SimpleQueryUpdateEmitterTest {
             // given...
             SubscriptionQuery testQueryPayload = new SubscriptionQuery("some-query");
             SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
-                    QUERY_TYPE, testQueryPayload, instanceOf(String.class), instanceOf(String.class)
+                    QUERY_PAYLOAD_TYPE, testQueryPayload, RESPONSE_TYPE, UPDATE_TYPE
             );
 
-            when(messageTypeResolver.resolveOrThrow(String.class)).thenReturn(QUERY_TYPE);
+            when(messageTypeResolver.resolveOrThrow(String.class)).thenReturn(QUERY_PAYLOAD_TYPE);
             when(converter.convert(any(), (Type) eq(String.class))).thenThrow(ConversionException.class);
             // when...
             testSubject.complete(String.class, query -> query.equals("some-query"));
@@ -377,10 +380,10 @@ class SimpleQueryUpdateEmitterTest {
         void completeForQueryName() {
             // given...
             SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
-                    QUERY_TYPE, "some-query", instanceOf(String.class), instanceOf(String.class)
+                    QUERY_PAYLOAD_TYPE, "some-query", RESPONSE_TYPE, UPDATE_TYPE
             );
             // when...
-            testSubject.complete(QUERY_TYPE.qualifiedName(), query -> true);
+            testSubject.complete(QUERY_PAYLOAD_TYPE.qualifiedName(), query -> true);
             // then...
             verify(queryBus).completeSubscriptions(filterCaptor.capture(), eq(context));
             assertThat(filterCaptor.getValue().test(testQuery)).isTrue();
@@ -394,14 +397,14 @@ class SimpleQueryUpdateEmitterTest {
             // given...
             SubscriptionQuery testQueryPayload = new SubscriptionQuery("some-query");
             SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
-                    QUERY_TYPE, testQueryPayload, instanceOf(String.class), instanceOf(String.class)
+                    QUERY_PAYLOAD_TYPE, testQueryPayload, RESPONSE_TYPE, UPDATE_TYPE
             );
             Update testUpdatePayload = new Update("some-update");
 
-            when(messageTypeResolver.resolveOrThrow(String.class)).thenReturn(QUERY_TYPE);
-            when(messageTypeResolver.resolveOrThrow(testUpdatePayload)).thenReturn(UPDATE_TYPE);
+            when(messageTypeResolver.resolveOrThrow(String.class)).thenReturn(QUERY_PAYLOAD_TYPE);
+            when(messageTypeResolver.resolveOrThrow(testUpdatePayload)).thenReturn(UPDATE_PAYLOAD_TYPE);
             // when...
-            testSubject.complete(QUERY_TYPE.qualifiedName(), query -> query.equals(testQueryPayload));
+            testSubject.complete(QUERY_PAYLOAD_TYPE.qualifiedName(), query -> query.equals(testQueryPayload));
             // then...
             verify(queryBus).completeSubscriptions(filterCaptor.capture(), eq(context));
             assertThat(filterCaptor.getValue().test(testQuery)).isTrue();
@@ -418,9 +421,9 @@ class SimpleQueryUpdateEmitterTest {
         void completeExceptionallyForQueryType() {
             // given...
             SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
-                    QUERY_TYPE, "some-query", instanceOf(String.class), instanceOf(String.class)
+                    QUERY_PAYLOAD_TYPE, "some-query", RESPONSE_TYPE, UPDATE_TYPE
             );
-            when(messageTypeResolver.resolveOrThrow(String.class)).thenReturn(QUERY_TYPE);
+            when(messageTypeResolver.resolveOrThrow(String.class)).thenReturn(QUERY_PAYLOAD_TYPE);
             // when...
             testSubject.completeExceptionally(String.class, query -> true, CAUSE);
             // then...
@@ -435,10 +438,10 @@ class SimpleQueryUpdateEmitterTest {
             // given...
             SubscriptionQuery testQueryPayload = new SubscriptionQuery("some-query");
             SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
-                    QUERY_TYPE, testQueryPayload, instanceOf(String.class), instanceOf(String.class)
+                    QUERY_PAYLOAD_TYPE, testQueryPayload, RESPONSE_TYPE, UPDATE_TYPE
             );
 
-            when(messageTypeResolver.resolveOrThrow(String.class)).thenReturn(QUERY_TYPE);
+            when(messageTypeResolver.resolveOrThrow(String.class)).thenReturn(QUERY_PAYLOAD_TYPE);
             when(converter.convert(any(), (Type) eq(String.class))).thenReturn("some-query");
             // when...
             testSubject.completeExceptionally(String.class, query -> query.equals("some-query"), CAUSE);
@@ -454,7 +457,7 @@ class SimpleQueryUpdateEmitterTest {
             // given...
             SubscriptionQuery testQueryPayload = new SubscriptionQuery("some-query");
             SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
-                    QUERY_TYPE, testQueryPayload, instanceOf(String.class), instanceOf(String.class)
+                    QUERY_PAYLOAD_TYPE, testQueryPayload, RESPONSE_TYPE, UPDATE_TYPE
             );
 
             when(messageTypeResolver.resolveOrThrow(any()))
@@ -473,10 +476,10 @@ class SimpleQueryUpdateEmitterTest {
             // given...
             SubscriptionQuery testQueryPayload = new SubscriptionQuery("some-query");
             SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
-                    QUERY_TYPE, testQueryPayload, instanceOf(String.class), instanceOf(String.class)
+                    QUERY_PAYLOAD_TYPE, testQueryPayload, RESPONSE_TYPE, UPDATE_TYPE
             );
 
-            when(messageTypeResolver.resolveOrThrow(String.class)).thenReturn(QUERY_TYPE);
+            when(messageTypeResolver.resolveOrThrow(String.class)).thenReturn(QUERY_PAYLOAD_TYPE);
             when(converter.convert(any(), (Type) eq(String.class))).thenThrow(ConversionException.class);
             // when...
             testSubject.completeExceptionally(String.class, query -> query.equals("some-query"), CAUSE);
@@ -490,10 +493,10 @@ class SimpleQueryUpdateEmitterTest {
         void completeExceptionallyForQueryName() {
             // given...
             SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
-                    QUERY_TYPE, "some-query", instanceOf(String.class), instanceOf(String.class)
+                    QUERY_PAYLOAD_TYPE, "some-query", RESPONSE_TYPE, UPDATE_TYPE
             );
             // when...
-            testSubject.completeExceptionally(QUERY_TYPE.qualifiedName(), query -> true, CAUSE);
+            testSubject.completeExceptionally(QUERY_PAYLOAD_TYPE.qualifiedName(), query -> true, CAUSE);
             // then...
             verify(queryBus).completeSubscriptionsExceptionally(filterCaptor.capture(), eq(CAUSE), eq(context));
             assertThat(filterCaptor.getValue().test(testQuery)).isTrue();
@@ -507,14 +510,14 @@ class SimpleQueryUpdateEmitterTest {
             // given...
             SubscriptionQuery testQueryPayload = new SubscriptionQuery("some-query");
             SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
-                    QUERY_TYPE, testQueryPayload, instanceOf(String.class), instanceOf(String.class)
+                    QUERY_PAYLOAD_TYPE, testQueryPayload, RESPONSE_TYPE, UPDATE_TYPE
             );
             Update testUpdatePayload = new Update("some-update");
 
-            when(messageTypeResolver.resolveOrThrow(String.class)).thenReturn(QUERY_TYPE);
-            when(messageTypeResolver.resolveOrThrow(testUpdatePayload)).thenReturn(UPDATE_TYPE);
+            when(messageTypeResolver.resolveOrThrow(String.class)).thenReturn(QUERY_PAYLOAD_TYPE);
+            when(messageTypeResolver.resolveOrThrow(testUpdatePayload)).thenReturn(UPDATE_PAYLOAD_TYPE);
             // when...
-            testSubject.completeExceptionally(QUERY_TYPE.qualifiedName(),
+            testSubject.completeExceptionally(QUERY_PAYLOAD_TYPE.qualifiedName(),
                                               query -> query.equals(testQueryPayload),
                                               CAUSE);
             // then...

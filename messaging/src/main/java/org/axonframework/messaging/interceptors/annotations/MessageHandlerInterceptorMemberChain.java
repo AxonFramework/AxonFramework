@@ -17,6 +17,7 @@
 package org.axonframework.messaging.interceptors.annotations;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotations.Internal;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
@@ -48,15 +49,18 @@ public interface MessageHandlerInterceptorMemberChain<T> {
      * @return The result as returned by the handlers or interceptors.
      * @throws Exception Any exception thrown by the handler or any of the interceptors.
      */
-    @Deprecated
+    // TODO Remove entirely once #3065, #3195, #3517, and #3728 have been resolved.
+    @Internal
+    @Deprecated(forRemoval = true, since = "5.2.0")
     Object handleSync(@Nonnull Message message,
                       @Nonnull ProcessingContext context,
                       @Nonnull T target,
                       @Nonnull MessageHandlingMember<? super T> handler
     ) throws Exception;
 
-
-    @Deprecated
+    // TODO Remove entirely once #3065, #3195, #3517, and #3728 have been resolved.
+    @Internal
+    @Deprecated(forRemoval = true, since = "5.2.0")
     default Object handleSync(@Nonnull Message message,
                               @Nonnull T target,
                               @Nonnull MessageHandlingMember<? super T> handler

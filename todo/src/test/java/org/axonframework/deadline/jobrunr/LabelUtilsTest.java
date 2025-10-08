@@ -19,7 +19,8 @@ package org.axonframework.deadline.jobrunr;
 import org.axonframework.deadline.TestScopeDescriptor;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.TestSerializer;
+import org.axonframework.serialization.TestConverter;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -44,7 +45,7 @@ class LabelUtilsTest {
     @Test
     void combinedScopeShouldBeConsistentAndShorterThan45Characters() {
         String deadLineName = "deadlineName";
-        Serializer serializer = TestSerializer.JACKSON.getSerializer();
+        Serializer serializer = JacksonSerializer.defaultSerializer();
         ScopeDescriptor descriptor = new TestScopeDescriptor("aggregateType", "identifier");
         String expected = LabelUtils.getCombinedLabel(serializer, deadLineName, descriptor);
         assertEquals(expected, LabelUtils.getCombinedLabel(serializer, deadLineName, descriptor));

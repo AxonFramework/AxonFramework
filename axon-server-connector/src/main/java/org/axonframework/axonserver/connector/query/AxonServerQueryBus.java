@@ -57,9 +57,6 @@ import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.responsetypes.ConvertingResponseMessage;
-import org.axonframework.messaging.responsetypes.InstanceResponseType;
-import org.axonframework.messaging.responsetypes.MultipleInstancesResponseType;
-import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.QueryBus;
@@ -68,7 +65,6 @@ import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryPriorityCalculator;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
-import org.axonframework.queryhandling.StreamingQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryResponseMessages;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
@@ -197,11 +193,11 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
     @Nonnull
     @Override
-    public Publisher<QueryResponseMessage> streamingQuery(@Nonnull StreamingQueryMessage query,
+    public Publisher<QueryResponseMessage> streamingQuery(@Nonnull QueryMessage query,
                                                           @Nullable ProcessingContext context) {
         Span span = spanFactory.createStreamingQuerySpan(query, true).start();
         try (SpanScope unused = span.makeCurrent()) {
-            StreamingQueryMessage queryWithContext = spanFactory.propagateContext(query);
+            QueryMessage queryWithContext = spanFactory.propagateContext(query);
             int priority = priorityCalculator.determinePriority(queryWithContext);
             AtomicReference<Scheduler> scheduler = new AtomicReference<>(PriorityTaskSchedulers.forPriority(
                     queryResponseExecutor,
@@ -212,7 +208,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                             new DefaultMessageDispatchInterceptorChain<>(dispatchInterceptors)
                                                     .proceed(queryWithContext, null)
                                                     .first()
-                                                    .<StreamingQueryMessage>cast()
+                                                    .<QueryMessage>cast()
                                                     .asMono()
                                                     .map(MessageStream.Entry::message)
                                                     .flatMapMany(intercepted -> {
@@ -293,8 +289,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         Span span = spanFactory.createQuerySpan(queryMessage, true).start();
         try (SpanScope unused = span.makeCurrent()) {
             QueryMessage queryWithContext = spanFactory.propagateContext(queryMessage);
-            Assert.isFalse(Publisher.class.isAssignableFrom(queryMessage.responseType().getExpectedResponseType()),
-                           () -> "The direct query does not support Flux as a return type.");
             shutdownLatch.ifShuttingDown("Cannot dispatch new queries as this bus is being shut down");
 
             QueryMessage interceptedQuery = new DefaultMessageDispatchInterceptorChain<>(dispatchInterceptors)
@@ -319,7 +313,8 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                     Runnable responseProcessingTask = new ResponseProcessingTask<>(result,
                                                                                    serializer,
                                                                                    queryTransaction,
-                                                                                   queryMessage.responseType(),
+                                                                                   // TODO #3488 - Replace Serializer and ResponseType use
+                                                                                   null, // queryMessage.responseType(),
                                                                                    responseTaskSpan);
 
                     result.onAvailable(() -> queryResponseExecutor.execute(new PriorityRunnable(
@@ -413,28 +408,30 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                           .query(queryRequest);
     }
 
-    private <R> Publisher<QueryResponseMessage> deserialize(StreamingQueryMessage queryMessage,
-                                                               QueryResponse queryResponse) {
+    private <R> Publisher<QueryResponseMessage> deserialize(QueryMessage queryMessage,
+                                                            QueryResponse queryResponse) {
+        // TODO #3488 - Replace Serializer and ResponseType use
         //noinspection unchecked
-        Class<R> expectedResponseType = (Class<R>) queryMessage.responseType().getExpectedResponseType();
+        Class<R> expectedResponseType = null; // (Class<R>) queryMessage.responseType().getExpectedResponseType();
         QueryResponseMessage responseMessage = serializer.deserializeResponse(queryResponse);
         if (responseMessage.isExceptional()) {
             return Flux.error(responseMessage.exceptionResult());
         }
         if (expectedResponseType.isAssignableFrom(responseMessage.payloadType())) {
-            InstanceResponseType<R> instanceResponseType = new InstanceResponseType<>(expectedResponseType);
-            return Flux.just(new ConvertingResponseMessage<>(instanceResponseType, responseMessage));
+//            InstanceResponseType<R> instanceResponseType = new InstanceResponseType<>(expectedResponseType);
+//            return Flux.just(new ConvertingResponseMessage<>(instanceResponseType, responseMessage));
         } else {
-            MultipleInstancesResponseType<R> multiResponseType =
-                    new MultipleInstancesResponseType<>(expectedResponseType);
-            ConvertingResponseMessage<List<R>> convertingMessage =
-                    new ConvertingResponseMessage<>(multiResponseType, responseMessage);
-            return Flux.fromStream(convertingMessage.payload()
-                                                    .stream()
-                                                    .map(payload -> singleMessage(responseMessage,
-                                                                                  payload,
-                                                                                  expectedResponseType)));
+//            MultipleInstancesResponseType<R> multiResponseType =
+//                    new MultipleInstancesResponseType<>(expectedResponseType);
+//            ConvertingResponseMessage<List<R>> convertingMessage =
+//                    new ConvertingResponseMessage<>(multiResponseType, responseMessage);
+//            return Flux.fromStream(convertingMessage.payload()
+//                                                    .stream()
+//                                                    .map(payload -> singleMessage(responseMessage,
+//                                                                                  payload,
+//                                                                                  expectedResponseType)));
         }
+        return null;
     }
 
     private <R> QueryResponseMessage singleMessage(QueryResponseMessage original,
@@ -455,10 +452,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
             @Nullable ProcessingContext context,
             int updateBufferSize
     ) {
-        Assert.isFalse(Publisher.class.isAssignableFrom(query.responseType().getExpectedResponseType()),
-                       () -> "The subscription Query query does not support Flux as a return type.");
-        Assert.isFalse(Publisher.class.isAssignableFrom(query.updatesResponseType().getExpectedResponseType()),
-                       () -> "The subscription Query query does not support Flux as an update type.");
         shutdownLatch.ifShuttingDown(format(
                 "Cannot dispatch new %s as this bus is being shut down", "subscription queries"
         ));
@@ -947,7 +940,8 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                 next = queryResult.nextIfAvailable();
             }
             if (next != null) {
-                action.accept(serializer.deserializeResponse(next, queryMessage.responseType()));
+                // TODO #3488 - Replace Serializer and ResponseType use
+//                action.accept(serializer.deserializeResponse(next, queryMessage.responseType()));
                 return true;
             }
             queryResult.close();
@@ -977,13 +971,14 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         private final ResultStream<QueryResponse> result;
         private final QuerySerializer serializer;
         private final CompletableFuture<QueryResponseMessage> queryTransaction;
-        private final ResponseType<R> expectedResponseType;
+        private final Class<R> expectedResponseType;
         private final Span span;
 
         public ResponseProcessingTask(ResultStream<QueryResponse> result,
                                       QuerySerializer serializer,
                                       CompletableFuture<QueryResponseMessage> queryTransaction,
-                                      ResponseType<R> expectedResponseType, Span responseTaskSpan) {
+                                      Class<R> expectedResponseType,
+                                      Span responseTaskSpan) {
             this.result = result;
             this.serializer = serializer;
             this.queryTransaction = queryTransaction;
@@ -997,7 +992,8 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                 QueryResponse nextAvailable = result.nextIfAvailable();
                 if (nextAvailable != null) {
                     span.run(() -> {
-                        queryTransaction.complete(serializer.deserializeResponse(nextAvailable, expectedResponseType));
+                        // TODO #3488 - Replace Serializer and ResponseType use
+//                        queryTransaction.complete(serializer.deserializeResponse(nextAvailable, expectedResponseType));
                     });
                 } else if (result.isClosed() && !queryTransaction.isDone()) {
                     Exception exception = result.getError()

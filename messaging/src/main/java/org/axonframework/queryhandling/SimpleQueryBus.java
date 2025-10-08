@@ -17,17 +17,14 @@ package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.common.Assert;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
-import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
@@ -49,7 +46,7 @@ import java.util.stream.Collectors;
  * {@link #query(QueryMessage, ProcessingContext)} or
  * {@link #subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int)}) to the
  * {@link QueryHandler QueryHandlers} subscribed to that specific query's {@link QualifiedName name} and
- * {@link ResponseType type} combination.
+ * {@link QualifiedName response type} combination.
  * <p>
  * Allows fine-grained control over
  * {@link #subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int) subscription queries} through
@@ -162,11 +159,6 @@ public class SimpleQueryBus implements QueryBus {
     public SubscriptionQueryResponseMessages subscriptionQuery(@Nonnull SubscriptionQueryMessage query,
                                                                @Nullable ProcessingContext context,
                                                                int updateBufferSize) {
-        Assert.isFalse(Publisher.class.isAssignableFrom(query.responseType().getExpectedResponseType()),
-                       () -> "Subscription Query query does not support Flux as a return type.");
-        Assert.isFalse(Publisher.class.isAssignableFrom(query.updatesResponseType().getExpectedResponseType()),
-                       () -> "Subscription Query query does not support Flux as an update type.");
-
         Flux<QueryResponseMessage> initialStream =
                 Flux.defer(() -> query(query, context).asFlux())
                     .map(MessageStream.Entry::message)
@@ -206,11 +198,7 @@ public class SimpleQueryBus implements QueryBus {
 
     @Nonnull
     private QueryHandler handlerFor(@Nonnull QueryMessage query) {
-        ResponseType<?> responseType = query.responseType();
-        QueryHandlerName handlerName = new QueryHandlerName(
-                query.type().qualifiedName(),
-                new QualifiedName(responseType.getExpectedResponseType())
-        );
+        QueryHandlerName handlerName = new QueryHandlerName(query.type(), query.responseType());
         if (!subscriptions.containsKey(handlerName)) {
             throw NoHandlerForQueryException.forBus(query);
         }

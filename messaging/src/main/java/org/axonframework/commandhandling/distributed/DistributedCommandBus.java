@@ -56,9 +56,7 @@ public class DistributedCommandBus implements CommandBus {
     private final CommandBus localSegment;
     private final CommandBusConnector connector;
     private final ExecutorService executorService;
-
-    // TODO #3074 Refactor to a loadFactor per CommandType.
-    private final int loadFactor;
+    private final int loadFactor; // TODO #3074 Refactor to a loadFactor per CommandType.
 
     /**
      * Constructs a {@code DistributedCommandBus} using the given {@code localSegment} for

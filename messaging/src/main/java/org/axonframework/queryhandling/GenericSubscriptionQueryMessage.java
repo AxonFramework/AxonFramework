@@ -23,7 +23,6 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.Metadata;
-import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.serialization.Converter;
 
 import java.lang.reflect.Type;
@@ -38,7 +37,7 @@ import java.util.Map;
  */
 public class GenericSubscriptionQueryMessage extends GenericQueryMessage implements SubscriptionQueryMessage {
 
-    private final ResponseType<?> updateResponseType;
+    private final MessageType updateResponseType;
 
     /**
      * Constructs a {@code GenericSubscriptionQueryMessage} for the given {@code type}, {@code payload},
@@ -49,15 +48,15 @@ public class GenericSubscriptionQueryMessage extends GenericQueryMessage impleme
      * @param type               The {@link MessageType type} for this {@link SubscriptionQueryMessage}.
      * @param payload            The payload of type {@code P} expressing the query for this
      *                           {@link SubscriptionQueryMessage}.
-     * @param responseType       The expected {@link ResponseType response type} for this
+     * @param responseType       The expected {@link MessageType response type} for this
      *                           {@link SubscriptionQueryMessage}.
-     * @param updateResponseType The expected {@link ResponseType type} of incremental updates for this
+     * @param updateResponseType The expected {@link MessageType type} of incremental updates for this
      *                           {@link SubscriptionQueryMessage}.
      */
     public GenericSubscriptionQueryMessage(@Nonnull MessageType type,
                                            @Nullable Object payload,
-                                           @Nonnull ResponseType<?> responseType,
-                                           @Nonnull ResponseType<?> updateResponseType) {
+                                           @Nonnull MessageType responseType,
+                                           @Nonnull MessageType updateResponseType) {
         super(type, payload, responseType);
         this.updateResponseType = updateResponseType;
     }
@@ -77,21 +76,21 @@ public class GenericSubscriptionQueryMessage extends GenericQueryMessage impleme
      *                           {@link Message#type() type}, {@link Message#identifier() identifier} and
      *                           {@link Message#metadata() metadata} for the {@link SubscriptionQueryMessage} to
      *                           reconstruct.
-     * @param responseType       The expected {@link ResponseType response type} for this
+     * @param responseType       The expected {@link MessageType response type} for this
      *                           {@link SubscriptionQueryMessage}.
-     * @param updateResponseType The expected {@link ResponseType type} of incremental updates for this
+     * @param updateResponseType The expected {@link MessageType type} of incremental updates for this
      *                           {@link SubscriptionQueryMessage}.
      */
     public GenericSubscriptionQueryMessage(@Nonnull Message delegate,
-                                           @Nonnull ResponseType<?> responseType,
-                                           @Nonnull ResponseType<?> updateResponseType) {
+                                           @Nonnull MessageType responseType,
+                                           @Nonnull MessageType updateResponseType) {
         super(delegate, responseType);
         this.updateResponseType = updateResponseType;
     }
 
     @Override
     @Nonnull
-    public ResponseType<?> updatesResponseType() {
+    public MessageType updatesResponseType() {
         return updateResponseType;
     }
 
@@ -130,7 +129,7 @@ public class GenericSubscriptionQueryMessage extends GenericQueryMessage impleme
     @Override
     protected void describeTo(StringBuilder stringBuilder) {
         super.describeTo(stringBuilder);
-        stringBuilder.append(", expectedUpdateResponseType='")
+        stringBuilder.append(", updateResponseType='")
                      .append(updateResponseType)
                      .append('\'');
     }

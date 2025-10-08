@@ -33,7 +33,8 @@ import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueueTest;
 import org.axonframework.messaging.deadletter.WrongDeadLetterTypeException;
-import org.axonframework.serialization.TestSerializer;
+import org.axonframework.serialization.TestConverter;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
 
 import java.time.Clock;
@@ -140,8 +141,8 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
                 .maxSequences(MAX_SEQUENCES_AND_SEQUENCE_SIZE)
                 .maxSequenceSize(MAX_SEQUENCES_AND_SEQUENCE_SIZE)
                 .processingGroup("my_processing_group")
-                .eventSerializer(TestSerializer.JACKSON.getSerializer())
-                .genericSerializer(TestSerializer.JACKSON.getSerializer())
+                .eventSerializer(JacksonSerializer.defaultSerializer())
+                .genericSerializer(JacksonSerializer.defaultSerializer())
                 .build();
     }
 
@@ -217,7 +218,7 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
                 .builder()
                 .transactionManager(transactionManager)
                 .entityManagerProvider(() -> entityManager)
-                .serializer(TestSerializer.JACKSON.getSerializer());
+                .serializer(JacksonSerializer.defaultSerializer());
         assertThrows(AxonConfigurationException.class, builder::build);
     }
 
@@ -227,7 +228,7 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
                 .builder()
                 .processingGroup("my_processing_Group")
                 .entityManagerProvider(() -> entityManager)
-                .serializer(TestSerializer.JACKSON.getSerializer());
+                .serializer(JacksonSerializer.defaultSerializer());
 
         assertThrows(AxonConfigurationException.class, builder::build);
     }
@@ -238,7 +239,7 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
                 .builder()
                 .processingGroup("my_processing_Group")
                 .transactionManager(transactionManager)
-                .serializer(TestSerializer.JACKSON.getSerializer());
+                .serializer(JacksonSerializer.defaultSerializer());
 
         assertThrows(AxonConfigurationException.class, builder::build);
     }

@@ -24,7 +24,7 @@ package org.axonframework.eventhandling.processors.streaming.token.store.jdbc;
 public class PostgresTokenTableFactory extends GenericTokenTableFactory {
 
     /**
-     * Creates a singleton reference the the PostgresTokenTableFactory implementation.
+     * Creates a singleton reference the PostgresTokenTableFactory implementation.
      */
     public static final PostgresTokenTableFactory INSTANCE = new PostgresTokenTableFactory();
 

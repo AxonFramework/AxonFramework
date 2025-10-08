@@ -24,7 +24,7 @@ import org.axonframework.deadline.DeadlineManagerSpanFactory;
 import org.axonframework.deadline.quartz.QuartzDeadlineManager;
 import org.axonframework.integrationtests.deadline.AbstractDeadlineManagerTestSuite;
 import org.axonframework.messaging.ScopeAwareProvider;
-import org.axonframework.serialization.TestSerializer;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
@@ -48,7 +48,7 @@ class QuartzDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
                     QuartzDeadlineManager.builder()
                                          .scheduler(scheduler)
 //                                         .scopeAwareProvider(new ConfigurationScopeAwareProvider(configuration))
-                                         .serializer(TestSerializer.JACKSON.getSerializer())
+                                         .serializer(JacksonSerializer.defaultSerializer())
                                          .spanFactory(configuration.getComponent(DeadlineManagerSpanFactory.class))
                                          .build();
             scheduler.start();
@@ -64,7 +64,7 @@ class QuartzDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
         QuartzDeadlineManager testSubject = QuartzDeadlineManager.builder()
                                                                  .scopeAwareProvider(scopeAwareProvider)
                                                                  .scheduler(scheduler)
-                                                                 .serializer(TestSerializer.JACKSON.getSerializer())
+                                                                 .serializer(JacksonSerializer.defaultSerializer())
                                                                  .build();
 
         testSubject.shutdown();
@@ -82,7 +82,7 @@ class QuartzDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
         QuartzDeadlineManager testSubject = QuartzDeadlineManager.builder()
                                                                  .scopeAwareProvider(scopeAwareProvider)
                                                                  .scheduler(scheduler)
-                                                                 .serializer(TestSerializer.JACKSON.getSerializer())
+                                                                 .serializer(JacksonSerializer.defaultSerializer())
                                                                  .build();
 
         assertThrows(DeadlineException.class, testSubject::shutdown);
@@ -94,7 +94,7 @@ class QuartzDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
         QuartzDeadlineManager.Builder builderTestSubject =
                 QuartzDeadlineManager.builder()
                                      .scopeAwareProvider(scopeAwareProvider)
-                                     .serializer(TestSerializer.JACKSON.getSerializer());
+                                     .serializer(JacksonSerializer.defaultSerializer());
 
         assertThrows(AxonConfigurationException.class, builderTestSubject::build);
     }
@@ -105,7 +105,7 @@ class QuartzDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
         QuartzDeadlineManager.Builder builderTestSubject =
                 QuartzDeadlineManager.builder()
                                      .scheduler(scheduler)
-                                     .serializer(TestSerializer.JACKSON.getSerializer());
+                                     .serializer(JacksonSerializer.defaultSerializer());
 
         assertThrows(AxonConfigurationException.class, builderTestSubject::build);
     }

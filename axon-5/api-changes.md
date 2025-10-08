@@ -673,11 +673,10 @@ issues, we set `SequentialPolicy` by default (for events published by Aggregates
 This is not efficient because you cannot distribute the processing of events across different `EventProcessor` segments.
 But it's straightforward to tune the behavior. The new `@SequencingPolicy` annotation allows declaring sequencing
 policies on event handler methods or classes. Alternatively, you can use the declarative approach with the builder
-pattern.
-The most useful approach with DCB might be the `PropertySequencingPolicy`, which allows you to process events in order when they
-have the same value for a certain property. For example, you can process `StudentEnrolledEvent`s in order when they
-have the same `courseId` property, because they are related to the same course, but allow parallel processing of events
-that are related to different courses.
+pattern. The most useful approach with DCB might be the `PropertySequencingPolicy`, which allows you to process events
+in order when they have the same value for a certain property. For example, you can process `StudentEnrolledEvent`s in
+order when they have the same `courseId` property, because they are related to the same course, but allow parallel
+processing of events that are related to different courses.
 
 ```java
 // Annotation approach
@@ -1280,7 +1279,7 @@ Here is an example of both a creational and an instance command handler in Java:
 
 ```java
 public class MyEntity {
-    
+
     private String id;
 
     @EntityCreator
@@ -1586,7 +1585,7 @@ dispatching components.
 ## Query Dispatching and Handling
 
 This section describes numerous changes around Query Dispatching and Handling. For a reintroduction to the
-`QueryBus` and `QueryGateway`, check [this](#query-bus) and [this](#query-gateway) section respectively. For the
+`QueryBus` and `QueryGateway`, check [this](#query-bus) and [this](#query-gateway-and-response-types) section respectively. For the
 newly **recommended** approach to dispatch queries from within another message handling function, please check
 the [Query Dispatcher](#query-dispatcher) section.
 
@@ -1639,8 +1638,7 @@ for the same combination anymore.
 On top of that, Axon Framework 4 be "smart about" selecting a Query Handler that best fit the expected `ResponseType`.
 As Query Handler registration is no longer based on a the `ResponeType`/`Type`, we lose the capability to, for
 example, let a single-response query favor a single-response query handler. Or, for a multiple-response query to favor
-a
-multiple-response query handler, while a query handler was registered for both single and multiple responses.
+a multiple-response query handler, while a query handler was registered for both single and multiple responses.
 
 However, we view losing this capability as a benefit, as (1) it led to complex code and (2) led to unclarity in use,
 as we have noticed over the years. As a consequence, the local `QueryBus` will now throw a
@@ -1650,7 +1648,7 @@ name is being registered.
 As with any change, if you feel strongly about the previous solution, be sure to reach out to use. We would love to
 hear your use case to deduce the best way forward.
 
-### Query Gateway
+### Query Gateway and Response Types
 
 The `QueryGateway` has undergone some minor API changes to align with the [Async Native API](#async-native-apis).
 This alignment shows itself in being able to provide the `ProcessingContext`. Giving the active `ProcessingContext` is *
@@ -1658,9 +1656,11 @@ This alignment shows itself in being able to provide the `ProcessingContext`. Gi
 handler should dispatch a query (e.g., as with process automations), it is strongly advised to provide the active
 `ProcessingContext` as part of the send operation.
 
-On top of that, we have eliminated use of the `ResponseType` **entirely** from the `QueryGateway`, as we feel the
-`ResponseType` is an internal concern; not something to be bothered with when dispatching queries.
-To keep support for querying a single or multiple instances, the gateway now has dedicated methods:
+On top of that, we have eliminated use of the `ResponseType` **entirely**. Both from all `QueryMessage` implementations
+as well as from the `QueryGateway`/`QueryBus`. We felt the `ResponseType` was cumbersome to deal with and as such viewed
+as a nuisance for the user. Furthermore, it tied our query solution in the JVM space when distributing queries, which is
+**not** desirable at all. However, to keep support for querying a single or multiple instances, the gateway now has
+dedicated methods:
 
 1. `CompletableFuture<R> QueryGateway#query(Object, Class<R>, ProcessingContext)`
 2. `CompletableFuture<List<R>> QueryGateway#queryMany(Object, Class<R>, ProcessingContext)`
@@ -2012,6 +2012,7 @@ This section contains five tables:
 | org.axonframework.queryhandling.SubscriptionQueryResult                                                | org.axonframework.queryhandling.SubscriptionQueryResponse                                             | No                             |
 | org.axonframework.queryhandling.DefaultSubscriptionQueryResult                                         | org.axonframework.queryhandling.GenericSubscriptionQueryResponse                                      | No                             |
 | org.axonframework.axonserver.connector.query.subscription.AxonServerSubscriptionQueryResult            | org.axonframework.axonserver.connector.query.subscription.AxonServerSubscriptionQueryResponseMessages | No                             |
+| org.axonframework.eventhandling.processors.streaming.token.store.GenericTokenEntry                     | org.axonframework.eventhandling.processors.streaming.token.store.jdbc.JdbcTokenEntry                  | No                             |
 | org.axonframework.messaging.SubscribableMessageSource                                                  | org.axonframework.messaging.SubscribableEventSource                                                   | No                             |
 | org.axonframework.configuration.SubscribableMessageSourceDefinition                                    | org.axonframework.eventhandling.configuration.SubscribableEventSourceDefinition                       | No                             |
 | org.axonframework.axonserver.connector.event.axon.PersistentStreamMessageSourceDefinition              | org.axonframework.axonserver.connector.event.axon.PersistentStreamEventSourceDefinition               | No                             |
@@ -2120,8 +2121,18 @@ This section contains five tables:
 | org.axonframework.queryhandling.QuerySubscription                                        | Redundant class with current handler registration flow                                                                                         |
 | org.axonframework.queryhandling.QueryInvocationErrorHandler                              | Removed together with scatter-gather query removal, as described [here](#query-dispatching-and-handling)                                       |
 | org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler                       | Removed together with scatter-gather query removal, as described [here](#query-dispatching-and-handling)                                       |
+| org.axonframework.eventhandling.processors.streaming.token.store.AbstractTokenEntry      | Content of the methods pushed up into `JdbcTokenEntry` as the only implementer.                                                                |
 | org.axonframework.eventhandling.processors.subscribing.EventProcessingStrategy           | The sync/async processing is supported on `EventHandlingComponent` level                                                                       |
 | org.axonframework.eventhandling.processors.subscribing.DirectEventProcessingStrategy     | The sync/async processing is supported on `EventHandlingComponent` level                                                                       |
+| org.axonframework.queryhandling.StreamingQueryMessage                                    | Removed due to removal of `ResponseType`. Described [here](#query-dispatching-and-handling) why.                                               |
+| org.axonframework.queryhandling.GenericStreamingQueryMessage                             | Removed due to removal of `ResponseType`. Described [here](#query-dispatching-and-handling) why.                                               |
+| org.axonframework.messaging.responsetypes.AbstractResponseType                           | Removed to simplify querying and support none-JVM space, as described [here](#query-gateway-and-response-types).                               |
+| org.axonframework.messaging.responsetypes.InstanceResponseType                           | Removed to simplify querying and support none-JVM space, as described [here](#query-gateway-and-response-types).                               |
+| org.axonframework.messaging.responsetypes.MultipleInstancesResponseType                  | Removed to simplify querying and support none-JVM space, as described [here](#query-gateway-and-response-types).                               |
+| org.axonframework.messaging.responsetypes.OptionalResponseType                           | Removed to simplify querying and support none-JVM space, as described [here](#query-gateway-and-response-types).                               |
+| org.axonframework.messaging.responsetypes.PublisherResponseType                          | Removed to simplify querying and support none-JVM space, as described [here](#query-gateway-and-response-types).                               |
+| org.axonframework.messaging.responsetypes.ResponseType                                   | Removed to simplify querying and support none-JVM space, as described [here](#query-gateway-and-response-types).                               |
+| org.axonframework.messaging.responsetypes.ResponseTypes                                  | Removed to simplify querying and support none-JVM space, as described [here](#query-gateway-and-response-types).                               |
 | org.axonframework.serialization.Revision                                                 | See [here](#revision--version-resolution)                                                                                                      |
 | org.axonframework.serialization.RevisionResolver                                         | See [here](#revision--version-resolution)                                                                                                      |
 | org.axonframework.serialization.FixedValueRevisionResolver                               | See [here](#revision--version-resolution)                                                                                                      |
@@ -2183,6 +2194,9 @@ This section contains four subsections, called:
 | All none-copy org.axonframework.queryhandling.GenericQueryResponseMessage constructors     | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                   |
 | All org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage constructors     | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                   |
 | `DefaultSubscriptionQueryResult`                                                           | Replaced `Mono` and `Flux` for `SubscriptionQueryResponseMessages` and payload map functions | See [here](#subscription-queries-and-the-query-update-emitter) |
+| `JpaTokenStore`                                                                            | Replaced `Serializer` with `Converter`                                                       | See [here](#Serialization-Conversion-changes)                  |
+| `JdbcTokenStore`                                                                           | Replaced `Serializer` with `Converter`                                                       | See [here](#Serialization-Conversion-changes)                  |
+ 
 
 ### Moved, Renamed, or parameter adjusted Methods
 
@@ -2340,3 +2354,5 @@ This section contains four subsections, called:
 | `QueryBus#query(QueryMessage<Q, R>)`                                           | `CompletableFuture<QueryResponseMessage<R>>` | `MessageStream<QueryResponseMessage>`        |
 | `QueryGateway#query(String, Q, ResponseType<R>)`                               | `CompletableFuture<R>`                       | `CompletableFuture<List<R>>`                 |`
 | `SubscriptionQueryResult#initialResult()`                                      | `Mono<I>`                                    | `Flux<I>`                                    |`
+| `QueryMessage#responseType()`                                                  | `ResponseType<?>`                            | `MessageType`                                |`
+| `SubscriptionQueryMessage#updatesResponseType()`                               | `ResponseType<?>`                            | `MessageType`                                |`

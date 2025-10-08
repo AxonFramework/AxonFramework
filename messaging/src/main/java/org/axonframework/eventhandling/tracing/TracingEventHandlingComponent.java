@@ -41,7 +41,7 @@ import java.util.function.Function;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-// TODO #3594 - Revise Tracing Integration (not it's based on ThreadLocals which is not appropriate for the MessageStream API)
+// TODO #3594 - Revisit as part of Tracing Integration
 public class TracingEventHandlingComponent extends DelegatingEventHandlingComponent {
 
     private final Function<EventMessage, Span> spanProvider;

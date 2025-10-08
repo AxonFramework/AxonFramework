@@ -27,7 +27,6 @@ import org.axonframework.messaging.annotations.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotations.MessageHandlingMember;
 import org.axonframework.messaging.interceptors.annotations.ExceptionHandler;
 import org.axonframework.messaging.interceptors.annotations.MessageHandlerInterceptorMemberChain;
-import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.GenericQueryMessage;
@@ -113,7 +112,7 @@ class ExceptionHandlerTest {
         QueryMessage query = new GenericQueryMessage(
                 TEST_QUERY_TYPE,
                 new SomeQuery(() -> new RuntimeException("some-exception")),
-                ResponseTypes.instanceOf(SomeQueryResponse.class));
+                new MessageType(SomeQueryResponse.class));
 
         try {
             Object result = handle(query);

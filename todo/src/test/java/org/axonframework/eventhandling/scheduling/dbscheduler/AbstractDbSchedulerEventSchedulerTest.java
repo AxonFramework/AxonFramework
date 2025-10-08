@@ -27,7 +27,8 @@ import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventhandling.scheduling.java.SimpleScheduleToken;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.serialization.TestSerializer;
+import org.axonframework.serialization.TestConverter;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.hsqldb.jdbc.JDBCDataSource;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
@@ -90,7 +91,7 @@ abstract class AbstractDbSchedulerEventSchedulerTest {
         eventScheduler = DbSchedulerEventScheduler
                 .builder()
                 .scheduler(scheduler)
-                .serializer(TestSerializer.JACKSON.getSerializer())
+                .serializer(JacksonSerializer.defaultSerializer())
                 .eventBus(eventBus)
                 .useBinaryPojo(useBinaryPojo())
                 .build();

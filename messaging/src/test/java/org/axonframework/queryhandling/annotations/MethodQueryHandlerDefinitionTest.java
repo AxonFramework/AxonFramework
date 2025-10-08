@@ -18,14 +18,13 @@ package org.axonframework.queryhandling.annotations;
 
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.annotations.AnnotatedMessageHandlingMemberDefinition;
 import org.axonframework.messaging.annotations.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotations.MessageHandlingMember;
 import org.axonframework.messaging.annotations.ParameterResolverFactory;
 import org.axonframework.messaging.annotations.UnsupportedHandlerException;
-import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.junit.jupiter.api.*;
 
@@ -36,8 +35,8 @@ import static org.axonframework.messaging.annotations.MessageStreamResolverUtils
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test whether the {@link MethodQueryHandlerDefinition} correctly deals with return types, as well as for
- * example {@link java.util.concurrent.Future} and {@link Optional} which contain a generic type.
+ * Test whether the {@link MethodQueryHandlerDefinition} correctly deals with return types, as well as for example
+ * {@link java.util.concurrent.Future} and {@link Optional} which contain a generic type.
  *
  * @author Allard Buijze
  */
@@ -70,9 +69,9 @@ class MethodQueryHandlerDefinitionTest {
         QueryHandlingMember<MethodQueryHandlerDefinitionTest> handler = messageHandler("optionalReturnType");
         assertEquals(String.class, handler.resultType());
 
-        GenericQueryMessage message = new GenericQueryMessage(
-                new MessageType(String.class), "mock", ResponseTypes.instanceOf(String.class)
-        );
+        GenericQueryMessage message = new GenericQueryMessage(new MessageType(String.class),
+                                                              "mock",
+                                                              new MessageType(String.class));
 
         ProcessingContext context = StubProcessingContext.forMessage(message);
         assertTrue(handler.canHandle(message, context));

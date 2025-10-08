@@ -22,7 +22,6 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.junit.jupiter.api.*;
 
-import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
 import static org.junit.jupiter.api.Assertions.*;
 
 class SpanUtilsTest {
@@ -36,26 +35,26 @@ class SpanUtilsTest {
 
     @Test
     void determineMessageNameForQueryWithoutName() {
-        GenericQueryMessage message = new GenericQueryMessage(
-                new MessageType("query"), "MyPayload", instanceOf(String.class)
-        );
+        GenericQueryMessage message = new GenericQueryMessage(new MessageType("query"),
+                                                              "MyPayload",
+                                                              new MessageType(String.class));
 
         assertEquals("query#0.0.1", SpanUtils.determineMessageName(message));
     }
 
     @Test
     void determineMessageNameForQueryWithName() {
-        GenericQueryMessage message = new GenericQueryMessage(
-                new MessageType("query"), "MyPayload", instanceOf(String.class)
-        );
+        GenericQueryMessage message = new GenericQueryMessage(new MessageType("query"),
+                                                              "MyPayload",
+                                                              new MessageType(String.class));
         assertEquals("query#0.0.1", SpanUtils.determineMessageName(message));
     }
 
     @Test
     void determineMessageNameForQueryWithSameName() {
-        GenericQueryMessage message = new GenericQueryMessage(
-                new MessageType("query"), "MyPayload", instanceOf(String.class)
-        );
+        GenericQueryMessage message = new GenericQueryMessage(new MessageType("query"),
+                                                              "MyPayload",
+                                                              new MessageType(String.class));
         assertEquals("query#0.0.1", SpanUtils.determineMessageName(message));
     }
 

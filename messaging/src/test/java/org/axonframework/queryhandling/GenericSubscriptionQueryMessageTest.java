@@ -23,8 +23,6 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTestSuite;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.responsetypes.ResponseType;
-import org.axonframework.messaging.responsetypes.ResponseTypes;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -35,16 +33,14 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class GenericSubscriptionQueryMessageTest extends MessageTestSuite<SubscriptionQueryMessage> {
 
-    private static final ResponseType<String> TEST_RESPONSE_TYPE = ResponseTypes.instanceOf(String.class);
-    private static final ResponseType<String> TEST_UPDATES_TYPE = ResponseTypes.instanceOf(String.class);
+    private static final MessageType TEST_RESPONSE_TYPE = new MessageType(String.class);
+    private static final MessageType TEST_UPDATES_TYPE = new MessageType(String.class);
 
     @Override
     protected SubscriptionQueryMessage buildDefaultMessage() {
         Message delegate =
                 new GenericMessage(TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_METADATA);
-        return new GenericSubscriptionQueryMessage(delegate,
-                                                   TEST_RESPONSE_TYPE,
-                                                   TEST_UPDATES_TYPE);
+        return new GenericSubscriptionQueryMessage(delegate, TEST_RESPONSE_TYPE, TEST_UPDATES_TYPE);
     }
 
     @Override

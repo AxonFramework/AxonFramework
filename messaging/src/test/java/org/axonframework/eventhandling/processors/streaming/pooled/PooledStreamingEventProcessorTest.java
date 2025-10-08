@@ -784,8 +784,15 @@ class PooledStreamingEventProcessorTest {
 
             startEventProcessor();
 
-            assertWithin(1, TimeUnit.SECONDS, () -> assertThat(testSubject.processingStatus()).hasSize(8));
-            assertEquals(8, joinAndUnwrap(tokenStore.fetchSegments(PROCESSOR_NAME, null)).length);
+            await().pollDelay(Duration.ofMillis(50))
+                   .atMost(Duration.ofSeconds(1))
+                   .untilAsserted(() -> assertThat(testSubject.processingStatus()).hasSize(8));
+            await().pollDelay(Duration.ofMillis(50))
+                   .atMost(Duration.ofSeconds(1))
+                   .untilAsserted(() -> {
+                       int segmentCount = joinAndUnwrap(tokenStore.fetchSegments(PROCESSOR_NAME, null)).length;
+                       assertThat(segmentCount).isEqualTo(8);
+                   });
 
             events.forEach(e -> stubMessageSource.publishMessage(e));
 

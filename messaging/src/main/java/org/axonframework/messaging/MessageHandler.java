@@ -17,6 +17,7 @@
 package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotations.Internal;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 /**
@@ -34,9 +35,11 @@ public interface MessageHandler<T extends Message, R extends Message> {
      * @param message The message to be processed.
      * @return The result of the message processing.
      * @throws Exception any exception that occurs during message handling
+     * @deprecated In favor of {@link #handle(Message, ProcessingContext)}
      */
-    // TODO replace this operation for the new handle method
+    // TODO Remove entirely once #3065, #3195, #3517, and #3728 have been resolved.
     @Deprecated
+    @Internal
     Object handleSync(@Nonnull T message, @Nonnull ProcessingContext context) throws Exception;
 
     /**

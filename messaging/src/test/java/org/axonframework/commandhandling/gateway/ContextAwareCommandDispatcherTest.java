@@ -69,7 +69,7 @@ class ContextAwareCommandDispatcherTest {
         when(commandGateway.send(any(), eq(context)))
                 .thenReturn(() -> messageOneFuture)
                 .thenReturn(() -> messageTwoFuture);
-        when(commandGateway.send(any(), any(), eq(context)))
+        when(commandGateway.send(any(), any(Metadata.class), eq(context)))
                 .thenReturn(() -> messageOneFuture)
                 .thenReturn(() -> messageTwoFuture);
     }

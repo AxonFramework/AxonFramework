@@ -24,14 +24,12 @@ import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.queryhandling.GenericQueryMessage;
-import org.axonframework.queryhandling.GenericStreamingQueryMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryBusTestUtils;
 import org.axonframework.queryhandling.QueryExecutionException;
 import org.axonframework.queryhandling.QueryHandlingComponent;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.queryhandling.StreamingQueryMessage;
 import org.axonframework.queryhandling.annotations.AnnotatedQueryHandlingComponent;
 import org.axonframework.queryhandling.annotations.QueryHandler;
 import org.axonframework.serialization.PassThroughConverter;
@@ -55,7 +53,6 @@ import java.util.List;
 import java.util.Objects;
 
 import static java.util.Arrays.asList;
-import static org.axonframework.messaging.responsetypes.ResponseTypes.multipleInstancesOf;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -65,7 +62,8 @@ import static org.junit.jupiter.api.Assertions.*;
 @Testcontainers
 class StreamingQueryEndToEndTest {
 
-    private static final TypeReference<List<String>> LIST_OF_STRINGS = new TypeReference<>() {};
+    private static final TypeReference<List<String>> LIST_OF_STRINGS = new TypeReference<>() {
+    };
     private static final int HTTP_PORT = 8024;
     private static final int GRPC_PORT = 8124;
     private static final String HOSTNAME = "localhost";
@@ -152,8 +150,8 @@ class StreamingQueryEndToEndTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void streamingFluxQuery(boolean supportsStreaming) {
-        StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
-                new MessageType(FluxQuery.class), new FluxQuery(), String.class
+        QueryMessage testQuery = new GenericQueryMessage(
+                new MessageType(FluxQuery.class), new FluxQuery(), new MessageType(String.class)
         );
 
         StepVerifier.create(streamingQueryPayloads(testQuery, String.class, supportsStreaming))
@@ -169,9 +167,9 @@ class StreamingQueryEndToEndTest {
 
         StepVerifier.create(Flux.range(0, count)
                                 .flatMap(i -> streamingQueryPayloads(
-                                        new GenericStreamingQueryMessage(new MessageType(FluxQuery.class),
-                                                                         new FluxQuery(),
-                                                                         String.class),
+                                        new GenericQueryMessage(new MessageType(FluxQuery.class),
+                                                                new FluxQuery(),
+                                                                new MessageType(String.class)),
                                         String.class,
                                         supportsStreaming
                                 ))
@@ -183,8 +181,8 @@ class StreamingQueryEndToEndTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void streamingErrorFluxQuery(boolean supportsStreaming) {
-        StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
-                new MessageType(ErrorFluxQuery.class), new ErrorFluxQuery(), String.class
+        QueryMessage testQuery = new GenericQueryMessage(
+                new MessageType(ErrorFluxQuery.class), new ErrorFluxQuery(), new MessageType(String.class)
         );
 
         StepVerifier.create(streamingQueryPayloads(testQuery, String.class, supportsStreaming))
@@ -195,8 +193,8 @@ class StreamingQueryEndToEndTest {
 
     @Test
     void streamingHandlerErrorFluxQuery() {
-        StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
-                new MessageType(HandlerErrorFluxQuery.class), new HandlerErrorFluxQuery(), String.class
+        QueryMessage testQuery = new GenericQueryMessage(
+                new MessageType(HandlerErrorFluxQuery.class), new HandlerErrorFluxQuery(), new MessageType(String.class)
         );
 
         StepVerifier.create(streamingQueryPayloads(testQuery, String.class, true))
@@ -208,8 +206,8 @@ class StreamingQueryEndToEndTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void streamingListQuery(boolean supportsStreaming) {
-        StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
-                new MessageType(ListQuery.class), new ListQuery(), String.class
+        QueryMessage testQuery = new GenericQueryMessage(
+                new MessageType(ListQuery.class), new ListQuery(), new MessageType(String.class)
         );
 
         StepVerifier.create(streamingQueryPayloads(testQuery, String.class, supportsStreaming))
@@ -221,13 +219,13 @@ class StreamingQueryEndToEndTest {
     @ValueSource(booleans = {true, false})
     void listQuery(boolean supportsStreaming) throws Throwable {
         QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType(ListQuery.class), new ListQuery(), multipleInstancesOf(String.class)
+                new MessageType(ListQuery.class), new ListQuery(), new MessageType(String.class)
         );
 
         assertEquals(asList("a", "b", "c", "d"), directQueryPayload(testQuery, LIST_OF_STRINGS, supportsStreaming));
     }
 
-    private <R> Flux<R> streamingQueryPayloads(StreamingQueryMessage query, Class<R> cls, boolean supportsStreaming) {
+    private <R> Flux<R> streamingQueryPayloads(QueryMessage query, Class<R> cls, boolean supportsStreaming) {
         if (supportsStreaming) {
             return Flux.from(senderQueryBus.streamingQuery(query, null))
                        .map(m -> m.payloadAs(cls));
@@ -254,7 +252,7 @@ class StreamingQueryEndToEndTest {
 //            if (response != null && response.optionalExceptionResult().isPresent()) {
 //                throw response.optionalExceptionResult().get();
 //            } else {
-                throw e;
+            throw e;
 //            }
         }
     }
