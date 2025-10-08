@@ -67,12 +67,12 @@ public class JdbcTokenEntry {
     /**
      * Initializes a token entry from existing data.
      *
-     * @param token         the serialized token
-     * @param tokenType     the serialized type of the token
-     * @param timestamp     the timestamp of the token
-     * @param owner         the owner of the token
-     * @param processorName the processor name.
-     * @param segment       the token segment.
+     * @param token         The serialized token.
+     * @param tokenType     The serialized type of the token.
+     * @param timestamp     The timestamp of the token.
+     * @param owner         The owner of the token.
+     * @param processorName The processor name.
+     * @param segment       The token segment.
      */
     public JdbcTokenEntry(byte[] token, String tokenType, String timestamp, String owner, String processorName,
                           int segment) {
