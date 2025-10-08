@@ -4,6 +4,8 @@ Axon version: `5.0.0-preview`
 ## Getting Started Guide
 [Getting Started with Axon Framework 5](https://docs.axoniq.io/axon-framework-5-getting-started/) - there you will find a step-by-step introduction to the implementation showing how to move from Event Modeling to Vertical Slice Architecture (based on Dynamic Consistency Boundary) implementation.
 
+If you want to clone this repository to work from, feel free to use the `base` branch to start fresh.
+
 ## Event Store implementation
 
 ### InMemory
