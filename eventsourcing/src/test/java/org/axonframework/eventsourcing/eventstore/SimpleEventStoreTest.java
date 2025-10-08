@@ -419,6 +419,7 @@ class SimpleEventStoreTest {
             assertSame(subscriberException, exception.getCause());
             verify(mockSubscriber).accept(eq(List.of(testEvent)), any(ProcessingContext.class));
             verify(mockAppendTransaction, never()).commit(any(ProcessingContext.class));
+            verify(mockAppendTransaction).rollback(any(ProcessingContext.class));
         }
     }
 
