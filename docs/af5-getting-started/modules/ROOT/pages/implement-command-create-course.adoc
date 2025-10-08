@@ -167,18 +167,17 @@ class CreateCourseTest {
     // fixture creation skipped for brevity
 
     @Test
-    void givenCourseCreated_WhenCreateCourse_ThenSuccess_NoEvents() {
+    void givenNotExistingCourse_WhenCreateCourse_ThenSuccess() {
         var courseId = CourseId.random();
         var courseName = "Event Sourcing in Practice";
         var capacity = 3;
 
         fixture.given()
-               .event(new CourseCreated(courseId, courseName, capacity)) // <1>
-               .when()
-               .command(new CreateCourse(courseId, courseName, capacity)) // <2>
-               .then()
-               .success() // <3>
-               .noEvents(); // <3>
+                .when()
+                .command(new CreateCourse(courseId, courseName, capacity))
+                .then()
+                .success()
+                .events(new CourseCreated(courseId, courseName, capacity));
     }
 
 }
