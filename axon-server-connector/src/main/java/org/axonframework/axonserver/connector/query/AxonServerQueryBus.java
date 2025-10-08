@@ -256,31 +256,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         shutdownLatch.initialize();
     }
 
-    // TODO #3488 - Pick up when replacing the AxonServerQueryBus
-    public Registration subscribe(
-            @Nonnull String queryName,
-            @Nonnull Type responseType,
-            @Nonnull MessageHandler<? super QueryMessage, ? extends QueryResponseMessage> handler) {
-//        Registration localRegistration = localSegment.subscribe(queryName, responseType, handler);
-        Registration localRegistration = () -> true;
-        QueryDefinition queryDefinition = new QueryDefinition(queryName, responseType);
-        io.axoniq.axonserver.connector.Registration serverRegistration =
-                axonServerConnectionManager.getConnection(context)
-                                           .queryChannel()
-                                           .registerQueryHandler(localSegmentAdapter, queryDefinition);
-
-        queryHandlerNames.add(queryName);
-        return new AxonServerRegistration(() -> unsubscribe(queryName, localRegistration), serverRegistration::cancel);
-    }
-
-    private boolean unsubscribe(String queryName, Registration localSegmentRegistration) {
-        boolean result = localSegmentRegistration.cancel();
-        if (result) {
-            queryHandlerNames.remove(queryName);
-        }
-        return result;
-    }
-
     @Nonnull
     @Override
     public MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage queryMessage,
