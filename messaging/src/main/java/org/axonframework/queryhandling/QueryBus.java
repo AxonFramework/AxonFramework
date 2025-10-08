@@ -38,7 +38,7 @@ import java.util.function.Supplier;
  * resulting from the {@link QueryMessage#responseType() response type}.
  * <p>
  * Hence, queries dispatched (through either {@link #query(QueryMessage, ProcessingContext)},
- * {@link #streamingQuery(StreamingQueryMessage, ProcessingContext)}, and
+ * {@link #streamingQuery(QueryMessage, ProcessingContext)}, and
  * {@link #subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int)}) match a subscribed query handler based
  * on "query name" and "query response name."
  * <p>
@@ -96,7 +96,7 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      *                                    {@link QueryMessage#responseType()}.
      */
     @Nonnull
-    default Publisher<QueryResponseMessage> streamingQuery(@Nonnull StreamingQueryMessage query,
+    default Publisher<QueryResponseMessage> streamingQuery(@Nonnull QueryMessage query,
                                                            @Nullable ProcessingContext context) {
         return Mono.fromSupplier(() -> query(query, context))
                    .flatMapMany(MessageStream::asFlux)

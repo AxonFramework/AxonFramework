@@ -33,7 +33,7 @@ import java.util.Optional;
  * just-in-time conversion to ensure the response is formatted as requested.
  * <p>
  * The conversion is generally used to accommodate response types that aren't compatible with serialization, such as
- * {@link OptionalResponseType}.
+ * {@code OptionalResponseType}.
  *
  * @param <R> The type of {@link #payload() payload} contained in this {@link QueryResponseMessage}.
  * @author Allard Buijze
@@ -41,7 +41,7 @@ import java.util.Optional;
  */
 public class ConvertingResponseMessage<R> implements QueryResponseMessage {
 
-    private final ResponseType<R> expectedResponseType;
+    private final Class<R> expectedResponseType;
     private final QueryResponseMessage responseMessage;
 
     /**
@@ -51,7 +51,7 @@ public class ConvertingResponseMessage<R> implements QueryResponseMessage {
      * @param expectedResponseType An instance describing the expected response type.
      * @param responseMessage      The message containing the actual response from the handler.
      */
-    public ConvertingResponseMessage(ResponseType<R> expectedResponseType,
+    public ConvertingResponseMessage(Class<R> expectedResponseType,
                                      QueryResponseMessage responseMessage) {
         this.expectedResponseType = expectedResponseType;
         this.responseMessage = responseMessage;
@@ -95,7 +95,7 @@ public class ConvertingResponseMessage<R> implements QueryResponseMessage {
                     optionalExceptionResult().orElse(null)
             );
         }
-        return expectedResponseType.convert(responseMessage.payload());
+        return ((R) responseMessage.payload());
     }
 
     @Override
@@ -114,7 +114,7 @@ public class ConvertingResponseMessage<R> implements QueryResponseMessage {
     @Override
     @Nonnull
     public Class<R> payloadType() {
-        return expectedResponseType.responseMessagePayloadType();
+        return expectedResponseType;
     }
 
     @Override

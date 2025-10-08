@@ -43,15 +43,19 @@ import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryBusTestUtils;
 import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.QueryPriorityCalculator;
+import org.axonframework.queryhandling.annotations.AnnotatedQueryHandlingComponent;
+import org.axonframework.queryhandling.annotations.QueryHandler;
 import org.axonframework.serialization.PassThroughConverter;
 import org.junit.jupiter.api.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -78,6 +82,10 @@ class AsyncMessageHandlerTest {
     }
 
     record GetKnownPrimes() {
+        // query
+    }
+
+    record EchoValue(int... values) {
         // query
     }
 
@@ -156,7 +164,100 @@ class AsyncMessageHandlerTest {
 
         @Nested
         class QueryHandlers {
-            // TODO #3488 - Implement once there is an AnnotatedQueryHandlingComponent
+
+            @Test
+            void returningJustShouldUseResult() {
+                int echoInt = 1;
+                queryBus.subscribe(new AnnotatedQueryHandlingComponent<>(new JustQueryHandler(),
+                                                                         PassThroughConverter.MESSAGE_INSTANCE));
+
+                CompletableFuture<Integer> result = queryGateway.query(new EchoValue(echoInt), Integer.class, null);
+                assertThat(result).isDone();
+                assertThat(result.join()).isEqualTo(echoInt);
+            }
+
+            @Test
+            void returningPrimitiveShouldUseResult() {
+                int echoInt = 1;
+                queryBus.subscribe(new AnnotatedQueryHandlingComponent<>(new PrimitiveQueryHandler(),
+                                                                         PassThroughConverter.MESSAGE_INSTANCE));
+
+                CompletableFuture<Integer> result = queryGateway.query(new EchoValue(echoInt), Integer.class, null);
+                assertThat(result).isDone();
+                assertThat(result.join()).isEqualTo(echoInt);
+            }
+
+            @Test
+            void returningOptionalShouldUseResult() {
+                int echoInt = 1;
+                queryBus.subscribe(new AnnotatedQueryHandlingComponent<>(new OptionalQueryHandler(),
+                                                                         PassThroughConverter.MESSAGE_INSTANCE));
+
+                CompletableFuture<Integer> result = queryGateway.query(new EchoValue(echoInt), Integer.class, null);
+                assertThat(result).isDone();
+                assertThat(result.join()).isEqualTo(echoInt);
+            }
+
+            @Test
+            void returningCompletableFutureShouldUseItsResult() {
+                int echoInt = 1;
+                queryBus.subscribe(new AnnotatedQueryHandlingComponent<>(new CompletableFutureQueryHandler(),
+                                                                         PassThroughConverter.MESSAGE_INSTANCE));
+
+                CompletableFuture<Integer> result = queryGateway.query(new EchoValue(echoInt), Integer.class, null);
+                assertThat(result).isDone();
+                assertThat(result.join()).isEqualTo(echoInt);
+            }
+
+            @Test
+            void returningMonoShouldUseItsResult() {
+                int echoInt = 1;
+                queryBus.subscribe(new AnnotatedQueryHandlingComponent<>(new MonoQueryHandler(),
+                                                                         PassThroughConverter.MESSAGE_INSTANCE));
+
+                CompletableFuture<Integer> result = queryGateway.query(new EchoValue(echoInt), Integer.class, null);
+                assertThat(result).isDone();
+                assertThat(result.join()).isEqualTo(echoInt);
+            }
+
+            @Test
+            void returningIterableShouldUseItsResult() {
+                int echoIntOne = 1;
+                int echoIntTwo = 2;
+                queryBus.subscribe(new AnnotatedQueryHandlingComponent<>(new IterableQueryHandler(),
+                                                                         PassThroughConverter.MESSAGE_INSTANCE));
+
+                CompletableFuture<List<Integer>> result =
+                        queryGateway.queryMany(new EchoValue(echoIntOne, echoIntTwo), Integer.class, null);
+                assertThat(result).isDone();
+                assertThat(result.join()).contains(echoIntOne, echoIntTwo);
+            }
+
+            @Test
+            void returningStreamShouldUseItsResult() {
+                int echoIntOne = 1;
+                int echoIntTwo = 2;
+                queryBus.subscribe(new AnnotatedQueryHandlingComponent<>(new StreamQueryHandler(),
+                                                                         PassThroughConverter.MESSAGE_INSTANCE));
+
+                CompletableFuture<List<Integer>> result =
+                        queryGateway.queryMany(new EchoValue(echoIntOne, echoIntTwo), Integer.class, null);
+                assertThat(result).isDone();
+                assertThat(result.join()).contains(echoIntOne, echoIntTwo);
+            }
+
+            @Test
+            void returningFluxShouldUseItsResult() {
+                int echoIntOne = 1;
+                int echoIntTwo = 2;
+                queryBus.subscribe(new AnnotatedQueryHandlingComponent<>(new FluxQueryHandler(),
+                                                                         PassThroughConverter.MESSAGE_INSTANCE));
+
+                CompletableFuture<List<Integer>> result =
+                        queryGateway.queryMany(new EchoValue(echoIntOne, echoIntTwo), Integer.class, null);
+                assertThat(result).isDone();
+                assertThat(result.join()).contains(echoIntOne, echoIntTwo);
+            }
         }
     }
 
@@ -216,7 +317,6 @@ class AsyncMessageHandlerTest {
             }
         }
 
-        @Disabled("TODO #3488")
         @Nested
         class QueryHandlers {
 
@@ -275,6 +375,7 @@ class AsyncMessageHandlerTest {
 
     private class VoidEventHandler {
 
+        @SuppressWarnings("unused")
         @EventHandler
         public void handle(PrimeChecked event) {
             eventHandlerCalled.set(true);
@@ -283,6 +384,7 @@ class AsyncMessageHandlerTest {
 
     private class MonoEventHandler {
 
+        @SuppressWarnings("unused")
         @EventHandler
         public Mono<Void> handle(PrimeChecked event) {
             return Mono.fromRunnable(() -> eventHandlerCalled.set(true));
@@ -291,33 +393,109 @@ class AsyncMessageHandlerTest {
 
     private class CompletableFutureEventHandler {
 
+        @SuppressWarnings("unused")
         @EventHandler
         public CompletableFuture<Void> handle(PrimeChecked event) {
             return CompletableFuture.runAsync(() -> eventHandlerCalled.set(true));
         }
     }
 
-    private class CompletableFutureCommandHandler {
+    private static class CompletableFutureCommandHandler {
 
+        @SuppressWarnings("unused")
         @CommandHandler
         public Future<Boolean> handle(CheckIfPrime cmd) {
             return CompletableFuture.completedFuture(isPrime(cmd.value));
         }
     }
 
-    private class MonoCommandHandler {
+    private static class MonoCommandHandler {
 
+        @SuppressWarnings("unused")
         @CommandHandler
         public Mono<Boolean> handle(CheckIfPrime cmd) {
             return Mono.just(isPrime(cmd.value));
         }
     }
 
-    private class BooleanCommandHandler {
+    private static class BooleanCommandHandler {
 
+        @SuppressWarnings("unused")
         @CommandHandler
         public boolean handle(CheckIfPrime cmd) {
             return isPrime(cmd.value);
+        }
+    }
+
+    private static class JustQueryHandler {
+
+        @SuppressWarnings("unused")
+        @QueryHandler
+        public Integer handle(EchoValue query) {
+            return query.values()[0];
+        }
+    }
+
+    private static class PrimitiveQueryHandler {
+
+        @SuppressWarnings("unused")
+        @QueryHandler
+        public int handle(EchoValue query) {
+            return query.values()[0];
+        }
+    }
+
+    private static class OptionalQueryHandler {
+
+        @SuppressWarnings("unused")
+        @QueryHandler
+        public Optional<Integer> handle(EchoValue query) {
+            return Optional.of(query.values()[0]);
+        }
+    }
+
+    private static class CompletableFutureQueryHandler {
+
+        @SuppressWarnings("unused")
+        @QueryHandler
+        public CompletableFuture<Integer> handle(EchoValue query) {
+            return CompletableFuture.completedFuture(query.values()[0]);
+        }
+    }
+
+    private static class IterableQueryHandler {
+
+        @SuppressWarnings("unused")
+        @QueryHandler
+        public Iterable<Integer> handle(EchoValue query) {
+            return List.of(query.values()[0], query.values()[1]);
+        }
+    }
+
+    private static class StreamQueryHandler {
+
+        @SuppressWarnings("unused")
+        @QueryHandler
+        public Stream<Integer> handle(EchoValue query) {
+            return Stream.of(query.values()[0], query.values()[1]);
+        }
+    }
+
+    private static class MonoQueryHandler {
+
+        @SuppressWarnings("unused")
+        @QueryHandler
+        public Mono<Integer> handle(EchoValue query) {
+            return Mono.just(query.values()[0]);
+        }
+    }
+
+    private static class FluxQueryHandler {
+
+        @SuppressWarnings("unused")
+        @QueryHandler
+        public Flux<Integer> handle(EchoValue query) {
+            return Flux.just(query.values()[0], query.values()[1]);
         }
     }
 

@@ -21,7 +21,6 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.HashMap;
@@ -83,11 +82,7 @@ public class SimpleQueryHandlingComponent implements
     @Override
     public MessageStream<QueryResponseMessage> handle(@Nonnull QueryMessage query,
                                                       @Nonnull ProcessingContext context) {
-        QualifiedName name = query.type().qualifiedName();
-        // TODO get QualifiedName as a responseType i.o. making one here for the response
-        QueryHandlerName handlerName = new QueryHandlerName(
-                name, new QualifiedName(query.responseType().getExpectedResponseType())
-        );
+        QueryHandlerName handlerName = new QueryHandlerName(query.type(), query.responseType());
         Optional<QueryHandlingComponent> optionalSubHandler =
                 subComponents.stream()
                              .filter(subComponent -> subComponent.supportedQueries().contains(handlerName))

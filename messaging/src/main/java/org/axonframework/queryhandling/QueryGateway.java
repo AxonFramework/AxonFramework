@@ -47,9 +47,8 @@ public interface QueryGateway extends DescribableComponent {
      * <p>
      * The given {@code query} is wrapped as the payload of the {@link QueryMessage} that is eventually posted on the
      * {@code QueryBus}, unless the {@code query} already implements {@link Message}. In that case, a
-     * {@code QueryMessage} is constructed from that message's payload and {@link org.axonframework.messaging.Metadata}.
-     * The {@link QueryMessage#responseType()} will <b>at all times</b> be a
-     * {@link org.axonframework.messaging.responsetypes.InstanceResponseType}.
+     * {@code QueryMessage} is constructed from that message's payload and
+     * {@link org.axonframework.messaging.Metadata}.
      *
      * @param query        The {@code query} to be sent.
      * @param responseType A {@code Class} describing the desired response type.
@@ -70,9 +69,8 @@ public interface QueryGateway extends DescribableComponent {
      * <p>
      * The given {@code query} is wrapped as the payload of the {@link QueryMessage} that is eventually posted on the
      * {@code QueryBus}, unless the {@code query} already implements {@link Message}. In that case, a
-     * {@code QueryMessage} is constructed from that message's payload and {@link org.axonframework.messaging.Metadata}.
-     * The {@link QueryMessage#responseType()} will <b>at all times</b> be a
-     * {@link org.axonframework.messaging.responsetypes.MultipleInstancesResponseType}.
+     * {@code QueryMessage} is constructed from that message's payload and
+     * {@link org.axonframework.messaging.Metadata}.
      *
      * @param query        The {@code query} to be sent.
      * @param responseType A {@code Class} describing the desired response type.
@@ -93,11 +91,10 @@ public interface QueryGateway extends DescribableComponent {
      * stream large result sets. Usage of this method requires <a href="https://projectreactor.io/">Project Reactor</a>
      * on the class path.
      * <p>
-     * The given {@code query} is wrapped as the payload of the {@link StreamingQueryMessage} that is eventually posted
-     * on the {@code QueryBus}, unless the {@code query} already implements {@link Message}. In that case, a
-     * {@code StreamingQueryMessage} is constructed from that message's payload and
-     * {@link org.axonframework.messaging.Metadata}. The {@link QueryMessage#responseType()} will <b>at all times</b> be
-     * a {@link org.axonframework.messaging.responsetypes.PublisherResponseType}.
+     * The given {@code query} is wrapped as the payload of the {@link QueryMessage} that is eventually posted on the
+     * {@code QueryBus}, unless the {@code query} already implements {@link Message}. In that case, a
+     * {@code QueryMessage} is constructed from that message's payload and
+     * {@link org.axonframework.messaging.Metadata}.
      * <p>
      * {@link org.reactivestreams.Publisher} is used for backwards compatibility reason, for clients that don't have
      * Project Reactor on class path. Check <a href="https://docs.axoniq.io/reference-guide/extensions/reactor">Reactor
@@ -133,7 +130,7 @@ public interface QueryGateway extends DescribableComponent {
      *
      * @param query        The {@code query} to be sent.
      * @param responseType The response type returned by this query as the initial result and the updates.
-     * @param context      The processing context, if any, to dispatch the given {@code query} in.context
+     * @param context      The processing context, if any, to dispatch the given {@code query} in.
      * @param <R>          The type of all the responses.
      * @return A {@link org.reactivestreams.Publisher} streaming the results as dictated by the given
      * {@code responseType}.
@@ -163,7 +160,7 @@ public interface QueryGateway extends DescribableComponent {
      *
      * @param query            The {@code query} to be sent.
      * @param responseType     The response type returned by this query as the initial result and the updates.
-     * @param context          The processing context, if any, to dispatch the given {@code query} in.context
+     * @param context          The processing context, if any, to dispatch the given {@code query} in.
      * @param updateBufferSize The size of buffer which accumulates updates before a subscription to the {@code Flux} is
      *                         made.
      * @param <R>              The type of all the responses.
