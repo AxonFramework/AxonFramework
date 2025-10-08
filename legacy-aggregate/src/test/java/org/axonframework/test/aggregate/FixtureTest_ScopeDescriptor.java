@@ -45,7 +45,7 @@ class FixtureTest_ScopeDescriptor {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3195 - Migration Module")
     void resolvesScopeDescriptor() {
         fixture.givenNoPriorActivity()
                .when("some-identifier")

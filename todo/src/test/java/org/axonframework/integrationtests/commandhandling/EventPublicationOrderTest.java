@@ -65,7 +65,7 @@ class EventPublicationOrderTest {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled
     void publicationOrderIsMaintained_AggregateAdded() {
         String aggregateId = UUID.randomUUID().toString();
         UpdateStubAggregateWithExtraEventCommand testPayload = new UpdateStubAggregateWithExtraEventCommand(aggregateId);

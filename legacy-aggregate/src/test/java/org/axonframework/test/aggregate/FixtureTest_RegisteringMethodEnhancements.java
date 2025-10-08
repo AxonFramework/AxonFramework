@@ -60,7 +60,7 @@ public class FixtureTest_RegisteringMethodEnhancements {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3195 - Migration Module")
     void registerParameterResolverFactory() {
         testSubject.registerParameterResolverFactory(new TestParameterResolverFactory(new AtomicBoolean(false)))
                    .given(new MyEvent(TEST_AGGREGATE_IDENTIFIER, 42))
@@ -74,7 +74,7 @@ public class FixtureTest_RegisteringMethodEnhancements {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3195 - Migration Module")
     void createHandlerMethodIsCalledForRegisteredCustomHandlerDefinition() {
         AtomicBoolean handlerDefinitionReached = new AtomicBoolean(false);
 
@@ -89,7 +89,7 @@ public class FixtureTest_RegisteringMethodEnhancements {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3195 - Migration Module")
     void wrapHandlerMethodIsCalledForRegisteredCustomHandlerEnhancerDefinition() {
         AtomicBoolean handlerEnhancerReached = new AtomicBoolean(false);
 
