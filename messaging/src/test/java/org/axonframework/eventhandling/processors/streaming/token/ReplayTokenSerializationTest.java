@@ -32,15 +32,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 class ReplayTokenSerializationTest {
 
-    static Collection<TestConverter> serializers() {
+    static Collection<TestConverter> converters() {
         return TestConverter.all();
     }
 
-    @MethodSource("serializers")
+    @MethodSource("converters")
     @ParameterizedTest
-    void tokenShouldBeSerializable(TestConverter serializer) {
+    void tokenShouldBeSerializable(TestConverter converter) {
         TrackingToken innerToken = GapAwareTrackingToken.newInstance(10, Collections.singleton(9L));
         TrackingToken token = ReplayToken.createReplayToken(innerToken);
-        assertEquals(token, serializer.serializeDeserialize(token));
+        assertEquals(token, converter.serializeDeserialize(token));
     }
 }

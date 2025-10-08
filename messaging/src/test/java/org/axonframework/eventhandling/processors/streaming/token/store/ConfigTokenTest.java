@@ -33,15 +33,15 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class ConfigTokenTest {
 
-    static Collection<TestConverter> serializers() {
+    static Collection<TestConverter> converters() {
         return TestConverter.all();
     }
 
-    @MethodSource("serializers")
+    @MethodSource("converters")
     @ParameterizedTest
-    void tokenShouldBeSerializable(TestConverter serializer) {
+    void tokenShouldBeSerializable(TestConverter converter) {
         Map<String, String> configMap = Collections.singletonMap("some-key", "some-value");
         ConfigToken token = new ConfigToken(configMap);
-        assertEquals(token, serializer.serializeDeserialize(token));
+        assertEquals(token, converter.serializeDeserialize(token));
     }
 }

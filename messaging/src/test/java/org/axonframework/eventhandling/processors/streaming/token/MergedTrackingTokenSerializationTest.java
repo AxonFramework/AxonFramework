@@ -32,15 +32,15 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class MergedTrackingTokenSerializationTest {
 
-    static Collection<TestConverter> serializers() {
+    static Collection<TestConverter> converters() {
         return TestConverter.all();
     }
 
-    @MethodSource("serializers")
+    @MethodSource("converters")
     @ParameterizedTest
-    void tokenShouldBeSerializable(TestConverter serializer) {
+    void tokenShouldBeSerializable(TestConverter converter) {
         MergedTrackingToken testSubject = new MergedTrackingToken(new MergedTrackingToken(token(1), token(5)), token(3));
-        assertEquals(testSubject, serializer.serializeDeserialize(testSubject));
+        assertEquals(testSubject, converter.serializeDeserialize(testSubject));
     }
 
     private GlobalSequenceTrackingToken token(int sequence) {

@@ -83,7 +83,7 @@ public class JdbcTokenStore implements TokenStore {
      *
      * @param connectionProvider The {@link ConnectionProvider} used to provide connections to the underlying database.
      * @param converter          The {@link Converter} used to de-/serialize {@link TrackingToken}'s with.
-     * @param configuration      The {@link JdbcTokenStoreConfiguration} used to instantiate a {@code JdbcTokenStore}
+     * @param configuration       The {@link JdbcTokenStoreConfiguration} used to instantiate a {@code JdbcTokenStore}
      *                           instance
      */
     public JdbcTokenStore(@Nonnull ConnectionProvider connectionProvider,

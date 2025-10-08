@@ -31,14 +31,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 class SimpleScheduleTokenSerializationTest {
 
-    static Collection<TestConverter> serializers() {
+    static Collection<TestConverter> converters() {
        return TestConverter.all();
     }
 
-    @MethodSource("serializers")
+    @MethodSource("converters")
     @ParameterizedTest
-    void tokenShouldBeSerializable(TestConverter serializer) {
+    void tokenShouldBeSerializable(TestConverter converter) {
         SimpleScheduleToken tokenToTest = new SimpleScheduleToken("28bda08d-2dd5-4420-98cb-75ca073446b4");
-        assertEquals(tokenToTest, serializer.serializeDeserialize(tokenToTest));
+        assertEquals(tokenToTest, converter.serializeDeserialize(tokenToTest));
     }
 }

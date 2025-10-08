@@ -33,17 +33,17 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class MultiSourceTrackingTokenSerializationTest {
 
-    static Collection<TestConverter> serializers() {
+    static Collection<TestConverter> converters() {
         return TestConverter.all();
     }
 
-    @MethodSource("serializers")
+    @MethodSource("converters")
     @ParameterizedTest
-    void tokenShouldBeSerializable(TestConverter serializer) {
+    void tokenShouldBeSerializable(TestConverter converter) {
         Map<String, TrackingToken> tokenMap = new HashMap<>();
         tokenMap.put("token1", new GlobalSequenceTrackingToken(0));
         tokenMap.put("token2", new GlobalSequenceTrackingToken(0));
         MultiSourceTrackingToken testSubject = new MultiSourceTrackingToken(tokenMap);
-        assertEquals(testSubject, serializer.serializeDeserialize(testSubject));
+        assertEquals(testSubject, converter.serializeDeserialize(testSubject));
     }
 }

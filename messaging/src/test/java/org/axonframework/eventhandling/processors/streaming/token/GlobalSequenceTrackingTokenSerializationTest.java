@@ -31,14 +31,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 class GlobalSequenceTrackingTokenSerializationTest {
 
-    static Collection<TestConverter> serializers() {
+    static Collection<TestConverter> converters() {
        return TestConverter.all();
     }
 
-    @MethodSource("serializers")
+    @MethodSource("converters")
     @ParameterizedTest
-    void tokenShouldBeSerializable(TestConverter serializer) {
+    void tokenShouldBeSerializable(TestConverter converter) {
         GlobalSequenceTrackingToken token = new GlobalSequenceTrackingToken(Long.MAX_VALUE);
-        assertEquals(token, serializer.serializeDeserialize(token));
+        assertEquals(token, converter.serializeDeserialize(token));
     }
 }

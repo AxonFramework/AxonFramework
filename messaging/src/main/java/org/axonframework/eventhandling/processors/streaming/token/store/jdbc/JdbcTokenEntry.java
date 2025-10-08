@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling.processors.streaming.token.store.jdbc;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.ClassUtils;
 import org.axonframework.common.DateTimeUtils;
 import org.axonframework.common.ReflectionUtils;
@@ -60,7 +62,7 @@ public class JdbcTokenEntry {
      * @param token     The tracking token to store.
      * @param converter The converter to use when storing a serialized token.
      */
-    public JdbcTokenEntry(TrackingToken token, Converter converter) {
+    public JdbcTokenEntry(@Nullable TrackingToken token, @Nonnull Converter converter) {
         updateToken(token, converter);
     }
 
@@ -74,7 +76,7 @@ public class JdbcTokenEntry {
      * @param processorName The processor name.
      * @param segment       The token segment.
      */
-    public JdbcTokenEntry(byte[] token, String tokenType, String timestamp, String owner, String processorName,
+    public JdbcTokenEntry(byte[] token, String tokenType, String timestamp, String owner, @Nonnull String processorName,
                           int segment) {
         this.token = token;
         this.tokenType = tokenType;
@@ -96,7 +98,7 @@ public class JdbcTokenEntry {
      * @param converter The converter to deserialize the token with
      * @return the deserialized token stored in this entry
      */
-    public TrackingToken getToken(Converter converter) {
+    public TrackingToken getToken(@Nonnull Converter converter) {
         if (token == null || tokenType == null) {
             return null;
         }
@@ -227,7 +229,7 @@ public class JdbcTokenEntry {
      * @param token     The token representing the state to update to
      * @param converter The converter to update token to
      */
-    public final void updateToken(TrackingToken token, Converter converter) {
+    public final void updateToken(@Nullable TrackingToken token, @Nonnull Converter converter) {
         this.timestamp = formatInstant(clock.instant());
         if (token != null) {
             this.token = converter.convert(token, byte[].class);

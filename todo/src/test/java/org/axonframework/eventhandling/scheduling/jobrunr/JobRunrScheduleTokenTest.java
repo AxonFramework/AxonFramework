@@ -50,14 +50,14 @@ class JobRunrScheduleTokenTest {
         assertNotEquals(one.hashCode(), other.hashCode());
     }
 
-    @MethodSource("serializers")
+    @MethodSource("converters")
     @ParameterizedTest
-    void tokenShouldBeSerializable(TestConverter serializer) {
+    void tokenShouldBeSerializable(TestConverter converter) {
         ScheduleToken tokenToTest = new JobRunrScheduleToken(UUID.randomUUID());
-        assertEquals(tokenToTest, serializer.serializeDeserialize(tokenToTest));
+        assertEquals(tokenToTest, converter.serializeDeserialize(tokenToTest));
     }
 
-    public static Collection<TestConverter> serializers() {
+    public static Collection<TestConverter> converters() {
         return TestConverter.all();
     }
 }

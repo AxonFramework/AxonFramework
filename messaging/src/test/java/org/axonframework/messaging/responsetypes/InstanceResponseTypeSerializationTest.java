@@ -35,11 +35,11 @@ class InstanceResponseTypeSerializationTest extends AbstractResponseTypeTest<Abs
         super(new InstanceResponseType<>(QueryResponse.class));
     }
 
-    static Collection<TestConverter> serializers() {
+    static Collection<TestConverter> converters() {
        return TestConverter.all();
     }
 
-    @MethodSource("serializers")
+    @MethodSource("converters")
     @ParameterizedTest
     void responseTypeShouldBeSerializable(TestConverter serializer) {
         assertEquals(testSubject.getExpectedResponseType(), serializer.serializeDeserialize(testSubject).getExpectedResponseType());

@@ -32,7 +32,6 @@ import org.axonframework.eventhandling.processors.streaming.token.store.UnableTo
 import org.axonframework.eventhandling.processors.streaming.token.store.UnableToRetrieveIdentifierException;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.serialization.Converter;
-import org.axonframework.serialization.json.JacksonConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,13 +75,14 @@ public class JpaTokenStore implements TokenStore {
     private final LockModeType loadingLockMode;
 
     /**
-     * Instantiate a {@link JpaTokenStore} based on the fields contained in the {@link JpaTokenStoreConfiguration}.
+     * Instantiate a {JpaTokenStore} based on the fields contained in the {@link JpaTokenStoreConfiguration}.
      * <p>
-     * Will assert that the {@link EntityManagerProvider} and {@link JpaTokenStoreConfiguration} are not {@code null},
-     * otherwise an {@link AxonConfigurationException} will be thrown.
+     * Will assert that the {@link EntityManagerProvider}, {@link Converter} and {@link JpaTokenStoreConfiguration} are
+     * not {@code null}, otherwise an {@link AxonConfigurationException} will be thrown.
      *
      * @param entityManagerProvider The {@link EntityManagerProvider} used to obtain an {@link EntityManager} for.
-     * @param configuration         configuration for JPA token store.
+     * @param converter             The {@link Converter} used to serialize and deserialize token for storage.
+     * @param configuration          The configuration for JPA token store.
      */
     public JpaTokenStore(@Nonnull EntityManagerProvider entityManagerProvider,
                          @Nonnull Converter converter,

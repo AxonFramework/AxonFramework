@@ -61,8 +61,8 @@ Adjust packages in `import` statements and FQCNs according to the new locations 
 
 === Step 2
 
-If you have customized the `TokenEntry` or `JdbcTokenEntry`, rebase your changes on the current `TokenEntry`.
-This is required since the `JdbcTokenEntry` has been deprecated in favor of the `TokenEntry`.
+If you have customized the `TokenEntry` or `AbstractTokenEntry`, rebase your changes on the current `TokenEntry`.
+This is required since the `AbstractTokenEntry` has been deprecated in favor of the `TokenEntry`.
 
 === Step 3
 
@@ -159,7 +159,7 @@ However, you can combine recipes into a single command to, for example, upgrade 
 [source,shell]
 ----
 mvn -U org.openrewrite.maven:rewrite-maven-plugin:4.40.0:run \
- -Drewrite.recipeArtifactCoordinates=org.openrewrite.recipe:rewrite-spring:4.33.0,org.axonframework:axon-migration:LATEST \
+ -Drewrite.recipeArtifactCoordinates=org.openrewrite.recipe:rewrite-spring:4.33.0,org.axonframework:axon-migration:LATEST \  
  -DactiveRecipes=org.openrewrite.java.spring.boot3.UpgradeSpringBoot_3_0,org.axonframework.migration.UpgradeAxonFramework_4_7_Jakarta
 ----
 ====

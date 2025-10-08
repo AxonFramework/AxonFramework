@@ -16,6 +16,7 @@
 
 package org.axonframework.springboot.autoconfig;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManagerFactory;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
@@ -70,9 +71,9 @@ public class JpaAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public TokenStore tokenStore(EntityManagerProvider entityManagerProvider) {
+    public TokenStore tokenStore(EntityManagerProvider entityManagerProvider, ObjectMapper defaultAxonObjectMapper) {
         var config = JpaTokenStoreConfiguration.DEFAULT.claimTimeout(tokenStoreProperties.getClaimTimeout());
-        var converter = new JacksonConverter(); // FIXME? Object mapper configuration?
+        var converter = new JacksonConverter(defaultAxonObjectMapper);
         return new JpaTokenStore(entityManagerProvider, converter, config);
     }
 

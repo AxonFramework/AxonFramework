@@ -31,16 +31,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 class RemoteExceptionDescriptionSerializationTest {
 
-    static Collection<TestConverter> serializers() {
+    static Collection<TestConverter> converters() {
         return TestConverter.all();
     }
 
-    @MethodSource("serializers")
+    @MethodSource("converters")
     @ParameterizedTest
-    void tokenShouldBeSerializableWithJackson(TestConverter serializer) {
+    void tokenShouldBeSerializableWithJackson(TestConverter converter) {
         Throwable cause = new IllegalArgumentException("This is a test");
         Throwable exception = new IllegalStateException("Test with cause", cause);
         RemoteExceptionDescription descriptionToTest = RemoteExceptionDescription.describing(exception);
-        assertEquals(descriptionToTest, serializer.serializeDeserialize(descriptionToTest));
+        assertEquals(descriptionToTest, converter.serializeDeserialize(descriptionToTest));
     }
 }

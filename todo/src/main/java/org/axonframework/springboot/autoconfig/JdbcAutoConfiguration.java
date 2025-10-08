@@ -16,6 +16,7 @@
 
 package org.axonframework.springboot.autoconfig;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jdbc.UnitOfWorkAwareConnectionProviderWrapper;
@@ -116,11 +117,11 @@ public class JdbcAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(TokenStore.class)
     public TokenStore tokenStore(ConnectionProvider connectionProvider,
-                                 TokenSchema tokenSchema) {
+                                 TokenSchema tokenSchema, ObjectMapper defaultAxonObjectMapper) {
         var config = JdbcTokenStoreConfiguration.DEFAULT
                 .schema(tokenSchema)
                 .claimTimeout(tokenStoreProperties.getClaimTimeout());
-        var converter = new JacksonConverter(); // FIXME How to configure object mapper here?
+        var converter = new JacksonConverter(defaultAxonObjectMapper);
         return new JdbcTokenStore(connectionProvider::getConnection, converter, config);
     }
 

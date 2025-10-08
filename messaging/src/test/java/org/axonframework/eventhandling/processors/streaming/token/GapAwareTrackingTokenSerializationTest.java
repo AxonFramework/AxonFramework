@@ -33,21 +33,21 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 class GapAwareTrackingTokenSerializationTest {
 
-    public static Collection<TestConverter> serializers() {
+    public static Collection<TestConverter> converters() {
         return TestConverter.all();
     }
 
-    @MethodSource("serializers")
+    @MethodSource("converters")
     @ParameterizedTest
-    void tokenShouldBeSerializable(TestConverter serializer) {
+    void tokenShouldBeSerializable(TestConverter converter) {
         GapAwareTrackingToken subject = GapAwareTrackingToken.newInstance(Long.MAX_VALUE, asList(0L, 1L));
-        assertEquals(subject, serializer.serializeDeserialize(subject));
+        assertEquals(subject, converter.serializeDeserialize(subject));
     }
 
-    @MethodSource("serializers")
+    @MethodSource("converters")
     @ParameterizedTest
-    void tokenWithoutGapsShouldBeSerializable(TestConverter serializer) {
+    void tokenWithoutGapsShouldBeSerializable(TestConverter converter) {
         GapAwareTrackingToken subject = GapAwareTrackingToken.newInstance(0, emptyList());
-        assertEquals(subject, serializer.serializeDeserialize(subject));
+        assertEquals(subject, converter.serializeDeserialize(subject));
     }
 }
