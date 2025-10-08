@@ -159,19 +159,15 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
         return "EventHandlingComponent[" + processorName + "][" + index + "]";
     }
 
-    // TODO #3098 - Move it somewhere else! Like a decorator if certain enhancer applied.
     @Nonnull
-    private static TracingEventHandlingComponent withDefaultDecoration(
+    private static EventHandlingComponent withDefaultDecoration(
             EventHandlingComponent c,
             EventProcessorConfiguration configuration
     ) {
-        return new TracingEventHandlingComponent(
-                (event) -> configuration.spanFactory().createProcessEventSpan(false, event),
-                // TODO #3595 - Move this monitoring decorator to be placed around **all** other decorators for an EHC.
-                new MonitoringEventHandlingComponent(
-                        configuration.messageMonitor(),
-                        new SequenceCachingEventHandlingComponent(c)
-                )
+        // TODO #3595 - Move this monitoring decorator to be placed around **all** other decorators for an EHC.
+        return new MonitoringEventHandlingComponent(
+                configuration.messageMonitor(),
+                new SequenceCachingEventHandlingComponent(c)
         );
     }
 

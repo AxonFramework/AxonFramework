@@ -55,12 +55,14 @@ public class ConvertingCommandGateway implements CommandGateway {
     }
 
     @Override
+    @Nonnull
     public CommandResult send(@Nonnull Object command,
                               @Nullable ProcessingContext context) {
         return new ConvertingCommandResult(converter, delegate.send(command, context));
     }
 
     @Override
+    @Nonnull
     public CommandResult send(@Nonnull Object command,
                               @Nonnull Metadata metadata,
                               @Nullable ProcessingContext context) {

@@ -103,7 +103,9 @@ public interface MessageHandlingMember<T> {
      *                   from the invoked method.
      * @deprecated In favor of {@link #handle(Message, ProcessingContext, Object)}.
      */
-    @Deprecated
+    // TODO Remove entirely once #3065, #3195, #3517, and #3728 have been resolved.
+    @Internal
+    @Deprecated(forRemoval = true, since = "5.2.0")
     Object handleSync(@Nonnull Message message,
                       @Nonnull ProcessingContext context,
                       @Nullable T target) throws Exception;

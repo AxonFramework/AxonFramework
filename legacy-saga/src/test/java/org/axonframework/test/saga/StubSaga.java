@@ -31,9 +31,7 @@ import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.SagaLifecycle;
 import org.axonframework.modelling.saga.StartSaga;
 
-import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -124,7 +122,7 @@ public class StubSaga {
     @SagaEventHandler(associationProperty = "identifier")
     public void handleTriggerEvent(TimerTriggeredEvent event, ProcessingContext context) {
         handledEvents.add(event);
-        String result = commandGateway.send("Say hi!", context, String.class).join();
+        String result = commandGateway.send("Say hi!", String.class, context).join();
         if (result != null) {
             commandGateway.send(result, context);
         }

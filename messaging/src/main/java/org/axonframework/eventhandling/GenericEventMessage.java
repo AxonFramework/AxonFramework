@@ -19,6 +19,7 @@ package org.axonframework.eventhandling;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.ObjectUtils;
+import org.axonframework.common.annotations.Internal;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDecorator;
@@ -51,6 +52,7 @@ public class GenericEventMessage extends MessageDecorator implements EventMessag
      *
      * @deprecated #3083 - Configure application wide Clock
      */
+    @Internal
     @Deprecated // TODO #3083 - Configure application wide Clock
     public static Clock clock = Clock.systemUTC();
 
