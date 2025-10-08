@@ -17,7 +17,6 @@
 package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandPriorityCalculator;
@@ -25,12 +24,9 @@ import org.axonframework.commandhandling.InterceptingCommandBus;
 import org.axonframework.commandhandling.RoutingStrategy;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotations.AnnotationRoutingStrategy;
-import org.axonframework.commandhandling.annotations.CommandDispatcherParameterResolverFactory;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.ConvertingCommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
-import org.axonframework.common.FutureUtils;
-import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
@@ -59,7 +55,6 @@ import org.axonframework.messaging.interceptors.DefaultDispatchInterceptorRegist
 import org.axonframework.messaging.interceptors.DefaultHandlerInterceptorRegistry;
 import org.axonframework.messaging.interceptors.DispatchInterceptorRegistry;
 import org.axonframework.messaging.interceptors.HandlerInterceptorRegistry;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingLifecycleHandlerRegistrar;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
@@ -75,10 +70,8 @@ import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.json.JacksonConverter;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * A {@link ConfigurationEnhancer} registering the default components of the {@link MessagingConfigurer}.
@@ -146,10 +139,12 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
     public void enhance(@Nonnull ComponentRegistry registry) {
         registerComponents(registry);
         registerDecorators(registry);
+        registry.registerEnhancer(new EventSinkDefaults());
     }
 
     private static void registerComponents(@Nonnull ComponentRegistry registry) {
-        registry.registerIfNotPresent(MessageTypeResolver.class,
+        registry
+                .registerIfNotPresent(MessageTypeResolver.class,
                                       MessagingConfigurationDefaults::defaultMessageTypeResolver)
                 .registerIfNotPresent(Converter.class, c -> new JacksonConverter())
                 .registerIfNotPresent(MessageConverter.class, MessagingConfigurationDefaults::defaultMessageConverter)
@@ -167,7 +162,6 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                 .registerIfNotPresent(RoutingStrategy.class, MessagingConfigurationDefaults::defaultRoutingStrategy)
                 .registerIfNotPresent(CommandGateway.class, MessagingConfigurationDefaults::defaultCommandGateway)
                 .registerIfNotPresent(EventGateway.class, MessagingConfigurationDefaults::defaultEventGateway)
-                .registerIfNotPresent(EventBus.class, MessagingConfigurationDefaults::defaultEventBus)
                 .registerIfNotPresent(QueryBus.class, MessagingConfigurationDefaults::defaultQueryBus)
                 .registerIfNotPresent(QueryPriorityCalculator.class,
                                       c -> QueryPriorityCalculator.defaultCalculator())
@@ -247,10 +241,6 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
         );
     }
 
-    private static EventBus defaultEventBus(Configuration config) {
-        return new SimpleEventBus();
-    }
-
     private static EventGateway defaultEventGateway(Configuration config) {
         return new DefaultEventGateway(
                 config.getComponent(EventSink.class),
@@ -292,25 +282,36 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                             : new InterceptingCommandBus(delegate, handlerInterceptors, dispatchInterceptors);
                 }
         );
-        registry.registerDecorator(
-                EventSink.class,
-                InterceptingEventSink.DECORATION_ORDER,
-                (config, name, delegate) -> {
-                    if (!isDirectImplementationOf(delegate, EventSink.class)) {
-                        return delegate;
-                    }
-                    List<MessageDispatchInterceptor<? super EventMessage>> dispatchInterceptors =
-                            config.getComponent(DispatchInterceptorRegistry.class).eventInterceptors(config);
-                    return dispatchInterceptors.isEmpty()
-                            ? delegate
-                            : new InterceptingEventSink(delegate, dispatchInterceptors);
-                }
-        );
     }
 
-    private static boolean isDirectImplementationOf(@Nonnull Object component,
-                                                    @Nonnull Class<EventSink> clazz) {
-        return Arrays.stream(component.getClass().getInterfaces())
-                     .anyMatch(iface -> iface == clazz);
+
+    public static class EventSinkDefaults implements ConfigurationEnhancer {
+
+        @Override
+        public void enhance(@Nonnull ComponentRegistry registry) {
+            registry
+                    .registerIfNotPresent(EventSink.class, EventSinkDefaults::defaultEventBus)
+                    .registerDecorator(
+                            EventSink.class,
+                            InterceptingEventSink.DECORATION_ORDER,
+                            (config, name, delegate) -> {
+                                List<MessageDispatchInterceptor<? super EventMessage>> dispatchInterceptors =
+                                        config.getComponent(DispatchInterceptorRegistry.class)
+                                              .eventInterceptors(config);
+                                return dispatchInterceptors.isEmpty()
+                                        ? delegate
+                                        : new InterceptingEventSink(delegate, dispatchInterceptors);
+                            }
+                    );
+        }
+
+        private static EventBus defaultEventBus(Configuration config) {
+            return new SimpleEventBus();
+        }
+
+        @Override
+        public int order() {
+            return ENHANCER_ORDER;
+        }
     }
 }
