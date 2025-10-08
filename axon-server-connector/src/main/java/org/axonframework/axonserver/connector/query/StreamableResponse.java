@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.axonframework.axonserver.connector.query;
 
 import io.axoniq.axonserver.connector.FlowControl;
+import org.axonframework.common.annotations.Internal;
 
 /**
  * A specific type of {@link FlowControl} representing a response that can be streamed.
@@ -25,6 +26,7 @@ import io.axoniq.axonserver.connector.FlowControl;
  * @author Stefan Dragisic
  * @since 4.6.0
  */
+@Internal
 interface StreamableResponse extends FlowControl {
 
 }

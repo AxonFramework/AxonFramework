@@ -18,6 +18,8 @@ package org.axonframework.axonserver.connector.query;
 
 import io.axoniq.axonserver.connector.ReplyChannel;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
+import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotations.Internal;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.Metadata;
@@ -39,6 +41,7 @@ import static java.util.Collections.emptyIterator;
  * @author Stefan Dragisic
  * @since 4.6.0
  */
+@Internal
 class StreamableMultiInstanceResponse<T> implements StreamableResponse {
 
     private final QueryResponseMessage resultMessage;
@@ -62,17 +65,17 @@ class StreamableMultiInstanceResponse<T> implements StreamableResponse {
      * @param serializer      The serializer used to serialize items/
      * @param requestId       The identifier of the request these responses refer to/
      */
-    public StreamableMultiInstanceResponse(QueryResponseMessage resultMessage,
-                                           Class<T> responseType,
-                                           ReplyChannel<QueryResponse> responseHandler,
-                                           QuerySerializer serializer,
-                                           String requestId) {
+    public StreamableMultiInstanceResponse(@Nonnull QueryResponseMessage resultMessage,
+                                           @Nonnull Class<T> responseType,
+                                           @Nonnull ReplyChannel<QueryResponse> responseHandler,
+                                           @Nonnull QuerySerializer serializer,
+                                           @Nonnull String requestId) {
         this.resultMessage = resultMessage;
         this.responseType = responseType;
         this.responseHandler = responseHandler;
         this.serializer = serializer;
         this.requestId = requestId;
-        List<T> payload = (List<T>)resultMessage.payload();
+        List<T> payload = (List<T>) resultMessage.payload();
         this.result = payload != null ? payload.iterator() : emptyIterator();
     }
 
@@ -119,16 +122,15 @@ class StreamableMultiInstanceResponse<T> implements StreamableResponse {
         GenericMessage delegate;
         if (firstResponseToBeSent.compareAndSet(true, false)) {
             delegate = new GenericMessage(resultMessage.identifier(),
-                                            new MessageType(responseType),
-                                            result.next(),
-                                            responseType,
-                                            resultMessage.metadata()
-            );
+                                          new MessageType(responseType),
+                                          result.next(),
+                                          responseType,
+                                          resultMessage.metadata());
         } else {
             delegate = new GenericMessage(new MessageType(responseType),
-                                            result.next(),
-                                            responseType,
-                                            Metadata.emptyInstance());
+                                          result.next(),
+                                          responseType,
+                                          Metadata.emptyInstance());
         }
         GenericQueryResponseMessage message = new GenericQueryResponseMessage(delegate);
         responseHandler.send(serializer.serializeResponse(message, requestId));
