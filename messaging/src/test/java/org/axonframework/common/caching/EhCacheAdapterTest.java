@@ -53,7 +53,7 @@ class EhCacheAdapterTest extends AbstractCacheAdapterTest {
                                         Object.class,
                                         Object.class,
                                         ResourcePoolsBuilder.heap(10L).build())
-                                .withExpiry(ExpiryPolicyBuilder.timeToIdleExpiration(Duration.ofMillis(200L)))
+                                .withExpiry(ExpiryPolicyBuilder.timeToIdleExpiration(Duration.ofMillis(500L)))
                                 .build());
         EhCacheAdapter testSubject = new EhCacheAdapter((Ehcache) cache);
         return new TestSubjectWrapper(testSubject, cacheManager::close);

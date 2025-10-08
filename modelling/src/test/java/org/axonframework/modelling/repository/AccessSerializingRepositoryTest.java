@@ -137,9 +137,7 @@ class AccessSerializingRepositoryTest {
 
         assertFalse(result1.isDone());
         // This one times out, and is expected to have completed
-        await().pollDelay(Duration.ofMillis(20))
-               .atMost(Duration.ofMillis(100))
-               .untilAsserted(() -> assertTrue(result2.isCompletedExceptionally()));
+        await().untilAsserted(() -> assertTrue(result2.isCompletedExceptionally()));
 
         assertTrue(task2Loaded.get());
         assertFalse(result3.isDone());

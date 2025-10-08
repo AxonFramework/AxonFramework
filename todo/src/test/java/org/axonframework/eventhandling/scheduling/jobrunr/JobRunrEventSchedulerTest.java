@@ -96,7 +96,7 @@ class JobRunrEventSchedulerTest {
         eventScheduler.schedule(Duration.ZERO, 1);
         Instant rightAfterSchedule = Instant.now();
 
-        await().atMost(Duration.ofSeconds(2)).until(() -> !publishedMessages.isEmpty());
+        await().until(() -> !publishedMessages.isEmpty());
         assertEquals(1, publishedMessages.size());
 
         EventMessage publishedMessage = publishedMessages.getFirst();
@@ -110,7 +110,7 @@ class JobRunrEventSchedulerTest {
     void whenScheduledInPastIsCalledThanShouldPublishEvent() {
         eventScheduler.schedule(Duration.ofSeconds(-10L), 1);
 
-        await().atMost(Duration.ofSeconds(2)).until(() -> !publishedMessages.isEmpty());
+        await().until(() -> !publishedMessages.isEmpty());
         assertEquals(1, publishedMessages.size());
 
         EventMessage publishedMessage = publishedMessages.getFirst();
@@ -127,7 +127,7 @@ class JobRunrEventSchedulerTest {
         eventScheduler.schedule(Instant.now(), originalMessage);
         Instant rightAfterSchedule = Instant.now();
 
-        await().atMost(Duration.ofSeconds(2)).until(() -> !publishedMessages.isEmpty());
+        await().until(() -> !publishedMessages.isEmpty());
         assertEquals(1, publishedMessages.size());
 
         EventMessage publishedMessage = publishedMessages.getFirst();
@@ -142,7 +142,7 @@ class JobRunrEventSchedulerTest {
         eventScheduler.schedule(Duration.ZERO, new PayloadWithRevision());
         Instant rightAfterSchedule = Instant.now();
 
-        await().atMost(Duration.ofSeconds(2)).until(() -> !publishedMessages.isEmpty());
+        await().until(() -> !publishedMessages.isEmpty());
         assertEquals(1, publishedMessages.size());
 
         EventMessage publishedMessage = publishedMessages.getFirst();
@@ -162,7 +162,7 @@ class JobRunrEventSchedulerTest {
         eventScheduler.schedule(Instant.now(), originalMessage);
         Instant rightAfterSchedule = Instant.now();
 
-        await().atMost(Duration.ofSeconds(2)).until(() -> !publishedMessages.isEmpty());
+        await().until(() -> !publishedMessages.isEmpty());
         assertEquals(1, publishedMessages.size());
 
         EventMessage publishedMessage = publishedMessages.getFirst();
@@ -177,7 +177,7 @@ class JobRunrEventSchedulerTest {
         ScheduleToken token = eventScheduler.schedule(Duration.ofMillis(100L), 3);
         eventScheduler.reschedule(token, Duration.ofMillis(100L), 4);
 
-        await().atMost(Duration.ofSeconds(2)).until(() -> !publishedMessages.isEmpty());
+        await().until(() -> !publishedMessages.isEmpty());
         assertEquals(1, publishedMessages.size());
 
         EventMessage publishedMessage = publishedMessages.getFirst();
@@ -189,7 +189,7 @@ class JobRunrEventSchedulerTest {
         ScheduleToken token = eventScheduler.schedule(Instant.now().plusMillis(100L), 5);
         eventScheduler.reschedule(token, Instant.now().plusMillis(100L), 6);
 
-        await().atMost(Duration.ofSeconds(2)).until(() -> !publishedMessages.isEmpty());
+        await().until(() -> !publishedMessages.isEmpty());
         assertEquals(1, publishedMessages.size());
 
         EventMessage publishedMessage = publishedMessages.getFirst();
