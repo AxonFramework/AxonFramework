@@ -173,7 +173,7 @@ class AnnotatedQueryHandlingComponentTest {
         // given...
         QueryMessage testQuery = new GenericQueryMessage(new MessageType("nullResponse"),
                                                          "hello",
-                                                         instanceOf(String.class));
+                                                         new MessageType(String.class));
         ProcessingContext testContext = StubProcessingContext.forMessage(testQuery);
         // when...
         MessageStream<QueryResponseMessage> result = testSubject.handle(testQuery, testContext);
