@@ -22,10 +22,13 @@ import org.axonframework.common.Registration;
 import org.axonframework.common.annotations.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
+import org.axonframework.messaging.Context;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.ProcessingLifecycle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -48,6 +51,7 @@ public class EventSubscribers implements DescribableComponent {
 
     private static final Logger logger = LoggerFactory.getLogger(EventSubscribers.class);
 
+    private final Context.ResourceKey<List<EventMessage>> eventsQueue = Context.ResourceKey.withLabel("eventsQueue");
     private final Set<BiConsumer<List<? extends EventMessage>, ProcessingContext>> subscribers = new CopyOnWriteArraySet<>();
 
     /**
@@ -87,11 +91,84 @@ public class EventSubscribers implements DescribableComponent {
      * @param events  The list of events to notify subscribers about.
      * @param context The {@link ProcessingContext} associated with the events, may be {@code null}.
      */
-    public void notifySubscribers(
+    public void notifySubscribersNow(
             @Nonnull List<? extends EventMessage> events,
             @Nullable ProcessingContext context
     ) {
         subscribers.forEach(subscriber -> subscriber.accept(events, context));
+    }
+
+    public void notifySubscribersOnPhases(
+            @Nonnull List<? extends EventMessage> events,
+            @Nonnull ProcessingLifecycle.Phase phase,
+            @Nonnull ProcessingContext context
+    ) {
+        List<EventMessage> eventQueue = context.computeResourceIfAbsent(eventsQueue, () -> {
+            ArrayList<EventMessage> queue = new ArrayList<>();
+
+            context.runOn(phase, ctx -> {
+                List<EventMessage> queuedEvents = ctx.getResource(eventsQueue);
+                if (!queuedEvents.isEmpty()) {
+                    invokeSubscribers(queuedEvents, ctx, this::notifySubscribersNow);
+                }
+            });
+
+            // Clean up events resource on completion or error to free memory
+            context.doFinally(ctx -> ctx.removeResource(eventsQueue));
+
+            return queue;
+        });
+
+        eventQueue.addAll(events);
+    }
+
+    public void notifySubscribersOnPhase(
+            @Nonnull List<? extends EventMessage> events,
+            @Nonnull ProcessingLifecycle.Phase phase,
+            @Nonnull ProcessingContext context
+    ) {
+        List<EventMessage> eventQueue = context.computeResourceIfAbsent(eventsQueue, () -> {
+            ArrayList<EventMessage> queue = new ArrayList<>();
+
+            context.runOn(phase, ctx -> {
+                List<EventMessage> queuedEvents = ctx.getResource(eventsQueue);
+                if (!queuedEvents.isEmpty()) {
+                    invokeSubscribers(queuedEvents, ctx, this::notifySubscribersNow);
+                }
+            });
+
+            // Clean up events resource on completion or error to free memory
+            context.doFinally(ctx -> ctx.removeResource(eventsQueue));
+
+            return queue;
+        });
+
+        eventQueue.addAll(events);
+    }
+
+    /**
+     * Process events during a specific phase, handling events published during the phase.
+     *
+     * @param queuedEvents The events queued for processing
+     * @param context      The processing context
+     */
+    private void invokeSubscribers(
+            List<EventMessage> queuedEvents,
+            ProcessingContext context,
+            BiConsumer<List<? extends EventMessage>, ProcessingContext> eventsBatchConsumer
+    ) {
+        int processedItems = queuedEvents.size();
+        // Create a copy to avoid concurrent modification during event publication
+        eventsBatchConsumer.accept(new ArrayList<>(queuedEvents), context);
+
+        // Make sure events published during this phase are also processed
+        while (processedItems < queuedEvents.size()) {
+            List<EventMessage> newMessages = new ArrayList<>(
+                    queuedEvents.subList(processedItems, queuedEvents.size())
+            );
+            processedItems = queuedEvents.size();
+            eventsBatchConsumer.accept(newMessages, context);
+        }
     }
 
     @Override
