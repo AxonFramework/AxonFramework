@@ -92,14 +92,23 @@ public class DistributedQueryBus implements QueryBus {
     @Override
     public QueryBus subscribe(@Nonnull QueryHandlerName handlerName,
                               @Nonnull QueryHandler queryHandler) {
-        return null;
+        localSegment.subscribe(handlerName, queryHandler);
+        connector.subscribe(handlerName);
+        return this;
     }
 
     @Nonnull
     @Override
     public MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage query,
                                                      @Nullable ProcessingContext context) {
-        return null;
+        return connector.query(query, context);
+    }
+
+    @Nonnull
+    @Override
+    public Publisher<QueryResponseMessage> streamingQuery(@Nonnull QueryMessage query,
+                                                          @Nullable ProcessingContext context) {
+        return connector.streamingQuery(query, context);
     }
 
     @Nonnull
