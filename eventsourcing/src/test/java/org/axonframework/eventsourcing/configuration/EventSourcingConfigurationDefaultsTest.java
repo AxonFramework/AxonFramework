@@ -86,6 +86,17 @@ class EventSourcingConfigurationDefaultsTest {
     }
 
     @Test
+    void enhanceSetsEventStoreAsEventSink() {
+        ApplicationConfigurer configurer = MessagingConfigurer.create();
+        configurer.componentRegistry(cr -> cr.registerEnhancer(testSubject));
+        Configuration resultConfig = configurer.build();
+
+        EventSink eventSink = resultConfig.getComponent(EventSink.class);
+        assertInstanceOf(InterceptingEventStore.class, eventSink);
+    }
+
+
+    @Test
     void enhanceOnlySetsDefaultsThatAreNotPresentYet() {
         TestTagResolver testTagResolver = new TestTagResolver();
 
