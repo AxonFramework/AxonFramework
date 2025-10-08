@@ -38,6 +38,7 @@ import java.util.function.Supplier;
  * @author Mitchell Herrijgers
  * @since 4.6.0
  */
+// TODO #3594 - Be sure to return this instance once the UnitOfWork has been replaced
 public class LoggingSpanFactory implements SpanFactory {
 
     /**
