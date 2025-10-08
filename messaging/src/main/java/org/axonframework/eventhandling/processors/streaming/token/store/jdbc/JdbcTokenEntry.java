@@ -57,8 +57,8 @@ public class JdbcTokenEntry {
      * Initializes a new token entry for given {@code token}, {@code process} and {@code segment}. The given
      * {@code converter} can be used to serialize the token before it is stored.
      *
-     * @param token     The tracking token to store
-     * @param converter The converter to use when storing a serialized token
+     * @param token     The tracking token to store.
+     * @param converter The converter to use when storing a serialized token.
      */
     public JdbcTokenEntry(TrackingToken token, Converter converter) {
         updateToken(token, converter);
