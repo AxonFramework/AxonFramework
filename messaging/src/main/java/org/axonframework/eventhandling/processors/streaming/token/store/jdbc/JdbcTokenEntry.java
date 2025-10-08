@@ -226,8 +226,8 @@ public class JdbcTokenEntry {
     /**
      * Update the token data to the given {@code token}, using given {@code converter} to serialize it to bytes[].
      *
-     * @param token     The token representing the state to update to
-     * @param converter The converter to update token to
+     * @param token     The token representing the state to update to.
+     * @param converter The converter to update token to.
      */
     public final void updateToken(@Nullable TrackingToken token, @Nonnull Converter converter) {
         this.timestamp = formatInstant(clock.instant());
