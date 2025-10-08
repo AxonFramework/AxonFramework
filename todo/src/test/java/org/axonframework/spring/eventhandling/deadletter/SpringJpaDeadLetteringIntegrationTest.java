@@ -36,7 +36,8 @@ import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.TestSerializer;
+import org.axonframework.serialization.TestConverter;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
 //import org.axonframework.spring.utils.MysqlTestContainerExtension;
 import org.junit.jupiter.api.*;
@@ -83,7 +84,7 @@ class SpringJpaDeadLetteringIntegrationTest extends DeadLetteringEventIntegratio
     private PlatformTransactionManager platformTransactionManager;
     @Autowired
     private EntityManagerProvider entityManagerProvider;
-    private final Serializer serializer = TestSerializer.JACKSON.getSerializer();
+    private final Serializer serializer = JacksonSerializer.defaultSerializer();
     private final DeadLetterJpaConverter<EventMessage> converter = new EventMessageDeadLetterJpaConverter();
     private JpaSequencedDeadLetterQueue<EventMessage> jpaDeadLetterQueue;
 

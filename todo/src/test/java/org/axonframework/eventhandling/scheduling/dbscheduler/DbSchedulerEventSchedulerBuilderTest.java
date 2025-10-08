@@ -20,7 +20,8 @@ import com.github.kagkarlsson.scheduler.Scheduler;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.serialization.TestSerializer;
+import org.axonframework.serialization.TestConverter;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -42,7 +43,7 @@ class DbSchedulerEventSchedulerBuilderTest {
     void whenAllPropertiesAreSetCreatesManager() {
         DbSchedulerEventScheduler eventScheduler = builder.transactionManager(transactionManager)
                                                           .scheduler(scheduler)
-                                                          .serializer(TestSerializer.JACKSON.getSerializer())
+                                                          .serializer(JacksonSerializer.defaultSerializer())
                                                           .eventBus(eventBus)
                                                           .build();
 

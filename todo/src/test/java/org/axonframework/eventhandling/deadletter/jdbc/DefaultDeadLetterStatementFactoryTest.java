@@ -17,7 +17,8 @@
 package org.axonframework.eventhandling.deadletter.jdbc;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.serialization.TestSerializer;
+import org.axonframework.serialization.TestConverter;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -54,7 +55,7 @@ class DefaultDeadLetterStatementFactoryTest {
     void buildWithoutTheGenericSerializerThrowsAxonConfigurationException() {
         DefaultDeadLetterStatementFactory.Builder<?> testBuilder =
                 DefaultDeadLetterStatementFactory.builder()
-                                                 .eventSerializer(TestSerializer.JACKSON.getSerializer());
+                                                 .eventSerializer(JacksonSerializer.defaultSerializer());
 
         assertThrows(AxonConfigurationException.class, testBuilder::build);
     }
@@ -63,7 +64,7 @@ class DefaultDeadLetterStatementFactoryTest {
     void buildWithoutTheEventSerializerThrowsAxonConfigurationException() {
         DefaultDeadLetterStatementFactory.Builder<?> testBuilder =
                 DefaultDeadLetterStatementFactory.builder()
-                                                 .genericSerializer(TestSerializer.JACKSON.getSerializer());
+                                                 .genericSerializer(JacksonSerializer.defaultSerializer());
 
         assertThrows(AxonConfigurationException.class, testBuilder::build);
     }

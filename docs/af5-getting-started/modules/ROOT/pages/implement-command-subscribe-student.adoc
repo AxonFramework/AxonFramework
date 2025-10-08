@@ -19,7 +19,7 @@ In previous section we've defined the `CourseCreated` events, so there are two l
 Let's define them as Java records, as before.
 
 [source,java]
-.src/main/java/io/axoniq/demo/university/faculty/events/StudentSubscribedToCourse.java
+.src/main/java/io/axoniq/demo/university/faculty/events/StudentEnrolledInFaculty.java
 ----
 public record StudentEnrolledInFaculty(
         @EventTag // <1>
@@ -222,7 +222,7 @@ As you've seen before, for the behavior which is based on some state (so we have
 Let's make it right away!
 
 [source,java]
-.src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudentToCourse.java
+.src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudentToCourseCommandHandler.java
 ----
 class SubscribeStudentToCourseCommandHandler {
 

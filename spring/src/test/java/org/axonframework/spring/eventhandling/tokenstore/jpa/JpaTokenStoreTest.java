@@ -25,6 +25,7 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.processors.streaming.token.store.jpa.JpaTokenStore;
 import org.axonframework.eventhandling.processors.streaming.token.store.jpa.JpaTokenStoreConfiguration;
 import org.axonframework.eventhandling.processors.streaming.token.store.jpa.TokenEntry;
+import org.axonframework.serialization.TestConverter;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.hibernate.dialect.HSQLDialect;
 import org.hibernate.jpa.HibernatePersistenceProvider;
@@ -142,13 +143,13 @@ class JpaTokenStoreTest {
         @Bean
         public JpaTokenStore jpaTokenStore(EntityManagerProvider entityManagerProvider) {
             var config = JpaTokenStoreConfiguration.DEFAULT.nodeId("local");
-            return new JpaTokenStore(entityManagerProvider, JacksonSerializer.defaultSerializer(), config);
+            return new JpaTokenStore(entityManagerProvider, TestConverter.JACKSON.getConverter(), config);
         }
 
         @Bean
         public JpaTokenStore stealingJpaTokenStore(EntityManagerProvider entityManagerProvider) {
             var config = JpaTokenStoreConfiguration.DEFAULT.nodeId("stealing").claimTimeout(Duration.ofSeconds(-1));
-            return new JpaTokenStore(entityManagerProvider, JacksonSerializer.defaultSerializer(), config);
+            return new JpaTokenStore(entityManagerProvider, TestConverter.JACKSON.getConverter(), config);
         }
 
         @Bean

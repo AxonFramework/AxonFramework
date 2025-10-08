@@ -17,7 +17,6 @@
 package org.axonframework.eventhandling.processors.streaming.token.store.jdbc;
 
 import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 
@@ -36,15 +35,13 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @param schema       A {@link TokenSchema} which describes a JDBC token entry for this {@link TokenStore}.
  * @param claimTimeout A timeout specifying the time after which this process will force a claim.
  * @param nodeId       The id as a {@link String} to identify ownership of the tokens.
- * @param contentType  The content type as a {@link Class} to which a {@link TrackingToken} should be serialized.
  * @author Jens Mayer
  * @since 5.0.0
  */
 public record JdbcTokenStoreConfiguration(
         @Nonnull TokenSchema schema,
         @Nonnull TemporalAmount claimTimeout,
-        @Nonnull String nodeId,
-        @Nullable Class<?> contentType
+        @Nonnull String nodeId
 ) {
 
     /**
@@ -57,7 +54,7 @@ public record JdbcTokenStoreConfiguration(
      * </ul>
      */
     public static final JdbcTokenStoreConfiguration DEFAULT = new JdbcTokenStoreConfiguration(
-            new TokenSchema(), Duration.ofSeconds(10), ManagementFactory.getRuntimeMXBean().getName(), byte[].class
+            new TokenSchema(), Duration.ofSeconds(10), ManagementFactory.getRuntimeMXBean().getName()
     );
 
     /**
@@ -78,7 +75,7 @@ public record JdbcTokenStoreConfiguration(
      */
     public JdbcTokenStoreConfiguration schema(@Nonnull TokenSchema schema) {
         assertNonNull(schema, "The TokenSchema may not be null.");
-        return new JdbcTokenStoreConfiguration(schema, claimTimeout, nodeId, contentType);
+        return new JdbcTokenStoreConfiguration(schema, claimTimeout, nodeId);
     }
 
     /**
@@ -93,7 +90,7 @@ public record JdbcTokenStoreConfiguration(
      */
     public JdbcTokenStoreConfiguration claimTimeout(@Nonnull TemporalAmount claimTimeout) {
         assertNonNull(claimTimeout, "The claim timeout may not be null");
-        return new JdbcTokenStoreConfiguration(schema, claimTimeout, nodeId, contentType);
+        return new JdbcTokenStoreConfiguration(schema, claimTimeout, nodeId);
     }
 
     /**
@@ -106,19 +103,6 @@ public record JdbcTokenStoreConfiguration(
      */
     public JdbcTokenStoreConfiguration nodeId(@Nonnull String nodeId) {
         assertNonEmpty(nodeId, "The nodeId may not be null or empty.");
-        return new JdbcTokenStoreConfiguration(schema, claimTimeout, nodeId, contentType);
-    }
-
-    /**
-     * Sets the {@code contentType} to which a {@link TrackingToken} should be serialized.
-     * <p>
-     * Defaults to a {@code byte[]} {@link Class} type.
-     *
-     * @param contentType the content type as a {@link Class} to which a {@link TrackingToken} should be serialized
-     * @return The configuration itself, for fluent API usage.
-     */
-    public JdbcTokenStoreConfiguration contentType(@Nonnull Class<?> contentType) {
-        assertNonNull(contentType, "The content type may not be null");
-        return new JdbcTokenStoreConfiguration(schema, claimTimeout, nodeId, contentType);
+        return new JdbcTokenStoreConfiguration(schema, claimTimeout, nodeId);
     }
 }

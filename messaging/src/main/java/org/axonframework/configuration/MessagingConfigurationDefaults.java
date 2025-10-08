@@ -167,7 +167,6 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                 .registerIfNotPresent(RoutingStrategy.class, MessagingConfigurationDefaults::defaultRoutingStrategy)
                 .registerIfNotPresent(CommandGateway.class, MessagingConfigurationDefaults::defaultCommandGateway)
                 .registerIfNotPresent(EventGateway.class, MessagingConfigurationDefaults::defaultEventGateway)
-                .registerIfNotPresent(EventSink.class, MessagingConfigurationDefaults::defaultEventSink)
                 .registerIfNotPresent(EventBus.class, MessagingConfigurationDefaults::defaultEventBus)
                 .registerIfNotPresent(QueryBus.class, MessagingConfigurationDefaults::defaultQueryBus)
                 .registerIfNotPresent(QueryPriorityCalculator.class,
@@ -250,24 +249,6 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
 
     private static EventBus defaultEventBus(Configuration config) {
         return new SimpleEventBus();
-    }
-
-    // TODO #3392 - Replace for actual EventSink implementation.
-    private static EventSink defaultEventSink(Configuration config) {
-        EventBus eventBus = config.getComponent(EventBus.class);
-        return new EventSink() {
-            @Override
-            public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                                   @Nonnull List<EventMessage> events) {
-                eventBus.publish(context, events);
-                return FutureUtils.emptyCompletedFuture();
-            }
-
-            @Override
-            public void describeTo(@Nonnull ComponentDescriptor descriptor) {
-                // Not important
-            }
-        };
     }
 
     private static EventGateway defaultEventGateway(Configuration config) {

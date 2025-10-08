@@ -22,6 +22,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.FutureUtils;
+import org.axonframework.common.annotations.Internal;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
@@ -31,9 +32,7 @@ import org.axonframework.eventhandling.processors.streaming.token.store.UnableTo
 import org.axonframework.eventhandling.processors.streaming.token.store.UnableToInitializeTokenException;
 import org.axonframework.eventhandling.processors.streaming.token.store.UnableToRetrieveIdentifierException;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.SerializedType;
-import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,7 +49,6 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.DateTimeUtils.formatInstant;
 import static org.axonframework.common.FutureUtils.joinAndUnwrap;
-import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.eventhandling.processors.streaming.token.store.jpa.TokenEntry.clock;
 
 /**
@@ -72,29 +70,30 @@ public class JpaTokenStore implements TokenStore {
     private static final String SEGMENT_PARAM = "segment";
 
     private final EntityManagerProvider entityManagerProvider;
-    private final Serializer serializer;
+    private final Converter converter;
     private final TemporalAmount claimTimeout;
     private final String nodeId;
     private final LockModeType loadingLockMode;
 
     /**
-     * Instantiate a {@link JpaTokenStore} based on the fields contained in the {@link JpaTokenStoreConfiguration}.
+     * Instantiate a {JpaTokenStore} based on the fields contained in the {@link JpaTokenStoreConfiguration}.
      * <p>
-     * Will assert that the {@link EntityManagerProvider}, {@link Serializer} and {@link JpaTokenStoreConfiguration} are
+     * Will assert that the {@link EntityManagerProvider}, {@link Converter} and {@link JpaTokenStoreConfiguration} are
      * not {@code null}, otherwise an {@link AxonConfigurationException} will be thrown.
      *
      * @param entityManagerProvider The {@link EntityManagerProvider} used to obtain an {@link EntityManager} for.
-     * @param serializer            The {@link Serializer} used to de-/serialize {@link TrackingToken}'s with.
-     * @param configuration
+     * @param converter             The {@link Converter} used to serialize and deserialize token for storage.
+     * @param configuration         The configuration for JPA token store.
      */
     public JpaTokenStore(@Nonnull EntityManagerProvider entityManagerProvider,
-                         @Nonnull Serializer serializer,
-                         @Nonnull JpaTokenStoreConfiguration configuration) {
+                         @Nonnull Converter converter,
+                         @Nonnull JpaTokenStoreConfiguration configuration
+    ) {
         assertNonNull(entityManagerProvider, "EntityManagerProvider is a hard requirement and should be provided");
-        assertNonNull(serializer, "The Serializer is a hard requirement and should be provided");
+        assertNonNull(converter, "The Converter is a hard requirement and should be provided");
         assertNonNull(configuration, "The JpaTokenStoreConfiguration should be provided");
         this.entityManagerProvider = entityManagerProvider;
-        this.serializer = serializer;
+        this.converter = converter;
         this.claimTimeout = configuration.claimTimeout();
         this.nodeId = configuration.nodeId();
         this.loadingLockMode = configuration.loadingLockMode();
@@ -113,7 +112,7 @@ public class JpaTokenStore implements TokenStore {
             throw new UnableToClaimTokenException("Could not initialize segments. Some segments were already present.");
         }
         for (int segment = 0; segment < segmentCount; segment++) {
-            TokenEntry token = new TokenEntry(processorName, segment, initialToken, serializer);
+            TokenEntry token = new TokenEntry(processorName, segment, initialToken, converter);
             entityManager.persist(token);
         }
         entityManager.flush();
@@ -127,11 +126,17 @@ public class JpaTokenStore implements TokenStore {
                                               int segment,
                                               @Nullable ProcessingContext context) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
-        TokenEntry tokenToStore = new TokenEntry(processorName, segment, token, serializer);
-        byte[] tokenDataToStore =
-                getOrDefault(tokenToStore.getSerializedToken(), SerializedObject::getData, null);
-        String tokenTypeToStore = getOrDefault(tokenToStore.getTokenType(), SerializedType::getName, null);
+        TokenEntry tokenToStore = new TokenEntry(processorName, segment, token, converter);
 
+        final byte[] tokenDataToStore;
+        final String tokenTypeToStore;
+        if (token != null) {
+            tokenDataToStore = converter.convert(token, byte[].class);
+            tokenTypeToStore = token.getClass().getName();
+        } else {
+            tokenDataToStore = null;
+            tokenTypeToStore = TrackingToken.class.getName();
+        }
         int updatedTokens = entityManager.createQuery("UPDATE TokenEntry te SET "
                                                               + "te.token = :token, "
                                                               + "te.tokenType = :tokenType, "
@@ -152,7 +157,7 @@ public class JpaTokenStore implements TokenStore {
                                  + "Trying load-then-save approach instead.",
                          token, processorName, segment);
             TokenEntry tokenEntry = loadToken(processorName, segment, entityManager);
-            tokenEntry.updateToken(token, serializer);
+            tokenEntry.updateToken(token, converter);
         }
         return FutureUtils.emptyCompletedFuture();
     }
@@ -184,7 +189,7 @@ public class JpaTokenStore implements TokenStore {
     ) throws UnableToInitializeTokenException {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
 
-        TokenEntry entry = new TokenEntry(processorName, segment, token, serializer);
+        TokenEntry entry = new TokenEntry(processorName, segment, token, converter);
         entityManager.persist(entry);
         entityManager.flush();
         return FutureUtils.emptyCompletedFuture();
@@ -219,7 +224,7 @@ public class JpaTokenStore implements TokenStore {
                                                        int segment,
                                                        @Nullable ProcessingContext context) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
-        return completedFuture(loadToken(processorName, segment, entityManager).getToken(serializer));
+        return completedFuture(loadToken(processorName, segment, entityManager).getToken(converter));
     }
 
     @Nonnull
@@ -230,7 +235,7 @@ public class JpaTokenStore implements TokenStore {
             @Nullable ProcessingContext context
     ) throws UnableToClaimTokenException {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
-        return completedFuture(loadToken(processorName, segment, entityManager).getToken(serializer));
+        return completedFuture(loadToken(processorName, segment, entityManager).getToken(converter));
     }
 
     @Nonnull
@@ -410,127 +415,20 @@ public class JpaTokenStore implements TokenStore {
             token = new TokenEntry(CONFIG_TOKEN_ID,
                                    CONFIG_SEGMENT,
                                    new ConfigToken(Collections.singletonMap("id", UUID.randomUUID().toString())),
-                                   serializer);
+                                   converter);
             em.persist(token);
             em.flush();
         }
-        return (ConfigToken) token.getToken(serializer);
+        return (ConfigToken) token.getToken(converter);
     }
 
     /**
-     * Returns the serializer used by the Token Store to serialize tokens.
+     * Returns the {@code Converter} used by the {@code TokenStore} to serialize tokens.
      *
-     * @return the serializer used by the Token Store to serialize tokens
+     * @return The {@code Converter} used by the {@code TokenStore} to serialize tokens.
      */
-    public Serializer serializer() {
-        return serializer;
+    @Internal
+    public Converter converter() {
+        return converter;
     }
-
-//    /**
-//     * Builder class to instantiate a {@link JpaTokenStore}.
-//     * <p>
-//     * The {@code claimTimeout} to a 10 seconds duration, and {@code nodeId} is defaulted to the name of the managed
-//     * bean for the runtime system of the Java virtual machine. The {@link EntityManagerProvider} and {@link Serializer}
-//     * are a <b>hard requirements</b> and as such should be provided.
-//     */
-//    public static class Builder {
-//
-//        private LockModeType loadingLockMode = LockModeType.PESSIMISTIC_WRITE;
-//        private EntityManagerProvider entityManagerProvider;
-//        private Serializer serializer;
-//        private TemporalAmount claimTimeout = Duration.ofSeconds(10);
-//        private String nodeId = ManagementFactory.getRuntimeMXBean().getName();
-//
-//        /**
-//         * Sets the {@link EntityManagerProvider} which provides the {@link EntityManager} used to access the underlying
-//         * database.
-//         *
-//         * @param entityManagerProvider a {@link EntityManagerProvider} which provides the {@link EntityManager} used to
-//         *                              access the underlying database
-//         * @return the current Builder instance, for fluent interfacing
-//         */
-//        public Builder entityManagerProvider(EntityManagerProvider entityManagerProvider) {
-//            assertNonNull(entityManagerProvider, "EntityManagerProvider may not be null");
-//            this.entityManagerProvider = entityManagerProvider;
-//            return this;
-//        }
-//
-//        /**
-//         * Sets the {@link Serializer} used to de-/serialize {@link TrackingToken}s with.
-//         *
-//         * @param serializer a {@link Serializer} used to de-/serialize {@link TrackingToken}s with
-//         * @return the current Builder instance, for fluent interfacing
-//         */
-//        public Builder serializer(Serializer serializer) {
-//            assertNonNull(serializer, "Serializer may not be null");
-//            this.serializer = serializer;
-//            return this;
-//        }
-//
-//        /**
-//         * Sets the {@code claimTimeout} specifying the amount of time this process will wait after which this process
-//         * will force a claim of a {@link TrackingToken}. Thus if a claim has not been updated for the given
-//         * {@code claimTimeout}, this process will 'steal' the claim. Defaults to a duration of 10 seconds.
-//         *
-//         * @param claimTimeout a timeout specifying the time after which this process will force a claim
-//         * @return the current Builder instance, for fluent interfacing
-//         */
-//        public Builder claimTimeout(TemporalAmount claimTimeout) {
-//            assertNonNull(claimTimeout, "The claim timeout may not be null");
-//            this.claimTimeout = claimTimeout;
-//            return this;
-//        }
-//
-//        /**
-//         * Sets the {@code nodeId} to identify ownership of the tokens. Defaults to the name of the managed bean for the
-//         * runtime system of the Java virtual machine
-//         *
-//         * @param nodeId the id as a {@link String} to identify ownership of the tokens
-//         * @return the current Builder instance, for fluent interfacing
-//         */
-//        public Builder nodeId(String nodeId) {
-//            assertNodeId(nodeId, "The nodeId may not be null or empty");
-//            this.nodeId = nodeId;
-//            return this;
-//        }
-//
-//        /**
-//         * The {@link LockModeType} to use when loading tokens from the underlying database. Defaults to
-//         * {@code LockModeType.PESSIMISTIC_WRITE}, to force a write lock, which prevents lock upgrading and potential
-//         * resulting deadlocks.
-//         *
-//         * @param loadingLockMode The lock mode to use when retrieving tokens from the underlying store
-//         * @return the current Builder instance, for fluent interfacing
-//         */
-//        public Builder loadingLockMode(LockModeType loadingLockMode) {
-//            this.loadingLockMode = loadingLockMode;
-//            return this;
-//        }
-//
-//        /**
-//         * Initializes a {@link JpaTokenStore} as specified through this Builder.
-//         *
-//         * @return a {@link JpaTokenStore} as specified through this Builder
-//         */
-//        public JpaTokenStore build() {
-//            return new JpaTokenStore(this);
-//        }
-//
-//        /**
-//         * Validates whether the fields contained in this Builder are set accordingly.
-//         *
-//         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
-//         *                                    specifications
-//         */
-//        protected void validate() throws AxonConfigurationException {
-//            assertNonNull(entityManagerProvider,
-//                          "The EntityManagerProvider is a hard requirement and should be provided");
-//            assertNonNull(serializer, "The Serializer is a hard requirement and should be provided");
-//            assertNodeId(nodeId, "The nodeId is a hard requirement and should be provided");
-//        }
-//
-//        private void assertNodeId(String nodeId, String exceptionMessage) {
-//            assertThat(nodeId, name -> Objects.nonNull(name) && !"".equals(name), exceptionMessage);
-//        }
-//    }
 }

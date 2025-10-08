@@ -29,7 +29,8 @@ import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedType;
-import org.axonframework.serialization.TestSerializer;
+import org.axonframework.serialization.TestConverter;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.upcasting.Upcaster;
 import org.axonframework.utils.StubDomainEvent;
 import org.axonframework.utils.TestDomainEventEntry;
@@ -50,7 +51,7 @@ import static org.mockito.Mockito.*;
  */
 class SingleEventUpcasterTest {
 
-    private final Serializer serializer = TestSerializer.JACKSON.getSerializer();
+    private final Serializer serializer = JacksonSerializer.defaultSerializer();
 
     @Test
     void upcastsKnownType() {

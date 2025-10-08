@@ -29,7 +29,8 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.TestSerializer;
+import org.axonframework.serialization.TestConverter;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
 
 import java.sql.ResultSet;
@@ -64,7 +65,7 @@ class DefaultDeadLetterJdbcConverterTest {
     @BeforeEach
     void setUp() {
         schema = DeadLetterSchema.defaultSchema();
-        genericSerializer = TestSerializer.JACKSON.getSerializer();
+        genericSerializer = JacksonSerializer.defaultSerializer();
         eventSerializer = genericSerializer;
 
         testSubject = DefaultDeadLetterJdbcConverter.builder()
@@ -239,7 +240,7 @@ class DefaultDeadLetterJdbcConverterTest {
     void buildWithoutTheGenericSerializerThrowsAxonConfigurationException() {
         DefaultDeadLetterJdbcConverter.Builder<?> testBuilder =
                 DefaultDeadLetterJdbcConverter.builder()
-                                              .eventSerializer(TestSerializer.JACKSON.getSerializer());
+                                              .eventSerializer(JacksonSerializer.defaultSerializer());
 
         assertThrows(AxonConfigurationException.class, testBuilder::build);
     }
@@ -248,7 +249,7 @@ class DefaultDeadLetterJdbcConverterTest {
     void buildWithoutTheEventSerializerThrowsAxonConfigurationException() {
         DefaultDeadLetterJdbcConverter.Builder<?> testBuilder =
                 DefaultDeadLetterJdbcConverter.builder()
-                                              .genericSerializer(TestSerializer.JACKSON.getSerializer());
+                                              .genericSerializer(JacksonSerializer.defaultSerializer());
 
         assertThrows(AxonConfigurationException.class, testBuilder::build);
     }

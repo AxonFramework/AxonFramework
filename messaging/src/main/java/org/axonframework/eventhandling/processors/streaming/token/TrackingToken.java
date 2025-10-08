@@ -40,18 +40,20 @@ public interface TrackingToken {
      * Adds the given {@code token} to the given {@code context} using the {@link #RESOURCE_KEY}.
      *
      * @param context The {@link Context} to add the given {@code token} to.
-     * @param token   The {@link TrackingToken} to add to the given {@code context} using the {@link #RESOURCE_KEY}.
+     * @param token   The {TrackingToken} to add to the given {@code context} using the {@link #RESOURCE_KEY}.
+     *
+     * @return The resulting context.
      */
     static Context addToContext(Context context, TrackingToken token) {
         return context.withResource(RESOURCE_KEY, token);
     }
 
     /**
-     * Returns an {@link Optional} of {@link TrackingToken}, returning the resource keyed under the
+     * Returns an {@link Optional} of {TrackingToken}, returning the resource keyed under the
      * {@link #RESOURCE_KEY} in the given {@code context}.
      *
      * @param context The {@link Context} to retrieve the {@link TrackingToken} from, if present.
-     * @return An {@link Optional} of {@link TrackingToken}, returning the resource keyed under the
+     * @return An {@link Optional} of {TrackingToken}, returning the resource keyed under the
      * {@link #RESOURCE_KEY} in the given {@code context}.
      */
     static Optional<TrackingToken> fromContext(Context context) {

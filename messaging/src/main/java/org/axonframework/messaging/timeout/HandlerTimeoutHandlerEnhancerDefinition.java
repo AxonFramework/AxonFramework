@@ -29,9 +29,8 @@ import jakarta.annotation.Nonnull;
  * Inspects message handler and wraps it in a {@link TimeoutWrappedMessageHandlingMember} if the handler should have a
  * timeout.
  * <p>
- * The timeout is determined by the {@link HandlerTimeoutConfiguration} and the
- * {@link MessageHandlerTimeout} annotation on the message handler method. The annotation
- * takes precedence over the configuration.
+ * The timeout is determined by the {@link HandlerTimeoutConfiguration} and the {@link MessageHandlerTimeout} annotation
+ * on the message handler method. The annotation takes precedence over the configuration.
  *
  * @author Mitchell Herrijgers
  * @see TimeoutWrappedMessageHandlingMember
@@ -75,8 +74,8 @@ public class HandlerTimeoutHandlerEnhancerDefinition implements HandlerEnhancerD
     }
 
     /**
-     * Gets the attribute or the {@link MessageHandlerTimeout} annotation or the default
-     * value if the attribute is not present or invalid.
+     * Gets the attribute or the {@link MessageHandlerTimeout} annotation or the default value if the attribute is not
+     * present or invalid.
      *
      * @param original The original message handler
      * @param name     The name of the attribute
@@ -108,9 +107,9 @@ public class HandlerTimeoutHandlerEnhancerDefinition implements HandlerEnhancerD
             return configuration.getQueries();
         }
         // TODO #3065
-//        if (original.canHandleMessageType(DeadlineMessage.class)) {
-//            return configuration.getDeadlines();
-//        }
+        //if (original.canHandleMessageType(DeadlineMessage.class)) {
+        //    return configuration.getDeadlines();
+        //}
         return null;
     }
 }

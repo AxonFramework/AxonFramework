@@ -83,8 +83,8 @@ public enum TestSerializer {
         return deserialize(serialize(object), (Class<T>) object.getClass());
     }
 
-    public static Collection<TestSerializer> all() {
-        return EnumSet.allOf(TestSerializer.class);
+    public static Collection<TestConverter> all() {
+        return EnumSet.allOf(TestConverter.class);
     }
 
     static <T> SerializedObject<byte[]> asSerializedData(byte[] serialized, Class<T> type) {

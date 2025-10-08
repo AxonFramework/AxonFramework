@@ -75,7 +75,7 @@ class ConvertingCommandGatewayTest {
 
         when(mockConverter.convert(any(), eq((Type) byte[].class))).thenReturn(HELLO_BYTES);
 
-        CompletableFuture<byte[]> actual = testSubject.send("Test", null, byte[].class);
+        CompletableFuture<byte[]> actual = testSubject.send("Test", byte[].class, null);
         assertTrue(actual.isDone());
         assertArrayEquals(HELLO_BYTES, actual.get());
     }

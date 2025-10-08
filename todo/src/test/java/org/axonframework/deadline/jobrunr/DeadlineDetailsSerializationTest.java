@@ -25,7 +25,8 @@ import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
-import org.axonframework.serialization.TestSerializer;
+import org.axonframework.serialization.TestConverter;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
 
 import java.time.Instant;
@@ -56,7 +57,7 @@ class DeadlineDetailsSerializationTest {
 
     @Test
     void whenSerializedAndDeserializedAllPropertiesShouldBeTheSameUsingJackson() {
-        Serializer serializer = TestSerializer.JACKSON.getSerializer();
+        Serializer serializer = JacksonSerializer.defaultSerializer();
         testSerialisationWithSpecificSerializer(serializer);
     }
 

@@ -21,14 +21,14 @@ import jakarta.annotation.Nullable;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventSubscribers;
+import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine.AppendTransaction;
 import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.SubscribableEventSource;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.time.Instant;
@@ -45,13 +45,13 @@ import java.util.function.BiConsumer;
  * @author Steven van Beelen
  * @since 3.0.0
  */
-public class SimpleEventStore implements EventStore, SubscribableEventSource {
+public class SimpleEventStore implements EventStore, EventBus {
 
     private final EventStorageEngine eventStorageEngine;
     private final TagResolver tagResolver;
 
     private final ResourceKey<EventStoreTransaction> eventStoreTransactionKey;
-    private final EventSubscribers eventSubscribers = new EventSubscribers();
+    private final EventBus eventBus = new SimpleEventBus();
 
     /**
      * Constructs a {@code SimpleEventStore} using the given {@code eventStorageEngine} to start
@@ -83,6 +83,16 @@ public class SimpleEventStore implements EventStore, SubscribableEventSource {
     @Override
     public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
                                            @Nonnull List<EventMessage> events) {
+        return appendEvent(context, events)
+                .thenApply(r -> {
+                    eventBus.publish(context, events);
+                    return null;
+                });
+    }
+
+    @Nonnull
+    private CompletableFuture<Void> appendEvent(@Nullable ProcessingContext context,
+                                                @Nonnull List<EventMessage> events) {
         if (context == null) {
             AppendCondition none = AppendCondition.none();
             List<TaggedEventMessage<?>> taggedEvents = new ArrayList<>();
@@ -92,15 +102,11 @@ public class SimpleEventStore implements EventStore, SubscribableEventSource {
             return eventStorageEngine.appendEvents(none, context, taggedEvents)
                                      .thenApply(SimpleEventStore::castTransaction)
                                      .thenApply(tx -> tx.commit(context).thenApply(v -> tx.afterCommit(v, context)))
-                                     .thenApply(marker -> {
-                                         notifySubscribers(events, context);
-                                         return null;
-                                     });
+                                     .thenApply(marker -> null);
         } else {
             // Return a completed future since we have an active context.
             // The user will wait within the context's lifecycle anyhow.
             appendToTransaction(context, events);
-            registerSubscriberNotification(context, events);
             return FutureUtils.emptyCompletedFuture();
         }
     }
@@ -117,27 +123,9 @@ public class SimpleEventStore implements EventStore, SubscribableEventSource {
         }
     }
 
-    private void registerSubscriberNotification(ProcessingContext context, List<EventMessage> events) {
-        ResourceKey<Boolean> notificationRegisteredKey = ResourceKey.withLabel("subscriberNotificationRegistered");
-        context.computeResourceIfAbsent(
-                notificationRegisteredKey,
-                () -> {
-                    context.onAfterCommit(ctx -> {
-                        notifySubscribers(events, ctx);
-                        return FutureUtils.emptyCompletedFuture();
-                    });
-                    return true;
-                }
-        );
-    }
-
-    private void notifySubscribers(List<EventMessage> events, ProcessingContext context) {
-        eventSubscribers.notifySubscribers(events, context);
-    }
-
     @Override
     public Registration subscribe(@Nonnull BiConsumer<List<? extends EventMessage>, ProcessingContext> eventsBatchConsumer) {
-        return eventSubscribers.subscribe(eventsBatchConsumer);
+        return eventBus.subscribe(eventsBatchConsumer);
     }
 
     @Override
@@ -164,7 +152,7 @@ public class SimpleEventStore implements EventStore, SubscribableEventSource {
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("eventStorageEngine", eventStorageEngine);
         descriptor.describeProperty("tagResolver", tagResolver);
-        descriptor.describeProperty("eventSubscribers", eventSubscribers);
+        descriptor.describeProperty("eventBus", eventBus);
     }
 
     @SuppressWarnings("unchecked")

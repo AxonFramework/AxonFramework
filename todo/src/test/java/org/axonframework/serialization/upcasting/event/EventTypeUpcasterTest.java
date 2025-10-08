@@ -16,13 +16,17 @@
 
 package org.axonframework.serialization.upcasting.event;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.AbstractEventEntry;
 import org.axonframework.eventhandling.EventData;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedType;
+import org.axonframework.serialization.TestConverter;
 import org.axonframework.serialization.TestSerializer;
+import org.axonframework.serialization.json.JacksonConverter;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;

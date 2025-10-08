@@ -22,77 +22,70 @@ import com.fasterxml.jackson.databind.cfg.MapperConfig;
 import com.fasterxml.jackson.databind.introspect.Annotated;
 import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
 import com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper;
-import org.axonframework.serialization.json.JacksonSerializer;
+import org.axonframework.serialization.json.JacksonConverter;
 
 import java.beans.ConstructorProperties;
 import java.util.Collection;
 import java.util.EnumSet;
 
 /**
- * Enumeration of serializers for testing purposes.
+ * Enumeration of converters for testing purposes.
  *
  * @author JohT
  */
 @SuppressWarnings("unused")
-public enum TestSerializer {
+public enum TestConverter {
 
     JACKSON {
-        private final Serializer serializer = JacksonSerializer.defaultSerializer();
+        private final Converter converter = new JacksonConverter();
 
         @Override
-        public Serializer getSerializer() {
-            return serializer;
+        public Converter getConverter() {
+            return converter;
         }
     },
     CBOR {
-        private final Serializer serializer = JacksonSerializer.builder()
-                .objectMapper(CBORMapper
+        private final Converter converter = new JacksonConverter(
+                CBORMapper
                         .builder()
                         .findAndAddModules()
-                        .build()).build();
+                        .build());
 
         @Override
-        public Serializer getSerializer() {
-            return serializer;
+        public Converter getConverter() {
+            return converter;
         }
     },
     JACKSON_ONLY_ACCEPT_CONSTRUCTOR_PARAMETERS {
-        private final Serializer serializer =
-                JacksonSerializer.builder()
-                                 .objectMapper(OnlyAcceptConstructorPropertiesAnnotation.attachTo(new ObjectMapper()))
-                                 .build();
+        private final Converter converter =
+                new JacksonConverter(OnlyAcceptConstructorPropertiesAnnotation.attachTo(new ObjectMapper()));
 
         @Override
-        public Serializer getSerializer() {
-            return serializer;
+        public Converter getConverter() {
+            return converter;
         }
     };
 
     protected byte[] serialize(Object object) {
-        return getSerializer().serialize(object, byte[].class).getData();
+        return getConverter().convert(object, byte[].class);
     }
 
     protected <T> T deserialize(byte[] serialized, Class<T> type) {
-        return getSerializer().deserialize(asSerializedData(serialized, type));
+        return getConverter().convert(serialized, type);
     }
 
-    public abstract Serializer getSerializer();
+    public abstract Converter getConverter();
 
     @SuppressWarnings("unchecked")
     public <T> T serializeDeserialize(T object) {
         return deserialize(serialize(object), (Class<T>) object.getClass());
     }
 
-    public static Collection<TestSerializer> all() {
-        return EnumSet.allOf(TestSerializer.class);
+    public static Collection<TestConverter> all() {
+        return EnumSet.allOf(TestConverter.class);
     }
 
-    static <T> SerializedObject<byte[]> asSerializedData(byte[] serialized, Class<T> type) {
-        SimpleSerializedType serializedType = new SimpleSerializedType(type.getName(), null);
-        return new SimpleSerializedObject<>(serialized, byte[].class, serializedType);
-    }
-
-    private static class OnlyAcceptConstructorPropertiesAnnotation extends JacksonAnnotationIntrospector {
+    public static class OnlyAcceptConstructorPropertiesAnnotation extends JacksonAnnotationIntrospector {
 
         public static ObjectMapper attachTo(ObjectMapper objectMapper) {
             return objectMapper.setAnnotationIntrospector(new OnlyAcceptConstructorPropertiesAnnotation());

@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.responsetypes;
 
-import org.axonframework.serialization.TestSerializer;
+import org.axonframework.serialization.TestConverter;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 
@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests serialization capabilities of {@link OptionalResponseType}.
- * 
+ *
  * @author JohT
  */
 class OptionalResponseTypeSerializationTest
@@ -37,13 +37,13 @@ class OptionalResponseTypeSerializationTest
         super(new OptionalResponseType<>(QueryResponse.class));
     }
 
-    static Collection<TestSerializer> serializers() {
-        return TestSerializer.all();
+    static Collection<TestConverter> converters() {
+        return TestConverter.all();
     }
 
-    @MethodSource("serializers")
+    @MethodSource("converters")
     @ParameterizedTest
-    void responseTypeShouldBeSerializable(TestSerializer serializer) {
+    void responseTypeShouldBeSerializable(TestConverter serializer) {
         assertEquals(testSubject.getExpectedResponseType(), serializer.serializeDeserialize(testSubject).getExpectedResponseType());
     }
 }

@@ -24,7 +24,8 @@ import org.axonframework.deadline.DeadlineManagerSpanFactory;
 import org.axonframework.deadline.dbscheduler.DbSchedulerDeadlineManager;
 import org.axonframework.deadline.dbscheduler.DbSchedulerDeadlineManagerSupplier;
 import org.axonframework.integrationtests.deadline.AbstractDeadlineManagerTestSuite;
-import org.axonframework.serialization.TestSerializer;
+import org.axonframework.serialization.TestConverter;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.hsqldb.jdbc.JDBCDataSource;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
@@ -67,7 +68,7 @@ class BinaryDbSchedulerDeadlineManagerTest extends AbstractDeadlineManagerTestSu
                 .builder()
                 .scheduler(scheduler)
 //                .scopeAwareProvider(new ConfigurationScopeAwareProvider(configuration))
-                .serializer(TestSerializer.JACKSON.getSerializer())
+                .serializer(JacksonSerializer.defaultSerializer())
                 .transactionManager(NoTransactionManager.INSTANCE)
                 .spanFactory(configuration.getComponent(DeadlineManagerSpanFactory.class))
                 .build();

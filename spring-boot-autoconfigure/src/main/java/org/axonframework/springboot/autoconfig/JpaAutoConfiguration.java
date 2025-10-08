@@ -16,6 +16,7 @@
 
 package org.axonframework.springboot.autoconfig;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManagerFactory;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
@@ -24,6 +25,7 @@ import org.axonframework.eventhandling.processors.streaming.token.store.jpa.JpaT
 import org.axonframework.eventhandling.processors.streaming.token.store.jpa.JpaTokenStoreConfiguration;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.json.JacksonConverter;
 import org.axonframework.springboot.TokenStoreProperties;
 import org.axonframework.springboot.util.RegisterDefaultEntities;
 import org.axonframework.springboot.util.jpa.ContainerManagedEntityManagerProvider;
@@ -69,9 +71,10 @@ public class JpaAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public TokenStore tokenStore(Serializer serializer, EntityManagerProvider entityManagerProvider) {
+    public TokenStore tokenStore(EntityManagerProvider entityManagerProvider, ObjectMapper defaultAxonObjectMapper) {
         var config = JpaTokenStoreConfiguration.DEFAULT.claimTimeout(tokenStoreProperties.getClaimTimeout());
-        return new JpaTokenStore(entityManagerProvider,serializer, config);
+        var converter = new JacksonConverter(defaultAxonObjectMapper);
+        return new JpaTokenStore(entityManagerProvider, converter, config);
     }
 
     @Bean

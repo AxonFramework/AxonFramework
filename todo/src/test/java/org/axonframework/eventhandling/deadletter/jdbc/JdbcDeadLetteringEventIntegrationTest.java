@@ -27,7 +27,8 @@ import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.TestSerializer;
+import org.axonframework.serialization.TestConverter;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.hsqldb.jdbc.JDBCDataSource;
 import org.junit.jupiter.api.*;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
@@ -74,8 +75,8 @@ class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegratio
     protected SequencedDeadLetterQueue<EventMessage> buildDeadLetterQueue() {
         dataSource = dataSource();
         transactionManager = transactionManager(dataSource);
-        Serializer eventSerializer = TestSerializer.JACKSON.getSerializer();
-        Serializer genericSerializer = TestSerializer.JACKSON.getSerializer();
+        Serializer eventSerializer = JacksonSerializer.defaultSerializer();
+        Serializer genericSerializer = JacksonSerializer.defaultSerializer();
         statementFactory = DefaultDeadLetterStatementFactory.builder()
                                                             .eventSerializer(eventSerializer)
                                                             .genericSerializer(genericSerializer)
