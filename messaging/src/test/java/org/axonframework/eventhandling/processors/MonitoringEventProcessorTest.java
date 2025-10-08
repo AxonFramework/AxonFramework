@@ -14,32 +14,42 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling;
+package org.axonframework.eventhandling.processors;
 
 import org.axonframework.common.infra.MockComponentDescriptor;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.MessageMonitor.MonitorCallback;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.axonframework.monitoring.MessageMonitorTestUtils.commandMessageMonitor;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
 
-class MonitoringCommandBusTest {
+class MonitoringEventProcessorTest {
 
-    private final CommandBus mockCommandBus = mock(CommandBus.class);
-    private final MonitorCallback mockMonitorCallback = mock(MonitorCallback.class);
-    private final MessageMonitor<CommandMessage> fakeMessageMonitor = commandMessageMonitor(msg -> mockMonitorCallback);
+    private final EventProcessor mockDelegate = mock(EventProcessor.class);
 
-    private final MonitoringCommandBus testSubject = new MonitoringCommandBus(mockCommandBus, fakeMessageMonitor);
+    private final MessageMonitor<EventMessage> testMonitor = new MessageMonitor<>() {
+        @Override
+        public MonitorCallback onMessageIngested(EventMessage message) {
+            return mock(MonitorCallback.class);
+        }
+
+        @Override
+        public String toString() {
+            return "anonymous EventMessageMonitor";
+        }
+    };
+
+    private final MonitoringEventProcessor testSubject = new MonitoringEventProcessor(mockDelegate, testMonitor);
 
     @Test
     void describeIncludesAllRelevantProperties() {
         var componentDescriptor = new MockComponentDescriptor();
         testSubject.describeTo(componentDescriptor);
 
-        assertThat(componentDescriptor.getProperty("delegate").toString()).startsWith("Mock for CommandBus, hashCode:");
+        assertThat(componentDescriptor.getProperty("delegate").toString()).startsWith("Mock for EventProcessor, hashCode:");
         assertThat(componentDescriptor.getProperty("messageMonitor").toString()).isEqualTo(
-                "anonymous CommandMessageMonitor");
+                "anonymous EventMessageMonitor");
     }
 }

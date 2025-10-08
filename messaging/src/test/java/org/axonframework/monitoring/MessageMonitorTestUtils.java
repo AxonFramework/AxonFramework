@@ -18,11 +18,12 @@ package org.axonframework.monitoring;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.messaging.Message;
 import org.axonframework.monitoring.MessageMonitor.MonitorCallback;
 
 import java.util.function.Function;
 
-public class MessageMonitorUtils {
+public class MessageMonitorTestUtils {
 
     @FunctionalInterface
     public interface MonitorCallBackProvider extends Function<CommandMessage, MonitorCallback> {
@@ -43,6 +44,7 @@ public class MessageMonitorUtils {
         };
     }
 
-    private MessageMonitorUtils() {
+    private MessageMonitorTestUtils() {
+        // Utility class
     }
 }
