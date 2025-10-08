@@ -62,7 +62,7 @@ class AggregateCreationFromCommandsTest {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3195 - Migration Module")
     void createAlwaysCreationWithoutFactory() {
         createAndRegisterDefaultCommandHandler();
         String aggregateId = UUID.randomUUID().toString();
@@ -82,7 +82,7 @@ class AggregateCreationFromCommandsTest {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3195 - Migration Module")
     void createIfMissingCreationWithoutFactory() {
         createAndRegisterDefaultCommandHandler();
         String aggregateId = UUID.randomUUID().toString();
@@ -101,7 +101,7 @@ class AggregateCreationFromCommandsTest {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3195 - Migration Module")
     void createAlwaysCreationWithFactory() {
         createAndRegisterCommandHandlerWithFactory();
         String aggregateId = UUID.randomUUID().toString();
@@ -121,7 +121,7 @@ class AggregateCreationFromCommandsTest {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3195 - Migration Module")
     void createIfMissingCreationWithFactory() {
         createAndRegisterCommandHandlerWithFactory();
         String aggregateId = UUID.randomUUID().toString();

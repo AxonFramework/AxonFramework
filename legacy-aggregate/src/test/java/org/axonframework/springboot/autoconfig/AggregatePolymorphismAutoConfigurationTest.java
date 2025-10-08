@@ -57,7 +57,7 @@ class AggregatePolymorphismAutoConfigurationTest {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3195 - Migration Module")
     void polymorphicAggregateWiringHandlesCommandsAndIsEventSourcedAsExpected() {
         String catId = UUID.randomUUID().toString();
         String dogId = UUID.randomUUID().toString();
@@ -127,7 +127,7 @@ class AggregatePolymorphismAutoConfigurationTest {
      * optimization. Hence, we validate the first event <b>not</b> to be a snapshot.
      */
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3195 - Migration Module")
     void snapshottingOnAggregateCreationAreCreatedAndUsableForAnyPolymorphicAggregateChildType() {
         String catId = "catId";
         String dogId = "dogId";
@@ -168,7 +168,7 @@ class AggregatePolymorphismAutoConfigurationTest {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3195 - Migration Module")
     void snapshotsAreCreatedAndUsableForAnyPolymorphicAggregateChildType() {
         String catId = "catId";
         String dogId = "dogId";
