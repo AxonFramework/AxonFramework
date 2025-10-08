@@ -17,10 +17,12 @@
 package org.axonframework.commandhandling.gateway;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.messaging.Message;
 import org.axonframework.serialization.ConversionException;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -145,5 +147,36 @@ public interface CommandResult {
             }
         });
         return this;
+    }
+
+    /**
+     * Waits for the result of command handling, cast to the given {@code type}.
+     *
+     * @param resultType The expected result type of command handling.
+     * @param <R>        The type of the command result.
+     * @return The result of command handling, cast to the given {@code type}.
+     * @throws CommandExecutionException When a checked exception occurs while waiting for the result.
+     */
+    default <R> R wait(@Nonnull Class<R> resultType) {
+        try {
+            return resultAs(resultType).get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new CommandExecutionException("Thread interrupted while waiting for result", e);
+        } catch (ExecutionException e) {
+            throw rethrowUnwrappedExecutionException(e);
+        }
+    }
+
+    private static RuntimeException rethrowUnwrappedExecutionException(
+            @Nonnull ExecutionException executionException
+    ) {
+        if (executionException.getCause() instanceof RuntimeException runtimeException) {
+            throw runtimeException;
+        }
+        if (executionException.getCause() instanceof Error error) {
+            throw error;
+        }
+        throw new CommandExecutionException("Checked exception while handling command.", executionException.getCause());
     }
 }
