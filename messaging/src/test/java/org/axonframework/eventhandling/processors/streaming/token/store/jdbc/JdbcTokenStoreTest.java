@@ -567,7 +567,7 @@ class JdbcTokenStoreTest {
         ps.setString(1, "__config");
         ps.setInt(2, 0);
         ps.setString(3, ConfigToken.class.getName());
-        ps.setBytes(4, tokenStore.serializer().convert(token, byte[].class));
+        ps.setBytes(4, tokenStore.converter().convert(token, byte[].class));
         ps.executeUpdate();
 
         Optional<String> id1 = joinAndUnwrap(tokenStore.retrieveStorageIdentifier(mock()));

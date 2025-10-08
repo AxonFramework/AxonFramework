@@ -117,7 +117,7 @@ class JpaTokenStoreTest {
     @Test
     void identifierReadIfAvailable() {
         entityManager.persist(new TokenEntry("__config", 0, new ConfigToken(Collections.singletonMap("id", "test")),
-                                             jpaTokenStore.serializer()));
+                                             jpaTokenStore.converter()));
         Optional<String> id1 = joinAndUnwrap(jpaTokenStore.retrieveStorageIdentifier(mock()));
         assertTrue(id1.isPresent());
         Optional<String> id2 = joinAndUnwrap(jpaTokenStore.retrieveStorageIdentifier(mock()));

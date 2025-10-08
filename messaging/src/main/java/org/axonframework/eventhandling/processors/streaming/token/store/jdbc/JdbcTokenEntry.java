@@ -20,9 +20,6 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.ClassUtils;
 import org.axonframework.common.DateTimeUtils;
-import org.axonframework.common.ReflectionUtils;
-import org.axonframework.common.TypeReference;
-import org.axonframework.common.TypeReflectionUtils;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.store.jpa.TokenEntry;
 import org.axonframework.serialization.Converter;
@@ -40,6 +37,7 @@ import static org.axonframework.common.DateTimeUtils.formatInstant;
  *
  * @author Rene de Waele
  * @author Simon Zambrovski
+ * @since 3.0.0
  */
 public class JdbcTokenEntry {
 
@@ -76,7 +74,11 @@ public class JdbcTokenEntry {
      * @param processorName The processor name.
      * @param segment       The token segment.
      */
-    public JdbcTokenEntry(byte[] token, String tokenType, String timestamp, String owner, @Nonnull String processorName,
+    public JdbcTokenEntry(byte[] token,
+                          String tokenType,
+                          String timestamp,
+                          String owner,
+                          @Nonnull String processorName,
                           int segment) {
         this.token = token;
         this.tokenType = tokenType;
@@ -89,14 +91,15 @@ public class JdbcTokenEntry {
     /**
      * Default constructor required for JPA
      */
+    @SuppressWarnings("unused")
     protected JdbcTokenEntry() {
     }
 
     /**
      * Returns the token, deserializing it with given {@code converter}.
      *
-     * @param converter The converter to deserialize the token with
-     * @return the deserialized token stored in this entry
+     * @param converter The converter to deserialize the token with.
+     * @return The deserialized token stored in this entry.
      */
     public TrackingToken getToken(@Nonnull Converter converter) {
         if (token == null || tokenType == null) {
@@ -109,7 +112,7 @@ public class JdbcTokenEntry {
     /**
      * Returns the storage timestamp of this token entry.
      *
-     * @return The storage timestamp
+     * @return The storage timestamp.
      */
     public Instant timestamp() {
         return DateTimeUtils.parseInstant(timestamp);
@@ -118,25 +121,27 @@ public class JdbcTokenEntry {
     /**
      * Returns the storage timestamp of this token entry as a String.
      *
-     * @return The storage timestamp as string
+     * @return The storage timestamp as string.
      */
     public String timestampAsString() {
         return timestamp;
     }
 
     /**
-     * Returns the name of the process to which this token belongs.
+     * Returns the name of the {@link org.axonframework.eventhandling.processors.streaming.StreamingEventProcessor} to
+     * which this token belongs.
      *
-     * @return the process name
+     * @return The name of the {@link org.axonframework.eventhandling.processors.streaming.StreamingEventProcessor} to
+     * which this token belongs.
      */
     public String getProcessorName() {
         return processorName;
     }
 
     /**
-     * Returns the segment index of the process to which this token belongs.
+     * Returns the segment identifier of this token.
      *
-     * @return the segment index
+     * @return The segment identifier of this token.
      */
     public int getSegment() {
         return segment;
@@ -146,7 +151,7 @@ public class JdbcTokenEntry {
      * Returns the identifier of the process (JVM) having a claim on this token, or {@code null} if the token isn't
      * claimed.
      *
-     * @return the process (JVM) that claimed this token
+     * @return The process (JVM) that claimed this token.
      */
     public String getOwner() {
         return owner;
@@ -178,9 +183,9 @@ public class JdbcTokenEntry {
      * If a claim exists, but it is older than given {@code claimTimeout}, the claim may be 'stolen'.
      *
      * @param owner        The name of the current node, to register as owner. This name must be unique for multiple
-     *                     instances of the same logical processor
-     * @param claimTimeout The time after which a claim may be 'stolen' from its current owner
-     * @return {@code true} if the claim succeeded, otherwise false
+     *                     instances of the same logical processor.
+     * @param claimTimeout The time after which a claim may be 'stolen' from its current owner.
+     * @return {@code true} if the claim succeeded, otherwise false.
      */
     public boolean claim(String owner, TemporalAmount claimTimeout) {
         if (!mayClaim(owner, claimTimeout)) {
@@ -195,9 +200,9 @@ public class JdbcTokenEntry {
      * Check if given {@code owner} may claim this token.
      *
      * @param owner        The name of the current node, to register as owner. This name must be unique for multiple
-     *                     instances of the same logical processor
-     * @param claimTimeout The time after which a claim may be 'stolen' from its current owner
-     * @return {@code true} if the claim may be made, {@code false} otherwise
+     *                     instances of the same logical processor.
+     * @param claimTimeout The time after which a claim may be 'stolen' from its current owner.
+     * @return {@code true} if the claim may be made, {@code false} otherwise.
      */
     public boolean mayClaim(String owner, TemporalAmount claimTimeout) {
         return this.owner == null || owner.equals(this.owner) || expired(claimTimeout);
@@ -210,7 +215,7 @@ public class JdbcTokenEntry {
     /**
      * Release any claim of ownership currently active on this Token, if owned by the given {@code owner}.
      *
-     * @param owner The name of the current node, which was registered as the owner
+     * @param owner The name of the current node, which was registered as the owner.
      * @return {@code true} of the claim was successfully released, or {@code false} if the token has been claimed by
      * another owner.
      */

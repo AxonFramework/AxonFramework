@@ -19,6 +19,7 @@ package org.axonframework.eventhandling.processors.streaming.token.store.jdbc;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.annotations.Internal;
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.JdbcException;
 import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
@@ -213,11 +214,12 @@ public class JdbcTokenStore implements TokenStore {
     }
 
     /**
-     * Returns the serializer used by the Token Store to serialize tokens.
+     * Returns the converter used by the {@code TokenStore} to serialize tokens.
      *
-     * @return the serializer used by the Token Store to serialize tokens
+     * @return The converter used by the {@code TokenStore} to serialize tokens
      */
-    public Converter serializer() {
+    @Internal
+    public Converter converter() {
         return converter;
     }
 

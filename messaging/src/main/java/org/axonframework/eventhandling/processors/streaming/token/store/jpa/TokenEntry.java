@@ -42,6 +42,7 @@ import static org.axonframework.common.DateTimeUtils.formatInstant;
  * @author Rene de Waele
  * @author Allard Buijze
  * @author Simon Zambrovski
+ * @since 3.0.0
  */
 @Entity
 @IdClass(TokenEntry.PK.class)
@@ -73,12 +74,15 @@ public class TokenEntry {
      * Initializes a new token entry for given {@code token}, {@code processorName} and {@code segment}. The given
      * {@code converter} is used to serialize the token before it is stored.
      *
-     * @param token         The tracking token to store
-     * @param processorName The name of the processor to store this token for
-     * @param segment       The segment index of the processor
-     * @param converter     The converter to use when storing a serialized token
+     * @param token         The tracking token to store.
+     * @param processorName The name of the processor to store this token for.
+     * @param segment       The segment index of the processor.
+     * @param converter     The converter to use when storing a serialized token.
      */
-    public TokenEntry(@Nonnull String processorName, int segment, @Nullable TrackingToken token, @Nonnull Converter converter) {
+    public TokenEntry(@Nonnull String processorName,
+                      int segment,
+                      @Nullable TrackingToken token,
+                      @Nonnull Converter converter) {
         this.timestamp = formatInstant(clock.instant());
         if (token != null) {
             this.token = converter.convert(token, byte[].class);
@@ -89,7 +93,7 @@ public class TokenEntry {
     }
 
     /**
-     * Default constructor for JPA
+     * Default constructor for JPA.
      */
     @SuppressWarnings("unused")
     protected TokenEntry() {
@@ -98,11 +102,13 @@ public class TokenEntry {
     /**
      * Returns the token, deserializing it with given {@code serializer}
      *
-     * @param converter The converter to deserialize the token with
-     * @return the deserialized token stored in this entry
+     * @param converter The converter to deserialize the token with.
+     * @return The deserialized token stored in this entry.
      */
     public TrackingToken getToken(@Nonnull Converter converter) {
-        return (token == null || tokenType == null) ? null : converter.convert(this.token, ClassUtils.loadClass(tokenType));
+        return (token == null || tokenType == null)
+                ? null
+                : converter.convert(this.token, ClassUtils.loadClass(tokenType));
     }
 
     /**
@@ -113,9 +119,9 @@ public class TokenEntry {
      * If a claim exists, but it is older than given {@code claimTimeout}, the claim may be 'stolen'.
      *
      * @param owner        The name of the current node, to register as owner. This name must be unique for multiple
-     *                     instances of the same logical processor
-     * @param claimTimeout The time after which a claim may be 'stolen' from its current owner
-     * @return {@code true} if the claim succeeded, otherwise false
+     *                     instances of the same logical processor.
+     * @param claimTimeout The time after which a claim may be 'stolen' from its current owner.
+     * @return {@code true} if the claim succeeded, otherwise false.
      */
     public boolean claim(String owner, TemporalAmount claimTimeout) {
         if (!mayClaim(owner, claimTimeout)) {
@@ -130,9 +136,9 @@ public class TokenEntry {
      * Check if given {@code owner} may claim this token.
      *
      * @param owner        The name of the current node, to register as owner. This name must be unique for multiple
-     *                     instances of the same logical processor
-     * @param claimTimeout The time after which a claim may be 'stolen' from its current owner
-     * @return {@code true} if the claim may be made, {@code false} otherwise
+     *                     instances of the same logical processor.
+     * @param claimTimeout The time after which a claim may be 'stolen' from its current owner.
+     * @return {@code true} if the claim may be made, {@code false} otherwise.
      */
     public boolean mayClaim(String owner, TemporalAmount claimTimeout) {
         return this.owner == null || owner.equals(this.owner) || expired(claimTimeout);
@@ -145,7 +151,7 @@ public class TokenEntry {
     /**
      * Release any claim of ownership currently active on this Token, if owned by the given {@code owner}.
      *
-     * @param owner The name of the current node, which was registered as the owner
+     * @param owner The name of the current node, which was registered as the owner.
      * @return {@code true} of the claim was successfully released, or {@code false} if the token has been claimed by
      * another owner.
      */
@@ -160,7 +166,7 @@ public class TokenEntry {
     /**
      * Returns the storage timestamp of this token entry as a String.
      *
-     * @return The storage timestamp as string
+     * @return The storage timestamp as string.
      */
     public String timestampAsString() {
         return timestamp;
@@ -169,7 +175,7 @@ public class TokenEntry {
     /**
      * Returns the storage timestamp of this token entry.
      *
-     * @return The storage timestamp
+     * @return The storage timestamp.
      */
     public Instant timestamp() {
         return DateTimeUtils.parseInstant(timestamp);
@@ -177,10 +183,10 @@ public class TokenEntry {
 
     /**
      * Updates a token, using the provided token and serializer to update the serialized token and token type. It will
-     * also update the timestamp to the current time, using the inhirited static {@link java.time.Clock}.
+     * also update the timestamp to the current time, using the inherited static {@link java.time.Clock}.
      *
-     * @param token     The new token that needs to be persisted
-     * @param converter The converter that will be used to serialize the token
+     * @param token     The new token that needs to be persisted.
+     * @param converter The converter that will be used to serialize the token.
      */
     public void updateToken(@Nullable TrackingToken token, @Nonnull Converter converter) {
         this.timestamp = formatInstant(clock.instant());
@@ -197,22 +203,34 @@ public class TokenEntry {
      * Returns the identifier of the process (JVM) having a claim on this token, or {@code null} if the token isn't
      * claimed.
      *
-     * @return the process (JVM) that claimed this token
+     * @return The process (JVM) that claimed this token.
      */
     public String getOwner() {
         return owner;
     }
 
+    /**
+     * Returns the name of the {@link org.axonframework.eventhandling.processors.streaming.StreamingEventProcessor} to
+     * which this token belongs.
+     *
+     * @return The name of the {@link org.axonframework.eventhandling.processors.streaming.StreamingEventProcessor} to
+     * which this token belongs.
+     */
     public String getProcessorName() {
         return processorName;
     }
 
+    /**
+     * Returns the segment identifier of this token.
+     *
+     * @return The segment identifier of this token.
+     */
     public int getSegment() {
         return segment;
     }
 
     /**
-     * Primary key for token entries used by JPA
+     * Primary key for token entries used by JPA.
      */
     @SuppressWarnings("UnusedDeclaration")
     public static class PK {
@@ -221,16 +239,16 @@ public class TokenEntry {
         private int segment;
 
         /**
-         * Constructor for JPA
+         * Constructor for JPA.
          */
         public PK() {
         }
 
         /**
-         * Constructs a primary key for a TokenEntry
+         * Constructs a primary key for a {@code TokenEntry}.
          *
-         * @param processorName The name of the processor
-         * @param segment       the index of the processing segment
+         * @param processorName The name of the processor.
+         * @param segment       The index of the processing segment.
          */
         public PK(String processorName, int segment) {
             this.processorName = processorName;
