@@ -35,7 +35,7 @@ import java.util.function.Consumer;
  * @author Mitchell Herrijgers
  * @author Steven van Beelen
  */
-public abstract class AbstractCommandHandlingStudentTestSuite extends AbstractStudentTestSuite {
+public abstract class AbstractCommandHandlingStudentIT extends AbstractStudentIT {
 
     private CommandHandlingModule.SetupPhase commandHandlingModule;
 

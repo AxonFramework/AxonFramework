@@ -60,7 +60,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 @Disabled("TODO #3488 - Axon Server Query Bus replacement")
 @Testcontainers
-class StreamingQueryEndToEndTest {
+class StreamingQueryIT {
 
     private static final TypeReference<List<String>> LIST_OF_STRINGS = new TypeReference<>() {
     };

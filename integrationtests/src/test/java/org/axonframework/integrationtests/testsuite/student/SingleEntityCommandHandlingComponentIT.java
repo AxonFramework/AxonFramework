@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Mitchell Herrijgers
  */
-class SingleEntityCommandHandlingComponentTest extends AbstractCommandHandlingStudentTestSuite {
+class SingleEntityCommandHandlingComponentIT extends AbstractCommandHandlingStudentIT {
     private final String student1 = createId("student-1");
     private final String student2 = createId("student-2");
 
