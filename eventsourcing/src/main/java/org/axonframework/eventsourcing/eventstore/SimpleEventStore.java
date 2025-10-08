@@ -122,7 +122,7 @@ public class SimpleEventStore implements EventStore, SubscribableEventSource {
         context.computeResourceIfAbsent(
                 notificationRegisteredKey,
                 () -> {
-                    context.onAfterCommit(ctx -> {
+                    context.onPrepareCommit(ctx -> {
                         notifySubscribers(events, ctx);
                         return FutureUtils.emptyCompletedFuture();
                     });
