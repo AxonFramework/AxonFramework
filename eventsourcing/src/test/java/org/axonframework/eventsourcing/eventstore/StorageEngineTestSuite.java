@@ -30,6 +30,7 @@ import org.axonframework.messaging.MessageStream.Entry;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 import reactor.test.StepVerifier;
 
 import java.nio.charset.StandardCharsets;
@@ -46,6 +47,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -55,6 +57,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Steven van Beelen
  */
+@TestInstance(Lifecycle.PER_CLASS)
 public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
 
     protected String TEST_DOMAIN_ID;
@@ -66,6 +69,18 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
 
     protected ESE testSubject;
 
+    @BeforeAll
+    void beforeAll() throws Exception {
+        testSubject = buildStorageEngine();
+
+        // At this time the store is empty, verify first and latest token are the same:
+        TrackingToken actualTailToken = testSubject.firstToken(processingContext()).get(5, TimeUnit.SECONDS);
+        TrackingToken actualHeadToken = testSubject.latestToken(processingContext()).get(5, TimeUnit.SECONDS);
+
+        assertTrue(actualHeadToken.covers(actualTailToken));
+        assertTrue(actualTailToken.covers(actualHeadToken));
+    }
+
     @BeforeEach
     void setUp() throws Exception {
         TEST_DOMAIN_ID = UUID.randomUUID().toString();
@@ -75,8 +90,6 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
         TEST_CRITERIA = EventCriteria.havingTags(new Tag("TEST", TEST_DOMAIN_ID));
         OTHER_CRITERIA_TAGS = Set.of(new Tag("OTHER", OTHER_DOMAIN_ID));
         OTHER_CRITERIA = EventCriteria.havingTags(new Tag("OTHER", OTHER_DOMAIN_ID));
-
-        testSubject = buildStorageEngine();
     }
 
     /**
@@ -272,13 +285,17 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
         assertInstanceOf(AppendEventsTransactionRejectedException.class, actual.getCause());
     }
 
-    @Test
+    @RepeatedTest(5)  // repeat a few times to detect concurrency bugs earlier
     void concurrentTransactionsForNonOverlappingTagsBothCommitWithExpectedConsistencyMarkerResponse() throws Exception {
-        // given...
-        Set<ConsistencyMarker> expected =
-                Set.of(new GlobalIndexConsistencyMarker(1), new GlobalIndexConsistencyMarker(2));
-        AppendCondition firstCondition = new DefaultAppendCondition(ConsistencyMarker.ORIGIN, TEST_CRITERIA);
-        AppendCondition secondCondition = new DefaultAppendCondition(ConsistencyMarker.ORIGIN, OTHER_CRITERIA);
+        TrackingToken startToken = testSubject.latestToken(processingContext()).join();
+        long position = startToken.position().getAsLong();
+        GlobalIndexConsistencyMarker marker1 = new GlobalIndexConsistencyMarker(position + 1);
+        GlobalIndexConsistencyMarker marker2 = new GlobalIndexConsistencyMarker(position + 2);
+
+        AppendCondition firstCondition = AppendCondition.withCriteria(TEST_CRITERIA)
+                                                        .withMarker(ConsistencyMarker.ORIGIN);
+        AppendCondition secondCondition = AppendCondition.withCriteria(OTHER_CRITERIA)
+                                                         .withMarker(ConsistencyMarker.ORIGIN);
         CompletableFuture<AppendTransaction<?>> firstTx =
                 testSubject.appendEvents(firstCondition,
                                          processingContext(),
@@ -301,8 +318,14 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
         ConsistencyMarker secondMarker = secondCommit.get(50, TimeUnit.MILLISECONDS);
         assertNotNull(firstMarker);
         assertNotNull(secondMarker);
-        Set<ConsistencyMarker> result = Set.of(firstMarker, secondMarker);
-        assertEquals(expected, result);
+        List<ConsistencyMarker> result = List.of(firstMarker, secondMarker);
+
+        // Valid results here are: [1, 2], [2, 1], [2, 2], but not [1, 1]
+        assertThat(result).isIn(List.of(
+            List.of(marker1, marker2),
+            List.of(marker2, marker1),
+            List.of(marker2, marker2)
+        ));
     }
 
     @Test
@@ -379,6 +402,8 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
     void streamingFromSpecificPositionReturnsSelectedMessages() throws Exception {
         TaggedEventMessage<EventMessage> expectedEventOne = taggedEventMessage("event-1", TEST_CRITERIA_TAGS);
         TaggedEventMessage<EventMessage> expectedEventTwo = taggedEventMessage("event-4", TEST_CRITERIA_TAGS);
+        TrackingToken startToken = testSubject.latestToken(processingContext()).join();
+
         // Ensure there are "gaps" in the global stream based on events not matching the sourcing condition
         appendEvents(
                 AppendCondition.none(),
@@ -391,13 +416,11 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
                 taggedEventMessage("event-6", OTHER_CRITERIA_TAGS)
         );
 
-        TrackingToken tokenOfFirstMessage = testSubject.firstToken(processingContext())
-                                                       .thenApply(StreamingCondition::startingFrom)
-                                                       .thenApply(c -> testSubject.stream(c, processingContext()))
-                                                       .thenApply(MessageStream::first)
-                                                       .thenCompose(MessageStream.Single::asCompletableFuture)
-                                                       .thenApply(r -> r.getResource(TrackingToken.RESOURCE_KEY))
-                                                       .get(5, TimeUnit.SECONDS);
+        TrackingToken tokenOfFirstMessage = testSubject.stream(StreamingCondition.startingFrom(startToken), processingContext())
+            .first()
+            .asCompletableFuture()
+            .thenApply(r -> r.getResource(TrackingToken.RESOURCE_KEY))
+            .get(5, TimeUnit.SECONDS);
 
         StreamingCondition testCondition = StreamingCondition.conditionFor(tokenOfFirstMessage, TEST_CRITERIA);
 
@@ -411,6 +434,8 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
 
     @Test
     void streamingAfterLastPositionReturnsEmptyStream() throws Exception {
+        TrackingToken startToken = testSubject.latestToken(processingContext()).join();
+
         appendEvents(
                 AppendCondition.none(),
                 taggedEventMessage("event-0", TEST_CRITERIA_TAGS),
@@ -423,7 +448,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
         );
 
         StreamingCondition testCondition =
-                StreamingCondition.conditionFor(new GlobalSequenceTrackingToken(10), TEST_CRITERIA);
+                StreamingCondition.conditionFor(new GlobalSequenceTrackingToken(startToken.position().getAsLong() + 10), TEST_CRITERIA);
 
         MessageStream<EventMessage> result = testSubject.stream(testCondition, processingContext());
 
@@ -436,16 +461,15 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
 
     @Test
     void eventsPublishedAreIncludedInOpenStreams() throws Exception {
+        TrackingToken startToken = testSubject.latestToken(processingContext()).join();
+
         appendEvents(
                 AppendCondition.none(),
                 taggedEventMessage("event-0", TEST_CRITERIA_TAGS),
                 taggedEventMessage("event-1", TEST_CRITERIA_TAGS)
         );
 
-        MessageStream<EventMessage> stream = testSubject.firstToken(processingContext())
-                                                        .thenApply(StreamingCondition::startingFrom)
-                                                        .thenApply(c -> testSubject.stream(c, processingContext()))
-                                                        .get(5, TimeUnit.SECONDS);
+        MessageStream<EventMessage> stream = testSubject.stream(StreamingCondition.startingFrom(startToken), processingContext());
 
         // Wait for first event...
         await().pollDelay(Duration.ofMillis(250))
@@ -482,11 +506,10 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
 
     @Test
     void streamReceivesEventsAppendedAfterStreamOpened() throws Exception {
+        TrackingToken startToken = testSubject.latestToken(processingContext()).join();
+
         // given
-        MessageStream<EventMessage> stream = testSubject.firstToken(processingContext())
-                                                        .thenApply(StreamingCondition::startingFrom)
-                                                        .thenApply(c -> testSubject.stream(c, processingContext()))
-                                                        .get(5, TimeUnit.SECONDS);
+        MessageStream<EventMessage> stream = testSubject.stream(StreamingCondition.startingFrom(startToken), processingContext());
 
         // when
         TaggedEventMessage<EventMessage> expectedEvent1 = taggedEventMessage("event-1", TEST_CRITERIA_TAGS);
@@ -509,17 +532,9 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
     }
 
     @Test
-    void tailTokenReturnsHeadTokenForEmptyStore() throws Exception {
-        TrackingToken actualTailToken = testSubject.firstToken(processingContext()).get(5, TimeUnit.SECONDS);
-        TrackingToken actualHeadToken = testSubject.latestToken(processingContext()).get(5, TimeUnit.SECONDS);
-
-        assertTrue(actualHeadToken.covers(actualTailToken));
-        assertTrue(actualTailToken.covers(actualHeadToken));
-    }
-
-    @Test
     void tailTokenReturnsFirstAppendedEvent() throws Exception {
         TaggedEventMessage<EventMessage> firstEvent = taggedEventMessage("event-0", TEST_CRITERIA_TAGS);
+        TrackingToken startToken = testSubject.latestToken(processingContext()).join();
 
         appendEvents(
                 AppendCondition.none(),
@@ -527,10 +542,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
                 taggedEventMessage("event-1", TEST_CRITERIA_TAGS)
         );
 
-        MessageStream<EventMessage> stream = testSubject.firstToken(processingContext())
-                                                        .thenApply(StreamingCondition::startingFrom)
-                                                        .thenApply(c -> testSubject.stream(c, processingContext()))
-                                                        .get(5, TimeUnit.SECONDS);
+        MessageStream<EventMessage> stream = testSubject.stream(StreamingCondition.startingFrom(startToken), processingContext());
 
         Entry<EventMessage> actualEntry = stream.first()
                                                 .asCompletableFuture()

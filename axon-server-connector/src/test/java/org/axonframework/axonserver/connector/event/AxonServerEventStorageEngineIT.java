@@ -42,10 +42,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Steven van Beelen
  */
 @Testcontainers
-@Tags({
-        @Tag("slow"),
-})
-class AxonServerEventStorageEngineTest extends StorageEngineTestSuite<AxonServerEventStorageEngine> {
+class AxonServerEventStorageEngineIT extends StorageEngineTestSuite<AxonServerEventStorageEngine> {
 
     private static final String CONTEXT = "default";
 
@@ -53,16 +50,6 @@ class AxonServerEventStorageEngineTest extends StorageEngineTestSuite<AxonServer
     private static final AxonServerContainer container = new AxonServerContainer("docker.axoniq.io/axoniq/axonserver:2025.2.0-EAP2").withDevMode(true);
 
     private static AxonServerConnection connection;
-
-    @BeforeAll
-    static void beforeAll() {
-        container.start();
-        ServerAddress address = new ServerAddress(container.getHost(), container.getGrpcPort());
-        connection = AxonServerConnectionFactory.forClient("AxonServerEventStorageEngineTest")
-                                                .routingServers(address)
-                                                .build()
-                                                .connect(CONTEXT);
-    }
 
     @AfterAll
     static void afterAll() {
@@ -72,10 +59,19 @@ class AxonServerEventStorageEngineTest extends StorageEngineTestSuite<AxonServer
 
     @Override
     protected AxonServerEventStorageEngine buildStorageEngine() throws IOException {
+        container.start();
+        ServerAddress address = new ServerAddress(container.getHost(), container.getGrpcPort());
+        connection = AxonServerConnectionFactory.forClient("AxonServerEventStorageEngineTest")
+                                                .routingServers(address)
+                                                .build()
+                                                .connect(CONTEXT);
+
+        // This is only needed to switch the store to DCB mode:
         AxonServerContainerUtils.purgeEventsFromAxonServer(container.getHost(),
-                                                           container.getHttpPort(),
-                                                           CONTEXT,
-                                                           AxonServerContainerUtils.DCB_CONTEXT);
+                container.getHttpPort(),
+                CONTEXT,
+                AxonServerContainerUtils.DCB_CONTEXT);
+
         EventConverter eventConverter = new DelegatingEventConverter(new ChainingContentTypeConverter());
         return new AxonServerEventStorageEngine(connection, eventConverter);
     }
