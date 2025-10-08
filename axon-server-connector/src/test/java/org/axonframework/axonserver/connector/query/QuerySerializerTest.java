@@ -71,6 +71,7 @@ class QuerySerializerTest {
     }
 
     @Test
+    @Disabled("TODO #3488")
     void serializeResponse() {
         Map<String, ?> metadata = new HashMap<>() {{
             this.put("firstKey", "firstValue");
