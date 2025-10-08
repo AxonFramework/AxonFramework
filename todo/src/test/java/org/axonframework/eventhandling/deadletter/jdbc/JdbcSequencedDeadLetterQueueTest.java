@@ -28,7 +28,8 @@ import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueueTest;
 import org.axonframework.messaging.deadletter.WrongDeadLetterTypeException;
-import org.axonframework.serialization.TestSerializer;
+import org.axonframework.serialization.TestConverter;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.hsqldb.jdbc.JDBCDataSource;
 import org.junit.jupiter.api.*;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
@@ -75,8 +76,8 @@ class JdbcSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Even
                                                           .connectionProvider(dataSource::getConnection)
                                                           .schema(schema)
                                                           .transactionManager(transactionManager)
-                                                          .genericSerializer(TestSerializer.JACKSON.getSerializer())
-                                                          .eventSerializer(TestSerializer.JACKSON.getSerializer())
+                                                          .genericSerializer(JacksonSerializer.defaultSerializer())
+                                                          .eventSerializer(JacksonSerializer.defaultSerializer())
                                                           .build();
         return jdbcDeadLetterQueue;
     }
@@ -357,7 +358,7 @@ class JdbcSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Even
                                             .processingGroup(TEST_PROCESSING_GROUP)
                                             .connectionProvider(mock(ConnectionProvider.class))
                                             .converter(mock(DeadLetterJdbcConverter.class))
-                                            .eventSerializer(TestSerializer.JACKSON.getSerializer());
+                                            .eventSerializer(JacksonSerializer.defaultSerializer());
 
         assertThrows(AxonConfigurationException.class, testBuilder::build);
     }
@@ -370,7 +371,7 @@ class JdbcSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Even
                                             .processingGroup(TEST_PROCESSING_GROUP)
                                             .connectionProvider(mock(ConnectionProvider.class))
                                             .converter(mock(DeadLetterJdbcConverter.class))
-                                            .genericSerializer(TestSerializer.JACKSON.getSerializer());
+                                            .genericSerializer(JacksonSerializer.defaultSerializer());
 
         assertThrows(AxonConfigurationException.class, testBuilder::build);
     }
@@ -383,7 +384,7 @@ class JdbcSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Even
                                             .processingGroup(TEST_PROCESSING_GROUP)
                                             .connectionProvider(mock(ConnectionProvider.class))
                                             .statementFactory(mock(DeadLetterStatementFactory.class))
-                                            .eventSerializer(TestSerializer.JACKSON.getSerializer());
+                                            .eventSerializer(JacksonSerializer.defaultSerializer());
 
         assertThrows(AxonConfigurationException.class, testBuilder::build);
     }
@@ -396,7 +397,7 @@ class JdbcSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Even
                                             .processingGroup(TEST_PROCESSING_GROUP)
                                             .connectionProvider(mock(ConnectionProvider.class))
                                             .statementFactory(mock(DeadLetterStatementFactory.class))
-                                            .genericSerializer(TestSerializer.JACKSON.getSerializer());
+                                            .genericSerializer(JacksonSerializer.defaultSerializer());
 
         assertThrows(AxonConfigurationException.class, testBuilder::build);
     }

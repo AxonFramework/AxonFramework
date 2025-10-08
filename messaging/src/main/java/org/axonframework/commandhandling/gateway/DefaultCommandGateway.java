@@ -74,6 +74,7 @@ public class DefaultCommandGateway implements CommandGateway {
     }
 
     @Override
+    @Nonnull
     public CommandResult send(@Nonnull Object command,
                               @Nullable ProcessingContext context) {
         CommandMessage commandMessage = asCommandMessage(command, Metadata.emptyInstance());
@@ -88,6 +89,7 @@ public class DefaultCommandGateway implements CommandGateway {
     }
 
     @Override
+    @Nonnull
     public CommandResult send(@Nonnull Object command,
                               @Nonnull Metadata metadata,
                               @Nullable ProcessingContext context) {

@@ -32,7 +32,6 @@ import java.util.function.Function;
  * @author Allard Buijze
  * @since 2.1.0
  */
-// TODO We should omit the ServiceLoader behavior of the HandlerDefinition, as nobody actually constructs their own HandlerDefinitions
 public interface HandlerDefinition {
 
     /**

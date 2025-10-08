@@ -124,7 +124,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
                                                AxonServerConfiguration serverConfig =
                                                        config.getComponent(AxonServerConfiguration.class);
                                                int commandThreads = serverConfig.getCommandThreads();
-                                               return distributedCommandBusConfig.numberOfThreads(commandThreads);
+                                               return distributedCommandBusConfig.commandThreads(commandThreads);
                                            }
                                    );
     }

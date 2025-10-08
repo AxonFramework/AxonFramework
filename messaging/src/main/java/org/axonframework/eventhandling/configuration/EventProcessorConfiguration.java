@@ -142,7 +142,6 @@ public class EventProcessorConfiguration implements DescribableComponent {
      * @param spanFactory The {@link SpanFactory} implementation
      * @return The current instance, for fluent interfacing.
      */
-    @Deprecated(since = "5.0.0", forRemoval = true)
     public EventProcessorConfiguration spanFactory(@Nonnull EventProcessorSpanFactory spanFactory) {
         assertNonNull(spanFactory, "SpanFactory may not be null");
         this.spanFactory = spanFactory;
