@@ -189,10 +189,7 @@ public abstract class ReflectionUtils {
      *
      * @param member The member (field, method, constructor, etc) to check for accessibility
      * @return {@code true} if the member is accessible, otherwise {@code false}.
-     * @deprecated Since the used {@link AccessibleObject#isAccessible()} should be replaced for
-     * {@link AccessibleObject#canAccess(Object)}. The effort to implement a workaround is drafted in issue #2901.
      */
-    @Deprecated
     public static boolean isAccessible(AccessibleObject member) {
         return member.isAccessible() || (member instanceof Member && isNonFinalPublicMember((Member) member));
     }
