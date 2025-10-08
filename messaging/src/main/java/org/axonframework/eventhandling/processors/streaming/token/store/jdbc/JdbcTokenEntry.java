@@ -91,7 +91,7 @@ public class JdbcTokenEntry {
     }
 
     /**
-     * Returns the token, deserializing it with given {@code serializer}
+     * Returns the token, deserializing it with given {@code converter}.
      *
      * @param converter The converter to deserialize the token with
      * @return the deserialized token stored in this entry
