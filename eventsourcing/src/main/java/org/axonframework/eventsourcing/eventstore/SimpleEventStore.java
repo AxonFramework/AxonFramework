@@ -30,7 +30,6 @@ import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.SubscribableEventSource;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.ProcessingLifecycle;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -94,14 +93,14 @@ public class SimpleEventStore implements EventStore, SubscribableEventSource {
                                      .thenApply(SimpleEventStore::castTransaction)
                                      .thenApply(tx -> tx.commit(context).thenApply(v -> tx.afterCommit(v, context)))
                                      .thenApply(marker -> {
-                                         eventSubscribers.notifySubscribersNow(events, context);
+                                         notifySubscribers(events, context);
                                          return null;
                                      });
         } else {
             // Return a completed future since we have an active context.
             // The user will wait within the context's lifecycle anyhow.
             appendToTransaction(context, events);
-            eventSubscribers.notifySubscribersOnPhase(events, ProcessingLifecycle.DefaultPhases.PREPARE_COMMIT, context);
+            registerSubscriberNotification(context, events);
             return FutureUtils.emptyCompletedFuture();
         }
     }
@@ -118,9 +117,26 @@ public class SimpleEventStore implements EventStore, SubscribableEventSource {
         }
     }
 
+    private void registerSubscriberNotification(ProcessingContext context, List<EventMessage> events) {
+        ResourceKey<Boolean> notificationRegisteredKey = ResourceKey.withLabel("subscriberNotificationRegistered");
+        context.computeResourceIfAbsent(
+                notificationRegisteredKey,
+                () -> {
+                    context.onPrepareCommit(ctx -> {
+                        notifySubscribers(events, ctx);
+                        return FutureUtils.emptyCompletedFuture();
+                    });
+                    return true;
+                }
+        );
+    }
+
+    private void notifySubscribers(List<EventMessage> events, ProcessingContext context) {
+        eventSubscribers.notifySubscribers(events, context);
+    }
+
     @Override
-    public Registration subscribe(
-            @Nonnull BiConsumer<List<? extends EventMessage>, ProcessingContext> eventsBatchConsumer) {
+    public Registration subscribe(@Nonnull BiConsumer<List<? extends EventMessage>, ProcessingContext> eventsBatchConsumer) {
         return eventSubscribers.subscribe(eventsBatchConsumer);
     }
 
@@ -140,8 +156,7 @@ public class SimpleEventStore implements EventStore, SubscribableEventSource {
     }
 
     @Override
-    public MessageStream<EventMessage> open(@Nonnull StreamingCondition condition,
-                                            @Nullable ProcessingContext context) {
+    public MessageStream<EventMessage> open(@Nonnull StreamingCondition condition, @Nullable ProcessingContext context) {
         return eventStorageEngine.stream(condition, context);
     }
 
