@@ -394,6 +394,32 @@ class SimpleEventStoreTest {
             awaitSuccessfulCompletion(result);
             verifyNoInteractions(mockSubscriber);
         }
+
+        @Test
+        void subscriberExceptionRollsBackTransaction() {
+            // given
+            EventStorageEngine.AppendTransaction<?> mockAppendTransaction = mock();
+            when(mockStorageEngine.appendEvents(any(), any(ProcessingContext.class), anyList()))
+                    .thenReturn(completedFuture(mockAppendTransaction));
+            when(tagResolver.resolve(any())).thenReturn(Set.of());
+
+            RuntimeException subscriberException = new RuntimeException("Subscriber failed");
+            var mockSubscriber = mock(java.util.function.BiConsumer.class);
+            doThrow(subscriberException).when(mockSubscriber).accept(any(), any(ProcessingContext.class));
+            testSubject.subscribe(mockSubscriber);
+            EventMessage testEvent = createEvent(0);
+
+            // when
+            UnitOfWork uow = aUnitOfWork();
+            uow.onPreInvocation(context -> testSubject.publish(context, testEvent));
+            CompletableFuture<Void> result = uow.execute();
+
+            // then
+            ExecutionException exception = assertThrows(ExecutionException.class, () -> result.get(5, TimeUnit.SECONDS));
+            assertSame(subscriberException, exception.getCause());
+            verify(mockSubscriber).accept(eq(List.of(testEvent)), any(ProcessingContext.class));
+            verify(mockAppendTransaction, never()).commit(any(ProcessingContext.class));
+        }
     }
 
     @Test
