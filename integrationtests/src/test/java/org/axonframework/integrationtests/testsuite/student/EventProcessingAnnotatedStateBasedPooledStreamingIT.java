@@ -51,7 +51,7 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class EventProcessingAnnotatedStateBasedPooledStreamingTest extends AbstractStudentTestSuite {
+public class EventProcessingAnnotatedStateBasedPooledStreamingIT extends AbstractStudentIT {
 
     @Test
     void whenStudentEnrolledThenUpdateReadModel() {

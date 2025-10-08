@@ -40,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @Tags({
         @Tag("slow"),
 })
-class AggregateBasedAxonServerEventStorageEngineTest extends
+class AggregateBasedAxonServerEventStorageEngineIT extends
         AggregateBasedStorageEngineTestSuite<AggregateBasedAxonServerEventStorageEngine> {
 
     private static final AxonServerContainer axonServerContainer = new AxonServerContainer()

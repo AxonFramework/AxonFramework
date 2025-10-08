@@ -38,10 +38,9 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Albert Attard (JavaCreed)
  */
 @Testcontainers
-@Tags({
-        @Tag("slow"),
-})
-class MysqlJdbcEventStorageEngineTest {
+@Tag("slow")
+@Tag("nightly")
+class MysqlJdbcEventStorageEngineIT {
 
     @Container
     private static final MySQLContainer<?> MYSQL_CONTAINER = new MySQLContainer<>("mysql:8.0")
