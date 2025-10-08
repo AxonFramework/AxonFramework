@@ -53,4 +53,5 @@ public interface SubscribableEventSource {
      * no longer receive events.
      */
     Registration subscribe(@Nonnull BiConsumer<List<? extends EventMessage>, ProcessingContext> eventsBatchConsumer);
+    // TODO: BiFunction --- return CompletableFuture<Void>
 }
