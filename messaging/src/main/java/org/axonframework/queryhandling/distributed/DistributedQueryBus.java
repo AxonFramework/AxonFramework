@@ -30,6 +30,8 @@ import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryResponseMessages;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.UpdateHandler;
+import org.axonframework.util.PriorityRunnable;
+import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,6 +39,7 @@ import java.lang.invoke.MethodHandles;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -87,6 +90,7 @@ public class DistributedQueryBus implements QueryBus {
                 configuration.queryResponseExecutorServiceFactory()
                              .createExecutorService(configuration,
                                                     new PriorityBlockingQueue<>(QUERY_AND_RESPONSE_QUEUE_CAPACITY));
+        connector.onIncomingQuery(new DistributedHandler());
     }
 
     @Override
@@ -152,5 +156,65 @@ public class DistributedQueryBus implements QueryBus {
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(localSegment);
         descriptor.describeProperty("connector", connector);
+    }
+
+    private class DistributedHandler implements QueryBusConnector.Handler {
+
+        private static final AtomicLong TASK_SEQUENCE = new AtomicLong(Long.MIN_VALUE);
+
+        @Override
+        public void query(@Nonnull QueryMessage query,
+                          @Nonnull QueryBusConnector.ResultCallback callback) {
+            int priority = 0; //query.priority().orElse(0);
+            if (logger.isDebugEnabled()) {
+                logger.debug("Received query [{}] with response [{}] for processing with priority [{}].",
+                             query.type(), query.responseType(), priority);
+            }
+            long sequence = TASK_SEQUENCE.incrementAndGet();
+            responseHandlingExecutor.execute(
+                    new PriorityRunnable(() -> doHandleQuery(query, callback), priority, sequence)
+            );
+        }
+
+        @Override
+        public Publisher<QueryResponseMessage> streamingQuery(@Nonnull QueryMessage query) {
+            return null;
+        }
+
+        private void doHandleQuery(QueryMessage query,
+                                   QueryBusConnector.ResultCallback callback) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Processing incoming query [{}] with response [{}] with priority [{}]",
+                             query.type(), query.responseType(), 0);
+            }
+
+            localSegment.query(query, null);
+//            localSegment.query(query, null).whenComplete((resultMessage, e) -> {
+//                try {
+//                    if (e == null) {
+//                        handleSuccess(query, callback, resultMessage);
+//                    } else {
+//                        handleError(query, callback, e);
+//                    }
+//                } catch (Throwable ex) {
+//                    logger.error("Error handling response of command [{}]", query.type(), ex);
+//                    handleError(query, callback, ex);
+//                }
+//            });
+        }
+
+        private void handleError(QueryMessage query,
+                                 QueryBusConnector.ResultCallback callback,
+                                 Throwable e) {
+            logger.error("Error processing incoming command [{}]", query.type(), e);
+            callback.onError(e);
+        }
+
+        private void handleSuccess(QueryMessage query,
+                                   QueryBusConnector.ResultCallback callback,
+                                   QueryResponseMessage resultMessage) {
+            logger.debug("Successfully processed command [{}] with result [{}]", query.type(), resultMessage);
+            callback.onSuccess(resultMessage);
+        }
     }
 }
