@@ -18,11 +18,13 @@ package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.ProcessingLifecycle;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -146,7 +148,7 @@ public abstract class AbstractEventBus implements EventBus {
      * @param context The processing context, or {@code null} if no context is active
      */
     protected void prepareCommit(@Nonnull List<? extends EventMessage> events, @Nullable ProcessingContext context) {
-        eventSubscribers.notifySubscribersNow(events, context);
+        eventSubscribers.notifySubscribers(events, context);
     }
 
     /**
