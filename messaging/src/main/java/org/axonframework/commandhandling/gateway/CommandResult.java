@@ -155,6 +155,7 @@ public interface CommandResult {
      * @param resultType The expected result type of command handling.
      * @param <R>        The type of the command result.
      * @return The result of command handling, cast to the given {@code type}.
+     * @throws CommandExecutionException When a checked exception occurs while waiting for the result.
      */
     default <R> R wait(@Nonnull Class<R> resultType) {
         try {
