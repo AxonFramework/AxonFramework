@@ -21,7 +21,7 @@ import java.util.function.Function;
 
 /**
  * Functional interface returning the maximum amount of segments a {@link Coordinator} may claim, based on the given
- * {@code processingGroup}.
+ * {@code processorName}.
  *
  * @author Manish
  * @since 4.10.0
@@ -29,23 +29,21 @@ import java.util.function.Function;
 public interface MaxSegmentProvider extends Function<String, Integer> {
 
     /**
-     * Returns the maximum amount of segments to claim for the given {@code processingGroup}.
+     * Returns the maximum amount of segments to claim for the given {@code processorName}.
      *
-     * @param processingGroup The name of a processing group for which to provide the maximum amount of segments it can
-     *                        claim.
-     * @return The maximum number of segments that can be claimed for the given {@code processingGroup}.
+     * @param processorName The name of the processor for which to provide the maximum amount of segments it can claim.
+     * @return The maximum number of segments that can be claimed for the given {@code processorName}.
      */
-    int getMaxSegments(String processingGroup);
+    int getMaxSegments(String processorName);
 
     /**
-     * Returns the maximum amount of segments to claim for the given {@code processingGroup}.
+     * Returns the maximum amount of segments to claim for the given {@code processorName}.
      *
-     * @param processingGroup The name of a processing group for which to provide the maximum amount of segments it can
-     *                        claim.
-     * @return The maximum number of segments that can be claimed for the given {@code processingGroup}.
+     * @param processorName The name of a processor for which to provide the maximum amount of segments it can claim.
+     * @return The maximum number of segments that can be claimed for the given {@code processorName}.
      */
-    default Integer apply(String processingGroup) {
-        return getMaxSegments(processingGroup);
+    default Integer apply(String processorName) {
+        return getMaxSegments(processorName);
     }
 
     /**
@@ -54,6 +52,6 @@ public interface MaxSegmentProvider extends Function<String, Integer> {
      * @return A {@link MaxSegmentProvider} that always returns {@link Short#MAX_VALUE}.
      */
     static MaxSegmentProvider maxShort() {
-        return processingGroup -> Short.MAX_VALUE;
+        return processorName -> Short.MAX_VALUE;
     }
 }
