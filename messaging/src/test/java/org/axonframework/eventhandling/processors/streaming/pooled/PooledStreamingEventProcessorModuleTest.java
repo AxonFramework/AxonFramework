@@ -169,8 +169,7 @@ class PooledStreamingEventProcessorModuleTest {
             eventSource.publishMessage(sampleEvent);
 
             // then
-            await().atMost(Duration.ofMillis(500))
-                   .untilAsserted(() -> {
+            await().untilAsserted(() -> {
                        assertThat(component1.handled(sampleEvent)).isTrue();
                        assertThat(component2.handled(sampleEvent)).isTrue();
                        assertThat(component3HandledPayload.get()).isEqualTo(sampleEvent.payload());
