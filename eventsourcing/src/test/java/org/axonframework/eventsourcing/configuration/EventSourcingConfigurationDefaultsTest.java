@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.ApplicationConfigurer;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.MessagingConfigurer;
+import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
@@ -95,6 +96,15 @@ class EventSourcingConfigurationDefaultsTest {
         assertInstanceOf(InterceptingEventStore.class, eventSink);
     }
 
+    @Test
+    void enhanceSetsEventStoreAsEventBus() {
+        ApplicationConfigurer configurer = MessagingConfigurer.create();
+        configurer.componentRegistry(cr -> cr.registerEnhancer(testSubject));
+        Configuration resultConfig = configurer.build();
+
+        EventSink eventBus = resultConfig.getComponent(EventBus.class);
+        assertInstanceOf(InterceptingEventStore.class, eventBus);
+    }
 
     @Test
     void enhanceOnlySetsDefaultsThatAreNotPresentYet() {

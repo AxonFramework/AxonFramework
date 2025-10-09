@@ -70,11 +70,13 @@ public class EventSourcingConfigurationDefaults implements ConfigurationEnhancer
     public void enhance(@Nonnull ComponentRegistry registry) {
         // disable default EventBus in favor of SimpleEventStore
         registry.disableEnhancer(EventBusConfigurationDefaults.class);
+
         // Register components
         registry.registerIfNotPresent(TagResolver.class, EventSourcingConfigurationDefaults::defaultTagResolver)
                 .registerIfNotPresent(EventStorageEngine.class,
                                       EventSourcingConfigurationDefaults::defaultEventStorageEngine)
                 .registerIfNotPresent(EventStore.class, EventSourcingConfigurationDefaults::defaultEventStore);
+
         // Register decorators
         registry.registerDecorator(
                 EventStore.class,
