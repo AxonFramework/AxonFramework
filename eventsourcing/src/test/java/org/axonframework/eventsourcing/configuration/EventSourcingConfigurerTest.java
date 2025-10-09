@@ -20,11 +20,13 @@ import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.configuration.ApplicationConfigurerTestSuite;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ModuleBuilder;
+import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.EventStoreBasedEventBus;
+import org.axonframework.eventsourcing.eventstore.InterceptingEventStore;
 import org.axonframework.eventsourcing.eventstore.PayloadBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
@@ -66,13 +68,15 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
 
         Optional<EventStore> eventStore = result.getOptionalComponent(EventStore.class);
         assertTrue(eventStore.isPresent());
-        assertInstanceOf(EventStoreBasedEventBus.class, eventStore.get());
+        assertInstanceOf(InterceptingEventStore.class, eventStore.get());
 
         Optional<EventSink> eventSink = result.getOptionalComponent(EventSink.class);
         assertTrue(eventSink.isPresent());
         assertInstanceOf(EventStoreBasedEventBus.class, eventSink.get());
-        // By default, the Event Store and the Event Sink should be the same instance.
-        assertEquals(eventStore.get(), eventSink.get());
+        // By default, the Event Bus and the Event Sink should be the same instance.
+        Optional<EventBus> eventBus = result.getOptionalComponent(EventBus.class);
+        assertTrue(eventBus.isPresent());
+        assertEquals(eventBus.get(), eventSink.get());
     }
 
     @Test
