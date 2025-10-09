@@ -850,6 +850,86 @@ class DefaultComponentRegistryTest {
                                () -> config.getComponent(ServiceInterface.class),
                                "Should throw ambiguity exception when multiple implementations registered by impl class");
                 }
+
+                @Test
+                void componentLookupAlgorithmExactMatchVsAssignability() {
+                    // given
+                    ServiceImplA implA = new ServiceImplA("registered-by-interface");
+                    ServiceImplB implB = new ServiceImplB("registered-by-impl");
+
+                    testSubject.registerComponent(ServiceInterface.class, c -> implA)  // Exact match for ServiceInterface
+                               .registerComponent(ServiceImplB.class, c -> implB);      // Registered by implementation
+
+                    // when
+                    Configuration config = testSubject.build(mock());
+
+                    // then
+                    // SCENARIO 1: Exact match exists → Uses exact match, no assignability check
+                    ServiceInterface byInterface = config.getComponent(ServiceInterface.class);
+                    assertEquals("registered-by-interface", byInterface.getValue());
+                    assertSame(implA, byInterface);
+                    // Even though ServiceImplB also implements ServiceInterface,
+                    // it doesn't cause ambiguity because exact match wins
+
+                    // SCENARIO 2: Exact match exists for implementation class
+                    ServiceImplB byImpl = config.getComponent(ServiceImplB.class);
+                    assertEquals("registered-by-impl", byImpl.getValue());
+                    assertSame(implB, byImpl);
+
+                    // SCENARIO 3: Assignability check only works "upward" (interface ← impl), NOT "downward" (impl ← interface)
+                    // ServiceImplA was registered by ServiceInterface.class, not ServiceImplA.class
+                    // Asking for ServiceImplA.class has no exact match
+                    // Assignability check: ServiceImplA.isAssignableFrom(ServiceInterface) = FALSE
+                    // Therefore, component NOT found
+                    assertThrows(ComponentNotFoundException.class,
+                               () -> config.getComponent(ServiceImplA.class),
+                               "Cannot retrieve by implementation when registered by interface");
+
+                    // But we CAN get it by the registered type (interface)
+                    assertNotNull(config.getComponent(ServiceInterface.class));
+                }
+
+                @Test
+                void assignabilityCheckFindsImplementationWhenNoExactMatch() {
+                    // given
+                    ServiceImplA implA = new ServiceImplA("only-by-impl");
+
+                    // Register ONLY by implementation class, NOT by interface
+                    testSubject.registerComponent(ServiceImplA.class, c -> implA);
+
+                    // when
+                    Configuration config = testSubject.build(mock());
+
+                    // then
+                    // EXACT MATCH: ServiceImplA.class → works
+                    ServiceImplA byImpl = config.getComponent(ServiceImplA.class);
+                    assertEquals("only-by-impl", byImpl.getValue());
+
+                    // NO EXACT MATCH: ServiceInterface.class
+                    // → Searches for components where ServiceInterface.isAssignableFrom(component.type)
+                    // → Finds ServiceImplA because ServiceInterface.isAssignableFrom(ServiceImplA) = true
+                    // → Returns the component
+                    ServiceInterface byInterface = config.getComponent(ServiceInterface.class);
+                    assertEquals("only-by-impl", byInterface.getValue());
+                    assertSame(implA, byInterface);
+                }
+
+                @Test
+                void hasComponentReturnsTrueForExactMatchAndAssignableTypes() {
+                    // given
+                    ServiceImplA implA = new ServiceImplA("impl");
+                    testSubject.registerComponent(ServiceImplA.class, c -> implA);
+
+                    // when
+                    Configuration config = testSubject.build(mock());
+
+                    // then
+                    // hasComponent checks BOTH exact match AND assignability
+                    assertTrue(config.hasComponent(ServiceImplA.class),
+                             "Should find exact match");
+                    assertTrue(config.hasComponent(ServiceInterface.class),
+                             "Should find via assignability check");
+                }
             }
 
             @Nested
