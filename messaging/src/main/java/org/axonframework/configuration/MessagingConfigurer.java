@@ -23,7 +23,7 @@ import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.configuration.EventProcessingConfigurer;
-import org.axonframework.eventhandling.configuration.EventSinkConfigurationDefaults;
+import org.axonframework.eventhandling.configuration.EventBusConfigurationDefaults;
 import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
@@ -37,7 +37,6 @@ import org.axonframework.messaging.interceptors.HandlerInterceptorRegistry;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.configuration.QueryHandlingModule;
 
 import java.util.Objects;
@@ -95,7 +94,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     public static MessagingConfigurer enhance(@Nonnull ApplicationConfigurer applicationConfigurer) {
         return new MessagingConfigurer(applicationConfigurer)
                 .componentRegistry(cr -> cr
-                        .registerEnhancer(new EventSinkConfigurationDefaults())
+                        .registerEnhancer(new EventBusConfigurationDefaults())
                         .registerEnhancer(new MessagingConfigurationDefaults())
                 );
     }
