@@ -41,6 +41,7 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.SubscribableEventSource;
 import org.axonframework.messaging.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
@@ -113,8 +114,12 @@ class MessagingConfigurationDefaultsTest {
         // The specific CommandGateway-implementation registered by default may be overridden by the serviceloader-mechanism.
         // So we just check if _any_ CommandGateway has been added to the configuration.
         assertTrue(resultConfig.hasComponent(CommandGateway.class));
+
         assertInstanceOf(DefaultEventGateway.class, resultConfig.getComponent(EventGateway.class));
-        assertInstanceOf(InterceptingEventBus.class, resultConfig.getComponent(EventBus.class));
+        EventBus eventBus = resultConfig.getComponent(EventBus.class);
+        assertInstanceOf(InterceptingEventBus.class, eventBus);
+        assertThat(resultConfig.getComponent(SubscribableEventSource.class)).isSameAs(eventBus);
+
         assertInstanceOf(SimpleQueryBus.class, resultConfig.getComponent(QueryBus.class));
         assertEquals(QueryPriorityCalculator.defaultCalculator(),
                      resultConfig.getComponent(QueryPriorityCalculator.class));
@@ -214,6 +219,18 @@ class MessagingConfigurationDefaultsTest {
         Configuration resultConfig = configurer.build();
 
         assertThat(resultConfig.getComponent(CommandBus.class)).isInstanceOf(InterceptingCommandBus.class);
+    }
+
+    @Test
+    void decoratorsEventBusAsInterceptorEventBusWhenGenericHandlerInterceptorIsPresent() {
+        //noinspection unchecked
+        MessagingConfigurer configurer =
+                MessagingConfigurer.create()
+                                   .registerMessageHandlerInterceptor(c -> mock(MessageHandlerInterceptor.class));
+
+        Configuration resultConfig = configurer.build();
+
+        assertThat(resultConfig.getComponent(EventBus.class)).isInstanceOf(InterceptingEventBus.class);
     }
 
     @Test
