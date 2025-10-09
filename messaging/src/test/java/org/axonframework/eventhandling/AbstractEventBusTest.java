@@ -29,7 +29,6 @@ import org.junit.jupiter.api.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.BiConsumer;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 
@@ -83,21 +82,21 @@ class AbstractEventBusTest {
             List<String> phaseCalls = new ArrayList<>();
             StubPublishingEventBus trackingBus = new StubPublishingEventBus(false) {
                 @Override
-                protected void prepareCommit(@Nonnull List<? extends EventMessage> events, ProcessingContext context) {
+                protected CompletableFuture<Void> prepareCommit(@Nonnull List<? extends EventMessage> events, ProcessingContext context) {
                     phaseCalls.add("prepareCommit");
-                    super.prepareCommit(events, context);
+                    return super.prepareCommit(events, context);
                 }
 
                 @Override
-                protected void commit(@Nonnull List<? extends EventMessage> events, ProcessingContext context) {
+                protected CompletableFuture<Void> commit(@Nonnull List<? extends EventMessage> events, ProcessingContext context) {
                     phaseCalls.add("commit");
-                    super.commit(events, context);
+                    return super.commit(events, context);
                 }
 
                 @Override
-                protected void afterCommit(@Nonnull List<? extends EventMessage> events, ProcessingContext context) {
+                protected CompletableFuture<Void> afterCommit(@Nonnull List<? extends EventMessage> events, ProcessingContext context) {
                     phaseCalls.add("afterCommit");
-                    super.afterCommit(events, context);
+                    return super.afterCommit(events, context);
                 }
             };
             UnitOfWork uow = unitOfWorkFactory.create();
@@ -116,24 +115,24 @@ class AbstractEventBusTest {
             List<String> phaseCalls = new ArrayList<>();
             StubPublishingEventBus trackingBus = new StubPublishingEventBus(false) {
                 @Override
-                protected void prepareCommit(@Nonnull List<? extends EventMessage> events,
+                protected CompletableFuture<Void> prepareCommit(@Nonnull List<? extends EventMessage> events,
                                             @Nullable ProcessingContext context) {
                     phaseCalls.add("prepareCommit");
-                    super.prepareCommit(events, context);
+                    return super.prepareCommit(events, context);
                 }
 
                 @Override
-                protected void commit(@Nonnull List<? extends EventMessage> events,
+                protected CompletableFuture<Void> commit(@Nonnull List<? extends EventMessage> events,
                                     @Nullable ProcessingContext context) {
                     phaseCalls.add("commit");
-                    super.commit(events, context);
+                    return super.commit(events, context);
                 }
 
                 @Override
-                protected void afterCommit(@Nonnull List<? extends EventMessage> events,
+                protected CompletableFuture<Void> afterCommit(@Nonnull List<? extends EventMessage> events,
                                           @Nullable ProcessingContext context) {
                     phaseCalls.add("afterCommit");
-                    super.afterCommit(events, context);
+                    return super.afterCommit(events, context);
                 }
             };
             UnitOfWork uow = unitOfWorkFactory.create();
@@ -237,27 +236,27 @@ class AbstractEventBusTest {
             List<String> phaseCalls = new ArrayList<>();
             StubPublishingEventBus trackingBus = new StubPublishingEventBus(false) {
                 @Override
-                protected void prepareCommit(@Nonnull List<? extends EventMessage> events, ProcessingContext context) {
+                protected CompletableFuture<Void> prepareCommit(@Nonnull List<? extends EventMessage> events, ProcessingContext context) {
                     for (EventMessage event : events) {
                         phaseCalls.add("prepareCommit-" + event.payload());
                     }
-                    super.prepareCommit(events, context);
+                    return super.prepareCommit(events, context);
                 }
 
                 @Override
-                protected void commit(@Nonnull List<? extends EventMessage> events, ProcessingContext context) {
+                protected CompletableFuture<Void> commit(@Nonnull List<? extends EventMessage> events, ProcessingContext context) {
                     for (EventMessage event : events) {
                         phaseCalls.add("commit-" + event.payload());
                     }
-                    super.commit(events, context);
+                    return super.commit(events, context);
                 }
 
                 @Override
-                protected void afterCommit(@Nonnull List<? extends EventMessage> events, ProcessingContext context) {
+                protected CompletableFuture<Void> afterCommit(@Nonnull List<? extends EventMessage> events, ProcessingContext context) {
                     for (EventMessage event : events) {
                         phaseCalls.add("afterCommit-" + event.payload());
                     }
-                    super.afterCommit(events, context);
+                    return super.afterCommit(events, context);
                 }
             };
             UnitOfWork uow = unitOfWorkFactory.create();
@@ -323,7 +322,7 @@ class AbstractEventBusTest {
         }
 
         @Override
-        protected void prepareCommit(@Nonnull List<? extends EventMessage> events,
+        protected CompletableFuture<Void> prepareCommit(@Nonnull List<? extends EventMessage> events,
                                     @Nullable ProcessingContext context) {
             if (throwExceptionDuringPrepare) {
                 throw new RuntimeException("Simulated failure during prepare commit");
@@ -343,6 +342,7 @@ class AbstractEventBusTest {
             }
 
             committedEvents.addAll(events);
+            return super.prepareCommit(events, context);
         }
 
         @Override
