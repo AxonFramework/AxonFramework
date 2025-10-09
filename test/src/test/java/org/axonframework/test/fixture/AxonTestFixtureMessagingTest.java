@@ -33,6 +33,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.SubscribableEventSource;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.test.AxonAssertionError;
@@ -408,17 +409,17 @@ class AxonTestFixtureMessagingTest {
             var configurer = MessagingConfigurer.create();
             AtomicBoolean eventHandled = new AtomicBoolean(false);
             registerChangeStudentNameHandlerReturnsSingle(configurer);
-            configurer.registerEventSink(c -> new TestEventSink((context, events) -> {
-                if (!eventHandled.getAndSet(true)) {
-                    var commandGateway = c.getComponent(CommandGateway.class);
-                    commandGateway.sendAndWait(new ChangeStudentNameCommand("id", "name"));
-                }
-                return FutureUtils.emptyCompletedFuture();
-            }));
 
             var fixture = AxonTestFixture.with(configurer);
 
-            fixture.when()
+            fixture.given()
+                   .execute(c -> c.getComponent(SubscribableEventSource.class).subscribe((events, context) -> {
+                       if (!eventHandled.getAndSet(true)) {
+                           var commandGateway = c.getComponent(CommandGateway.class);
+                           commandGateway.sendAndWait(new ChangeStudentNameCommand("id", "name"));
+                       }
+                   }))
+                   .when()
                    .event(new StudentNameChangedEvent("my-studentId-1", "name-1", 1))
                    .then()
                    .commands(new ChangeStudentNameCommand("id", "name"));

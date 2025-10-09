@@ -295,7 +295,7 @@ public interface AxonTestPhase {
          * @param function The function to execute on the configuration.
          * @return The current Given instance, for fluent interfacing.
          */
-        Given execute(@Nonnull Function<Configuration, Void> function);
+        Given execute(@Nonnull Function<Configuration, ?> function);
 
         /**
          * Allows running custom setup steps (other than executing messages) on any component retrievable from the
