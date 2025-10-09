@@ -98,18 +98,13 @@ public class EventSourcingConfigurationDefaults implements ConfigurationEnhancer
         // disable default EventBus in favor of EventStoreBasedEventBus
         registry.disableEnhancer(EventBusConfigurationDefaults.class);
 
-        registry.registerDecorator(
-                EventStore.class,
-                InterceptingEventStore.DECORATION_ORDER + 1,
-                (config, name, delegate) -> new EventStoreBasedEventBus(delegate, new SimpleEventBus())
-        );
+        registry.registerIfNotPresent(EventBus.class, cfg -> new SimpleEventBus());
 
-        registry.registerIfNotPresent(
+        registry.registerDecorator(
                 EventBus.class,
-                cfg -> cfg.getOptionalComponent(EventStore.class)
-                          .filter(it -> it instanceof EventBus).map(it -> (EventBus) it)
-                          .orElseThrow(() -> new IllegalStateException(
-                                  "Current EventStore implementation does not implement EventBus interface. You need to register an EventBus implementation manually. ")));
+                InterceptingEventStore.DECORATION_ORDER, // todo: decoration order
+                (config, name, delegate) -> new EventStoreBasedEventBus(config.getComponent(EventStore.class), delegate)
+        );
 
         registry.registerComponent(
                 EventSink.class,
