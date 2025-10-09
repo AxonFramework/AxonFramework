@@ -824,6 +824,32 @@ class DefaultComponentRegistryTest {
                     assertSame(existingImpl, result);
                     assertNotSame(newImpl, result);
                 }
+
+                @Test
+                void ambiguousComponentMatchWhenMultipleImplementationsRegisteredByImplClass() {
+                    // given
+                    ServiceImplA implA = new ServiceImplA("a");
+                    ServiceImplB implB = new ServiceImplB("b");
+
+                    // Register BOTH by their implementation classes
+                    testSubject.registerComponent(ServiceImplA.class, c -> implA)
+                               .registerComponent(ServiceImplB.class, c -> implB);
+
+                    // when
+                    Configuration config = testSubject.build(mock());
+
+                    // then
+                    // Both implementations can be retrieved by their specific types
+                    assertEquals("a", config.getComponent(ServiceImplA.class).getValue());
+                    assertEquals("b", config.getComponent(ServiceImplB.class).getValue());
+
+                    // BUT trying to retrieve by interface throws AmbiguousComponentMatchException
+                    // because there's no exact match for ServiceInterface, so it searches for assignable types
+                    // and finds BOTH ServiceImplA and ServiceImplB
+                    assertThrows(AmbiguousComponentMatchException.class,
+                               () -> config.getComponent(ServiceInterface.class),
+                               "Should throw ambiguity exception when multiple implementations registered by impl class");
+                }
             }
 
             @Nested
