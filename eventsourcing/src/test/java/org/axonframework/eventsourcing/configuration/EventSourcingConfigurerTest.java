@@ -24,15 +24,12 @@ import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.eventsourcing.eventstore.InterceptingEventStore;
+import org.axonframework.eventsourcing.eventstore.EventStoreBasedEventBus;
 import org.axonframework.eventsourcing.eventstore.PayloadBasedTagResolver;
-import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.correlation.CorrelationDataProviderRegistry;
-import org.axonframework.messaging.correlation.DefaultCorrelationDataProviderRegistry;
 import org.axonframework.modelling.configuration.StateBasedEntityModule;
 import org.axonframework.queryhandling.configuration.QueryHandlingModule;
 import org.junit.jupiter.api.*;
@@ -67,14 +64,13 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
         assertTrue(eventStorageEngine.isPresent());
         assertInstanceOf(InMemoryEventStorageEngine.class, eventStorageEngine.get());
 
-        // Intercepting at all times, since we have a MessageOriginProvider that leads to the CorrelationDataInterceptor
         Optional<EventStore> eventStore = result.getOptionalComponent(EventStore.class);
         assertTrue(eventStore.isPresent());
-        assertInstanceOf(InterceptingEventStore.class, eventStore.get());
+        assertInstanceOf(EventStoreBasedEventBus.class, eventStore.get());
 
         Optional<EventSink> eventSink = result.getOptionalComponent(EventSink.class);
         assertTrue(eventSink.isPresent());
-        assertInstanceOf(InterceptingEventStore.class, eventSink.get());
+        assertInstanceOf(EventStoreBasedEventBus.class, eventSink.get());
         // By default, the Event Store and the Event Sink should be the same instance.
         assertEquals(eventStore.get(), eventSink.get());
     }
@@ -97,22 +93,6 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
                                           .build();
 
         assertEquals(expected, result.getComponent(EventStorageEngine.class));
-    }
-
-    @Test
-    void registerEventStoreOverridesDefault() {
-        EventStore expected = new SimpleEventStore(null, null);
-
-        // Registers default provider registry to remove MessageOriginProvider, thus removing CorrelationDataInterceptor.
-        // This ensures we don't get an InterceptingEventStore.
-        Configuration result = testSubject.componentRegistry(cr -> cr.registerComponent(
-                                                  CorrelationDataProviderRegistry.class,
-                                                  c -> new DefaultCorrelationDataProviderRegistry())
-                                          ).
-                                          registerEventStore(c -> expected)
-                                          .build();
-
-        assertEquals(expected, result.getComponent(EventStore.class));
     }
 
     @Test
