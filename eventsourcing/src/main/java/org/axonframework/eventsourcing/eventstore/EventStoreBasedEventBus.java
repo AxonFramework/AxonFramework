@@ -37,16 +37,13 @@ import java.util.function.BiConsumer;
  * Implementation of both {@link EventStore} and {@link EventBus} that delegates event store operations to an
  * {@link EventStore} and provides event bus functionality through an {@link EventBus}.
  * <p>
- * When events are {@link #publish(ProcessingContext, List) published}, they are first appended to the
- * {@code EventStore}, and then published to the {@code EventBus} for subscriber notification.
- * <p>
  * This component allows an {@code EventStore} to also function as an {@code EventBus}, enabling subscribers to receive
  * events as they are appended to the store.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class EventStoreEventBus implements EventStore, EventBus {
+public class EventStoreBasedEventBus implements EventStore, EventBus {
 
     private final EventStore eventStore;
     private final EventBus eventBus;
@@ -58,7 +55,7 @@ public class EventStoreEventBus implements EventStore, EventBus {
      * @param eventStore The {@link EventStore} to delegate event store operations to.
      * @param eventBus   The {@link EventBus} to use for subscription management.
      */
-    public EventStoreEventBus(@Nonnull EventStore eventStore, @Nonnull EventBus eventBus) {
+    public EventStoreBasedEventBus(@Nonnull EventStore eventStore, @Nonnull EventBus eventBus) {
         this.eventStore = Objects.requireNonNull(eventStore, "EventStore may not be null");
         this.eventBus = Objects.requireNonNull(eventBus, "EventBus may not be null");
     }
