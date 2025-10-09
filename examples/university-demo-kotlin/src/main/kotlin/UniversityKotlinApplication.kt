@@ -1,6 +1,5 @@
 package io.axoniq.demo.university
 
-import org.axonframework.configuration.ApplicationConfigurer
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer
 
 

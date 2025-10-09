@@ -1,12 +1,12 @@
 package io.axoniq.demo.university.faculty.write.create_course
 
-import io.axoniq.demo.university.faculty.FacultyTags.COURSE_ID
+import io.axoniq.demo.university.faculty.FacultyTags.COURSE
 import io.axoniq.demo.university.faculty.events.CourseCreated
 import org.axonframework.eventsourcing.annotations.EventSourcedEntity
 import org.axonframework.eventsourcing.annotations.EventSourcingHandler
 import org.axonframework.eventsourcing.annotations.reflection.EntityCreator
 
-@EventSourcedEntity(tagKey = COURSE_ID)
+@EventSourcedEntity(tagKey = COURSE)
 class CreateCourseState @EntityCreator constructor() {
 
   private var created: Boolean = false

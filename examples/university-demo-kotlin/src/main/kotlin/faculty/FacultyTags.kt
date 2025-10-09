@@ -1,6 +1,6 @@
 package io.axoniq.demo.university.faculty
 
 data object FacultyTags {
-  const val STUDENT_ID: String = "studentId"
-  const val COURSE_ID: String = "courseId"
+  const val STUDENT: String = "student"
+  const val COURSE: String = "course"
 }

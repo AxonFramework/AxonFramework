@@ -5,7 +5,7 @@ import io.axoniq.demo.university.shared.ids.CourseId
 import org.axonframework.eventsourcing.annotations.EventTag
 
 data class CourseRenamed(
-  @EventTag(key = FacultyTags.COURSE_ID)
+  @EventTag(key = FacultyTags.COURSE)
   val courseId: CourseId,
   val name: String
 ) : FacultyEvent

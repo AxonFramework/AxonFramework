@@ -6,7 +6,7 @@ import org.axonframework.eventsourcing.annotations.EventSourcedEntity
 import org.axonframework.eventsourcing.annotations.EventSourcingHandler
 import org.axonframework.eventsourcing.annotations.reflection.EntityCreator
 
-@EventSourcedEntity(tagKey = FacultyTags.STUDENT_ID)
+@EventSourcedEntity(tagKey = FacultyTags.STUDENT)
 class EnrollStudentState @EntityCreator constructor() {
   var enrolled = false
 

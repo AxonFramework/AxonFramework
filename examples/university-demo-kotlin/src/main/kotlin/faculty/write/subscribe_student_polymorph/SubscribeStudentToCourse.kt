@@ -1,4 +1,4 @@
-package io.axoniq.demo.university.faculty.write.subscribe_student
+package io.axoniq.demo.university.faculty.write.subscribe_student_polymorph
 
 import io.axoniq.demo.university.shared.ids.CourseId
 import io.axoniq.demo.university.shared.ids.StudentId

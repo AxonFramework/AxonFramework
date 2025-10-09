@@ -72,13 +72,11 @@
     <dependency>
       <groupId>org.jetbrains.kotlin</groupId>
       <artifactId>kotlin-reflect</artifactId>
-      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.github.oshai</groupId>
       <artifactId>kotlin-logging-jvm</artifactId>
       <version>7.0.13</version>
-      <scope>compile</scope>
     </dependency>
     <!-- endregion [Kotlin] -->
 

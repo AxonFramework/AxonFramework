@@ -6,9 +6,9 @@ import io.axoniq.demo.university.shared.ids.StudentId
 import org.axonframework.eventsourcing.annotations.EventTag
 
 data class StudentSubscribedToCourse(
-  @EventTag(key = FacultyTags.STUDENT_ID)
+  @EventTag(key = FacultyTags.STUDENT)
   val studentId: StudentId,
 
-  @EventTag(key = FacultyTags.COURSE_ID)
+  @EventTag(key = FacultyTags.COURSE)
   val courseId: CourseId,
 )
