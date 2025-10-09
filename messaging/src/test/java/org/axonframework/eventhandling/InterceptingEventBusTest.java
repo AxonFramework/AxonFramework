@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
@@ -138,8 +138,8 @@ class InterceptingEventBusTest {
     @Test
     void delegateSubscribeDirectly() {
         // given
-        BiConsumer<List<? extends EventMessage>, ProcessingContext> testConsumer = (events, context) -> {
-        };
+        BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> testConsumer = 
+            (events, context) -> CompletableFuture.completedFuture(null);
         Registration testRegistration = mock(Registration.class);
         when(eventBus.subscribe(any())).thenReturn(testRegistration);
 

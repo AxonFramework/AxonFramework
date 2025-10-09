@@ -31,7 +31,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 
 /**
  * Implementation of both {@link EventStore} and {@link EventBus} that delegates event store operations to an
@@ -73,7 +73,7 @@ public class EventStoreBasedEventBus implements EventStore, EventBus {
     }
 
     @Override
-    public Registration subscribe(@Nonnull BiConsumer<List<? extends EventMessage>, ProcessingContext> eventsBatchConsumer) {
+    public Registration subscribe(@Nonnull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
         return eventBus.subscribe(eventsBatchConsumer);
     }
 

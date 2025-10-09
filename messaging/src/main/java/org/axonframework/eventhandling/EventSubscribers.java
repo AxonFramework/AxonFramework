@@ -28,8 +28,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 
 /**
  * Internal utility class for managing event subscribers.
@@ -48,7 +49,7 @@ public class EventSubscribers implements DescribableComponent {
 
     private static final Logger logger = LoggerFactory.getLogger(EventSubscribers.class);
 
-    private final Set<BiConsumer<List<? extends EventMessage>, ProcessingContext>> subscribers = new CopyOnWriteArraySet<>();
+    private final Set<BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>>> subscribers = new CopyOnWriteArraySet<>();
 
     /**
      * Subscribes the given {@code eventsBatchConsumer} to receive notifications when events are published.
@@ -59,7 +60,7 @@ public class EventSubscribers implements DescribableComponent {
      * @return A {@link Registration} that can be used to unsubscribe the consumer.
      */
     public Registration subscribe(
-            @Nonnull BiConsumer<List<? extends EventMessage>, ProcessingContext> eventsBatchConsumer
+            @Nonnull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer
     ) {
         if (this.subscribers.add(eventsBatchConsumer)) {
             if (logger.isDebugEnabled()) {
@@ -91,7 +92,7 @@ public class EventSubscribers implements DescribableComponent {
             @Nonnull List<? extends EventMessage> events,
             @Nullable ProcessingContext context
     ) {
-        subscribers.forEach(subscriber -> subscriber.accept(events, context));
+        subscribers.forEach(subscriber -> subscriber.apply(events, context));
     }
 
     @Override

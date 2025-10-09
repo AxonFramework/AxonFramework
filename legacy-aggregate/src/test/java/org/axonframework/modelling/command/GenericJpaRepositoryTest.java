@@ -46,7 +46,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -103,7 +103,7 @@ class GenericJpaRepositoryTest {
     @Test
     void aggregateStoredBeforeEventsPublished() throws Exception {
         //noinspection unchecked
-        BiConsumer<List<? extends EventMessage>, ProcessingContext> mockConsumer = mock(BiConsumer.class);
+        BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> mockConsumer = mock(BiFunction.class);
         eventBus.subscribe(mockConsumer);
 
         testSubject.newInstance(() -> new StubJpaAggregate("test", "payload1", "payload2"));
@@ -111,7 +111,7 @@ class GenericJpaRepositoryTest {
 
         InOrder inOrder = inOrder(mockEntityManager, mockConsumer);
         inOrder.verify(mockEntityManager).persist(any());
-        inOrder.verify(mockConsumer).accept(anyList(), any());
+        inOrder.verify(mockConsumer).apply(anyList(), any());
     }
 
     @Test

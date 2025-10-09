@@ -19,8 +19,9 @@ package org.axonframework.messaging;
 import org.axonframework.common.Registration;
 
 import java.util.List;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
+
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -28,7 +29,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 /**
  * Interface for a source of {@link EventMessage EventMessages} to which event processors can subscribe.
  * <p>
- * Provides functionality to {@link #subscribe(Consumer) subscribe} event batch consumers to receive
+ * Provides functionality to {@link #subscribe(BiFunction) subscribe} event batch consumers to receive
  * {@link EventMessage events} published to this source. When subscribed, consumers will receive all events published to
  * this source since the subscription.
  * <p>
@@ -52,6 +53,5 @@ public interface SubscribableEventSource {
      * @return A {@link Registration} handle to unsubscribe the {@code eventsBatchConsumer}. When unsubscribed, it will
      * no longer receive events.
      */
-    Registration subscribe(@Nonnull BiConsumer<List<? extends EventMessage>, ProcessingContext> eventsBatchConsumer);
-    // TODO: BiFunction --- return CompletableFuture<Void>
+    Registration subscribe(@Nonnull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer);
 }

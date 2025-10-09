@@ -25,7 +25,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 
 /**
  * Abstract implementation of an {@link EventBus} that delegates all calls to a given delegate.
@@ -53,7 +53,7 @@ public abstract class DelegatingEventBus implements EventBus {
     }
 
     @Override
-    public Registration subscribe(@Nonnull BiConsumer<List<? extends EventMessage>, ProcessingContext> eventsBatchConsumer) {
+    public Registration subscribe(@Nonnull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
         return delegate.subscribe(eventsBatchConsumer);
     }
 
