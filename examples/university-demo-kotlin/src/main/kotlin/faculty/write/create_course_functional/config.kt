@@ -1,6 +1,6 @@
 package io.axoniq.demo.university.faculty.write.create_course_functional
 
-import io.axoniq.demo.university._ext.FunctionalCommandHandlerComponent
+import io.axoniq.demo.university._ext.functionalHandler
 import io.axoniq.demo.university.shared.ids.CourseId
 import org.axonframework.commandhandling.configuration.CommandHandlingModule
 import org.axonframework.eventhandling.gateway.EventAppender
@@ -8,10 +8,11 @@ import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer
 import org.axonframework.modelling.annotations.InjectEntity
 
-class SomeEnclosingClass {
-  internal fun handle(command: CreateCourse, @InjectEntity(idProperty = CreateCourse.ID) state: CreateCourseState, eventAppender: EventAppender) {
-    eventAppender.append(state.decide(command))
-  }
+/**
+ * Pure function without enclosing type.
+ */
+internal fun handle(command: CreateCourse, @InjectEntity(idProperty = CreateCourse.ID) state: CreateCourseState, eventAppender: EventAppender) {
+  eventAppender.append(state.decide(command))
 }
 
 fun EventSourcingConfigurer.registerCreateCourseFunctional() = apply {
@@ -25,14 +26,8 @@ fun EventSourcingConfigurer.registerCreateCourseFunctional() = apply {
     CommandHandlingModule
       .named("CreateCourse")
       .commandHandlers()
-      .commandHandlingComponent { configuration ->
-        FunctionalCommandHandlerComponent(
-          function = SomeEnclosingClass::handle,
-          instance = SomeEnclosingClass(),
-          configuration = configuration
-        )
-      }
+      .functionalHandler(
+        ::handle,
+      )
   )
-
-
 }
