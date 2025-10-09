@@ -63,8 +63,7 @@ class EventSourcingConfigurationDefaultsTest {
 
     @Test
     void enhanceSetsExpectedDefaultsInAbsenceOfTheseComponents() {
-        ApplicationConfigurer configurer = MessagingConfigurer.create();
-        configurer.componentRegistry(cr -> cr.registerEnhancer(testSubject));
+        ApplicationConfigurer configurer = EventSourcingConfigurer.create();
         Configuration resultConfig = configurer.build();
 
         assertInstanceOf(AnnotationBasedTagResolver.class, resultConfig.getComponent(TagResolver.class));
@@ -73,7 +72,7 @@ class EventSourcingConfigurationDefaultsTest {
 
         // Intercepting at all times, since we have a MessageOriginProvider that leads to the CorrelationDataInterceptor
         EventStore eventStore = resultConfig.getComponent(EventStore.class);
-        assertInstanceOf(InterceptingEventStore.class, eventStore);
+        assertInstanceOf(EventStoreBasedEventBus.class, eventStore);
 
         EventSink eventSink = resultConfig.getComponent(EventSink.class);
         EventSink eventBus = resultConfig.getComponent(EventBus.class);
@@ -90,8 +89,7 @@ class EventSourcingConfigurationDefaultsTest {
 
     @Test
     void enhanceSetsEventStoreAsEventSink() {
-        ApplicationConfigurer configurer = MessagingConfigurer.create();
-        configurer.componentRegistry(cr -> cr.registerEnhancer(testSubject));
+        ApplicationConfigurer configurer = EventSourcingConfigurer.create();
         Configuration resultConfig = configurer.build();
 
         EventSink eventSink = resultConfig.getComponent(EventSink.class);
@@ -100,8 +98,7 @@ class EventSourcingConfigurationDefaultsTest {
 
     @Test
     void enhanceSetsEventBusAsSubscribableEventSource() {
-        ApplicationConfigurer configurer = MessagingConfigurer.create();
-        configurer.componentRegistry(cr -> cr.registerEnhancer(testSubject));
+        ApplicationConfigurer configurer = EventSourcingConfigurer.create();
         Configuration resultConfig = configurer.build();
 
         EventBus eventBus = resultConfig.getComponent(EventBus.class);
@@ -126,13 +123,12 @@ class EventSourcingConfigurationDefaultsTest {
     @Test
     void decoratorsEventStoreAsInterceptorEventStoreWhenDispatchInterceptorIsPresent() {
         //noinspection unchecked
-        MessagingConfigurer configurer =
-                MessagingConfigurer.create()
-                                   .registerDispatchInterceptor(c -> mock(MessageDispatchInterceptor.class));
-
+        ApplicationConfigurer configurer = EventSourcingConfigurer
+                .create()
+                .messaging(m -> m.registerDispatchInterceptor(c -> mock(MessageDispatchInterceptor.class)));
         Configuration resultConfig = configurer.build();
 
-        assertThat(resultConfig.getComponent(EventStore.class)).isInstanceOf(InterceptingEventStore.class);
+        assertThat(resultConfig.getComponent(EventStore.class)).isInstanceOf(EventStoreBasedEventBus.class);
     }
 
     private static class TestTagResolver implements TagResolver {

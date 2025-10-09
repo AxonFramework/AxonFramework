@@ -21,11 +21,8 @@ import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.configuration.MessagingConfigurationDefaults;
-import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.SimpleEventBus;
-import org.axonframework.eventhandling.configuration.EventBusConfigurationDefaults;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -74,41 +71,23 @@ public class EventSourcingConfigurationDefaults implements ConfigurationEnhancer
     public void enhance(@Nonnull ComponentRegistry registry) {
         // Register components
         registry.registerIfNotPresent(TagResolver.class, EventSourcingConfigurationDefaults::defaultTagResolver)
-                .registerIfNotPresent(EventStorageEngine.class,
-                                      EventSourcingConfigurationDefaults::defaultEventStorageEngine)
-                .registerIfNotPresent(EventStore.class, EventSourcingConfigurationDefaults::defaultEventStore);
-
-        // Register decorators
-        registry.registerDecorator(
-                EventStore.class,
-                InterceptingEventStore.DECORATION_ORDER,
-                (config, name, delegate) -> {
-                    List<MessageDispatchInterceptor<? super EventMessage>> dispatchInterceptors =
-                            config.getComponent(DispatchInterceptorRegistry.class).eventInterceptors(config);
-                    return dispatchInterceptors.isEmpty()
-                            ? delegate
-                            : new InterceptingEventStore(delegate, dispatchInterceptors);
-                }
-        );
-
-        registerEventStoreAsEventBus(registry);
+                .registerIfNotPresent(EventStorageEngine.class, EventSourcingConfigurationDefaults::defaultEventStorageEngine)
+                .registerIfNotPresent(EventStoreBasedEventBus.class, config -> {
+                    // fixme: Now it's hard-coded, but I haven't found better solution.
+                    // If I register EventStore and intercept it, I can still make EventStoreBasedEventBus - registered as an EventBus
+                    // BUT there is a problem I have more than one EventSink implementation
+                    var simpleEventStore = simpleEventStore(config);
+                    var interceptedEventStore = interceptingEventStore(config, simpleEventStore);
+                    return new EventStoreBasedEventBus(interceptedEventStore, new SimpleEventBus());
+                });
     }
 
-    private static void registerEventStoreAsEventBus(@Nonnull ComponentRegistry registry) {
-        // disable default EventBus in favor of EventStoreBasedEventBus
-        registry.disableEnhancer(EventBusConfigurationDefaults.class);
-
-        registry.registerIfNotPresent(EventBus.class, cfg -> new SimpleEventBus());
-
-        registry.registerDecorator(
-                EventBus.class,
-                InterceptingEventStore.DECORATION_ORDER, // todo: decoration order
-                (config, name, delegate) -> new EventStoreBasedEventBus(config.getComponent(EventStore.class), delegate)
-        );
-
-        registry.registerComponent(
-                EventSink.class,
-                cfg -> cfg.getComponent(EventBus.class));
+    private static EventStore interceptingEventStore(Configuration config, EventStore delegate) {
+        List<MessageDispatchInterceptor<? super EventMessage>> dispatchInterceptors =
+                config.getComponent(DispatchInterceptorRegistry.class).eventInterceptors(config);
+        return dispatchInterceptors.isEmpty()
+                ? delegate
+                : new InterceptingEventStore(delegate, dispatchInterceptors);
     }
 
     private static TagResolver defaultTagResolver(Configuration configuration) {
@@ -119,7 +98,7 @@ public class EventSourcingConfigurationDefaults implements ConfigurationEnhancer
         return new InMemoryEventStorageEngine();
     }
 
-    private static SimpleEventStore defaultEventStore(Configuration config) {
+    private static SimpleEventStore simpleEventStore(Configuration config) {
         return new SimpleEventStore(config.getComponent(EventStorageEngine.class),
                                     config.getComponent(TagResolver.class));
     }

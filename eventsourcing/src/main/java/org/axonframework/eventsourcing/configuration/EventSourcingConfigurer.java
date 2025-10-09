@@ -31,6 +31,7 @@ import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.configuration.Module;
 import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.eventhandling.EventSink;
+import org.axonframework.eventhandling.configuration.EventBusConfigurationDefaults;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
@@ -96,6 +97,7 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
     public static EventSourcingConfigurer enhance(@Nonnull ModellingConfigurer modellingConfigurer) {
         return new EventSourcingConfigurer(modellingConfigurer)
                 .componentRegistry(cr -> cr
+                        .disableEnhancer(EventBusConfigurationDefaults.class) // disable default EventBus in favor of EventStoreBasedEventBus
                         .registerEnhancer(new EventSourcingConfigurationDefaults())
                 );
     }
