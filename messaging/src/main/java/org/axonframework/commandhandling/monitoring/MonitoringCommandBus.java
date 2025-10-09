@@ -22,13 +22,13 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.common.Assert;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.configuration.DecoratorDefinition;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.monitoring.MessageMonitorUtils;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -62,6 +62,12 @@ public class MonitoringCommandBus implements CommandBus {
     private final CommandBus delegate;
     private final MessageMonitor<? super CommandMessage> messageMonitor;
 
+    /**
+     * Constructs a new {@link MonitoringCommandBus} by decorating the given {@code delegate}.
+     * </p>
+     * @param delegate the {@link CommandBus} to decorate
+     * @param messageMonitor the {@link MessageMonitor} for reporting
+     */
     public MonitoringCommandBus(@Nonnull final CommandBus delegate,
                                 @Nonnull final MessageMonitor<Message> messageMonitor) {
         this.delegate = requireNonNull(delegate, "commandBus may not be null");
@@ -79,10 +85,7 @@ public class MonitoringCommandBus implements CommandBus {
     public CommandBus subscribe(@Nonnull QualifiedName name, @Nonnull CommandHandler commandHandler) {
         final CommandHandler monitoringCommandHandler = (command, context) -> {
             // TODO: what do we do when the context is not started?
-            Assert.isTrue(context.isStarted(), () -> "context is not started");
-            final var monitorCallback = messageMonitor.onMessageIngested(command);
-            context.onAfterCommit(processingContext -> CompletableFuture.runAsync(monitorCallback::reportSuccess));
-            context.onError((processingContext, phase, error) -> monitorCallback.reportFailure(error));
+            MessageMonitorUtils.registerMonitorCallback(context, messageMonitor, command);
 
             return commandHandler.handle(command, context);
         };

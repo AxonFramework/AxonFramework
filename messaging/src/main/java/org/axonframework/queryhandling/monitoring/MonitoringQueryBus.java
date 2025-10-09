@@ -20,10 +20,13 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.configuration.DecoratorDefinition;
+import org.axonframework.eventhandling.EventSink;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.ProcessingLifecycle;
 import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.monitoring.MessageMonitorUtils;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryHandler;
@@ -40,9 +43,11 @@ import org.reactivestreams.Publisher;
 import reactor.core.publisher.Signal;
 import reactor.util.context.Context;
 
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
@@ -57,7 +62,6 @@ import static java.util.Objects.requireNonNull;
  * {@link org.axonframework.configuration.ComponentRegistry#registerDecorator(DecoratorDefinition) decorator} and
  * automatically kicks in whenever a {@link QueryMessage} specific {@link MessageMonitor} is present.
  */
-// TODO 3595 - Introduce monitoring logic here.
 public class MonitoringQueryBus implements QueryBus {
 
     /**
@@ -77,6 +81,12 @@ public class MonitoringQueryBus implements QueryBus {
     private final QueryBus delegate;
     private final MessageMonitor<? super QueryMessage> messageMonitor;
 
+    /**
+     * Constructs a {@code MonitoringQueryBus}, decorating the given {@code delegate}.
+     *
+     * @param delegate     The delegate {@code EventSink} that will handle all publishing.
+     * @param messageMonitor the {@link MessageMonitor} to use.
+     */
     public MonitoringQueryBus(@Nonnull final QueryBus delegate,
                               @Nullable final MessageMonitor<? super QueryMessage> messageMonitor) {
         this.delegate = requireNonNull(delegate, "delegate cannot be null");
@@ -86,7 +96,10 @@ public class MonitoringQueryBus implements QueryBus {
     @Override
     public @Nonnull MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage query,
                                                               @Nullable ProcessingContext context) {
-        // Note: Monitoring callbacks are typically applied at handler subscription time. This wrapper delegates.
+        MessageMonitorUtils.registerMonitorCallback(context, messageMonitor, query);
+
+        // TODO: JG?: if we want to report the result messages as well, we need to copy this stream somehow. It would not be a good idea imho to grab this from inside the concrete queryBus impl.
+        // TODO: JG?: do we have a MessageStream/copy?
         return delegate.query(query, context);
     }
 
@@ -94,11 +107,13 @@ public class MonitoringQueryBus implements QueryBus {
     public @Nonnull SubscriptionQueryResponseMessages subscriptionQuery(@Nonnull SubscriptionQueryMessage query,
                                                                         @Nullable ProcessingContext context,
                                                                         int updateBufferSize) {
+        // TODO: JG?: include in #3595?
         return delegate.subscriptionQuery(query, context, updateBufferSize);
     }
 
     @Override
     public @Nonnull UpdateHandler subscribeToUpdates(@Nonnull SubscriptionQueryMessage query, int updateBufferSize) {
+        // TODO: JG?: include in #3595?
         return delegate.subscribeToUpdates(query, updateBufferSize);
     }
 
@@ -106,12 +121,14 @@ public class MonitoringQueryBus implements QueryBus {
     public @Nonnull CompletableFuture<Void> emitUpdate(@Nonnull Predicate<SubscriptionQueryMessage> filter,
                                                        @Nonnull Supplier<SubscriptionQueryUpdateMessage> updateSupplier,
                                                        @Nullable ProcessingContext context) {
+        // TODO: JG?: include in #3595?
         return delegate.emitUpdate(filter, updateSupplier, context);
     }
 
     @Override
     public @Nonnull CompletableFuture<Void> completeSubscriptions(@Nonnull Predicate<SubscriptionQueryMessage> filter,
                                                                   @Nullable ProcessingContext context) {
+        // TODO: JG?: include in #3595?
         return delegate.completeSubscriptions(filter, context);
     }
 
@@ -121,11 +138,13 @@ public class MonitoringQueryBus implements QueryBus {
             @Nonnull Throwable cause,
             @Nullable ProcessingContext context
     ) {
+        // TODO: JG?: include in #3595?
         return delegate.completeSubscriptionsExceptionally(filter, cause, context);
     }
 
     @Override
     public QueryBus subscribe(@Nonnull Set<QueryHandlerName> names, @Nonnull QueryHandler queryHandler) {
+        // TODO: JG?: include in #3595?
         delegate.subscribe(names, queryHandler);
         return this;
     }
@@ -134,6 +153,7 @@ public class MonitoringQueryBus implements QueryBus {
     public QueryBus subscribe(@Nonnull QualifiedName queryName,
                               @Nonnull QualifiedName responseName,
                               @Nonnull QueryHandler queryHandler) {
+        // TODO: JG?: include in #3595?
         delegate.subscribe(queryName, responseName, queryHandler);
         return this;
     }

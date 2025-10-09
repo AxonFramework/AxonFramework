@@ -26,11 +26,11 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingLifecycle;
 import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.monitoring.MessageMonitorUtils;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
@@ -64,11 +64,12 @@ public class MonitoringEventSink implements EventSink {
     /**
      * Constructs a {@code MonitoringEventSink}, decorating the given {@code delegate}.
      * <p>
-     * The {@link MessageMonitor.MonitorCallback}s for the given {@code messageMonitor} are registered on
-     * the {@link ProcessingContext#onAfterCommit(Function) onAfterCommit} and {@link ProcessingContext#onError(ProcessingLifecycle.ErrorHandler) onError}
-     * hooks and invoked after the {@link EventSink#publish(ProcessingContext, List) delegate.publish} method returned.
+     * The {@link MessageMonitor.MonitorCallback}s for the given {@code messageMonitor} are registered on the
+     * {@link ProcessingContext#onAfterCommit(Function) onAfterCommit} and
+     * {@link ProcessingContext#onError(ProcessingLifecycle.ErrorHandler) onError} hooks and invoked after the
+     * {@link EventSink#publish(ProcessingContext, List) delegate.publish} method returned.
      *
-     * @param delegate     The delegate {@code EventSink} that will handle all publishing.
+     * @param delegate       The delegate {@code EventSink} that will handle all publishing.
      * @param messageMonitor the {@link MessageMonitor} to use.
      */
     public MonitoringEventSink(@Nonnull final EventSink delegate,
@@ -81,14 +82,7 @@ public class MonitoringEventSink implements EventSink {
     public CompletableFuture<Void> publish(@Nullable ProcessingContext context, @Nonnull List<EventMessage> events) {
         // TODO: JG? - I noticed that when this gets called, the context is not null. But the SimpleEventStore explicitly deals with null.
         // TODO: JG? - in other words: do we ever have to wonder if it is null/not started?
-        if (context != null && context.isStarted()) {
-            var monitorCallbacks = events.stream().map(messageMonitor::onMessageIngested).toList();
-            context.onAfterCommit(c -> monitorCallbacks.stream().
-                                                       map( it -> CompletableFuture.runAsync(it::reportSuccess))
-                                                       // TODO: Collecting a Stream of CompletableFutures to allOf could be a FutureUtil imho
-                    .collect(Collectors.collectingAndThen(Collectors.toList(), list -> CompletableFuture.allOf(list.toArray(CompletableFuture[]::new))))
-            );
-        }
+        MessageMonitorUtils.registerMonitorCallbacks(context, messageMonitor, events);
 
         return delegate.publish(context, events);
     }

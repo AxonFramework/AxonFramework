@@ -203,6 +203,7 @@ public class AxonTestFixtureMonitoringTest {
                 Customization::disableAxonServer
         );
 
+        // TODO: logging timestamps show that the reports are not in order of execution. Issue?
         fixture
                 .given()
                 .noPriorActivity()
