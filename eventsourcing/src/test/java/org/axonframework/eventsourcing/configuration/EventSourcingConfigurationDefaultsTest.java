@@ -32,6 +32,7 @@ import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageE
 import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.eventstreaming.Tag;
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.SubscribableEventSource;
 import org.junit.jupiter.api.*;
 
 import java.util.Set;
@@ -104,6 +105,16 @@ class EventSourcingConfigurationDefaultsTest {
 
         EventSink eventBus = resultConfig.getComponent(EventBus.class);
         assertInstanceOf(InterceptingEventStore.class, eventBus);
+    }
+
+    @Test
+    void enhanceSetsEventStoreAsSubscribableEventSource() {
+        ApplicationConfigurer configurer = MessagingConfigurer.create();
+        configurer.componentRegistry(cr -> cr.registerEnhancer(testSubject));
+        Configuration resultConfig = configurer.build();
+
+        SubscribableEventSource subscribableEventSource = resultConfig.getComponent(SubscribableEventSource.class);
+        assertInstanceOf(InterceptingEventStore.class, subscribableEventSource);
     }
 
     @Test
