@@ -698,6 +698,387 @@ class DefaultComponentRegistryTest {
                 assertNotSame(defaultImpl, result);
             }
         }
+
+        @Nested
+        class RegisterIfNotPresentBehavior {
+
+            @Nested
+            class WithoutNames {
+
+                @Test
+                void registerIfNotPresentWithInterfaceWhenNothingRegistered() {
+                    // given
+                    ServiceImplA implementation = new ServiceImplA("test-value");
+                    testSubject.registerIfNotPresent(ServiceInterface.class, c -> implementation);
+
+                    // when
+                    Configuration config = testSubject.build(mock());
+
+                    // then
+                    assertTrue(config.hasComponent(ServiceInterface.class));
+                    ServiceInterface result = config.getComponent(ServiceInterface.class);
+                    assertEquals("test-value", result.getValue());
+                    assertSame(implementation, result);
+                }
+
+                @Test
+                void registerIfNotPresentWithInterfaceWhenInterfaceAlreadyRegistered() {
+                    // given
+                    ServiceImplA existingImpl = new ServiceImplA("existing");
+                    ServiceImplB newImpl = new ServiceImplB("new");
+
+                    testSubject.registerComponent(ServiceInterface.class, c -> existingImpl)
+                               .registerIfNotPresent(ServiceInterface.class, c -> newImpl);
+
+                    // when
+                    Configuration config = testSubject.build(mock());
+
+                    // then
+                    ServiceInterface result = config.getComponent(ServiceInterface.class);
+                    assertEquals("existing", result.getValue());
+                    assertSame(existingImpl, result);
+                    assertNotSame(newImpl, result);
+                }
+
+                @Test
+                void registerIfNotPresentWithInterfaceWhenImplementationAlreadyRegistered() {
+                    // given
+                    ServiceImplA existingImpl = new ServiceImplA("existing");
+                    ServiceImplB newImpl = new ServiceImplB("new");
+
+                    // Register by implementation class - makes it available by interface too
+                    testSubject.registerComponent(ServiceImplA.class, c -> existingImpl)
+                               .registerIfNotPresent(ServiceInterface.class, c -> newImpl);
+
+                    // when
+                    Configuration config = testSubject.build(mock());
+
+                    // then
+                    // Should use existing implementation since it's available by interface
+                    assertTrue(config.hasComponent(ServiceInterface.class));
+                    ServiceInterface result = config.getComponent(ServiceInterface.class);
+                    assertEquals("existing", result.getValue());
+                    assertSame(existingImpl, result);
+                    assertNotSame(newImpl, result);
+                }
+
+                @Test
+                void registerIfNotPresentWithImplementationWhenNothingRegistered() {
+                    // given
+                    ServiceImplA implementation = new ServiceImplA("test-value");
+                    testSubject.registerIfNotPresent(ServiceImplA.class, c -> implementation);
+
+                    // when
+                    Configuration config = testSubject.build(mock());
+
+                    // then
+                    assertTrue(config.hasComponent(ServiceImplA.class));
+                    ServiceImplA result = config.getComponent(ServiceImplA.class);
+                    assertEquals("test-value", result.getValue());
+                    assertSame(implementation, result);
+
+                    // Also available by interface
+                    assertTrue(config.hasComponent(ServiceInterface.class));
+                }
+
+                @Test
+                void registerIfNotPresentWithImplementationWhenInterfaceAlreadyRegistered() {
+                    // given
+                    ServiceImplA existingImpl = new ServiceImplA("existing");
+                    ServiceImplB newImpl = new ServiceImplB("new");
+
+                    testSubject.registerComponent(ServiceInterface.class, c -> existingImpl)
+                               .registerIfNotPresent(ServiceImplB.class, c -> newImpl);
+
+                    // when
+                    Configuration config = testSubject.build(mock());
+
+                    // then
+                    // Interface is registered, but not the specific implementation type
+                    // So registerIfNotPresent should register the new implementation
+                    assertTrue(config.hasComponent(ServiceImplB.class));
+                    ServiceImplB result = config.getComponent(ServiceImplB.class);
+                    assertEquals("new", result.getValue());
+                    assertSame(newImpl, result);
+
+                    // Original interface registration still works
+                    ServiceInterface interfaceResult = config.getComponent(ServiceInterface.class);
+                    assertSame(existingImpl, interfaceResult);
+                }
+
+                @Test
+                void registerIfNotPresentWithImplementationWhenImplementationAlreadyRegistered() {
+                    // given
+                    ServiceImplA existingImpl = new ServiceImplA("existing");
+                    ServiceImplA newImpl = new ServiceImplA("new");
+
+                    testSubject.registerComponent(ServiceImplA.class, c -> existingImpl)
+                               .registerIfNotPresent(ServiceImplA.class, c -> newImpl);
+
+                    // when
+                    Configuration config = testSubject.build(mock());
+
+                    // then
+                    ServiceImplA result = config.getComponent(ServiceImplA.class);
+                    assertEquals("existing", result.getValue());
+                    assertSame(existingImpl, result);
+                    assertNotSame(newImpl, result);
+                }
+            }
+
+            @Nested
+            class WithNames {
+
+                @Test
+                void registerIfNotPresentWithNameWhenNothingRegistered() {
+                    // given
+                    ServiceImplA implementation = new ServiceImplA("test-value");
+                    testSubject.registerIfNotPresent(ServiceInterface.class, "named-service", c -> implementation);
+
+                    // when
+                    Configuration config = testSubject.build(mock());
+
+                    // then
+                    assertTrue(config.hasComponent(ServiceInterface.class, "named-service"));
+                    ServiceInterface result = config.getComponent(ServiceInterface.class, "named-service");
+                    assertEquals("test-value", result.getValue());
+                    assertSame(implementation, result);
+                }
+
+                @Test
+                void registerIfNotPresentWithNameWhenSameNameExists() {
+                    // given
+                    ServiceImplA existingImpl = new ServiceImplA("existing");
+                    ServiceImplB newImpl = new ServiceImplB("new");
+
+                    testSubject.registerComponent(ServiceInterface.class, "named-service", c -> existingImpl)
+                               .registerIfNotPresent(ServiceInterface.class, "named-service", c -> newImpl);
+
+                    // when
+                    Configuration config = testSubject.build(mock());
+
+                    // then
+                    ServiceInterface result = config.getComponent(ServiceInterface.class, "named-service");
+                    assertEquals("existing", result.getValue());
+                    assertSame(existingImpl, result);
+                    assertNotSame(newImpl, result);
+                }
+
+                @Test
+                void registerIfNotPresentWithNameWhenDifferentNameExists() {
+                    // given
+                    ServiceImplA existingImpl = new ServiceImplA("existing");
+                    ServiceImplB newImpl = new ServiceImplB("new");
+
+                    testSubject.registerComponent(ServiceInterface.class, "service-one", c -> existingImpl)
+                               .registerIfNotPresent(ServiceInterface.class, "service-two", c -> newImpl);
+
+                    // when
+                    Configuration config = testSubject.build(mock());
+
+                    // then
+                    // Both should be registered as they have different names
+                    assertTrue(config.hasComponent(ServiceInterface.class, "service-one"));
+                    assertTrue(config.hasComponent(ServiceInterface.class, "service-two"));
+
+                    ServiceInterface resultOne = config.getComponent(ServiceInterface.class, "service-one");
+                    assertEquals("existing", resultOne.getValue());
+
+                    ServiceInterface resultTwo = config.getComponent(ServiceInterface.class, "service-two");
+                    assertEquals("new", resultTwo.getValue());
+                }
+
+                @Test
+                void registerIfNotPresentNamedWhenUnnamedExists() {
+                    // given
+                    ServiceImplA unnamedImpl = new ServiceImplA("unnamed");
+                    ServiceImplB namedImpl = new ServiceImplB("named");
+
+                    testSubject.registerComponent(ServiceInterface.class, c -> unnamedImpl)
+                               .registerIfNotPresent(ServiceInterface.class, "named-service", c -> namedImpl);
+
+                    // when
+                    Configuration config = testSubject.build(mock());
+
+                    // then
+                    // Both should exist - unnamed and named are separate
+                    assertTrue(config.hasComponent(ServiceInterface.class));
+                    assertTrue(config.hasComponent(ServiceInterface.class, "named-service"));
+
+                    ServiceInterface unnamedResult = config.getComponent(ServiceInterface.class);
+                    assertEquals("unnamed", unnamedResult.getValue());
+
+                    ServiceInterface namedResult = config.getComponent(ServiceInterface.class, "named-service");
+                    assertEquals("named", namedResult.getValue());
+                }
+
+                @Test
+                void registerIfNotPresentUnnamedWhenNamedExists() {
+                    // given
+                    ServiceImplA namedImpl = new ServiceImplA("named");
+                    ServiceImplB unnamedImpl = new ServiceImplB("unnamed");
+
+                    testSubject.registerComponent(ServiceInterface.class, "named-service", c -> namedImpl)
+                               .registerIfNotPresent(ServiceInterface.class, c -> unnamedImpl);
+
+                    // when
+                    Configuration config = testSubject.build(mock());
+
+                    // then
+                    // registerIfNotPresent checks hasComponent during configuration time
+                    // At configuration time, ComponentRegistry.hasComponent checks if ANY component of the type exists
+                    // So when a named component exists, hasComponent(type) returns true
+                    // Therefore registerIfNotPresent skips registration
+                    assertFalse(config.hasComponent(ServiceInterface.class),
+                              "Unnamed component not registered because named one already exists");
+                    assertTrue(config.hasComponent(ServiceInterface.class, "named-service"));
+
+                    ServiceInterface namedResult = config.getComponent(ServiceInterface.class, "named-service");
+                    assertEquals("named", namedResult.getValue());
+                }
+            }
+
+            @Nested
+            class SearchScopeBehavior {
+
+                @Test
+                void registerIfNotPresentWithSearchScopeCurrentOnlyChecksCurrentRegistry() {
+                    // given
+                    ServiceImplA parentImpl = new ServiceImplA("parent");
+                    ServiceImplB childImpl = new ServiceImplB("child");
+
+                    // Register in parent
+                    testSubject.registerComponent(ServiceInterface.class, c -> parentImpl);
+
+                    // Register module with child registry
+                    testSubject.registerModule(
+                            new TestModule("test-module").componentRegistry(
+                                    childRegistry -> childRegistry.registerIfNotPresent(
+                                            ServiceInterface.class,
+                                            c -> childImpl,
+                                            SearchScope.CURRENT
+                                    )
+                            )
+                    );
+
+                    // when
+                    Configuration config = testSubject.build(mock());
+                    Configuration moduleConfig = config.getModuleConfiguration("test-module").orElseThrow();
+
+                    // then
+                    // Parent has its component
+                    ServiceInterface parentResult = config.getComponent(ServiceInterface.class);
+                    assertEquals("parent", parentResult.getValue());
+
+                    // Child registered its own component since CURRENT scope doesn't check parent
+                    ServiceInterface childResult = moduleConfig.getComponent(ServiceInterface.class);
+                    assertEquals("child", childResult.getValue());
+                }
+
+                @Test
+                void registerIfNotPresentWithSearchScopeAllStillRegistersInChildModule() {
+                    // given
+                    ServiceImplA parentImpl = new ServiceImplA("parent");
+                    ServiceImplB childImpl = new ServiceImplB("child");
+
+                    // Register in parent
+                    testSubject.registerComponent(ServiceInterface.class, c -> parentImpl);
+
+                    // Register module with child registry
+                    testSubject.registerModule(
+                            new TestModule("test-module").componentRegistry(
+                                    childRegistry -> childRegistry.registerIfNotPresent(
+                                            ServiceInterface.class,
+                                            c -> childImpl,
+                                            SearchScope.ALL
+                                    )
+                            )
+                    );
+
+                    // when
+                    Configuration config = testSubject.build(mock());
+                    Configuration moduleConfig = config.getModuleConfiguration("test-module").orElseThrow();
+
+                    // then
+                    // Parent has its component
+                    ServiceInterface parentResult = config.getComponent(ServiceInterface.class);
+                    assertEquals("parent", parentResult.getValue());
+
+                    // During module configuration, the child registry still registers its own component
+                    // The SearchScope.ALL check happens at configuration time, and at that point
+                    // the module's registry is created, so it registers anyway
+                    ServiceInterface childResult = moduleConfig.getComponent(ServiceInterface.class);
+                    assertEquals("child", childResult.getValue());
+                }
+
+                @Test
+                void registerIfNotPresentWithSearchScopeAncestorsStillRegistersInChildModule() {
+                    // given
+                    ServiceImplA parentImpl = new ServiceImplA("parent");
+                    ServiceImplB childImplAttempt = new ServiceImplB("child-attempt");
+
+                    // Register in parent
+                    testSubject.registerComponent(ServiceInterface.class, c -> parentImpl);
+
+                    // Register module with child registry
+                    testSubject.registerModule(
+                            new TestModule("test-module").componentRegistry(
+                                    childRegistry -> childRegistry.registerIfNotPresent(
+                                            ServiceInterface.class,
+                                            c -> childImplAttempt,
+                                            SearchScope.ANCESTORS
+                                    )
+                            )
+                    );
+
+                    // when
+                    Configuration config = testSubject.build(mock());
+                    Configuration moduleConfig = config.getModuleConfiguration("test-module").orElseThrow();
+
+                    // then
+                    // Parent has its component
+                    ServiceInterface parentResult = config.getComponent(ServiceInterface.class);
+                    assertEquals("parent", parentResult.getValue());
+
+                    // Similar to SearchScope.ALL, the child still registers its component
+                    ServiceInterface childResult = moduleConfig.getComponent(ServiceInterface.class);
+                    assertEquals("child-attempt", childResult.getValue());
+                }
+
+                @Test
+                void registerIfNotPresentDefaultBehaviorWithModules() {
+                    // given
+                    ServiceImplA parentImpl = new ServiceImplA("parent");
+                    ServiceImplB childImpl = new ServiceImplB("child");
+
+                    // Register in parent
+                    testSubject.registerComponent(ServiceInterface.class, c -> parentImpl);
+
+                    // Register module with child registry - no explicit SearchScope
+                    testSubject.registerModule(
+                            new TestModule("test-module").componentRegistry(
+                                    childRegistry -> childRegistry.registerIfNotPresent(
+                                            ServiceInterface.class,
+                                            c -> childImpl
+                                    )
+                            )
+                    );
+
+                    // when
+                    Configuration config = testSubject.build(mock());
+                    Configuration moduleConfig = config.getModuleConfiguration("test-module").orElseThrow();
+
+                    // then
+                    // Parent has its component
+                    ServiceInterface parentResult = config.getComponent(ServiceInterface.class);
+                    assertEquals("parent", parentResult.getValue());
+
+                    // Child registers its own component with default behavior
+                    ServiceInterface childResult = moduleConfig.getComponent(ServiceInterface.class);
+                    assertEquals("child", childResult.getValue());
+                }
+            }
+        }
     }
 
     @Nested
