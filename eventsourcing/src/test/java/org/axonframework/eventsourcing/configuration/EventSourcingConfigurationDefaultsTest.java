@@ -71,17 +71,21 @@ class EventSourcingConfigurationDefaultsTest {
         assertInstanceOf(InMemoryEventStorageEngine.class,
                          resultConfig.getComponent(EventStorageEngine.class));
 
+        // Intercepting at all times, since we have a MessageOriginProvider that leads to the CorrelationDataInterceptor
         EventStore eventStore = resultConfig.getComponent(EventStore.class);
-        assertInstanceOf(EventStoreBasedEventBus.class, eventStore);
+        assertInstanceOf(InterceptingEventStore.class, eventStore);
 
         EventSink eventSink = resultConfig.getComponent(EventSink.class);
+        EventSink eventBus = resultConfig.getComponent(EventBus.class);
         // By default, the Event Store and the Event Sink should be the same instance.
-        assertEquals(eventStore, eventSink);
+        assertEquals(eventBus, eventSink);
         assertInstanceOf(EventStoreBasedEventBus.class, eventSink);
+        assertInstanceOf(EventStoreBasedEventBus.class, eventBus);
+
 
         SubscribableEventSource eventSource = resultConfig.getComponent(SubscribableEventSource.class);
         // By default, the SubscribableEventSource and the Event Sink should be the same instance.
-        assertEquals(eventStore, eventSource);
+        assertEquals(eventBus, eventSource);
     }
 
     @Test
@@ -95,26 +99,14 @@ class EventSourcingConfigurationDefaultsTest {
     }
 
     @Test
-    void enhanceSetsEventStoreAsEventBus() {
+    void enhanceSetsEventBusAsSubscribableEventSource() {
         ApplicationConfigurer configurer = MessagingConfigurer.create();
         configurer.componentRegistry(cr -> cr.registerEnhancer(testSubject));
         Configuration resultConfig = configurer.build();
 
-
-        EventStore eventStore = resultConfig.getComponent(EventStore.class);
-        EventSink eventBus = resultConfig.getComponent(EventBus.class);
-        assertEquals(eventStore, eventBus);
-    }
-
-    @Test
-    void enhanceSetsEventStoreAsSubscribableEventSource() {
-        ApplicationConfigurer configurer = MessagingConfigurer.create();
-        configurer.componentRegistry(cr -> cr.registerEnhancer(testSubject));
-        Configuration resultConfig = configurer.build();
-
-        EventStore eventStore = resultConfig.getComponent(EventStore.class);
+        EventBus eventBus = resultConfig.getComponent(EventBus.class);
         SubscribableEventSource subscribableEventSource = resultConfig.getComponent(SubscribableEventSource.class);
-        assertEquals(eventStore, subscribableEventSource);
+        assertEquals(eventBus, subscribableEventSource);
     }
 
     @Test
@@ -140,7 +132,7 @@ class EventSourcingConfigurationDefaultsTest {
 
         Configuration resultConfig = configurer.build();
 
-        assertThat(resultConfig.getComponent(EventStore.class)).isInstanceOf(EventStoreBasedEventBus.class);
+        assertThat(resultConfig.getComponent(EventStore.class)).isInstanceOf(InterceptingEventStore.class);
     }
 
     private static class TestTagResolver implements TagResolver {
