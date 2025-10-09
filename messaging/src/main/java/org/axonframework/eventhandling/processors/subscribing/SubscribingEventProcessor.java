@@ -110,10 +110,10 @@ public class SubscribingEventProcessor implements EventProcessor {
             // This event processor has already been started
             return FutureUtils.emptyCompletedFuture();
         }
-        eventBusRegistration = eventSource.subscribe((events, context) -> this.process(
-                events.stream().map(it -> (EventMessage) it).toList(),
-                context)
-        );
+        eventBusRegistration = eventSource.subscribe((events, context) -> {
+            this.process(events.stream().map(it -> (EventMessage) it).toList(), context);
+            return CompletableFuture.completedFuture(null);
+        });
         return FutureUtils.emptyCompletedFuture();
     }
 

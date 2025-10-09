@@ -32,6 +32,7 @@ import org.mockito.junit.jupiter.*;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -39,7 +40,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
@@ -67,7 +68,7 @@ class PersistentStreamMessageSourceTest {
                                .build();
 
     @Mock
-    private BiConsumer<List<? extends EventMessage>, ProcessingContext> eventConsumer;
+    private BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventConsumer;
 
     private PersistentStreamMessageSource messageSource;
 
@@ -118,7 +119,7 @@ class PersistentStreamMessageSourceTest {
     void subscribingWithDifferentConsumerShouldThrowException() {
         // given
         messageSource.subscribe(eventConsumer);
-        BiConsumer<List<? extends EventMessage>, ProcessingContext> anotherConsumer = mock(BiConsumer.class);
+        BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> anotherConsumer = mock(BiFunction.class);
 
         // when/then
         assertThrows(IllegalStateException.class,
@@ -130,7 +131,7 @@ class PersistentStreamMessageSourceTest {
         // given
         Registration registration = messageSource.subscribe(eventConsumer);
         registration.cancel();
-        BiConsumer<List<? extends EventMessage>, ProcessingContext> newConsumer = mock(BiConsumer.class);
+        BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> newConsumer = mock(BiFunction.class);
 
         // when/then
         Assertions.assertDoesNotThrow(() -> messageSource.subscribe(newConsumer));
@@ -195,8 +196,8 @@ class PersistentStreamMessageSourceTest {
                                       CONCURRENT_TEST_EXECUTOR.submit(() -> {
                                           try {
                                               startLatch.await();
-                                              BiConsumer<List<? extends EventMessage>, ProcessingContext> consumer = mock(
-                                                      BiConsumer.class);
+                                              BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> consumer = mock(
+                                                      BiFunction.class);
                                               messageSource.subscribe(consumer);
                                               successfulSubscriptions.incrementAndGet();
                                           } catch (IllegalStateException e) {
@@ -276,7 +277,7 @@ class PersistentStreamMessageSourceTest {
             CONCURRENT_TEST_EXECUTOR.submit(() -> {
                 try {
                     cancellationStarted.await();
-                    messageSource.subscribe(mock(BiConsumer.class));
+                    messageSource.subscribe(mock(BiFunction.class));
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 } finally {

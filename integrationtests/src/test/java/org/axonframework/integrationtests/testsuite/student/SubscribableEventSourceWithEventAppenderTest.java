@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
@@ -56,6 +57,7 @@ class SubscribableEventSourceWithEventAppenderTest extends AbstractStudentTestSu
         SubscribableEventSource eventSource = startedConfiguration.getComponent(SubscribableEventSource.class);
         Registration subscription = eventSource.subscribe((events, processingContext) -> {
             receivedEvents.addAll(events);
+            return CompletableFuture.completedFuture(null);
         });
 
         // when
@@ -86,6 +88,7 @@ class SubscribableEventSourceWithEventAppenderTest extends AbstractStudentTestSu
         SubscribableEventSource eventSource = startedConfiguration.getComponent(SubscribableEventSource.class);
         Registration subscription = eventSource.subscribe((events, processingContext) -> {
             receivedEvents.addAll(events);
+            return CompletableFuture.completedFuture(null);
         });
 
         // when
@@ -119,9 +122,11 @@ class SubscribableEventSourceWithEventAppenderTest extends AbstractStudentTestSu
         SubscribableEventSource eventSource = startedConfiguration.getComponent(SubscribableEventSource.class);
         Registration subscription1 = eventSource.subscribe((events, processingContext) -> {
             subscriber1Events.addAll(events);
+            return CompletableFuture.completedFuture(null);
         });
         Registration subscription2 = eventSource.subscribe((events, processingContext) -> {
             subscriber2Events.addAll(events);
+            return CompletableFuture.completedFuture(null);
         });
 
         // when
@@ -150,6 +155,7 @@ class SubscribableEventSourceWithEventAppenderTest extends AbstractStudentTestSu
         SubscribableEventSource eventSource = startedConfiguration.getComponent(SubscribableEventSource.class);
         Registration subscription = eventSource.subscribe((events, processingContext) -> {
             receivedEvents.addAll(events);
+            return CompletableFuture.completedFuture(null);
         });
 
         var studentId = UUID.randomUUID().toString();

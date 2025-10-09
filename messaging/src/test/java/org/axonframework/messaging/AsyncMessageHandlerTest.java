@@ -104,7 +104,10 @@ class AsyncMessageHandlerTest {
                 ProcessingContext testContext =
                         StubProcessingContext.withComponent(EventConverter.class, PassThroughConverter.EVENT_INSTANCE);
 
-                eventBus.subscribe((messages, context) -> messages.forEach(m -> ehc.handle(m, testContext)));
+                eventBus.subscribe((messages, context) -> {
+                    messages.forEach(m -> ehc.handle(m, testContext));
+                    return CompletableFuture.completedFuture(null);
+                });
 
                 assertEvents();
             }
@@ -115,7 +118,10 @@ class AsyncMessageHandlerTest {
                 ProcessingContext testContext =
                         StubProcessingContext.withComponent(EventConverter.class, PassThroughConverter.EVENT_INSTANCE);
 
-                eventBus.subscribe((messages, context) -> messages.forEach(m -> ehc.handle(m, testContext)));
+                eventBus.subscribe((messages, context) -> {
+                    messages.forEach(m -> ehc.handle(m, testContext));
+                    return CompletableFuture.completedFuture(null);
+                });
 
                 assertEvents();
             }
@@ -127,7 +133,10 @@ class AsyncMessageHandlerTest {
                 ProcessingContext testContext =
                         StubProcessingContext.withComponent(EventConverter.class, PassThroughConverter.EVENT_INSTANCE);
 
-                eventBus.subscribe((messages, context) -> messages.forEach(m -> ehc.handle(m, testContext)));
+                eventBus.subscribe((messages, context) -> {
+                    messages.forEach(m -> ehc.handle(m, testContext));
+                    return CompletableFuture.completedFuture(null);
+                });
 
                 assertEvents();
             }

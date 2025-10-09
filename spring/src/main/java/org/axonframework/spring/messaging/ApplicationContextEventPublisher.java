@@ -26,6 +26,7 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.context.PayloadApplicationEvent;
 
 import jakarta.annotation.Nonnull;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Component that forward events received from a {@link SubscribableEventSource} as Spring {@link ApplicationEvent} to
@@ -68,11 +69,14 @@ public class ApplicationContextEventPublisher implements InitializingBean, Appli
 
     @Override
     public void afterPropertiesSet() {
-        messageSource.subscribe((msgs, ctx) -> msgs.forEach(msg -> {
-            ApplicationEvent converted = convert(msg);
-            if (converted != null) {
-                applicationContext.publishEvent(convert(msg));
-            }
-        }));
+        messageSource.subscribe((msgs, ctx) -> {
+            msgs.forEach(msg -> {
+                ApplicationEvent converted = convert(msg);
+                if (converted != null) {
+                    applicationContext.publishEvent(convert(msg));
+                }
+            });
+            return CompletableFuture.completedFuture(null);
+        });
     }
 }

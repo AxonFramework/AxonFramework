@@ -22,8 +22,8 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.List;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 
 import static org.mockito.Mockito.*;
 
@@ -34,20 +34,20 @@ import static org.mockito.Mockito.*;
  */
 class SimpleEventBusTest {
 
-    private BiConsumer<List<? extends EventMessage>, ProcessingContext> listener1;
-    private BiConsumer<List<? extends EventMessage>, ProcessingContext> listener2;
-    private BiConsumer<List<? extends EventMessage>, ProcessingContext> listener3;
+    private BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> listener1;
+    private BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> listener2;
+    private BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> listener3;
 
     private EventBus testSubject;
 
     @BeforeEach
     void setUp() {
         //noinspection unchecked
-        listener1 = mock(BiConsumer.class);
+        listener1 = mock(BiFunction.class);
         //noinspection unchecked
-        listener2 = mock(BiConsumer.class);
+        listener2 = mock(BiFunction.class);
         //noinspection unchecked
-        listener3 = mock(BiConsumer.class);
+        listener3 = mock(BiFunction.class);
 
         testSubject = new SimpleEventBus();
     }
@@ -70,9 +70,9 @@ class SimpleEventBusTest {
         subscription3.cancel();
         testSubject.publish(null, newEvent());
 
-        verify(listener1, times(2)).accept(anyList(), eq(null));
-        verify(listener2, times(2)).accept(anyList(), eq(null));
-        verify(listener3, times(2)).accept(anyList(), eq(null));
+        verify(listener1, times(2)).apply(anyList(), eq(null));
+        verify(listener2, times(2)).apply(anyList(), eq(null));
+        verify(listener3, times(2)).apply(anyList(), eq(null));
     }
 
     private EventMessage newEvent() {

@@ -25,7 +25,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
@@ -93,8 +93,8 @@ class DelegatingEventBusTest {
     @Test
     void subscribeDelegatesToWrappedEventBus() {
         // given
-        BiConsumer<List<? extends EventMessage>, ProcessingContext> eventsBatchConsumer = (events, context) -> {
-        };
+        BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer = 
+            (events, context) -> CompletableFuture.completedFuture(null);
         Registration expectedRegistration = mock(Registration.class);
 
         when(delegate.subscribe(eventsBatchConsumer)).thenReturn(expectedRegistration);

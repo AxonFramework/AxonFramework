@@ -29,7 +29,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 
 /**
  * Decorator around the {@link EventBus} intercepting all {@link EventMessage events} before they are
@@ -87,7 +87,7 @@ public class InterceptingEventBus implements EventBus {
     }
 
     @Override
-    public Registration subscribe(@Nonnull BiConsumer<List<? extends EventMessage>, ProcessingContext> eventsBatchConsumer) {
+    public Registration subscribe(@Nonnull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
         return delegate.subscribe(eventsBatchConsumer);
     }
 

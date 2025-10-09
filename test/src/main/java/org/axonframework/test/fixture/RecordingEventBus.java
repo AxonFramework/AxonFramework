@@ -26,7 +26,8 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.function.BiConsumer;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 
 /**
  * An {@link EventBus} implementation recording all the events that are
@@ -53,7 +54,7 @@ public class RecordingEventBus extends RecordingEventSink implements EventBus {
     }
 
     @Override
-    public Registration subscribe(@Nonnull BiConsumer<List<? extends EventMessage>, ProcessingContext> eventsBatchConsumer) {
+    public Registration subscribe(@Nonnull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
         return eventBus.subscribe(eventsBatchConsumer);
     }
 

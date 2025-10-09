@@ -27,6 +27,7 @@ import org.springframework.messaging.support.GenericMessage;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 
 /**
@@ -93,7 +94,10 @@ public class OutboundEventMessageChannelAdapter implements InitializingBean {
      */
     @Override
     public void afterPropertiesSet() {
-        eventSource.subscribe(this::handle);
+        eventSource.subscribe((events, context) -> {
+            handle(events, context);
+            return CompletableFuture.completedFuture(null);
+        });
     }
 
     /**

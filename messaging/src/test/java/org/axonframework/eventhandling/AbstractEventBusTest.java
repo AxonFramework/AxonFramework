@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
@@ -346,7 +347,7 @@ class AbstractEventBusTest {
 
         @Override
         public Registration subscribe(
-                @Nonnull BiConsumer<List<? extends EventMessage>, ProcessingContext> eventsBatchConsumer
+                @Nonnull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer
         ) {
             throw new UnsupportedOperationException();
         }

@@ -56,7 +56,7 @@ class EventStoreBasedEventBusTest {
         @Test
         void subscribeAddsConsumerAndReturnsRegistration() {
             // given
-            var mockConsumer = mock(java.util.function.BiConsumer.class);
+            var mockConsumer = mock(java.util.function.BiFunction.class);
 
             // when
             var registration = testSubject.subscribe(mockConsumer);
@@ -70,7 +70,7 @@ class EventStoreBasedEventBusTest {
         @Test
         void subscribingSameConsumerTwiceOnlyAddsItOnce() {
             // given
-            var mockConsumer = mock(java.util.function.BiConsumer.class);
+            var mockConsumer = mock(java.util.function.BiFunction.class);
 
             // when
             var registration1 = testSubject.subscribe(mockConsumer);
@@ -94,7 +94,7 @@ class EventStoreBasedEventBusTest {
                     .thenReturn(completedFuture(mockAppendTransaction));
             when(tagResolver.resolve(any())).thenReturn(Set.of());
 
-            var mockSubscriber = mock(java.util.function.BiConsumer.class);
+            var mockSubscriber = mock(java.util.function.BiFunction.class);
             testSubject.subscribe(mockSubscriber);
             EventMessage testEvent = createEvent(0);
 
@@ -103,7 +103,7 @@ class EventStoreBasedEventBusTest {
 
             // then
             awaitSuccessfulCompletion(result);
-            verify(mockSubscriber).accept(eq(List.of(testEvent)), isNull());
+            verify(mockSubscriber).apply(eq(List.of(testEvent)), isNull());
         }
 
         @Test
@@ -117,7 +117,7 @@ class EventStoreBasedEventBusTest {
                     .thenReturn(completedFuture(mockAppendTransaction));
             when(tagResolver.resolve(any())).thenReturn(Set.of());
 
-            var mockSubscriber = mock(java.util.function.BiConsumer.class);
+            var mockSubscriber = mock(java.util.function.BiFunction.class);
             testSubject.subscribe(mockSubscriber);
             EventMessage testEventZero = createEvent(0);
             EventMessage testEventOne = createEvent(1);
@@ -129,7 +129,7 @@ class EventStoreBasedEventBusTest {
             awaitSuccessfulCompletion(uow.execute());
 
             // then
-            verify(mockSubscriber).accept(eq(List.of(testEventZero, testEventOne)), any(ProcessingContext.class));
+            verify(mockSubscriber).apply(eq(List.of(testEventZero, testEventOne)), any(ProcessingContext.class));
         }
 
         @Test
@@ -143,7 +143,7 @@ class EventStoreBasedEventBusTest {
                     .thenReturn(completedFuture(mockAppendTransaction));
             when(tagResolver.resolve(any())).thenReturn(Set.of());
 
-            var mockSubscriber = mock(java.util.function.BiConsumer.class);
+            var mockSubscriber = mock(java.util.function.BiFunction.class);
             var registration = testSubject.subscribe(mockSubscriber);
             EventMessage testEvent = createEvent(0);
 
@@ -165,8 +165,8 @@ class EventStoreBasedEventBusTest {
             when(tagResolver.resolve(any())).thenReturn(Set.of());
 
             RuntimeException subscriberException = new RuntimeException("Subscriber failed");
-            var mockSubscriber = mock(java.util.function.BiConsumer.class);
-            doThrow(subscriberException).when(mockSubscriber).accept(any(), any(ProcessingContext.class));
+            var mockSubscriber = mock(java.util.function.BiFunction.class);
+            doThrow(subscriberException).when(mockSubscriber).apply(any(), any(ProcessingContext.class));
             testSubject.subscribe(mockSubscriber);
             EventMessage testEvent = createEvent(0);
 
@@ -178,7 +178,7 @@ class EventStoreBasedEventBusTest {
             // then
             ExecutionException exception = assertThrows(ExecutionException.class, () -> result.get(5, TimeUnit.SECONDS));
             assertSame(subscriberException, exception.getCause());
-            verify(mockSubscriber).accept(eq(List.of(testEvent)), any(ProcessingContext.class));
+            verify(mockSubscriber).apply(eq(List.of(testEvent)), any(ProcessingContext.class));
             verify(mockAppendTransaction, never()).commit(any(ProcessingContext.class));
             verify(mockAppendTransaction).rollback(any(ProcessingContext.class));
         }

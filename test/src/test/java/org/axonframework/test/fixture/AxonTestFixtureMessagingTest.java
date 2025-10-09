@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -237,6 +238,7 @@ class AxonTestFixtureMessagingTest {
             fixture.given()
                    .execute(c -> c.getComponent(SubscribableEventSource.class).subscribe((events, context) -> {
                        studentEvents.addAll(events);
+                       return CompletableFuture.completedFuture(null);
                    }))
                    .event(studentNameChangedEventMessage("my-studentId-1", "name-1", 1))
                    .when()
@@ -411,6 +413,7 @@ class AxonTestFixtureMessagingTest {
                            var commandGateway = c.getComponent(CommandGateway.class);
                            commandGateway.sendAndWait(new ChangeStudentNameCommand("id", "name"));
                        }
+                       return CompletableFuture.completedFuture(null);
                    }))
                    .when()
                    .event(new StudentNameChangedEvent("my-studentId-1", "name-1", 1))
@@ -432,6 +435,7 @@ class AxonTestFixtureMessagingTest {
                            var commandGateway = c.getComponent(CommandGateway.class);
                            commandGateway.sendAndWait(new ChangeStudentNameCommand("id", "name"));
                        }
+                       return CompletableFuture.completedFuture(null);
                    }))
                    .when()
                    .event(new StudentNameChangedEvent("my-studentId-1", "name-1", 1))
@@ -471,6 +475,7 @@ class AxonTestFixtureMessagingTest {
             fixture.given()
                    .execute(c -> c.getComponent(SubscribableEventSource.class).subscribe((events, context) -> {
                        // No-op handler - succeeds without throwing
+                       return CompletableFuture.completedFuture(null);
                    }))
                    .when()
                    .event(new StudentNameChangedEvent("my-studentId-1", "name-1", 1))
@@ -492,6 +497,7 @@ class AxonTestFixtureMessagingTest {
             fixture.given()
                    .execute(c -> c.getComponent(SubscribableEventSource.class).subscribe((events, context) -> {
                        // No-op handler - succeeds without throwing
+                       return CompletableFuture.completedFuture(null);
                    }))
                    .when()
                    .events(whenEvents)
@@ -532,6 +538,7 @@ class AxonTestFixtureMessagingTest {
                         fixture.given()
                                .execute(c -> c.getComponent(SubscribableEventSource.class).subscribe((events, context) -> {
                                    // No-op handler - succeeds without throwing
+                                   return CompletableFuture.completedFuture(null);
                                }))
                                .when()
                                .event(new StudentNameChangedEvent("my-studentId-1", "name-1", 1))
