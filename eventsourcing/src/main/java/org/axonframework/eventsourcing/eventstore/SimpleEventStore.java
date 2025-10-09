@@ -19,11 +19,8 @@ package org.axonframework.eventsourcing.eventstore;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.FutureUtils;
-import org.axonframework.common.Registration;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine.AppendTransaction;
 import org.axonframework.eventstreaming.StreamingCondition;
@@ -35,7 +32,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BiConsumer;
 
 /**
  * Simple implementation of the {@link EventStore}.
@@ -45,13 +41,12 @@ import java.util.function.BiConsumer;
  * @author Steven van Beelen
  * @since 3.0.0
  */
-public class SimpleEventStore implements EventStore, EventBus {
+public class SimpleEventStore implements EventStore {
 
     private final EventStorageEngine eventStorageEngine;
     private final TagResolver tagResolver;
 
     private final ResourceKey<EventStoreTransaction> eventStoreTransactionKey;
-    private final EventBus eventBus = new SimpleEventBus();
 
     /**
      * Constructs a {@code SimpleEventStore} using the given {@code eventStorageEngine} to start
@@ -83,16 +78,6 @@ public class SimpleEventStore implements EventStore, EventBus {
     @Override
     public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
                                            @Nonnull List<EventMessage> events) {
-        return appendEvent(context, events)
-                .thenApply(r -> {
-                    eventBus.publish(context, events);
-                    return null;
-                });
-    }
-
-    @Nonnull
-    private CompletableFuture<Void> appendEvent(@Nullable ProcessingContext context,
-                                                @Nonnull List<EventMessage> events) {
         if (context == null) {
             AppendCondition none = AppendCondition.none();
             List<TaggedEventMessage<?>> taggedEvents = new ArrayList<>();
@@ -124,11 +109,6 @@ public class SimpleEventStore implements EventStore, EventBus {
     }
 
     @Override
-    public Registration subscribe(@Nonnull BiConsumer<List<? extends EventMessage>, ProcessingContext> eventsBatchConsumer) {
-        return eventBus.subscribe(eventsBatchConsumer);
-    }
-
-    @Override
     public CompletableFuture<TrackingToken> firstToken(@Nullable ProcessingContext context) {
         return eventStorageEngine.firstToken(context);
     }
@@ -152,7 +132,6 @@ public class SimpleEventStore implements EventStore, EventBus {
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("eventStorageEngine", eventStorageEngine);
         descriptor.describeProperty("tagResolver", tagResolver);
-        descriptor.describeProperty("eventBus", eventBus);
     }
 
     @SuppressWarnings("unchecked")
