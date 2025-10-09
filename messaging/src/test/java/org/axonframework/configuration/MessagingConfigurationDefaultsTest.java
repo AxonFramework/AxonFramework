@@ -31,8 +31,7 @@ import org.axonframework.commandhandling.gateway.ConvertingCommandGateway;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventSink;
-import org.axonframework.eventhandling.InterceptingEventSink;
-import org.axonframework.eventhandling.SimpleEventBus;
+import org.axonframework.eventhandling.InterceptingEventBus;
 import org.axonframework.eventhandling.conversion.DelegatingEventConverter;
 import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.eventhandling.gateway.DefaultEventGateway;
@@ -115,7 +114,7 @@ class MessagingConfigurationDefaultsTest {
         // So we just check if _any_ CommandGateway has been added to the configuration.
         assertTrue(resultConfig.hasComponent(CommandGateway.class));
         assertInstanceOf(DefaultEventGateway.class, resultConfig.getComponent(EventGateway.class));
-        assertInstanceOf(SimpleEventBus.class, resultConfig.getComponent(EventBus.class));
+        assertInstanceOf(InterceptingEventBus.class, resultConfig.getComponent(EventBus.class));
         assertInstanceOf(SimpleQueryBus.class, resultConfig.getComponent(QueryBus.class));
         assertEquals(QueryPriorityCalculator.defaultCalculator(),
                      resultConfig.getComponent(QueryPriorityCalculator.class));
@@ -264,7 +263,7 @@ class MessagingConfigurationDefaultsTest {
 
         Configuration resultConfig = configurer.build();
 
-        assertThat(resultConfig.getComponent(EventSink.class)).isInstanceOf(InterceptingEventSink.class);
+        assertThat(resultConfig.getComponent(EventSink.class)).isInstanceOf(InterceptingEventBus.class);
     }
 
     private static class TestCommandBus implements CommandBus {
