@@ -78,22 +78,14 @@ import static org.mockito.Mockito.*;
  */
 class MessagingConfigurationDefaultsTest {
 
-    private MessagingConfigurationDefaults testSubject;
-
-    @BeforeEach
-    void setUp() {
-        testSubject = new MessagingConfigurationDefaults();
-    }
-
     @Test
     void orderEqualsMaxInteger() {
-        assertEquals(Integer.MAX_VALUE, testSubject.order());
+        assertEquals(Integer.MAX_VALUE, new MessagingConfigurationDefaults().order());
     }
 
     @Test
     void enhanceSetsExpectedDefaultsInAbsenceOfTheseComponents() {
-        ApplicationConfigurer configurer = new DefaultAxonApplication();
-        configurer.componentRegistry(cr -> testSubject.enhance(cr));
+        ApplicationConfigurer configurer = MessagingConfigurer.enhance(new DefaultAxonApplication());
         Configuration resultConfig = configurer.build();
 
         assertInstanceOf(ClassBasedMessageTypeResolver.class, resultConfig.getComponent(MessageTypeResolver.class));
@@ -132,8 +124,7 @@ class MessagingConfigurationDefaultsTest {
 
     @Test
     void registersMessageOriginProviderInCorrelationDataProviderRegistryByDefault() {
-        ApplicationConfigurer configurer = new DefaultAxonApplication();
-        configurer.componentRegistry(cr -> testSubject.enhance(cr));
+        ApplicationConfigurer configurer = MessagingConfigurer.enhance(new DefaultAxonApplication());
         Configuration resultConfig = configurer.build();
 
         List<CorrelationDataProvider> providers = resultConfig.getComponent(CorrelationDataProviderRegistry.class)
@@ -145,7 +136,7 @@ class MessagingConfigurationDefaultsTest {
 
     @Test
     void registersCorrelationDataInterceptorInInterceptorRegistriesWhenSingleCorrelationDataProviderIsPresent() {
-        ApplicationConfigurer configurer = new DefaultAxonApplication();
+        ApplicationConfigurer configurer = MessagingConfigurer.enhance(new DefaultAxonApplication());
         configurer.componentRegistry(cr -> {
             cr.registerComponent(CorrelationDataProviderRegistry.class,
                                  config -> {
@@ -153,7 +144,6 @@ class MessagingConfigurationDefaultsTest {
                                              new DefaultCorrelationDataProviderRegistry();
                                      return providerRegistry.registerProvider(c -> mock());
                                  });
-            testSubject.enhance(cr);
         });
         Configuration resultConfig = configurer.build();
 
@@ -172,11 +162,10 @@ class MessagingConfigurationDefaultsTest {
 
     @Test
     void doesNotRegisterCorrelationDataInterceptorInInterceptorRegistriesWhenTheAreNoCorrelationDataProviders() {
-        ApplicationConfigurer configurer = new DefaultAxonApplication();
+        ApplicationConfigurer configurer = MessagingConfigurer.enhance(new DefaultAxonApplication());
         configurer.componentRegistry(cr -> {
             cr.registerComponent(CorrelationDataProviderRegistry.class,
                                  config -> new DefaultCorrelationDataProviderRegistry());
-            testSubject.enhance(cr);
         });
         Configuration resultConfig = configurer.build();
 
@@ -197,11 +186,10 @@ class MessagingConfigurationDefaultsTest {
         TestCommandBus testCommandBus = new TestCommandBus();
 
         // Registers default provider registry to remove MessageOriginProvider, thus removing CorrelationDataInterceptor.
-        ApplicationConfigurer configurer = new DefaultAxonApplication().componentRegistry(
+        ApplicationConfigurer configurer = MessagingConfigurer.enhance(new DefaultAxonApplication()).componentRegistry(
                 cr -> cr.registerComponent(CommandBus.class, c -> testCommandBus)
                         .registerComponent(CorrelationDataProviderRegistry.class,
                                            c -> new DefaultCorrelationDataProviderRegistry())
-                        .registerEnhancer(testSubject)
         );
 
         CommandBus configuredCommandBus = configurer.build()
