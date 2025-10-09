@@ -84,15 +84,22 @@ public class EventSubscribers implements DescribableComponent {
 
     /**
      * Notifies all subscribers with the given events and processing context.
+     * <p>
+     * All subscriber futures are executed in parallel and the returned future completes when all of them complete.
      *
      * @param events  The list of events to notify subscribers about.
      * @param context The {@link ProcessingContext} associated with the events, may be {@code null}.
+     * @return A {@link CompletableFuture} that completes when all subscriber futures have completed.
      */
-    public void notifySubscribers(
+    public CompletableFuture<Void> notifySubscribers(
             @Nonnull List<? extends EventMessage> events,
             @Nullable ProcessingContext context
     ) {
-        subscribers.forEach(subscriber -> subscriber.apply(events, context));
+        var consumeFutures = subscribers.stream()
+                                        .map(subscriber -> subscriber.apply(events, context))
+                                        .toArray(CompletableFuture[]::new);
+
+        return CompletableFuture.allOf(consumeFutures);
     }
 
     @Override

@@ -64,7 +64,7 @@ public abstract class AbstractEventBus implements EventBus {
     @Override
     public CompletableFuture<Void> publish(@Nullable ProcessingContext context, @Nonnull List<EventMessage> events) {
         if (context == null) {
-            // No processing context, publish immediately
+            // No processing context, publish immediately - I exepect UnitOfWorkFactory will be useful to retrieve component!
             prepareCommit(events, null);
             commit(events, null);
             afterCommit(events, null);
@@ -149,7 +149,7 @@ public abstract class AbstractEventBus implements EventBus {
      * @param context The processing context, or {@code null} if no context is active
      */
     protected void prepareCommit(@Nonnull List<? extends EventMessage> events, @Nullable ProcessingContext context) {
-        eventSubscribers.notifySubscribers(events, context);
+        eventSubscribers.notifySubscribers(events, context).join();
     }
 
     /**
