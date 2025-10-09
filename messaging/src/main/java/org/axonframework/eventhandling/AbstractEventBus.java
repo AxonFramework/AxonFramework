@@ -18,18 +18,19 @@ package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Context;
+import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.ProcessingLifecycle;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BiConsumer;
+import java.util.concurrent.Future;
 import java.util.function.BiFunction;
 
 /**
@@ -47,11 +48,20 @@ public abstract class AbstractEventBus implements EventBus {
 
     private final Context.ResourceKey<List<EventMessage>> eventsKey = Context.ResourceKey.withLabel("EventBus_Events");
     private final EventSubscribers eventSubscribers = new EventSubscribers();
+    private final UnitOfWorkFactory unitOfWorkFactory;
 
     /**
      * Instantiate an {@link AbstractEventBus}.
      **/
     public AbstractEventBus() {
+        this.unitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE); // todo: remove the constructor.
+    }
+
+    /**
+     * Instantiate an {@link AbstractEventBus}.
+     **/
+    public AbstractEventBus(UnitOfWorkFactory unitOfWorkFactory) {
+        this.unitOfWorkFactory = unitOfWorkFactory;
     }
 
     @Override
@@ -64,18 +74,24 @@ public abstract class AbstractEventBus implements EventBus {
     @Override
     public CompletableFuture<Void> publish(@Nullable ProcessingContext context, @Nonnull List<EventMessage> events) {
         if (context == null) {
-            // No processing context, publish immediately - I exepect UnitOfWorkFactory will be useful to retrieve component!
-            prepareCommit(events, null);
-            commit(events, null);
-            afterCommit(events, null);
-            return FutureUtils.emptyCompletedFuture();
+            return unitOfWorkFactory
+                    .create()
+                    .executeWithResult(ctx -> {
+                        runInContext(ctx, events);
+                        return FutureUtils.emptyCompletedFuture();
+                    });
         }
 
+        runInContext(context, events);
+        return FutureUtils.emptyCompletedFuture();
+    }
+
+    private void runInContext(@Nonnull ProcessingContext context, @Nonnull List<EventMessage> events) {
         // Check if we're already in or past the commit phase - publishing is forbidden at this point
         if (context.isCommitted()) {
             throw new IllegalStateException(
                     "It is not allowed to publish events when the ProcessingContext has already been committed. "
-                    + "Please start a new ProcessingContext before publishing events."
+                            + "Please start a new ProcessingContext before publishing events."
             );
         }
 
@@ -83,25 +99,28 @@ public abstract class AbstractEventBus implements EventBus {
         List<EventMessage> eventQueue = context.computeResourceIfAbsent(eventsKey, () -> {
             ArrayList<EventMessage> queue = new ArrayList<>();
 
-            context.runOnPrepareCommit(ctx -> {
+            context.onPrepareCommit(ctx -> {
                 List<EventMessage> queuedEvents = ctx.getResource(eventsKey);
                 if (queuedEvents != null && !queuedEvents.isEmpty()) {
-                    processEventsInPhase(queuedEvents, ctx, this::prepareCommit);
+                    return processEventsInPhase(queuedEvents, ctx, this::prepareCommit);
                 }
+                return FutureUtils.emptyCompletedFuture();
             });
 
-            context.runOnCommit(ctx -> {
+            context.onCommit(ctx -> {
                 List<EventMessage> queuedEvents = ctx.getResource(eventsKey);
                 if (queuedEvents != null && !queuedEvents.isEmpty()) {
-                    processEventsInPhase(queuedEvents, ctx, this::commit);
+                    return processEventsInPhase(queuedEvents, ctx, this::commit);
                 }
+                return FutureUtils.emptyCompletedFuture();
             });
 
-            context.runOnAfterCommit(ctx -> {
+            context.onAfterCommit(ctx -> {
                 List<EventMessage> queuedEvents = ctx.getResource(eventsKey);
                 if (queuedEvents != null && !queuedEvents.isEmpty()) {
-                    processEventsInPhase(queuedEvents, ctx, this::afterCommit);
+                    return processEventsInPhase(queuedEvents, ctx, this::afterCommit);
                 }
+                return FutureUtils.emptyCompletedFuture();
             });
 
             // Clean up events resource on completion or error to free memory
@@ -111,8 +130,6 @@ public abstract class AbstractEventBus implements EventBus {
         });
 
         eventQueue.addAll(events);
-
-        return FutureUtils.emptyCompletedFuture();
     }
 
     /**
@@ -121,15 +138,18 @@ public abstract class AbstractEventBus implements EventBus {
      * @param queuedEvents The events queued for processing
      * @param context      The processing context
      * @param processor    The processor to invoke for the events
+     * @return A {@link CompletableFuture} that completes when all event processing is done
      */
-    private void processEventsInPhase(
+    private CompletableFuture<Void> processEventsInPhase(
             List<EventMessage> queuedEvents,
             ProcessingContext context,
-            BiConsumer<List<? extends EventMessage>, ProcessingContext> processor
+            BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<Void>> processor
     ) {
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
         int processedItems = queuedEvents.size();
+
         // Create a copy to avoid concurrent modification during event publication
-        processor.accept(new ArrayList<>(queuedEvents), context);
+        futures.add(processor.apply(new ArrayList<>(queuedEvents), context));
 
         // Make sure events published during this phase are also processed
         while (processedItems < queuedEvents.size()) {
@@ -137,8 +157,10 @@ public abstract class AbstractEventBus implements EventBus {
                     queuedEvents.subList(processedItems, queuedEvents.size())
             );
             processedItems = queuedEvents.size();
-            processor.accept(newMessages, context);
+            futures.add(processor.apply(newMessages, context));
         }
+
+        return CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new));
     }
 
     /**
@@ -148,8 +170,9 @@ public abstract class AbstractEventBus implements EventBus {
      * @param events  Events to be published by this Event Bus
      * @param context The processing context, or {@code null} if no context is active
      */
-    protected void prepareCommit(@Nonnull List<? extends EventMessage> events, @Nullable ProcessingContext context) {
-        eventSubscribers.notifySubscribers(events, context).join();
+    protected CompletableFuture<Void> prepareCommit(@Nonnull List<? extends EventMessage> events,
+                                                    @Nullable ProcessingContext context) {
+        return eventSubscribers.notifySubscribers(events, context);
     }
 
     /**
@@ -158,7 +181,9 @@ public abstract class AbstractEventBus implements EventBus {
      *
      * @param events Events to be published by this Event Bus
      */
-    protected void commit(@Nonnull List<? extends EventMessage> events, @Nullable ProcessingContext context) {
+    protected CompletableFuture<Void> commit(@Nonnull List<? extends EventMessage> events,
+                                             @Nullable ProcessingContext context) {
+        return FutureUtils.emptyCompletedFuture();
     }
 
     /**
@@ -167,7 +192,9 @@ public abstract class AbstractEventBus implements EventBus {
      *
      * @param events Events to be published by this Event Bus
      */
-    protected void afterCommit(@Nonnull List<? extends EventMessage> events, @Nullable ProcessingContext context) {
+    protected CompletableFuture<Void> afterCommit(@Nonnull List<? extends EventMessage> events,
+                                                  @Nullable ProcessingContext context) {
+        return FutureUtils.emptyCompletedFuture();
     }
 
     @Override

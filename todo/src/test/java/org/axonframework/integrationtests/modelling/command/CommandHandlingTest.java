@@ -90,8 +90,9 @@ class CommandHandlingTest {
         }
 
         @Override
-        protected void commit(@Nonnull List<? extends EventMessage> events, @Nullable ProcessingContext context) {
+        protected CompletableFuture<Void> commit(@Nonnull List<? extends EventMessage> events, @Nullable ProcessingContext context) {
             storedEvents.addAll(events.stream().map(StubEventStore::asDomainEventMessage).toList());
+            return super.commit(events, context);
         }
 
         private static DomainEventMessage asDomainEventMessage(EventMessage event) {
