@@ -11,7 +11,7 @@ import org.axonframework.modelling.annotations.InjectEntity
 
 class EnrollStudentCommandHandler {
   @CommandHandler
-  fun handle(command: EnrollStudent, @InjectEntity(idProperty = EnrollStudent.ID_PROP) state: EnrollStudentState, eventAppender: EventAppender) {
+  internal fun handle(command: EnrollStudent, @InjectEntity(idProperty = EnrollStudent.ID_PROP) state: EnrollStudentState, eventAppender: EventAppender) {
     eventAppender.append(state.decide(command))
   }
 }

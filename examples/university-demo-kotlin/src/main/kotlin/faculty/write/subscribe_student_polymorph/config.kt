@@ -10,7 +10,7 @@ import org.axonframework.modelling.annotations.InjectEntity
 
 class SubscribeStudentToCoursePolymorphCommandHandler {
   @CommandHandler
-  fun handle(command: SubscribeStudentToCourse, @InjectEntity state: State, eventAppender: EventAppender) {
+  internal fun handle(command: SubscribeStudentToCourse, @InjectEntity state: State, eventAppender: EventAppender) {
     eventAppender.append(state.decide(command))
   }
 }

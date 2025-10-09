@@ -1,4 +1,4 @@
-package io.axoniq.demo.university.faculty.write.create_course
+package io.axoniq.demo.university.faculty.write.create_course_functional
 
 import io.axoniq.demo.university.faculty.FacultyTags.COURSE
 import io.axoniq.demo.university.faculty.events.CourseCreated

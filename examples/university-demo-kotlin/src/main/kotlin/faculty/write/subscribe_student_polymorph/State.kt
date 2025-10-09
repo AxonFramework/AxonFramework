@@ -3,6 +3,7 @@ package io.axoniq.demo.university.faculty.write.subscribe_student_polymorph
 import io.axoniq.demo.university.faculty.events.CourseCreated
 import io.axoniq.demo.university.faculty.events.StudentEnrolledInFaculty
 import io.axoniq.demo.university.faculty.events.StudentSubscribedToCourse
+import io.axoniq.demo.university._ext.conditionalEvolve
 import io.axoniq.demo.university.shared.ids.CourseId
 import io.axoniq.demo.university.shared.ids.StudentId
 import io.axoniq.demo.university.shared.ids.SubscriptionId
@@ -21,7 +22,7 @@ import org.axonframework.messaging.ClassBasedMessageTypeResolver
     State.SubscriptionState::class
   ]
 )
-sealed interface State {
+internal sealed interface State {
   companion object {
 
     const val MAX_COURSES_PER_STUDENT = 3
@@ -58,20 +59,6 @@ sealed interface State {
    */
   fun decide(cmd: SubscribeStudentToCourse): List<Any> {
     throw UnsupportedOperationException("Command dispatched to incorrect state. Current type is '${this::class.simpleName}'.")
-  }
-
-  /**
-   * Conditional state evolver.
-   * @param condition A condition if the state should be evolved.
-   * @param stateEvolver  A state evolving function.
-   * @return current or evolved stated, depending on the value of condition.
-   */
-  fun conditionalEvolve(condition: Boolean, stateEvolver: (State) -> State): State {
-    return if (condition) {
-      stateEvolver(this)
-    } else {
-      this
-    }
   }
 
   object InitialState : State {

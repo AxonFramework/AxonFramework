@@ -10,7 +10,7 @@ import org.axonframework.modelling.annotations.InjectEntity
 
 class SubscribeStudentToCourseCommandHandler {
   @CommandHandler
-  fun handle(command: SubscribeStudentToCourse, @InjectEntity state: SubscribeStudentToCourseState, eventAppender: EventAppender) {
+  internal fun handle(command: SubscribeStudentToCourse, @InjectEntity state: State, eventAppender: EventAppender) {
     eventAppender.append(state.decide(command))
   }
 }
@@ -18,7 +18,7 @@ class SubscribeStudentToCourseCommandHandler {
 fun EventSourcingConfigurer.registerSubscribeStudentToCourse() = apply {
   registerEntity(
     EventSourcedEntityModule.annotated(
-      SubscriptionId::class.java, SubscribeStudentToCourseState::class.java
+      SubscriptionId::class.java, State::class.java
     )
   )
   registerCommandHandlingModule(
