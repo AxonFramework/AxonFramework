@@ -274,6 +274,433 @@ class DefaultComponentRegistryTest {
     }
 
     @Nested
+    class ComponentRegistrationAndRetrieval {
+
+        @Nested
+        class InterfaceVsImplementationRegistration {
+
+            @Test
+            void registerByInterfaceRetrieveByInterface() {
+                // given
+                ServiceImplA implementation = new ServiceImplA("test-value");
+                testSubject.registerComponent(ServiceInterface.class, c -> implementation);
+
+                // when
+                Configuration config = testSubject.build(mock());
+
+                // then
+                assertTrue(config.hasComponent(ServiceInterface.class));
+                ServiceInterface result = config.getComponent(ServiceInterface.class);
+                assertEquals("test-value", result.getValue());
+                assertSame(implementation, result);
+            }
+
+            @Test
+            void registerByInterfaceRetrieveByImplementationFails() {
+                // given
+                ServiceImplA implementation = new ServiceImplA("test-value");
+                testSubject.registerComponent(ServiceInterface.class, c -> implementation);
+
+                // when
+                Configuration config = testSubject.build(mock());
+
+                // then
+                assertFalse(config.hasComponent(ServiceImplA.class));
+                assertThrows(ComponentNotFoundException.class, () -> config.getComponent(ServiceImplA.class));
+            }
+
+            @Test
+            void registerByImplementationIsAlsoRetrievableByInterface() {
+                // given
+                ServiceImplA implementation = new ServiceImplA("test-value");
+                testSubject.registerComponent(ServiceImplA.class, c -> implementation);
+
+                // when
+                Configuration config = testSubject.build(mock());
+
+                // then
+                // Component registered by implementation class is accessible by implementation
+                assertTrue(config.hasComponent(ServiceImplA.class));
+                ServiceImplA resultByImpl = config.getComponent(ServiceImplA.class);
+                assertEquals("test-value", resultByImpl.getValue());
+                assertSame(implementation, resultByImpl);
+
+                // Framework also makes it available by interface automatically
+                assertTrue(config.hasComponent(ServiceInterface.class));
+                ServiceInterface resultByInterface = config.getComponent(ServiceInterface.class);
+                assertEquals("test-value", resultByInterface.getValue());
+                assertSame(implementation, resultByInterface);
+            }
+
+            @Test
+            void registerByImplementationRetrieveByImplementation() {
+                // given
+                ServiceImplA implementation = new ServiceImplA("test-value");
+                testSubject.registerComponent(ServiceImplA.class, c -> implementation);
+
+                // when
+                Configuration config = testSubject.build(mock());
+
+                // then
+                assertTrue(config.hasComponent(ServiceImplA.class));
+                ServiceImplA result = config.getComponent(ServiceImplA.class);
+                assertEquals("test-value", result.getValue());
+                assertSame(implementation, result);
+            }
+
+            @Test
+            void registerByInterfaceWithDifferentImplementationsReplacesComponent() {
+                // given
+                ServiceImplA implA = new ServiceImplA("value-a");
+                ServiceImplB implB = new ServiceImplB("value-b");
+
+                testSubject.registerComponent(ServiceInterface.class, c -> implA)
+                           .registerComponent(ServiceInterface.class, c -> implB);
+
+                // when
+                Configuration config = testSubject.build(mock());
+
+                // then
+                assertTrue(config.hasComponent(ServiceInterface.class));
+                ServiceInterface result = config.getComponent(ServiceInterface.class);
+                assertEquals("value-b", result.getValue());
+                assertSame(implB, result);
+                assertNotSame(implA, result);
+            }
+        }
+
+        @Nested
+        class MultipleImplementationsWithoutNames {
+
+            @Test
+            void registeringMultipleImplementationsWithoutNamesReplacesComponent() {
+                // given
+                ServiceImplA implA = new ServiceImplA("value-a");
+                ServiceImplB implB = new ServiceImplB("value-b");
+
+                testSubject.registerComponent(ServiceInterface.class, c -> implA)
+                           .registerComponent(ServiceInterface.class, c -> implB);
+
+                // when
+                Configuration config = testSubject.build(mock());
+
+                // then
+                assertTrue(config.hasComponent(ServiceInterface.class));
+                ServiceInterface result = config.getComponent(ServiceInterface.class);
+                assertEquals("value-b", result.getValue());
+                assertSame(implB, result);
+            }
+
+            @Test
+            void hasComponentReturnsTrueOnlyForLastRegisteredComponent() {
+                // given
+                ServiceImplA implA = new ServiceImplA("value-a");
+                ServiceImplB implB = new ServiceImplB("value-b");
+
+                testSubject.registerComponent(ServiceInterface.class, c -> implA)
+                           .registerComponent(ServiceInterface.class, c -> implB);
+
+                // when
+                Configuration config = testSubject.build(mock());
+
+                // then
+                assertTrue(config.hasComponent(ServiceInterface.class));
+                // Cannot check by implementation type as registration is by interface
+                assertFalse(config.hasComponent(ServiceImplA.class));
+                assertFalse(config.hasComponent(ServiceImplB.class));
+            }
+
+            @Test
+            void getOptionalComponentReturnsOnlyLastRegisteredComponent() {
+                // given
+                ServiceImplA implA = new ServiceImplA("value-a");
+                ServiceImplB implB = new ServiceImplB("value-b");
+
+                testSubject.registerComponent(ServiceInterface.class, c -> implA)
+                           .registerComponent(ServiceInterface.class, c -> implB);
+
+                // when
+                Configuration config = testSubject.build(mock());
+
+                // then
+                Optional<ServiceInterface> result = config.getOptionalComponent(ServiceInterface.class);
+                assertTrue(result.isPresent());
+                assertEquals("value-b", result.get().getValue());
+                assertSame(implB, result.get());
+            }
+
+            @Test
+            void componentBuilderIsOnlyInvokedForLastRegisteredComponent() {
+                // given
+                AtomicInteger counterA = new AtomicInteger(0);
+                AtomicInteger counterB = new AtomicInteger(0);
+
+                testSubject.registerComponent(ServiceInterface.class, c -> {
+                                   counterA.incrementAndGet();
+                                   return new ServiceImplA("value-a");
+                               })
+                           .registerComponent(ServiceInterface.class, c -> {
+                               counterB.incrementAndGet();
+                               return new ServiceImplB("value-b");
+                           });
+
+                // when
+                Configuration config = testSubject.build(mock());
+                config.getComponent(ServiceInterface.class);
+
+                // then
+                assertEquals(0, counterA.get(), "First builder should not be invoked");
+                assertEquals(1, counterB.get(), "Second builder should be invoked once");
+            }
+        }
+
+        @Nested
+        class MultipleImplementationsWithNames {
+
+            @Test
+            void registerMultipleImplementationsWithDifferentNamesAllAccessible() {
+                // given
+                ServiceImplA implA = new ServiceImplA("value-a");
+                ServiceImplB implB = new ServiceImplB("value-b");
+
+                testSubject.registerComponent(ServiceInterface.class, "service-a", c -> implA)
+                           .registerComponent(ServiceInterface.class, "service-b", c -> implB);
+
+                // when
+                Configuration config = testSubject.build(mock());
+
+                // then
+                assertTrue(config.hasComponent(ServiceInterface.class, "service-a"));
+                assertTrue(config.hasComponent(ServiceInterface.class, "service-b"));
+
+                ServiceInterface resultA = config.getComponent(ServiceInterface.class, "service-a");
+                assertEquals("value-a", resultA.getValue());
+                assertSame(implA, resultA);
+
+                ServiceInterface resultB = config.getComponent(ServiceInterface.class, "service-b");
+                assertEquals("value-b", resultB.getValue());
+                assertSame(implB, resultB);
+            }
+
+            @Test
+            void registerWithSameNameReplacesComponent() {
+                // given
+                ServiceImplA implA = new ServiceImplA("value-a");
+                ServiceImplB implB = new ServiceImplB("value-b");
+
+                testSubject.registerComponent(ServiceInterface.class, "service", c -> implA)
+                           .registerComponent(ServiceInterface.class, "service", c -> implB);
+
+                // when
+                Configuration config = testSubject.build(mock());
+
+                // then
+                assertTrue(config.hasComponent(ServiceInterface.class, "service"));
+                ServiceInterface result = config.getComponent(ServiceInterface.class, "service");
+                assertEquals("value-b", result.getValue());
+                assertSame(implB, result);
+            }
+
+            @Test
+            void namedComponentIsNotAccessibleWithoutName() {
+                // given
+                ServiceImplA implA = new ServiceImplA("value-a");
+                testSubject.registerComponent(ServiceInterface.class, "service-a", c -> implA);
+
+                // when
+                Configuration config = testSubject.build(mock());
+
+                // then
+                assertTrue(config.hasComponent(ServiceInterface.class, "service-a"));
+                assertFalse(config.hasComponent(ServiceInterface.class), "Named component should not be accessible without name");
+                assertThrows(ComponentNotFoundException.class,
+                           () -> config.getComponent(ServiceInterface.class),
+                           "Should throw when retrieving named component without name");
+            }
+
+            @Test
+            void unnamedComponentIsNotAccessibleByArbitraryName() {
+                // given
+                ServiceImplA implA = new ServiceImplA("value-a");
+                testSubject.registerComponent(ServiceInterface.class, c -> implA);
+
+                // when
+                Configuration config = testSubject.build(mock());
+
+                // then
+                assertTrue(config.hasComponent(ServiceInterface.class));
+                assertFalse(config.hasComponent(ServiceInterface.class, "some-name"));
+                assertThrows(ComponentNotFoundException.class,
+                           () -> config.getComponent(ServiceInterface.class, "some-name"),
+                           "Should throw when retrieving unnamed component with a name");
+            }
+
+            @Test
+            void canRegisterBothNamedAndUnnamedComponentsOfSameType() {
+                // given
+                ServiceImplA unnamedImpl = new ServiceImplA("unnamed");
+                ServiceImplA namedImpl = new ServiceImplA("named");
+
+                testSubject.registerComponent(ServiceInterface.class, c -> unnamedImpl)
+                           .registerComponent(ServiceInterface.class, "named-service", c -> namedImpl);
+
+                // when
+                Configuration config = testSubject.build(mock());
+
+                // then
+                assertTrue(config.hasComponent(ServiceInterface.class));
+                assertTrue(config.hasComponent(ServiceInterface.class, "named-service"));
+
+                ServiceInterface unnamedResult = config.getComponent(ServiceInterface.class);
+                assertEquals("unnamed", unnamedResult.getValue());
+                assertSame(unnamedImpl, unnamedResult);
+
+                ServiceInterface namedResult = config.getComponent(ServiceInterface.class, "named-service");
+                assertEquals("named", namedResult.getValue());
+                assertSame(namedImpl, namedResult);
+            }
+
+            @Test
+            void getOptionalComponentWithNameReturnsCorrectComponent() {
+                // given
+                ServiceImplA implA = new ServiceImplA("value-a");
+                ServiceImplB implB = new ServiceImplB("value-b");
+
+                testSubject.registerComponent(ServiceInterface.class, "service-a", c -> implA)
+                           .registerComponent(ServiceInterface.class, "service-b", c -> implB);
+
+                // when
+                Configuration config = testSubject.build(mock());
+
+                // then
+                Optional<ServiceInterface> resultA = config.getOptionalComponent(ServiceInterface.class, "service-a");
+                assertTrue(resultA.isPresent());
+                assertEquals("value-a", resultA.get().getValue());
+
+                Optional<ServiceInterface> resultB = config.getOptionalComponent(ServiceInterface.class, "service-b");
+                assertTrue(resultB.isPresent());
+                assertEquals("value-b", resultB.get().getValue());
+
+                Optional<ServiceInterface> nonExistent = config.getOptionalComponent(ServiceInterface.class, "non-existent");
+                assertFalse(nonExistent.isPresent());
+            }
+        }
+
+        @Nested
+        class ComponentNotFoundScenarios {
+
+            @Test
+            void retrievingUnregisteredComponentThrowsComponentNotFoundException() {
+                // given
+                Configuration config = testSubject.build(mock());
+
+                // when / then
+                assertThrows(ComponentNotFoundException.class,
+                           () -> config.getComponent(ServiceInterface.class));
+            }
+
+            @Test
+            void retrievingUnregisteredComponentByNameThrowsComponentNotFoundException() {
+                // given
+                Configuration config = testSubject.build(mock());
+
+                // when / then
+                assertThrows(ComponentNotFoundException.class,
+                           () -> config.getComponent(ServiceInterface.class, "non-existent"));
+            }
+
+            @Test
+            void retrievingByWrongTypeThrowsComponentNotFoundException() {
+                // given
+                testSubject.registerComponent(ServiceInterface.class, c -> new ServiceImplA("test"));
+
+                // when
+                Configuration config = testSubject.build(mock());
+
+                // then
+                assertThrows(ComponentNotFoundException.class,
+                           () -> config.getComponent(String.class),
+                           "Should throw when requesting component by wrong type");
+            }
+
+            @Test
+            void getOptionalComponentReturnsEmptyForNonExistentComponent() {
+                // given
+                Configuration config = testSubject.build(mock());
+
+                // when
+                Optional<ServiceInterface> result = config.getOptionalComponent(ServiceInterface.class);
+
+                // then
+                assertFalse(result.isPresent());
+            }
+
+            @Test
+            void getOptionalComponentReturnsEmptyForNonExistentNamedComponent() {
+                // given
+                testSubject.registerComponent(ServiceInterface.class, c -> new ServiceImplA("test"));
+                Configuration config = testSubject.build(mock());
+
+                // when
+                Optional<ServiceInterface> result = config.getOptionalComponent(ServiceInterface.class, "non-existent");
+
+                // then
+                assertFalse(result.isPresent());
+            }
+
+            @Test
+            void hasComponentReturnsFalseForUnregisteredComponent() {
+                // given
+                Configuration config = testSubject.build(mock());
+
+                // when / then
+                assertFalse(config.hasComponent(ServiceInterface.class));
+            }
+
+            @Test
+            void hasComponentReturnsFalseForUnregisteredNamedComponent() {
+                // given
+                testSubject.registerComponent(ServiceInterface.class, c -> new ServiceImplA("test"));
+                Configuration config = testSubject.build(mock());
+
+                // when / then
+                assertFalse(config.hasComponent(ServiceInterface.class, "non-existent"));
+            }
+
+            @Test
+            void getComponentWithDefaultSupplierReturnsDefaultForNonExistentComponent() {
+                // given
+                Configuration config = testSubject.build(mock());
+                ServiceImplA defaultImpl = new ServiceImplA("default");
+
+                // when
+                ServiceInterface result = config.getComponent(ServiceInterface.class, () -> defaultImpl);
+
+                // then
+                assertSame(defaultImpl, result);
+                assertEquals("default", result.getValue());
+            }
+
+            @Test
+            void getComponentWithDefaultSupplierReturnsRegisteredComponentWhenExists() {
+                // given
+                ServiceImplA registeredImpl = new ServiceImplA("registered");
+                ServiceImplA defaultImpl = new ServiceImplA("default");
+                testSubject.registerComponent(ServiceInterface.class, c -> registeredImpl);
+
+                // when
+                Configuration config = testSubject.build(mock());
+                ServiceInterface result = config.getComponent(ServiceInterface.class, () -> defaultImpl);
+
+                // then
+                assertSame(registeredImpl, result);
+                assertEquals("registered", result.getValue());
+                assertNotSame(defaultImpl, result);
+            }
+        }
+    }
+
+    @Nested
     class DescribeTo {
 
         @Test
@@ -414,6 +841,37 @@ class DefaultComponentRegistryTest {
          */
         public TestModule(@Nonnull String name) {
             super(name);
+        }
+    }
+
+    // Test component hierarchy for exploration tests
+    interface ServiceInterface {
+        String getValue();
+    }
+
+    static class ServiceImplA implements ServiceInterface {
+        private final String value;
+
+        ServiceImplA(String value) {
+            this.value = value;
+        }
+
+        @Override
+        public String getValue() {
+            return value;
+        }
+    }
+
+    static class ServiceImplB implements ServiceInterface {
+        private final String value;
+
+        ServiceImplB(String value) {
+            this.value = value;
+        }
+
+        @Override
+        public String getValue() {
+            return value;
         }
     }
 }
