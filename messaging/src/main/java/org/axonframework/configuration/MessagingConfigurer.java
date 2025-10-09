@@ -23,6 +23,7 @@ import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.configuration.EventProcessingConfigurer;
+import org.axonframework.eventhandling.configuration.EventSinkConfigurationDefaults;
 import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
@@ -94,6 +95,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     public static MessagingConfigurer enhance(@Nonnull ApplicationConfigurer applicationConfigurer) {
         return new MessagingConfigurer(applicationConfigurer)
                 .componentRegistry(cr -> cr
+                        .registerEnhancer(new EventSinkConfigurationDefaults())
                         .registerEnhancer(new MessagingConfigurationDefaults())
                 );
     }
