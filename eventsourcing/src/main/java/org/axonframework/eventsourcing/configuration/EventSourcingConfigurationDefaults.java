@@ -95,7 +95,7 @@ public class EventSourcingConfigurationDefaults implements ConfigurationEnhancer
     }
 
     private static void registerEventStoreAsEventBus(@Nonnull ComponentRegistry registry) {
-        // disable default EventBus in favor of SimpleEventStore
+        // disable default EventBus in favor of EventStoreBasedEventBus
         registry.disableEnhancer(EventBusConfigurationDefaults.class);
 
         registry.registerDecorator(
@@ -113,7 +113,7 @@ public class EventSourcingConfigurationDefaults implements ConfigurationEnhancer
 
         registry.registerComponent(
                 EventSink.class,
-                cfg -> cfg.getComponent(EventStore.class));
+                cfg -> cfg.getComponent(EventBus.class));
     }
 
     private static TagResolver defaultTagResolver(Configuration configuration) {
