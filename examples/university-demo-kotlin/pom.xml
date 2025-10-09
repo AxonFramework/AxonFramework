@@ -29,7 +29,7 @@
 
     <!-- region [dependencies-main] -->
     <spring-boot.version>3.5.6</spring-boot.version>
-    <axon.version>5.0.0-SNAPSHOT</axon.version>
+    <axon.version>5.0.0-preview</axon.version>
     <log4j.version>2.24.3</log4j.version>
     <!-- endregion [dependencies-main] -->
 

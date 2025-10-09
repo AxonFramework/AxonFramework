@@ -20,19 +20,26 @@ jobs:
 
     timeout-minutes: 10
 
+    strategy:
+      matrix:
+        axon-framework:
+          - version: 5.0.0-preview
+          - version: 5.0.0-SNAPSHOT
+      fail-fast: false
+
     steps:
       - name: 🛎️ Checkout repository
         uses: actions/checkout@v4
 
-      - name: 🔧 Set up JDK 21
+      - name: 🔧 Set up JDK
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
+          java-version-file: .java-version
           distribution: 'zulu'
           cache: maven
 
       - name: 📦 Build with Maven
-        run: mvn -B compile --file pom.xml
+        run: mvn -B compile -ntp -B -Daxon.version=${{ matrix.axon-framework.version }}
 
       - name: 🧪 Run tests
-        run: mvn -B test --file pom.xml
+        run: mvn -B test -ntp -B
