@@ -39,10 +39,10 @@ public class MessagesRecordingConfigurationEnhancer implements ConfigurationEnha
     public void enhance(@Nonnull ComponentRegistry registry) {
         Objects.requireNonNull(registry, "Cannot enhance a null ComponentRegistry.")
                .registerDecorator(EventStore.class,
-                                  Integer.MIN_VALUE,
+                                  Integer.MAX_VALUE,
                                   (config, name, delegate) -> new RecordingEventStore(delegate))
                .registerDecorator(EventBus.class,
-                                  Integer.MIN_VALUE + 100,
+                                  Integer.MAX_VALUE,
                                   (config, name, delegate) -> new RecordingEventBus(delegate))
                .registerDecorator(CommandBus.class,
                                   Integer.MAX_VALUE,
