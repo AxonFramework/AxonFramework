@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling.processors;
+package org.axonframework.eventhandling.monitoring;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.MockComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.monitoring.MonitoringEventProcessor;
+import org.axonframework.eventhandling.processors.EventProcessor;
+import org.axonframework.messaging.Message;
 import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.monitoring.MessageMonitor.MonitorCallback;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,9 +32,9 @@ class MonitoringEventProcessorTest {
 
     private final EventProcessor mockDelegate = mock(EventProcessor.class);
 
-    private final MessageMonitor<EventMessage> testMonitor = new MessageMonitor<>() {
+    private final MessageMonitor<Message> testMonitor = new MessageMonitor<>() {
         @Override
-        public MonitorCallback onMessageIngested(EventMessage message) {
+        public MonitorCallback onMessageIngested(@Nonnull Message message) {
             return mock(MonitorCallback.class);
         }
 

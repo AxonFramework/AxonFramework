@@ -14,41 +14,35 @@
  * limitations under the License.
  */
 
-package org.axonframework.queryhandling;
+package org.axonframework.commandhandling.monitoring;
 
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.infra.MockComponentDescriptor;
+import org.axonframework.messaging.Message;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.MessageMonitor.MonitorCallback;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
+import static org.axonframework.monitoring.MessageMonitorTestUtils.messageMonitor;
+import static org.mockito.Mockito.*;
 
-class MonitoringQueryBusTest {
+class MonitoringCommandBusTest {
 
-    private final QueryBus mockDelegate = mock(QueryBus.class);
+    private final CommandBus mockCommandBus = mock(CommandBus.class);
     private final MonitorCallback mockMonitorCallback = mock(MonitorCallback.class);
-    private final MessageMonitor<QueryMessage> fakeMessageMonitor = new MessageMonitor<>() {
-        @Override
-        public MonitorCallback onMessageIngested(QueryMessage message) {
-            return mockMonitorCallback;
-        }
+    private final MessageMonitor<Message> fakeMessageMonitor = messageMonitor(msg -> mockMonitorCallback);
 
-        @Override
-        public String toString() {
-            return "anonymous QueryMessageMonitor";
-        }
-    };
-
-    private final MonitoringQueryBus testSubject = new MonitoringQueryBus(mockDelegate, fakeMessageMonitor);
+    private final MonitoringCommandBus testSubject = new MonitoringCommandBus(mockCommandBus, fakeMessageMonitor);
 
     @Test
     void describeIncludesAllRelevantProperties() {
         var componentDescriptor = new MockComponentDescriptor();
         testSubject.describeTo(componentDescriptor);
 
-        assertThat(componentDescriptor.getProperty("delegate").toString()).startsWith("Mock for QueryBus, hashCode:");
+        assertThat(componentDescriptor.getProperty("delegate").toString()).startsWith("Mock for CommandBus, hashCode:");
         assertThat(componentDescriptor.getProperty("messageMonitor").toString()).isEqualTo(
-                "anonymous QueryMessageMonitor");
+                "anonymous CommandMessageMonitor");
     }
 }

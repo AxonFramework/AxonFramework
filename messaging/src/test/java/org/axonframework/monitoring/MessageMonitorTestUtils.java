@@ -26,14 +26,14 @@ import java.util.function.Function;
 public class MessageMonitorTestUtils {
 
     @FunctionalInterface
-    public interface MonitorCallBackProvider extends Function<CommandMessage, MonitorCallback> {
+    public interface MonitorCallBackProvider extends Function<Message, MonitorCallback> {
 
     }
 
-    public static MessageMonitor<CommandMessage> commandMessageMonitor(final MonitorCallBackProvider callbackProvider) {
+    public static MessageMonitor<Message> messageMonitor(final MonitorCallBackProvider callbackProvider) {
         return new MessageMonitor<>() {
             @Override
-            public MonitorCallback onMessageIngested(@Nonnull CommandMessage message) {
+            public MonitorCallback onMessageIngested(@Nonnull Message message) {
                 return callbackProvider.apply(message);
             }
 

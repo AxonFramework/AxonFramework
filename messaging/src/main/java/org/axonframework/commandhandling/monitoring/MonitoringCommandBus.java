@@ -14,16 +14,21 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling;
+package org.axonframework.commandhandling.monitoring;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.common.Assert;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.configuration.DecoratorDefinition;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.monitoring.NoOpMessageMonitor;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -58,29 +63,27 @@ public class MonitoringCommandBus implements CommandBus {
     private final MessageMonitor<? super CommandMessage> messageMonitor;
 
     public MonitoringCommandBus(@Nonnull final CommandBus delegate,
-                                @Nullable final MessageMonitor<? super CommandMessage> messageMonitor) {
-        this.delegate = requireNonNull(delegate, "delegate cannot be null");
-        this.messageMonitor = messageMonitor != null ? messageMonitor : NoOpMessageMonitor.INSTANCE;
+                                @Nonnull final MessageMonitor<Message> messageMonitor) {
+        this.delegate = requireNonNull(delegate, "commandBus may not be null");
+        this.messageMonitor = requireNonNull(messageMonitor, "messageMonitor may not be null");
     }
 
     @Override
     public CompletableFuture<CommandResultMessage> dispatch(@Nonnull CommandMessage command,
                                                             @Nullable ProcessingContext processingContext) {
-        // TODO: Is there actually anything to do here except calling the delegate? Seems like the monittoring is done in the commandHandler used to subscribe.
+        // TODO: Is there actually anything to do here except calling the delegate? Seems like the monitoring is done in the commandHandler used to subscribe.
         return delegate.dispatch(command, processingContext);
     }
 
     @Override
     public CommandBus subscribe(@Nonnull QualifiedName name, @Nonnull CommandHandler commandHandler) {
         final CommandHandler monitoringCommandHandler = (command, context) -> {
-            if (context.isStarted()) {
-                final var monitorCallback = messageMonitor.onMessageIngested(command);
-                context.onAfterCommit(processingContext -> CompletableFuture.runAsync(monitorCallback::reportSuccess));
-                context.onError((processingContext, phase, error) -> monitorCallback.reportFailure(error));
-            } else {
-                // TODO: what do we do when the context is not started?
-                throw new IllegalStateException("context is not started.");
-            }
+            // TODO: what do we do when the context is not started?
+            Assert.isTrue(context.isStarted(), () -> "context is not started");
+            final var monitorCallback = messageMonitor.onMessageIngested(command);
+            context.onAfterCommit(processingContext -> CompletableFuture.runAsync(monitorCallback::reportSuccess));
+            context.onError((processingContext, phase, error) -> monitorCallback.reportFailure(error));
+
             return commandHandler.handle(command, context);
         };
 

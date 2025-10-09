@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling.processors;
+package org.axonframework.eventhandling.monitoring;
 
 import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.configuration.DecoratorDefinition;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.processors.EventProcessor;
+import org.axonframework.messaging.Message;
 import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.monitoring.NoOpMessageMonitor;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -32,8 +33,8 @@ import static java.util.Objects.requireNonNull;
  * processing is done by a delegate.
  * <p>
  * This {@link MonitoringEventProcessor} is typically registered as a
- * {@link org.axonframework.configuration.ComponentRegistry#registerDecorator(org.axonframework.configuration.DecoratorDefinition)
- * decorator} and automatically kicks in whenever an {@link EventMessage} specific
+ * {@link org.axonframework.configuration.ComponentRegistry#registerDecorator(DecoratorDefinition)  decorator}
+ *  and automatically kicks in whenever an {@link EventMessage} specific
  * {@link org.axonframework.monitoring.MessageMonitor} is present.
  */
 public class MonitoringEventProcessor implements EventProcessor {
@@ -42,9 +43,9 @@ public class MonitoringEventProcessor implements EventProcessor {
     private final MessageMonitor<? super EventMessage> messageMonitor;
 
     public MonitoringEventProcessor(@Nonnull final EventProcessor delegate,
-                                    @Nullable final MessageMonitor<? super EventMessage> messageMonitor) {
-        this.delegate = requireNonNull(delegate, "delegate cannot be null");
-        this.messageMonitor = messageMonitor != null ? messageMonitor : NoOpMessageMonitor.INSTANCE;
+                                    @Nonnull final MessageMonitor<Message> messageMonitor) {
+        this.delegate = requireNonNull(delegate, "eventProcessor cannot be null");
+        this.messageMonitor = requireNonNull(messageMonitor, "messageMonitor may not be null");
     }
 
     @Override
@@ -54,6 +55,7 @@ public class MonitoringEventProcessor implements EventProcessor {
 
     @Override
     public CompletableFuture<Void> start() {
+        // TODO: here?
         return delegate.start();
     }
 

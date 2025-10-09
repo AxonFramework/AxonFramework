@@ -16,26 +16,43 @@
 
 package org.axonframework.queryhandling.monitoring;
 
+import org.axonframework.common.infra.MockComponentDescriptor;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.queryhandling.GenericQueryMessage;
-import org.axonframework.queryhandling.NoHandlerForQueryException;
-import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.queryhandling.QueryResponseMessage;
+import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.queryhandling.QueryBus;
 import org.junit.jupiter.api.*;
 
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-
-import static java.util.stream.Collectors.toSet;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 // TODO 3488 - Introduce monitoring test logic here.
 class MonitoringQueryBusTest {
+
+    private final QueryBus mockDelegate = mock(QueryBus.class);
+    private final MessageMonitor.MonitorCallback mockMonitorCallback = mock(MessageMonitor.MonitorCallback.class);
+    private final MessageMonitor<Message> fakeMessageMonitor = new MessageMonitor<>() {
+        @Override
+        public MonitorCallback onMessageIngested(Message message) {
+            return mockMonitorCallback;
+        }
+
+        @Override
+        public String toString() {
+            return "anonymous QueryMessageMonitor";
+        }
+    };
+
+    private final MonitoringQueryBus testSubject = new MonitoringQueryBus(mockDelegate, fakeMessageMonitor);
+
+    @Test
+    void describeIncludesAllRelevantProperties() {
+        var componentDescriptor = new MockComponentDescriptor();
+        testSubject.describeTo(componentDescriptor);
+
+        assertThat(componentDescriptor.getProperty("delegate").toString()).startsWith("Mock for QueryBus, hashCode:");
+        assertThat(componentDescriptor.getProperty("messageMonitor").toString()).isEqualTo(
+                "anonymous QueryMessageMonitor");
+    }
 
     // private MessageMonitor.MonitorCallback monitorCallback;
 
@@ -59,5 +76,4 @@ class MonitoringQueryBusTest {
 //        verify(messageMonitor, times(1)).onMessageIngested(any());
 //        verify(monitorCallback, times(3)).reportSuccess();
 //    }
-
 }

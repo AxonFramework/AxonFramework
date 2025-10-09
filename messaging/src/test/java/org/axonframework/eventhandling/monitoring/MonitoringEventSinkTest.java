@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling;
+package org.axonframework.eventhandling.monitoring;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.MockComponentDescriptor;
+import org.axonframework.eventhandling.EventSink;
+import org.axonframework.messaging.Message;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.MessageMonitor.MonitorCallback;
 import org.junit.jupiter.api.Test;
@@ -28,9 +31,9 @@ class MonitoringEventSinkTest {
 
     private final EventSink mockDelegate = mock(EventSink.class);
     private final MonitorCallback mockMonitorCallback = mock(MonitorCallback.class);
-    private final MessageMonitor<EventMessage> fakeMessageMonitor = new MessageMonitor<>() {
+    private final MessageMonitor<Message> fakeMessageMonitor = new MessageMonitor<>() {
         @Override
-        public MonitorCallback onMessageIngested(EventMessage message) {
+        public MonitorCallback onMessageIngested(@Nonnull Message message) {
             return mockMonitorCallback;
         }
 
