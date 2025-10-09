@@ -17,8 +17,6 @@
 package org.axonframework.eventhandling.configuration;
 
 import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
-import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ConfigurationEnhancer;
@@ -26,15 +24,13 @@ import org.axonframework.configuration.MessagingConfigurationDefaults;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
+import org.axonframework.eventhandling.InterceptingEventBus;
 import org.axonframework.eventhandling.InterceptingEventSink;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.interceptors.DispatchInterceptorRegistry;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * A {@link ConfigurationEnhancer} registering the default components for event publishing and event bus.
@@ -51,10 +47,11 @@ import java.util.concurrent.CompletableFuture;
  *     {@link MessageDispatchInterceptor MessageDispatchInterceptors} present in the {@link DispatchInterceptorRegistry}.</li>
  * </ul>
  *
+ * @author Mateusz Nowak
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public class EventSinkConfigurationDefaults implements ConfigurationEnhancer {
+public class EventBusConfigurationDefaults implements ConfigurationEnhancer {
 
     /**
      * The order of {@code this} enhancer compared to others, equal to 100 positions before
@@ -74,50 +71,24 @@ public class EventSinkConfigurationDefaults implements ConfigurationEnhancer {
     }
 
     private static void registerComponents(@Nonnull ComponentRegistry registry) {
-        registry.registerIfNotPresent(EventBus.class, EventSinkConfigurationDefaults::defaultEventBus)
-                .registerIfNotPresent(EventSink.class, EventSinkConfigurationDefaults::defaultEventSink);
+        registry.registerIfNotPresent(EventBus.class, EventBusConfigurationDefaults::defaultEventBus);
     }
 
     private static EventBus defaultEventBus(Configuration config) {
         return new SimpleEventBus();
     }
 
-    private static EventSink defaultEventSink(Configuration config) {
-        EventBus eventBus = config.getComponent(EventBus.class);
-        return new EventSink() {
-            @Override
-            public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                                   @Nonnull List<EventMessage> events) {
-                return eventBus.publish(context, events);
-            }
-
-            @Override
-            public void describeTo(@Nonnull ComponentDescriptor descriptor) {
-                descriptor.describeWrapperOf(eventBus);
-            }
-        };
-    }
-
     private static void registerDecorators(@Nonnull ComponentRegistry registry) {
         registry.registerDecorator(
-                EventSink.class,
-                InterceptingEventSink.DECORATION_ORDER,
+                EventBus.class,
+                InterceptingEventBus.DECORATION_ORDER,
                 (config, name, delegate) -> {
-                    if (!isDirectImplementationOf(delegate, EventSink.class)) {
-                        return delegate;
-                    }
                     List<MessageDispatchInterceptor<? super EventMessage>> dispatchInterceptors =
                             config.getComponent(DispatchInterceptorRegistry.class).eventInterceptors(config);
                     return dispatchInterceptors.isEmpty()
                             ? delegate
-                            : new InterceptingEventSink(delegate, dispatchInterceptors);
+                            : new InterceptingEventBus(delegate, dispatchInterceptors);
                 }
         );
-    }
-
-    private static boolean isDirectImplementationOf(@Nonnull Object component,
-                                                    @Nonnull Class<EventSink> clazz) {
-        return Arrays.stream(component.getClass().getInterfaces())
-                     .anyMatch(iface -> iface == clazz);
     }
 }
