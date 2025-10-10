@@ -37,7 +37,9 @@ import static org.axonframework.common.io.IOUtils.closeQuietly;
  */
 @SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection"})
 @Testcontainers
-class Oracle11EventTableFactoryTest {
+@Tag("slow")
+@Tag("nightly")
+class Oracle11EventTableFactoryIT {
 
     private static final String USERNAME = "test";
     private static final String PASSWORD = "test";

@@ -46,7 +46,10 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Mitchell Herrijgers
  */
-class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractCommandHandlingStudentTestSuite {
+class CompoundEntityIdentifierCommandHandlingComponentIT extends AbstractCommandHandlingStudentIT {
+    private final String student1 = createId("student-1");
+    private final String student2 = createId("student-2");
+    private final String student3 = createId("student-3");
 
     @Override
     protected EventSourcingConfigurer testSuiteConfigurer(EventSourcingConfigurer configurer) {
@@ -124,25 +127,25 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractComma
 
     private void verifyMentorLogicForComponent() {
         // Can assign mentor to mentee
-        String result = sendCommand(new AssignMentorCommand("my-studentId-1", "my-studentId-2"), String.class);
+        String result = sendCommand(new AssignMentorCommand(student1, student2), String.class);
 
         assertEquals("successful", result);
 
         // But not a second time
-        assertThatThrownBy(() -> sendCommand(new AssignMentorCommand("my-studentId-1", "my-studentId-3")))
+        assertThatThrownBy(() -> sendCommand(new AssignMentorCommand(student1, student3)))
             .isInstanceOf(CommandExecutionException.class)
             .hasMessageContaining("Mentee already has a mentor");
 
         // And a third student can't become the mentee of the second, because the second is already a mentor
-        assertThatThrownBy(() -> sendCommand(new AssignMentorCommand("my-studentId-3", "my-studentId-2")))
+        assertThatThrownBy(() -> sendCommand(new AssignMentorCommand(student3, student2)))
             .isInstanceOf(CommandExecutionException.class)
             .hasMessageContaining("Mentor already assigned to a mentee");
 
         // But the mentee can become a mentor for a third student
-        sendCommand(new AssignMentorCommand("my-studentId-2", "my-studentId-3"));
+        sendCommand(new AssignMentorCommand(student2, student3));
 
         // And that third can become a mentor for the first
-        sendCommand(new AssignMentorCommand("my-studentId-3", "my-studentId-1"));
+        sendCommand(new AssignMentorCommand(student3, student1));
     }
 
     class CompoundModelAnnotatedCommandHandler {

@@ -236,7 +236,7 @@ public class AxonServerContainerUtils {
         deleteContext(hostname, port, context);
         createContext(hostname, port, context, dcbContext);
         try {
-            Thread.sleep(2_000);
+            Thread.sleep(500);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }

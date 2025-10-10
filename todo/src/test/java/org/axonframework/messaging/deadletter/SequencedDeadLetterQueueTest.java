@@ -864,7 +864,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
                 blockingTask
         ));
         blockingProcess.start();
-        assertTrue(isBlocking.await(100, TimeUnit.MILLISECONDS));
+        assertTrue(isBlocking.await(1, TimeUnit.SECONDS));
 
         boolean result = testSubject.process(equals(testLetter), nonBlockingTask);
         assertFalse(result);

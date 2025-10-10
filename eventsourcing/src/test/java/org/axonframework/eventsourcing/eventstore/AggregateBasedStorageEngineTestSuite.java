@@ -93,11 +93,6 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
         testSubject = buildStorageEngine();
     }
 
-    @AfterAll
-    static void afterAll() {
-        EXECUTOR.close();
-    }
-
     /**
      * Constructs the {@link EventStorageEngine} used in this test suite.
      *
