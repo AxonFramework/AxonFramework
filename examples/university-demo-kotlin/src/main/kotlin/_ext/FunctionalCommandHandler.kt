@@ -2,10 +2,12 @@ package io.axoniq.demo.university._ext
 
 import org.axonframework.commandhandling.*
 import org.axonframework.commandhandling.configuration.CommandHandlingModule.CommandHandlerPhase
+import org.axonframework.common.annotations.AnnotationUtils
 import org.axonframework.configuration.Configuration
 import org.axonframework.messaging.*
 import org.axonframework.messaging.Message
 import org.axonframework.messaging.annotations.*
+import org.axonframework.messaging.annotations.MessageHandler
 import org.axonframework.messaging.annotations.MessageStreamResolverUtils.resolveToStream
 import org.axonframework.messaging.conversion.MessageConverter
 import org.axonframework.messaging.unitofwork.ProcessingContext
@@ -47,10 +49,11 @@ class FunctionalCommandMessageHandlingMember<T : Any>(
     // parameter resolution must be performed on a Java Method (it relies on ParameterResolverFactory using Executable)
     val method = requireNotNull(function.javaMethod) { "Kotlin function ${function.name} must correspond to a java method" }
     this.parameterCount = method.parameterCount
-
     val parameters: Array<Parameter> = method.parameters
     val parameterResolvers: Array<ParameterResolver<*>?> = arrayOfNulls<ParameterResolver<*>>(parameterCount)
-    var supportedPayloadType: Class<*> = parameters[0].type // command on first position
+    var supportedPayloadType: Class<*> = AnnotationUtils
+      .findAnnotationAttribute<Class<*>>(method, MessageHandler::class.java, "payloadType") // try to read from annotation
+      .orElseGet { parameters[0].type } // or just use first parameter type
     for (i in 0..<parameterCount) {
       val parameterResolver = parameterResolverFactory.createInstance(method, parameters, i)
       parameterResolvers[i] = parameterResolver
