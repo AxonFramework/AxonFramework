@@ -1,7 +1,6 @@
 package io.axoniq.demo.university._ext
 
 import org.axonframework.commandhandling.*
-import org.axonframework.commandhandling.annotations.CommandHandlingMember
 import org.axonframework.commandhandling.configuration.CommandHandlingModule.CommandHandlerPhase
 import org.axonframework.configuration.Configuration
 import org.axonframework.messaging.*
@@ -11,13 +10,11 @@ import org.axonframework.messaging.annotations.MessageStreamResolverUtils.resolv
 import org.axonframework.messaging.conversion.MessageConverter
 import org.axonframework.messaging.unitofwork.ProcessingContext
 import java.lang.reflect.InvocationTargetException
-import java.lang.reflect.Method
 import java.lang.reflect.Parameter
 import java.util.*
 import java.util.Objects.requireNonNull
 import java.util.concurrent.ExecutionException
 import java.util.function.Function
-import java.util.function.Supplier
 import kotlin.reflect.KFunction
 import kotlin.reflect.full.extensionReceiverParameter
 import kotlin.reflect.full.instanceParameter
@@ -37,24 +34,23 @@ fun CommandHandlerPhase.functionalHandler(
 class FunctionalCommandMessageHandlingMember<T : Any>(
   val function: KFunction<*>,
   val messageType: Class<out Message>,
-  val parameterResolverFactory: ParameterResolverFactory,
-  val returnTypeConverter: Function<Any?, MessageStream<*>>
+  val returnTypeConverter: Function<Any?, MessageStream<*>>,
+  parameterResolverFactory: ParameterResolverFactory
 ) : MessageHandlingMember<T> {
 
   val parameterCount: Int
   val resolvers: Array<ParameterResolver<*>>
   val payloadType: Class<*>
-  val method: Method
 
   init {
-    // FIXME -> perform all this on function instead of method
     require(function.parameters.isNotEmpty()) { "The command handler must receive at least a command parameter" }
-    this.method = requireNotNull(function.javaMethod) { "Kotlin function ${function.name} must correspond to a java method" }
-    val parameters: Array<Parameter> = method.parameters
+    // parameter resolution must be performed on a Java Method (it relies on ParameterResolverFactory using Executable)
+    val method = requireNotNull(function.javaMethod) { "Kotlin function ${function.name} must correspond to a java method" }
     this.parameterCount = method.parameterCount
-    val parameterResolvers: Array<ParameterResolver<*>?> = arrayOfNulls<ParameterResolver<*>>(parameterCount)
 
-    var supportedPayloadType: Class<*> = parameters[0].type
+    val parameters: Array<Parameter> = method.parameters
+    val parameterResolvers: Array<ParameterResolver<*>?> = arrayOfNulls<ParameterResolver<*>>(parameterCount)
+    var supportedPayloadType: Class<*> = parameters[0].type // command on first position
     for (i in 0..<parameterCount) {
       val parameterResolver = parameterResolverFactory.createInstance(method, parameters, i)
       parameterResolvers[i] = parameterResolver
@@ -68,7 +64,7 @@ class FunctionalCommandMessageHandlingMember<T : Any>(
         } else if (!parameterResolver.supportedPayloadType().isAssignableFrom(supportedPayloadType)) {
           throw UnsupportedHandlerException(
             "The method ${method.toGenericString()} seems to have parameters that put conflicting requirements on the payload type" +
-              " applicable on that method: ${supportedPayloadType} vs ${parameterResolver.supportedPayloadType()}", method
+              " applicable on that method: $supportedPayloadType vs ${parameterResolver.supportedPayloadType()}", method
           )
         }
       }
@@ -90,7 +86,7 @@ class FunctionalCommandMessageHandlingMember<T : Any>(
     return this.payloadType.isAssignableFrom(payloadType)
   }
 
-  @Deprecated("left over from sync version")
+  @Deprecated(message = "left over from sync version", level = DeprecationLevel.WARNING)
   override fun handleSync(message: Message, context: ProcessingContext, target: T?): Any =
     try {
       handle(message, context, target).first().asCompletableFuture().get()?.message()?.payload()!!
@@ -103,11 +99,7 @@ class FunctionalCommandMessageHandlingMember<T : Any>(
     }
 
 
-  override fun handle(
-    message: Message,
-    context: ProcessingContext,
-    target: T?
-  ): MessageStream<*> {
+  override fun handle(message: Message, context: ProcessingContext, target: T?): MessageStream<*> {
     return try {
       val paramValues = resolveParameterValues(Message.addToContext(context, message))
       val result = function.invokeFunctionAuto(instance = target, args = paramValues)
@@ -137,14 +129,10 @@ class FunctionalCommandMessageHandlingMember<T : Any>(
     return params
   }
 
-  @Suppress("UNCHECKED_CAST")
+  /**
+   * For a functional handler there is no unwrapping.
+   */
   override fun <HT : Any> unwrap(handlerType: Class<HT>): Optional<HT> {
-    if (handlerType.isInstance(this)) {
-      return Optional.of<FunctionalCommandMessageHandlingMember<T>>(this) as Optional<HT>
-    }
-    if (handlerType.isInstance(method)) {
-      return Optional.of<Method>(method) as Optional<HT>
-    }
     return Optional.empty<HT>()
   }
 
@@ -174,14 +162,40 @@ class FunctionalCommandMessageHandlingMember<T : Any>(
     return true
   }
 
+  /**
+   * Invoke with or without instance depending on the function declaration.
+   * @param instance nullable instance.
+   * @param args list of parameters excluding the instance.
+   * @return nullable return of the function.
+   */
+  private fun KFunction<*>.invokeFunctionAuto(
+    instance: Any?,
+    vararg args: Any?
+  ): Any? {
+    return if (this.isTopLevel()) {
+      this.call(*args)
+    } else {
+      requireNotNull(instance) { "Instance required for member function ${this.name}" }
+      this.call(instance, *args)
+    }
+  }
 }
 
+/**
+ * Functional command handling component.
+ * @param <T> type of instance to operate on. May be omitted if the function is a top level function.
+ * @param function function to call.
+ * @param instance optional instance.
+ * @param parameterResolverFactory resolver for function parameters.
+ * @param messageTypeResolver resolver for the type of message.
+ * @param converter converter for the payload.
+ */
 class FunctionalCommandHandlerComponent<T : Any>(
   function: KFunction<*>,
-  private val instance: T?,
+  instance: T?,
   parameterResolverFactory: ParameterResolverFactory,
-  private val messageTypeResolver: MessageTypeResolver,
-  private val converter: MessageConverter
+  messageTypeResolver: MessageTypeResolver,
+  converter: MessageConverter
 ) : CommandHandlingComponent {
 
   private val handlingComponent: SimpleCommandHandlingComponent = SimpleCommandHandlingComponent.create(
@@ -196,7 +210,6 @@ class FunctionalCommandHandlerComponent<T : Any>(
     converter = configuration.getComponent(MessageConverter::class.java)
   )
 
-
   init {
     if (!function.isTopLevel()) {
       requireNonNull(instance) { "Member functions must be used on object instance, but none was provided." }
@@ -208,15 +221,10 @@ class FunctionalCommandHandlerComponent<T : Any>(
       returnTypeConverter = Function { resolveToStream(it, ClassBasedMessageTypeResolver()) }
     )
     val payloadType = member.payloadType()
-    val qualifiedName = member.unwrap<CommandHandlingMember<*>>(CommandHandlingMember::class.java)
-      .map { it.commandName() }
-      .filter { it != payloadType.name }
-      .map { QualifiedName(it) }
-      .orElseGet(Supplier {
-        messageTypeResolver.resolve(payloadType)
-          .orElse(MessageType(payloadType))
-          .qualifiedName()
-      })
+    // always deduct qualified name from the payload
+    val qualifiedName = messageTypeResolver.resolve(payloadType)
+      .orElse(MessageType(payloadType))
+      .qualifiedName()
 
     handlingComponent.subscribe(
       qualifiedName,
@@ -232,28 +240,17 @@ class FunctionalCommandHandlerComponent<T : Any>(
     )
   }
 
-  override fun supportedCommands(): Set<QualifiedName> = handlingComponent.supportedCommands()
+  override fun supportedCommands(): Set<QualifiedName> =
+    handlingComponent.supportedCommands()
 
-  override fun handle(
-    command: CommandMessage,
-    processingContext: ProcessingContext
-  ): MessageStream.Single<CommandResultMessage> = handlingComponent.handle(command, processingContext)
-
+  override fun handle(command: CommandMessage, processingContext: ProcessingContext): MessageStream.Single<CommandResultMessage> =
+    handlingComponent.handle(command, processingContext)
 }
 
-
-fun KFunction<*>.invokeFunctionAuto(
-  instance: Any?,
-  vararg args: Any?
-): Any? {
-  return if (this.isTopLevel()) {
-    this.call(*args)
-  } else {
-    requireNotNull(instance) { "Instance required for member function ${this.name}" }
-    this.call(instance, *args)
-  }
-}
-
+/**
+ * Checks if the method is defined top level (static) or if it has a receiver type (is a member or extension).
+ * @return true, if the method is not defined inside an enclosing type.
+ */
 fun KFunction<*>.isTopLevel(): Boolean {
   return this.instanceParameter == null && this.extensionReceiverParameter == null
 }
