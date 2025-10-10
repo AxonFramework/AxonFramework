@@ -26,12 +26,12 @@ import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.EventStoreBasedEventBus;
-import org.axonframework.eventsourcing.eventstore.InterceptingEventStore;
 import org.axonframework.eventsourcing.eventstore.PayloadBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.SubscribableEventSource;
 import org.axonframework.modelling.configuration.StateBasedEntityModule;
 import org.axonframework.queryhandling.configuration.QueryHandlingModule;
 import org.junit.jupiter.api.*;
@@ -80,17 +80,18 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
     }
 
     @Test
-    void eventSinkEventBusEventStore() {
+    void eventSinkAndEventBusAndEventStoreAndSubscribableEventSourceAreTheSameObject() {
         Configuration result = testSubject.build();
 
         EventStore eventStore = result.getComponent(EventStore.class);
         EventBus eventBus = result.getComponent(EventBus.class);
         EventSink eventSink = result.getComponent(EventSink.class);
+        SubscribableEventSource subscribableEventSource = result.getComponent(SubscribableEventSource.class);
 
         assertThat(eventBus).isSameAs(eventStore);
         assertThat(eventSink).isSameAs(eventStore);
+        assertThat(subscribableEventSource).isSameAs(eventStore);
     }
-
 
     @Test
     void registerTagResolverOverridesDefault() {

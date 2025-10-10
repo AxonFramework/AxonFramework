@@ -21,6 +21,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -51,7 +52,7 @@ class AxonTestFixtureMessagingTest {
 
         @Test
         void givenNoPriorActivityWhenCommandThenExpectEvents() {
-            var configurer = MessagingConfigurer.create();
+            var configurer = messagingConfigurer();
             registerChangeStudentNameHandlerReturnsEmpty(configurer);
 
             var fixture = AxonTestFixture.with(configurer);
@@ -66,7 +67,7 @@ class AxonTestFixtureMessagingTest {
 
         @Test
         void givenNothingWhenCommandThenExpectEvents() {
-            var configurer = MessagingConfigurer.create();
+            var configurer = messagingConfigurer();
             registerChangeStudentNameHandlerReturnsEmpty(configurer);
 
             var fixture = AxonTestFixture.with(configurer);
@@ -80,7 +81,7 @@ class AxonTestFixtureMessagingTest {
 
         @Test
         void whenCommandThenExpectEvents() {
-            var configurer = MessagingConfigurer.create();
+            var configurer = messagingConfigurer();
             registerChangeStudentNameHandlerReturnsEmpty(configurer);
 
             var fixture = AxonTestFixture.with(configurer);
@@ -93,7 +94,7 @@ class AxonTestFixtureMessagingTest {
 
         @Test
         void whenCommandThenSuccess() {
-            var configurer = MessagingConfigurer.create();
+            var configurer = messagingConfigurer();
             registerChangeStudentNameHandlerReturnsEmpty(configurer);
 
             var fixture = AxonTestFixture.with(configurer);
@@ -106,7 +107,7 @@ class AxonTestFixtureMessagingTest {
 
         @Test
         void whenCommandReturnsEmptyThenSuccessWithNullValue() {
-            var configurer = MessagingConfigurer.create();
+            var configurer = messagingConfigurer();
             registerChangeStudentNameHandlerReturnsEmpty(configurer);
 
             var fixture = AxonTestFixture.with(configurer);
@@ -120,7 +121,7 @@ class AxonTestFixtureMessagingTest {
 
         @Test
         void whenCommandReturnsSingleThenSuccessWithValue() {
-            var configurer = MessagingConfigurer.create();
+            var configurer = messagingConfigurer();
             registerChangeStudentNameHandlerReturnsSingle(configurer);
 
             var fixture = AxonTestFixture.with(configurer);
@@ -134,7 +135,7 @@ class AxonTestFixtureMessagingTest {
 
         @Test
         void whenCommandReturnsSingleThenSuccessWithValueConsumer() {
-            var configurer = MessagingConfigurer.create();
+            var configurer = messagingConfigurer();
             registerChangeStudentNameHandlerReturnsSingle(configurer);
 
             var fixture = AxonTestFixture.with(configurer);
@@ -151,7 +152,7 @@ class AxonTestFixtureMessagingTest {
 
         @Test
         void whenCommandWithMetadataThenSuccessWithTheMetadata() {
-            var configurer = MessagingConfigurer.create();
+            var configurer = messagingConfigurer();
             registerChangeStudentNameHandlerReturnsSingle(configurer);
 
             var fixture = AxonTestFixture.with(configurer);
@@ -166,7 +167,7 @@ class AxonTestFixtureMessagingTest {
 
         @Test
         void whenCommandWithMetadataMapThenSuccessWithTheMetadata() {
-            var configurer = MessagingConfigurer.create();
+            var configurer = messagingConfigurer();
             registerChangeStudentNameHandlerReturnsSingle(configurer);
 
             var fixture = AxonTestFixture.with(configurer);
@@ -180,7 +181,7 @@ class AxonTestFixtureMessagingTest {
 
         @Test
         void whenCommandWithMetadataMapThenSuccessWithTheMetadataSatisfies() {
-            var configurer = MessagingConfigurer.create();
+            var configurer = messagingConfigurer();
             registerChangeStudentNameHandlerReturnsSingle(configurer);
 
             var fixture = AxonTestFixture.with(configurer);
@@ -195,7 +196,7 @@ class AxonTestFixtureMessagingTest {
 
         @Test
         void givenEventsWhenCommandReturnsSingleThenSuccessWithValue() {
-            var configurer = MessagingConfigurer.create();
+            var configurer = messagingConfigurer();
             registerChangeStudentNameHandlerReturnsSingle(configurer);
 
             var fixture = AxonTestFixture.with(configurer);
@@ -215,7 +216,7 @@ class AxonTestFixtureMessagingTest {
 
         @Test
         void givenEventWhenCommandThenExpectEvents() {
-            var configurer = MessagingConfigurer.create();
+            var configurer = messagingConfigurer();
             var studentEvents = new ArrayList<>();
             configurer.registerCommandBus(
                     c -> aCommandBus()
@@ -252,7 +253,7 @@ class AxonTestFixtureMessagingTest {
 
         @Test
         void givenNoPriorActivityWhenCommandThenExpectException() {
-            var configurer = MessagingConfigurer.create();
+            var configurer = messagingConfigurer();
             configurer.componentRegistry(cr -> cr.registerDecorator(
                     CommandBus.class,
                     0,
@@ -275,7 +276,7 @@ class AxonTestFixtureMessagingTest {
 
         @Test
         void givenNoPriorActivityWhenCommandHandlerThrowsThenExpectException() {
-            var configurer = MessagingConfigurer.create();
+            var configurer = messagingConfigurer();
             configurer.componentRegistry(cr -> cr.registerDecorator(
                     CommandBus.class,
                     0,
@@ -303,7 +304,7 @@ class AxonTestFixtureMessagingTest {
 
             @Test
             void ifThenNoEventsButThereAreSomeEvents() {
-                var configurer = MessagingConfigurer.create();
+                var configurer = messagingConfigurer();
                 registerChangeStudentNameHandlerReturnsEmpty(configurer);
 
                 var fixture = AxonTestFixture.with(configurer);
@@ -323,7 +324,7 @@ class AxonTestFixtureMessagingTest {
 
             @Test
             void ifThenExpectEventsButWithDifferentPayload() {
-                var configurer = MessagingConfigurer.create();
+                var configurer = messagingConfigurer();
                 registerChangeStudentNameHandlerReturnsEmpty(configurer);
 
                 var fixture = AxonTestFixture.with(configurer);
@@ -341,7 +342,7 @@ class AxonTestFixtureMessagingTest {
 
             @Test
             void ifExpectExceptionButSuccess() {
-                var configurer = MessagingConfigurer.create();
+                var configurer = messagingConfigurer();
                 configurer.componentRegistry(cr -> cr.registerDecorator(
                         CommandBus.class,
                         0,
@@ -368,7 +369,7 @@ class AxonTestFixtureMessagingTest {
 
             @Test
             void ifExpectSuccessButException() {
-                var configurer = MessagingConfigurer.create();
+                var configurer = messagingConfigurer();
                 configurer.componentRegistry(cr -> cr.registerDecorator(
                         CommandBus.class,
                         0,
@@ -398,7 +399,7 @@ class AxonTestFixtureMessagingTest {
 
         @Test
         void whenEventThenExpectedCommand() {
-            var configurer = MessagingConfigurer.create();
+            var configurer = messagingConfigurer();
             AtomicBoolean eventHandled = new AtomicBoolean(false);
             registerChangeStudentNameHandlerReturnsSingle(configurer);
 
@@ -419,7 +420,7 @@ class AxonTestFixtureMessagingTest {
 
         @Test
         void whenEventThenExpectedCommandCustomAssertion() {
-            var configurer = MessagingConfigurer.create();
+            var configurer = messagingConfigurer();
             AtomicBoolean eventHandled = new AtomicBoolean(false);
             registerChangeStudentNameHandlerReturnsSingle(configurer);
 
@@ -446,7 +447,7 @@ class AxonTestFixtureMessagingTest {
 
         @Test
         void whenEventHandlerFailsThenException() {
-            var configurer = MessagingConfigurer.create();
+            var configurer = messagingConfigurer();
 
             var fixture = AxonTestFixture.with(configurer);
 
@@ -463,7 +464,7 @@ class AxonTestFixtureMessagingTest {
 
         @Test
         void whenEventHandlerDoesNotFailThenSuccess() {
-            var configurer = MessagingConfigurer.create();
+            var configurer = messagingConfigurer();
 
             var fixture = AxonTestFixture.with(configurer);
 
@@ -480,7 +481,7 @@ class AxonTestFixtureMessagingTest {
 
         @Test
         void whenEventsHandlerDoesNotFailThenSuccess() {
-            var configurer = MessagingConfigurer.create();
+            var configurer = messagingConfigurer();
 
             var fixture = AxonTestFixture.with(configurer);
 
@@ -504,7 +505,7 @@ class AxonTestFixtureMessagingTest {
 
             @Test
             void ifExpectSuccessButException() {
-                var configurer = MessagingConfigurer.create();
+                var configurer = messagingConfigurer();
 
                 var fixture = AxonTestFixture.with(configurer);
 
@@ -523,7 +524,7 @@ class AxonTestFixtureMessagingTest {
 
             @Test
             void ifExpectExceptionButSuccess() {
-                var configurer = MessagingConfigurer.create();
+                var configurer = messagingConfigurer();
 
                 var fixture = AxonTestFixture.with(configurer);
 
@@ -544,7 +545,7 @@ class AxonTestFixtureMessagingTest {
 
             @Test
             void whenEventHandlerFailsThenException() {
-                var configurer = MessagingConfigurer.create();
+                var configurer = messagingConfigurer();
 
                 var fixture = AxonTestFixture.with(configurer);
 
@@ -569,7 +570,7 @@ class AxonTestFixtureMessagingTest {
 
         @Test
         void whenThenAndWhenThen() {
-            var configurer = MessagingConfigurer.create();
+            var configurer = messagingConfigurer();
             registerChangeStudentNameHandlerReturnsSingle(configurer);
 
             var fixture = AxonTestFixture.with(configurer);
@@ -591,7 +592,7 @@ class AxonTestFixtureMessagingTest {
 
         @Test
         void chainSameFixturePhaseTwice() {
-            var configurer = MessagingConfigurer.create();
+            var configurer = messagingConfigurer();
             registerChangeStudentNameHandlerReturnsSingle(configurer);
 
             var fixture = AxonTestFixture.with(configurer);
@@ -625,7 +626,7 @@ class AxonTestFixtureMessagingTest {
 
         @Test
         void setupRegisterIgnoredFieldThenShouldPassWithDifferentNameInExpectedEvents() {
-            var configurer = MessagingConfigurer.create();
+            var configurer = messagingConfigurer();
             registerChangeStudentNameHandlerReturnsEmpty(configurer);
 
             var fixture = AxonTestFixture.with(
@@ -697,5 +698,10 @@ class AxonTestFixtureMessagingTest {
                             return MessageStream.just(resultMessage);
                         })
         ));
+    }
+
+    private static MessagingConfigurer messagingConfigurer() {
+        return MessagingConfigurer.create()
+                                  .componentRegistry(ComponentRegistry::disableEnhancerScanning);
     }
 }
