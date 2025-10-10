@@ -30,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * The {@link LoggingSpanFactory} only logs statement, but should still provide basic requirements such as returning a
  * non-null span, and the span returning itself in certain situations.
  */
+// TODO #3594 - Be sure to return this instance once the UnitOfWork has been replaced
 class LoggingSpanFactoryTest {
 
     private static final EventMessage TEST_EVENT =

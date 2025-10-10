@@ -73,7 +73,7 @@ class QuerySerializerTest {
 
     @Test
     void serializeResponse() {
-        Map<String, ?> metadata = new HashMap<>() {{
+        Map<String, String> metadata = new HashMap<>() {{
             this.put("firstKey", "firstValue");
             this.put("secondKey", "secondValue");
         }};

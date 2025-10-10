@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 package org.axonframework.messaging.unitofwork;
 
+import org.axonframework.messaging.GenericResultMessage;
 import org.axonframework.messaging.ResultMessage;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.axonframework.messaging.GenericResultMessage.asResultMessage;
 
 /**
  * @author Rene de Waele
@@ -30,7 +30,7 @@ class ExecutionResultTest {
     @Test
     void normalExecutionResult() {
         Object resultPayload = new Object();
-        ResultMessage result = asResultMessage(resultPayload);
+        ResultMessage result = GenericResultMessage.asResultMessage(resultPayload);
         ExecutionResult subject = new ExecutionResult(result);
         assertSame(result, subject.getResult());
         assertFalse(subject.isExceptionResult());
@@ -40,7 +40,7 @@ class ExecutionResultTest {
     @Test
     void uncheckedExceptionResult() {
         RuntimeException mockException = new RuntimeException();
-        ResultMessage resultMessage = asResultMessage(mockException);
+        ResultMessage resultMessage = GenericResultMessage.asResultMessage(mockException);
         ExecutionResult subject = new ExecutionResult(resultMessage);
         assertTrue(subject.isExceptionResult());
         assertSame(mockException, subject.getExceptionResult());
@@ -50,7 +50,7 @@ class ExecutionResultTest {
     @Test
     void checkedExceptionResult() {
         Exception mockException = new Exception();
-        ResultMessage resultMessage = asResultMessage(mockException);
+        ResultMessage resultMessage = GenericResultMessage.asResultMessage(mockException);
         ExecutionResult subject = new ExecutionResult(resultMessage);
         assertTrue(subject.isExceptionResult());
         assertSame(mockException, subject.getExceptionResult());

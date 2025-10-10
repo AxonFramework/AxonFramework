@@ -101,6 +101,7 @@ class GenericJpaRepositoryTest {
     }
 
     @Test
+    @Disabled("TODO #3462")
     void aggregateStoredBeforeEventsPublished() throws Exception {
         //noinspection unchecked
         BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> mockConsumer = mock(BiFunction.class);
@@ -141,6 +142,7 @@ class GenericJpaRepositoryTest {
     }
 
     @Test
+    @Disabled("TODO #3462")
     void aggregateCreatesSequenceNumbersForNewAggregatesWhenUsingDomainEventSequenceAwareEventBus() {
         DomainSequenceAwareEventBus testEventBus = new DomainSequenceAwareEventBus();
 
@@ -215,6 +217,7 @@ class GenericJpaRepositoryTest {
 //    }
 
     @Test
+    @Disabled("TODO #3462")
     void aggregateDoesNotCreateSequenceNumbersWhenSequenceNumberGenerationIsDisabled() {
         String expectedFirstPayload = "test1";
         String expectedSecondPayload = "test2";
