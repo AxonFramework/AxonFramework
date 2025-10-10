@@ -75,7 +75,7 @@ public class EventSourcingConfigurationDefaults implements ConfigurationEnhancer
                 .registerIfNotPresent(EventStoreBasedEventBus.class, config -> {
                     // fixme: Now it's hard-coded, but I haven't found better solution.
                     // If I register EventStore and intercept it, I can still make EventStoreBasedEventBus - registered as an EventBus
-                    // BUT there is a problem I have more than one EventSink implementation
+                    // BUT there is a problem, then I have more than one EventSink implementation
                     var simpleEventStore = simpleEventStore(config);
                     var interceptedEventStore = interceptingEventStore(config, simpleEventStore);
                     return new EventStoreBasedEventBus(interceptedEventStore, new SimpleEventBus());

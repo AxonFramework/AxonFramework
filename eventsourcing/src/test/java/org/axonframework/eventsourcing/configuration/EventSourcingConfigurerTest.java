@@ -68,7 +68,7 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
 
         Optional<EventStore> eventStore = result.getOptionalComponent(EventStore.class);
         assertTrue(eventStore.isPresent());
-        assertInstanceOf(InterceptingEventStore.class, eventStore.get());
+        assertInstanceOf(EventStoreBasedEventBus.class, eventStore.get());
 
         Optional<EventSink> eventSink = result.getOptionalComponent(EventSink.class);
         assertTrue(eventSink.isPresent());
