@@ -69,10 +69,7 @@ public class EventStoreBasedEventBus implements EventStore, EventBus {
     public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
                                            @Nonnull List<EventMessage> events) {
         return eventStore.publish(context, events)
-                         .thenApply(r -> {
-                             eventBus.publish(context, events);
-                             return null;
-                         });
+                         .thenCompose(r -> eventBus.publish(context, events));
     }
 
     @Override
