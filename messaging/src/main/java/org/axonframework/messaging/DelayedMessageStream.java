@@ -17,8 +17,6 @@
 package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -104,11 +102,6 @@ public class DelayedMessageStream<M extends Message> implements MessageStream<M>
             }
         }
         return new DelayedMessageStream.Single<>(safeDelegate);
-    }
-
-    @Override
-    public Flux<Entry<M>> asFlux() {
-        return Mono.fromFuture(delegate).flatMapMany(MessageStream::asFlux);
     }
 
     @Override

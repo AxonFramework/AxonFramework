@@ -112,7 +112,7 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message> {
             MessageStream<Message> testSubject = DelayedMessageStream.create(testFuture)
                                                                              .whenComplete(() -> invoked.set(true));
 
-            StepVerifier.create(testSubject.asFlux())
+            StepVerifier.create(MessageStreamUtils.asFlux(testSubject))
                         .verifyTimeout(Duration.ofMillis(250));
             // Verify timeout cancels the Flux, so we need to create the test subject again after this.
             assertFalse(invoked.get());
@@ -121,7 +121,7 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message> {
             testSubject = DelayedMessageStream.create(testFuture)
                                               .whenComplete(() -> invoked.set(true));
 
-            StepVerifier.create(testSubject.asFlux())
+            StepVerifier.create(MessageStreamUtils.asFlux(testSubject))
                         .expectNextMatches(entry -> entry.message().equals(expected))
                         .verifyComplete();
             assertTrue(invoked.get());
@@ -258,30 +258,6 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message> {
 
             result = testSubject.first().asCompletableFuture();
             assertTrue(result.isDone());
-            assertTrue(invoked.get());
-        }
-
-        @Test
-        void createEntryBecomeVisibleWhenFutureCompletes_asFlux() {
-            AtomicBoolean invoked = new AtomicBoolean(false);
-            Message expected = createRandomMessage();
-            CompletableFuture<MessageStream.Single<Message>> testFuture = new CompletableFuture<>();
-
-            MessageStream<Message> testSubject = DelayedMessageStream.createSingle(testFuture)
-                                                                             .whenComplete(() -> invoked.set(true));
-
-            StepVerifier.create(testSubject.asFlux())
-                        .verifyTimeout(Duration.ofMillis(250));
-            // Verify timeout cancels the Flux, so we need to create the test subject again after this.
-            assertFalse(invoked.get());
-
-            testFuture.complete(MessageStream.just(expected));
-            testSubject = DelayedMessageStream.createSingle(testFuture)
-                                              .whenComplete(() -> invoked.set(true));
-
-            StepVerifier.create(testSubject.asFlux())
-                        .expectNextMatches(entry -> entry.message().equals(expected))
-                        .verifyComplete();
             assertTrue(invoked.get());
         }
 
