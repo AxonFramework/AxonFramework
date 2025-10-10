@@ -18,11 +18,11 @@ package org.axonframework.eventhandling.processors.streaming.pooled;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotations.Internal;
-import org.axonframework.eventhandling.processors.errorhandling.ErrorContext;
-import org.axonframework.eventhandling.processors.errorhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.processors.ProcessorEventHandlingComponents;
+import org.axonframework.eventhandling.processors.errorhandling.ErrorContext;
+import org.axonframework.eventhandling.processors.errorhandling.ErrorHandler;
 import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.eventhandling.processors.streaming.segmenting.SegmentMatcher;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -69,7 +69,7 @@ class DefaultWorkPackageEventFilter implements WorkPackage.EventFilter {
      * @param eventMessage The message for which to identify if the processor can handle it.
      * @param segment      The segment for which the event should be processed.
      * @return {@code true} if the event message should be handled, otherwise {@code false}.
-     * @throws Exception if the {@code errorHandler} throws an Exception back on the
+     * @throws Exception If the {@code errorHandler} throws an Exception back on the
      *                   {@link ErrorHandler#handleError(ErrorContext)} call.
      */
     @Override
@@ -85,10 +85,13 @@ class DefaultWorkPackageEventFilter implements WorkPackage.EventFilter {
                 return false;
             }
             var sequenceIdentifiers = eventHandlingComponents.sequenceIdentifiersFor(eventMessage, context);
-            return sequenceIdentifiers.stream()
-                                      .anyMatch(identifier -> new SegmentMatcher((e, ctx) -> Optional.of(identifier)).matches(segment, eventMessage, context));
+            return sequenceIdentifiers.stream().anyMatch(identifier -> new SegmentMatcher(
+                    (e, ctx) -> Optional.of(identifier)).matches(segment, eventMessage, context)
+            );
         } catch (Exception e) {
-            errorHandler.handleError(new ErrorContext(eventProcessor, e, Collections.singletonList(eventMessage)));
+            errorHandler.handleError(
+                    new ErrorContext(eventProcessor, e, Collections.singletonList(eventMessage), context)
+            );
             return false;
         }
     }
