@@ -109,3 +109,5 @@ data is sent to AxonIQ and includes technical information about your environment
 Please read [this page](https://docs.axoniq.io/axon-framework-update-checker/) of our documentation for more details on
 why we collect this information, what you get in return, how to opt out, and why this matters. Please check out
 our [Privacy Policy](https://www.axoniq.io/privacy-policy) for any privacy concerns.
+
+<img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=31ffe27e-667c-48ff-8a14-8029d44dfb66" />
