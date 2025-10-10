@@ -78,6 +78,7 @@ class ContextAwareEventMultiUpcasterTest {
         upcaster = new StubContextAwareEventMultiUpcaster(expectedNewString, expectedNewInteger, expectedNewBooleans);
     }
 
+    @Disabled("TODO #3597")
     @Test
     void upcastsAddsContextValueFromFirstEvent() {
         int expectedNumberOfEvents = 4;

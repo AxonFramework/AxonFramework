@@ -30,10 +30,8 @@ import jakarta.annotation.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.Metadata;
-import org.axonframework.serialization.AnnotationRevisionResolver;
 import org.axonframework.serialization.ChainingContentTypeConverter;
 import org.axonframework.serialization.Converter;
-import org.axonframework.serialization.RevisionResolver;
 import org.axonframework.serialization.SerializationException;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;
@@ -62,7 +60,6 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 @Deprecated(forRemoval = true, since = "5.0.0")
 public class JacksonSerializer implements Serializer {
 
-    private final RevisionResolver revisionResolver;
     private final Converter converter;
     private final ObjectMapper objectMapper;
     private final Set<String> unknownClasses = new ConcurrentSkipListSet<>();
@@ -71,7 +68,7 @@ public class JacksonSerializer implements Serializer {
     /**
      * Instantiate a Builder to be able to create a {@link JacksonSerializer}.
      * <p>
-     * The {@link RevisionResolver} is defaulted to an {@link AnnotationRevisionResolver}, the {@link Converter} to a
+     * The {@code RevisionResolver} is defaulted to an {@code AnnotationRevisionResolver}, the {@link Converter} to a
      * {@link ChainingContentTypeConverter}, the {@link ObjectMapper} defaults to a {@link ObjectMapper#ObjectMapper()}
      * result and the {@link ClassLoader} to the ClassLoader of {@code this} class.
      * <p>
@@ -89,7 +86,7 @@ public class JacksonSerializer implements Serializer {
     /**
      * Instantiate a default {@link JacksonSerializer}.
      * <p>
-     * The {@link RevisionResolver} is defaulted to an {@link AnnotationRevisionResolver}, the {@link Converter} to a
+     * The {@code RevisionResolver} is defaulted to an {@code AnnotationRevisionResolver}, the {@link Converter} to a
      * {@link ChainingContentTypeConverter}, the {@link ObjectMapper} defaults to a {@link ObjectMapper#ObjectMapper()}
      * result and the {@link ClassLoader} to the ClassLoader of {@code this} class.
      * <p>
@@ -116,7 +113,6 @@ public class JacksonSerializer implements Serializer {
      */
     protected JacksonSerializer(Builder builder) {
         builder.validate();
-        this.revisionResolver = builder.revisionResolver;
         this.converter = builder.converter;
         this.objectMapper = builder.objectMapper;
 
@@ -296,7 +292,7 @@ public class JacksonSerializer implements Serializer {
         if (type == null || Void.TYPE.equals(type) || Void.class.equals(type)) {
             return SimpleSerializedType.emptyType();
         }
-        return new SimpleSerializedType(type.getName(), revisionResolver.revisionOf(type));
+        return new SimpleSerializedType(type.getName(), "not-required-anymore");
     }
 
     @Override
@@ -305,18 +301,9 @@ public class JacksonSerializer implements Serializer {
     }
 
     /**
-     * Returns the revision resolver used by this serializer.
-     *
-     * @return the revision resolver
-     */
-    protected RevisionResolver getRevisionResolver() {
-        return revisionResolver;
-    }
-
-    /**
      * Builder class to instantiate a {@link JacksonSerializer}.
      * <p>
-     * The {@link RevisionResolver} is defaulted to an {@link AnnotationRevisionResolver}, the {@link Converter} to a
+     * The {@code RevisionResolver} is defaulted to an {@code AnnotationRevisionResolver}, the {@link Converter} to a
      * {@link ChainingContentTypeConverter}, the {@link ObjectMapper} defaults to a {@link ObjectMapper#ObjectMapper()}
      * result and the {@link ClassLoader} to the ClassLoader of {@code this} class.
      * <p>
@@ -327,28 +314,12 @@ public class JacksonSerializer implements Serializer {
      */
     public static class Builder {
 
-        private RevisionResolver revisionResolver = new AnnotationRevisionResolver();
         private Converter converter = new ChainingContentTypeConverter();
         private ObjectMapper objectMapper = new ObjectMapper();
         private boolean lenientDeserialization = false;
         private boolean defaultTyping = false;
         private ClassLoader classLoader;
         private boolean cacheUnknownClasses = true;
-
-        /**
-         * Sets the {@link RevisionResolver} used to resolve the revision from an object to be serialized. Defaults to
-         * an {@link AnnotationRevisionResolver} which resolves the revision based on the contents of the
-         * {@link org.axonframework.serialization.Revision} annotation on the serialized classes.
-         *
-         * @param revisionResolver a {@link RevisionResolver} used to resolve the revision from an object to be
-         *                         serialized
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder revisionResolver(RevisionResolver revisionResolver) {
-            assertNonNull(revisionResolver, "RevisionResolver may not be null");
-            this.revisionResolver = revisionResolver;
-            return this;
-        }
 
         /**
          * Sets the {@link Converter} used as a converter factory providing converter instances utilized by upcasters to

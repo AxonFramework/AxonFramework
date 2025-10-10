@@ -20,9 +20,9 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.DomainEventData;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
+import org.axonframework.eventhandling.annotations.Event;
 import org.axonframework.eventsourcing.eventstore.jpa.SnapshotEventEntry;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.serialization.Revision;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
@@ -122,17 +122,17 @@ class RevisionSnapshotFilterTest {
                                                                                    .build());
     }
 
-    @Revision(EXPECTED_REVISION)
+    @Event(version = EXPECTED_REVISION)
     private record RightAggregateTypeAndRevision(String state) {
 
     }
 
-    @Revision("some-other-revision")
+    @Event(version = "some-other-revision")
     private record WrongAggregateType(String state) {
 
     }
 
-    @Revision("some-other-revision")
+    @Event(version = "some-other-revision")
     private record RightAggregateTypeAndWrongRevision(String state) {
 
     }

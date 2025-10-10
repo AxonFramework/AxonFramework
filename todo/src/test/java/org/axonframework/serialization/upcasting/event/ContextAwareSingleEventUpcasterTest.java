@@ -69,6 +69,7 @@ class ContextAwareSingleEventUpcasterTest {
     }
 
     @Test
+    @Disabled("TODO #3597")
     void upcastsAddsContextValueFromFirstEvent() {
         int expectedNumberOfEvents = 2;
         String expectedContextEventString = "oldName";

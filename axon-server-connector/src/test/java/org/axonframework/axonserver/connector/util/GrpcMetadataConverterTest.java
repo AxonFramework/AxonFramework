@@ -16,12 +16,10 @@
 
 package org.axonframework.axonserver.connector.util;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.axoniq.axonserver.grpc.MetaDataValue;
 import io.axoniq.axonserver.grpc.SerializedObject;
-import org.axonframework.serialization.Revision;
+import org.axonframework.eventhandling.annotations.Event;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
@@ -93,34 +91,6 @@ class GrpcMetadataConverterTest {
         MetaDataValue result = testSubject.convertToMetadataValue(true);
 
         assertTrue(result.getBooleanValue());
-    }
-
-    @Test
-    void convertObjectToMetaDataValueUsesSerializer() {
-        TestObject testObject = new TestObject("some-text");
-
-        MetaDataValue result = testSubject.convertToMetadataValue(testObject);
-
-        verify(serializer).serialize(testObject, byte[].class);
-
-        SerializedObject resultBytes = result.getBytesValue();
-        assertEquals(TestObject.class.getName(), resultBytes.getType());
-        assertNotNull(resultBytes.getData());
-        assertEquals("", resultBytes.getRevision());
-    }
-
-    @Test
-    void convertObjectWithRevisionToMetaDataValue() {
-        RevisionTestObject testObject = new RevisionTestObject("some-text");
-
-        MetaDataValue result = testSubject.convertToMetadataValue(testObject);
-
-        verify(serializer).serialize(testObject, byte[].class);
-
-        SerializedObject resultBytes = result.getBytesValue();
-        assertEquals(RevisionTestObject.class.getName(), resultBytes.getType());
-        assertNotNull(resultBytes.getData());
-        assertEquals("some-revision", resultBytes.getRevision());
     }
 
     @Test
@@ -238,7 +208,7 @@ class GrpcMetadataConverterTest {
     }
 
     @SuppressWarnings("unused")
-    @Revision("some-revision")
+    @Event(version = "some-revision")
     private static class RevisionTestObject {
 
         private final String testField;

@@ -27,6 +27,7 @@ import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
 import org.axonframework.serialization.json.JacksonSerializer;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 import org.mockito.*;
@@ -73,6 +74,7 @@ class DeadlineJobDataBinderTest {
         );
     }
 
+    @Disabled("TODO #3065")
     @MethodSource("serializerImplementationAndAssertionSpecifics")
     @ParameterizedTest
     void toJobDataTest(
@@ -100,6 +102,7 @@ class DeadlineJobDataBinderTest {
         verify(serializer).serialize(testDeadlineScope, byte[].class);
     }
 
+    @Disabled("TODO #3065")
     @MethodSource("serializerImplementationAndAssertionSpecifics")
     @ParameterizedTest
     void retrievingDeadlineMessage(

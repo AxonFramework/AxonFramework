@@ -16,37 +16,7 @@
 
 package org.axonframework.serialization.upcasting.avro;
 
-import org.apache.avro.generic.GenericData;
-import org.apache.avro.generic.GenericRecord;
-import org.apache.avro.message.SchemaStore;
-import org.axonframework.eventhandling.AbstractSequencedDomainEventEntry;
-import org.axonframework.eventhandling.DomainEventMessage;
-import org.axonframework.eventhandling.EventData;
-import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.Metadata;
-import org.axonframework.serialization.AnnotationRevisionResolver;
-import org.axonframework.serialization.SerializationException;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.SimpleSerializedObject;
-import org.axonframework.serialization.SimpleSerializedType;
-import org.axonframework.serialization.avro.AvroConverter;
-import org.axonframework.serialization.avro.GenericRecordToByteArrayConverter;
 import org.axonframework.serialization.avro.test.ComplexObject;
-import org.axonframework.serialization.avro.test.ComplexObjectSchemas;
-import org.axonframework.serialization.json.JacksonSerializer;
-import org.axonframework.serialization.upcasting.event.InitialEventRepresentation;
-import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
-import org.axonframework.serialization.upcasting.event.SingleEventUpcaster;
-import org.junit.jupiter.api.*;
-
-import java.time.Instant;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Stream;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * TODO #3597 - Left this test in the codebase to be able to re-create is as soon upcasting is redesigned.

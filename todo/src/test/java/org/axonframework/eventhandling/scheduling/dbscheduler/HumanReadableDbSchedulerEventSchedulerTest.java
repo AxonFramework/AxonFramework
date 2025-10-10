@@ -32,7 +32,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class HumanReadableDbSchedulerEventSchedulerTest extends AbstractDbSchedulerEventSchedulerTest {
 
-
     @Override
     Task<?> getTask(Supplier<DbSchedulerEventScheduler> eventSchedulerSupplier) {
         return DbSchedulerEventScheduler.humanReadableTask(eventSchedulerSupplier);

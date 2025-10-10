@@ -54,6 +54,7 @@ class SingleEventUpcasterTest {
     private final Serializer serializer = JacksonSerializer.defaultSerializer();
 
     @Test
+    @Disabled("TODO #3597")
     void upcastsKnownType() {
         String newValue = "newNameValue";
         Metadata metadata = Metadata.with("key", "value");
@@ -122,6 +123,7 @@ class SingleEventUpcasterTest {
     }
 
     @Test
+    @Disabled("TODO #3597")
     void ignoresWrongVersion() {
         DomainEventMessage testEvent = new GenericDomainEventMessage(
                 "test", "aggregateId", 0, new MessageType("event"), new StubDomainEvent("oldName")

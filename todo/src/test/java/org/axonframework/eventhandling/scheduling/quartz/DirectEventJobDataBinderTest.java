@@ -23,6 +23,7 @@ import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
 import org.axonframework.serialization.json.JacksonSerializer;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 import org.mockito.*;
@@ -61,6 +62,7 @@ class DirectEventJobDataBinderTest {
         );
     }
 
+    @Disabled("TODO #3104")
     @MethodSource("serializerImplementationAndAssertionSpecifics")
     @ParameterizedTest
     void eventMessageToJobData(
@@ -86,6 +88,7 @@ class DirectEventJobDataBinderTest {
         verify(serializer).serialize(testMetadata, byte[].class);
     }
 
+    @Disabled("TODO #3104")
     @MethodSource("serializerImplementationAndAssertionSpecifics")
     @ParameterizedTest
     void eventMessageFromJobData(

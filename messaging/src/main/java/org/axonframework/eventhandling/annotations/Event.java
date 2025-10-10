@@ -60,7 +60,7 @@ public @interface Event {
      *
      * @return The business or domain name of the event.
      */
-    String name();
+    String name() default "";
 
     /**
      * The version of the event.

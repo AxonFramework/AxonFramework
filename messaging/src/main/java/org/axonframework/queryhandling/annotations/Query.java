@@ -60,7 +60,7 @@ public @interface Query {
      *
      * @return The business or domain name of the query.
      */
-    String name();
+    String name() default "";
 
     /**
      * The version of the query.
