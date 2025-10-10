@@ -75,19 +75,16 @@ public abstract class AbstractEventBus implements EventBus {
     @Override
     public CompletableFuture<Void> publish(@Nullable ProcessingContext context, @Nonnull List<EventMessage> events) {
         if (context == null) {
-            return unitOfWorkFactory
-                    .create()
-                    .executeWithResult(ctx -> {
-                        runInContext(ctx, events);
-                        return FutureUtils.emptyCompletedFuture();
-                    });
+            var unitOfWork = unitOfWorkFactory.create();
+            unitOfWork.runOnPreInvocation(ctx -> registerEventPublishingHooks(ctx, events));
+            return unitOfWork.execute();
         }
 
-        runInContext(context, events);
+        registerEventPublishingHooks(context, events);
         return FutureUtils.emptyCompletedFuture();
     }
 
-    private void runInContext(@Nonnull ProcessingContext context, @Nonnull List<EventMessage> events) {
+    private void registerEventPublishingHooks(@Nonnull ProcessingContext context, @Nonnull List<EventMessage> events) {
         // Check if we're already in or past the commit phase - publishing is forbidden at this point
         if (context.isCommitted()) {
             throw new IllegalStateException(
