@@ -77,7 +77,7 @@ class QueryMessageHandlerInterceptorChainTest {
     }
 
     @Test
-    void subsequentChainInvocationsSTartFromBeginningAndInvokeInOrder() {
+    void subsequentChainInvocationsStartFromBeginningAndInvokeInOrder() {
         // given...
         AtomicInteger invocationCount = new AtomicInteger(0);
         QueryMessage firstQuery = query("first", String.class);

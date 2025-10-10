@@ -18,7 +18,7 @@ package org.axonframework.springboot.autoconfig;
 
 import org.axonframework.axonserver.connector.AxonServerConfigurationEnhancer;
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.InterceptingCommandBus;
+import org.axonframework.commandhandling.interceptors.InterceptingCommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.common.TypeReference;
 import org.axonframework.common.infra.ComponentDescriptor;
