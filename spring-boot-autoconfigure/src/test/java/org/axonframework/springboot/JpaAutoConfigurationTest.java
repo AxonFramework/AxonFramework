@@ -16,6 +16,7 @@
 
 package org.axonframework.springboot;
 
+import jakarta.persistence.EntityManagerFactory;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
@@ -25,6 +26,9 @@ import org.axonframework.springboot.util.jpa.ContainerManagedEntityManagerProvid
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.EnableMBeanExport;
+import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.context.ContextConfiguration;
 
 import java.time.Duration;
@@ -32,11 +36,13 @@ import java.time.temporal.TemporalAmount;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Tests JPA auto-configuration
  *
  * @author Sara Pellegrini
+ * @author Simon Zambrovski
  */
 class JpaAutoConfigurationTest {
 
@@ -44,13 +50,15 @@ class JpaAutoConfigurationTest {
 
     @BeforeEach
     void setUp() {
-        testContext = new ApplicationContextRunner().withUserConfiguration(TestContext.class)
-                                                    .withPropertyValues("axon.axonserver.enabled=false");
+        testContext = new ApplicationContextRunner()
+                .withUserConfiguration(TestContext.class)
+                .withPropertyValues("axon.axonserver.enabled=false");
     }
 
     @Test
     void contextInitialization() {
-        testContext.run(context -> {
+        testContext
+                .run(context -> {
             Map<String, EntityManagerProvider> entityManagerProviders =
                     context.getBeansOfType(EntityManagerProvider.class);
             assertTrue(entityManagerProviders.containsKey("entityManagerProvider"));
@@ -82,7 +90,8 @@ class JpaAutoConfigurationTest {
 
     @Test
     void setTokenStoreClaimTimeout() {
-        testContext.withPropertyValues("axon.eventhandling.tokenstore.claim-timeout=3001")
+        testContext
+                .withPropertyValues("axon.eventhandling.tokenstore.claim-timeout=3001")
                    .run(context -> {
                        Map<String, TokenStore> tokenStores =
                                context.getBeansOfType(TokenStore.class);
@@ -120,7 +129,12 @@ class JpaAutoConfigurationTest {
 
     @ContextConfiguration
     @EnableAutoConfiguration
+    @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
     private static class TestContext {
 
+        @Bean
+        public EntityManagerFactory entityManagerFactory() {
+            return mock();
+        }
     }
 }

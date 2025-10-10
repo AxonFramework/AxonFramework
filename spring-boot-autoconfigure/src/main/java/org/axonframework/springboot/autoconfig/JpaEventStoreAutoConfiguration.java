@@ -33,6 +33,8 @@ import org.axonframework.springboot.JpaEventStorageEngineConfigurationProperties
 import org.axonframework.springboot.util.RegisterDefaultEntities;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -49,7 +51,7 @@ import java.util.function.UnaryOperator;
  * @since 4.0
  */
 @AutoConfiguration
-@ConditionalOnClass({EntityManagerFactory.class, PlatformTransactionManager.class})
+@ConditionalOnBean({EntityManagerFactory.class, PlatformTransactionManager.class})
 @ConditionalOnMissingBean(value = {EventStore.class, EventStorageEngine.class})
 @RegisterDefaultEntities(packages = {
         "org.axonframework.eventsourcing.eventstore.jpa"
@@ -60,10 +62,11 @@ public class JpaEventStoreAutoConfiguration {
     /**
      * Creates an aggregate-based JPA event storage engine enhancer.
      *
-     * @param entityManagerProvider        An entity manager provide to access the underlying DB.
-     * @param transactionManager           A transaction manager to run safe transaction operations.
-     * @param eventConverter               A converter to use for event conversion.
-     * @param persistenceExceptionResolver A persistence exception resolver on duplicate errors.
+     * @param entityManagerProvider                        An entity manager provide to access the underlying DB.
+     * @param transactionManager                           A transaction manager to run safe transaction operations.
+     * @param eventConverter                               A converter to use for event conversion.
+     * @param persistenceExceptionResolver                 A persistence exception resolver on duplicate errors.
+     * @param jpaEventStorageEngineConfigurationProperties Spring properties to configure the JPA Event store Engine.
      * @return A configuration enhancer registering JPA Storage Engine ordered between Axon Server and In-Memory Storage
      * Engine.
      */

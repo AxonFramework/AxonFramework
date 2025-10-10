@@ -56,7 +56,6 @@ import javax.sql.DataSource;
         //  "org.axonframework.eventhandling.deadletter.jpa", // TODO re-enable as part of #3097
         // "org.axonframework.modelling.saga.repository.jpa", // TODO re-enable as part of #3517
 })
-@AutoConfigureAfter(HibernateJpaAutoConfiguration.class)
 public class JpaAutoConfiguration {
 
 
@@ -98,7 +97,6 @@ public class JpaAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean
-    @ConditionalOnBean(DataSource.class)
     public PersistenceExceptionResolver persistenceExceptionResolver(DataSource dataSource) throws SQLException {
         return new SQLErrorCodesResolver(dataSource);
     }
