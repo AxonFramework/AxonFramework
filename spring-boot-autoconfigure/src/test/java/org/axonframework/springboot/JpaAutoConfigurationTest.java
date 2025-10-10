@@ -16,6 +16,7 @@
 
 package org.axonframework.springboot;
 
+import jakarta.persistence.EntityManagerFactory;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
@@ -25,6 +26,9 @@ import org.axonframework.springboot.util.jpa.ContainerManagedEntityManagerProvid
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.EnableMBeanExport;
+import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.context.ContextConfiguration;
 
 import java.time.Duration;
@@ -32,26 +36,29 @@ import java.time.temporal.TemporalAmount;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Tests JPA auto-configuration
  *
  * @author Sara Pellegrini
+ * @author Simon Zambrovski
  */
-@Disabled("TODO #3496")
 class JpaAutoConfigurationTest {
 
     private ApplicationContextRunner testContext;
 
     @BeforeEach
     void setUp() {
-        testContext = new ApplicationContextRunner().withUserConfiguration(TestContext.class)
-                                                    .withPropertyValues("axon.axonserver.enabled=false");
+        testContext = new ApplicationContextRunner()
+                .withUserConfiguration(TestContext.class)
+                .withPropertyValues("axon.axonserver.enabled=false");
     }
 
     @Test
     void contextInitialization() {
-        testContext.run(context -> {
+        testContext
+                .run(context -> {
             Map<String, EntityManagerProvider> entityManagerProviders =
                     context.getBeansOfType(EntityManagerProvider.class);
             assertTrue(entityManagerProviders.containsKey("entityManagerProvider"));
@@ -64,12 +71,15 @@ class JpaAutoConfigurationTest {
             assertEquals(JpaTokenStore.class,
                          tokenStores.get("tokenStore").getClass());
 
-//            Map<String, SagaStore> sagaStores =
-//                    context.getBeansOfType(SagaStore.class);
-//            assertTrue(sagaStores.containsKey("sagaStore"));
-//            assertEquals(JpaSagaStore.class,
-//                         sagaStores.get("sagaStore").getClass());
-
+            /*
+            TODO re-enable as part of #3097
+            //noinspection rawtypes
+            Map<String, SagaStore> sagaStores =
+                    context.getBeansOfType(SagaStore.class);
+            assertTrue(sagaStores.containsKey("sagaStore"));
+            assertEquals(JpaSagaStore.class,
+                         sagaStores.get("sagaStore").getClass());
+             */
             Map<String, SQLErrorCodesResolver> persistenceExceptionResolvers =
                     context.getBeansOfType(SQLErrorCodesResolver.class);
             assertTrue(persistenceExceptionResolvers.containsKey("persistenceExceptionResolver"));
@@ -80,7 +90,8 @@ class JpaAutoConfigurationTest {
 
     @Test
     void setTokenStoreClaimTimeout() {
-        testContext.withPropertyValues("axon.eventhandling.tokenstore.claim-timeout=3000")
+        testContext
+                .withPropertyValues("axon.eventhandling.tokenstore.claim-timeout=3001")
                    .run(context -> {
                        Map<String, TokenStore> tokenStores =
                                context.getBeansOfType(TokenStore.class);
@@ -89,33 +100,41 @@ class JpaAutoConfigurationTest {
                        TemporalAmount tokenClaimInterval = ReflectionUtils.getFieldValue(
                                JpaTokenStore.class.getDeclaredField("claimTimeout"), tokenStore
                        );
-                       assertEquals(Duration.ofSeconds(3L), tokenClaimInterval);
+                       assertEquals(Duration.ofMillis(3001), tokenClaimInterval);
                    });
     }
+
 
     @Test
     @Disabled("TODO #3517")
     void sequencedDeadLetterQueueCanBeSetViaSpringConfiguration() {
-//        testContext.withPropertyValues("axon.eventhandling.processors.first.dlq.enabled=true")
-//                   .run(context -> {
-//                       assertNotNull(context.getBean(DeadLetterQueueProviderConfigurerModule.class));
-//
-//                       EventProcessingModule eventProcessingConfig = context.getBean(EventProcessingModule.class);
-//                       assertNotNull(eventProcessingConfig);
-//
-//                       Optional<SequencedDeadLetterQueue<EventMessage>> dlq =
-//                               eventProcessingConfig.deadLetterQueue("first");
-//                       assertTrue(dlq.isPresent());
-//                       assertTrue(dlq.get() instanceof JpaSequencedDeadLetterQueue);
-//
-//                       dlq = eventProcessingConfig.deadLetterQueue("second");
-//                       assertFalse(dlq.isPresent());
-//                   });
+      /*
+        testContext.withPropertyValues("axon.eventhandling.processors.first.dlq.enabled=true")
+                   .run(context -> {
+                       assertNotNull(context.getBean(DeadLetterQueueProviderConfigurerModule.class));
+
+                       EventProcessingModule eventProcessingConfig = context.getBean(EventProcessingModule.class);
+                       assertNotNull(eventProcessingConfig);
+
+                       Optional<SequencedDeadLetterQueue<EventMessage>> dlq =
+                               eventProcessingConfig.deadLetterQueue("first");
+                       assertTrue(dlq.isPresent());
+                       assertTrue(dlq.get() instanceof JpaSequencedDeadLetterQueue);
+
+                       dlq = eventProcessingConfig.deadLetterQueue("second");
+                       assertFalse(dlq.isPresent());
+                   });
+    */
     }
 
     @ContextConfiguration
     @EnableAutoConfiguration
+    @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
     private static class TestContext {
 
+        @Bean
+        public EntityManagerFactory entityManagerFactory() {
+            return mock();
+        }
     }
 }
