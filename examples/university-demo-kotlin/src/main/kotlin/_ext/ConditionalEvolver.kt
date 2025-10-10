@@ -6,7 +6,7 @@ package io.axoniq.demo.university._ext
  * @param evolver A function to be executed.
  * @return itself or evolved version.
  */
-fun <T> T.conditionalEvolve(
+inline fun <T> T.evolveIf(
   condition: Boolean,
   evolver: (T) -> T
 ): T {

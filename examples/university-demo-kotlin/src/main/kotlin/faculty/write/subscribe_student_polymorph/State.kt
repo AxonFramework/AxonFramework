@@ -3,7 +3,7 @@ package io.axoniq.demo.university.faculty.write.subscribe_student_polymorph
 import io.axoniq.demo.university.faculty.events.CourseCreated
 import io.axoniq.demo.university.faculty.events.StudentEnrolledInFaculty
 import io.axoniq.demo.university.faculty.events.StudentSubscribedToCourse
-import io.axoniq.demo.university._ext.conditionalEvolve
+import io.axoniq.demo.university._ext.evolveIf
 import io.axoniq.demo.university.shared.ids.CourseId
 import io.axoniq.demo.university.shared.ids.StudentId
 import io.axoniq.demo.university.shared.ids.SubscriptionId
@@ -145,13 +145,13 @@ internal sealed interface State {
 
     @EventSourcingHandler
     fun evolve(event: StudentSubscribedToCourse): State =
-      conditionalEvolve(event.courseId == courseState.courseId) {
+      evolveIf(event.courseId == courseState.courseId) {
         copy(courseState = courseState.evolveStudentSubscribed())
       }
-        .conditionalEvolve(event.studentId == studentState.studentId) {
+        .evolveIf(event.studentId == studentState.studentId) {
           copy(studentState = studentState.evolveSubscribedToCourse())
         }
-        .conditionalEvolve(event.studentId == studentState.studentId && event.courseId == courseState.courseId) {
+        .evolveIf(event.studentId == studentState.studentId && event.courseId == courseState.courseId) {
           copy(alreadySubscribed = true)
         }
 

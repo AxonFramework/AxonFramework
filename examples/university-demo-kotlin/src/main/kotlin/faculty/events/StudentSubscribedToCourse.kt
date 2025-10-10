@@ -11,4 +11,4 @@ data class StudentSubscribedToCourse(
 
   @EventTag(key = FacultyTags.COURSE)
   val courseId: CourseId,
-)
+) : FacultyEvent

@@ -4,7 +4,7 @@ import io.axoniq.demo.university.faculty.FacultyTags
 import io.axoniq.demo.university.faculty.events.CourseCreated
 import io.axoniq.demo.university.faculty.events.StudentEnrolledInFaculty
 import io.axoniq.demo.university.faculty.events.StudentSubscribedToCourse
-import io.axoniq.demo.university._ext.conditionalEvolve
+import io.axoniq.demo.university._ext.evolveIf
 import io.axoniq.demo.university.shared.ids.CourseId
 import io.axoniq.demo.university.shared.ids.StudentId
 import io.axoniq.demo.university.shared.ids.SubscriptionId
@@ -74,10 +74,10 @@ internal class State @EntityCreator constructor() {
   @EventSourcingHandler
   fun evolve(event: StudentSubscribedToCourse) =
     apply { alreadySubscribed = event.studentId == studentId && event.courseId == courseId }
-      .conditionalEvolve(event.courseId == courseId) {
+      .evolveIf(event.courseId == courseId) {
         apply { studentsInCourse = studentsInCourse + 1 }
       }
-      .conditionalEvolve(event.studentId == studentId) {
+      .evolveIf(event.studentId == studentId) {
         apply { coursesForStudent = coursesForStudent + 1 }
       }
 
