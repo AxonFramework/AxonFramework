@@ -16,9 +16,8 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.common.AxonConfigurationException;
-
-import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotations.Internal;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 
 /**
  * Implementation of the {@link EventBus} that dispatches events in the thread the publishes them.
@@ -28,4 +27,12 @@ import jakarta.annotation.Nonnull;
  */
 public class SimpleEventBus extends AbstractEventBus {
 
+    @Internal
+    SimpleEventBus() {
+        super();
+    }
+
+    public SimpleEventBus(UnitOfWorkFactory unitOfWorkFactory) {
+        super(unitOfWorkFactory);
+    }
 }

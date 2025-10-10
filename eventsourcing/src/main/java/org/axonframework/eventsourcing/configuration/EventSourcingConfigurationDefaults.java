@@ -35,6 +35,7 @@ import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.interceptors.DispatchInterceptorRegistry;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 
 import java.util.List;
 
@@ -90,7 +91,7 @@ public class EventSourcingConfigurationDefaults implements ConfigurationEnhancer
         registry.registerDecorator(
                 EventStore.class,
                 InterceptingEventStore.DECORATION_ORDER + 50,
-                (config, name, delegate) -> new EventStoreBasedEventBus(delegate, new SimpleEventBus())
+                (config, name, delegate) -> new EventStoreBasedEventBus(delegate, new SimpleEventBus(config.getComponent(UnitOfWorkFactory.class)))
         );
 
         registry.registerComponent(EventBus.class,
