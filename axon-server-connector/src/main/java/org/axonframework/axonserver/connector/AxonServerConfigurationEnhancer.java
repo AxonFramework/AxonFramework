@@ -18,6 +18,7 @@ package org.axonframework.axonserver.connector;
 
 import org.axonframework.axonserver.connector.command.AxonServerCommandBusConnector;
 import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngineFactory;
+import org.axonframework.axonserver.connector.query.AxonServerQueryBusConnector;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.commandhandling.distributed.PayloadConvertingCommandBusConnector;
 import org.axonframework.common.FutureUtils;
@@ -32,6 +33,7 @@ import org.axonframework.configuration.SearchScope;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.conversion.MessageConverter;
+import org.axonframework.queryhandling.distributed.QueryBusConnector;
 
 import java.util.Optional;
 import javax.annotation.Nonnull;
@@ -62,6 +64,7 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
                                       SearchScope.ALL)
                 .registerIfNotPresent(eventStorageEngineDefinition(), SearchScope.ALL)
                 .registerIfNotPresent(commandBusConnectorDefinition(), SearchScope.ALL)
+                .registerIfNotPresent(queryBusConnectorDefinition(), SearchScope.ALL)
                 .registerDecorator(CommandBusConnector.class, 0, payloadConvertingConnectorComponentDecorator())
                 .registerDecorator(topologyChangeListenerRegistration())
                 .registerFactory(new AxonServerEventStorageEngineFactory());
@@ -112,6 +115,22 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
                                   .onShutdown(Phase.OUTBOUND_COMMAND_CONNECTORS,
                                               (ComponentLifecycleHandler<CommandBusConnector>) (config, connector) ->
                                                       ((AxonServerCommandBusConnector) connector).shutdownDispatching());
+    }
+
+    private ComponentDefinition<QueryBusConnector> queryBusConnectorDefinition() {
+        return ComponentDefinition.ofType(QueryBusConnector.class)
+                                  .withBuilder(config -> new AxonServerQueryBusConnector(
+                                          config.getComponent(AxonServerConnectionManager.class).getConnection(),
+                                          config.getComponent(AxonServerConfiguration.class)
+                                  ))
+                                  .onStart(Phase.INBOUND_QUERY_CONNECTOR,
+                                           connector -> ((AxonServerQueryBusConnector) connector).start())
+                                  .onShutdown(Phase.INBOUND_QUERY_CONNECTOR,
+                                              (ComponentLifecycleHandler<QueryBusConnector>) (config, connector) ->
+                                                      ((AxonServerQueryBusConnector) connector).disconnect())
+                                  .onShutdown(Phase.OUTBOUND_QUERY_CONNECTORS,
+                                              (ComponentLifecycleHandler<QueryBusConnector>) (config, connector) ->
+                                                      ((AxonServerQueryBusConnector) connector).shutdownDispatching());
     }
 
     private ComponentDecorator<CommandBusConnector, PayloadConvertingCommandBusConnector> payloadConvertingConnectorComponentDecorator() {

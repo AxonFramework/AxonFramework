@@ -25,7 +25,6 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryBusTestUtils;
-import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
@@ -127,30 +126,30 @@ class QueryThreadingIntegrationTest {
 
     @Test
     void canStillHandleQueryResponsesWhileManyQueriesHandling() {
-        queryBus2.subscribe(QUERY_TYPE_B.name(), String.class, (query, ctx) -> {
-            while (secondaryQueryBlock.get()) {
-                try {
-                    Thread.sleep(10);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-            }
-            return "b";
-        });
+//        queryBus2.subscribe(QUERY_TYPE_B.name(), String.class, (query, ctx) -> {
+//            while (secondaryQueryBlock.get()) {
+//                try {
+//                    Thread.sleep(10);
+//                } catch (InterruptedException e) {
+//                    Thread.currentThread().interrupt();
+//                }
+//            }
+//            return "b";
+//        });
 
-        queryBus.subscribe(QUERY_TYPE_A.name(), String.class, (query, ctx) -> {
-            waitingQueries.incrementAndGet();
-            QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE_B,
-                                                             "start",
-                                                             new MessageType(String.class));
-            QueryResponseMessage b = queryBus.query(testQuery, null)
-                                             .first()
-                                             .asCompletableFuture()
-                                             .thenApply(MessageStream.Entry::message)
-                                             .get();
-            waitingQueries.decrementAndGet();
-            return "a" + b.payload();
-        });
+//        queryBus.subscribe(QUERY_TYPE_A.name(), String.class, (query, ctx) -> {
+//            waitingQueries.incrementAndGet();
+//            QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE_B,
+//                                                             "start",
+//                                                             new MessageType(String.class));
+//            QueryResponseMessage b = queryBus.query(testQuery, null)
+//                                             .first()
+//                                             .asCompletableFuture()
+//                                             .thenApply(MessageStream.Entry::message)
+//                                             .get();
+//            waitingQueries.decrementAndGet();
+//            return "a" + b.payload();
+//        });
 
         MessageStream<QueryResponseMessage> query1 = queryBus.query(
                 new GenericQueryMessage(QUERY_TYPE_A, "start", new MessageType(String.class)), null

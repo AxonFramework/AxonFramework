@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package org.axonframework.axonserver.connector.query;
 
 import io.axoniq.axonserver.connector.ReplyChannel;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
+import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotations.Internal;
 import org.axonframework.queryhandling.QueryResponseMessage;
 
 /**
@@ -27,6 +29,7 @@ import org.axonframework.queryhandling.QueryResponseMessage;
  * @author Stefan Dragisic
  * @since 4.6.0
  */
+@Internal
 class StreamableInstanceResponse implements StreamableResponse {
 
     private final QueryResponseMessage result;
@@ -38,15 +41,15 @@ class StreamableInstanceResponse implements StreamableResponse {
     /**
      * Instantiates this streamable instance result.
      *
-     * @param result          the result to be streamed
-     * @param responseHandler the {@link ReplyChannel} used for sending the result to the Axon Server
-     * @param serializer      the serializer used to serialize items
-     * @param requestId       the identifier of the request these responses refer to
+     * @param result          The result to be streamed.
+     * @param responseHandler The {@link ReplyChannel} used for sending the result to the Axon Server.
+     * @param serializer      The serializer used to serialize items.
+     * @param requestId       The identifier of the request these responses refer to.
      */
-    public StreamableInstanceResponse(QueryResponseMessage result,
-                                      ReplyChannel<QueryResponse> responseHandler,
-                                      QuerySerializer serializer,
-                                      String requestId) {
+    public StreamableInstanceResponse(@Nonnull QueryResponseMessage result,
+                                      @Nonnull ReplyChannel<QueryResponse> responseHandler,
+                                      @Nonnull QuerySerializer serializer,
+                                      @Nonnull String requestId) {
         this.result = result;
         this.responseHandler = responseHandler;
         this.serializer = serializer;

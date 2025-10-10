@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,10 @@ package org.axonframework.axonserver.connector.query;
 import io.axoniq.axonserver.connector.ReplyChannel;
 import io.axoniq.axonserver.grpc.ErrorMessage;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
+import jakarta.annotation.Nonnull;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
+import org.axonframework.common.annotations.Internal;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.reactivestreams.Subscription;
 import reactor.core.publisher.BaseSubscriber;
@@ -34,6 +36,7 @@ import reactor.core.publisher.Flux;
  * @author Stefan Dragisic
  * @since 4.6.0
  */
+@Internal
 class StreamableFluxResponse implements StreamableResponse {
 
     private final Subscription subscription;
@@ -41,18 +44,17 @@ class StreamableFluxResponse implements StreamableResponse {
     /**
      * Instantiates this streamable flux result.
      *
-     * @param result          a {@link Flux} of responses to be sent
-     * @param responseHandler the {@link ReplyChannel} used for sending the result to the Axon Server
-     * @param serializer      the serializer used to serialize items
-     * @param requestId       the identifier of the request these responses refer to
-     * @param clientId        the identifier of the client
-     * @param <T>             the type of items to be sent
+     * @param result          A {@link Flux} of responses to be sent.
+     * @param responseHandler The {@link ReplyChannel} used for sending the result to the Axon Server.
+     * @param serializer      The serializer used to serialize items.
+     * @param requestId       The identifier of the request these responses refer to.
+     * @param clientId        The identifier of the client.
      */
-    public <T> StreamableFluxResponse(Flux<QueryResponseMessage> result,
-                                      ReplyChannel<QueryResponse> responseHandler,
-                                      QuerySerializer serializer,
-                                      String requestId,
-                                      String clientId) {
+    public StreamableFluxResponse(@Nonnull Flux<QueryResponseMessage> result,
+                                  @Nonnull ReplyChannel<QueryResponse> responseHandler,
+                                  @Nonnull QuerySerializer serializer,
+                                  @Nonnull String requestId,
+                                  @Nonnull String clientId) {
         SendingSubscriber subscriber = new SendingSubscriber(responseHandler, clientId, requestId);
         this.subscription = subscriber;
         result.map(message -> serializer.serializeResponse(message, requestId))
@@ -82,12 +84,12 @@ class StreamableFluxResponse implements StreamableResponse {
         }
 
         @Override
-        protected void hookOnSubscribe(Subscription subscription) {
+        protected void hookOnSubscribe(@Nonnull Subscription subscription) {
             // we want to avoid auto request
         }
 
         @Override
-        protected void hookOnNext(QueryResponse value) {
+        protected void hookOnNext(@Nonnull QueryResponse value) {
             responseHandler.send(value);
         }
 
@@ -97,7 +99,7 @@ class StreamableFluxResponse implements StreamableResponse {
         }
 
         @Override
-        protected void hookOnError(Throwable e) {
+        protected void hookOnError(@Nonnull Throwable e) {
             ErrorMessage ex = ExceptionSerializer.serialize(clientId, e);
             QueryResponse response =
                     QueryResponse.newBuilder()
