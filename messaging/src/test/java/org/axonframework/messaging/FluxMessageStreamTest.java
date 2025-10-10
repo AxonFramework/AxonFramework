@@ -37,7 +37,7 @@ class FluxMessageStreamTest extends MessageStreamTest<Message> {
 
     @Override
     MessageStream<Message> completedTestSubject(List<Message> messages) {
-        return MessageStream.fromFlux(Flux.fromIterable(messages));
+        return FluxUtils.asMessageStream(Flux.fromIterable(messages));
     }
 
     @Override
@@ -56,7 +56,7 @@ class FluxMessageStreamTest extends MessageStreamTest<Message> {
     @Override
     protected MessageStream<Message> uncompletedTestSubject(List<Message> messages,
                                                                     CompletableFuture<Void> completionMarker) {
-        return MessageStream.fromFlux(Flux.fromIterable(messages).concatWith(
+        return FluxUtils.asMessageStream(Flux.fromIterable(messages).concatWith(
                 Flux.create(emitter -> completionMarker.whenComplete(
                         (v, e) -> {
                             if (e != null) {
@@ -70,7 +70,7 @@ class FluxMessageStreamTest extends MessageStreamTest<Message> {
 
     @Override
     MessageStream<Message> failingTestSubject(List<Message> messages, Exception failure) {
-        return MessageStream.fromFlux(Flux.fromIterable(messages).concatWith(Mono.error(failure)));
+        return FluxUtils.asMessageStream(Flux.fromIterable(messages).concatWith(Mono.error(failure)));
     }
 
     @Override
@@ -85,7 +85,7 @@ class FluxMessageStreamTest extends MessageStreamTest<Message> {
         Flux<Message> flux;
         flux = Flux.fromIterable(List.of(createRandomMessage(), createRandomMessage(), createRandomMessage()))
                    .doOnCancel(() -> invoked.set(true));
-        MessageStream<Message> testSubject = MessageStream.fromFlux(flux);
+        MessageStream<Message> testSubject = FluxUtils.asMessageStream(flux);
 
         assertTrue(testSubject.next().isPresent());
         assertFalse(invoked.get());

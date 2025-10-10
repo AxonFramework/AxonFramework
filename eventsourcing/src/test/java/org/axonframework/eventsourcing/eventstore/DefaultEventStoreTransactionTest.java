@@ -24,6 +24,7 @@ import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageE
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.Tag;
 import org.axonframework.messaging.Context;
+import org.axonframework.messaging.FluxUtils;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -101,7 +102,7 @@ class DefaultEventStoreTransactionTest {
 
             // then
             assertNull(beforeCommitEvents.get().first().asCompletableFuture().join());
-            StepVerifier.create(afterCommitEvents.get().asFlux())
+            StepVerifier.create(FluxUtils.of(afterCommitEvents.get()))
                         .assertNext(entry -> assertPositionAndEvent(entry, 1, event1))
                         .assertNext(entry -> assertPositionAndEvent(entry, 2, event2))
                         .assertNext(entry -> assertPositionAndEvent(entry, 3, event3))
@@ -136,11 +137,11 @@ class DefaultEventStoreTransactionTest {
             awaitSuccessfulCompletion(uow.execute());
 
             // then: before commit - no events should be visible
-            StepVerifier.create(beforeCommitEvents.get().asFlux())
+            StepVerifier.create(FluxUtils.of(beforeCommitEvents.get()))
                         .verifyComplete();
 
             // then: after commit - both events should be visible
-            StepVerifier.create(afterCommitEvents.get().asFlux())
+            StepVerifier.create(FluxUtils.of(afterCommitEvents.get()))
                         .assertNext(entry -> assertPositionAndEvent(entry, 1, event1))
                         .assertNext(entry -> assertPositionAndEvent(entry, 2, event2))
                         .verifyComplete();
@@ -200,8 +201,8 @@ class DefaultEventStoreTransactionTest {
                                                                                     m -> Set.of(tagToCommitOn));
 
                 // Read both streams, with non-existing empty
-                transaction.source(SourcingCondition.conditionFor(nonExistingCriteria)).asFlux().blockLast();
-                transaction.source(SourcingCondition.conditionFor(existingCriteria)).asFlux().blockLast();
+                FluxUtils.of(transaction.source(SourcingCondition.conditionFor(nonExistingCriteria))).blockLast();
+                FluxUtils.of(transaction.source(SourcingCondition.conditionFor(existingCriteria))).blockLast();
 
                 transaction.appendEvent(new GenericEventMessage(new MessageType(String.class), "my payload"));
 
@@ -336,7 +337,7 @@ class DefaultEventStoreTransactionTest {
             });
             awaitSuccessfulCompletion(verificationUow.execute());
 
-            StepVerifier.create(eventsAfterRollback.get().asFlux())
+            StepVerifier.create(FluxUtils.of(eventsAfterRollback.get()))
                         .verifyComplete();
         }
 
