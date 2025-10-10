@@ -35,13 +35,12 @@ import java.util.Objects;
  * its origin.</li>
  * <li><b>causationId</b> - Identifies the direct parent message that caused the current message to be created (links to
  * the immediate trigger). This is always the {@link Message#identifier() identifier} of the message currently being
- * processed. For example, for an event, this would be the identifier of the command that triggered the event; for a
- * saga-initiated command, this would be the identifier of the event that triggered the saga.</li>
+ * processed. For example, for an event, this would be the identifier of the command that triggered the event.</li>
  * </ul>
  * <p>
  * Example usage:
  * <pre>{@code
- * // Create provider with default keys ("correlationId" and "causationId")
+ * // Create provider with default keys ("causationId" and "correlationId")
  * CorrelationDataProvider provider = new MessageOriginProvider();
  *
  * // Or customize the metadata keys
