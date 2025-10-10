@@ -195,7 +195,7 @@ public class GenericMessage extends AbstractMessage {
     @Nullable
     public <T> T payloadAs(@Nonnull Type type, @Nullable Converter converter) {
         //noinspection rawtypes,unchecked
-        if (type instanceof Class clazz && clazz.isAssignableFrom(payloadType())) {
+        if (type instanceof Class clazz && clazz.isAssignableFrom(payloadType()) || Void.class.equals(payloadType())) {
             //noinspection unchecked
             return (T) payload();
         }

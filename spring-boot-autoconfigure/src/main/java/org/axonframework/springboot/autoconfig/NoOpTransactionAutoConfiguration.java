@@ -20,15 +20,27 @@ import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
-import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 
+/**
+ * Autoconfiguration class that registers a bean creation method for a default {@link TransactionManager}, the
+ * {@link NoTransactionManager}.
+ *
+ * @author Allard Buijze
+ * @since 3.0.3
+ */
 @AutoConfiguration
 @AutoConfigureAfter(TransactionAutoConfiguration.class)
-@AutoConfigureBefore(LegacyAxonAutoConfiguration.class)
 public class NoOpTransactionAutoConfiguration {
 
+    /**
+     * Bean creation method constructing the default {@link TransactionManager} to be used by Axon Framework.
+     * <p>
+     * The default is a {@link NoTransactionManager}.
+     *
+     * @return The {@link TransactionManager} to be used by Axon Framework.
+     */
     @Bean
     @ConditionalOnMissingBean(TransactionManager.class)
     public TransactionManager axonTransactionManager() {

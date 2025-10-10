@@ -18,6 +18,7 @@ package org.axonframework.messaging.annotations;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.annotations.Internal;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -33,6 +34,7 @@ import java.util.Optional;
  * @author Allard Buijze
  * @since 3.0.0
  */
+@Internal
 public interface MessageHandlingMember<T> {
 
     /**
@@ -101,7 +103,9 @@ public interface MessageHandlingMember<T> {
      *                   from the invoked method.
      * @deprecated In favor of {@link #handle(Message, ProcessingContext, Object)}.
      */
-    @Deprecated
+    // TODO Remove entirely once #3065, #3195, #3517, and #3728 have been resolved.
+    @Internal
+    @Deprecated(forRemoval = true, since = "5.2.0")
     Object handleSync(@Nonnull Message message,
                       @Nonnull ProcessingContext context,
                       @Nullable T target) throws Exception;

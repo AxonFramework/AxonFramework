@@ -16,9 +16,8 @@
 
 package org.axonframework.eventhandling.processors.streaming.segmenting;
 
-import org.axonframework.eventhandling.DomainEventMessage;
-import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.axonframework.messaging.MessageType;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -33,17 +32,18 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class SegmentTest {
 
-    private List<DomainEventMessage> domainEventMessages;
+    private List<EventMessage> eventMessages;
 
     @BeforeEach
     void before() {
-        domainEventMessages = produceEvents();
+        eventMessages = produceEvents();
     }
 
     @Test
     void segmentSplitAddsUp() {
-        final List<Long> identifiers = domainEventMessages.stream().map(de -> {
-            final String aggregateIdentifier = de.getAggregateIdentifier();
+        final List<Long> identifiers = eventMessages.stream().map(de -> {
+            final String aggregateIdentifier = de.payloadAs(String.class);
+            //noinspection DataFlowIssue
             return UUID.fromString(aggregateIdentifier).getLeastSignificantBits();
         }).toList();
 
@@ -351,21 +351,14 @@ class SegmentTest {
         }
     }
 
-    private List<DomainEventMessage> produceEvents() {
-        final ArrayList<DomainEventMessage> events = new ArrayList<>();
+    private List<EventMessage> produceEvents() {
+        final ArrayList<EventMessage> events = new ArrayList<>();
         // Produce a set of
         for (int i = 0; i < 10000; i++) {
             String aggregateIdentifier = UUID.randomUUID().toString();
-            final DomainEventMessage domainEventMessage = newStubDomainEvent(aggregateIdentifier);
+            final EventMessage domainEventMessage = EventTestUtils.asEventMessage(aggregateIdentifier);
             events.add(domainEventMessage);
         }
         return events;
-    }
-
-    private DomainEventMessage newStubDomainEvent(Object aggregateIdentifier) {
-        return new GenericDomainEventMessage(
-                "aggregateType", aggregateIdentifier.toString(), 0L,
-                new MessageType("event"), new Object()
-        );
     }
 }

@@ -20,6 +20,9 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.repository.ManagedEntity;
 import org.axonframework.modelling.repository.Repository;
+import org.axonframework.modelling.repository.SimpleRepository;
+import org.axonframework.modelling.repository.SimpleRepositoryEntityLoader;
+import org.axonframework.modelling.repository.SimpleRepositoryEntityPersister;
 
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;

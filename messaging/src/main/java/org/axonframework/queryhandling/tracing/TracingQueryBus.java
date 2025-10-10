@@ -16,7 +16,7 @@
 
 package org.axonframework.queryhandling.tracing;
 
-// TODO 3488 - Introduce tracing logic here.
+// TODO 3594 - Introduce tracing logic here.
 public class TracingQueryBus {
 
     /*
@@ -39,7 +39,7 @@ public class TracingQueryBus {
             LegacyDefaultUnitOfWork<StreamingQueryMessage> uow = LegacyDefaultUnitOfWork.startAndGet(query);
             return uow.executeWithResult((ctx) -> {
                 /*
-                // TODO #3488 - Reintegrate, and construct chain only once!
+                // TODO 3594 - Reintegrate, and construct chain only once!
                 QueryHandler queryHandler = new QueryHandler() {
                     @Nonnull
                     @Override
@@ -58,4 +58,32 @@ public class TracingQueryBus {
 //});
 //        }
 //        }
+
+    /*
+    UpdateEmitter logic
+
+    @Test
+    void queryUpdateEmitterIsTraced() {
+        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
+                new MessageType("chatMessages"), "some-payload",
+                multipleInstancesOf(String.class), instanceOf(String.class)
+        );
+
+        UpdateHandler result = queryBus.subscribeToUpdates(
+                queryMessage,
+                1024
+        );
+
+        result.updates().subscribe();
+//        testSubject.emit(any -> true, "some-awesome-text");
+        result.complete();
+
+        spanFactory.verifySpanCompleted("QueryUpdateEmitter.scheduleQueryUpdateMessage");
+        spanFactory.verifySpanHasType("QueryUpdateEmitter.scheduleQueryUpdateMessage",
+                                      TestSpanFactory.TestSpanType.INTERNAL);
+        spanFactory.verifySpanCompleted("QueryUpdateEmitter.emitQueryUpdateMessage");
+        spanFactory.verifySpanHasType("QueryUpdateEmitter.emitQueryUpdateMessage",
+                                      TestSpanFactory.TestSpanType.DISPATCH);
+    }
+    * */
 }

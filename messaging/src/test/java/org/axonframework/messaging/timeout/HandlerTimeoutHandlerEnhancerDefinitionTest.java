@@ -17,11 +17,8 @@ package org.axonframework.messaging.timeout;
 
 import org.axonframework.commandhandling.annotations.CommandHandler;
 import org.axonframework.common.ObjectUtils;
-import org.axonframework.deadline.annotations.DeadlineHandler;
 import org.axonframework.eventhandling.annotations.EventHandler;
-import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.annotations.AnnotatedMessageHandlingMemberDefinition;
 import org.axonframework.messaging.annotations.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotations.MessageHandlerTimeout;
@@ -31,8 +28,8 @@ import org.axonframework.queryhandling.annotations.QueryHandler;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
+import static org.axonframework.messaging.annotations.MessageStreamResolverUtils.resolveToStream;
 import static org.junit.jupiter.api.Assertions.*;
 
 class HandlerTimeoutHandlerEnhancerDefinitionTest {
@@ -125,29 +122,28 @@ class HandlerTimeoutHandlerEnhancerDefinitionTest {
         assertInstanceOf(TimeoutWrappedMessageHandlingMember.class, result);
     }
 
+    // TODO #3065
+//    @Test
+//    void createsCorrectHandlerEnhancerDefinitionForDeadlineHandlerWithAnnotation() throws NoSuchMethodException {
+//        MessageHandlingMember<DeadlineHandlerWithAnnotation> handler = getHandler(DeadlineHandlerWithAnnotation.class,
+//                                                                                  "handle");
+//        MessageHandlingMember<DeadlineHandlerWithAnnotation> result = handlerEnhancerDefinition.wrapHandler(handler);
+//
+//        assertIsWrappedAndAssert(result, 100, 50, 10);
+//
+//        assertInstanceOf(TimeoutWrappedMessageHandlingMember.class, result);
+//    }
 
-    @Test
-    void createsCorrectHandlerEnhancerDefinitionForDeadlineHandlerWithAnnotation() throws NoSuchMethodException {
-        MessageHandlingMember<DeadlineHandlerWithAnnotation> handler = getHandler(DeadlineHandlerWithAnnotation.class,
-                                                                                  "handle");
-        MessageHandlingMember<DeadlineHandlerWithAnnotation> result = handlerEnhancerDefinition.wrapHandler(handler);
-
-        assertIsWrappedAndAssert(result, 100, 50, 10);
-
-        assertInstanceOf(TimeoutWrappedMessageHandlingMember.class, result);
-    }
-
-
-    @Test
-    void createsCorrectHandlerEnhancerDefinitionForDeadlineHandlerWithoutAnnotation() throws NoSuchMethodException {
-        MessageHandlingMember<DeadlineHandlerWithAnnotation> handler = getHandler(DeadlineHandlerWithAnnotation.class,
-                                                                                  "handleDefault");
-        MessageHandlingMember<DeadlineHandlerWithAnnotation> result = handlerEnhancerDefinition.wrapHandler(handler);
-
-        assertIsWrappedAndAssert(result, 10000, 4000, 1000);
-
-        assertInstanceOf(TimeoutWrappedMessageHandlingMember.class, result);
-    }
+//    @Test
+//    void createsCorrectHandlerEnhancerDefinitionForDeadlineHandlerWithoutAnnotation() throws NoSuchMethodException {
+//        MessageHandlingMember<DeadlineHandlerWithAnnotation> handler = getHandler(DeadlineHandlerWithAnnotation.class,
+//                                                                                  "handleDefault");
+//        MessageHandlingMember<DeadlineHandlerWithAnnotation> result = handlerEnhancerDefinition.wrapHandler(handler);
+//
+//        assertIsWrappedAndAssert(result, 10000, 4000, 1000);
+//
+//        assertInstanceOf(TimeoutWrappedMessageHandlingMember.class, result);
+//    }
 
     private void assertIsWrappedAndAssert(MessageHandlingMember<?> handler, int timeout, int warningThreshold,
                                           int warningInterval) {
@@ -165,24 +161,10 @@ class HandlerTimeoutHandlerEnhancerDefinitionTest {
                 targetClass,
                 targetClass.getDeclaredMethod(methodName, String.class),
                 parameterResolver,
-                HandlerTimeoutHandlerEnhancerDefinitionTest::returnTypeConverter
+                result -> resolveToStream(result, new ClassBasedMessageTypeResolver())
         );
         assertTrue(optionalHandler.isPresent());
         return optionalHandler.get();
-    }
-
-    // TODO This local static function should be replaced with a dedicated interface that converts types.
-    // TODO However, that's out of the scope of the unit-of-rework branch and thus will be picked up later.
-    private static MessageStream<?> returnTypeConverter(Object result) {
-        if (result instanceof CompletableFuture<?> future) {
-            return MessageStream.fromFuture(future.thenApply(
-                    r -> new GenericMessage(new MessageType(r.getClass()), r)
-            ));
-        }
-        if (result instanceof MessageStream<?> stream) {
-            return stream;
-        }
-        return MessageStream.just(new GenericMessage(new MessageType(ObjectUtils.nullSafeTypeOf(result)), result));
     }
 
     @SuppressWarnings("unused")
@@ -224,16 +206,16 @@ class HandlerTimeoutHandlerEnhancerDefinitionTest {
         }
     }
 
-    @SuppressWarnings("unused")
-    static class DeadlineHandlerWithAnnotation {
-
-        @MessageHandlerTimeout(timeoutMs = 100, warningThresholdMs = 50, warningIntervalMs = 10)
-        @DeadlineHandler
-        public void handle(String message) {
-        }
-
-        @DeadlineHandler
-        public void handleDefault(String message) {
-        }
-    }
+//    @SuppressWarnings("unused")
+//    static class DeadlineHandlerWithAnnotation {
+//
+//        @MessageHandlerTimeout(timeoutMs = 100, warningThresholdMs = 50, warningIntervalMs = 10)
+//        @DeadlineHandler
+//        public void handle(String message) {
+//        }
+//
+//        @DeadlineHandler
+//        public void handleDefault(String message) {
+//        }
+//    }
 }

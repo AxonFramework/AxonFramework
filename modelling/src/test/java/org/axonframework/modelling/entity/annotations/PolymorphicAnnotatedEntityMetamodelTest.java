@@ -17,7 +17,7 @@
 package org.axonframework.modelling.entity.annotations;
 
 import org.axonframework.modelling.entity.ChildEntityNotFoundException;
-import org.axonframework.modelling.entity.EntityExistsForCreationalCommandHandler;
+import org.axonframework.modelling.entity.EntityAlreadyExistsForCreationalCommandHandlerException;
 import org.axonframework.modelling.entity.WrongPolymorphicEntityTypeException;
 import org.axonframework.modelling.entity.child.ChildAmbiguityException;
 import org.axonframework.modelling.entity.domain.development.Developer;
@@ -118,7 +118,7 @@ class PolymorphicAnnotatedEntityMetamodelTest extends AbstractAnnotatedEntityMet
             entityState = new InternalProject("project-id", "Axon Framework 5");
 
             // When & Then
-            assertThatExceptionOfType(EntityExistsForCreationalCommandHandler.class)
+            assertThatExceptionOfType(EntityAlreadyExistsForCreationalCommandHandlerException.class)
                     .isThrownBy(() -> dispatchInstanceCommand(new CreateProjectCommand("Axon Framework 6",
                                                                                        ProjectType.INTERNAL))
 

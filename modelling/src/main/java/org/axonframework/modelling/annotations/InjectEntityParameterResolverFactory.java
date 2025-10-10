@@ -21,8 +21,9 @@ import jakarta.annotation.Nullable;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.annotations.ParameterResolver;
 import org.axonframework.messaging.annotations.ParameterResolverFactory;
+import org.axonframework.modelling.EntityIdResolver;
+import org.axonframework.modelling.PropertyBasedEntityIdResolver;
 import org.axonframework.modelling.StateManager;
-import org.axonframework.modelling.command.EntityIdResolver;
 import org.axonframework.modelling.repository.ManagedEntity;
 
 import java.lang.reflect.Executable;
@@ -34,8 +35,10 @@ import static org.axonframework.common.ConstructorUtils.getConstructorFunctionWi
 
 /**
  * {@link ParameterResolverFactory} implementation that provides {@link ParameterResolver ParameterResolvers} for
- * parameters annotated with {@link InjectEntity}. The parameter can either be a {@link ManagedEntity} or the entity
- * itself. The order of resolving the identity id is as specified on the {@link InjectEntity} annotation.
+ * parameters annotated with {@link InjectEntity}.
+ * <p>
+ * The parameter can either be a {@link ManagedEntity} or the entity itself. The order of resolving the identity id is
+ * as specified on the {@link InjectEntity} annotation.
  *
  * @author Mitchell Herrijgers
  * @see InjectEntity

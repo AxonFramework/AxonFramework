@@ -19,7 +19,6 @@ package org.axonframework.metrics;
 import com.codahale.metrics.MetricRegistry;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.processors.EventProcessor;
@@ -37,13 +36,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 
 /**
  * Registry for application metrics with convenient ways to register Axon components.
  *
  * @author Rene de Waele
- * @since 3.0
+ * @since 3.0.0
  */
 public class GlobalMetricRegistry {
 
@@ -65,23 +63,6 @@ public class GlobalMetricRegistry {
      */
     public GlobalMetricRegistry(MetricRegistry metricRegistry) {
         this.registry = metricRegistry;
-    }
-
-    /**
-     * Registers the configured {@link MetricRegistry} with the given {@code configurer} via {@link
-     * LegacyConfigurer#configureMessageMonitor(Function)}. Components registered by the {@link LegacyConfigurer} will be added by
-     * invocation of {@link #registerComponent(Class, String)}.
-     *
-     * @param configurer the application's {@link LegacyConfigurer}
-     * @return the {@link LegacyConfigurer}, with the new registration applied, for chaining
-     */
-    @SuppressWarnings("unchecked")
-    public LegacyConfigurer registerWithConfigurer(LegacyConfigurer configurer) {
-        return configurer.configureMessageMonitor(
-                configuration
-                        -> (componentType, componentName)
-                        -> (MessageMonitor<Message>) registerComponent(componentType, componentName)
-        );
     }
 
     /**

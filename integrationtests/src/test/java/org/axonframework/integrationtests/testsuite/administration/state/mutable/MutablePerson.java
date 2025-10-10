@@ -18,9 +18,9 @@ package org.axonframework.integrationtests.testsuite.administration.state.mutabl
 
 import org.axonframework.commandhandling.annotations.CommandHandler;
 import org.axonframework.eventhandling.gateway.EventAppender;
-import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
 import org.axonframework.eventsourcing.annotations.EventCriteriaBuilder;
 import org.axonframework.eventsourcing.annotations.EventSourcedEntity;
+import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
 import org.axonframework.eventsourcing.annotations.reflection.EntityCreator;
 import org.axonframework.eventsourcing.annotations.reflection.InjectEntityId;
 import org.axonframework.eventstreaming.EventCriteria;
@@ -28,7 +28,6 @@ import org.axonframework.integrationtests.testsuite.administration.commands.Chan
 import org.axonframework.integrationtests.testsuite.administration.common.PersonIdentifier;
 import org.axonframework.integrationtests.testsuite.administration.common.PersonType;
 import org.axonframework.integrationtests.testsuite.administration.events.EmailAddressChanged;
-import org.axonframework.modelling.command.EntityId;
 
 @EventSourcedEntity(
         concreteTypes = {
@@ -38,7 +37,6 @@ import org.axonframework.modelling.command.EntityId;
 )
 public abstract class MutablePerson {
 
-    @EntityId
     protected PersonIdentifier identifier;
     protected String emailAddress;
 

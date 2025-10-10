@@ -191,4 +191,64 @@ class InterceptingQueryBusTest {
                     .verifyComplete();
     }
      */
+
+    /*
+    Subscription query tests
+    @Test
+    @Disabled("TODO #3488")
+    void subscriptionQueryWithInterceptors() {
+        // given
+        List<String> interceptedResponse = Arrays.asList("fakeReply1", "fakeReply2");
+//        queryBus.registerDispatchInterceptor((message, context, chain) -> chain.proceed(
+//                message.andMetadata(Collections.singletonMap("key", "value")), context
+//        ));
+//        queryBus.registerHandlerInterceptor((message, context, chain) -> {
+//            if (message.metadata().containsKey("key")) {
+//                return MessageStream.fromIterable(
+//                        interceptedResponse.stream()
+//                                           .map(p -> new GenericQueryResponseMessage(new MessageType("response"), p))
+//                                           .toList()
+//                );
+//            }
+//            return chain.proceed(message, context);
+//        });
+        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
+                TEST_QUERY_TYPE, TEST_QUERY_PAYLOAD,
+                multipleInstancesOf(String.class), instanceOf(String.class)
+        );
+
+        // when
+        SubscriptionQueryResponseMessages result = queryBus.subscriptionQuery(queryMessage, null, 50);
+
+        // then
+        StepVerifier.create(result.initialResult().map(Message::payload))
+                    .expectNext(interceptedResponse)
+                    .verifyComplete();
+    }
+
+    @Test
+    @Disabled("TODO #3488")
+    void subscriptionQueryUpdateWithInterceptors() {
+        // given
+        Map<String, String> metadata = Collections.singletonMap("key", "value");
+//        queryUpdateEmitter.registerDispatchInterceptor(
+//                (message, context, chain) -> chain.proceed(message.andMetadata(metadata), context)
+//        );
+        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
+                TEST_QUERY_TYPE, TEST_QUERY_PAYLOAD,
+                multipleInstancesOf(String.class), instanceOf(String.class)
+        );
+
+        // when
+        SubscriptionQueryResponseMessages result = queryBus.subscriptionQuery(queryMessage, null, 50);
+
+        queryBus.emitUpdate(String.class, TEST_QUERY_PAYLOAD::equals, "Update1");
+        result.close();
+
+        // then
+        StepVerifier.create(result.updates())
+                    .expectNextMatches(m -> m.metadata().equals(metadata))
+                    .verifyComplete();
+    }
+     */
 }

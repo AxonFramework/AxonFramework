@@ -18,21 +18,28 @@ package org.axonframework.queryhandling.annotations;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.messaging.annotations.HandlerAttributes;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.annotations.HandlerAttributes;
 import org.axonframework.messaging.annotations.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotations.MessageHandlingMember;
 import org.axonframework.messaging.annotations.UnsupportedHandlerException;
 import org.axonframework.messaging.annotations.WrappedMessageHandlingMember;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.util.ClasspathResolver;
+import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Future;
+import java.util.stream.Stream;
 
 import static org.axonframework.common.ReflectionUtils.resolvePrimitiveWrapperTypeIfPrimitive;
 import static org.axonframework.common.ReflectionUtils.unwrapIfType;
@@ -105,8 +112,16 @@ public class MethodQueryHandlerDefinition implements HandlerEnhancerDefinition {
         }
 
         private Type unwrapType(Type genericReturnType) {
+            List<Class<?>> typeToUnwrap = new ArrayList<>(List.of(
+                    Future.class, Optional.class, Publisher.class, Iterable.class, Stream.class
+            ));
+            if (ClasspathResolver.projectReactorOnClasspath()) {
+                typeToUnwrap.addAll(List.of(Flux.class, Mono.class));
+            }
             return upperBound(resolvePrimitiveWrapperTypeIfPrimitive(
-                    unwrapIfType(genericReturnType, Future.class, Optional.class)));
+                    unwrapIfType(genericReturnType,
+                                 typeToUnwrap.toArray(new Class<?>[0]))
+            ));
         }
 
         private Type upperBound(Type type) {
@@ -123,8 +138,7 @@ public class MethodQueryHandlerDefinition implements HandlerEnhancerDefinition {
         public boolean canHandle(@Nonnull Message message, @Nonnull ProcessingContext context) {
             return super.canHandle(message, context)
                     && message instanceof QueryMessage
-                    && queryName.equals(message.type().name())
-                    && ((QueryMessage) message).responseType().matches(resultType);
+                    && queryName.equals(message.type().name());
         }
 
         @Override

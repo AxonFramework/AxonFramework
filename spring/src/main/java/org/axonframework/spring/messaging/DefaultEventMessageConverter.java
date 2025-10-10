@@ -16,15 +16,12 @@
 
 package org.axonframework.spring.messaging;
 
-import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MessageType;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
-import org.springframework.util.NumberUtils;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -35,10 +32,9 @@ import java.util.stream.Collectors;
 /**
  * An {@link EventMessageConverter} that will convert an Axon event message into a Spring message by:
  * <ul>
- * <li>Copying axon event payload into Spring message payload</li>
- * <li>Copying axon event metadata into Spring message headers</li>
- * <li>Adding axon event message specific attributes - that are not part of axon metadata - to the Spring message Headers.
- * Among those specific attributes are {@link DomainEventMessage} specific properties</li>
+ * <li>Copying axon event payload into Spring message payload.</li>
+ * <li>Copying axon event metadata into Spring message headers.</li>
+ * <li>Adding axon event message specific attributes - that are not part of axon metadata - to the Spring message Headers.</li>
  * </ul>
  *
  * @author Reda.Housni-Alaoui
@@ -58,13 +54,8 @@ public class DefaultEventMessageConverter implements EventMessageConverter {
         Map<String, Object> headers = new HashMap<>(event.metadata());
         headers.put(MESSAGE_ID, event.identifier());
         headers.put(MESSAGE_TYPE, event.type().toString());
-        if (event instanceof DomainEventMessage) {
-            headers.put(AGGREGATE_ID, ((DomainEventMessage) event).getAggregateIdentifier());
-            headers.put(AGGREGATE_SEQ, ((DomainEventMessage) event).getSequenceNumber());
-            headers.put(AGGREGATE_TYPE, ((DomainEventMessage) event).getType());
-        }
         return new GenericMessage(event.payload(),
-                                    new SettableTimestampMessageHeaders(headers, event.timestamp().toEpochMilli()));
+                                  new SettableTimestampMessageHeaders(headers, event.timestamp().toEpochMilli()));
     }
 
     @Override
@@ -84,18 +75,8 @@ public class DefaultEventMessageConverter implements EventMessageConverter {
 
         org.axonframework.messaging.GenericMessage genericMessage
                 = new org.axonframework.messaging.GenericMessage(messageId, type, message.getPayload(), metadata);
-        if (headers.containsKey(AGGREGATE_ID)) {
-            //noinspection DataFlowIssue - Just let it throw a NullPointerException if the sequence or timestamp is null
-            return new GenericDomainEventMessage(Objects.toString(headers.get(AGGREGATE_TYPE)),
-                                                   Objects.toString(headers.get(AGGREGATE_ID)),
-                                                   NumberUtils.convertNumberToTargetClass(
-                                                           headers.get(AGGREGATE_SEQ, Number.class), Long.class
-                                                   ),
-                                                   genericMessage, () -> Instant.ofEpochMilli(timestamp));
-        } else {
-            //noinspection DataFlowIssue - Just let it throw a NullPointerException if the timestamp is null
-            return new GenericEventMessage(genericMessage, () -> Instant.ofEpochMilli(timestamp));
-        }
+        //noinspection DataFlowIssue - Just let it throw a NullPointerException if the timestamp is null
+        return new GenericEventMessage(genericMessage, () -> Instant.ofEpochMilli(timestamp));
     }
 
     /**

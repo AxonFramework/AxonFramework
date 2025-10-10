@@ -37,7 +37,7 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
-import org.axonframework.modelling.AnnotationBasedEntityEvolvingComponent;
+import org.axonframework.modelling.annotations.AnnotationBasedEntityEvolvingComponent;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.serialization.Converter;
 import org.junit.jupiter.api.*;
@@ -57,8 +57,8 @@ import java.util.Objects;
  */
 public abstract class AbstractStudentTestSuite extends AbstractAxonServerIntegrationTest {
 
-    protected static final GenericCommandResultMessage<String> SUCCESSFUL_COMMAND_RESULT =
-            new GenericCommandResultMessage<>(new MessageType("empty"), "successful");
+    protected static final GenericCommandResultMessage SUCCESSFUL_COMMAND_RESULT =
+            new GenericCommandResultMessage(new MessageType("empty"), "successful");
 
     protected UnitOfWorkFactory unitOfWorkFactory;
 

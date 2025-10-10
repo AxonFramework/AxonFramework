@@ -20,16 +20,15 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.annotations.CommandHandler;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.annotations.AnnotationEventHandlerAdapter;
 import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.annotations.AnnotatedHandlerInspector;
-import org.axonframework.messaging.interceptors.annotations.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.annotations.MessageHandlingMember;
 import org.axonframework.messaging.interceptors.annotations.ExceptionHandler;
-import org.axonframework.messaging.responsetypes.ResponseTypes;
+import org.axonframework.messaging.interceptors.annotations.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.annotations.QueryHandler;
@@ -113,7 +112,7 @@ class ExceptionHandlerTest {
         QueryMessage query = new GenericQueryMessage(
                 TEST_QUERY_TYPE,
                 new SomeQuery(() -> new RuntimeException("some-exception")),
-                ResponseTypes.instanceOf(SomeQueryResponse.class));
+                new MessageType(SomeQueryResponse.class));
 
         try {
             Object result = handle(query);
@@ -149,8 +148,8 @@ class ExceptionHandlerTest {
 
     /**
      * This method is a similar approach as followed by the
-     * {@link AnnotationEventHandlerAdapter#handleSync(EventMessage,org.axonframework.messaging.unitofwork.ProcessingContext)}. Thus, mirroring
-     * regular message handling components.
+     * {@link org.axonframework.eventhandling.annotations.AnnotatedEventHandlingComponent#handle(EventMessage,
+     * ProcessingContext)}. Thus, mirroring regular message handling components.
      */
     private Object handle(Message message) throws Exception {
         Optional<MessageHandlingMember<? super ExceptionHandlingComponent>> handler =

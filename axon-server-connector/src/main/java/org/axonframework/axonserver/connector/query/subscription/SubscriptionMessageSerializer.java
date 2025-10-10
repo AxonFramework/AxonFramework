@@ -46,8 +46,8 @@ import java.util.Optional;
 
 /**
  * Converter between Axon Framework {@link SubscriptionQueryMessage}, the initial {@link QueryResponseMessage} and the
- * subsequent {@link SubscriptionQueryUpdateMessage}'s and Axon Server gRPC {@link SubscriptionQuery} and {@link
- * SubscriptionQueryResponse}. The latter is serviced by providing a {@link QueryProviderOutbound} wrapping the
+ * subsequent {@link SubscriptionQueryUpdateMessage}'s and Axon Server gRPC {@link SubscriptionQuery} and
+ * {@link SubscriptionQueryResponse}. The latter is serviced by providing a {@link QueryProviderOutbound} wrapping the
  * SubscriptionQueryResponse.
  *
  * @author Sara Pellegrini
@@ -67,13 +67,13 @@ public class SubscriptionMessageSerializer {
     private final GrpcObjectSerializer<Object> responseTypeSerializer;
 
     /**
-     * Instantiate a serializer used to convert Axon {@link SubscriptionQueryMessage}s, the initial {@link
-     * QueryResponseMessage} and the subsequent {@link SubscriptionQueryUpdateMessage}s into Axon Server gRPC messages
-     * and vice versa.
+     * Instantiate a serializer used to convert Axon {@link SubscriptionQueryMessage}s, the initial
+     * {@link QueryResponseMessage} and the subsequent {@link SubscriptionQueryUpdateMessage}s into Axon Server gRPC
+     * messages and vice versa.
      *
-     * @param messageSerializer a {@link Serializer} used to de-/serialize an Axon Server gRPC message into {@link
-     *                          SubscriptionQueryMessage}s, {@link QueryResponseMessage}s and {@link
-     *                          SubscriptionQueryUpdateMessage}s, and vice versa
+     * @param messageSerializer a {@link Serializer} used to de-/serialize an Axon Server gRPC message into
+     *                          {@link SubscriptionQueryMessage}s, {@link QueryResponseMessage}s and
+     *                          {@link SubscriptionQueryUpdateMessage}s, and vice versa
      * @param serializer        a {@link Serializer} used to create a dedicated converter for a {@link QueryMessage}
      *                          {@link org.axonframework.messaging.responsetypes.ResponseType}
      * @param configuration     an {@link AxonServerConfiguration} used to set the configurable component id and name in
@@ -120,15 +120,15 @@ public class SubscriptionMessageSerializer {
      * @return a {@link SerializedObject} based on the given {@code subscriptionQueryMessage} its
      * {@link SubscriptionQueryMessage#updatesResponseType()}
      */
-    public SerializedObject serializeUpdateType(SubscriptionQueryMessage<?, ?, ?> subscriptionQueryMessage) {
+    public SerializedObject serializeUpdateType(SubscriptionQueryMessage subscriptionQueryMessage) {
         return responseTypeSerializer.apply(subscriptionQueryMessage.updatesResponseType());
     }
 
     /**
      * Serializes the given {@code subscriptionQueryUpdateMessage} into a {@link QueryUpdate}.
      *
-     * @param subscriptionQueryUpdateMessage the {@link SubscriptionQueryUpdateMessage} to serialize into a {@link
-     *                                       QueryUpdate}
+     * @param subscriptionQueryUpdateMessage the {@link SubscriptionQueryUpdateMessage} to serialize into a
+     *                                       {@link QueryUpdate}
      * @return the {@link QueryUpdate} based on the given {@link SubscriptionQueryUpdateMessage}
      */
     public QueryUpdate serialize(SubscriptionQueryUpdateMessage subscriptionQueryUpdateMessage) {
@@ -144,7 +144,8 @@ public class SubscriptionMessageSerializer {
                 updateMessageBuilder.setPayload(exceptionDetailsSerializer.apply(optionalDetails.get()));
             } else {
                 logger.warn("Serializing exception [{}] without details.", exceptionResult.getClass(), exceptionResult);
-                logger.info("To share exceptional information with the recipient it is recommended to wrap the exception in a QueryExecutionException with provided details.");
+                logger.info(
+                        "To share exceptional information with the recipient it is recommended to wrap the exception in a QueryExecutionException with provided details.");
             }
         } else {
             updateMessageBuilder.setPayload(payloadSerializer.apply(subscriptionQueryUpdateMessage));
@@ -162,13 +163,10 @@ public class SubscriptionMessageSerializer {
      * Deserializes the given {@code subscriptionQuery} into a {@link SubscriptionQueryMessage}.
      *
      * @param subscriptionQuery the {@link SubscriptionQuery} to deserialize into a {@link SubscriptionQueryMessage}
-     * @param <Q>               the query type of the {@link SubscriptionQueryMessage} to return
-     * @param <I>               the initial result type of the {@link SubscriptionQueryMessage} to return
-     * @param <U>               the update type of the {@link SubscriptionQueryMessage} to return
      * @return the {@link SubscriptionQueryMessage} based on the given {@code subscriptionQuery}
      */
-    public <Q, I, U> SubscriptionQueryMessage<Q, I, U> deserialize(SubscriptionQuery subscriptionQuery) {
-        return new GrpcBackedSubscriptionQueryMessage<>(subscriptionQuery, messageSerializer, serializer);
+    public SubscriptionQueryMessage deserialize(SubscriptionQuery subscriptionQuery) {
+        return new GrpcBackedSubscriptionQueryMessage(subscriptionQuery, messageSerializer, serializer);
     }
 
     /**
@@ -187,7 +185,6 @@ public class SubscriptionMessageSerializer {
      * Deserializes the given {@code queryUpdate} into a {@link SubscriptionQueryUpdateMessage}.
      *
      * @param queryUpdate the {@link QueryUpdate} to deserialize into a {@link SubscriptionQueryUpdateMessage}
-     * @param <U>         the update type of the {@link SubscriptionQueryUpdateMessage} to return
      * @return a {@link SubscriptionQueryUpdateMessage} based on the given {@link QueryUpdate}
      */
     public SubscriptionQueryUpdateMessage deserialize(QueryUpdate queryUpdate) {

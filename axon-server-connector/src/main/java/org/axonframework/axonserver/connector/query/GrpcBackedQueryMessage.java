@@ -23,7 +23,6 @@ import org.axonframework.axonserver.connector.util.GrpcMetadata;
 import org.axonframework.axonserver.connector.util.GrpcSerializedObject;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.Metadata;
-import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.LazyDeserializingObject;
@@ -45,7 +44,7 @@ public class GrpcBackedQueryMessage<P, R> implements QueryMessage {
 
     private final QueryRequest query;
     private final LazyDeserializingObject<P> serializedPayload;
-    private final LazyDeserializingObject<ResponseType<R>> serializedResponseType;
+    private final LazyDeserializingObject<Class<R>> serializedResponseType;
     private final Supplier<Metadata> metadataSupplier;
     private final MessageType type;
 
@@ -73,7 +72,7 @@ public class GrpcBackedQueryMessage<P, R> implements QueryMessage {
 
     private GrpcBackedQueryMessage(QueryRequest queryRequest,
                                    LazyDeserializingObject<P> serializedPayload,
-                                   LazyDeserializingObject<ResponseType<R>> serializedResponseType,
+                                   LazyDeserializingObject<Class<R>> serializedResponseType,
                                    Supplier<Metadata> metadataSupplier,
                                    MessageType type) {
         this.query = queryRequest;
@@ -97,8 +96,9 @@ public class GrpcBackedQueryMessage<P, R> implements QueryMessage {
 
     @Override
     @Nonnull
-    public ResponseType<R> responseType() {
-        return serializedResponseType.getObject();
+    public MessageType responseType() {
+        // TODO #3488 - Not implementing this, as the GrpcBackedResponseMessage will be removed as part of #3488
+        return null;
     }
 
     @Override

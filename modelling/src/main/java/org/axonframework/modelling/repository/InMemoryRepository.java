@@ -20,7 +20,6 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.SimpleRepository;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;

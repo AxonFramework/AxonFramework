@@ -49,8 +49,8 @@ public interface CommandBusConnector extends DescribableComponent {
      * @return A {@link CompletableFuture} that will complete with the result of the command handling.
      */
     @Nonnull
-    CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage command,
-                                                        @Nullable ProcessingContext processingContext);
+    CompletableFuture<CommandResultMessage> dispatch(@Nonnull CommandMessage command,
+                                                     @Nullable ProcessingContext processingContext);
 
     /**
      * Subscribes to a command with the given {@code commandName} and a {@code loadFactor}.
@@ -58,8 +58,10 @@ public interface CommandBusConnector extends DescribableComponent {
      * @param commandName The {@link QualifiedName} of the command to subscribe to.
      * @param loadFactor  The load factor for the command, which can be used to control the distribution of command
      *                    handling across multiple instances. The load factor should be a positive integer.
+     * @return A {@code CompletableFuture} that completes successfully when this connector subscribed to the given
+     * {@code commandName} with the given {@code loadFactor}.
      */
-    void subscribe(@Nonnull QualifiedName commandName, int loadFactor);
+    CompletableFuture<Void> subscribe(@Nonnull QualifiedName commandName, int loadFactor);
 
     /**
      * Unsubscribes from a command with the given {@code commandName}.
@@ -105,7 +107,7 @@ public interface CommandBusConnector extends DescribableComponent {
          * @param resultMessage The result message containing the outcome of the command processing. If the message
          *                      handling yielded no result message, a {@code null} should be passed.
          */
-        void onSuccess(@Nullable CommandResultMessage<?> resultMessage);
+        void onSuccess(@Nullable CommandResultMessage resultMessage);
 
         /**
          * Called when an error occurs during command processing.

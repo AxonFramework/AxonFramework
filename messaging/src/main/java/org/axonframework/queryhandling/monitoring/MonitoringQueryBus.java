@@ -17,16 +17,13 @@
 package org.axonframework.queryhandling.monitoring;
 
 import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.SimpleQueryBus;
-import org.axonframework.queryhandling.StreamingQueryMessage;
 import reactor.core.publisher.Signal;
 import reactor.util.context.Context;
 
 import java.util.function.Consumer;
-import java.util.function.UnaryOperator;
 
-// TODO 3488 - Introduce monitoring logic here.
+// TODO 3595 - Introduce monitoring logic here.
 public class MonitoringQueryBus {
 
     // private final MessageMonitor<? super QueryMessage> messageMonitor;
@@ -154,21 +151,21 @@ public class MonitoringQueryBus {
      *
      * @author Milan Savic
      */
-    private static class MonitorCallbackContextWriter implements UnaryOperator<Context> {
-
-        private final MessageMonitor<? super QueryMessage> messageMonitor;
-        private final StreamingQueryMessage query;
-
-        private MonitorCallbackContextWriter(MessageMonitor<? super QueryMessage> messageMonitor,
-                                             StreamingQueryMessage query) {
-            this.messageMonitor = messageMonitor;
-            this.query = query;
-        }
-
-        @Override
-        public Context apply(Context ctx) {
-            return ctx.put(MessageMonitor.MonitorCallback.class,
-                           messageMonitor.onMessageIngested(query));
-        }
-    }
+//    private static class MonitorCallbackContextWriter implements UnaryOperator<Context> {
+//
+//        private final MessageMonitor<? super QueryMessage> messageMonitor;
+//        private final StreamingQueryMessage query;
+//
+//        private MonitorCallbackContextWriter(MessageMonitor<? super QueryMessage> messageMonitor,
+//                                             StreamingQueryMessage query) {
+//            this.messageMonitor = messageMonitor;
+//            this.query = query;
+//        }
+//
+//        @Override
+//        public Context apply(Context ctx) {
+//            return ctx.put(MessageMonitor.MonitorCallback.class,
+//                           messageMonitor.onMessageIngested(query));
+//        }
+//    }
 }

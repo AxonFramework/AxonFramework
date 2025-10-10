@@ -18,7 +18,7 @@ package org.axonframework.queryhandling;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.responsetypes.ResponseType;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.serialization.Converter;
 
 import java.lang.reflect.Type;
@@ -38,12 +38,12 @@ import java.util.Map;
 public interface QueryMessage extends Message {
 
     /**
-     * The {@link ResponseType type of response} expected by the sender of the query.
+     * Returns the query {@link MessageType response type} of this {@code QueryMessage}.
      *
-     * @return The {@link ResponseType type of response} expected by the sender of the query.
+     * @return The query {@link MessageType response type} of this {@code QueryMessage}.
      */
     @Nonnull
-    ResponseType<?> responseType();
+    MessageType responseType();
 
     @Override
     @Nonnull

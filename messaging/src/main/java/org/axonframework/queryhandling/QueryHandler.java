@@ -42,5 +42,5 @@ public interface QueryHandler extends MessageHandler {
      */
     @Nonnull
     MessageStream<QueryResponseMessage> handle(@Nonnull QueryMessage query,
-                                                  @Nonnull ProcessingContext context);
+                                               @Nonnull ProcessingContext context);
 }

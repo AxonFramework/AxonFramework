@@ -16,6 +16,8 @@
 
 package org.axonframework.common.jdbc;
 
+import org.axonframework.common.annotations.Internal;
+
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -25,6 +27,7 @@ import java.sql.SQLException;
  * @author Allard Buijze
  * @since 2.2
  */
+@Internal
 @FunctionalInterface
 public interface ConnectionProvider {
 

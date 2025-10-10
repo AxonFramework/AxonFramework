@@ -30,10 +30,11 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
@@ -57,7 +58,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     private final Map<String, Module> modules = new ConcurrentHashMap<>();
     private final List<ComponentFactory<?>> factories = new ArrayList<>();
 
-    private final AtomicBoolean initialized = new AtomicBoolean(false);
+    private final AtomicReference<Configuration> initialized = new AtomicReference<>();
     private final Map<String, Configuration> moduleConfigurations = new ConcurrentHashMap<>();
 
     private OverridePolicy overridePolicy = OverridePolicy.WARN;
@@ -181,8 +182,9 @@ public class DefaultComponentRegistry implements ComponentRegistry {
 
     private Configuration doBuild(@Nullable Configuration optionalParent,
                                   @Nonnull LifecycleRegistry lifecycleRegistry) {
-        if (initialized.getAndSet(true)) {
-            throw new IllegalStateException("Component registry has already been initialized.");
+        Configuration configuration = initialized.get();
+        if (configuration != null) {
+            return configuration;
         }
         this.parentConfig = Optional.ofNullable(optionalParent);
         if (enhancerScanning) {
@@ -194,6 +196,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
         buildModules(config, lifecycleRegistry);
         initializeComponents(config, lifecycleRegistry);
         registerFactoryShutdownHandlers(lifecycleRegistry);
+        initialized.set(config);
 
         return config;
     }
@@ -277,6 +280,24 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     }
 
     @Override
+    public ComponentRegistry disableEnhancer(@Nonnull String fullyQualifiedClassName) {
+        Objects.requireNonNull(fullyQualifiedClassName, "The fully qualified class name must not be null.");
+        try {
+            var enhancerClass = Class.forName(fullyQualifiedClassName);
+            if (!ConfigurationEnhancer.class.isAssignableFrom(enhancerClass)) {
+                throw new IllegalArgumentException(
+                        String.format("Class %s is not a ConfigurationEnhancer", fullyQualifiedClassName)
+                );
+            }
+            //noinspection unchecked
+            return disableEnhancer((Class<? extends ConfigurationEnhancer>) enhancerClass);
+        } catch (ClassNotFoundException e) {
+            logger.warn("Disabling Configuration Enhancer [{}] won't take effect as the enhancer class could not be found.", fullyQualifiedClassName);
+        }
+        return this;
+    }
+
+    @Override
     public DefaultComponentRegistry disableEnhancer(Class<? extends ConfigurationEnhancer> enhancerClass) {
         if (invokedEnhancers.contains(enhancerClass)) {
             logger.warn("Disabling Configuration Enhancer [{}] won't take effect as it has already been invoked. "
@@ -325,7 +346,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
 
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
-        descriptor.describeProperty("initialized", initialized.get());
+        descriptor.describeProperty("initialized", initialized.get() != null);
         descriptor.describeProperty("components", components);
         descriptor.describeProperty("decorators", decoratorDefinitions);
         descriptor.describeProperty("configurerEnhancers", enhancers);

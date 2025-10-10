@@ -22,8 +22,9 @@ import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.eventhandling.processors.streaming.token.store.jpa.JpaTokenStore;
+import org.axonframework.eventhandling.processors.streaming.token.store.jpa.JpaTokenStoreConfiguration;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
-import org.axonframework.serialization.json.JacksonSerializer;
+import org.axonframework.serialization.json.JacksonConverter;
 import org.axonframework.springboot.TokenStoreProperties;
 import org.axonframework.springboot.util.RegisterDefaultEntities;
 import org.axonframework.springboot.util.jpa.ContainerManagedEntityManagerProvider;
@@ -43,6 +44,7 @@ import javax.sql.DataSource;
  * Autoconfiguration class for Axon's JPA specific infrastructure components.
  *
  * @author Allard Buijze
+ * @author Simon Zambrovski
  * @since 3.0.3
  */
 @AutoConfiguration
@@ -51,8 +53,8 @@ import javax.sql.DataSource;
 @EnableConfigurationProperties(TokenStoreProperties.class)
 @RegisterDefaultEntities(packages = {
         "org.axonframework.eventhandling.tokenstore",
-       //  "org.axonframework.eventhandling.deadletter.jpa", // TODO re-enable as part of #3097
-       // "org.axonframework.modelling.saga.repository.jpa", // TODO re-enable as part of #3517
+        //  "org.axonframework.eventhandling.deadletter.jpa", // TODO re-enable as part of #3097
+        // "org.axonframework.modelling.saga.repository.jpa", // TODO re-enable as part of #3517
 })
 @AutoConfigureAfter(HibernateJpaAutoConfiguration.class)
 public class JpaAutoConfiguration {
@@ -72,23 +74,19 @@ public class JpaAutoConfiguration {
     /**
      * Builds a JPA Token Store.
      *
-     * @param entityManagerProvider An entity manager provider to retrieve connections.
-     * @param tokenStoreProperties  A set of properties to configure the token store.
-     * @param objectMapper An object mapper to use for token conversion to JSON.
+     * @param entityManagerProvider   An entity manager provider to retrieve connections.
+     * @param tokenStoreProperties    A set of properties to configure the token store.
+     * @param defaultAxonObjectMapper An object mapper to use for token conversion to JSON.
      * @return instance of JPA token store.
      */
     @Bean
     @ConditionalOnMissingBean
     public TokenStore tokenStore(EntityManagerProvider entityManagerProvider,
                                  TokenStoreProperties tokenStoreProperties,
-                                 ObjectMapper objectMapper) {
-        // FIXME -> replace with converter
-        var serializer = JacksonSerializer.builder().objectMapper(objectMapper).build();
-        return JpaTokenStore.builder()
-                            .entityManagerProvider(entityManagerProvider)
-                            .serializer(serializer)
-                            .claimTimeout(tokenStoreProperties.getClaimTimeout())
-                            .build();
+                                 ObjectMapper defaultAxonObjectMapper) {
+        var config = JpaTokenStoreConfiguration.DEFAULT.claimTimeout(tokenStoreProperties.getClaimTimeout());
+        var converter = new JacksonConverter(defaultAxonObjectMapper);
+        return new JpaTokenStore(entityManagerProvider, converter, config);
     }
 
     /**
@@ -104,42 +102,4 @@ public class JpaAutoConfiguration {
     public PersistenceExceptionResolver persistenceExceptionResolver(DataSource dataSource) throws SQLException {
         return new SQLErrorCodesResolver(dataSource);
     }
-
-    /*
-    TODO re-enable as part of #3097
-    @Lazy
-    @Bean
-    @ConditionalOnMissingBean(SagaStore.class)
-    public JpaSagaStore sagaStore(EntityManagerProvider entityManagerProvider) {
-        return JpaSagaStore.builder()
-                           .entityManagerProvider(entityManagerProvider)
-                           .build();
-    }
-     */
-
-    /*
-    TODO re-enable as part of #3517
-    // tag::JpaDeadLetterQueueProviderConfigurerModule[]
-    @Bean
-    @ConditionalOnMissingBean
-    public DeadLetterQueueProviderConfigurerModule deadLetterQueueProviderConfigurerModule(
-            EventProcessorProperties eventProcessorProperties,
-            EntityManagerProvider entityManagerProvider,
-            TransactionManager transactionManager,
-            Serializer genericSerializer,
-            @Qualifier("eventSerializer") Serializer eventSerializer
-    ) {
-        return new DeadLetterQueueProviderConfigurerModule(
-                eventProcessorProperties,
-                processingGroup -> config -> JpaSequencedDeadLetterQueue.builder()
-                                                                        .processingGroup(processingGroup)
-                                                                        .entityManagerProvider(entityManagerProvider)
-                                                                        .transactionManager(transactionManager)
-                                                                        .genericSerializer(genericSerializer)
-                                                                        .eventSerializer(eventSerializer)
-                                                                        .build()
-        );
-    }
-    // end::JpaDeadLetterQueueProviderConfigurerModule[]
-    */
 }

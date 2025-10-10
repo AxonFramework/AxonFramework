@@ -19,20 +19,20 @@ package org.axonframework.integrationtests.eventsourcing.eventstore.jpa;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.PersistenceContext;
+import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.processors.streaming.token.GapAwareTrackingToken;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.processors.streaming.token.GapAwareTrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedStorageEngineTestSuite;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
-import org.axonframework.eventsourcing.eventstore.jdbc.JdbcSQLErrorCodesResolver;
 import org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedJpaEventStorageEngine;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.StreamingCondition;
@@ -98,7 +98,17 @@ class AggregateBasedJpaEventStorageEngineTest
                 entityManagerProvider,
                 transactionManager,
                 converter,
-                config -> config.persistenceExceptionResolver(new JdbcSQLErrorCodesResolver())
+                config -> config.persistenceExceptionResolver(new PersistenceExceptionResolver() {
+                    @Override
+                    public boolean isDuplicateKeyViolation(Exception exception) {
+                        return causeIsEntityExistsException(exception);
+                    }
+
+                    private boolean causeIsEntityExistsException(Throwable exception) {
+                        return exception instanceof java.sql.SQLIntegrityConstraintViolationException
+                                || (exception.getCause() != null && causeIsEntityExistsException(exception.getCause()));
+                    }
+                })
         );
     }
 
@@ -126,7 +136,8 @@ class AggregateBasedJpaEventStorageEngineTest
     void sourcingFromNonGapAwareTrackingTokenShouldThrowException() {
         assertThrows(
                 IllegalArgumentException.class,
-                () -> testSubject.stream(StreamingCondition.startingFrom(new GlobalSequenceTrackingToken(5)), processingContext())
+                () -> testSubject.stream(StreamingCondition.startingFrom(new GlobalSequenceTrackingToken(5)),
+                                         processingContext())
         );
     }
 
@@ -170,7 +181,8 @@ class AggregateBasedJpaEventStorageEngineTest
                      .executeUpdate();
         transaction.commit();
 
-        testSubject.stream(StreamingCondition.startingFrom(new GapAwareTrackingToken(0, Collections.emptySet())), processingContext())
+        testSubject.stream(StreamingCondition.startingFrom(new GapAwareTrackingToken(0, Collections.emptySet())),
+                           processingContext())
                    .reduce(
                            new ArrayList<TrackingToken>(), (tokens, entry) -> {
                                Optional<TrackingToken> optionalToken = TrackingToken.fromContext(entry);
@@ -299,7 +311,8 @@ class AggregateBasedJpaEventStorageEngineTest
                                      TaggedEventMessage<?>... events) {
         subject.appendEvents(condition, processingContext(), events)
                .thenApply(this::castTransaction)
-               .thenCompose(tx -> tx.commit(processingContext()).thenCompose(v -> tx.afterCommit(v, processingContext())))
+               .thenCompose(tx -> tx.commit(processingContext())
+                                    .thenCompose(v -> tx.afterCommit(v, processingContext())))
                .join();
     }
 

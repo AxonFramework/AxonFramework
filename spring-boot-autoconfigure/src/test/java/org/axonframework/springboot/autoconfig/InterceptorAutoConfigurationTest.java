@@ -20,7 +20,6 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.annotations.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.config.ProcessingGroup;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.eventhandling.gateway.EventGateway;
@@ -236,7 +235,6 @@ class InterceptorAutoConfigurationTest {
         public TokenStore tokenStore() {
             return new InMemoryTokenStore();
         }
-
     }
 
     static class MessageInterceptorContext {
@@ -683,7 +681,6 @@ class InterceptorAutoConfigurationTest {
         }
 
         @SuppressWarnings("unused")
-        @ProcessingGroup("test")
         static class EventHandlingComponent {
 
             @EventHandler

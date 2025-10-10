@@ -22,7 +22,6 @@ import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.query.AxonServerQueryBus;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryBusTestUtils;
@@ -46,7 +45,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 
-@Disabled("TODO #3488")
+@Disabled("TODO #3488 - Axon Server Query Bus replacement")
 @Testcontainers
 class QueryThreadingIntegrationTest {
 
@@ -98,7 +97,6 @@ class QueryThreadingIntegrationTest {
                                      .axonServerConnectionManager(connectionManager)
                                      .configuration(configuration)
                                      .localSegment(localQueryBus)
-                                     .updateEmitter(localQueryBus.queryUpdateEmitter())
                                      .messageSerializer(serializer)
                                      .genericSerializer(serializer)
                                      .build();
@@ -110,7 +108,6 @@ class QueryThreadingIntegrationTest {
                                       .axonServerConnectionManager(connectionManager)
                                       .configuration(configuration)
                                       .localSegment(localQueryBus2)
-                                      .updateEmitter(localQueryBus.queryUpdateEmitter())
                                       .messageSerializer(serializer)
                                       .genericSerializer(serializer)
                                       .build();
@@ -145,7 +142,7 @@ class QueryThreadingIntegrationTest {
             waitingQueries.incrementAndGet();
             QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE_B,
                                                              "start",
-                                                             ResponseTypes.instanceOf(String.class));
+                                                             new MessageType(String.class));
             QueryResponseMessage b = queryBus.query(testQuery, null)
                                              .first()
                                              .asCompletableFuture()
@@ -156,22 +153,22 @@ class QueryThreadingIntegrationTest {
         });
 
         MessageStream<QueryResponseMessage> query1 = queryBus.query(
-                new GenericQueryMessage(QUERY_TYPE_A, "start", ResponseTypes.instanceOf(String.class)), null
+                new GenericQueryMessage(QUERY_TYPE_A, "start", new MessageType(String.class)), null
         );
         MessageStream<QueryResponseMessage> query2 = queryBus.query(
-                new GenericQueryMessage(QUERY_TYPE_A, "start", ResponseTypes.instanceOf(String.class)), null
+                new GenericQueryMessage(QUERY_TYPE_A, "start", new MessageType(String.class)), null
         );
         MessageStream<QueryResponseMessage> query3 = queryBus.query(
-                new GenericQueryMessage(QUERY_TYPE_A, "start", ResponseTypes.instanceOf(String.class)), null
+                new GenericQueryMessage(QUERY_TYPE_A, "start", new MessageType(String.class)), null
         );
         MessageStream<QueryResponseMessage> query4 = queryBus.query(
-                new GenericQueryMessage(QUERY_TYPE_A, "start", ResponseTypes.instanceOf(String.class)), null
+                new GenericQueryMessage(QUERY_TYPE_A, "start", new MessageType(String.class)), null
         );
         MessageStream<QueryResponseMessage> query5 = queryBus.query(
-                new GenericQueryMessage(QUERY_TYPE_A, "start", ResponseTypes.instanceOf(String.class)), null
+                new GenericQueryMessage(QUERY_TYPE_A, "start", new MessageType(String.class)), null
         );
         MessageStream<QueryResponseMessage> query6 = queryBus.query(
-                new GenericQueryMessage(QUERY_TYPE_A, "start", ResponseTypes.instanceOf(String.class)), null
+                new GenericQueryMessage(QUERY_TYPE_A, "start", new MessageType(String.class)), null
         );
 
         // Wait until all queries are waiting on the secondary query. Note that query 6 cannot be processed

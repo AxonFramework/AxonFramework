@@ -18,10 +18,10 @@ package org.axonframework.eventhandling.processors.streaming.pooled;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
-import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.eventhandling.processors.streaming.StreamingEventProcessor;
+import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.eventhandling.processors.streaming.segmenting.TrackerStatus;
+import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.ReplayToken;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.WrappedToken;
@@ -32,6 +32,7 @@ import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.eventstreaming.TrackingTokenSource;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,7 +58,6 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
 
 import static org.axonframework.common.BuilderUtils.assertStrictPositive;
 import static org.axonframework.common.FutureUtils.emptyCompletedFuture;
@@ -65,10 +65,10 @@ import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 import static org.axonframework.common.ProcessUtils.executeUntilTrue;
 
 /**
- * Coordinator for the {@link PooledStreamingEventProcessor}. Uses coordination tasks (separate threads) to starts a
- * work package for every {@link TrackingToken} it is able to claim. The tokens for every work package are combined and
- * the lower bound of this combined token is used to open an event stream from a {@link StreamableEventSource}. Events
- * are scheduled one by one to <em>all</em> work packages coordinated by this service.
+ * Coordinator for the {@link PooledStreamingEventProcessor}. Uses coordination tasks (separate threads) to start a work
+ * package for every {@link TrackingToken} it is able to claim. The tokens for every work package are combined and the
+ * lower bound of this combined token is used to open an event stream from a {@link StreamableEventSource}. Events are
+ * scheduled one by one to <em>all</em> work packages coordinated by this service.
  * <p>
  * Coordination tasks will run and be rerun as long as this service is considered to be {@link #isRunning()}.
  * Coordination will continue whenever exceptions occur, albeit with an incremental back off. Due to this, both
@@ -106,15 +106,15 @@ class Coordinator {
     private final AtomicReference<RunState> runState;
     private final Map<Integer, Instant> releasesDeadlines = new ConcurrentHashMap<>();
     private final Map<Integer, Integer> releasesLastBackOffSeconds = new ConcurrentHashMap<>();
-    private int errorWaitBackOff = 500;
     private final Queue<CoordinatorTask> coordinatorTasks = new ConcurrentLinkedQueue<>();
     private final AtomicReference<CoordinationTask> coordinationTask = new AtomicReference<>();
+    private int errorWaitBackOff = 500;
 
     /**
-     * Instantiate a Builder to be able to create a {@link Coordinator}. This builder <b>does not</b> validate the
-     * fields. Hence, any fields provided should be validated by the user of the {@link Builder}.
+     * Instantiate a Builder to be able to create a {@code Coordinator}-instance. This builder <b>does not</b> validate
+     * the fields. Hence, any fields provided should be validated by the user of the {@link Builder}.
      *
-     * @return a Builder to be able to create a {@link Coordinator}
+     * @return a Builder to be able to create a {@code Coordinator}-instance
      */
     protected static Builder builder() {
         return new Builder();
@@ -142,8 +142,8 @@ class Coordinator {
     }
 
     /**
-     * Start the event coordination task of this coordinator. Will shutdown this service immediately if the coordination
-     * task cannot be started.
+     * Start the event coordination task of this coordinator. Will shut down this service immediately if the
+     * coordination task cannot be started.
      */
     public void start() {
         RunState newState = this.runState.updateAndGet(RunState::attemptStart);
@@ -300,23 +300,23 @@ class Coordinator {
     private boolean initializeTokenStore() {
         AtomicBoolean tokenStoreInitialized = new AtomicBoolean(false);
         try {
-            joinAndUnwrap(
-                    unitOfWorkFactory.create()
-                                     .executeWithResult(context -> {
-                                         int[] segments = tokenStore.fetchSegments(name);
-                                         if (segments == null || segments.length == 0) {
-                                             logger.info("Initializing segments for processor [{}] ({} segments)",
-                                                         name,
-                                                         initialSegmentCount);
-                                             tokenStore.initializeTokenSegments(
-                                                     name,
-                                                     initialSegmentCount,
-                                                     joinAndUnwrap(initialToken.apply(eventSource)));
-                                         }
-                                         tokenStoreInitialized.set(true);
-                                         return emptyCompletedFuture();
-                                     })
-            );
+            joinAndUnwrap(unitOfWorkFactory.create().executeWithResult(
+                    context -> {
+                        int[] segments = joinAndUnwrap(tokenStore.fetchSegments(name, context));
+                        if (segments == null || segments.length == 0) {
+                            logger.info("Initializing segments for processor [{}] ({} segments)",
+                                        name, initialSegmentCount);
+                            joinAndUnwrap(tokenStore.initializeTokenSegments(
+                                    name,
+                                    initialSegmentCount,
+                                    joinAndUnwrap(initialToken.apply(eventSource)),
+                                    context
+                            ));
+                        }
+                        tokenStoreInitialized.set(true);
+                        return emptyCompletedFuture();
+                    }
+            ));
         } catch (Exception e) {
             logger.info(
                     "Error while initializing the Token Store. This may simply indicate concurrent attempts to initialize.",
@@ -576,9 +576,9 @@ class Coordinator {
          * Specifies the {@link Function} used to generate the initial {@link TrackingToken}s. Defaults to an automatic
          * replay since the start of the stream.
          * <p>
-         * More specifically, it defaults to a {@link ReplayToken} that starts streaming
-         * from the {@link StreamableEventSource#latestToken() tail} with the replay flag enabled until the
-         * {@link StreamableEventSource#firstToken() head} at the moment of initialization is reached.
+         * More specifically, it defaults to a {@link ReplayToken} that starts streaming from the
+         * {@link StreamableEventSource#latestToken(ProcessingContext) tail} with the replay flag enabled until the
+         * {@link StreamableEventSource#firstToken(ProcessingContext) head} at the moment of initialization is reached.
          *
          * @param initialToken a {@link Function} generating the initial {@link TrackingToken} based on a given
          *                     {@link StreamableEventSource}
@@ -914,15 +914,16 @@ class Coordinator {
          */
         private Map<Segment, TrackingToken> claimNewSegments() {
             Map<Segment, TrackingToken> newClaims = new HashMap<>();
-            List<Segment> segments = joinAndUnwrap(
-                    unitOfWorkFactory.create()
-                                     .executeWithResult(context -> CompletableFuture.completedFuture(tokenStore.fetchAvailableSegments(
-                                             name)))
-            );
+            List<Segment> segments = joinAndUnwrap(unitOfWorkFactory.create().executeWithResult(
+                    context -> tokenStore.fetchAvailableSegments(name, context)
+            ));
+            if (segments == null) {
+                return newClaims;
+            }
             // As segments are used for Segment#computeSegment, we cannot filter out the WorkPackages upfront.
             List<Segment> unClaimedSegments = segments.stream()
                                                       .filter(segment -> !workPackages.containsKey(segment.getSegmentId()))
-                                                      .collect(Collectors.toList());
+                                                      .toList();
             int maxSegmentsToClaim = maxSegmentProvider.apply(name) - workPackages.size();
             for (Segment segment : unClaimedSegments) {
                 int segmentId = segment.getSegmentId();
@@ -936,11 +937,9 @@ class Coordinator {
                 }
                 if (newClaims.size() < maxSegmentsToClaim) {
                     try {
-                        TrackingToken token = joinAndUnwrap(
-                                unitOfWorkFactory.create()
-                                                 .executeWithResult(context -> CompletableFuture.completedFuture(
-                                                         tokenStore.fetchToken(name, segment)))
-                        );
+                        TrackingToken token = joinAndUnwrap(unitOfWorkFactory.create().executeWithResult(
+                                context -> tokenStore.fetchToken(name, segment, context)
+                        ));
                         newClaims.put(segment, token);
                         logger.info("Processor [{}] claimed the token for segment {}.", name, segmentId);
                     } catch (UnableToClaimTokenException e) {
@@ -974,8 +973,12 @@ class Coordinator {
             }
 
             if (eventStream == null && !workPackages.isEmpty() && !(trackingToken instanceof NoToken)) {
-                var startStreamingFrom = Objects.requireNonNullElse(trackingToken, new GlobalSequenceTrackingToken(-1));
-                eventStream = eventSource.open(StreamingCondition.conditionFor(startStreamingFrom, eventCriteria), null);
+                var startStreamingFrom = Objects.requireNonNullElse(
+                        trackingToken, joinAndUnwrap(eventSource.firstToken(null))
+                );
+                eventStream = eventSource.open(
+                        StreamingCondition.conditionFor(startStreamingFrom, eventCriteria), null
+                );
                 logger.debug("Processor [{}] opened stream with tracking token [{}] and criteria [{}].",
                              name,
                              trackingToken,
@@ -1165,15 +1168,10 @@ class Coordinator {
                                logger.debug("Processor [{}] released claim on {}.", name, work.segment());
                            }
                        })
-                       .thenRun(() -> joinAndUnwrap(
-                               unitOfWorkFactory
-                                       .create()
-                                       .executeWithResult(context -> {
-                                           tokenStore.releaseClaim(name, segmentId);
-                                           segmentReleasedAction.accept(work.segment());
-                                           return emptyCompletedFuture();
-                                       }))
-                       )
+                       .thenRun(() -> joinAndUnwrap(unitOfWorkFactory.create().executeWithResult(
+                               context -> tokenStore.releaseClaim(name, segmentId, context)
+                                                    .thenRun(() -> segmentReleasedAction.accept(work.segment()))
+                       )))
                        .exceptionally(throwable -> {
                            logger.info("An exception occurred during the abort of work package [{}] on [{}] processor.",
                                        segmentId, name, throwable);

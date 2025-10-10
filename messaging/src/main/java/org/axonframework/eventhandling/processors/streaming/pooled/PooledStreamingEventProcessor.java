@@ -202,11 +202,8 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
 
     private String calculateIdentifier() {
         var unitOfWork = unitOfWorkFactory.create();
-        return joinAndUnwrap(
-                unitOfWork.executeWithResult(context -> CompletableFuture.completedFuture(
-                        tokenStore.retrieveStorageIdentifier().orElse("--unknown--"))
-                )
-        );
+        return joinAndUnwrap(unitOfWork.executeWithResult(tokenStore::retrieveStorageIdentifier))
+                .orElse("--unknown--");
     }
 
     @Override
@@ -230,27 +227,11 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
 
     @Override
     public CompletableFuture<Boolean> splitSegment(int segmentId) {
-        if (!tokenStore.requiresExplicitSegmentInitialization()) {
-            CompletableFuture<Boolean> result = new CompletableFuture<>();
-            result.completeExceptionally(new UnsupportedOperationException(
-                    "TokenStore must require explicit initialization to safely split tokens."
-            ));
-            return result;
-        }
-
         return coordinator.splitSegment(segmentId);
     }
 
     @Override
     public CompletableFuture<Boolean> mergeSegment(int segmentId) {
-        if (!tokenStore.requiresExplicitSegmentInitialization()) {
-            CompletableFuture<Boolean> result = new CompletableFuture<>();
-            result.completeExceptionally(new UnsupportedOperationException(
-                    "TokenStore must require explicit initialization to safely merge tokens."
-            ));
-            return result;
-        }
-
         return coordinator.mergeSegment(segmentId);
     }
 
@@ -328,7 +309,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     /**
      * {@inheritDoc}
      * <p>
-     * The maximum capacity of the {@link PooledStreamingEventProcessor} defaults to {@value Short#MAX_VALUE}. If
+     * The maximum capacity of the {@code PooledStreamingEventProcessor} defaults to {@value Short#MAX_VALUE}. If
      * required, this value can be adjusted through the
      * {@link PooledStreamingEventProcessorConfiguration#maxClaimedSegments(int)} method.
      */
@@ -372,15 +353,14 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         return eventHandlingComponents.handle(events, context)
                                       .onErrorContinue(ex -> {
                                           try {
-                                              configuration.errorHandler().handleError(new ErrorContext(name,
-                                                                                                        ex,
-                                                                                                        events));
+                                              configuration.errorHandler()
+                                                           .handleError(new ErrorContext(name, ex, events, context));
                                           } catch (RuntimeException re) {
                                               return MessageStream.failed(re);
                                           } catch (Exception e) {
                                               return MessageStream.failed(new EventProcessingException(
-                                                      "Exception occurred while processing events",
-                                                      e));
+                                                      "Exception occurred while processing events", e
+                                              ));
                                           }
                                           return MessageStream.empty().cast();
                                       })

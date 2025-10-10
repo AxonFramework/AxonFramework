@@ -76,7 +76,6 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         }
         this.commandBus = (RecordingCommandBus) commandBusComponent;
 
-        // Safely cast EventSink with proper error handling
         EventSink eventSinkComponent = configuration.getComponent(EventSink.class);
         if (!(eventSinkComponent instanceof RecordingEventSink)) {
             throw new FixtureExecutionException(
@@ -87,6 +86,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
             );
         }
         this.eventSink = (RecordingEventSink) eventSinkComponent;
+
         this.messageTypeResolver = configuration.getComponent(MessageTypeResolver.class);
         this.unitOfWorkFactory = configuration.getComponent(UnitOfWorkFactory.class);
     }
@@ -110,11 +110,17 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
      * @param customization A function that allows to customize the fixture setup.
      * @return A new fixture instance
      */
-    public static AxonTestFixture with(@Nonnull ApplicationConfigurer configurer,
-                                       @Nonnull UnaryOperator<Customization> customization) {
+    public static AxonTestFixture with(
+            @Nonnull ApplicationConfigurer configurer,
+            @Nonnull UnaryOperator<Customization> customization
+    ) {
         Objects.requireNonNull(configurer, "Configurer may not be null");
         Objects.requireNonNull(customization, "Customization may not be null");
         var fixtureConfiguration = customization.apply(new Customization());
+        if (!fixtureConfiguration.axonServerEnabled()) {
+            configurer = configurer.componentRegistry(cr -> cr.disableEnhancer(
+                    "org.axonframework.axonserver.connector.AxonServerConfigurationEnhancer"));
+        }
         var configuration =
                 configurer.componentRegistry(cr -> cr.registerEnhancer(new MessagesRecordingConfigurationEnhancer()))
                           .start();
@@ -151,25 +157,29 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
     }
 
     /**
-     * Allow to customize the fixture setup.
+     * Allow customizing the fixture setup.
      *
+     * @param axonServerEnabled True if Axon Server should be enabled, false otherwise. It's enabled by default.
      * @param fieldFilters Collections of {@link FieldFilter FieldFilters} used to adjust the matchers for commands,
      *                     events, and result messages.
      */
-    public record Customization(@Nonnull List<FieldFilter> fieldFilters) {
+    public record Customization(
+            boolean axonServerEnabled,
+            @Nonnull List<FieldFilter> fieldFilters
+    ) {
 
         /**
          * Creates a new instance of {@code Customization}.
          */
         public Customization() {
-            this(new ArrayList<>());
+            this(true, new ArrayList<>());
         }
 
         /**
          * Registers the given {@code fieldFilter}, which is used to define which Fields are used when comparing
          * objects.
          * <p>
-         * This filter is used by following methods:
+         * This filter is used by the following methods:
          * <ul>
          *     <li>{@link AxonTestPhase.Then.Message#events}</li>
          *     <li>{@link AxonTestPhase.Then.Message#commands}</li>
@@ -190,14 +200,14 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         public Customization registerFieldFilter(@Nonnull FieldFilter fieldFilter) {
             List<FieldFilter> fieldFiltersCopy = new ArrayList<>(this.fieldFilters);
             fieldFiltersCopy.add(fieldFilter);
-            return new Customization(fieldFiltersCopy);
+            return new Customization(axonServerEnabled, fieldFiltersCopy);
         }
 
         /**
          * Indicates that a field with given {@code fieldName}, which is declared in given {@code declaringClass} is
          * ignored when performing deep equality checks.
          * <p>
-         * This filter is used by following methods:
+         * This filter is used by the following methods:
          * <ul>
          *     <li>{@link AxonTestPhase.Then.Message#events}</li>
          *     <li>{@link AxonTestPhase.Then.Message#commands}</li>
@@ -223,6 +233,33 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
          */
         public List<FieldFilter> fieldFilters() {
             return fieldFilters;
+        }
+
+        /**
+         * Configures Axon Server to be disabled.
+         *
+         * @return The current Customization, for fluent interfacing.
+         */
+        public Customization disableAxonServer() {
+            return new Customization(false, fieldFilters);
+        }
+
+        /**
+         * Indicates whether Axon Server is enabled.
+         *
+         * @return True if Axon Server is enabled, false otherwise.
+         */
+        public boolean axonServerEnabled() {
+            return axonServerEnabled;
+        }
+
+        /**
+         * Indicates whether Axon Server is disabled.
+         *
+         * @return True if Axon Server is disabled, false otherwise.
+         */
+        public boolean axonServerDisabled() {
+            return! axonServerEnabled;
         }
     }
 }

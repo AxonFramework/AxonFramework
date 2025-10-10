@@ -39,7 +39,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.awaitility.Awaitility.await;
-import static org.axonframework.commandhandling.CommandBusTestUtils.*;
+import static org.axonframework.commandhandling.CommandBusTestUtils.aCommandBus;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -82,23 +82,18 @@ class DistributedCommandBusTest {
         CommandBusConnector.ResultCallback mockCallback = mock();
         connector.handler.get().handle(testCommand, mockCallback);
 
-        await().untilAsserted(() -> {
-            verify(mockCallback).onError(isA(NoHandlerForCommandException.class));
-        });
+        await().untilAsserted(() -> verify(mockCallback).onError(isA(NoHandlerForCommandException.class)));
     }
 
     @Test
     void incomingCommandsAreDelegatedToSubscribedHandlers() {
-        GenericCommandResultMessage<String> resultMessage =
-                new GenericCommandResultMessage<>(new MessageType("result"), "OK");
+        CommandResultMessage resultMessage = new GenericCommandResultMessage(new MessageType("result"), "OK");
         testSubject.subscribe(testCommand.type().qualifiedName(),
                               (command, context) -> MessageStream.just(resultMessage));
 
         CommandBusConnector.ResultCallback mockCallback = mock();
         connector.handler.get().handle(testCommand, mockCallback);
-        await().untilAsserted(() -> {
-            verify(mockCallback).onSuccess(same(resultMessage));
-        });
+        await().untilAsserted(() -> verify(mockCallback).onSuccess(same(resultMessage)));
     }
 
     @Test
@@ -119,16 +114,17 @@ class DistributedCommandBusTest {
 
         @Nonnull
         @Override
-        public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage command,
-                                                                   @Nullable ProcessingContext processingContext) {
-            CompletableFuture<CommandResultMessage<?>> future = new CompletableFuture<>();
+        public CompletableFuture<CommandResultMessage> dispatch(@Nonnull CommandMessage command,
+                                                                @Nullable ProcessingContext processingContext) {
+            CompletableFuture<CommandResultMessage> future = new CompletableFuture<>();
             dispatchedCommands.put(command, future);
             return future;
         }
 
         @Override
-        public void subscribe(@Nonnull QualifiedName commandName, int loadFactor) {
+        public CompletableFuture<Void> subscribe(@Nonnull QualifiedName commandName, int loadFactor) {
             subscriptions.put(commandName, loadFactor);
+            return CompletableFuture.completedFuture(null);
         }
 
         @Override

@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.processors.streaming.token;
 
-import org.axonframework.serialization.TestSerializer;
+import org.axonframework.serialization.TestConverter;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -26,19 +26,19 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests serialization capabilities of {@link GlobalSequenceTrackingToken}.
- * 
+ *
  * @author JohT
  */
 class GlobalSequenceTrackingTokenSerializationTest {
 
-    static Collection<TestSerializer> serializers() {
-       return TestSerializer.all();
+    static Collection<TestConverter> converters() {
+       return TestConverter.all();
     }
 
-    @MethodSource("serializers")
+    @MethodSource("converters")
     @ParameterizedTest
-    void tokenShouldBeSerializable(TestSerializer serializer) {
+    void tokenShouldBeSerializable(TestConverter converter) {
         GlobalSequenceTrackingToken token = new GlobalSequenceTrackingToken(Long.MAX_VALUE);
-        assertEquals(token, serializer.serializeDeserialize(token));
+        assertEquals(token, converter.serializeDeserialize(token));
     }
 }

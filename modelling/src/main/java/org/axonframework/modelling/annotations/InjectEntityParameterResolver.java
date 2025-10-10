@@ -22,17 +22,17 @@ import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotations.ParameterResolver;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.modelling.EntityIdResolver;
 import org.axonframework.modelling.StateManager;
-import org.axonframework.modelling.command.EntityIdResolver;
 
 import static java.util.Objects.requireNonNull;
 
 /**
  * A {@link ParameterResolver} implementation that loads an entity from the {@link StateManager} of the given
- * {@link Configuration}. The entity is loaded based on the id resolved from the message using the given
- * {@link EntityIdResolver}.
+ * {@link Configuration}.
  * <p>
- * Can either load the {@link org.axonframework.modelling.repository.ManagedEntity} or just the entity itself.
+ * The entity is loaded based on the id resolved from the message using the given {@link EntityIdResolver}. Can either
+ * load the {@link org.axonframework.modelling.repository.ManagedEntity} or just the entity itself.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0
@@ -48,10 +48,10 @@ class InjectEntityParameterResolver implements ParameterResolver<Object> {
      * Instantiate a {@link ParameterResolver} that loads an entity of {@code type} using the given
      * {@code stateManager}, resolving the needed id using the {@code identifierResolver}.
      * <p>
-     * This constructor depends on the {@link Configuration} instead of the {@link StateManager} to prevent
-     * circular dependencies during creation of message handlers. For example, if the repository uses an annotation-based
-     * event state applier, it would construct methods, which would then require the {@link StateManager} to be
-     * created during the construction of the parameter resolvers. This would lead to a circular dependency.
+     * This constructor depends on the {@link Configuration} instead of the {@link StateManager} to prevent circular
+     * dependencies during creation of message handlers. For example, if the repository uses an annotation-based event
+     * state applier, it would construct methods, which would then require the {@link StateManager} to be created during
+     * the construction of the parameter resolvers. This would lead to a circular dependency.
      *
      * @param configuration      The {@link Configuration} from which a {@link StateManager} can be retrieved to load
      *                           the entity.

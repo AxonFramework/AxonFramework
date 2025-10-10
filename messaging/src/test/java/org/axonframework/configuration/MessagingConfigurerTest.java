@@ -54,6 +54,7 @@ import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
+import org.axonframework.queryhandling.configuration.QueryHandlingModule;
 import org.junit.jupiter.api.*;
 
 import java.util.List;
@@ -113,10 +114,6 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
         Optional<QueryBus> queryBus = result.getOptionalComponent(QueryBus.class);
         assertTrue(queryBus.isPresent());
         assertInstanceOf(SimpleQueryBus.class, queryBus.get());
-
-        Optional<QueryUpdateEmitter> queryUpdateEmitter = result.getOptionalComponent(QueryUpdateEmitter.class);
-        assertTrue(queryUpdateEmitter.isPresent());
-        assertInstanceOf(SimpleQueryUpdateEmitter.class, queryUpdateEmitter.get());
     }
 
     @Test
@@ -199,16 +196,6 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
                                           .build();
 
         assertEquals(expected, result.getComponent(QueryBus.class));
-    }
-
-    @Test
-    void registerQueryUpdateEmitterOverridesDefault() {
-        QueryUpdateEmitter expected = SimpleQueryUpdateEmitter.builder().build();
-
-        Configuration result = testSubject.registerQueryUpdateEmitter(c -> expected)
-                                          .build();
-
-        assertEquals(expected, result.getComponent(QueryUpdateEmitter.class));
     }
 
     @Test
@@ -396,6 +383,23 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
 
         Configuration configuration =
                 testSubject.registerCommandHandlingModule(statelessCommandHandlingModule)
+                           .build();
+
+        assertThat(configuration.getModuleConfiguration("test")).isPresent();
+    }
+
+    @Test
+    void registerQueryHandlingModuleAddsAModuleConfiguration() {
+        ModuleBuilder<QueryHandlingModule> statefulCommandHandlingModule =
+                QueryHandlingModule.named("test")
+                                   .queryHandlers(handlerPhase -> handlerPhase.queryHandler(
+                                           new QualifiedName(String.class),
+                                           new QualifiedName(String.class),
+                                           (command, context) -> MessageStream.empty().cast()
+                                   ));
+
+        Configuration configuration =
+                testSubject.registerQueryHandlingModule(statefulCommandHandlingModule)
                            .build();
 
         assertThat(configuration.getModuleConfiguration("test")).isPresent();

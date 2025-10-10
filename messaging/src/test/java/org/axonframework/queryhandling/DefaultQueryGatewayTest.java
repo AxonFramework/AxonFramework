@@ -22,10 +22,6 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.Metadata;
-import org.axonframework.messaging.responsetypes.InstanceResponseType;
-import org.axonframework.messaging.responsetypes.MultipleInstancesResponseType;
-import org.axonframework.messaging.responsetypes.PublisherResponseType;
-import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -33,23 +29,24 @@ import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+import reactor.util.concurrent.Queues;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
  * Test class verifying correct workings of the {@link DefaultQueryGateway}.
  *
  * @author Allard Buijze
+ * @author Steven van Beelen
  */
 class DefaultQueryGatewayTest {
 
     private static final MessageType QUERY_TYPE = new MessageType(String.class);
+    private static final MessageType UPDATE_TYPE = new MessageType(String.class);
     private static final String QUERY_PAYLOAD = "query";
     private static final MessageType RESPONSE_TYPE = new MessageType(String.class);
     private static final String RESPONSE_PAYLOAD = "answer";
@@ -59,7 +56,8 @@ class DefaultQueryGatewayTest {
     private DefaultQueryGateway testSubject;
 
     private ArgumentCaptor<QueryMessage> queryCaptor;
-    private ArgumentCaptor<StreamingQueryMessage> streamingQueryCaptor;
+    private ArgumentCaptor<QueryMessage> streamingQueryCaptor;
+    private ArgumentCaptor<SubscriptionQueryMessage> subscriptionQueryCaptor;
 
     @BeforeEach
     void setUp() {
@@ -70,14 +68,15 @@ class DefaultQueryGatewayTest {
                                               QueryPriorityCalculator.defaultCalculator());
 
         queryCaptor = ArgumentCaptor.forClass(QueryMessage.class);
-        streamingQueryCaptor = ArgumentCaptor.forClass(StreamingQueryMessage.class);
+        streamingQueryCaptor = ArgumentCaptor.forClass(QueryMessage.class);
+        subscriptionQueryCaptor = ArgumentCaptor.forClass(SubscriptionQueryMessage.class);
     }
 
     @Nested
     class QuerySingle {
 
         @Test
-        void queryInvokesQueryBusWithSingleInstanceResponseType() throws Exception {
+        void queryInvokesQueryBusAsExpected() throws Exception {
             // given...
             QueryResponseMessage testResponse = new GenericQueryResponseMessage(RESPONSE_TYPE, RESPONSE_PAYLOAD);
             when(queryBus.query(any(), eq(null))).thenReturn(MessageStream.just(testResponse));
@@ -92,9 +91,7 @@ class DefaultQueryGatewayTest {
             QueryMessage resultMessage = queryCaptor.getValue();
             assertThat(resultMessage.payload()).isEqualTo(QUERY_PAYLOAD);
             assertThat(resultMessage.payloadType()).isEqualTo(String.class);
-            ResponseType<?> responseType = resultMessage.responseType();
-            assertThat(responseType).isInstanceOf(InstanceResponseType.class);
-            assertThat(responseType.getExpectedResponseType()).isEqualTo(String.class);
+            assertThat(resultMessage.responseType()).isEqualTo(RESPONSE_TYPE);
             assertThat(resultMessage.metadata()).isEqualTo(Metadata.emptyInstance());
         }
 
@@ -118,9 +115,7 @@ class DefaultQueryGatewayTest {
             QueryMessage resultMessage = queryCaptor.getValue();
             assertThat(resultMessage.payload()).isEqualTo(QUERY_PAYLOAD);
             assertThat(resultMessage.payloadType()).isEqualTo(String.class);
-            ResponseType<?> responseType = resultMessage.responseType();
-            assertThat(responseType).isInstanceOf(InstanceResponseType.class);
-            assertThat(responseType.getExpectedResponseType()).isEqualTo(String.class);
+            assertThat(resultMessage.responseType()).isEqualTo(RESPONSE_TYPE);
             Metadata resultMetadata = resultMessage.metadata();
             assertThat(resultMetadata).containsKey(expectedKey);
             assertThat(resultMetadata).containsValue(expectedValue);
@@ -171,13 +166,27 @@ class DefaultQueryGatewayTest {
             assertThat(result).isCompletedExceptionally();
             assertThat(result.exceptionNow().getMessage()).isEqualTo("Faking conversion problem");
         }
+
+        @Test
+        void queryWithNullMessageInEntryReturnsNull() throws Exception {
+            // given...
+            MessageStream.Single<QueryResponseMessage> streamWithNullMessage = MessageStream.fromFuture(
+                    CompletableFuture.completedFuture(null)
+            );
+            when(queryBus.query(any(), eq(null))).thenReturn(streamWithNullMessage);
+            // when...
+            CompletableFuture<String> result = testSubject.query(QUERY_PAYLOAD, String.class, null);
+            // then...
+            assertThat(result).isDone();
+            assertThat(result.get()).isNull();
+        }
     }
 
     @Nested
     class QueryMany {
 
         @Test
-        void queryManyInvokesQueryBusWithMultiInstanceResponseType() throws Exception {
+        void queryManyInvokesQueryBusAsExpected() throws Exception {
             // given...
             QueryResponseMessage testResponse = new GenericQueryResponseMessage(RESPONSE_TYPE, RESPONSE_PAYLOAD);
             when(queryBus.query(any(), eq(null))).thenReturn(MessageStream.fromIterable(List.of(testResponse)));
@@ -194,9 +203,7 @@ class DefaultQueryGatewayTest {
             QueryMessage resultMessage = queryCaptor.getValue();
             assertThat(resultMessage.payload()).isEqualTo(QUERY_PAYLOAD);
             assertThat(resultMessage.payloadType()).isEqualTo(String.class);
-            ResponseType<?> responseType = resultMessage.responseType();
-            assertThat(responseType).isInstanceOf(MultipleInstancesResponseType.class);
-            assertThat(responseType.getExpectedResponseType()).isEqualTo(String.class);
+            assertThat(resultMessage.responseType()).isEqualTo(RESPONSE_TYPE);
             assertThat(resultMessage.metadata()).isEqualTo(Metadata.emptyInstance());
         }
 
@@ -222,9 +229,7 @@ class DefaultQueryGatewayTest {
             QueryMessage resultMessage = queryCaptor.getValue();
             assertThat(resultMessage.payload()).isEqualTo(QUERY_PAYLOAD);
             assertThat(resultMessage.payloadType()).isEqualTo(String.class);
-            ResponseType<?> responseType = resultMessage.responseType();
-            assertThat(responseType).isInstanceOf(MultipleInstancesResponseType.class);
-            assertThat(responseType.getExpectedResponseType()).isEqualTo(String.class);
+            assertThat(resultMessage.responseType()).isEqualTo(RESPONSE_TYPE);
             Metadata resultMetadata = resultMessage.metadata();
             assertThat(resultMetadata).containsKey(expectedKey);
             assertThat(resultMetadata).containsValue(expectedValue);
@@ -283,7 +288,7 @@ class DefaultQueryGatewayTest {
     class StreamingQuery {
 
         @Test
-        void streamingQueryInvokesQueryBusWithPublisherResponseType() {
+        void streamingQueryInvokesQueryBusAsExpected() {
             // given...
             QueryResponseMessage testResponse = new GenericQueryResponseMessage(RESPONSE_TYPE, RESPONSE_PAYLOAD);
             when(queryBus.streamingQuery(any(), eq(null))).thenReturn(Mono.just(testResponse));
@@ -294,12 +299,10 @@ class DefaultQueryGatewayTest {
             // then...
             verify(queryBus).streamingQuery(streamingQueryCaptor.capture(), eq(null));
 
-            StreamingQueryMessage resultMessage = streamingQueryCaptor.getValue();
+            QueryMessage resultMessage = streamingQueryCaptor.getValue();
             assertThat(resultMessage.payload()).isEqualTo(QUERY_PAYLOAD);
             assertThat(resultMessage.payloadType()).isEqualTo(String.class);
-            ResponseType<?> responseType = resultMessage.responseType();
-            assertThat(responseType).isInstanceOf(PublisherResponseType.class);
-            assertThat(responseType.getExpectedResponseType()).isEqualTo(String.class);
+            assertThat(resultMessage.responseType()).isEqualTo(RESPONSE_TYPE);
             assertThat(resultMessage.metadata()).isEqualTo(Metadata.emptyInstance());
         }
 
@@ -311,7 +314,7 @@ class DefaultQueryGatewayTest {
             String expectedKey = "key";
             String expectedValue = "value";
             Metadata testMetadata = Metadata.with(expectedKey, expectedValue);
-            Message testQuery = new GenericStreamingQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, String.class)
+            Message testQuery = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE)
                     .andMetadata(testMetadata);
             // when...
             StepVerifier.create(testSubject.streamingQuery(testQuery, String.class, null))
@@ -320,12 +323,10 @@ class DefaultQueryGatewayTest {
             // then...
             verify(queryBus).streamingQuery(streamingQueryCaptor.capture(), eq(null));
 
-            StreamingQueryMessage resultMessage = streamingQueryCaptor.getValue();
+            QueryMessage resultMessage = streamingQueryCaptor.getValue();
             assertThat(resultMessage.payload()).isEqualTo(QUERY_PAYLOAD);
             assertThat(resultMessage.payloadType()).isEqualTo(String.class);
-            ResponseType<?> responseType = resultMessage.responseType();
-            assertThat(responseType).isInstanceOf(PublisherResponseType.class);
-            assertThat(responseType.getExpectedResponseType()).isEqualTo(String.class);
+            assertThat(resultMessage.responseType()).isEqualTo(RESPONSE_TYPE);
             Metadata resultMetadata = resultMessage.metadata();
             assertThat(resultMetadata).containsKey(expectedKey);
             assertThat(resultMetadata).containsValue(expectedValue);
@@ -351,7 +352,7 @@ class DefaultQueryGatewayTest {
                         .expectNext("a", "b", "c")
                         .verifyComplete();
             // then expect query sent...
-            verify(queryBus, times(1)).streamingQuery(any(StreamingQueryMessage.class), eq(null));
+            verify(queryBus, times(1)).streamingQuery(any(QueryMessage.class), eq(null));
         }
 
         @Test
@@ -365,122 +366,288 @@ class DefaultQueryGatewayTest {
         }
     }
 
-    @Test
-    void subscriptionQuery() {
-        when(queryBus.subscriptionQuery(any(), anyInt()))
-                .thenReturn(new DefaultSubscriptionQueryResult<>(Mono.empty(), Flux.empty(), () -> true));
+    @Nested
+    class SubscriptionQuerySingleResultType {
 
-        testSubject.subscriptionQuery("subscription", instanceOf(String.class), instanceOf(String.class));
+        @Test
+        void subscriptionQueryInvokesQueryBusAsExpected() {
+            // given...
+            Flux<QueryResponseMessage> initial = Flux.just(
+                    new GenericQueryResponseMessage(QUERY_TYPE, "a"),
+                    new GenericQueryResponseMessage(QUERY_TYPE, "b"),
+                    new GenericQueryResponseMessage(QUERY_TYPE, "c")
+            );
+            Flux<SubscriptionQueryUpdateMessage> updates = Flux.just(
+                    new GenericSubscriptionQueryUpdateMessage(UPDATE_TYPE, "1"),
+                    new GenericSubscriptionQueryUpdateMessage(UPDATE_TYPE, "2"),
+                    new GenericSubscriptionQueryUpdateMessage(UPDATE_TYPE, "3")
+            );
+            SubscriptionQueryResponseMessages testResponseMessage =
+                    new GenericSubscriptionQueryResponseMessages(initial, updates, () -> {
+                    });
+            when(queryBus.subscriptionQuery(any(), eq(null), eq(Queues.SMALL_BUFFER_SIZE)))
+                    .thenReturn(testResponseMessage);
+            // when/then ...
+            StepVerifier.create(testSubject.subscriptionQuery(QUERY_PAYLOAD, String.class, null))
+                        .expectNext("a", "b", "c", "1", "2", "3")
+                        .verifyComplete();
+            verify(queryBus).subscriptionQuery(
+                    subscriptionQueryCaptor.capture(), eq(null), eq(Queues.SMALL_BUFFER_SIZE)
+            );
+            SubscriptionQueryMessage resultMessage = subscriptionQueryCaptor.getValue();
+            assertThat(resultMessage.payload()).isEqualTo(QUERY_PAYLOAD);
+            assertThat(resultMessage.payloadType()).isEqualTo(String.class);
+            assertThat(resultMessage.responseType()).isEqualTo(RESPONSE_TYPE);
+            assertThat(resultMessage.updatesResponseType()).isEqualTo(RESPONSE_TYPE);
+            assertThat(resultMessage.metadata()).isEqualTo(Metadata.emptyInstance());
+        }
 
-        //noinspection unchecked
-        ArgumentCaptor<SubscriptionQueryMessage<String, String, String>> queryMessageCaptor =
-                ArgumentCaptor.forClass(SubscriptionQueryMessage.class);
+        @Test
+        void subscriptionQueryWithMetadataInvokesQueryBusWithMetadata() {
+            // given...
+            Flux<QueryResponseMessage> initial = Flux.just(
+                    new GenericQueryResponseMessage(QUERY_TYPE, "a"),
+                    new GenericQueryResponseMessage(QUERY_TYPE, "b"),
+                    new GenericQueryResponseMessage(QUERY_TYPE, "c")
+            );
+            Flux<SubscriptionQueryUpdateMessage> updates = Flux.just(
+                    new GenericSubscriptionQueryUpdateMessage(UPDATE_TYPE, "1"),
+                    new GenericSubscriptionQueryUpdateMessage(UPDATE_TYPE, "2"),
+                    new GenericSubscriptionQueryUpdateMessage(UPDATE_TYPE, "3")
+            );
+            SubscriptionQueryResponseMessages testResponseMessage =
+                    new GenericSubscriptionQueryResponseMessages(initial, updates, () -> {
+                    });
+            when(queryBus.subscriptionQuery(any(), eq(null), eq(Queues.SMALL_BUFFER_SIZE)))
+                    .thenReturn(testResponseMessage);
+            String expectedKey = "key";
+            String expectedValue = "value";
+            Metadata testMetadata = Metadata.with(expectedKey, expectedValue);
+            Message testQuery = new GenericMessage(QUERY_TYPE, QUERY_PAYLOAD, testMetadata);
+            // when/then ...
+            StepVerifier.create(testSubject.subscriptionQuery(testQuery, String.class, null))
+                        .expectNext("a", "b", "c", "1", "2", "3")
+                        .verifyComplete();
+            verify(queryBus).subscriptionQuery(
+                    subscriptionQueryCaptor.capture(), eq(null), eq(Queues.SMALL_BUFFER_SIZE)
+            );
+            SubscriptionQueryMessage resultMessage = subscriptionQueryCaptor.getValue();
+            assertThat(resultMessage.payload()).isEqualTo(QUERY_PAYLOAD);
+            assertThat(resultMessage.payloadType()).isEqualTo(String.class);
+            assertThat(resultMessage.responseType()).isEqualTo(RESPONSE_TYPE);
+            assertThat(resultMessage.updatesResponseType()).isEqualTo(RESPONSE_TYPE);
+            Metadata resultMetadata = resultMessage.metadata();
+            assertThat(resultMetadata).containsKey(expectedKey);
+            assertThat(resultMetadata).containsValue(expectedValue);
+        }
 
-        verify(queryBus).subscriptionQuery(queryMessageCaptor.capture(), anyInt());
+        @Test
+        void subscriptionQueryUpdatesExceptionReportedInFlux() {
+            // given...
+            Flux<QueryResponseMessage> initial = Flux.error(new MockException());
+            Flux<SubscriptionQueryUpdateMessage> updates = Flux.error(new MockException());
+            SubscriptionQueryResponseMessages testResponseMessage =
+                    new GenericSubscriptionQueryResponseMessages(initial, updates, () -> {
+                    });
+            when(queryBus.subscriptionQuery(any(), eq(null), eq(Queues.SMALL_BUFFER_SIZE)))
+                    .thenReturn(testResponseMessage);
+            // when/then...
+            StepVerifier.create(testSubject.subscriptionQuery(QUERY_PAYLOAD, String.class, null))
+                        .verifyError(MockException.class);
+        }
 
-        SubscriptionQueryMessage<String, String, String> result = queryMessageCaptor.getValue();
-        assertEquals("subscription", result.payload());
-        assertEquals(String.class, result.payloadType());
-        assertTrue(InstanceResponseType.class.isAssignableFrom(result.responseType().getClass()));
-        assertEquals(String.class, result.responseType().getExpectedResponseType());
-        assertTrue(InstanceResponseType.class.isAssignableFrom(result.updatesResponseType().getClass()));
-        assertEquals(String.class, result.updatesResponseType().getExpectedResponseType());
-        assertEquals(Metadata.emptyInstance(), result.metadata());
+        @Test
+        void subscriptionQueryNullResultsAreSkipped() {
+            // given...
+            Flux<QueryResponseMessage> initial = Flux.just(
+                    new GenericQueryResponseMessage(QUERY_TYPE, "a"),
+                    new GenericQueryResponseMessage(QUERY_TYPE, null),
+                    new GenericQueryResponseMessage(QUERY_TYPE, "b")
+            );
+            Flux<SubscriptionQueryUpdateMessage> updates = Flux.just(
+                    new GenericSubscriptionQueryUpdateMessage(QUERY_TYPE, "1"),
+                    new GenericSubscriptionQueryUpdateMessage(QUERY_TYPE, null),
+                    new GenericSubscriptionQueryUpdateMessage(QUERY_TYPE, "2")
+            );
+            SubscriptionQueryResponseMessages testResponseMessage =
+                    new GenericSubscriptionQueryResponseMessages(initial, updates, () -> {
+                    });
+            when(queryBus.subscriptionQuery(any(), eq(null), eq(Queues.SMALL_BUFFER_SIZE)))
+                    .thenReturn(testResponseMessage);
+            // when/then...
+            StepVerifier.create(testSubject.subscriptionQuery(QUERY_PAYLOAD, String.class, null))
+                        .expectNext("a", "b", "1", "2")
+                        .verifyComplete();
+        }
     }
 
-    @Test
-    void subscriptionQueryWithMetadata() {
-        String expectedMetadataKey = "key";
-        String expectedMetadataValue = "value";
+    @Nested
+    class SubscriptionQueryWithDifferentInitialAndUpdateType {
 
-        when(queryBus.subscriptionQuery(any(), anyInt()))
-                .thenReturn(new DefaultSubscriptionQueryResult<>(Mono.empty(), Flux.empty(), () -> true));
+        @Test
+        void subscriptionQueryInvokesQueryBusAsExpected() {
+            // given...
+            Flux<QueryResponseMessage> initial = Flux.just(
+                    new GenericQueryResponseMessage(QUERY_TYPE, "a"),
+                    new GenericQueryResponseMessage(QUERY_TYPE, "b"),
+                    new GenericQueryResponseMessage(QUERY_TYPE, "c")
+            );
+            Flux<SubscriptionQueryUpdateMessage> updates = Flux.just(
+                    new GenericSubscriptionQueryUpdateMessage(UPDATE_TYPE, "1"),
+                    new GenericSubscriptionQueryUpdateMessage(UPDATE_TYPE, "2"),
+                    new GenericSubscriptionQueryUpdateMessage(UPDATE_TYPE, "3")
+            );
+            SubscriptionQueryResponseMessages testResponseMessage =
+                    new GenericSubscriptionQueryResponseMessages(initial, updates, () -> {
+                    });
+            when(queryBus.subscriptionQuery(any(), eq(null), eq(Queues.SMALL_BUFFER_SIZE)))
+                    .thenReturn(testResponseMessage);
+            // when...
+            SubscriptionQueryResponse<String, String> result =
+                    testSubject.subscriptionQuery(QUERY_PAYLOAD, String.class, String.class, null);
+            // /then...
+            StepVerifier.create(result.initialResult())
+                        .expectNext("a", "b", "c")
+                        .verifyComplete();
+            StepVerifier.create(result.updates())
+                        .expectNext("1", "2", "3")
+                        .verifyComplete();
+            verify(queryBus).subscriptionQuery(
+                    subscriptionQueryCaptor.capture(), eq(null), eq(Queues.SMALL_BUFFER_SIZE)
+            );
+            SubscriptionQueryMessage resultMessage = subscriptionQueryCaptor.getValue();
+            assertThat(resultMessage.payload()).isEqualTo(QUERY_PAYLOAD);
+            assertThat(resultMessage.payloadType()).isEqualTo(String.class);
+            assertThat(resultMessage.responseType()).isEqualTo(RESPONSE_TYPE);
+            assertThat(resultMessage.updatesResponseType()).isEqualTo(RESPONSE_TYPE);
+            assertThat(resultMessage.metadata()).isEqualTo(Metadata.emptyInstance());
+        }
 
+        @Test
+        void subscriptionQueryWithMetadataInvokesQueryBusWithMetadata() {
+            // given...
+            Flux<QueryResponseMessage> initial = Flux.just(
+                    new GenericQueryResponseMessage(QUERY_TYPE, "a"),
+                    new GenericQueryResponseMessage(QUERY_TYPE, "b"),
+                    new GenericQueryResponseMessage(QUERY_TYPE, "c")
+            );
+            Flux<SubscriptionQueryUpdateMessage> updates = Flux.just(
+                    new GenericSubscriptionQueryUpdateMessage(UPDATE_TYPE, "1"),
+                    new GenericSubscriptionQueryUpdateMessage(UPDATE_TYPE, "2"),
+                    new GenericSubscriptionQueryUpdateMessage(UPDATE_TYPE, "3")
+            );
+            SubscriptionQueryResponseMessages testResponseMessage =
+                    new GenericSubscriptionQueryResponseMessages(initial, updates, () -> {
+                    });
+            when(queryBus.subscriptionQuery(any(), eq(null), eq(Queues.SMALL_BUFFER_SIZE)))
+                    .thenReturn(testResponseMessage);
+            String expectedKey = "key";
+            String expectedValue = "value";
+            Metadata testMetadata = Metadata.with(expectedKey, expectedValue);
+            Message testQuery = new GenericMessage(QUERY_TYPE, QUERY_PAYLOAD, testMetadata);
+            // when...
+            SubscriptionQueryResponse<String, String> result =
+                    testSubject.subscriptionQuery(testQuery, String.class, String.class, null);
+            // then ...
+            StepVerifier.create(result.initialResult())
+                        .expectNext("a", "b", "c")
+                        .verifyComplete();
+            StepVerifier.create(result.updates())
+                        .expectNext("1", "2", "3")
+                        .verifyComplete();
+            verify(queryBus).subscriptionQuery(
+                    subscriptionQueryCaptor.capture(), eq(null), eq(Queues.SMALL_BUFFER_SIZE)
+            );
+            SubscriptionQueryMessage resultMessage = subscriptionQueryCaptor.getValue();
+            assertThat(resultMessage.payload()).isEqualTo(QUERY_PAYLOAD);
+            assertThat(resultMessage.payloadType()).isEqualTo(String.class);
+            assertThat(resultMessage.responseType()).isEqualTo(RESPONSE_TYPE);
+            assertThat(resultMessage.updatesResponseType()).isEqualTo(RESPONSE_TYPE);
+            Metadata resultMetadata = resultMessage.metadata();
+            assertThat(resultMetadata).containsKey(expectedKey);
+            assertThat(resultMetadata).containsValue(expectedValue);
+        }
 
-        Message testQuery = new GenericMessage(
-                QUERY_TYPE, "subscription",
-                Metadata.with(expectedMetadataKey, expectedMetadataValue)
-        );
-        testSubject.subscriptionQuery(testQuery, instanceOf(String.class), instanceOf(String.class));
+        @Test
+        void subscriptionQueryInitialResultExceptionReportedInInitialResultFlux() {
+            // given...
+            Flux<QueryResponseMessage> initial = Flux.error(new MockException());
+            Flux<SubscriptionQueryUpdateMessage> updates = Flux.just();
+            SubscriptionQueryResponseMessages testResponseMessage =
+                    new GenericSubscriptionQueryResponseMessages(initial, updates, () -> {
+                    });
+            when(queryBus.subscriptionQuery(any(), eq(null), eq(Queues.SMALL_BUFFER_SIZE)))
+                    .thenReturn(testResponseMessage);
+            // when...
+            SubscriptionQueryResponse<String, String> result =
+                    testSubject.subscriptionQuery(QUERY_PAYLOAD, String.class, String.class, null);
+            // then...
+            StepVerifier.create(result.initialResult())
+                        .verifyError(MockException.class);
+        }
 
-        //noinspection unchecked
-        ArgumentCaptor<SubscriptionQueryMessage<String, String, String>> queryMessageCaptor =
-                ArgumentCaptor.forClass(SubscriptionQueryMessage.class);
+        @Test
+        void subscriptionQueryUpdatesExceptionReportedInUpdatesFlux() {
+            // given...
+            Flux<QueryResponseMessage> initial = Flux.just();
+            Flux<SubscriptionQueryUpdateMessage> updates = Flux.error(new MockException());
+            SubscriptionQueryResponseMessages testResponseMessage =
+                    new GenericSubscriptionQueryResponseMessages(initial, updates, () -> {
+                    });
+            when(queryBus.subscriptionQuery(any(), eq(null), eq(Queues.SMALL_BUFFER_SIZE)))
+                    .thenReturn(testResponseMessage);
+            // when...
+            SubscriptionQueryResponse<String, String> result =
+                    testSubject.subscriptionQuery(QUERY_PAYLOAD, String.class, String.class, null);
+            // then...
+            StepVerifier.create(result.updates())
+                        .verifyError(MockException.class);
+        }
 
-        verify(queryBus).subscriptionQuery(queryMessageCaptor.capture(), anyInt());
+        @Test
+        void subscriptionQueryInitialResultNullResultsAreSkipped() {
+            // given...
+            Flux<QueryResponseMessage> initial = Flux.just(
+                    new GenericQueryResponseMessage(QUERY_TYPE, "a"),
+                    new GenericQueryResponseMessage(QUERY_TYPE, null),
+                    new GenericQueryResponseMessage(QUERY_TYPE, "b")
+            );
+            Flux<SubscriptionQueryUpdateMessage> updates = Flux.just();
+            SubscriptionQueryResponseMessages testResponseMessage =
+                    new GenericSubscriptionQueryResponseMessages(initial, updates, () -> {
+                    });
+            when(queryBus.subscriptionQuery(any(), eq(null), eq(Queues.SMALL_BUFFER_SIZE)))
+                    .thenReturn(testResponseMessage);
+            // when...
+            SubscriptionQueryResponse<String, String> result =
+                    testSubject.subscriptionQuery(QUERY_PAYLOAD, String.class, String.class, null);
+            // then...
+            StepVerifier.create(result.initialResult())
+                        .expectNext("a", "b")
+                        .verifyComplete();
+        }
 
-        SubscriptionQueryMessage<String, String, String> result = queryMessageCaptor.getValue();
-        assertEquals("subscription", result.payload());
-        assertEquals(String.class, result.payloadType());
-        assertTrue(InstanceResponseType.class.isAssignableFrom(result.responseType().getClass()));
-        assertEquals(String.class, result.responseType().getExpectedResponseType());
-        assertTrue(InstanceResponseType.class.isAssignableFrom(result.updatesResponseType().getClass()));
-        assertEquals(String.class, result.updatesResponseType().getExpectedResponseType());
-        Metadata resultMetadata = result.metadata();
-        assertTrue(resultMetadata.containsKey(expectedMetadataKey));
-        assertTrue(resultMetadata.containsValue(expectedMetadataValue));
-    }
-
-    @Test
-    void exceptionInInitialResultOfSubscriptionQueryReportedInMono() {
-        QueryResponseMessage testResponse = new GenericQueryResponseMessage(
-                QUERY_TYPE, new MockException(), String.class
-        );
-        when(queryBus.subscriptionQuery(anySubscriptionMessage(String.class, String.class), anyInt()))
-                .thenReturn(new DefaultSubscriptionQueryResult<>(
-                        Mono.just(testResponse),
-                        Flux.empty(),
-                        () -> true
-                ));
-
-        SubscriptionQueryResult<String, String> actual =
-                testSubject.subscriptionQuery("Test", instanceOf(String.class), instanceOf(String.class));
-        //noinspection NullableInLambdaInTransform
-        assertEquals(
-                MockException.class,
-                actual.initialResult().map(i -> null).onErrorResume(e -> Mono.just(e.getClass())).block()
-        );
-    }
-
-    @Test
-    void nullInitialResultOfSubscriptionQueryReportedAsEmptyMono() {
-        QueryResponseMessage testQuery = new GenericQueryResponseMessage(
-                QUERY_TYPE, (String) null, String.class
-        );
-        when(queryBus.subscriptionQuery(anySubscriptionMessage(String.class, String.class), anyInt()))
-                .thenReturn(new DefaultSubscriptionQueryResult<>(
-                        Mono.just(testQuery),
-                        Flux.empty(),
-                        () -> true
-                ));
-
-        SubscriptionQueryResult<String, String> actual =
-                testSubject.subscriptionQuery("Test", instanceOf(String.class), instanceOf(String.class));
-
-        assertNull(actual.initialResult().block());
-    }
-
-    @Test
-    void nullUpdatesOfSubscriptionQuerySkipped() {
-        SubscriptionQueryUpdateMessage testQuery = new GenericSubscriptionQueryUpdateMessage(
-                QUERY_TYPE, null, String.class
-        );
-        when(queryBus.subscriptionQuery(anySubscriptionMessage(String.class, String.class), anyInt()))
-                .thenReturn(new DefaultSubscriptionQueryResult<>(
-                        Mono.empty(),
-                        Flux.just(testQuery),
-                        () -> true
-                ));
-
-        SubscriptionQueryResult<String, String> actual =
-                testSubject.subscriptionQuery("Test", instanceOf(String.class), instanceOf(String.class));
-
-        assertNull(actual.initialResult().block());
-        assertEquals((Long) 0L, actual.updates().count().block());
-    }
-
-    @SuppressWarnings({"SameParameterValue", "unused"})
-    private <Q, R> SubscriptionQueryMessage<Q, R, R> anySubscriptionMessage(Class<Q> queryType, Class<R> responseType) {
-        return any();
+        @Test
+        void subscriptionQueryUpdatesNullResultsAreSkipped() {
+            // given...
+            Flux<QueryResponseMessage> initial = Flux.just();
+            Flux<SubscriptionQueryUpdateMessage> updates = Flux.just(
+                    new GenericSubscriptionQueryUpdateMessage(QUERY_TYPE, "a"),
+                    new GenericSubscriptionQueryUpdateMessage(QUERY_TYPE, null),
+                    new GenericSubscriptionQueryUpdateMessage(QUERY_TYPE, "b")
+            );
+            SubscriptionQueryResponseMessages testResponseMessage =
+                    new GenericSubscriptionQueryResponseMessages(initial, updates, () -> {
+                    });
+            when(queryBus.subscriptionQuery(any(), eq(null), eq(Queues.SMALL_BUFFER_SIZE)))
+                    .thenReturn(testResponseMessage);
+            // when...
+            SubscriptionQueryResponse<String, String> result =
+                    testSubject.subscriptionQuery(QUERY_PAYLOAD, String.class, String.class, null);
+            // then...
+            StepVerifier.create(result.updates())
+                        .expectNext("a", "b")
+                        .verifyComplete();
+        }
     }
 }

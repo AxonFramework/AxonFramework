@@ -27,12 +27,15 @@ import java.lang.annotation.Target;
 /**
  * Annotation to be placed on a parameter of a field or method of the payload of a
  * {@link org.axonframework.messaging.Message}, which provides the identifier of the target entity when using the
- * {@link AnnotationBasedEntityIdResolver}. See the {@link InjectEntity} annotation for more information about the
- * different ways to resolve the entity id when injecting entities into messsage handlers.
+ * {@link AnnotationBasedEntityIdResolver}.
+ * <p>
+ * See the {@link InjectEntity} annotation for more information about the different ways to resolve the entity id when
+ * injecting entities into messsage handlers.
  * <p>
  * Multiple parameters annotated with {@link TargetEntityId} are allowed, but only one distinct non-null value may be
- * returned. If multiple non-null values are found that don't match, a {@link MultipleTargetEntityIdsFoundInPayload} is
- * thrown. If no non-null value is found, a {@link NoEntityIdFoundInPayload} is thrown.
+ * returned. If multiple non-null values are found that don't match, a
+ * {@link MultipleTargetEntityIdsFoundInPayloadException} is thrown. If no non-null value is found, a
+ * {@link NoEntityIdFoundInPayloadException} is thrown.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0

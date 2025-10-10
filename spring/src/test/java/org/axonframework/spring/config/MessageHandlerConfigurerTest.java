@@ -19,8 +19,7 @@ package org.axonframework.spring.config;
 import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Module;
-import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessorModule;
-import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessorModule;
+import org.axonframework.queryhandling.configuration.QueryHandlingModule;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -32,7 +31,6 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
-
 
 class MessageHandlerConfigurerTest {
 
@@ -49,7 +47,6 @@ class MessageHandlerConfigurerTest {
 
     @Test
     void detectsAndRegistersCommandHandlersPerPackage() {
-
         Map<String, String> commandHandlers = new HashMap<>();
         commandHandlers.put("Handler1", "my.command.packaging.Handler1");
         commandHandlers.put("Handler2", "my.command.packaging.Handler2");
@@ -57,11 +54,9 @@ class MessageHandlerConfigurerTest {
         commandHandlers.put("CustomHandler2", "my.command.packaging.custom.Handler2");
         commandHandlers.put("HandlerWithoutPackage", "HandlerWithoutPackage");
         commandHandlers.forEach((String handlerName, String fullQualifiedHandlerName) -> {
-                                    var bdmock = beanDefinitionMock(fullQualifiedHandlerName);
-                                    when(beanFactory.getBeanDefinition(eq(handlerName))).thenReturn(bdmock);
-                                }
-
-        );
+            var bdmock = beanDefinitionMock(fullQualifiedHandlerName);
+            when(beanFactory.getBeanDefinition(eq(handlerName))).thenReturn(bdmock);
+        });
 
         MessageHandlerConfigurer configurer = new MessageHandlerConfigurer(MessageHandlerConfigurer.Type.COMMAND,
                                                                            commandHandlers.keySet().stream().toList());
@@ -84,7 +79,6 @@ class MessageHandlerConfigurerTest {
 
     @Test
     void detectsAndRegistersEventHandlersPerPackage() {
-
         when(applicationContext.getBeansOfType(EventProcessorSettings.class)).thenReturn(Map.of(
                 "my.event.packaging.custom",
                 new EventProcessorSettings.SubscribingEventProcessorSettings() {
@@ -167,42 +161,34 @@ class MessageHandlerConfigurerTest {
 
     @Test
     void detectsAndRegistersQueryHandlersPerPackage() {
-
-        Map<String, String> eventHandlers = new HashMap<>();
-        eventHandlers.put("Handler1", "my.query.packaging.Handler1");
-        eventHandlers.put("Handler2", "my.query.packaging.Handler2");
-        eventHandlers.put("CustomHandler1", "my.query.packaging.custom.Handler1");
-        eventHandlers.put("CustomHandler2", "my.query.packaging.custom.Handler2");
-        eventHandlers.put("HandlerWithoutPackage", "HandlerWithoutPackage");
-        eventHandlers.forEach((String handlerName, String fullQualifiedHandlerName) -> {
-                                  var bdmock = beanDefinitionMock(fullQualifiedHandlerName);
-                                  when(beanFactory.getBeanDefinition(eq(handlerName))).thenReturn(bdmock);
-                              }
-
-        );
+        Map<String, String> queryHandlers = new HashMap<>();
+        queryHandlers.put("Handler1", "my.query.packaging.Handler1");
+        queryHandlers.put("Handler2", "my.query.packaging.Handler2");
+        queryHandlers.put("CustomHandler1", "my.query.packaging.custom.Handler1");
+        queryHandlers.put("CustomHandler2", "my.query.packaging.custom.Handler2");
+        queryHandlers.put("HandlerWithoutPackage", "HandlerWithoutPackage");
+        queryHandlers.forEach((String handlerName, String fullQualifiedHandlerName) -> {
+            var bdmock = beanDefinitionMock(fullQualifiedHandlerName);
+            when(beanFactory.getBeanDefinition(eq(handlerName))).thenReturn(bdmock);
+        });
         MessageHandlerConfigurer configurer = new MessageHandlerConfigurer(MessageHandlerConfigurer.Type.QUERY,
-                                                                           eventHandlers.keySet().stream().toList());
+                                                                           queryHandlers.keySet().stream().toList());
         configurer.setApplicationContext(applicationContext);
         configurer.enhance(registry);
 
-        /*
-        TODO -> activate as soon as QueryHandlers are in place, as part of #3358
         var moduleCaptor = ArgumentCaptor.forClass(org.axonframework.configuration.Module.class);
         Mockito.verify(registry, times(3)).registerModule(moduleCaptor.capture());
 
         var registeredModules = moduleCaptor.getAllValues();
         assertThat(registeredModules).isNotNull();
         assertThat(registeredModules).hasSize(3);
-        assertThat(registeredModules).allMatch(module -> module instanceof PooledStreamingEventProcessorModule);
+        assertThat(registeredModules).allMatch(module -> module instanceof QueryHandlingModule);
         assertThat(registeredModules.stream().map(Module::name)).containsExactlyInAnyOrder(
-                "my.query.packaging",
-                "my.query.packaging.custom",
-                "default"
+                "QueryHandling[my.query.packaging]",
+                "QueryHandling[my.query.packaging.custom]",
+                "QueryHandling[default]"
         );
-
-         */
     }
-
 
     private static AbstractBeanDefinition beanDefinitionMock(String fqcn) {
         var bdMock = mock(AbstractBeanDefinition.class);

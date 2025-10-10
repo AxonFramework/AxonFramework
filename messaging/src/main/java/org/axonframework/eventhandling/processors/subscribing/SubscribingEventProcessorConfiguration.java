@@ -30,12 +30,10 @@ import org.axonframework.eventhandling.processors.errorhandling.PropagatingError
 import org.axonframework.eventhandling.tracing.DefaultEventProcessorSpanFactory;
 import org.axonframework.eventhandling.tracing.EventProcessorSpanFactory;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.SubscribableMessageSource;
+import org.axonframework.messaging.SubscribableEventSource;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
-
-import java.util.List;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -45,24 +43,24 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a
  * {@link EventProcessorSpanFactory} is defaulted to a {@link DefaultEventProcessorSpanFactory} backed by a
  * {@link org.axonframework.tracing.NoOpSpanFactory}, the {@link MessageMonitor} defaults to a
- * {@link NoOpMessageMonitor}, the {@link EventProcessingStrategy} defaults to a {@link DirectEventProcessingStrategy}
- * and the {@link UnitOfWorkFactory} defaults to the
+ * {@link NoOpMessageMonitor}, and the {@link UnitOfWorkFactory} defaults to the
  * {@link org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory}. The Event Processor
- * {@link SubscribableMessageSource} is <b>hard requirements</b> and as such should be provided.
+ * {@link SubscribableEventSource} is <b>hard requirements</b> and as such should be provided.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
  */
 public class SubscribingEventProcessorConfiguration extends EventProcessorConfiguration {
 
-    private SubscribableMessageSource<? extends EventMessage> messageSource;
-    private EventProcessingStrategy processingStrategy = DirectEventProcessingStrategy.INSTANCE;
+    private SubscribableEventSource eventSource;
 
     /**
      * Constructs a new {@code SubscribingEventProcessorConfiguration}.
      * <p>
      * This configuration will not have any of the default {@link MessageHandlerInterceptor MessageHandlerInterceptors}
-     * for events. Please use {@link #SubscribingEventProcessorConfiguration(EventProcessorConfiguration, Configuration)} when those are desired.
+     * for events. Please use
+     * {@link #SubscribingEventProcessorConfiguration(EventProcessorConfiguration, Configuration)} when those are
+     * desired.
      */
     @Internal
     public SubscribingEventProcessorConfiguration() {
@@ -112,33 +110,18 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
     }
 
     /**
-     * Sets the {@link SubscribableMessageSource} (e.g. the {@link EventBus}) to which this {@link EventProcessor}
+     * Sets the {@link SubscribableEventSource} (e.g. the {@link EventBus}) to which this {@link EventProcessor}
      * implementation will subscribe itself to receive {@link EventMessage}s.
      *
-     * @param messageSource The {@link SubscribableMessageSource} (e.g. the {@link EventBus}) to which this
+     * @param eventSource The {@link SubscribableEventSource} (e.g. the {@link EventBus}) to which this
      *                      {@link EventProcessor} implementation will subscribe itself to receive
      *                      {@link EventMessage}s.
      * @return The current instance, for fluent interfacing.
      */
-    public SubscribingEventProcessorConfiguration messageSource(
-            @Nonnull SubscribableMessageSource<? extends EventMessage> messageSource) {
-        assertNonNull(messageSource, "SubscribableMessageSource may not be null");
-        this.messageSource = messageSource;
-        return this;
-    }
-
-    /**
-     * Sets the {@link EventProcessingStrategy} determining whether events are processed directly or asynchronously.
-     * Defaults to a {@link DirectEventProcessingStrategy}.
-     *
-     * @param processingStrategy The {@link EventProcessingStrategy} determining whether events are processed directly
-     *                           or asynchronously.
-     * @return The current instance, for fluent interfacing.
-     */
-    public SubscribingEventProcessorConfiguration processingStrategy(
-            @Nonnull EventProcessingStrategy processingStrategy) {
-        assertNonNull(processingStrategy, "EventProcessingStrategy may not be null");
-        this.processingStrategy = processingStrategy;
+    public SubscribingEventProcessorConfiguration eventSource(
+            @Nonnull SubscribableEventSource eventSource) {
+        assertNonNull(eventSource, "SubscribableEventSource may not be null");
+        this.eventSource = eventSource;
         return this;
     }
 
@@ -174,31 +157,21 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
     @Override
     protected void validate() throws AxonConfigurationException {
         super.validate();
-        assertNonNull(messageSource, "The SubscribableMessageSource is a hard requirement and should be provided");
+        assertNonNull(eventSource, "The SubscribableMessageSource is a hard requirement and should be provided");
     }
 
     /**
-     * Returns the {@link SubscribableMessageSource} to which this processor subscribes.
+     * Returns the {@link SubscribableEventSource} to which this processor subscribes.
      *
-     * @return The {@link SubscribableMessageSource} for receiving events.
+     * @return The {@link SubscribableEventSource} for receiving events.
      */
-    public SubscribableMessageSource<? extends EventMessage> messageSource() {
-        return messageSource;
-    }
-
-    /**
-     * Returns the {@link EventProcessingStrategy} determining how events are processed.
-     *
-     * @return The {@link EventProcessingStrategy} for this processor.
-     */
-    public EventProcessingStrategy processingStrategy() {
-        return processingStrategy;
+    public SubscribableEventSource eventSource() {
+        return eventSource;
     }
 
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         super.describeTo(descriptor);
-        descriptor.describeProperty("messageSource", messageSource);
-        descriptor.describeProperty("processingStrategy", processingStrategy);
+        descriptor.describeProperty("eventSource", eventSource);
     }
 }

@@ -82,7 +82,7 @@ class InterceptingCommandBusTest {
                 .thenAnswer(invocation -> completedFuture(commandResult("ok")));
 
         CommandMessage testCommand = new GenericCommandMessage(TEST_COMMAND_TYPE, "test");
-        CompletableFuture<CommandResultMessage<?>> result = testSubject
+        CompletableFuture<CommandResultMessage> result = testSubject
                 .dispatch(testCommand, StubProcessingContext.forMessage(testCommand));
 
         ArgumentCaptor<CommandMessage> dispatchedMessage = ArgumentCaptor.forClass(CommandMessage.class);

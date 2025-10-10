@@ -19,7 +19,6 @@ package org.axonframework.utils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
-import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.MessageStream;
@@ -27,138 +26,16 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Integration test that demonstrates the compatibility between {@link AsyncInMemoryStreamableEventSource} and
- * {@link InMemoryStreamableEventSource}.
- * <p>
  * This test verifies that both implementations produce equivalent results when processing the same sequence of events,
  * including error scenarios.
  */
 class AsyncInMemoryStreamableEventSourceTest {
 
     private ProcessingContext processingContext = null;
-
-    @Test
-    @DisplayName("Both implementations handle normal event flow identically")
-    void normalEventFlowCompatibility() throws ExecutionException, InterruptedException {
-        // Given - Same events for both implementations
-        EventMessage event1 = EventTestUtils.asEventMessage("Test Event 1");
-        EventMessage event2 = EventTestUtils.asEventMessage("Test Event 2");
-
-        AsyncInMemoryStreamableEventSource asyncSource = new AsyncInMemoryStreamableEventSource();
-        InMemoryStreamableEventSource legacySource = new InMemoryStreamableEventSource();
-
-        // When - Publish same events to both
-        asyncSource.publishMessage(event1);
-        asyncSource.publishMessage(event2);
-
-        legacySource.publishMessage(event1);
-        legacySource.publishMessage(event2);
-
-        // Then - Both should report same head token
-        TrackingToken asyncHead = asyncSource.firstToken(processingContext).get();
-        TrackingToken legacyHead = legacySource.createHeadToken();
-
-        assertEquals(legacyHead.position(), asyncHead.position());
-
-        // And both should deliver same events in same order
-        StreamingCondition condition = StreamingCondition.startingFrom(null);
-        MessageStream<EventMessage> asyncStream = asyncSource.open(condition, processingContext);
-        try (var legacyStream = legacySource.openStream(null)) {
-
-            // First event
-            assertTrue(asyncStream.hasNextAvailable());
-            assertTrue(legacyStream.hasNextAvailable(0, java.util.concurrent.TimeUnit.MILLISECONDS));
-
-            var asyncEntry1 = asyncStream.next().orElseThrow();
-            TrackedEventMessage legacyEvent1 = legacyStream.nextAvailable();
-
-            assertEquals(legacyEvent1.payload(), asyncEntry1.message().payload());
-            assertEquals(legacyEvent1.trackingToken().position(),
-                         TrackingToken.fromContext(asyncEntry1).orElseThrow().position());
-
-            // Second event
-            var asyncEntry2 = asyncStream.next().orElseThrow();
-            TrackedEventMessage legacyEvent2 = legacyStream.nextAvailable();
-
-            assertEquals(legacyEvent2.payload(), asyncEntry2.message().payload());
-            assertEquals(legacyEvent2.trackingToken().position(),
-                         TrackingToken.fromContext(asyncEntry2).orElseThrow().position());
-
-            // No more events
-            assertFalse(asyncStream.hasNextAvailable());
-            assertFalse(legacyStream.hasNextAvailable(0, java.util.concurrent.TimeUnit.MILLISECONDS));
-        }
-    }
-
-    @Test
-    @DisplayName("Both implementations handle FAIL_EVENT identically")
-    void failEventCompatibility() {
-        // Given
-        AsyncInMemoryStreamableEventSource asyncSource = new AsyncInMemoryStreamableEventSource();
-        InMemoryStreamableEventSource legacySource = new InMemoryStreamableEventSource();
-
-        // When - Publish FAIL_EVENT to both
-        asyncSource.publishMessage(AsyncInMemoryStreamableEventSource.FAIL_EVENT);
-        legacySource.publishMessage(InMemoryStreamableEventSource.FAIL_EVENT);
-
-        // Then - Both should throw identical exceptions
-        StreamingCondition condition = StreamingCondition.startingFrom(null);
-
-        // Test async implementation
-        MessageStream<EventMessage> asyncStream = asyncSource.open(condition, processingContext);
-        IllegalStateException asyncException = assertThrows(IllegalStateException.class,
-                                                            asyncStream::next);
-        assertTrue(asyncException.getMessage().contains("Cannot retrieve event at position [0]"));
-
-        // Test legacy implementation
-        try (var legacyStream = legacySource.openStream(null)) {
-            IllegalStateException legacyException = assertThrows(IllegalStateException.class,
-                                                                 legacyStream::nextAvailable);
-            assertTrue(legacyException.getMessage().contains("Cannot retrieve event at position"));
-        }
-    }
-
-    @Test
-    @DisplayName("Both implementations handle destructive close behavior identically")
-    void destructiveCloseBehaviorCompatibility() throws ExecutionException, InterruptedException {
-        // Given
-        AsyncInMemoryStreamableEventSource asyncSource = new AsyncInMemoryStreamableEventSource();
-        InMemoryStreamableEventSource legacySource = new InMemoryStreamableEventSource();
-
-        // Publish events to both
-        EventMessage event = EventTestUtils.asEventMessage("Test Event");
-        asyncSource.publishMessage(event);
-        legacySource.publishMessage(event);
-
-        // Verify events exist
-        assertNotNull(asyncSource.firstToken(processingContext).get());
-        assertNotNull(legacySource.createHeadToken());
-
-        // When - Open and close streams (triggers destructive behavior)
-        StreamingCondition condition = StreamingCondition.startingFrom(null);
-        MessageStream<EventMessage> asyncStream = asyncSource.open(condition, processingContext);
-        asyncStream.close();
-        try (var legacyStream = legacySource.openStream(null)) {
-            // Just open and close
-        }
-
-        // Then - Both should have cleared their events
-        assertNull(asyncSource.firstToken(processingContext).get());
-        assertNull(legacySource.createHeadToken());
-
-        // And new streams should see no events
-        MessageStream<EventMessage> newAsyncStream = asyncSource.open(condition, processingContext);
-        assertFalse(newAsyncStream.hasNextAvailable());
-
-        try (var newLegacyStream = legacySource.openStream(null)) {
-            assertFalse(newLegacyStream.hasNextAvailable(0, java.util.concurrent.TimeUnit.MILLISECONDS));
-        }
-    }
 
     @Nested
     class TrackingTokenHandling {

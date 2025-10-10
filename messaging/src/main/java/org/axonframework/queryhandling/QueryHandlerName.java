@@ -18,7 +18,10 @@ package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotations.Internal;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * A combination of two {@link QualifiedName QualifiedNames}, one for the query handled by a {@link QueryHandler} and
@@ -35,4 +38,25 @@ public record QueryHandlerName(
         @Nonnull QualifiedName responseName
 ) {
 
+    /**
+     * Constructs a {@code QueryHandlerName} for a given {@code queryType} and {@code responseType}.
+     *
+     * @param queryType    The {@code MessageType} containing the {@link MessageType#qualifiedName() query name}.
+     * @param responseType The {@code MessageType} containing the {@link MessageType#qualifiedName() response name}.
+     */
+    public QueryHandlerName(@Nonnull MessageType queryType,
+                            @Nonnull MessageType responseType) {
+        this(queryType.qualifiedName(), responseType.qualifiedName());
+    }
+
+    /**
+     * Compact constructor asserting whether the {@code queryName} and {@code responseName} are non-null.
+     *
+     * @param queryName    The name of the query a {@link QueryHandler} handlers.
+     * @param responseName The name of the response a {@link QueryHandler} returns.
+     */
+    public QueryHandlerName {
+        requireNonNull(queryName, "The qualifiedName cannot be null.");
+        requireNonNull(responseName, "The qualifiedName cannot be null.");
+    }
 }
