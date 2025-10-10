@@ -86,4 +86,9 @@ public class MockComponentDescriptor implements ComponentDescriptor {
     public String describe() {
         throw new UnsupportedOperationException("This mock Component Descriptor cannot describe itself.");
     }
+
+    @Override
+    public String toString() {
+        return "MockComponentDescriptor{properties=%s}".formatted(properties);
+    }
 }

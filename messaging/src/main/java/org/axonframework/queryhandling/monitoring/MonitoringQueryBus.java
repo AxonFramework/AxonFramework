@@ -16,17 +16,168 @@
 
 package org.axonframework.queryhandling.monitoring;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.configuration.DecoratorDefinition;
+import org.axonframework.eventhandling.EventSink;
+import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.ProcessingLifecycle;
 import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.monitoring.MessageMonitorUtils;
+import org.axonframework.monitoring.NoOpMessageMonitor;
+import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryHandler;
+import org.axonframework.queryhandling.QueryHandlerName;
+import org.axonframework.queryhandling.QueryHandlingComponent;
+import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.SimpleQueryBus;
+import org.axonframework.queryhandling.SubscriptionQueryMessage;
+import org.axonframework.queryhandling.SubscriptionQueryResponseMessages;
+import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
+import org.axonframework.queryhandling.UpdateHandler;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Signal;
 import reactor.util.context.Context;
 
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
-// TODO 3595 - Introduce monitoring logic here.
-public class MonitoringQueryBus {
+import static java.util.Objects.requireNonNull;
 
-    // private final MessageMonitor<? super QueryMessage> messageMonitor;
+/**
+ * A {@link QueryBus} wrapper that supports a {@link org.axonframework.monitoring.MessageMonitor}. Actual dispatching
+ * and handling of queries is done by a delegate.
+ * <p>
+ * This {@link MonitoringQueryBus} is typically registered as a
+ * {@link org.axonframework.configuration.ComponentRegistry#registerDecorator(DecoratorDefinition) decorator} and
+ * automatically kicks in whenever a {@link QueryMessage} specific {@link MessageMonitor} is present.
+ */
+public class MonitoringQueryBus implements QueryBus {
+
+    /**
+     * The order in which the {@link MonitoringQueryBus} is applied as a
+     * {@link org.axonframework.configuration.ComponentRegistry#registerDecorator(DecoratorDefinition) decorator} to the
+     * {@link QueryBus}.
+     * <p>
+     * As such, any decorator with a lower value will be applied to the delegate, and any higher value will be applied
+     * to the {@code MonitoringQueryBus} itself. Using the same value can either lead to application of the decorator to
+     * the delegate or the {@code MonitoringQueryBus}, depending on the order of registration.
+     * <p>
+     * The order of the {@code MonitoringQueryBus} is set to {@code Integer.MIN_VALUE + 100} to ensure it is applied
+     * very early in the configuration process, but not the earliest to allow for other decorators to be applied.
+     */
+    public static final int DECORATION_ORDER = Integer.MIN_VALUE + 100;
+
+    private final QueryBus delegate;
+    private final MessageMonitor<? super QueryMessage> messageMonitor;
+
+    /**
+     * Constructs a {@code MonitoringQueryBus}, decorating the given {@code delegate}.
+     *
+     * @param delegate     The delegate {@code EventSink} that will handle all publishing.
+     * @param messageMonitor the {@link MessageMonitor} to use.
+     */
+    public MonitoringQueryBus(@Nonnull final QueryBus delegate,
+                              @Nullable final MessageMonitor<? super QueryMessage> messageMonitor) {
+        this.delegate = requireNonNull(delegate, "delegate cannot be null");
+        this.messageMonitor = messageMonitor != null ? messageMonitor : NoOpMessageMonitor.INSTANCE;
+    }
+
+    @Override
+    public @Nonnull MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage query,
+                                                              @Nullable ProcessingContext context) {
+        MessageMonitorUtils.registerMonitorCallback(context, messageMonitor, query);
+
+        // TODO: JG?: if we want to report the result messages as well, we need to copy this stream somehow. It would not be a good idea imho to grab this from inside the concrete queryBus impl.
+        // TODO: JG?: do we have a MessageStream/copy?
+        return delegate.query(query, context);
+    }
+
+    @Override
+    public @Nonnull SubscriptionQueryResponseMessages subscriptionQuery(@Nonnull SubscriptionQueryMessage query,
+                                                                        @Nullable ProcessingContext context,
+                                                                        int updateBufferSize) {
+        // TODO: JG?: include in #3595?
+        return delegate.subscriptionQuery(query, context, updateBufferSize);
+    }
+
+    @Override
+    public @Nonnull UpdateHandler subscribeToUpdates(@Nonnull SubscriptionQueryMessage query, int updateBufferSize) {
+        // TODO: JG?: include in #3595?
+        return delegate.subscribeToUpdates(query, updateBufferSize);
+    }
+
+    @Override
+    public @Nonnull CompletableFuture<Void> emitUpdate(@Nonnull Predicate<SubscriptionQueryMessage> filter,
+                                                       @Nonnull Supplier<SubscriptionQueryUpdateMessage> updateSupplier,
+                                                       @Nullable ProcessingContext context) {
+        // TODO: JG?: include in #3595?
+        return delegate.emitUpdate(filter, updateSupplier, context);
+    }
+
+    @Override
+    public @Nonnull CompletableFuture<Void> completeSubscriptions(@Nonnull Predicate<SubscriptionQueryMessage> filter,
+                                                                  @Nullable ProcessingContext context) {
+        // TODO: JG?: include in #3595?
+        return delegate.completeSubscriptions(filter, context);
+    }
+
+    @Override
+    public @Nonnull CompletableFuture<Void> completeSubscriptionsExceptionally(
+            @Nonnull Predicate<SubscriptionQueryMessage> filter,
+            @Nonnull Throwable cause,
+            @Nullable ProcessingContext context
+    ) {
+        // TODO: JG?: include in #3595?
+        return delegate.completeSubscriptionsExceptionally(filter, cause, context);
+    }
+
+    @Override
+    public QueryBus subscribe(@Nonnull Set<QueryHandlerName> names, @Nonnull QueryHandler queryHandler) {
+        // TODO: JG?: include in #3595?
+        delegate.subscribe(names, queryHandler);
+        return this;
+    }
+
+    @Override
+    public QueryBus subscribe(@Nonnull QualifiedName queryName,
+                              @Nonnull QualifiedName responseName,
+                              @Nonnull QueryHandler queryHandler) {
+        // TODO: JG?: include in #3595?
+        delegate.subscribe(queryName, responseName, queryHandler);
+        return this;
+    }
+
+    @Override
+    public QueryBus subscribe(@Nonnull QueryHandlerName handlerName, @Nonnull QueryHandler queryHandler) {
+        delegate.subscribe(handlerName, queryHandler);
+        return this;
+    }
+
+    @Override
+    public QueryBus subscribe(@Nonnull QueryHandlingComponent handlingComponent) {
+        delegate.subscribe(handlingComponent);
+        return this;
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeWrapperOf(delegate);
+        descriptor.describeProperty("messageMonitor", messageMonitor);
+    }
+
+
+// private final MessageMonitor<? super QueryMessage> messageMonitor;
 
     /*
     @Nonnull
@@ -151,21 +302,21 @@ public class MonitoringQueryBus {
      *
      * @author Milan Savic
      */
-//    private static class MonitorCallbackContextWriter implements UnaryOperator<Context> {
-//
-//        private final MessageMonitor<? super QueryMessage> messageMonitor;
-//        private final StreamingQueryMessage query;
-//
-//        private MonitorCallbackContextWriter(MessageMonitor<? super QueryMessage> messageMonitor,
-//                                             StreamingQueryMessage query) {
-//            this.messageMonitor = messageMonitor;
-//            this.query = query;
-//        }
-//
-//        @Override
-//        public Context apply(Context ctx) {
-//            return ctx.put(MessageMonitor.MonitorCallback.class,
-//                           messageMonitor.onMessageIngested(query));
-//        }
-//    }
+    /*private static class MonitorCallbackContextWriter implements UnaryOperator<Context> {
+
+        private final MessageMonitor<? super QueryMessage> messageMonitor;
+        private final StreamingQueryMessage query;
+
+        private MonitorCallbackContextWriter(MessageMonitor<? super QueryMessage> messageMonitor,
+                                             StreamingQueryMessage query) {
+            this.messageMonitor = messageMonitor;
+            this.query = query;
+        }
+
+        @Override
+        public Context apply(Context ctx) {
+            return ctx.put(MessageMonitor.MonitorCallback.class,
+                           messageMonitor.onMessageIngested(query));
+        }
+    }*/
 }
