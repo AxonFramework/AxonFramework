@@ -29,6 +29,7 @@ import org.axonframework.eventhandling.InterceptingEventSink;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.interceptors.DispatchInterceptorRegistry;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 
 import java.util.List;
 
@@ -75,7 +76,7 @@ public class EventBusConfigurationDefaults implements ConfigurationEnhancer {
     }
 
     private static EventBus defaultEventBus(Configuration config) {
-        return new SimpleEventBus();
+        return new SimpleEventBus(config.getComponent(UnitOfWorkFactory.class));
     }
 
     private static void registerDecorators(@Nonnull ComponentRegistry registry) {
