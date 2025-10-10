@@ -41,6 +41,8 @@ import static java.util.Objects.requireNonNull;
  * This {@link MonitoringEventSink} is typically registered as a
  * {@link org.axonframework.configuration.ComponentRegistry#registerDecorator(DecoratorDefinition) decorator} and
  * automatically kicks in whenever an {@link EventMessage} specific {@link MessageMonitor} is present.
+ *
+ * FIXME: when we use the {@link MonitoringEventDispatchInterceptor} this might be obsolete.
  */
 public class MonitoringEventSink implements EventSink {
 

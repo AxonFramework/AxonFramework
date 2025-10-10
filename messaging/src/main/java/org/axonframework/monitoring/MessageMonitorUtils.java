@@ -23,9 +23,9 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingLifecycle;
 import org.axonframework.monitoring.MessageMonitor.MonitorCallback;
 
+import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
-import java.util.stream.StreamSupport;
 
 import static java.util.concurrent.CompletableFuture.allOf;
 import static java.util.stream.Collectors.collectingAndThen;
@@ -37,31 +37,31 @@ import static java.util.stream.Collectors.toList;
 public class MessageMonitorUtils {
 
     /**
-     * Creates a {@link MonitorCallback} for each of the given {@code messages} using {@link MessageMonitor#onMessageIngested(Message)}
-     * and registers:
+     * Creates a {@link MonitorCallback} for each of the given {@code messages} using
+     * {@link MessageMonitor#onMessageIngested(Message)} and registers:
      * <ul>
      *     <li>{@link MonitorCallback#reportSuccess()} on {@link ProcessingContext#onAfterCommit(Function)}</li>
      *     <li>{@link MonitorCallback#reportFailure(Throwable)} on {@link ProcessingContext#onError(ProcessingLifecycle.ErrorHandler)}</li>
      * </ul>
-     *
+     * <p>
      * Requires the {@link ProcessingContext} to be <code>non-null</code> and {@link ProcessingContext#isStarted() started},
      * if it is not, {@link MonitorCallback#reportIgnored()} is called instead.
      *
-     * @param processingContext the current {@link ProcessingContext}, if <code>null</code>> or not started, the message is reported as ignored
-     * @param messageMonitor the {@link MessageMonitor} used for callback creation
-     * @param messages the {@link Message}s to report
-     * @param <T> subtype of Message used
+     * @param processingContext the current {@link ProcessingContext}, if <code>null</code>> or not started, the message
+     *                          is reported as ignored
+     * @param messageMonitor    the {@link MessageMonitor} used for callback creation
+     * @param messages          the {@link Message}s to report
+     * @param <T>               subtype of Message used
      */
     public static <T extends Message> void registerMonitorCallbacks(@Nullable ProcessingContext processingContext,
                                                                     @Nonnull MessageMonitor<T> messageMonitor,
-                                                                    @Nonnull Iterable<? extends T> messages) {
-        var monitorCallbacks = StreamSupport.stream(messages.spliterator(), false)
-                                            .map(messageMonitor::onMessageIngested)
-                                            .toList();
+                                                                    @Nonnull Collection<? extends T> messages) {
+        var monitorCallbacks = messageMonitor.onMessagesIngested(messages);
 
         if (processingContext != null && processingContext.isStarted()) {
-            processingContext.onError((cts, phase, error) -> monitorCallbacks.forEach(it -> it.reportFailure(error)));
-            processingContext.onAfterCommit(c -> monitorCallbacks.stream()
+            processingContext.onError((cts, phase, error) -> monitorCallbacks.values()
+                                                                             .forEach(it -> it.reportFailure(error)));
+            processingContext.onAfterCommit(c -> monitorCallbacks.values().stream()
                                                                  .map(it -> CompletableFuture.runAsync(it::reportSuccess))
                                                                  // TODO: Collecting a Stream of CompletableFutures to allOf could be a FutureUtil imho
                                                                  .collect(collectingAndThen(
@@ -71,25 +71,26 @@ public class MessageMonitorUtils {
                                                                  )
             );
         } else {
-            monitorCallbacks.forEach(MonitorCallback::reportIgnored);
+            monitorCallbacks.values().forEach(MonitorCallback::reportIgnored);
         }
     }
 
     /**
-     * Creates a {@link MonitorCallback} for the given {@code message} using {@link MessageMonitor#onMessageIngested(Message)}
-     * and registers:
+     * Creates a {@link MonitorCallback} for the given {@code message} using
+     * {@link MessageMonitor#onMessageIngested(Message)} and registers:
      * <ul>
      *     <li>{@link MonitorCallback#reportSuccess()} on {@link ProcessingContext#onAfterCommit(Function)}</li>
      *     <li>{@link MonitorCallback#reportFailure(Throwable)} on {@link ProcessingContext#onError(ProcessingLifecycle.ErrorHandler)}</li>
      * </ul>
-     *
+     * <p>
      * Requires the {@link ProcessingContext} to be <code>non-null</code> and {@link ProcessingContext#isStarted() started},
      * if it is not, {@link MonitorCallback#reportIgnored()} is called instead.
      *
-     * @param processingContext the current {@link ProcessingContext}, if <code>null</code>> or not started, the message is reported as ignored
-     * @param messageMonitor the {@link MessageMonitor} used for callback creation
-     * @param message the {@link Message} to report
-     * @param <T> subtype of Message used
+     * @param processingContext the current {@link ProcessingContext}, if <code>null</code>> or not started, the message
+     *                          is reported as ignored
+     * @param messageMonitor    the {@link MessageMonitor} used for callback creation
+     * @param message           the {@link Message} to report
+     * @param <T>               subtype of Message used
      */
     public static <T extends Message> void registerMonitorCallback(@Nullable ProcessingContext processingContext,
                                                                    @Nonnull MessageMonitor<T> messageMonitor,

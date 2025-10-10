@@ -42,6 +42,8 @@ import static java.util.Objects.requireNonNull;
  * {@link org.axonframework.configuration.ComponentRegistry#registerDecorator(DecoratorDefinition) decorator} and
  * automatically kicks whenever a {@link CommandMessage} specific {@link org.axonframework.monitoring.MessageMonitor} is
  * present.
+ *
+ * FIXME: if the {@link MonitoringCommandHandlerInterceptor} works as intended, we do not need this anymore.
  */
 public class MonitoringCommandBus implements CommandBus {
 

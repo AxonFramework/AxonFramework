@@ -16,17 +16,15 @@
 
 package org.axonframework.test.fixture;
 
-import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.annotations.Command;
 import org.axonframework.commandhandling.annotations.CommandHandler;
 import org.axonframework.commandhandling.configuration.CommandHandlingModule;
-import org.axonframework.commandhandling.monitoring.MonitoringCommandBus;
+import org.axonframework.commandhandling.monitoring.MonitoringCommandHandlerInterceptor;
 import org.axonframework.configuration.DecoratorDefinition;
-import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.annotations.Event;
 import org.axonframework.eventhandling.gateway.EventAppender;
+import org.axonframework.eventhandling.monitoring.MonitoringEventDispatchInterceptor;
 import org.axonframework.eventhandling.monitoring.MonitoringEventProcessor;
-import org.axonframework.eventhandling.monitoring.MonitoringEventSink;
 import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.eventsourcing.annotations.EventSourcedEntity;
 import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
@@ -34,8 +32,6 @@ import org.axonframework.eventsourcing.annotations.EventTag;
 import org.axonframework.eventsourcing.annotations.reflection.EntityCreator;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.eventsourcing.monitoring.MonitoringEventStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.modelling.annotations.InjectEntity;
 import org.axonframework.monitoring.MessageMonitor;
@@ -107,31 +103,33 @@ public class AxonTestFixtureMonitoringTest {
         // configure application using given messageMonitor
         static EventSourcingConfigurer configurer(final MessageMonitor<Message> messageMonitor) {
 
+
             final var configurer = EventSourcingConfigurer.create()
+
                                                           .componentRegistry(registry -> {
-                                                              registry
-                                                                      .registerDecorator(decorate(CommandBus.class,
-                                                                                                  messageMonitor,
-                                                                                                  MonitoringCommandBus::new))
-// TODO: erasure between Store and Sink                               .registerDecorator(decorate(EventSink.class,
+
+
+//                                                              registry
+//                                                                      .registerDecorator(decorate(EventProcessor.class,
 //                                                                                                  messageMonitor,
-//                                                                                                  MonitoringEventSink::new))
-                                                                      .registerDecorator(decorate(EventStore.class,
-                                                                                                  messageMonitor,
-                                                                                                  MonitoringEventStore::new))
-                                                                      .registerDecorator(decorate(EventProcessor.class,
-                                                                                                  messageMonitor,
-                                                                                                  MonitoringEventProcessor::new))
-                                                                      .registerDecorator(decorate(QueryBus.class,
-                                                                                                  messageMonitor,
-                                                                                                  MonitoringQueryBus::new))
-                                                              ;
+//                                                                                                  MonitoringEventProcessor::new))
+//                                                                      .registerDecorator(decorate(QueryBus.class,
+//                                                                                                  messageMonitor,
+//                                                                                                  MonitoringQueryBus::new))
+//                                                              ;
                                                           });
 
             final var entity = EventSourcedEntityModule.annotated(String.class,
                                                                   Domain.CourseCreatedCommandHandler.State.class);
 
             return configurer.registerEntity(entity)
+                             .messaging(messagingConfigurer -> {
+                                 messagingConfigurer.registerCommandHandlerInterceptor(
+                                         c -> new MonitoringCommandHandlerInterceptor(LoggingMessageMonitor.INSTANCE)
+                                 ).registerEventDispatchInterceptor(
+                                         c -> new MonitoringEventDispatchInterceptor(LoggingMessageMonitor.INSTANCE)
+                                 );
+                             })
                              .registerCommandHandlingModule(CommandHandlingModule.named("CreateCourse")
                                                                                  .commandHandlers()
                                                                                  .annotatedCommandHandlingComponent(c -> new Domain.CourseCreatedCommandHandler()))
@@ -152,7 +150,9 @@ public class AxonTestFixtureMonitoringTest {
 
         }
 
-        public record JustSomeAdditionalCourseCreated(String courseId, String name) {}
+        public record JustSomeAdditionalCourseCreated(String courseId, String name) {
+
+        }
 
         public static class CourseAlreadyExists extends RuntimeException {
 
@@ -183,7 +183,8 @@ public class AxonTestFixtureMonitoringTest {
                     if (created) {
                         throw new CourseAlreadyExists(cmd.courseId);
                     }
-                    return List.of(new CourseCreated(cmd.courseId(), cmd.name()), new JustSomeAdditionalCourseCreated(cmd.courseId(), cmd.name()));
+                    return List.of(new CourseCreated(cmd.courseId(), cmd.name()),
+                                   new JustSomeAdditionalCourseCreated(cmd.courseId(), cmd.name()));
                 }
 
                 @EventSourcingHandler
@@ -211,7 +212,8 @@ public class AxonTestFixtureMonitoringTest {
                 .command(new CreateCourse(courseId, "Math"))
                 .then()
                 .success()
-                .events(new CourseCreated(courseId, "Math"), new Domain.JustSomeAdditionalCourseCreated(courseId, "Math"))
+                .events(new CourseCreated(courseId, "Math"),
+                        new Domain.JustSomeAdditionalCourseCreated(courseId, "Math"))
                 .and()
                 .when()
                 .command(new CreateCourse(courseId, "Math"))

@@ -36,6 +36,8 @@ import static java.util.Objects.requireNonNull;
  * {@link org.axonframework.configuration.ComponentRegistry#registerDecorator(DecoratorDefinition)  decorator}
  *  and automatically kicks in whenever an {@link EventMessage} specific
  * {@link org.axonframework.monitoring.MessageMonitor} is present.
+ *
+ * FIXME: JG? we intercept every message via {@link MonitoringEventDispatchInterceptor}, so do we really need this?
  */
 public class MonitoringEventProcessor implements EventProcessor {
 
