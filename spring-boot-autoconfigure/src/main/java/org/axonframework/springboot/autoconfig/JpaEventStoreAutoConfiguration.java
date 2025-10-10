@@ -29,12 +29,13 @@ import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedJpaEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedJpaEventStorageEngineConfiguration;
+import org.axonframework.springboot.JpaEventStorageEngineConfigurationProperties;
 import org.axonframework.springboot.util.RegisterDefaultEntities;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -53,6 +54,7 @@ import java.util.function.UnaryOperator;
 @RegisterDefaultEntities(packages = {
         "org.axonframework.eventsourcing.eventstore.jpa"
 })
+@EnableConfigurationProperties(JpaEventStorageEngineConfigurationProperties.class)
 public class JpaEventStoreAutoConfiguration {
 
     /**
@@ -66,14 +68,15 @@ public class JpaEventStoreAutoConfiguration {
      * Engine.
      */
     @Bean
-    @ConditionalOnBean({EntityManagerProvider.class, TransactionManager.class})
     public ConfigurationEnhancer aggregateBasedJpaEventStorageEngine(
             EntityManagerProvider entityManagerProvider,
             TransactionManager transactionManager,
             EventConverter eventConverter,
-            PersistenceExceptionResolver persistenceExceptionResolver
+            PersistenceExceptionResolver persistenceExceptionResolver,
+            JpaEventStorageEngineConfigurationProperties jpaEventStorageEngineConfigurationProperties
     ) {
         return new AggregateBasedJpaEventStorageEngineConfigrationEnhancer(
+                jpaEventStorageEngineConfigurationProperties,
                 entityManagerProvider,
                 transactionManager,
                 eventConverter,
@@ -85,6 +88,7 @@ public class JpaEventStoreAutoConfiguration {
      * Enhancer for registration of a bean definition creating a JPA Storage Engine.
      */
     public record AggregateBasedJpaEventStorageEngineConfigrationEnhancer(
+            JpaEventStorageEngineConfigurationProperties properties,
             EntityManagerProvider entityManagerProvider,
             TransactionManager transactionManager,
             EventConverter eventConverter,
@@ -93,20 +97,15 @@ public class JpaEventStoreAutoConfiguration {
 
         @Override
         public void enhance(@NotNull ComponentRegistry registry) {
-            UnaryOperator<AggregateBasedJpaEventStorageEngineConfiguration> configurer = config -> {
-                config
-                        /*
-                        TODO: provide configuration for it from Spring Properties.
-                        .batchSize(a)
-                        .gapCleaningThreshold(b)
-                        .gapTimeout(c)
-                        .lowestGlobalSequence(d)
-                        .maxGapOffset(e)
-                         */
-                        .persistenceExceptionResolver(persistenceExceptionResolver)
-                ;
-                return config;
-            };
+            UnaryOperator<AggregateBasedJpaEventStorageEngineConfiguration> configurer = config ->
+                    config
+                            .batchSize(properties.batchSize())
+                            .gapCleaningThreshold(properties.gapCleaningThreshold())
+                            .gapTimeout(properties.gapTimeout())
+                            .lowestGlobalSequence(properties.lowestGlobalSequence())
+                            .maxGapOffset(properties.maxGapOffset())
+                            .persistenceExceptionResolver(persistenceExceptionResolver);
+
             registry.registerIfNotPresent(EventStorageEngine.class,
                                           (configuration)
                                                   -> new AggregateBasedJpaEventStorageEngine(
