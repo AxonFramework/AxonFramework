@@ -80,6 +80,19 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
     }
 
     @Test
+    void eventSinkEventBusEventStore() {
+        Configuration result = testSubject.build();
+
+        EventStore eventStore = result.getComponent(EventStore.class);
+        EventBus eventBus = result.getComponent(EventBus.class);
+        EventSink eventSink = result.getComponent(EventSink.class);
+
+        assertThat(eventBus).isSameAs(eventStore);
+        assertThat(eventSink).isSameAs(eventStore);
+    }
+
+
+    @Test
     void registerTagResolverOverridesDefault() {
         TagResolver expected = PayloadBasedTagResolver.forPayloadType(String.class);
 
