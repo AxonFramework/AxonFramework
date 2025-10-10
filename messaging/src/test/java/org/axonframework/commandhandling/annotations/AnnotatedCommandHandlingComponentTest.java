@@ -18,7 +18,7 @@ package org.axonframework.commandhandling.annotations;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandMessageHandlerInterceptorChain;
+import org.axonframework.commandhandling.interceptors.CommandMessageHandlerInterceptorChain;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
