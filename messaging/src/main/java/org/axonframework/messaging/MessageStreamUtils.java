@@ -17,14 +17,17 @@
 package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.messaging.MessageStream.Single;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
+import reactor.core.publisher.Mono;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /**
  * Utility methods to work with {@link MessageStream MessageStreams}.
@@ -57,6 +60,70 @@ public abstract class MessageStreamUtils {
     }
 
     /**
+     * Create a stream that provides the {@link Message Messages} returned by the given {@code flux}, automatically
+     * wrapped in an {@link Entry}.
+     *
+     * @param flux The {@link Flux} providing the {@link Message Messages} to stream.
+     * @param <M>  The type of {@link Message} contained in the {@link Entry entries} of this stream.
+     * @return A stream of {@link Entry entries} that returns the {@link Message Messages} provided by the given
+     *     {@code flux}.
+     */
+    public static <M extends Message> MessageStream<M> fromFlux(@Nonnull Flux<M> flux) {
+        return fromFlux(flux, message -> Context.empty());
+    }
+
+    /**
+     * Create a stream that provides the {@link Message Messages} returned by the given {@code flux}, automatically
+     * wrapped in an {@link Entry} with the resulting {@link Context} from the {@code contextSupplier}.
+     *
+     * @param flux            The {@link Flux} providing the {@link Message Messages} to stream.
+     * @param contextSupplier A {@link Function} ingesting each {@link Message} from the given {@code flux} returning
+     *                        the {@link Context} to set for the {@link Entry} the {@code Message} is wrapped in.
+     * @param <M>             The type of {@link Message} contained in the {@link Entry entries} of this stream.
+     * @return A stream of {@link Entry entries} that returns the {@link Message Messages} provided by the given
+     * {@code flux} with a {@link Context} provided by the {@code contextSupplier}.
+     */
+    public static <M extends Message> MessageStream<M> fromFlux(@Nonnull Flux<M> flux,
+                                                                @Nonnull Function<M, Context> contextSupplier) {
+        return new FluxMessageStream<>(flux.map(message -> new SimpleEntry<>(message, contextSupplier.apply(message))));
+    }
+
+    /**
+     * Create a stream that returns a single {@link Entry entry} wrapping the {@link Message} from the given
+     * {@code mono}, once the given {@code mono} completes.
+     * <p>
+     * The stream will contain at most a single entry. It may also contain no entries if the mono completes empty. The
+     * stream will complete with an exception when the given {@code mono} completes exceptionally.
+     *
+     * @param mono The {@link Mono} providing the {@link Message} to contain in the stream.
+     * @param <M>  The type of {@link Message} contained in the {@link Entry entries} of this stream.
+     * @return A stream containing at most one {@link Entry entry} from the given {@code mono}.
+     */
+    public static <M extends Message> Single<M> fromMono(@Nonnull Mono<M> mono) {
+        return MessageStream.fromFuture(mono.toFuture());
+    }
+
+    /**
+     * Create a stream that returns a single {@link Entry entry} wrapping the {@link Message} from the given
+     * {@code mono}, once the given {@code mono} completes.
+     * <p>
+     * The automatically generated {@code Entry} will have the {@link Context} as given by the {@code contextSupplier}.
+     * <p>
+     * The stream will contain at most a single entry. It may also contain no entries if the mono completes empty. The
+     * stream will complete with an exception when the given {@code mono} completes exceptionally.
+     *
+     * @param mono            The {@link Mono} providing the {@link Message} to contain in the stream.
+     * @param contextSupplier A {@link Function} ingesting the {@link Message} from the given {@code mono} returning the
+     *                        {@link Context} to set for the {@link Entry} the {@code Message} is wrapped in.
+     * @param <M>             The type of {@link Message} contained in the {@link Entry entries} of this stream.
+     * @return A stream containing at most one {@link Entry entry} from the given {@code mono}.
+     */
+    public static <M extends Message> Single<M> fromMono(@Nonnull Mono<M> mono,
+                                                         @Nonnull Function<M, Context> contextSupplier) {
+        return MessageStream.fromFuture(mono.toFuture(), contextSupplier);
+    }
+
+    /**
      * Returns a {@code CompletableFuture} that completes with the given reduction of messages read from the
      * {@code source}. The reduction is computed by applying the given {@code accumulator} function on the result of the
      * previous invocation in combination with each {@link MessageStream.Entry entry} returned by the given
@@ -82,8 +149,8 @@ public abstract class MessageStreamUtils {
      * @return A {@code CompletableFuture} that completes with the result of the reduction operation.
      */
     public static <M extends Message, R> CompletableFuture<R> reduce(@Nonnull MessageStream<M> source,
-                                                                        @Nonnull R identity,
-                                                                        @Nonnull BiFunction<R, MessageStream.Entry<M>, R> accumulator) {
+                                                                     @Nonnull R identity,
+                                                                     @Nonnull BiFunction<R, MessageStream.Entry<M>, R> accumulator) {
         Reducer<M, R> reducer = new Reducer<>(source, identity, accumulator);
         source.onAvailable(reducer::process);
         return reducer.result();
@@ -125,12 +192,14 @@ public abstract class MessageStreamUtils {
         }
 
         public void process() {
-            boolean continueOnCurrentThread = true;
-            while (continueOnCurrentThread && !processingGate.getAndSet(true)) {
+            if (!processingGate.getAndSet(true)) {
                 try {
-                    while (emitter.requestedFromDownstream() > 0 && source.hasNextAvailable()) {
+                    long remaining = emitter.requestedFromDownstream();
+
+                    while (remaining-- > 0 && source.hasNextAvailable() && !emitter.isCancelled()) {
                         source.next().ifPresent(emitter::next);
                     }
+
                     if (source.isCompleted()) {
                         source.error().ifPresentOrElse(emitter::error, emitter::complete);
                     }
@@ -140,7 +209,6 @@ public abstract class MessageStreamUtils {
                 } finally {
                     processingGate.set(false);
                 }
-                continueOnCurrentThread = emitter.requestedFromDownstream() > 0 && source.hasNextAvailable();
             }
         }
     }

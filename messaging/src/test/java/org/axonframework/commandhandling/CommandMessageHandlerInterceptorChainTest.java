@@ -21,6 +21,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.MessageStreamUtils;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
@@ -64,11 +65,10 @@ class CommandMessageHandlerInterceptorChainTest {
         MessageHandlerInterceptorChain<CommandMessage> testSubject =
                 new CommandMessageHandlerInterceptorChain(asList(interceptorOne, interceptorTwo), mockHandler);
 
-        Message result = testSubject.proceed(testCommand, StubProcessingContext.forMessage(testCommand))
-                                    .first()
-                                    .asMono()
-                                    .map(MessageStream.Entry::message)
-                                    .block();
+        Message result = MessageStreamUtils.asFlux(testSubject.proceed(testCommand, StubProcessingContext.forMessage(testCommand)).first())
+            .singleOrEmpty()
+            .map(MessageStream.Entry::message)
+            .block();
         assertNotNull(result);
         assertSame("Result", result.payload());
         verify(mockHandler).handle(argThat(x -> (x != null) && "testing".equals(x.payload())), any());
@@ -109,11 +109,10 @@ class CommandMessageHandlerInterceptorChainTest {
                 new CommandMessageHandlerInterceptorChain(asList(interceptorOne, interceptorTwo), mockHandler);
 
         // when first invocation...
-        Message firstResult = testSubject.proceed(firstCommand, firstContext)
-                                         .first()
-                                         .asMono()
-                                         .map(MessageStream.Entry::message)
-                                         .block();
+        Message firstResult = MessageStreamUtils.asFlux(testSubject.proceed(firstCommand, firstContext).first())
+            .singleOrEmpty()
+            .map(MessageStream.Entry::message)
+            .block();
         // then response is...
         assertNotNull(firstResult);
         assertSame("Result", firstResult.payload());
@@ -123,11 +122,10 @@ class CommandMessageHandlerInterceptorChainTest {
         firstInterceptorOrder.verify(interceptorOne).interceptOnHandle(eq(firstCommand), eq(firstContext), any());
         firstInterceptorOrder.verify(interceptorTwo).interceptOnHandle(eq(firstCommand), eq(firstContext), any());
         // when second invocation...
-        Message secondResult = testSubject.proceed(secondCommand, secondContext)
-                                          .first()
-                                          .asMono()
-                                          .map(MessageStream.Entry::message)
-                                          .block();
+        Message secondResult = MessageStreamUtils.asFlux(testSubject.proceed(secondCommand, secondContext).first())
+            .singleOrEmpty()
+            .map(MessageStream.Entry::message)
+            .block();
         // then response is...
         assertNotNull(secondResult);
         assertSame("Result", firstResult.payload());

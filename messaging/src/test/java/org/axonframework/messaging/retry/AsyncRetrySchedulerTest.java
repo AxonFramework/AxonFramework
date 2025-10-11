@@ -20,6 +20,7 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.MessageStreamUtils;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
@@ -150,7 +151,7 @@ class AsyncRetrySchedulerTest {
 
         assertTrue(actual.hasNextAvailable());
 
-        StepVerifier.create(actual.asFlux())
+        StepVerifier.create(MessageStreamUtils.asFlux(actual))
                     .expectNextCount(1)
                     .verifyError(MockException.class);
 

@@ -19,6 +19,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.MessageStreamUtils;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -99,7 +100,7 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
     default Publisher<QueryResponseMessage> streamingQuery(@Nonnull QueryMessage query,
                                                            @Nullable ProcessingContext context) {
         return Mono.fromSupplier(() -> query(query, context))
-                   .flatMapMany(MessageStream::asFlux)
+                   .flatMapMany(MessageStreamUtils::asFlux)
                    .map(MessageStream.Entry::message);
     }
 

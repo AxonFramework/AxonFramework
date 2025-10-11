@@ -22,6 +22,7 @@ import org.axonframework.common.annotations.Internal;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.MessageStreamUtils;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.util.ClasspathResolver;
@@ -78,10 +79,10 @@ public class MessageStreamResolverUtils {
         // Handle Project Reactor types first with traditional if-statements
         if (ClasspathResolver.projectReactorOnClasspath()) {
             if (result instanceof Mono<?> mono) {
-                return MessageStream.fromMono(mono.map(r -> new GenericMessage(typeResolver.resolveOrThrow(r), r)));
+                return MessageStreamUtils.fromMono(mono.map(r -> new GenericMessage(typeResolver.resolveOrThrow(r), r)));
             }
             if (result instanceof Flux<?> flux) {
-                return MessageStream.fromFlux(flux.map(r -> new GenericMessage(typeResolver.resolveOrThrow(r), r)));
+                return MessageStreamUtils.fromFlux(flux.map(r -> new GenericMessage(typeResolver.resolveOrThrow(r), r)));
             }
         }
 

@@ -313,7 +313,7 @@ class StreamingQueryTest {
 
         @QueryHandler(queryName = "streamingAfterHandlerCompletesQuery")
         public Flux<Long> streamingAfterHandlerCompletesQuery(String criteria) {
-            return Flux.interval(Duration.ofSeconds(1))
+            return Flux.interval(Duration.ofMillis(100))
                        .take(5);
         }
 

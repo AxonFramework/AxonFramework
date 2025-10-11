@@ -21,6 +21,7 @@ import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.MessageStreamUtils;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -160,7 +161,7 @@ public class SimpleQueryBus implements QueryBus {
                                                                @Nullable ProcessingContext context,
                                                                int updateBufferSize) {
         Flux<QueryResponseMessage> initialStream =
-                Flux.defer(() -> query(query, context).asFlux())
+                Flux.defer(() -> MessageStreamUtils.asFlux(query(query, context)))
                     .map(MessageStream.Entry::message)
                     .doOnError(error -> logger.error(
                             "An error happened while trying to report an initial result. Query: {}",
@@ -173,6 +174,7 @@ public class SimpleQueryBus implements QueryBus {
                                                             updateHandler::complete);
     }
 
+    @Override
     @Nonnull
     public UpdateHandler subscribeToUpdates(@Nonnull SubscriptionQueryMessage query,
                                             int updateBufferSize) {
