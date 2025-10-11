@@ -23,9 +23,13 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.SubscribableEventSource;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
+
 import jakarta.annotation.Nonnull;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 /**
  * A {@link SubscribableEventSource} that receives event from a persistent stream from Axon Server. The persistent
@@ -40,9 +44,8 @@ public class PersistentStreamMessageSource implements SubscribableEventSource {
     private final PersistentStreamConnection persistentStreamConnection;
     private final String name;
 
-    private Consumer<List<? extends EventMessage>> consumer = NO_OP_CONSUMER;
-    private static final Consumer<List<? extends EventMessage>> NO_OP_CONSUMER = events -> {
-    };
+    private BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> consumer = NO_OP_CONSUMER;
+    private static final BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> NO_OP_CONSUMER = (events, context) -> CompletableFuture.completedFuture(null);
 
     /**
      * Instantiates a {@code PersistentStreamMessageSource}.
@@ -92,11 +95,14 @@ public class PersistentStreamMessageSource implements SubscribableEventSource {
     }
 
     @Override
-    public Registration subscribe(@Nonnull Consumer<List<? extends EventMessage>> eventsBatchConsumer) {
+    public Registration subscribe(
+            @Nonnull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer
+    ) {
         synchronized (this) {
             boolean noConsumer = this.consumer.equals(NO_OP_CONSUMER);
             if (noConsumer) {
-                persistentStreamConnection.open(eventsBatchConsumer);
+                persistentStreamConnection.open(events -> eventsBatchConsumer.apply(events,
+                                                                                     null)); // todo: what with processing context here? Should be null?
                 this.consumer = eventsBatchConsumer;
             } else {
                 boolean sameConsumer = this.consumer.equals(eventsBatchConsumer);

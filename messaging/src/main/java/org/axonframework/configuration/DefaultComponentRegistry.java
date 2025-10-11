@@ -27,12 +27,14 @@ import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
@@ -223,19 +225,37 @@ public class DefaultComponentRegistry implements ComponentRegistry {
      * The disabled enhancers filter is invoked in a for-loop instead of as a Stream operation, as a
      * {@code ConfigurationEnhancer} can add more enhancers that should be disabled. By making the filter part of the
      * stream operation, that update is lost.
+     * <p>
+     * This method supports dynamic enhancer registration - if an enhancer registers another enhancer during its
+     * {@link ConfigurationEnhancer#enhance(ComponentRegistry)} call, the newly registered enhancer will be processed
+     * in the correct order based on its {@link ConfigurationEnhancer#order()} value relative to all unprocessed
+     * enhancers. Each enhancer is processed one at a time to ensure proper ordering when new enhancers are registered
+     * dynamically.
      */
     private void invokeEnhancers() {
-        List<ConfigurationEnhancer>
-                distinctAndOrderedEnhancers = enhancers.values()
-                                                       .stream()
-                                                       .distinct()
-                                                       .sorted(Comparator.comparingInt(ConfigurationEnhancer::order))
-                                                       .toList();
-        for (ConfigurationEnhancer enhancer : distinctAndOrderedEnhancers) {
+        Set<String> processedEnhancerKeys = new HashSet<>();
+
+        while (processedEnhancerKeys.size() < enhancers.size()) {
+            // Find the next unprocessed enhancer with the lowest order value
+            Optional<Map.Entry<String, ConfigurationEnhancer>> nextEnhancer =
+                enhancers.entrySet()
+                        .stream()
+                        .filter(entry -> !processedEnhancerKeys.contains(entry.getKey()))
+                        .min(Comparator.comparingInt(entry -> entry.getValue().order()));
+
+            if (nextEnhancer.isEmpty()) {
+                break; // No more enhancers to process
+            }
+
+            Map.Entry<String, ConfigurationEnhancer> entry = nextEnhancer.get();
+            String key = entry.getKey();
+            ConfigurationEnhancer enhancer = entry.getValue();
+
             if (!disabledEnhancers.contains(enhancer.getClass())) {
                 enhancer.enhance(this);
                 invokedEnhancers.add(enhancer.getClass());
             }
+            processedEnhancerKeys.add(key);
         }
     }
 

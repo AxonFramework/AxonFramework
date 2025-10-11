@@ -31,8 +31,7 @@ import org.axonframework.commandhandling.gateway.ConvertingCommandGateway;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventSink;
-import org.axonframework.eventhandling.InterceptingEventSink;
-import org.axonframework.eventhandling.SimpleEventBus;
+import org.axonframework.eventhandling.InterceptingEventBus;
 import org.axonframework.eventhandling.conversion.DelegatingEventConverter;
 import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.eventhandling.gateway.DefaultEventGateway;
@@ -42,6 +41,7 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.SubscribableEventSource;
 import org.axonframework.messaging.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
@@ -78,22 +78,14 @@ import static org.mockito.Mockito.*;
  */
 class MessagingConfigurationDefaultsTest {
 
-    private MessagingConfigurationDefaults testSubject;
-
-    @BeforeEach
-    void setUp() {
-        testSubject = new MessagingConfigurationDefaults();
-    }
-
     @Test
     void orderEqualsMaxInteger() {
-        assertEquals(Integer.MAX_VALUE, testSubject.order());
+        assertEquals(Integer.MAX_VALUE, new MessagingConfigurationDefaults().order());
     }
 
     @Test
     void enhanceSetsExpectedDefaultsInAbsenceOfTheseComponents() {
-        ApplicationConfigurer configurer = new DefaultAxonApplication();
-        configurer.componentRegistry(cr -> testSubject.enhance(cr));
+        ApplicationConfigurer configurer = MessagingConfigurer.enhance(new DefaultAxonApplication());
         Configuration resultConfig = configurer.build();
 
         assertInstanceOf(ClassBasedMessageTypeResolver.class, resultConfig.getComponent(MessageTypeResolver.class));
@@ -122,8 +114,12 @@ class MessagingConfigurationDefaultsTest {
         // The specific CommandGateway-implementation registered by default may be overridden by the serviceloader-mechanism.
         // So we just check if _any_ CommandGateway has been added to the configuration.
         assertTrue(resultConfig.hasComponent(CommandGateway.class));
+
         assertInstanceOf(DefaultEventGateway.class, resultConfig.getComponent(EventGateway.class));
-        assertInstanceOf(SimpleEventBus.class, resultConfig.getComponent(EventBus.class));
+        EventBus eventBus = resultConfig.getComponent(EventBus.class);
+        assertInstanceOf(InterceptingEventBus.class, eventBus);
+        assertThat(resultConfig.getComponent(SubscribableEventSource.class)).isSameAs(eventBus);
+
         assertInstanceOf(SimpleQueryBus.class, resultConfig.getComponent(QueryBus.class));
         assertEquals(QueryPriorityCalculator.defaultCalculator(),
                      resultConfig.getComponent(QueryPriorityCalculator.class));
@@ -132,8 +128,7 @@ class MessagingConfigurationDefaultsTest {
 
     @Test
     void registersMessageOriginProviderInCorrelationDataProviderRegistryByDefault() {
-        ApplicationConfigurer configurer = new DefaultAxonApplication();
-        configurer.componentRegistry(cr -> testSubject.enhance(cr));
+        ApplicationConfigurer configurer = MessagingConfigurer.enhance(new DefaultAxonApplication());
         Configuration resultConfig = configurer.build();
 
         List<CorrelationDataProvider> providers = resultConfig.getComponent(CorrelationDataProviderRegistry.class)
@@ -145,7 +140,7 @@ class MessagingConfigurationDefaultsTest {
 
     @Test
     void registersCorrelationDataInterceptorInInterceptorRegistriesWhenSingleCorrelationDataProviderIsPresent() {
-        ApplicationConfigurer configurer = new DefaultAxonApplication();
+        ApplicationConfigurer configurer = MessagingConfigurer.enhance(new DefaultAxonApplication());
         configurer.componentRegistry(cr -> {
             cr.registerComponent(CorrelationDataProviderRegistry.class,
                                  config -> {
@@ -153,7 +148,6 @@ class MessagingConfigurationDefaultsTest {
                                              new DefaultCorrelationDataProviderRegistry();
                                      return providerRegistry.registerProvider(c -> mock());
                                  });
-            testSubject.enhance(cr);
         });
         Configuration resultConfig = configurer.build();
 
@@ -172,11 +166,10 @@ class MessagingConfigurationDefaultsTest {
 
     @Test
     void doesNotRegisterCorrelationDataInterceptorInInterceptorRegistriesWhenTheAreNoCorrelationDataProviders() {
-        ApplicationConfigurer configurer = new DefaultAxonApplication();
+        ApplicationConfigurer configurer = MessagingConfigurer.enhance(new DefaultAxonApplication());
         configurer.componentRegistry(cr -> {
             cr.registerComponent(CorrelationDataProviderRegistry.class,
                                  config -> new DefaultCorrelationDataProviderRegistry());
-            testSubject.enhance(cr);
         });
         Configuration resultConfig = configurer.build();
 
@@ -197,11 +190,10 @@ class MessagingConfigurationDefaultsTest {
         TestCommandBus testCommandBus = new TestCommandBus();
 
         // Registers default provider registry to remove MessageOriginProvider, thus removing CorrelationDataInterceptor.
-        ApplicationConfigurer configurer = new DefaultAxonApplication().componentRegistry(
+        ApplicationConfigurer configurer = MessagingConfigurer.enhance(new DefaultAxonApplication()).componentRegistry(
                 cr -> cr.registerComponent(CommandBus.class, c -> testCommandBus)
                         .registerComponent(CorrelationDataProviderRegistry.class,
                                            c -> new DefaultCorrelationDataProviderRegistry())
-                        .registerEnhancer(testSubject)
         );
 
         CommandBus configuredCommandBus = configurer.build()
@@ -227,6 +219,18 @@ class MessagingConfigurationDefaultsTest {
         Configuration resultConfig = configurer.build();
 
         assertThat(resultConfig.getComponent(CommandBus.class)).isInstanceOf(InterceptingCommandBus.class);
+    }
+
+    @Test
+    void decoratorsEventBusAsInterceptorEventBusWhenGenericHandlerInterceptorIsPresent() {
+        //noinspection unchecked
+        MessagingConfigurer configurer =
+                MessagingConfigurer.create()
+                                   .registerMessageHandlerInterceptor(c -> mock(MessageHandlerInterceptor.class));
+
+        Configuration resultConfig = configurer.build();
+
+        assertThat(resultConfig.getComponent(EventBus.class)).isInstanceOf(InterceptingEventBus.class);
     }
 
     @Test
@@ -276,7 +280,7 @@ class MessagingConfigurationDefaultsTest {
 
         Configuration resultConfig = configurer.build();
 
-        assertThat(resultConfig.getComponent(EventSink.class)).isInstanceOf(InterceptingEventSink.class);
+        assertThat(resultConfig.getComponent(EventSink.class)).isInstanceOf(InterceptingEventBus.class);
     }
 
     private static class TestCommandBus implements CommandBus {

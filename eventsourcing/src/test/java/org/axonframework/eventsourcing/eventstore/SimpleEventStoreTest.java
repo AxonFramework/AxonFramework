@@ -288,6 +288,7 @@ class SimpleEventStoreTest {
         }
 
     }
+
     @Test
     void describeToDescribesPropertiesForEventStorageEngineAndTheContext() {
         // given

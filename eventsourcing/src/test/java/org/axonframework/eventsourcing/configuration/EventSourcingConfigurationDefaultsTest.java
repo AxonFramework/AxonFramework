@@ -20,17 +20,20 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.ApplicationConfigurer;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.MessagingConfigurer;
+import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.EventStoreBasedEventBus;
 import org.axonframework.eventsourcing.eventstore.InterceptingEventStore;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.eventstreaming.Tag;
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.SubscribableEventSource;
 import org.junit.jupiter.api.*;
 
 import java.util.Set;
@@ -60,8 +63,7 @@ class EventSourcingConfigurationDefaultsTest {
 
     @Test
     void enhanceSetsExpectedDefaultsInAbsenceOfTheseComponents() {
-        ApplicationConfigurer configurer = MessagingConfigurer.create();
-        configurer.componentRegistry(cr -> cr.registerEnhancer(testSubject));
+        ApplicationConfigurer configurer = EventSourcingConfigurer.create();
         Configuration resultConfig = configurer.build();
 
         assertInstanceOf(AnnotationBasedTagResolver.class, resultConfig.getComponent(TagResolver.class));
@@ -70,19 +72,38 @@ class EventSourcingConfigurationDefaultsTest {
 
         // Intercepting at all times, since we have a MessageOriginProvider that leads to the CorrelationDataInterceptor
         EventStore eventStore = resultConfig.getComponent(EventStore.class);
-        assertInstanceOf(InterceptingEventStore.class, eventStore);
+        assertInstanceOf(EventStoreBasedEventBus.class, eventStore);
 
         EventSink eventSink = resultConfig.getComponent(EventSink.class);
-        assertInstanceOf(InterceptingEventStore.class, eventSink);
+        EventSink eventBus = resultConfig.getComponent(EventBus.class);
         // By default, the Event Store and the Event Sink should be the same instance.
-        assertEquals(eventStore, eventSink);
-        assertInstanceOf(InterceptingEventStore.class, eventSink);
+        assertEquals(eventBus, eventSink);
+        assertInstanceOf(EventStoreBasedEventBus.class, eventSink);
+        assertInstanceOf(EventStoreBasedEventBus.class, eventBus);
 
-        StreamableEventSource<EventMessage> eventSource = resultConfig.getComponent(StreamableEventSource.class);
-        assertInstanceOf(InterceptingEventStore.class, eventSource);
-        // By default, the Event Store and the Event Sink should be the same instance.
-        assertEquals(eventStore, eventSource);
-        assertInstanceOf(InterceptingEventStore.class, eventSource);
+
+        SubscribableEventSource eventSource = resultConfig.getComponent(SubscribableEventSource.class);
+        // By default, the SubscribableEventSource and the Event Sink should be the same instance.
+        assertEquals(eventBus, eventSource);
+    }
+
+    @Test
+    void enhanceSetsEventStoreAsEventSink() {
+        ApplicationConfigurer configurer = EventSourcingConfigurer.create();
+        Configuration resultConfig = configurer.build();
+
+        EventSink eventSink = resultConfig.getComponent(EventSink.class);
+        assertInstanceOf(EventStoreBasedEventBus.class, eventSink);
+    }
+
+    @Test
+    void enhanceSetsEventBusAsSubscribableEventSource() {
+        ApplicationConfigurer configurer = EventSourcingConfigurer.create();
+        Configuration resultConfig = configurer.build();
+
+        EventBus eventBus = resultConfig.getComponent(EventBus.class);
+        SubscribableEventSource subscribableEventSource = resultConfig.getComponent(SubscribableEventSource.class);
+        assertEquals(eventBus, subscribableEventSource);
     }
 
     @Test
@@ -102,13 +123,12 @@ class EventSourcingConfigurationDefaultsTest {
     @Test
     void decoratorsEventStoreAsInterceptorEventStoreWhenDispatchInterceptorIsPresent() {
         //noinspection unchecked
-        MessagingConfigurer configurer =
-                MessagingConfigurer.create()
-                                   .registerDispatchInterceptor(c -> mock(MessageDispatchInterceptor.class));
-
+        ApplicationConfigurer configurer = EventSourcingConfigurer
+                .create()
+                .messaging(m -> m.registerDispatchInterceptor(c -> mock(MessageDispatchInterceptor.class)));
         Configuration resultConfig = configurer.build();
 
-        assertThat(resultConfig.getComponent(EventStore.class)).isInstanceOf(InterceptingEventStore.class);
+        assertThat(resultConfig.getComponent(EventStore.class)).isInstanceOf(EventStoreBasedEventBus.class);
     }
 
     private static class TestTagResolver implements TagResolver {

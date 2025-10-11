@@ -21,16 +21,21 @@ import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.configuration.MessagingConfigurationDefaults;
+import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventSink;
+import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.EventStoreBasedEventBus;
 import org.axonframework.eventsourcing.eventstore.InterceptingEventStore;
 import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.interceptors.DispatchInterceptorRegistry;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 
 import java.util.List;
 
@@ -71,8 +76,7 @@ public class EventSourcingConfigurationDefaults implements ConfigurationEnhancer
         registry.registerIfNotPresent(TagResolver.class, EventSourcingConfigurationDefaults::defaultTagResolver)
                 .registerIfNotPresent(EventStorageEngine.class,
                                       EventSourcingConfigurationDefaults::defaultEventStorageEngine)
-                .registerIfNotPresent(EventStore.class, EventSourcingConfigurationDefaults::defaultEventStore);
-        // Register decorators
+                .registerIfNotPresent(EventStore.class, EventSourcingConfigurationDefaults::simpleEventStore);
         registry.registerDecorator(
                 EventStore.class,
                 InterceptingEventStore.DECORATION_ORDER,
@@ -84,6 +88,19 @@ public class EventSourcingConfigurationDefaults implements ConfigurationEnhancer
                             : new InterceptingEventStore(delegate, dispatchInterceptors);
                 }
         );
+        registry.registerDecorator(
+                EventStore.class,
+                InterceptingEventStore.DECORATION_ORDER + 50,
+                (config, name, delegate) -> new EventStoreBasedEventBus(delegate, new SimpleEventBus(config.getComponent(UnitOfWorkFactory.class)))
+        );
+
+        registry.registerComponent(EventBus.class,
+                                   c -> c.getOptionalComponent(EventStore.class).filter(it -> it instanceof EventBus)
+                                         .map(it -> (EventBus) it).orElseThrow(() -> new IllegalStateException("The EventStore is not an EventBus, so the EventBus must be configured explicitly.")));
+
+        registry.registerComponent(
+                EventSink.class,
+                cfg -> cfg.getComponent(EventStore.class));
     }
 
     private static TagResolver defaultTagResolver(Configuration configuration) {
@@ -94,7 +111,7 @@ public class EventSourcingConfigurationDefaults implements ConfigurationEnhancer
         return new InMemoryEventStorageEngine();
     }
 
-    private static EventStore defaultEventStore(Configuration config) {
+    private static SimpleEventStore simpleEventStore(Configuration config) {
         return new SimpleEventStore(config.getComponent(EventStorageEngine.class),
                                     config.getComponent(TagResolver.class));
     }

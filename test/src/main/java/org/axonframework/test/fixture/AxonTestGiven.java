@@ -139,7 +139,7 @@ class AxonTestGiven implements AxonTestPhase.Given {
     }
 
     @Override
-    public AxonTestPhase.Given execute(@Nonnull Function<Configuration, Void> function) {
+    public AxonTestPhase.Given execute(@Nonnull Function<Configuration, ?> function) {
         function.apply(configuration);
         return this;
     }

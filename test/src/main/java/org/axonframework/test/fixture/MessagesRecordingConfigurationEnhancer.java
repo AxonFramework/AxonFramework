@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.ConfigurationEnhancer;
+import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 
@@ -40,10 +41,9 @@ public class MessagesRecordingConfigurationEnhancer implements ConfigurationEnha
                .registerDecorator(EventStore.class,
                                   Integer.MAX_VALUE,
                                   (config, name, delegate) -> new RecordingEventStore(delegate))
-               .registerDecorator(EventSink.class,
+               .registerDecorator(EventBus.class,
                                   Integer.MAX_VALUE,
-                                  (config, name, delegate) -> EventStore.class.isAssignableFrom(delegate.getClass())
-                                          ? delegate : new RecordingEventSink(delegate))
+                                  (config, name, delegate) -> new RecordingEventBus(delegate))
                .registerDecorator(CommandBus.class,
                                   Integer.MAX_VALUE,
                                   (config, name, delegate) -> new RecordingCommandBus(delegate));

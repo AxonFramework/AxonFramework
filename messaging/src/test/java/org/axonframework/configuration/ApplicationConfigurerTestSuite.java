@@ -1020,6 +1020,154 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             assertTrue(thirdRegistration.get());
         }
 
+        @Test
+        void enhancerCanRegisterAnotherEnhancer() {
+            // given...
+            AtomicBoolean firstEnhancerInvoked = new AtomicBoolean(false);
+            AtomicBoolean secondEnhancerInvoked = new AtomicBoolean(false);
+
+            ConfigurationEnhancer secondEnhancer = registry -> {
+                secondEnhancerInvoked.set(true);
+                registry.registerComponent(TestComponent.class, "second", c -> new TestComponent("second"));
+            };
+
+            ConfigurationEnhancer firstEnhancer = registry -> {
+                firstEnhancerInvoked.set(true);
+                registry.registerComponent(TestComponent.class, "first", c -> new TestComponent("first"));
+                registry.registerEnhancer(secondEnhancer);
+            };
+
+            testSubject.componentRegistry(cr -> cr.registerEnhancer(firstEnhancer));
+
+            // when...
+            Configuration config = buildConfiguration();
+
+            // then...
+            assertTrue(firstEnhancerInvoked.get());
+            assertTrue(secondEnhancerInvoked.get());
+            assertEquals(new TestComponent("first"), config.getComponent(TestComponent.class, "first"));
+            assertEquals(new TestComponent("second"), config.getComponent(TestComponent.class, "second"));
+        }
+
+        @Test
+        void dynamicallyRegisteredEnhancersAreInvokedInCorrectOrder() {
+            // given...
+            AtomicInteger executionOrder = new AtomicInteger(0);
+            AtomicInteger enhancerAOrder = new AtomicInteger(-1);
+            AtomicInteger enhancerBOrder = new AtomicInteger(-1);
+            AtomicInteger enhancerCOrder = new AtomicInteger(-1);
+
+            ConfigurationEnhancer enhancerC = new ConfigurationEnhancer() {
+                @Override
+                public void enhance(@Nonnull ComponentRegistry registry) {
+                    enhancerCOrder.set(executionOrder.getAndIncrement());
+                    registry.registerComponent(TestComponent.class, "C", c -> new TestComponent("C"));
+                }
+
+                @Override
+                public int order() {
+                    return 5;
+                }
+            };
+
+            ConfigurationEnhancer enhancerB = new ConfigurationEnhancer() {
+                @Override
+                public void enhance(@Nonnull ComponentRegistry registry) {
+                    enhancerBOrder.set(executionOrder.getAndIncrement());
+                    registry.registerComponent(TestComponent.class, "B", c -> new TestComponent("B"));
+                }
+
+                @Override
+                public int order() {
+                    return 10;
+                }
+            };
+
+            ConfigurationEnhancer enhancerA = new ConfigurationEnhancer() {
+                @Override
+                public void enhance(@Nonnull ComponentRegistry registry) {
+                    enhancerAOrder.set(executionOrder.getAndIncrement());
+                    registry.registerComponent(TestComponent.class, "A", c -> new TestComponent("A"));
+                    // Register enhancerC with order=5, which should be invoked before enhancerB (order=10)
+                    registry.registerEnhancer(enhancerC);
+                }
+
+                @Override
+                public int order() {
+                    return 0;
+                }
+            };
+
+            testSubject.componentRegistry(cr -> cr.registerEnhancer(enhancerA).registerEnhancer(enhancerB));
+
+            // when...
+            Configuration config = buildConfiguration();
+
+            // then...
+            // Verify all components were created
+            assertEquals(new TestComponent("A"), config.getComponent(TestComponent.class, "A"));
+            assertEquals(new TestComponent("B"), config.getComponent(TestComponent.class, "B"));
+            assertEquals(new TestComponent("C"), config.getComponent(TestComponent.class, "C"));
+
+            // Verify execution order: A(0) -> C(5) -> B(10)
+            assertEquals(0, enhancerAOrder.get(), "EnhancerA (order=0) should execute first");
+            assertEquals(1, enhancerCOrder.get(), "EnhancerC (order=5) should execute second");
+            assertEquals(2, enhancerBOrder.get(), "EnhancerB (order=10) should execute third");
+        }
+
+        @Test
+        void dynamicallyRegisteredEnhancerWithLowerOrderThanParentExecutesAfterParent() {
+            // given...
+            AtomicInteger executionOrder = new AtomicInteger(0);
+            AtomicInteger parentEnhancerOrder = new AtomicInteger(-1);
+            AtomicInteger childEnhancerOrder = new AtomicInteger(-1);
+
+            ConfigurationEnhancer childEnhancer = new ConfigurationEnhancer() {
+                @Override
+                public void enhance(@Nonnull ComponentRegistry registry) {
+                    childEnhancerOrder.set(executionOrder.getAndIncrement());
+                    registry.registerComponent(TestComponent.class, "child", c -> new TestComponent("child"));
+                }
+
+                @Override
+                public int order() {
+                    return 5; // Lower order than parent
+                }
+            };
+
+            ConfigurationEnhancer parentEnhancer = new ConfigurationEnhancer() {
+                @Override
+                public void enhance(@Nonnull ComponentRegistry registry) {
+                    parentEnhancerOrder.set(executionOrder.getAndIncrement());
+                    registry.registerComponent(TestComponent.class, "parent", c -> new TestComponent("parent"));
+                    // Register child with order=5, which is lower than parent's order=10
+                    // But child should still execute AFTER parent since parent already executed
+                    registry.registerEnhancer(childEnhancer);
+                }
+
+                @Override
+                public int order() {
+                    return 10; // Higher order than child
+                }
+            };
+
+            testSubject.componentRegistry(cr -> cr.registerEnhancer(parentEnhancer));
+
+            // when...
+            Configuration config = buildConfiguration();
+
+            // then...
+            // Verify both components were created
+            assertEquals(new TestComponent("parent"), config.getComponent(TestComponent.class, "parent"));
+            assertEquals(new TestComponent("child"), config.getComponent(TestComponent.class, "child"));
+
+            // Verify execution order: parent executes first, then child
+            // Even though child has lower order value (5 < 10), it executes after parent
+            // because it was registered dynamically during parent's execution
+            assertEquals(0, parentEnhancerOrder.get(), "Parent enhancer (order=10) should execute first");
+            assertEquals(1, childEnhancerOrder.get(), "Child enhancer (order=5) should execute second, after parent");
+        }
+
         record TestConfigurationEnhancer(AtomicBoolean invoked) implements ConfigurationEnhancer {
 
             @Override

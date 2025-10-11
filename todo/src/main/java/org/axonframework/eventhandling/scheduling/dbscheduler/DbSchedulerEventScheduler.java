@@ -322,7 +322,7 @@ public class DbSchedulerEventScheduler implements EventScheduler {
     private void publishEventMessage(EventMessage eventMessage) {
         LegacyUnitOfWork<EventMessage> unitOfWork = LegacyDefaultUnitOfWork.startAndGet(null);
         unitOfWork.attachTransaction(transactionManager);
-        unitOfWork.execute((ctx) -> eventBus.publish(eventMessage));
+        unitOfWork.execute((ctx) -> eventBus.publish(null, eventMessage));
     }
 
     /**

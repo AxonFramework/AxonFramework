@@ -60,7 +60,7 @@ class LockingRepositoryTest {
     @BeforeEach
     void setUp() {
         spanFactory = new TestSpanFactory();
-        eventBus = spy(SimpleEventBus.builder().build());
+        eventBus = spy(new SimpleEventBus());
         lockFactory = spy(PessimisticLockFactory.usingDefaults());
         when(lockFactory.obtainLock(anyString()))
                 .thenAnswer(invocation -> lock = spy((Lock) invocation.callRealMethod()));
@@ -95,7 +95,7 @@ class LockingRepositoryTest {
 
         //noinspection resource
         verify(lockFactory).obtainLock(aggregate.getIdentifier());
-        verify(eventBus).publish(isA(EventMessage.class));
+        verify(eventBus).publish(eq(null), isA(EventMessage.class));
     }
 
     @Test
@@ -157,7 +157,7 @@ class LockingRepositoryTest {
         uow.commit();
 
         verifyNoInteractions(lockFactory);
-        verify(eventBus).publish(isA(EventMessage.class));
+        verify(eventBus).publish(eq(null), isA(EventMessage.class));
         assertNull(result.identifier());
         assertEquals(0, testSubject.getSaveCount());
     }
@@ -194,7 +194,7 @@ class LockingRepositoryTest {
         loadedAggregate.execute(StubAggregate::doSomething);
         CurrentUnitOfWork.commit();
 
-        verify(eventBus, times(2)).publish(any(EventMessage.class));
+        verify(eventBus, times(2)).publish(eq(null), any(EventMessage.class));
         verify(lock).release();
     }
 

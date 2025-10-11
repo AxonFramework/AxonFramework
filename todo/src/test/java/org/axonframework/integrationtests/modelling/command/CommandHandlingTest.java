@@ -17,6 +17,7 @@
 package org.axonframework.integrationtests.modelling.command;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.AbstractEventBus;
 import org.axonframework.eventhandling.DomainEventMessage;
@@ -29,12 +30,15 @@ import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.integrationtests.commandhandling.StubAggregate;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -48,7 +52,7 @@ class CommandHandlingTest {
 
     @BeforeEach
     void setUp() {
-        stubEventStore = StubEventStore.builder().build();
+        stubEventStore = new StubEventStore();
         repository = LegacyEventSourcingRepository.builder(StubAggregate.class)
 //                                                  .eventStore(stubEventStore)
                                                   .build();
@@ -81,21 +85,14 @@ class CommandHandlingTest {
 
         private final List<DomainEventMessage> storedEvents = new LinkedList<>();
 
-        private StubEventStore(Builder builder) {
-            super(builder);
-        }
-
-        private static Builder builder() {
-            return new Builder();
-        }
-
         public DomainEventStream readEvents(@Nonnull String identifier) {
             return DomainEventStream.of(new ArrayList<>(storedEvents));
         }
 
         @Override
-        protected void commit(List<? extends EventMessage> events) {
-            storedEvents.addAll(events.stream().map(StubEventStore::asDomainEventMessage).collect(Collectors.toList()));
+        protected CompletableFuture<Void> commit(@Nonnull List<? extends EventMessage> events, @Nullable ProcessingContext context) {
+            storedEvents.addAll(events.stream().map(StubEventStore::asDomainEventMessage).toList());
+            return super.commit(events, context);
         }
 
         private static DomainEventMessage asDomainEventMessage(EventMessage event) {
@@ -112,15 +109,10 @@ class CommandHandlingTest {
         }
 
         @Override
-        public Registration subscribe(@Nonnull Consumer<List<? extends EventMessage>> eventsBatchConsumer) {
+        public Registration subscribe(
+                @Nonnull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
             throw new UnsupportedOperationException();
         }
 
-        private static class Builder extends AbstractEventBus.Builder {
-
-            private StubEventStore build() {
-                return new StubEventStore(this);
-            }
-        }
     }
 }

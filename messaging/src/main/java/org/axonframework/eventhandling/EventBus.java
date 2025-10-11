@@ -16,11 +16,8 @@
 
 package org.axonframework.eventhandling;
 
-import jakarta.annotation.Nonnull;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.SubscribableEventSource;
-
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * Specification of the mechanism on which the Event Listeners can subscribe for events and event publishers can publish
@@ -33,31 +30,6 @@ import java.util.List;
  * @see SimpleEventBus
  * @since 0.1
  */
-@Deprecated // TODO #3392 - Replace for actual EventSink implementation.
-public interface EventBus extends SubscribableEventSource {
-
-    /**
-     * Publish a collection of events on this bus (one, or multiple). The events will be dispatched to all subscribed
-     * listeners.
-     * <p>
-     * Implementations may treat the given {@code events} as a single batch and distribute the events as such to
-     * all subscribed EventListeners.
-     *
-     * @param events The collection of events to publish
-     */
-    default void publish(EventMessage... events) {
-        publish(Arrays.asList(events));
-    }
-
-    /**
-     * Publish a collection of events on this bus (one, or multiple). The events will be dispatched to all subscribed
-     * listeners.
-     * <p>
-     * Implementations may treat the given {@code events} as a single batch and distribute the events as such to all
-     * subscribed EventListeners.
-     *
-     * @param events The collection of events to publish
-     */
-    void publish(@Nonnull List<? extends EventMessage> events);
+public interface EventBus extends SubscribableEventSource, EventSink, DescribableComponent {
 
 }

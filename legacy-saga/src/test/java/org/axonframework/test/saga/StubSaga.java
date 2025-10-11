@@ -94,7 +94,7 @@ public class StubSaga {
     @SagaEventHandler(associationProperty = "identifier")
     public void handleEvent(TriggerExistingSagaEvent event, EventBus eventBus) {
         handledEvents.add(event);
-        eventBus.publish(new GenericEventMessage(
+        eventBus.publish(null, new GenericEventMessage(
                 new MessageType("event"), new SagaWasTriggeredEvent(this)
         ));
     }

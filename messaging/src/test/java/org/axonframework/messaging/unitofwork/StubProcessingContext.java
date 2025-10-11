@@ -29,6 +29,7 @@ import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.LegacyResources;
 import org.axonframework.messaging.Message;
 import org.axonframework.utils.StubLifecycleRegistry;
+import org.slf4j.Logger;
 
 import java.util.Comparator;
 import java.util.List;
@@ -49,9 +50,11 @@ import java.util.function.UnaryOperator;
  */
 public class StubProcessingContext implements ProcessingContext {
 
+    private static final Logger logger = org.slf4j.LoggerFactory.getLogger(StubProcessingContext.class);
+
     private final Map<ResourceKey<?>, Object> resources = new ConcurrentHashMap<>();
     private final Map<Phase, List<Function<ProcessingContext, CompletableFuture<?>>>> phaseActions = new ConcurrentHashMap<>();
-    private final Phase currentPhase = DefaultPhases.PRE_INVOCATION;
+    private Phase currentPhase = DefaultPhases.PRE_INVOCATION;
     private final ApplicationContext applicationContext;
 
     /**
@@ -95,20 +98,23 @@ public class StubProcessingContext implements ProcessingContext {
         return false;
     }
 
-    public CompletableFuture<Object> moveToPhase(Phase phase) {
+    public CompletableFuture<Object> moveToPhase(ProcessingLifecycle.Phase phase) {
         if (phase.isBefore(currentPhase)) {
             throw new IllegalArgumentException("Cannot move to a phase before the current phase");
         }
         if (!phase.isAfter(currentPhase)) {
             return CompletableFuture.completedFuture(null);
         }
-        return phaseActions.keySet().stream()
-                           .filter(p -> p.isAfter(currentPhase) && p.order() <= phase.order())
-                           .sorted(Comparator.comparing(Phase::order))
-                           .flatMap(p -> phaseActions.get(p).stream())
-                           .reduce(CompletableFuture.completedFuture(null),
-                                   (cf, action) -> cf.thenCompose(v -> (CompletableFuture<Object>) action.apply(this)),
-                                   (cf1, cf2) -> cf2);
+        ProcessingLifecycle.Phase initialPhase = currentPhase;
+        CompletableFuture<Object> result = phaseActions.keySet().stream()
+                                                       .filter(p -> p.isAfter(initialPhase) && p.order() <= phase.order())
+                                                       .sorted(Comparator.comparing(ProcessingLifecycle.Phase::order))
+                                                       .flatMap(p -> phaseActions.get(p).stream())
+                                                       .reduce(CompletableFuture.completedFuture(null),
+                                                               (cf, action) -> cf.thenCompose(v -> (CompletableFuture<Object>) action.apply(this)),
+                                                               (cf1, cf2) -> cf2);
+        currentPhase = phase;
+        return result;
     }
 
     @Override
@@ -122,12 +128,14 @@ public class StubProcessingContext implements ProcessingContext {
 
     @Override
     public ProcessingLifecycle onError(ErrorHandler action) {
-        throw new UnsupportedOperationException("Lifecycle actions are not yet supported in the StubProcessingContext");
+        logger.warn("Error handler is not yet supported in the StubProcessingContext");
+        return this;
     }
 
     @Override
     public ProcessingLifecycle whenComplete(Consumer<ProcessingContext> action) {
-        throw new UnsupportedOperationException("Lifecycle actions are not yet supported in the StubProcessingContext");
+        logger.warn("Completion action is not yet supported in the StubProcessingContext");
+        return this;
     }
 
     @Override
