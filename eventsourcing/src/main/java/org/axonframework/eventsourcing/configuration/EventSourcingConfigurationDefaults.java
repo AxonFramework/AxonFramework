@@ -65,6 +65,16 @@ public class EventSourcingConfigurationDefaults implements ConfigurationEnhancer
      */
     public static final int ENHANCER_ORDER = MessagingConfigurationDefaults.ENHANCER_ORDER - 100;
 
+    private boolean isSpringContext = false;
+
+    public EventSourcingConfigurationDefaults() {
+        this.isSpringContext = true;
+    }
+
+    public EventSourcingConfigurationDefaults(boolean isSpringContext) {
+        this.isSpringContext = isSpringContext;
+    }
+
     @Override
     public int order() {
         return ENHANCER_ORDER;
@@ -91,16 +101,25 @@ public class EventSourcingConfigurationDefaults implements ConfigurationEnhancer
         registry.registerDecorator(
                 EventStore.class,
                 InterceptingEventStore.DECORATION_ORDER + 50,
-                (config, name, delegate) -> new EventStoreBasedEventBus(delegate, new SimpleEventBus(config.getComponent(UnitOfWorkFactory.class)))
+                (config, name, delegate) -> new EventStoreBasedEventBus(
+                        delegate,
+                        new SimpleEventBus(config.getComponent(UnitOfWorkFactory.class)))
         );
 
         registry.registerComponent(EventBus.class,
                                    c -> c.getOptionalComponent(EventStore.class).filter(it -> it instanceof EventBus)
-                                         .map(it -> (EventBus) it).orElseThrow(() -> new IllegalStateException("The EventStore is not an EventBus, so the EventBus must be configured explicitly.")));
+                                         .map(it -> (EventBus) it).orElseThrow(() -> new IllegalStateException(
+                                                   "The EventStore is not an EventBus, so the EventBus must be configured explicitly.")));
 
-        registry.registerComponent(
-                EventSink.class,
-                cfg -> cfg.getComponent(EventStore.class));
+        if (isSpringContext) { // fixme: due to difference in SpringComponentRegistry and DefaultComponentRegistry
+            registry.registerIfNotPresent(
+                    EventSink.class,
+                    cfg -> cfg.getComponent(EventStore.class));
+        } else {
+            registry.registerComponent(
+                    EventSink.class,
+                    cfg -> cfg.getComponent(EventStore.class));
+        }
     }
 
     private static TagResolver defaultTagResolver(Configuration configuration) {
