@@ -21,16 +21,17 @@ import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.axonframework.eventhandling.EventTestUtils.createEvent;
 import static org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils.aUnitOfWork;
 import static org.axonframework.utils.AssertUtils.awaitSuccessfulCompletion;
@@ -43,7 +44,6 @@ import static org.mockito.Mockito.*;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-@ExtendWith(MockitoExtension.class)
 class EventStoreBasedEventBusTest {
 
     private EventStorageEngine mockStorageEngine = mock(EventStorageEngine.class);
@@ -56,10 +56,10 @@ class EventStoreBasedEventBusTest {
         @Test
         void subscribeAddsConsumerAndReturnsRegistration() {
             // given
-            var mockConsumer = mock(java.util.function.BiFunction.class);
+            RecordingEventListener listener = new RecordingEventListener();
 
             // when
-            var registration = testSubject.subscribe(mockConsumer);
+            var registration = testSubject.subscribe(listener);
 
             // then
             assertNotNull(registration);
@@ -70,11 +70,11 @@ class EventStoreBasedEventBusTest {
         @Test
         void subscribingSameConsumerTwiceOnlyAddsItOnce() {
             // given
-            var mockConsumer = mock(java.util.function.BiFunction.class);
+            RecordingEventListener listener = new RecordingEventListener();
 
             // when
-            var registration1 = testSubject.subscribe(mockConsumer);
-            var registration2 = testSubject.subscribe(mockConsumer);
+            var registration1 = testSubject.subscribe(listener);
+            var registration2 = testSubject.subscribe(listener);
 
             // then
             assertNotNull(registration1);
@@ -94,8 +94,8 @@ class EventStoreBasedEventBusTest {
                     .thenReturn(completedFuture(mockAppendTransaction));
             when(tagResolver.resolve(any())).thenReturn(Set.of());
 
-            var mockSubscriber = mock(java.util.function.BiFunction.class);
-            testSubject.subscribe(mockSubscriber);
+            RecordingEventListener listener = new RecordingEventListener();
+            testSubject.subscribe(listener);
             EventMessage testEvent = createEvent(0);
 
             // when
@@ -103,7 +103,11 @@ class EventStoreBasedEventBusTest {
 
             // then
             awaitSuccessfulCompletion(result);
-            verify(mockSubscriber).apply(eq(List.of(testEvent)), isNull());
+            assertThat(listener.getReceivedEvents())
+                    .hasSize(1)
+                    .containsExactly(testEvent);
+            assertThat(listener.getInvocationCount()).isEqualTo(1);
+            assertThat(listener.getCapturedContexts()).containsExactly((ProcessingContext) null);
         }
 
         @Test
@@ -117,8 +121,8 @@ class EventStoreBasedEventBusTest {
                     .thenReturn(completedFuture(mockAppendTransaction));
             when(tagResolver.resolve(any())).thenReturn(Set.of());
 
-            var mockSubscriber = mock(java.util.function.BiFunction.class);
-            testSubject.subscribe(mockSubscriber);
+            RecordingEventListener listener = new RecordingEventListener();
+            testSubject.subscribe(listener);
             EventMessage testEventZero = createEvent(0);
             EventMessage testEventOne = createEvent(1);
 
@@ -129,7 +133,14 @@ class EventStoreBasedEventBusTest {
             awaitSuccessfulCompletion(uow.execute());
 
             // then
-            verify(mockSubscriber).apply(eq(List.of(testEventZero, testEventOne)), any(ProcessingContext.class));
+            assertThat(listener.getReceivedEvents())
+                    .hasSize(2)
+                    .containsExactly(testEventZero, testEventOne);
+            assertThat(listener.getInvocationCount()).isEqualTo(1);
+            assertThat(listener.getCapturedContexts())
+                    .hasSize(1)
+                    .first()
+                    .isNotNull();
         }
 
         @Test
@@ -143,8 +154,8 @@ class EventStoreBasedEventBusTest {
                     .thenReturn(completedFuture(mockAppendTransaction));
             when(tagResolver.resolve(any())).thenReturn(Set.of());
 
-            var mockSubscriber = mock(java.util.function.BiFunction.class);
-            var registration = testSubject.subscribe(mockSubscriber);
+            RecordingEventListener listener = new RecordingEventListener();
+            var registration = testSubject.subscribe(listener);
             EventMessage testEvent = createEvent(0);
 
             // when
@@ -153,7 +164,8 @@ class EventStoreBasedEventBusTest {
 
             // then
             awaitSuccessfulCompletion(result);
-            verifyNoInteractions(mockSubscriber);
+            assertThat(listener.getReceivedEvents()).isEmpty();
+            assertThat(listener.getInvocationCount()).isEqualTo(0);
         }
 
         @Test
@@ -165,9 +177,8 @@ class EventStoreBasedEventBusTest {
             when(tagResolver.resolve(any())).thenReturn(Set.of());
 
             RuntimeException subscriberException = new RuntimeException("Subscriber failed");
-            var mockSubscriber = mock(java.util.function.BiFunction.class);
-            doThrow(subscriberException).when(mockSubscriber).apply(any(), any(ProcessingContext.class));
-            testSubject.subscribe(mockSubscriber);
+            FailingEventListener listener = new FailingEventListener(subscriberException);
+            testSubject.subscribe(listener);
             EventMessage testEvent = createEvent(0);
 
             // when
@@ -178,9 +189,62 @@ class EventStoreBasedEventBusTest {
             // then
             ExecutionException exception = assertThrows(ExecutionException.class, () -> result.get(5, TimeUnit.SECONDS));
             assertSame(subscriberException, exception.getCause());
-            verify(mockSubscriber).apply(eq(List.of(testEvent)), any(ProcessingContext.class));
+            assertThat(listener.getInvocationCount()).isEqualTo(1);
             verify(mockAppendTransaction, never()).commit(any(ProcessingContext.class));
             verify(mockAppendTransaction).rollback(any(ProcessingContext.class));
+        }
+    }
+
+    // Test listener implementations
+
+    /**
+     * Recording listener that tracks all invocations, events, and contexts received.
+     */
+    private static class RecordingEventListener implements java.util.function.BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> {
+        private final List<EventMessage> receivedEvents = new CopyOnWriteArrayList<>();
+        private final List<ProcessingContext> capturedContexts = new CopyOnWriteArrayList<>();
+        private int invocationCount = 0;
+
+        @Override
+        public CompletableFuture<?> apply(List<? extends EventMessage> events, ProcessingContext context) {
+            invocationCount++;
+            receivedEvents.addAll(events);
+            capturedContexts.add(context);
+            return CompletableFuture.completedFuture(null);
+        }
+
+        public List<EventMessage> getReceivedEvents() {
+            return new ArrayList<>(receivedEvents);
+        }
+
+        public List<ProcessingContext> getCapturedContexts() {
+            return new ArrayList<>(capturedContexts);
+        }
+
+        public int getInvocationCount() {
+            return invocationCount;
+        }
+    }
+
+    /**
+     * Listener that throws an exception when invoked.
+     */
+    private static class FailingEventListener implements java.util.function.BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> {
+        private final RuntimeException exceptionToThrow;
+        private int invocationCount = 0;
+
+        public FailingEventListener(RuntimeException exceptionToThrow) {
+            this.exceptionToThrow = exceptionToThrow;
+        }
+
+        @Override
+        public CompletableFuture<?> apply(List<? extends EventMessage> events, ProcessingContext context) {
+            invocationCount++;
+            throw exceptionToThrow;
+        }
+
+        public int getInvocationCount() {
+            return invocationCount;
         }
     }
 
