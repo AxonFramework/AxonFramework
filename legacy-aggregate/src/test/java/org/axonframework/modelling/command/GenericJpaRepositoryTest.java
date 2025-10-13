@@ -181,36 +181,33 @@ class GenericJpaRepositoryTest {
         assertEquals("id", domainEventThree.getAggregateIdentifier());
     }
 
-//    @Test
-//    void aggregateDoesNotCreateSequenceNumbersWhenEventBusIsNotDomainEventSequenceAware() {
-//        SimpleEventBus testEventBus = spy(SimpleEventBus.builder().build());
-//
-//        testSubject = GenericJpaRepository.builder(StubJpaAggregate.class)
-//                                                .entityManagerProvider(new SimpleEntityManagerProvider(mockEntityManager))
-//                                                .eventBus(testEventBus)
-//                                                .identifierConverter(identifierConverter)
-//                                                .build();
-//
-//        LegacyDefaultUnitOfWork.startAndGet(null).executeWithResult((ctx) -> {
-//            Aggregate<StubJpaAggregate> agg = testSubject.load(aggregateId);
-//            agg.execute(e -> e.doSomething("test2"));
-//            return null;
-//        });
-//
-//        CurrentUnitOfWork.commit();
-//
-//        @SuppressWarnings("unchecked")
-//        ArgumentCaptor<List<? extends EventMessage>> eventCaptor =
-//                ArgumentCaptor.forClass((Class<List<? extends EventMessage>>) (Class<?>) List.class);
-//
-//        verify(testEventBus).publish(any(ProcessingContext.class), eventCaptor.capture());
-//        List<? extends EventMessage> capturedEvents = eventCaptor.getValue();
-//
-//        assertEquals(1, capturedEvents.size());
-//        EventMessage eventOne = capturedEvents.get(0);
-//        assertFalse(eventOne instanceof DomainEventMessage);
-//        assertEquals("test2", eventOne.payload());
-//    }
+    @Test
+    void aggregateDoesNotCreateSequenceNumbersWhenEventBusIsNotDomainEventSequenceAware() {
+        SimpleEventBus testEventBus = new SimpleEventBus();
+        OrderTrackingListener listener = new OrderTrackingListener();
+        testEventBus.subscribe(listener);
+
+        testSubject = GenericJpaRepository.builder(StubJpaAggregate.class)
+                                                .entityManagerProvider(new SimpleEntityManagerProvider(mockEntityManager))
+                                                .eventBus(testEventBus)
+                                                .identifierConverter(identifierConverter)
+                                                .build();
+
+        LegacyDefaultUnitOfWork.startAndGet(null).executeWithResult((ctx) -> {
+            Aggregate<StubJpaAggregate> agg = testSubject.load(aggregateId);
+            agg.execute(e -> e.doSomething("test2"));
+            return null;
+        });
+
+        CurrentUnitOfWork.commit();
+
+        List<EventMessage> capturedEvents = listener.getReceivedEvents();
+
+        assertEquals(1, capturedEvents.size());
+        EventMessage eventOne = capturedEvents.get(0);
+        assertFalse(eventOne instanceof DomainEventMessage);
+        assertEquals("test2", eventOne.payload());
+    }
 
     @Test
     void aggregateDoesNotCreateSequenceNumbersWhenSequenceNumberGenerationIsDisabled() {
