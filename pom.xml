@@ -554,6 +554,7 @@
                     <systemPropertyVariables>
                         <slf4j.version>${slf4j.version}</slf4j.version>
                         <log4j.version>${log4j.version}</log4j.version>
+                        <test.forkNumber>$${surefire.forkNumber}</test.forkNumber>
                     </systemPropertyVariables>
                     <includes>
                         <include>**/*Test.java</include>
@@ -721,11 +722,18 @@
                                 <configuration>
                                     <!--suppress MavenModelInspection -->
                                     <argLine>-Djava.awt.headless=true ${failsafeArgLine}</argLine>
+                                    <systemPropertyVariables>
+                                        <test.forkNumber>$${surefire.forkNumber}</test.forkNumber>
+                                    </systemPropertyVariables>
                                     <includes>
                                         <include>**/*IntegrationTest.java</include>
                                         <include>**/*IntegrationTests.java</include>
                                         <include>**/*IntegrationTest_*.java</include>
                                         <include>**/*IntegrationTests_*.java</include>
+                                        <!-- these are the defaults -->
+                                        <include>**/IT*.java</include>
+                                        <include>**/*IT.java</include>
+                                        <include>**/*ITCase.java</include>
                                     </includes>
                                     <excludes>
                                         <exclude>**/*Test.java</exclude>
@@ -734,6 +742,13 @@
                                         <exclude>**/*Tests_*.java</exclude>
                                     </excludes>
                                 </configuration>
+                            </execution>
+
+                            <execution>
+                                <id>verify-integration-tests</id>
+                                <goals>
+                                    <goal>verify</goal>
+                                </goals>
                             </execution>
                         </executions>
                     </plugin>

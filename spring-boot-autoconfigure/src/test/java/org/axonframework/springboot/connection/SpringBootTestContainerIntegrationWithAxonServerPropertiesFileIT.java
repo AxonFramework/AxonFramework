@@ -44,7 +44,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest
 @Testcontainers
 @ActiveProfiles("custom")
-class SpringBootTestContainerIntegrationWithAxonServerPropertiesFileTest {
+class SpringBootTestContainerIntegrationWithAxonServerPropertiesFileIT {
 
     @Container
     @ServiceConnection

@@ -56,10 +56,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-@Tags({
-        @Tag("flaky"),
-})
-public class EventProcessingAnnotatedEventSourcedPooledStreamingTest extends AbstractStudentTestSuite {
+public class EventProcessingAnnotatedEventSourcedPooledStreamingIT extends AbstractStudentIT {
 
     @Test
     void whenStudentEnrolled3CoursesThenSendNotificationTest() {
@@ -137,10 +134,11 @@ public class EventProcessingAnnotatedEventSourcedPooledStreamingTest extends Abs
 
     protected void verifyNotificationSentTo(String studentId) {
         UnitOfWork uow = unitOfWorkFactory.create();
-        uow.executeWithResult(context -> context.component(StateManager.class)
-                                                .repository(StudentCoursesAutomationState.class, String.class)
-                                                .load(studentId, context)
-                                                .thenAccept(student -> assertTrue(student.entity().notified()))).join();
+        assertTrue(uow.executeWithResult(context -> context.component(StateManager.class)
+            .repository(StudentCoursesAutomationState.class, String.class)
+            .load(studentId, context)
+            .thenApply(student -> student.entity().notified())).join()
+        );
     }
 
     @Override

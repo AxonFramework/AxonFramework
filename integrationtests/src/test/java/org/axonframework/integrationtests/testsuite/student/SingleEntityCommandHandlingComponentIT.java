@@ -37,7 +37,9 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Mitchell Herrijgers
  */
-class SingleEntityCommandHandlingComponentTest extends AbstractCommandHandlingStudentTestSuite {
+class SingleEntityCommandHandlingComponentIT extends AbstractCommandHandlingStudentIT {
+    private final String student1 = createId("student-1");
+    private final String student2 = createId("student-2");
 
     @Test
     void canHandleCommandThatTargetsOneEntityUsingStateManager() {
@@ -57,18 +59,18 @@ class SingleEntityCommandHandlingComponentTest extends AbstractCommandHandlingSt
         ));
         startApp();
 
-        changeStudentName("my-studentId-1", "name-1");
-        verifyStudentName("my-studentId-1", "name-1");
-        changeStudentName("my-studentId-1", "name-2");
-        verifyStudentName("my-studentId-1", "name-2");
-        changeStudentName("my-studentId-1", "name-3");
-        verifyStudentName("my-studentId-1", "name-3");
-        changeStudentName("my-studentId-1", "name-4");
-        verifyStudentName("my-studentId-1", "name-4");
+        changeStudentName(student1, "name-1");
+        verifyStudentName(student1, "name-1");
+        changeStudentName(student1, "name-2");
+        verifyStudentName(student1, "name-2");
+        changeStudentName(student1, "name-3");
+        verifyStudentName(student1, "name-3");
+        changeStudentName(student1, "name-4");
+        verifyStudentName(student1, "name-4");
 
-        changeStudentName("my-studentId-2", "name-5");
-        verifyStudentName("my-studentId-1", "name-4");
-        verifyStudentName("my-studentId-2", "name-5");
+        changeStudentName(student2, "name-5");
+        verifyStudentName(student1, "name-4");
+        verifyStudentName(student2, "name-5");
     }
 
     @Test
@@ -78,11 +80,11 @@ class SingleEntityCommandHandlingComponentTest extends AbstractCommandHandlingSt
         ));
         startApp();
 
-        changeStudentName("my-studentId-1", "name-1");
-        verifyStudentName("my-studentId-1", "name-1");
+        changeStudentName(student1, "name-1");
+        verifyStudentName(student1, "name-1");
 
-        changeStudentName("my-studentId-1", "name-2");
-        verifyStudentName("my-studentId-1", "name-2");
+        changeStudentName(student1, "name-2");
+        verifyStudentName(student1, "name-2");
     }
 
     static class SingleModelAnnotatedCommandHandler {

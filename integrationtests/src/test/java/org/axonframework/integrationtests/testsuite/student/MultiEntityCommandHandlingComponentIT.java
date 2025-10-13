@@ -47,7 +47,14 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Mitchell Herrijgers
  */
-class MultiEntityCommandHandlingComponentTest extends AbstractCommandHandlingStudentTestSuite {
+class MultiEntityCommandHandlingComponentIT extends AbstractCommandHandlingStudentIT {
+    private final String student1 = createId("student-1");
+    private final String student2 = createId("student-2");
+    private final String student3 = createId("student-3");
+    private final String student4 = createId("student-4");
+    private final String student5 = createId("student-5");
+    private final String course1 = createId("course-1");
+    private final String course2 = createId("course-2");
 
     @Test
     void canCombineModelsInAnnotatedCommandHandlerViaStateManagerParameter() {
@@ -56,9 +63,9 @@ class MultiEntityCommandHandlingComponentTest extends AbstractCommandHandlingStu
         ));
         startApp();
 
-        enrollStudentToCourse("my-studentId-1", "my-courseId-1");
+        enrollStudentToCourse(student1, course1);
 
-        verifyStudentEnrolledInCourse("my-studentId-1", "my-courseId-1");
+        verifyStudentEnrolledInCourse(student1, course1);
     }
 
     @Test
@@ -87,26 +94,26 @@ class MultiEntityCommandHandlingComponentTest extends AbstractCommandHandlingStu
         startApp();
 
         // First student
-        enrollStudentToCourse("my-studentId-2", "my-courseId-1");
-        verifyStudentEnrolledInCourse("my-studentId-2", "my-courseId-1");
+        enrollStudentToCourse(student2, course1);
+        verifyStudentEnrolledInCourse(student2, course1);
 
         // Second student
-        enrollStudentToCourse("my-studentId-3", "my-courseId-1");
-        verifyStudentEnrolledInCourse("my-studentId-3", "my-courseId-1");
-        verifyStudentEnrolledInCourse("my-studentId-2", "my-courseId-1");
+        enrollStudentToCourse(student3, course1);
+        verifyStudentEnrolledInCourse(student3, course1);
+        verifyStudentEnrolledInCourse(student2, course1);
 
         // Third and last possible student
-        enrollStudentToCourse("my-studentId-4", "my-courseId-1");
-        verifyStudentEnrolledInCourse("my-studentId-4", "my-courseId-1");
-        verifyStudentEnrolledInCourse("my-studentId-3", "my-courseId-1");
-        verifyStudentEnrolledInCourse("my-studentId-2", "my-courseId-1");
+        enrollStudentToCourse(student4, course1);
+        verifyStudentEnrolledInCourse(student4, course1);
+        verifyStudentEnrolledInCourse(student3, course1);
+        verifyStudentEnrolledInCourse(student2, course1);
 
         // Fourth can still enroll for other course
-        enrollStudentToCourse("my-studentId-4", "my-courseId-2");
-        verifyStudentEnrolledInCourse("my-studentId-4", "my-courseId-2");
+        enrollStudentToCourse(student4, course2);
+        verifyStudentEnrolledInCourse(student4, course2);
 
         // But five can not enroll for the first course
-        assertThatThrownBy(() -> enrollStudentToCourse("my-studentId-5", "my-courseId-1"))
+        assertThatThrownBy(() -> enrollStudentToCourse(student5, course1))
                 .isInstanceOf(CommandExecutionException.class)
                 .hasMessageContaining("Course already has 3 students");
     }
@@ -119,10 +126,10 @@ class MultiEntityCommandHandlingComponentTest extends AbstractCommandHandlingStu
         startApp();
 
         // Can assign mentor to mentee
-        sendCommand(new AssignMentorCommand("my-studentId-1", "my-studentId-2"));
+        sendCommand(new AssignMentorCommand(student1, student2));
 
         // But not a second time
-        assertThatThrownBy(() -> sendCommand(new AssignMentorCommand("my-studentId-1", "my-studentId-3")))
+        assertThatThrownBy(() -> sendCommand(new AssignMentorCommand(student1, student3)))
                 .isInstanceOf(CommandExecutionException.class)
                 .hasMessageContaining("Mentor already assigned to a mentee");
     }

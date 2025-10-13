@@ -31,9 +31,9 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.UUID;
 
-class StudentAxonTestFixtureAxonServerIntegrationTest {
+class StudentAxonTestFixtureAxonServerIntegrationIT {
 
-    protected static final Logger logger = LoggerFactory.getLogger(StudentAxonTestFixtureAxonServerIntegrationTest.class);
+    protected static final Logger logger = LoggerFactory.getLogger(StudentAxonTestFixtureAxonServerIntegrationIT.class);
 
     private static final AxonServerContainer container = new AxonServerContainer(
             "docker.axoniq.io/axoniq/axonserver:2025.2.0-EAP2")

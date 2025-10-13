@@ -37,7 +37,9 @@ import static org.axonframework.common.jdbc.JdbcUtils.closeQuietly;
  */
 @SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection"})
 @Testcontainers
-class Oracle11SagaSqlSchemaTest {
+@Tag("slow")
+@Tag("nightly")
+class Oracle11SagaSqlSchemaIT {
 
     private static final String USERNAME = "test";
     private static final String PASSWORD = "test";

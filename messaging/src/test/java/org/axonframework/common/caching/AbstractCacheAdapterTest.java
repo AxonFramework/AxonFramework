@@ -16,6 +16,7 @@
 
 package org.axonframework.common.caching;
 
+import org.awaitility.pollinterval.IterativePollInterval;
 import org.axonframework.common.Registration;
 import org.junit.jupiter.api.*;
 
@@ -120,15 +121,15 @@ public abstract class AbstractCacheAdapterTest {
         Object value = new Object();
         Object value2 = new Object();
         testSubject.put("test1", value);
-        await().atMost(Duration.ofMillis(300L)).untilAsserted(
+        await().untilAsserted(
                 () -> verify(mockListener).onEntryCreated("test1", value));
 
         testSubject.put("test1", value2);
-        await().atMost(Duration.ofMillis(300L)).untilAsserted(
+        await().untilAsserted(
                 () -> verify(mockListener).onEntryUpdated("test1", value2));
 
         testSubject.remove("test1");
-        await().atMost(Duration.ofMillis(300L)).untilAsserted(
+        await().untilAsserted(
                 () -> verify(mockListener).onEntryRemoved("test1"));
 
         assertNull(testSubject.get("test1"));
@@ -140,9 +141,9 @@ public abstract class AbstractCacheAdapterTest {
         Object value = new Object();
 
         testSubject.put("test1", value);
-        await().atMost(Duration.ofMillis(300L)).untilAsserted(
+        await().untilAsserted(
                 () -> verify(mockListener).onEntryCreated("test1", value));
-        await().atMost(Duration.ofSeconds(1L)).untilAsserted(() -> {
+        await().pollInterval(IterativePollInterval.iterative(interval -> interval.multipliedBy(2), Duration.ofMillis(100))).untilAsserted(() -> {
             testSubject.get("test1");
             verify(mockListener).onEntryExpired("test1");
         });
@@ -154,7 +155,7 @@ public abstract class AbstractCacheAdapterTest {
         Object value = new Object();
         Object value2 = new Object();
         testSubject.put("test1", value);
-        await().atMost(Duration.ofMillis(300L)).untilAsserted(
+        await().untilAsserted(
                 () -> verify(mockListener).onEntryCreated("test1", value));
         registration.cancel();
 

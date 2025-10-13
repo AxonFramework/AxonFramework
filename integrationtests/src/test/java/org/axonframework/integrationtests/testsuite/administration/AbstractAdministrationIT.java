@@ -19,7 +19,7 @@ package org.axonframework.integrationtests.testsuite.administration;
 import org.axonframework.configuration.ApplicationConfigurer;
 import org.axonframework.configuration.Module;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.integrationtests.testsuite.AbstractAxonServerIntegrationTest;
+import org.axonframework.integrationtests.testsuite.AbstractAxonServerIT;
 import org.axonframework.integrationtests.testsuite.administration.commands.AssignTaskCommand;
 import org.axonframework.integrationtests.testsuite.administration.commands.ChangeEmailAddress;
 import org.axonframework.integrationtests.testsuite.administration.commands.CompleteTaskCommand;
@@ -38,16 +38,16 @@ import java.util.stream.Collectors;
  * Test suite for verifying polymorphic behavior of entities. Can be implemented by different test classes that verify
  * different ways of building the {@link org.axonframework.modelling.entity.EntityCommandHandlingComponent}.
  */
-public abstract class AbstractAdministrationTestSuite extends AbstractAxonServerIntegrationTest {
+public abstract class AbstractAdministrationIT extends AbstractAxonServerIT {
 
-    private static final CreateEmployee CREATE_EMPLOYEE_1_COMMAND = new CreateEmployee(
-            new PersonIdentifier(PersonType.EMPLOYEE, "1234"),
+    private final CreateEmployee CREATE_EMPLOYEE_1_COMMAND = new CreateEmployee(
+            new PersonIdentifier(PersonType.EMPLOYEE, createId("employee")),
             "mitchell.herrijgers@axoniq.io",
             "Bug Creator",
             3000.0);
 
-    private static final CreateCustomer CREATE_CUSTOMER_1_COMMAND = new CreateCustomer(
-            new PersonIdentifier(PersonType.CUSTOMER, "shomer"),
+    private final CreateCustomer CREATE_CUSTOMER_1_COMMAND = new CreateCustomer(
+            new PersonIdentifier(PersonType.CUSTOMER, createId("customer")),
             "homer@the-simpsons.io"
     );
 
