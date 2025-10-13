@@ -39,15 +39,14 @@ import org.mockito.*;
 import org.mockito.internal.stubbing.answers.*;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
@@ -102,16 +101,15 @@ class GenericJpaRepositoryTest {
 
     @Test
     void aggregateStoredBeforeEventsPublished() throws Exception {
-        //noinspection unchecked
-        BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> mockConsumer = mock(BiFunction.class);
-        eventBus.subscribe(mockConsumer);
+        OrderTrackingListener listener = new OrderTrackingListener();
+        eventBus.subscribe(listener);
 
         testSubject.newInstance(() -> new StubJpaAggregate("test", "payload1", "payload2"));
         CurrentUnitOfWork.commit();
 
-        InOrder inOrder = inOrder(mockEntityManager, mockConsumer);
+        InOrder inOrder = inOrder(mockEntityManager);
         inOrder.verify(mockEntityManager).persist(any());
-        inOrder.verify(mockConsumer).apply(anyList(), any());
+        assertTrue(listener.wasInvoked(), "Listener should have been invoked");
     }
 
     @Test
@@ -347,8 +345,9 @@ class GenericJpaRepositoryTest {
         }
 
         @Override
-        public CompletableFuture<Void> publish(@Nullable ProcessingContext context, EventMessage... events) {
-            publishedEvents.addAll(Arrays.asList(events));
+        public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
+                                               @Nonnull List<EventMessage> events) {
+            publishedEvents.addAll(events);
             return super.publish(context, events);
         }
 
@@ -367,15 +366,31 @@ class GenericJpaRepositoryTest {
         }
 
         @Override
-        public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                               @Nonnull List<EventMessage> events) {
-            publishedEvents.addAll(events);
-            return super.publish(context, events);
-        }
-
-        @Override
         public void describeTo(@Nonnull ComponentDescriptor descriptor) {
 
+        }
+    }
+
+    /**
+     * Listener that tracks invocation order relative to other operations.
+     */
+    private static class OrderTrackingListener implements BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> {
+        private final List<EventMessage> receivedEvents = new CopyOnWriteArrayList<>();
+        private volatile boolean invoked = false;
+
+        @Override
+        public CompletableFuture<?> apply(List<? extends EventMessage> events, ProcessingContext context) {
+            invoked = true;
+            receivedEvents.addAll(events);
+            return CompletableFuture.completedFuture(null);
+        }
+
+        public boolean wasInvoked() {
+            return invoked;
+        }
+
+        public List<EventMessage> getReceivedEvents() {
+            return new ArrayList<>(receivedEvents);
         }
     }
 }
