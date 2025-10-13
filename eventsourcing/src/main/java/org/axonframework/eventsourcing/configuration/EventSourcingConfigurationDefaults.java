@@ -25,6 +25,7 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.SimpleEventBus;
+import org.axonframework.eventhandling.configuration.EventBusConfigurationDefaults;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -82,6 +83,7 @@ public class EventSourcingConfigurationDefaults implements ConfigurationEnhancer
 
     @Override
     public void enhance(@Nonnull ComponentRegistry registry) {
+        registry.disableEnhancer(EventBusConfigurationDefaults.class);
         // Register components
         registry.registerIfNotPresent(TagResolver.class, EventSourcingConfigurationDefaults::defaultTagResolver)
                 .registerIfNotPresent(EventStorageEngine.class,
@@ -106,16 +108,15 @@ public class EventSourcingConfigurationDefaults implements ConfigurationEnhancer
                         new SimpleEventBus())
         );
 
-        registry.registerComponent(EventBus.class,
-                                   c -> c.getOptionalComponent(EventStore.class).filter(it -> it instanceof EventBus)
-                                         .map(it -> (EventBus) it).orElseThrow(() -> new IllegalStateException(
-                                                   "The EventStore is not an EventBus, so the EventBus must be configured explicitly.")));
-
         if (isSpringContext) { // fixme: due to difference in SpringComponentRegistry and DefaultComponentRegistry
             registry.registerIfNotPresent(
                     EventSink.class,
                     cfg -> cfg.getComponent(EventStore.class));
         } else {
+            registry.registerComponent(EventBus.class,
+                                       c -> c.getOptionalComponent(EventStore.class).filter(it -> it instanceof EventBus)
+                                             .map(it -> (EventBus) it).orElseThrow(() -> new IllegalStateException(
+                                                       "The EventStore is not an EventBus, so the EventBus must be configured explicitly.")));
             registry.registerComponent(
                     EventSink.class,
                     cfg -> cfg.getComponent(EventStore.class));
