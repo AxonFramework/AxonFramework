@@ -18,9 +18,8 @@ package org.axonframework.springboot.autoconfig;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.InterceptingCommandBus;
+import org.axonframework.commandhandling.interceptors.InterceptingCommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.commandhandling.distributed.DistributedCommandBus;
 import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.ComponentDecorator;
 import org.axonframework.configuration.ConfigurationEnhancer;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.queryhandling.intercepting;
+package org.axonframework.queryhandling.interceptors;
 
 // TODO 3488 - Implement once InterceptingQueryBus is in place
 class InterceptingQueryBusTest {

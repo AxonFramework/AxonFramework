@@ -14,10 +14,14 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling;
+package org.axonframework.commandhandling.interceptors;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.DecoratorDefinition;
