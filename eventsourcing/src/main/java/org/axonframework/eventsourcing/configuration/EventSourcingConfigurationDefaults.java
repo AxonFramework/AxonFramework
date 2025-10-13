@@ -103,7 +103,7 @@ public class EventSourcingConfigurationDefaults implements ConfigurationEnhancer
                 InterceptingEventStore.DECORATION_ORDER + 50,
                 (config, name, delegate) -> new EventStoreBasedEventBus(
                         delegate,
-                        new SimpleEventBus(config.getComponent(UnitOfWorkFactory.class)))
+                        new SimpleEventBus())
         );
 
         registry.registerComponent(EventBus.class,

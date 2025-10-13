@@ -27,12 +27,11 @@ import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
  */
 public class SimpleEventBus extends AbstractEventBus {
 
-    @Internal
+    /**
+     * Instantiate an {@code SimpleEventBus}.
+     **/
     public SimpleEventBus() {
         super();
     }
 
-    public SimpleEventBus(UnitOfWorkFactory unitOfWorkFactory) {
-        super(unitOfWorkFactory);
-    }
 }

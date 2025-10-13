@@ -76,7 +76,7 @@ public class EventBusConfigurationDefaults implements ConfigurationEnhancer {
     }
 
     private static EventBus defaultEventBus(Configuration config) {
-        return new SimpleEventBus(config.getComponent(UnitOfWorkFactory.class));
+        return new SimpleEventBus();
     }
 
     private static void registerDecorators(@Nonnull ComponentRegistry registry) {

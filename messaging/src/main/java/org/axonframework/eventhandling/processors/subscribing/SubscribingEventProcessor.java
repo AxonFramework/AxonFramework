@@ -137,8 +137,7 @@ public class SubscribingEventProcessor implements EventProcessor {
      */
     protected void process(@Nonnull List<EventMessage> eventMessages, @Nullable ProcessingContext context) {
         try {
-            if (context
-                    != null) { // if ProcessingContext is provided from the outside, the events will be processed in that context
+            if (context != null) { // if ProcessingContext is provided from the outside, the events will be processed in that context
                 context.onInvocation(processingContext -> processWithErrorHandling(eventMessages,
                                                                                    processingContext).asCompletableFuture());
             } else { // otherwise new UnitOfWork is created

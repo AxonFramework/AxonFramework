@@ -18,6 +18,7 @@ package org.axonframework.eventhandling.processors.subscribing;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.transaction.NoOpTransactionManager;
 import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.MessagingConfigurer;
@@ -161,15 +162,15 @@ class SubscribingEventProcessorModuleTest {
 
             // when
             EventMessage sampleEvent = EventTestUtils.asEventMessage("test-event");
-            eventBus.publish(null, sampleEvent);
+            FutureUtils.joinAndUnwrap(eventBus.publish(null, sampleEvent));
 
             // then
             await().atMost(Duration.ofMillis(500))
-                   .untilAsserted(() -> {
-                       assertThat(component1.handled(sampleEvent)).isTrue();
-                       assertThat(component2.handled(sampleEvent)).isTrue();
-                       assertThat(component3HandledPayload.get()).isEqualTo(sampleEvent.payload());
-                   });
+                   .untilAsserted(() -> assertThat(component1.handled(sampleEvent)).isTrue());
+            await().atMost(Duration.ofMillis(500))
+                   .untilAsserted(() -> assertThat(component2.handled(sampleEvent)).isTrue());
+            await().atMost(Duration.ofMillis(500))
+                   .untilAsserted(() -> assertThat(component3HandledPayload.get()).isEqualTo(sampleEvent.payload()));
 
             // cleanup
             configuration.shutdown();
@@ -239,7 +240,7 @@ class SubscribingEventProcessorModuleTest {
 
             // When publishing a String event
             EventMessage stringEvent = EventTestUtils.asEventMessage("test-event");
-            eventBus.publish(null, stringEvent);
+            FutureUtils.joinAndUnwrap(eventBus.publish(null, stringEvent));
 
             // Then only component one handles it
             await().atMost(Duration.ofMillis(500))
@@ -256,7 +257,7 @@ class SubscribingEventProcessorModuleTest {
 
             // When publishing an Integer event
             EventMessage integerEvent = EventTestUtils.asEventMessage(42);
-            eventBus.publish(null, integerEvent);
+            FutureUtils.joinAndUnwrap(eventBus.publish(null, integerEvent));
 
             // Then only component two handles it
             await().atMost(Duration.ofMillis(500))

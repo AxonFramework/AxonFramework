@@ -156,7 +156,7 @@ class SimpleEventBusTest {
         }
 
         @Test
-        void contextPassedToListenersIsNotNull() {
+        void contextPassedToListenersIsNull() {
             // given
             ContextCapturingEventListener listener = new ContextCapturingEventListener();
             testSubject.subscribe(listener);
@@ -168,7 +168,7 @@ class SimpleEventBusTest {
             assertThat(listener.getCapturedContexts())
                     .hasSize(1)
                     .first()
-                    .isNotNull();
+                    .isNull();
         }
 
         @Test

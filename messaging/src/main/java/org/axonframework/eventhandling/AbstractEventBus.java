@@ -20,13 +20,9 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
-import org.axonframework.common.annotations.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Context;
-import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
-import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,21 +44,11 @@ public abstract class AbstractEventBus implements EventBus {
 
     private final Context.ResourceKey<List<EventMessage>> eventsKey = Context.ResourceKey.withLabel("EventBus_Events");
     private final EventSubscribers eventSubscribers = new EventSubscribers();
-    private final UnitOfWorkFactory unitOfWorkFactory;
 
     /**
-     * Instantiate an {@link AbstractEventBus}.
+     * Instantiate an {@code AbstractEventBus}.
      **/
-    @Internal
     public AbstractEventBus() {
-        this.unitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
-    }
-
-    /**
-     * Instantiate an {@link AbstractEventBus}.
-     **/
-    public AbstractEventBus(UnitOfWorkFactory unitOfWorkFactory) {
-        this.unitOfWorkFactory = unitOfWorkFactory;
     }
 
     @Override
@@ -75,9 +61,11 @@ public abstract class AbstractEventBus implements EventBus {
     @Override
     public CompletableFuture<Void> publish(@Nullable ProcessingContext context, @Nonnull List<EventMessage> events) {
         if (context == null) {
-            var unitOfWork = unitOfWorkFactory.create();
-            unitOfWork.runOnPreInvocation(ctx -> registerEventPublishingHooks(ctx, events));
-            return unitOfWork.execute();
+            // No processing context, publish immediately
+            prepareCommit(events, null);
+            commit(events, null);
+            afterCommit(events, null);
+            return FutureUtils.emptyCompletedFuture();
         }
 
         registerEventPublishingHooks(context, events);
