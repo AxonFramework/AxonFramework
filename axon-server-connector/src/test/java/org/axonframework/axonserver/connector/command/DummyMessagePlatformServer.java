@@ -130,7 +130,7 @@ public class DummyMessagePlatformServer {
         @Override
         public StreamObserver<CommandProviderOutbound> openStream(
                 StreamObserver<CommandProviderInbound> responseObserver) {
-            return new StreamObserver<CommandProviderOutbound>() {
+            return new StreamObserver<>() {
                 @Override
                 public void onNext(CommandProviderOutbound commandProviderOutbound) {
                     switch (commandProviderOutbound.getRequestCase()) {
