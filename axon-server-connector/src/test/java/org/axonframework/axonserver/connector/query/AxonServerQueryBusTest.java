@@ -303,7 +303,7 @@ class AxonServerQueryBusTest {
     }
 
     @Test
-    void queryReportsCorrectException() throws ExecutionException, InterruptedException {
+    void queryReportsCorrectException() {
         when(mockQueryChannel.query(any())).thenReturn(new StubResultStream<>(
                 stubErrorResponse(ErrorCode.QUERY_EXECUTION_ERROR.errorCode(), "Faking exception result")
         ));
@@ -329,7 +329,7 @@ class AxonServerQueryBusTest {
     }
 
     @Test
-    void queryReportsCorrectNonTransientException() throws ExecutionException, InterruptedException {
+    void queryReportsCorrectNonTransientException() {
         spanFactory.reset();
         when(mockQueryChannel.query(any())).thenReturn(new StubResultStream<>(
                 stubErrorResponse(ErrorCode.QUERY_EXECUTION_NON_TRANSIENT_ERROR.errorCode(),
