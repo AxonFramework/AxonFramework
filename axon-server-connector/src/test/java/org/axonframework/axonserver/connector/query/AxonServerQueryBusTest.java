@@ -280,9 +280,7 @@ class AxonServerQueryBusTest {
 
     @Test
     void queryReportsDispatchException() throws Exception {
-        //noinspection rawtypes
-        StubResultStream t = new StubResultStream(new RuntimeException("Faking problems"));
-        //noinspection unchecked
+        StubResultStream<QueryResponse> t = new StubResultStream<>(new RuntimeException("Faking problems"));
         when(mockQueryChannel.query(any())).thenReturn(t);
         QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType("query"), "Hello, World", new MessageType(String.class)
@@ -360,13 +358,11 @@ class AxonServerQueryBusTest {
     }
 
     @Test
-    void queryCloseConnectionOnCompletableFutureCancel() {
-        //noinspection unchecked
-        ResultStream<QueryResponse> resultStream = mock(ResultStream.class);
+    void queryCloseConnectionOnCompletableFutureCancel(@Mock ResultStream<QueryResponse> resultStream) {
         when(mockQueryChannel.query(any())).thenReturn(resultStream);
-        QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType("query"), "Hello, World", new MessageType(String.class)
-        );
+//        QueryMessage testQuery = new GenericQueryMessage(
+//                new MessageType("query"), "Hello, World", new MessageType(String.class)
+//        );
 //        testSubject.query(testQuery).cancel(true);
         verify(resultStream).close();
     }
@@ -401,11 +397,9 @@ class AxonServerQueryBusTest {
                 new MessageType("query"), "Hello, World", new MessageType(String.class)
         );
 
-        //noinspection rawtypes,unchecked
-        StubResultStream stubResultStream = new StubResultStream(stubResponse("<string>1</string>"),
-                                                                 stubResponse("<string>2</string>"),
-                                                                 stubResponse("<string>3</string>"));
-        //noinspection unchecked
+        StubResultStream<QueryResponse> stubResultStream = new StubResultStream<>(stubResponse("<string>1</string>"),
+                                                                                  stubResponse("<string>2</string>"),
+                                                                                  stubResponse("<string>3</string>"));
         when(mockQueryChannel.query(any())).thenReturn(stubResultStream);
 
         StepVerifier.create(Flux.from(testSubject.streamingQuery(testQuery, null))
