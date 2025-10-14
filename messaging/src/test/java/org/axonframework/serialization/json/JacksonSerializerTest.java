@@ -195,51 +195,6 @@ class JacksonSerializerTest {
     }
 
     @Test
-    void customObjectMapperRevisionResolverAndConverter() {
-        RevisionResolver revisionResolver = spy(new AnnotationRevisionResolver());
-        ChainingContentTypeConverter converter = spy(new ChainingContentTypeConverter());
-        ObjectMapper objectMapper = spy(new ObjectMapper());
-
-        testSubject = JacksonSerializer.builder()
-                                       .revisionResolver(revisionResolver)
-                                       .converter(converter)
-                                       .objectMapper(objectMapper)
-                                       .build();
-
-        SerializedObject<byte[]> serialized =
-                testSubject.serialize(new SimpleSerializableType("test"), byte[].class);
-        SimpleSerializableType actual = testSubject.deserialize(serialized);
-
-        assertNotNull(actual);
-        verify(objectMapper).readerFor(SimpleSerializableType.class);
-        verify(objectMapper).writer();
-        verify(revisionResolver).revisionOf(SimpleSerializableType.class);
-        verify(converter, times(4)).registerConverter(isA(ContentTypeConverter.class));
-        assertSame(objectMapper, testSubject.getObjectMapper());
-    }
-
-    @Test
-    void customObjectMapperAndRevisionResolver() {
-        ObjectMapper objectMapper = spy(new ObjectMapper());
-        RevisionResolver revisionResolver = spy(new AnnotationRevisionResolver());
-
-        testSubject = JacksonSerializer.builder()
-                                       .revisionResolver(revisionResolver)
-                                       .objectMapper(objectMapper)
-                                       .build();
-
-        SerializedObject<byte[]> serialized =
-                testSubject.serialize(new SimpleSerializableType("test"), byte[].class);
-        SimpleSerializableType actual = testSubject.deserialize(serialized);
-
-        assertNotNull(actual);
-        assertTrue(testSubject.getConverter() instanceof ChainingContentTypeConverter);
-        verify(objectMapper).readerFor(SimpleSerializableType.class);
-        verify(objectMapper).writer();
-        verify(revisionResolver).revisionOf(SimpleSerializableType.class);
-    }
-
-    @Test
     void customObjectMapper() {
         ObjectMapper objectMapper = spy(new ObjectMapper());
 
@@ -340,22 +295,6 @@ class JacksonSerializerTest {
         assertEquals(toSerialize.getValue(), actual.getValue());
         assertEquals(toSerialize.getNested().getValue(), actual.getNested().getValue());
     }
-
-    @Test
-    void configuredRevisionResolverIsReturned() {
-        String expectedRevision = "some-revision";
-        RevisionResolver expectedRevisionResolver = payloadType -> expectedRevision;
-
-        JacksonSerializer customTestSubject = JacksonSerializer.builder()
-                                                               .revisionResolver(expectedRevisionResolver)
-                                                               .build();
-
-        RevisionResolver result = customTestSubject.getRevisionResolver();
-
-        assertEquals(expectedRevisionResolver, result);
-        assertEquals(expectedRevision, result.revisionOf(String.class));
-    }
-
 
     @Test
     void testConvertByteArrayToComplexObject() throws JsonProcessingException {
