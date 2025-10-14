@@ -147,6 +147,7 @@ public class SimpleEventStore implements EventStore {
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("eventStorageEngine", eventStorageEngine);
+        descriptor.describeProperty("eventBus", eventBus);
         descriptor.describeProperty("tagResolver", tagResolver);
     }
 

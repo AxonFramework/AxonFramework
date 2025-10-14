@@ -37,16 +37,20 @@ public class MessagesRecordingConfigurationEnhancer implements ConfigurationEnha
 
     @Override
     public void enhance(@Nonnull ComponentRegistry registry) {
-        Objects.requireNonNull(registry, "Cannot enhance a null ComponentRegistry.")
-               .registerDecorator(EventStore.class,
-                                  Integer.MAX_VALUE,
-                                  (config, name, delegate) -> new RecordingEventStore(delegate))
-               .registerDecorator(EventBus.class,
-                                  Integer.MAX_VALUE,
-                                  (config, name, delegate) -> new RecordingEventBus(delegate))
-               .registerDecorator(CommandBus.class,
-                                  Integer.MAX_VALUE,
-                                  (config, name, delegate) -> new RecordingCommandBus(delegate));
+        Objects.requireNonNull(registry, "Cannot enhance a null ComponentRegistry.");
+
+        registry.registerDecorator(CommandBus.class,
+                                   Integer.MAX_VALUE,
+                                   (config, name, delegate) -> new RecordingCommandBus(delegate));
+        if (registry.hasComponent(EventStore.class)) {
+            registry.registerDecorator(EventStore.class,
+                                       Integer.MAX_VALUE,
+                                       (config, name, delegate) -> new RecordingEventStore(delegate));
+        } else {
+            registry.registerDecorator(EventBus.class,
+                                       Integer.MAX_VALUE,
+                                       (config, name, delegate) -> new RecordingEventBus(delegate));
+        }
     }
 
     @Override

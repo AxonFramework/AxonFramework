@@ -174,7 +174,7 @@ public class InterceptingEventStore implements EventStore {
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
         descriptor.describeProperty("dispatchInterceptors", interceptors);
-        descriptor.describeProperty("delegateSink", delegateBus);
+        descriptor.describeProperty("delegateBus", delegateBus);
     }
 
     @Override

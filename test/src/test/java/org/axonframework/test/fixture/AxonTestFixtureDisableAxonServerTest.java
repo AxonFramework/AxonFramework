@@ -16,6 +16,7 @@
 
 package org.axonframework.test.fixture;
 
+import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.junit.jupiter.api.*;
 
@@ -24,7 +25,14 @@ import static org.junit.jupiter.api.Assertions.*;
 public class AxonTestFixtureDisableAxonServerTest {
 
     @Test
-    void disablesAxonServerNeverThrows() {
+    void disablesAxonServerForMessagingConfigurerNeverThrows() {
+        var configurer = MessagingConfigurer.create();
+
+        assertDoesNotThrow(() -> AxonTestFixture.with(configurer, AxonTestFixture.Customization::disableAxonServer));
+    }
+
+    @Test
+    void disablesAxonServerForEventSourcingConfigurerNeverThrows() {
         var configurer = EventSourcingConfigurer.create();
 
         assertDoesNotThrow(() -> AxonTestFixture.with(configurer, AxonTestFixture.Customization::disableAxonServer));
