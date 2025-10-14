@@ -23,13 +23,10 @@ import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.configuration.MessagingConfigurationDefaults;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.InterceptingEventBus;
-import org.axonframework.eventhandling.InterceptingEventSink;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.interceptors.DispatchInterceptorRegistry;
-import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 
 import java.util.List;
 
@@ -39,12 +36,11 @@ import java.util.List;
  * Will only register the following components <b>if</b> there is no component registered for the given class yet:
  * <ul>
  *     <li>Registers a {@link SimpleEventBus} for class {@link EventBus}</li>
- *     <li>Registers a default {@link EventSink} wrapping the {@link EventBus}</li>
  * </ul>
  * <p>
  * Furthermore, this enhancer will decorate the:
  * <ul>
- *     <li>The {@link EventSink} in a {@link InterceptingEventSink} <b>if</b> there are any
+ *     <li>The {@link EventBus} in a {@link InterceptingEventBus} <b>if</b> there are any
  *     {@link MessageDispatchInterceptor MessageDispatchInterceptors} present in the {@link DispatchInterceptorRegistry}.</li>
  * </ul>
  *

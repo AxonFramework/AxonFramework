@@ -227,9 +227,9 @@ public class DefaultComponentRegistry implements ComponentRegistry {
      * stream operation, that update is lost.
      * <p>
      * This method supports dynamic enhancer registration - if an enhancer registers another enhancer during its
-     * {@link ConfigurationEnhancer#enhance(ComponentRegistry)} call, the newly registered enhancer will be processed
-     * in the correct order based on its {@link ConfigurationEnhancer#order()} value relative to all unprocessed
-     * enhancers. Each enhancer is processed one at a time to ensure proper ordering when new enhancers are registered
+     * {@link ConfigurationEnhancer#enhance(ComponentRegistry)} call, the newly registered enhancer will be processed in
+     * the correct order based on its {@link ConfigurationEnhancer#order()} value relative to all unprocessed enhancers.
+     * Each enhancer is processed one at a time to ensure proper ordering when new enhancers are registered
      * dynamically.
      */
     private void invokeEnhancers() {
@@ -238,10 +238,10 @@ public class DefaultComponentRegistry implements ComponentRegistry {
         while (processedEnhancerKeys.size() < enhancers.size()) {
             // Find the next unprocessed enhancer with the lowest order value
             Optional<Map.Entry<String, ConfigurationEnhancer>> nextEnhancer =
-                enhancers.entrySet()
-                        .stream()
-                        .filter(entry -> !processedEnhancerKeys.contains(entry.getKey()))
-                        .min(Comparator.comparingInt(entry -> entry.getValue().order()));
+                    enhancers.entrySet()
+                             .stream()
+                             .filter(entry -> !processedEnhancerKeys.contains(entry.getKey()))
+                             .min(Comparator.comparingInt(entry -> entry.getValue().order()));
 
             if (nextEnhancer.isEmpty()) {
                 break; // No more enhancers to process
@@ -312,7 +312,9 @@ public class DefaultComponentRegistry implements ComponentRegistry {
             //noinspection unchecked
             return disableEnhancer((Class<? extends ConfigurationEnhancer>) enhancerClass);
         } catch (ClassNotFoundException e) {
-            logger.warn("Disabling Configuration Enhancer [{}] won't take effect as the enhancer class could not be found.", fullyQualifiedClassName);
+            logger.warn(
+                    "Disabling Configuration Enhancer [{}] won't take effect as the enhancer class could not be found.",
+                    fullyQualifiedClassName);
         }
         return this;
     }

@@ -436,9 +436,9 @@ class DefaultComponentRegistryTest {
                 AtomicInteger counterB = new AtomicInteger(0);
 
                 testSubject.registerComponent(ServiceInterface.class, c -> {
-                                   counterA.incrementAndGet();
-                                   return new ServiceImplA("value-a");
-                               })
+                               counterA.incrementAndGet();
+                               return new ServiceImplA("value-a");
+                           })
                            .registerComponent(ServiceInterface.class, c -> {
                                counterB.incrementAndGet();
                                return new ServiceImplB("value-b");
@@ -512,10 +512,11 @@ class DefaultComponentRegistryTest {
 
                 // then
                 assertTrue(config.hasComponent(ServiceInterface.class, "service-a"));
-                assertFalse(config.hasComponent(ServiceInterface.class), "Named component should not be accessible without name");
+                assertFalse(config.hasComponent(ServiceInterface.class),
+                            "Named component should not be accessible without name");
                 assertThrows(ComponentNotFoundException.class,
-                           () -> config.getComponent(ServiceInterface.class),
-                           "Should throw when retrieving named component without name");
+                             () -> config.getComponent(ServiceInterface.class),
+                             "Should throw when retrieving named component without name");
             }
 
             @Test
@@ -531,8 +532,8 @@ class DefaultComponentRegistryTest {
                 assertTrue(config.hasComponent(ServiceInterface.class));
                 assertFalse(config.hasComponent(ServiceInterface.class, "some-name"));
                 assertThrows(ComponentNotFoundException.class,
-                           () -> config.getComponent(ServiceInterface.class, "some-name"),
-                           "Should throw when retrieving unnamed component with a name");
+                             () -> config.getComponent(ServiceInterface.class, "some-name"),
+                             "Should throw when retrieving unnamed component with a name");
             }
 
             @Test
@@ -581,7 +582,8 @@ class DefaultComponentRegistryTest {
                 assertTrue(resultB.isPresent());
                 assertEquals("value-b", resultB.get().getValue());
 
-                Optional<ServiceInterface> nonExistent = config.getOptionalComponent(ServiceInterface.class, "non-existent");
+                Optional<ServiceInterface> nonExistent = config.getOptionalComponent(ServiceInterface.class,
+                                                                                     "non-existent");
                 assertFalse(nonExistent.isPresent());
             }
         }
@@ -596,7 +598,7 @@ class DefaultComponentRegistryTest {
 
                 // when / then
                 assertThrows(ComponentNotFoundException.class,
-                           () -> config.getComponent(ServiceInterface.class));
+                             () -> config.getComponent(ServiceInterface.class));
             }
 
             @Test
@@ -606,7 +608,7 @@ class DefaultComponentRegistryTest {
 
                 // when / then
                 assertThrows(ComponentNotFoundException.class,
-                           () -> config.getComponent(ServiceInterface.class, "non-existent"));
+                             () -> config.getComponent(ServiceInterface.class, "non-existent"));
             }
 
             @Test
@@ -619,8 +621,8 @@ class DefaultComponentRegistryTest {
 
                 // then
                 assertThrows(ComponentNotFoundException.class,
-                           () -> config.getComponent(String.class),
-                           "Should throw when requesting component by wrong type");
+                             () -> config.getComponent(String.class),
+                             "Should throw when requesting component by wrong type");
             }
 
             @Test
@@ -847,8 +849,8 @@ class DefaultComponentRegistryTest {
                     // because there's no exact match for ServiceInterface, so it searches for assignable types
                     // and finds BOTH ServiceImplA and ServiceImplB
                     assertThrows(AmbiguousComponentMatchException.class,
-                               () -> config.getComponent(ServiceInterface.class),
-                               "Should throw ambiguity exception when multiple implementations registered by impl class");
+                                 () -> config.getComponent(ServiceInterface.class),
+                                 "Should throw ambiguity exception when multiple implementations registered by impl class");
                 }
 
                 @Test
@@ -857,7 +859,8 @@ class DefaultComponentRegistryTest {
                     ServiceImplA implA = new ServiceImplA("registered-by-interface");
                     ServiceImplB implB = new ServiceImplB("registered-by-impl");
 
-                    testSubject.registerComponent(ServiceInterface.class, c -> implA)  // Exact match for ServiceInterface
+                    testSubject.registerComponent(ServiceInterface.class,
+                                                  c -> implA)  // Exact match for ServiceInterface
                                .registerComponent(ServiceImplB.class, c -> implB);      // Registered by implementation
 
                     // when
@@ -882,8 +885,8 @@ class DefaultComponentRegistryTest {
                     // Assignability check: ServiceImplA.isAssignableFrom(ServiceInterface) = FALSE
                     // Therefore, component NOT found
                     assertThrows(ComponentNotFoundException.class,
-                               () -> config.getComponent(ServiceImplA.class),
-                               "Cannot retrieve by implementation when registered by interface");
+                                 () -> config.getComponent(ServiceImplA.class),
+                                 "Cannot retrieve by implementation when registered by interface");
 
                     // But we CAN get it by the registered type (interface)
                     assertNotNull(config.getComponent(ServiceInterface.class));
@@ -926,9 +929,9 @@ class DefaultComponentRegistryTest {
                     // then
                     // hasComponent checks BOTH exact match AND assignability
                     assertTrue(config.hasComponent(ServiceImplA.class),
-                             "Should find exact match");
+                               "Should find exact match");
                     assertTrue(config.hasComponent(ServiceInterface.class),
-                             "Should find via assignability check");
+                               "Should find via assignability check");
                 }
             }
 
@@ -1036,7 +1039,7 @@ class DefaultComponentRegistryTest {
                     // So when a named component exists, hasComponent(type) returns true
                     // Therefore registerIfNotPresent skips registration
                     assertFalse(config.hasComponent(ServiceInterface.class),
-                              "Unnamed component not registered because named one already exists");
+                                "Unnamed component not registered because named one already exists");
                     assertTrue(config.hasComponent(ServiceInterface.class, "named-service"));
 
                     ServiceInterface namedResult = config.getComponent(ServiceInterface.class, "named-service");
@@ -1333,10 +1336,12 @@ class DefaultComponentRegistryTest {
 
     // Test component hierarchy for exploration tests
     interface ServiceInterface {
+
         String getValue();
     }
 
     static class ServiceImplA implements ServiceInterface {
+
         private final String value;
 
         ServiceImplA(String value) {
@@ -1350,6 +1355,7 @@ class DefaultComponentRegistryTest {
     }
 
     static class ServiceImplB implements ServiceInterface {
+
         private final String value;
 
         ServiceImplB(String value) {

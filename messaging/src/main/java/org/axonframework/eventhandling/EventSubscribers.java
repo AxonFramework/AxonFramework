@@ -45,7 +45,7 @@ import java.util.function.BiFunction;
  * @since 5.0.0
  */
 @Internal
-public class EventSubscribers implements DescribableComponent {
+class EventSubscribers implements DescribableComponent {
 
     private static final Logger logger = LoggerFactory.getLogger(EventSubscribers.class);
 

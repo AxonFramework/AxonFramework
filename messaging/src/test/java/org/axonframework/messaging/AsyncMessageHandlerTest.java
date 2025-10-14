@@ -73,7 +73,7 @@ class AsyncMessageHandlerTest {
     private final QueryGateway queryGateway = new DefaultQueryGateway(queryBus,
                                                                       new ClassBasedMessageTypeResolver(),
                                                                       QueryPriorityCalculator.defaultCalculator());
-    private final EventBus eventBus = new SimpleEventBus();  // TODO #3392 - Replace for actual EventSink implementation.
+    private final EventBus eventBus = new SimpleEventBus();
     private final AtomicBoolean eventHandlerCalled = new AtomicBoolean();
 
     record CheckIfPrime(int value) {

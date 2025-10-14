@@ -19,6 +19,7 @@ package org.axonframework.eventhandling;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.Registration;
+import org.axonframework.common.annotations.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
@@ -33,6 +34,7 @@ import java.util.function.BiFunction;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
+@Internal
 public abstract class DelegatingEventBus implements EventBus {
 
     protected final EventBus delegate;

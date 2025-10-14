@@ -29,6 +29,7 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.InterceptingEventStore;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.eventstreaming.Tag;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.SubscribableEventSource;
@@ -73,16 +74,17 @@ class EventSourcingConfigurationDefaultsTest {
         assertInstanceOf(InterceptingEventStore.class, eventStore);
 
         EventSink eventSink = resultConfig.getComponent(EventSink.class);
-        EventSink eventBus = resultConfig.getComponent(EventBus.class);
+        EventBus eventBus = resultConfig.getComponent(EventBus.class);
         // By default, the Event Store and the Event Sink should be the same instance.
         assertEquals(eventBus, eventSink);
         assertInstanceOf(InterceptingEventStore.class, eventSink);
         assertInstanceOf(InterceptingEventStore.class, eventBus);
 
+        StreamableEventSource<?> streamableEventSource = resultConfig.getComponent(StreamableEventSource.class);
+        assertEquals(eventBus, streamableEventSource);
 
-        SubscribableEventSource eventSource = resultConfig.getComponent(SubscribableEventSource.class);
-        // By default, the SubscribableEventSource and the Event Sink should be the same instance.
-        assertEquals(eventBus, eventSource);
+        SubscribableEventSource subscribableEventSource = resultConfig.getComponent(SubscribableEventSource.class);
+        assertEquals(eventBus, subscribableEventSource);
     }
 
     @Test

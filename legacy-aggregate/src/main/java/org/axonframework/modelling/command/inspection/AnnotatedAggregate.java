@@ -385,7 +385,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
      */
     protected void publishOnEventBus(EventMessage msg) {
         if (eventBus != null) {
-            eventBus.publish(null, msg); // todo: should it be null here?
+            eventBus.publish(null, msg);
         }
     }
 
