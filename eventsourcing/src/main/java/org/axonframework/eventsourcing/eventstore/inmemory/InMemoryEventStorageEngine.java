@@ -27,6 +27,7 @@ import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.GlobalIndexConsistencyMarker;
+import org.axonframework.eventsourcing.eventstore.GlobalIndexPosition;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.eventstreaming.EventsCondition;
@@ -183,9 +184,12 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
             logger.debug("Start sourcing events with condition [{}].", condition);
         }
 
+        // Get start position and ensure it is within valid bounds for this implementation:
+        long start = Math.max(0, GlobalIndexPosition.toIndex(condition.start()));
+
         // Set end to the CURRENT last position, to reflect it's a finite stream.
         MapBackedMessageStream messageStream = new MapBackedSourcingEventMessageStream(
-                condition.start(), eventStorage.isEmpty() ? -1 : eventStorage.lastKey(), condition
+                start, eventStorage.isEmpty() ? -1 : eventStorage.lastKey(), condition
         );
         openStreams.add(messageStream);
         return messageStream;
