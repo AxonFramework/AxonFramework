@@ -148,6 +148,7 @@ public class DummyMessagePlatformServer {
                         case FLOW_CONTROL:
                         case COMMAND_RESPONSE:
                         case REQUEST_NOT_SET:
+                        case ACK:
                             break;
                     }
                     String instructionId = commandProviderOutbound.getInstructionId();
