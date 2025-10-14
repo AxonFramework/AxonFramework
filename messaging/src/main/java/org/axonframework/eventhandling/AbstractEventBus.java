@@ -31,7 +31,7 @@ import java.util.function.BiFunction;
 
 /**
  * Base class for the Event Bus. In case events are published while a ProcessingContext is active, the events are queued
- * and published during the commit phase of the ProcessingContext.
+ * and published during the commit (by default - you may override this behavior thanks to the protected methods) phase of the ProcessingContext.
  * <p>
  * This implementation of the {@link EventBus} directly forwards all published events (in the callers' thread) to
  * subscribed event processors.
