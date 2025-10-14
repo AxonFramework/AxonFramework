@@ -73,21 +73,20 @@ class QuerySerializerTest {
     @Test
     @Disabled("TODO #3488")
     void serializeResponse() {
-        Map<String, ?> metadata = new HashMap<>() {{
-            this.put("firstKey", "firstValue");
-            this.put("secondKey", "secondValue");
-        }};
-        QueryResponseMessage message = new GenericQueryResponseMessage(
-                new MessageType("query"), BigDecimal.ONE, BigDecimal.class, metadata
-        );
-        QueryResponse grpcMessage = testSubject.serializeResponse(message, "requestMessageId");
-        QueryResponseMessage deserialized = null;
-//                testSubject.deserializeResponse(grpcMessage, instanceOf(BigDecimal.class));
-
-        assertEquals(message.identifier(), deserialized.identifier());
-        assertEquals(message.metadata(), deserialized.metadata());
-        assertEquals(message.payloadType(), deserialized.payloadType());
-        assertEquals(message.payload(), deserialized.payload());
+//        Map<String, ?> metadata = new HashMap<>() {{
+//            this.put("firstKey", "firstValue");
+//            this.put("secondKey", "secondValue");
+//        }};
+//        QueryResponseMessage message = new GenericQueryResponseMessage(
+//                new MessageType("query"), BigDecimal.ONE, BigDecimal.class, metadata
+//        );
+//        QueryResponse grpcMessage = testSubject.serializeResponse(message, "requestMessageId");
+//        QueryResponseMessage deserialized = testSubject.deserializeResponse(grpcMessage, instanceOf(BigDecimal.class));
+//
+//        assertEquals(message.identifier(), deserialized.identifier());
+//        assertEquals(message.metadata(), deserialized.metadata());
+//        assertEquals(message.payloadType(), deserialized.payloadType());
+//        assertEquals(message.payload(), deserialized.payload());
     }
 
     @Test

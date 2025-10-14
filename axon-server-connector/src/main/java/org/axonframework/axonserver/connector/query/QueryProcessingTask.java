@@ -242,6 +242,7 @@ class QueryProcessingTask implements Runnable, FlowControl {
                                           clientId);
     }
 
+    @SuppressWarnings("unused")
     private <R> StreamableMultiInstanceResponse<R> streamableMultiInstanceResult(QueryResponseMessage result,
                                                                                  Class<R> responseType) {
         return new StreamableMultiInstanceResponse<>(result,
@@ -251,6 +252,7 @@ class QueryProcessingTask implements Runnable, FlowControl {
                                                      queryRequest.getMessageIdentifier());
     }
 
+    @SuppressWarnings("unused")
     private StreamableInstanceResponse streamableInstanceResult(QueryResponseMessage result) {
         return new StreamableInstanceResponse(result, responseHandler, serializer, queryRequest.getMessageIdentifier());
     }

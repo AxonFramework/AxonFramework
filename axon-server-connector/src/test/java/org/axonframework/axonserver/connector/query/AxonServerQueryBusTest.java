@@ -500,10 +500,10 @@ class AxonServerQueryBusTest {
     @Test
     void shutdownTakesFinishedQueriesIntoAccount() {
         when(mockQueryChannel.query(any())).thenReturn(new StubResultStream<>(stubResponse("some-payload")));
-        QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType("query"), "some-query", new MessageType(String.class)
-        );
-
+//        QueryMessage testQuery = new GenericQueryMessage(
+//                new MessageType("query"), "some-query", new MessageType(String.class)
+//        );
+//
 //        CompletableFuture<QueryResponseMessage> result = testSubject.query(testQuery);
 //        result.join();
 
