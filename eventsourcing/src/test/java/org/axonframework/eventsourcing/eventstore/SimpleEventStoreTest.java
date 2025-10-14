@@ -438,6 +438,44 @@ class SimpleEventStoreTest {
             verify(mockAppendTransaction).rollback(any(ProcessingContext.class));
         }
 
+        @Test
+        void subscribersAreNotifiedWhenEventsAreAppendedViaTransaction() {
+            // given
+            EventStorageEngine.AppendTransaction<?> mockAppendTransaction = mock();
+            when(mockAppendTransaction.commit(any(ProcessingContext.class))).thenReturn(completedFuture(null));
+            when(mockAppendTransaction.afterCommit(any(), any(ProcessingContext.class)))
+                    .thenReturn(completedFuture(mock(ConsistencyMarker.class)));
+            when(mockStorageEngine.appendEvents(any(), any(ProcessingContext.class), anyList()))
+                    .thenReturn(completedFuture(mockAppendTransaction));
+            when(tagResolver.resolve(any())).thenReturn(Set.of());
+
+            RecordingEventListener listener = new RecordingEventListener();
+            testSubject.subscribe(listener);
+            EventMessage testEventZero = createEvent(0);
+            EventMessage testEventOne = createEvent(1);
+
+            // when
+            UnitOfWork uow = aUnitOfWork();
+            uow.onPreInvocation(context -> {
+                EventStoreTransaction transaction = testSubject.transaction(context);
+                transaction.appendEvent(testEventZero);
+                transaction.appendEvent(testEventOne);
+                return completedFuture(null);
+            });
+
+            awaitSuccessfulCompletion(uow.execute());
+
+            // then
+            assertThat(listener.getReceivedEvents())
+                    .hasSize(2)
+                    .containsExactly(testEventZero, testEventOne);
+            assertThat(listener.getInvocationCount()).isEqualTo(1);
+            assertThat(listener.getCapturedContexts())
+                    .hasSize(1)
+                    .first()
+                    .isNotNull();
+        }
+
         // Test listener implementations
 
         /**

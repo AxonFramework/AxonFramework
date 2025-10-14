@@ -80,18 +80,16 @@ public class SimpleEventStore implements EventStore {
     public EventStoreTransaction transaction(@Nonnull ProcessingContext processingContext) {
         return processingContext.computeResourceIfAbsent(
                 eventStoreTransactionKey,
-                () -> new DefaultEventStoreTransaction(eventStorageEngine, processingContext, this::tagEvents)
+                () -> {
+                    var eventStoreTransaction = new DefaultEventStoreTransaction(eventStorageEngine, processingContext, this::tagEvents);
+                    eventStoreTransaction.onAppend(events -> eventBus.publish(processingContext, events).join());
+                    return eventStoreTransaction;
+                }
         );
     }
 
     @Override
     public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                           @Nonnull List<EventMessage> events) {
-        return append(context, events).thenCompose(r -> eventBus.publish(context, events));
-    }
-
-    @Nonnull
-    private CompletableFuture<Void> append(@Nullable ProcessingContext context,
                                            @Nonnull List<EventMessage> events) {
         if (context == null) {
             AppendCondition none = AppendCondition.none();
@@ -102,7 +100,8 @@ public class SimpleEventStore implements EventStore {
             return eventStorageEngine.appendEvents(none, context, taggedEvents)
                                      .thenApply(SimpleEventStore::castTransaction)
                                      .thenApply(tx -> tx.commit(context).thenApply(v -> tx.afterCommit(v, context)))
-                                     .thenApply(marker -> null);
+                                     .thenApply(marker -> null)
+                                     .thenCompose(r -> eventBus.publish(context, events));
         } else {
             // Return a completed future since we have an active context.
             // The user will wait within the context's lifecycle anyhow.
