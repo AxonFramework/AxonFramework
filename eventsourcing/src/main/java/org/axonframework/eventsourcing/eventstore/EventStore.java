@@ -18,10 +18,10 @@ package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.DescribableComponent;
+import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventstreaming.StreamableEventSource;
-import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.List;
@@ -45,7 +45,7 @@ import java.util.List;
  * @author Steven van Beelen
  * @since 0.1.0
  */
-public interface EventStore extends StreamableEventSource<EventMessage>, EventSink, DescribableComponent {
+public interface EventStore extends StreamableEventSource<EventMessage>, EventBus, DescribableComponent {
 
     /**
      * Retrieves the {@link EventStoreTransaction transaction for appending events} for the given

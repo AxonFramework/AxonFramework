@@ -21,22 +21,18 @@ import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.configuration.MessagingConfigurationDefaults;
-import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.configuration.EventBusConfigurationDefaults;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.eventsourcing.eventstore.EventStoreBasedEventBus;
 import org.axonframework.eventsourcing.eventstore.InterceptingEventStore;
 import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.interceptors.DispatchInterceptorRegistry;
-import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 
 import java.util.List;
 
@@ -66,16 +62,6 @@ public class EventSourcingConfigurationDefaults implements ConfigurationEnhancer
      */
     public static final int ENHANCER_ORDER = MessagingConfigurationDefaults.ENHANCER_ORDER - 100;
 
-    private boolean isSpringContext = false;
-
-    public EventSourcingConfigurationDefaults() {
-        this.isSpringContext = true;
-    }
-
-    public EventSourcingConfigurationDefaults(boolean isSpringContext) {
-        this.isSpringContext = isSpringContext;
-    }
-
     @Override
     public int order() {
         return ENHANCER_ORDER;
@@ -100,27 +86,6 @@ public class EventSourcingConfigurationDefaults implements ConfigurationEnhancer
                             : new InterceptingEventStore(delegate, dispatchInterceptors);
                 }
         );
-        registry.registerDecorator(
-                EventStore.class,
-                InterceptingEventStore.DECORATION_ORDER + 50,
-                (config, name, delegate) -> new EventStoreBasedEventBus(
-                        delegate,
-                        new SimpleEventBus())
-        );
-
-        if (isSpringContext) { // fixme: due to difference in SpringComponentRegistry and DefaultComponentRegistry
-            registry.registerIfNotPresent(
-                    EventSink.class,
-                    cfg -> cfg.getComponent(EventStore.class));
-        } else {
-            registry.registerComponent(EventBus.class,
-                                       c -> c.getOptionalComponent(EventStore.class).filter(it -> it instanceof EventBus)
-                                             .map(it -> (EventBus) it).orElseThrow(() -> new IllegalStateException(
-                                                       "The EventStore is not an EventBus, so the EventBus must be configured explicitly.")));
-            registry.registerComponent(
-                    EventSink.class,
-                    cfg -> cfg.getComponent(EventStore.class));
-        }
     }
 
     private static TagResolver defaultTagResolver(Configuration configuration) {
@@ -132,7 +97,10 @@ public class EventSourcingConfigurationDefaults implements ConfigurationEnhancer
     }
 
     private static SimpleEventStore simpleEventStore(Configuration config) {
-        return new SimpleEventStore(config.getComponent(EventStorageEngine.class),
-                                    config.getComponent(TagResolver.class));
+        return new SimpleEventStore(
+                config.getComponent(EventStorageEngine.class),
+                new SimpleEventBus(),
+                config.getComponent(TagResolver.class)
+        );
     }
 }

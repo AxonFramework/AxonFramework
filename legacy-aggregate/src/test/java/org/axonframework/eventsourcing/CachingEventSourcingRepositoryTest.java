@@ -20,6 +20,7 @@ import org.axonframework.common.caching.Cache;
 import org.axonframework.common.caching.EhCacheAdapter;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
@@ -63,7 +64,7 @@ class CachingEventSourcingRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        mockEventStore = spy(new SimpleEventStore(new InMemoryEventStorageEngine(), new AnnotationBasedTagResolver()));
+        mockEventStore = spy(new SimpleEventStore(new InMemoryEventStorageEngine(), new SimpleEventBus(), new AnnotationBasedTagResolver()));
         Map<String, CacheConfiguration<?, ?>> caches = new HashMap<>();
         DefaultConfiguration config = new DefaultConfiguration(caches, null);
         cacheManager = new EhcacheManager(config);

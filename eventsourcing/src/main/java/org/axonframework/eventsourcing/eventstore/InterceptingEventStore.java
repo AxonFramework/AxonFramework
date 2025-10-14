@@ -18,12 +18,13 @@ package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.Registration;
 import org.axonframework.common.annotations.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.DecoratorDefinition;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.InterceptingEventSink;
+import org.axonframework.eventhandling.InterceptingEventBus;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.Context;
@@ -36,6 +37,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -71,7 +73,7 @@ public class InterceptingEventStore implements EventStore {
     private final EventStore delegate;
     private final List<MessageDispatchInterceptor<? super EventMessage>> interceptors;
     private final InterceptingAppender interceptingAppender;
-    private final InterceptingEventSink delegateSink;
+    private final InterceptingEventBus delegateBus;
 
     private final Context.ResourceKey<EventStoreTransaction> delegateTransactionKey;
     private final Context.ResourceKey<EventStoreTransaction> interceptingTransactionKey;
@@ -95,7 +97,7 @@ public class InterceptingEventStore implements EventStore {
         this.interceptors = Objects.requireNonNull(interceptors, "The dispatch interceptors must not be null.");
         this.interceptingAppender =
                 new InterceptingAppender(interceptors, context -> context.getResource(delegateTransactionKey));
-        this.delegateSink = new InterceptingEventSink(delegate, interceptors);
+        this.delegateBus = new InterceptingEventBus(delegate, interceptors);
     }
 
     @Override
@@ -144,11 +146,12 @@ public class InterceptingEventStore implements EventStore {
     @Override
     public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
                                            @Nonnull List<EventMessage> events) {
-        return delegateSink.publish(context, events);
+        return delegateBus.publish(context, events);
     }
 
     @Override
-    public MessageStream<EventMessage> open(@Nonnull StreamingCondition condition, @Nullable ProcessingContext context) {
+    public MessageStream<EventMessage> open(@Nonnull StreamingCondition condition,
+                                            @Nullable ProcessingContext context) {
         return delegate.open(condition, context);
     }
 
@@ -171,7 +174,14 @@ public class InterceptingEventStore implements EventStore {
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
         descriptor.describeProperty("dispatchInterceptors", interceptors);
-        descriptor.describeProperty("delegateSink", delegateSink);
+        descriptor.describeProperty("delegateSink", delegateBus);
+    }
+
+    @Override
+    public Registration subscribe(
+            @Nonnull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer
+    ) {
+        return delegate.subscribe(eventsBatchConsumer);
     }
 
     private class InterceptingEventStoreTransaction implements EventStoreTransaction {
