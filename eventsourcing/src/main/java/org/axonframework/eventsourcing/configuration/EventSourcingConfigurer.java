@@ -97,7 +97,6 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
     public static EventSourcingConfigurer enhance(@Nonnull ModellingConfigurer modellingConfigurer) {
         return new EventSourcingConfigurer(modellingConfigurer)
                 .componentRegistry(cr -> cr
-                        .disableEnhancer(EventBusConfigurationDefaults.class) // disable default EventBus in favor of EventStoreBasedEventBus
                         .registerEnhancer(new EventSourcingConfigurationDefaults())
                 );
     }

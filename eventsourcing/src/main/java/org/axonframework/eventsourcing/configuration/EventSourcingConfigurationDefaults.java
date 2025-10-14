@@ -39,6 +39,9 @@ import java.util.List;
 /**
  * A {@link ConfigurationEnhancer} registering the default components of the {@link EventSourcingConfigurer}.
  * <p>
+ * This enhancer disables the {@link EventBusConfigurationDefaults} to prevent duplicate {@link org.axonframework.eventhandling.EventBus}
+ * registration, as the {@link EventStore} implementation serves as the EventBus in event sourcing scenarios.
+ * <p>
  * Will only register the following components <b>if</b> there is no component registered for the given class yet:
  * <ul>
  *     <li>Registers a {@link AnnotationBasedTagResolver} for class {@link TagResolver}</li>
