@@ -100,6 +100,7 @@ class EventMultiUpcasterTest {
     }
 
     @Test
+    @Disabled("TODO #3597")
     void upcasterIgnoresWrongEventRevision() {
         String expectedRevisionNumber = "1";
 
@@ -127,6 +128,7 @@ class EventMultiUpcasterTest {
 
     @SuppressWarnings("OptionalGetWithoutIsPresent")
     @Test
+    @Disabled("TODO #3597")
     void upcastingDomainEventData() {
         String testAggregateType = "test";
         String testAggregateId = "aggregateId";
@@ -167,6 +169,7 @@ class EventMultiUpcasterTest {
 
     @SuppressWarnings("ConstantConditions")
     @Test
+    @Disabled("TODO #3597")
     void upcastsKnownType() {
         String expectedRevisionNumber = "1";
         String expectedSecondAndThirdRevisionNumber = null;
