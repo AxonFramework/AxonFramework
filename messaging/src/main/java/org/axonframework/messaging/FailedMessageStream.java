@@ -17,7 +17,6 @@
 package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
-import reactor.core.publisher.Flux;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -48,11 +47,6 @@ class FailedMessageStream<M extends Message> implements MessageStream.Empty<M> {
     @Override
     public CompletableFuture<Entry<M>> asCompletableFuture() {
         return CompletableFuture.failedFuture(error);
-    }
-
-    @Override
-    public Flux<Entry<M>> asFlux() {
-        return Flux.error(error);
     }
 
     @Override

@@ -18,6 +18,7 @@ package org.axonframework.queryhandling;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.DescribableComponent;
+import org.axonframework.messaging.FluxUtils;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
@@ -99,7 +100,7 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
     default Publisher<QueryResponseMessage> streamingQuery(@Nonnull QueryMessage query,
                                                            @Nullable ProcessingContext context) {
         return Mono.fromSupplier(() -> query(query, context))
-                   .flatMapMany(MessageStream::asFlux)
+                   .flatMapMany(FluxUtils::of)
                    .map(MessageStream.Entry::message);
     }
 

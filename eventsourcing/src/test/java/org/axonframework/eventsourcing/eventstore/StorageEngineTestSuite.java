@@ -25,6 +25,7 @@ import org.axonframework.eventsourcing.eventstore.EventStorageEngine.AppendTrans
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.eventstreaming.Tag;
+import org.axonframework.messaging.FluxUtils;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageStream.Entry;
 import org.axonframework.messaging.MessageType;
@@ -123,7 +124,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
 
         SourcingCondition testCondition = SourcingCondition.conditionFor(TEST_CRITERIA);
 
-        StepVerifier.create(testSubject.source(testCondition, processingContext()).asFlux())
+        StepVerifier.create(FluxUtils.of(testSubject.source(testCondition, processingContext())))
                     .expectNextCount(expectedCount)
                     .verifyComplete();
     }
@@ -140,15 +141,13 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
                 taggedEventMessage("event-5", OTHER_CRITERIA_TAGS)
         );
 
-        StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(TEST_CRITERIA), processingContext())
-                                       .asFlux())
+        StepVerifier.create(FluxUtils.of(testSubject.source(SourcingCondition.conditionFor(TEST_CRITERIA), processingContext())))
                     .assertNext(entry -> assertNull(entry.getResource(ConsistencyMarker.RESOURCE_KEY)))
                     .assertNext(entry -> assertNull(entry.getResource(ConsistencyMarker.RESOURCE_KEY)))
                     .assertNext(StorageEngineTestSuite::assertMarkerEntry)
                     .verifyComplete();
 
-        StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(OTHER_CRITERIA), processingContext())
-                                       .asFlux())
+        StepVerifier.create(FluxUtils.of(testSubject.source(SourcingCondition.conditionFor(OTHER_CRITERIA), processingContext())))
                     .assertNext(entry -> assertNull(entry.getResource(ConsistencyMarker.RESOURCE_KEY)))
                     .assertNext(entry -> assertNull(entry.getResource(ConsistencyMarker.RESOURCE_KEY)))
                     .assertNext(entry -> assertNull(entry.getResource(ConsistencyMarker.RESOURCE_KEY)))
@@ -170,13 +169,12 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
                 taggedEventMessage("event-5", OTHER_CRITERIA_TAGS)
         );
 
-        ConsistencyMarker marker = testSubject.source(SourcingCondition.conditionFor(OTHER_CRITERIA),
-                                                      processingContext())
-                                              .asFlux()
-                                              .collectList()
-                                              .map(List::getLast)
-                                              .map(entry -> entry.getResource(ConsistencyMarker.RESOURCE_KEY))
-                                              .block();
+        ConsistencyMarker marker = FluxUtils
+            .of(testSubject.source(SourcingCondition.conditionFor(OTHER_CRITERIA), processingContext()))
+            .collectList()
+            .map(List::getLast)
+            .map(entry -> entry.getResource(ConsistencyMarker.RESOURCE_KEY))
+            .block();
 
         appendEvents(AppendCondition.none(), taggedEventMessage("event-6", OTHER_CRITERIA_TAGS));
 
@@ -198,7 +196,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
     void sourcingEventsReturnsConsistencyMarkerAsSoleMessageWhenNoEventsInTheStoreForFlux() {
         SourcingCondition testCondition = SourcingCondition.conditionFor(TEST_CRITERIA);
 
-        StepVerifier.create(testSubject.source(testCondition, processingContext()).asFlux())
+        StepVerifier.create(FluxUtils.of(testSubject.source(testCondition, processingContext())))
                     .assertNext(StorageEngineTestSuite::assertMarkerEntry)
                     .verifyComplete();
     }
@@ -213,7 +211,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
         MessageStream<EventMessage> sourcingStream = testSubject.source(testCondition, processingContext());
 
         // then
-        StepVerifier.create(sourcingStream.asFlux())
+        StepVerifier.create(FluxUtils.of(sourcingStream))
                     .assertNext(StorageEngineTestSuite::assertMarkerEntry)
                     .verifyComplete();
     }
@@ -390,7 +388,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
                            .thenApply(c -> testSubject.stream(c, processingContext()))
                            .get(5, TimeUnit.SECONDS);
 
-        StepVerifier.create(result.asFlux())
+        StepVerifier.create(FluxUtils.of(result))
                     .assertNext(entry -> assertEvent(entry.message(), expectedEventOne.event()))
                     .assertNext(entry -> assertEvent(entry.message(), expectedEventTwo.event()))
                     .assertNext(entry -> assertEvent(entry.message(), expectedEventThree.event()))
@@ -424,7 +422,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
 
         StreamingCondition testCondition = StreamingCondition.conditionFor(tokenOfFirstMessage, TEST_CRITERIA);
 
-        StepVerifier.create(testSubject.stream(testCondition, processingContext()).asFlux())
+        StepVerifier.create(FluxUtils.of(testSubject.stream(testCondition, processingContext())))
                     // we've skipped the first one by changing the starting point
                     .assertNext(entry -> assertEvent(entry.message(), expectedEventOne.event()))
                     .assertNext(entry -> assertEvent(entry.message(), expectedEventTwo.event()))
@@ -585,8 +583,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
                                                                                                                    TimeUnit.SECONDS);
 
         assertNotNull(actualToken);
-        StepVerifier.create(testSubject.stream(StreamingCondition.startingFrom(actualToken), processingContext())
-                                       .asFlux())
+        StepVerifier.create(FluxUtils.of(testSubject.stream(StreamingCondition.startingFrom(actualToken), processingContext())))
                     .expectNextCount(2)
                     .thenCancel()
                     .verify();

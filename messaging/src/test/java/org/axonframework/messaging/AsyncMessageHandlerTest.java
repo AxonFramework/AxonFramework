@@ -297,7 +297,7 @@ class AsyncMessageHandlerTest {
                                     null, isPrime(((CheckIfPrime) command.payload()).value())
                             );
 
-                            return MessageStream.fromMono(Mono.just(data));
+                            return MonoUtils.asSingle(Mono.just(data));
                         }
                 );
 
@@ -325,7 +325,7 @@ class AsyncMessageHandlerTest {
                 queryBus.subscribe(
                         new QualifiedName(GetKnownPrimes.class),
                         new QualifiedName(Integer.class),
-                        (query, context) -> MessageStream.fromFlux(
+                        (query, context) -> FluxUtils.asMessageStream(
                                 Flux.just(2, 3, 5, 7)
                                     .map(i -> new GenericQueryResponseMessage(new MessageType(Integer.class), i))
                         )

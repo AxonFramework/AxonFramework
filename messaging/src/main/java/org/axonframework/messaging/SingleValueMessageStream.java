@@ -18,8 +18,6 @@ package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -66,16 +64,6 @@ class SingleValueMessageStream<M extends Message> implements MessageStream.Singl
     @Override
     public CompletableFuture<Entry<M>> asCompletableFuture() {
         return source;
-    }
-
-    @Override
-    public Flux<Entry<M>> asFlux() {
-        return Flux.from(asMono());
-    }
-
-    @Override
-    public Mono<Entry<M>> asMono() {
-        return Mono.fromFuture(source);
     }
 
     @Override

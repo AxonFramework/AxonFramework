@@ -104,11 +104,9 @@ class OnNextMessageStreamTest extends MessageStreamTest<Message> {
         Message second = createRandomMessage();
         List<Message> messages = List.of(first, second);
 
-        StepVerifier.create(MessageStream.fromIterable(messages)
-                                         .onNext(seen::add)
-                                         .asFlux())
-                    .expectNextCount(2)
-                    .verifyComplete();
+        StepVerifier.create(FluxUtils.of(MessageStream.fromIterable(messages).onNext(seen::add)))
+            .expectNextCount(2)
+            .verifyComplete();
 
         assertEquals(2, seen.size());
         assertEquals(first, seen.getFirst().message());
