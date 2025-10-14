@@ -18,7 +18,6 @@ package org.axonframework.axonserver.connector.util;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.axoniq.axonserver.grpc.MetaDataValue;
-import io.axoniq.axonserver.grpc.SerializedObject;
 import org.axonframework.eventhandling.annotations.Event;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;

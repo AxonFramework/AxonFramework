@@ -129,7 +129,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
     private static final int DIRECT_QUERY_NUMBER_OF_RESULTS = 1;
     private static final long DIRECT_QUERY_TIMEOUT_MS = TimeUnit.HOURS.toMillis(1);
-    private static final int SCATTER_GATHER_NUMBER_OF_RESULTS = -1;
 
     private static final int QUERY_QUEUE_CAPACITY = 1000;
 
@@ -411,8 +410,8 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                           .query(queryRequest);
     }
 
-    private <R> Publisher<QueryResponseMessage> deserialize(QueryMessage queryMessage,
-                                                            QueryResponse queryResponse) {
+    private Publisher<QueryResponseMessage> deserialize(QueryMessage queryMessage,
+                                                        QueryResponse queryResponse) {
         // TODO #3488 - Replace Serializer and ResponseType use
         //noinspection unchecked
 //        Class<R> expectedResponseType = (Class<R>) queryMessage.responseType().getExpectedResponseType();
