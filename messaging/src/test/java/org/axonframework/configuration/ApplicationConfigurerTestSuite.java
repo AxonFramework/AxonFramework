@@ -1168,6 +1168,285 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             assertEquals(1, childEnhancerOrder.get(), "Child enhancer (order=5) should execute second, after parent");
         }
 
+        @Nested
+        class DisableEnhancer {
+
+            @Test
+            void disableEnhancerByClassCanDisableFutureEnhancers() {
+                // given...
+                AtomicBoolean firstEnhancerInvoked = new AtomicBoolean(false);
+                AtomicBoolean secondEnhancerInvoked = new AtomicBoolean(false);
+
+                class SecondEnhancer implements ConfigurationEnhancer {
+
+                    @Override
+                    public void enhance(@Nonnull ComponentRegistry registry) {
+                        secondEnhancerInvoked.set(true);
+                        registry.registerComponent(TestComponent.class, "second", c -> new TestComponent("second"));
+                    }
+
+                    @Override
+                    public int order() {
+                        return 100; // Execute after FirstEnhancer
+                    }
+                }
+
+                class FirstEnhancer implements ConfigurationEnhancer {
+
+                    @Override
+                    public void enhance(@Nonnull ComponentRegistry registry) {
+                        firstEnhancerInvoked.set(true);
+                        registry.registerComponent(TestComponent.class, "first", c -> new TestComponent("first"));
+                        // Disable SecondEnhancer which hasn't executed yet
+                        registry.disableEnhancer(SecondEnhancer.class);
+                    }
+                }
+
+                testSubject.componentRegistry(cr -> cr.registerEnhancer(new FirstEnhancer())
+                                                      .registerEnhancer(new SecondEnhancer()));
+
+                // when...
+                Configuration config = buildConfiguration();
+
+                // then...
+                // FirstEnhancer should execute, but SecondEnhancer should be disabled
+                assertTrue(firstEnhancerInvoked.get(), "FirstEnhancer should execute");
+                assertFalse(secondEnhancerInvoked.get(),
+                            "SecondEnhancer should NOT execute because it was disabled");
+                // Only first component should be registered
+                assertEquals(new TestComponent("first"), config.getComponent(TestComponent.class, "first"));
+                assertFalse(config.getOptionalComponent(TestComponent.class, "second").isPresent(),
+                            "SecondEnhancer's component should not exist");
+            }
+
+            @Test
+            void disableEnhancerByStringCanDisableFutureEnhancers() {
+                // given...
+                AtomicBoolean disablingEnhancerInvoked = new AtomicBoolean(false);
+                AtomicBoolean targetEnhancerInvoked = new AtomicBoolean(false);
+
+                class TargetEnhancer implements ConfigurationEnhancer {
+
+                    @Override
+                    public void enhance(@Nonnull ComponentRegistry registry) {
+                        targetEnhancerInvoked.set(true);
+                        registry.registerComponent(TestComponent.class, "target", c -> new TestComponent("target"));
+                    }
+
+                    @Override
+                    public int order() {
+                        return 100; // Execute after disabling enhancer
+                    }
+                }
+
+                ConfigurationEnhancer disablingEnhancer = registry -> {
+                    disablingEnhancerInvoked.set(true);
+                    registry.registerComponent(TestComponent.class, "disabler", c -> new TestComponent("disabler"));
+                    // Disable TargetEnhancer by class name
+                    registry.disableEnhancer(TargetEnhancer.class.getName());
+                };
+
+                testSubject.componentRegistry(cr -> cr.registerEnhancer(disablingEnhancer)
+                                                      .registerEnhancer(new TargetEnhancer()));
+
+                // when...
+                Configuration config = buildConfiguration();
+
+                // then...
+                // Disabling enhancer should execute, but target should be disabled
+                assertTrue(disablingEnhancerInvoked.get(), "Disabling enhancer should execute");
+                assertFalse(targetEnhancerInvoked.get(),
+                            "TargetEnhancer should NOT execute because it was disabled by name");
+                // Only disabler component should be registered
+                assertEquals(new TestComponent("disabler"), config.getComponent(TestComponent.class, "disabler"));
+                assertFalse(config.getOptionalComponent(TestComponent.class, "target").isPresent(),
+                            "TargetEnhancer's component should not exist");
+            }
+
+            @Test
+            void disableEnhancerWhenEnhancerWithLowerOrderDisablesHigherOrder() {
+                // given...
+                AtomicInteger executionOrder = new AtomicInteger(0);
+                AtomicInteger lowOrderEnhancerOrder = new AtomicInteger(-1);
+                AtomicInteger highOrderEnhancerOrder = new AtomicInteger(-1);
+
+                class HighOrderEnhancer implements ConfigurationEnhancer {
+
+                    @Override
+                    public void enhance(@Nonnull ComponentRegistry registry) {
+                        highOrderEnhancerOrder.set(executionOrder.getAndIncrement());
+                        registry.registerComponent(TestComponent.class, "high", c -> new TestComponent("high"));
+                    }
+
+                    @Override
+                    public int order() {
+                        return 100; // Higher order, executes later
+                    }
+                }
+
+                class LowOrderEnhancer implements ConfigurationEnhancer {
+
+                    @Override
+                    public void enhance(@Nonnull ComponentRegistry registry) {
+                        lowOrderEnhancerOrder.set(executionOrder.getAndIncrement());
+                        registry.registerComponent(TestComponent.class, "low", c -> new TestComponent("low"));
+                        // Disable an enhancer that hasn't executed yet
+                        registry.disableEnhancer(HighOrderEnhancer.class);
+                    }
+
+                    @Override
+                    public int order() {
+                        return 10; // Lower order, executes first
+                    }
+                }
+
+                testSubject.componentRegistry(cr -> cr.registerEnhancer(new HighOrderEnhancer())
+                                                      .registerEnhancer(new LowOrderEnhancer()));
+
+                // when...
+                Configuration config = buildConfiguration();
+
+                // then...
+                // Verify only LowOrderEnhancer executed
+                assertEquals(0, lowOrderEnhancerOrder.get(),
+                             "LowOrderEnhancer (order=10) should execute first");
+                assertEquals(-1, highOrderEnhancerOrder.get(),
+                             "HighOrderEnhancer (order=100) should NOT execute because it was disabled");
+                // Only low component should be registered
+                assertEquals(new TestComponent("low"), config.getComponent(TestComponent.class, "low"));
+                assertFalse(config.getOptionalComponent(TestComponent.class, "high").isPresent(),
+                            "HighOrderEnhancer's component should not exist");
+            }
+
+            @Test
+            void disableEnhancerCannotDisableAlreadyExecutedEnhancer() {
+                // given...
+                AtomicInteger executionOrder = new AtomicInteger(0);
+                AtomicInteger lowOrderEnhancerOrder = new AtomicInteger(-1);
+                AtomicInteger highOrderEnhancerOrder = new AtomicInteger(-1);
+
+                class LowOrderEnhancer implements ConfigurationEnhancer {
+
+                    @Override
+                    public void enhance(@Nonnull ComponentRegistry registry) {
+                        lowOrderEnhancerOrder.set(executionOrder.getAndIncrement());
+                        registry.registerComponent(TestComponent.class, "low", c -> new TestComponent("low"));
+                    }
+
+                    @Override
+                    public int order() {
+                        return 10; // Lower order, executes first
+                    }
+                }
+
+                class HighOrderEnhancer implements ConfigurationEnhancer {
+
+                    @Override
+                    public void enhance(@Nonnull ComponentRegistry registry) {
+                        highOrderEnhancerOrder.set(executionOrder.getAndIncrement());
+                        registry.registerComponent(TestComponent.class, "high", c -> new TestComponent("high"));
+                        // Try to disable an enhancer that already executed
+                        // This has no effect as it already ran
+                        registry.disableEnhancer(LowOrderEnhancer.class);
+                    }
+
+                    @Override
+                    public int order() {
+                        return 100; // Higher order, executes later
+                    }
+                }
+
+                testSubject.componentRegistry(cr -> cr.registerEnhancer(new LowOrderEnhancer())
+                                                      .registerEnhancer(new HighOrderEnhancer()));
+
+                // when...
+                Configuration config = buildConfiguration();
+
+                // then...
+                // Both enhancers should have executed (can't disable already-executed enhancer)
+                assertEquals(0, lowOrderEnhancerOrder.get(),
+                             "LowOrderEnhancer (order=10) should execute first");
+                assertEquals(1, highOrderEnhancerOrder.get(),
+                             "HighOrderEnhancer (order=100) should execute second");
+                // Both components should be registered, proving LowOrderEnhancer executed and wasn't retroactively disabled
+                assertEquals(new TestComponent("low"), config.getComponent(TestComponent.class, "low"));
+                assertEquals(new TestComponent("high"), config.getComponent(TestComponent.class, "high"));
+            }
+
+            @Test
+            void disableEnhancerMultipleTimes() {
+                // given...
+                AtomicBoolean firstEnhancerInvoked = new AtomicBoolean(false);
+                AtomicBoolean targetEnhancerInvoked = new AtomicBoolean(false);
+                AtomicInteger disablerInvocationCount = new AtomicInteger(0);
+
+                class TargetEnhancer implements ConfigurationEnhancer {
+
+                    @Override
+                    public void enhance(@Nonnull ComponentRegistry registry) {
+                        targetEnhancerInvoked.set(true);
+                        registry.registerComponent(TestComponent.class, "target", c -> new TestComponent("target"));
+                    }
+
+                    @Override
+                    public int order() {
+                        return 100; // Execute after others
+                    }
+                }
+
+                ConfigurationEnhancer firstEnhancer = registry -> {
+                    firstEnhancerInvoked.set(true);
+                    disablerInvocationCount.incrementAndGet();
+                    // Disable multiple times - should work the same
+                    registry.disableEnhancer(TargetEnhancer.class);
+                    registry.disableEnhancer(TargetEnhancer.class.getName());
+                    registry.disableEnhancer(TargetEnhancer.class);
+                    registry.registerComponent(TestComponent.class, "first", c -> new TestComponent("first"));
+                };
+
+                testSubject.componentRegistry(cr -> cr.registerEnhancer(firstEnhancer)
+                                                      .registerEnhancer(new TargetEnhancer()));
+
+                // when...
+                Configuration config = buildConfiguration();
+
+                // then...
+                // First enhancer executes, target should be disabled despite multiple disable calls
+                assertTrue(firstEnhancerInvoked.get(), "First enhancer should execute");
+                assertFalse(targetEnhancerInvoked.get(),
+                            "TargetEnhancer should NOT execute (disabled by multiple calls)");
+                assertEquals(1, disablerInvocationCount.get(), "First enhancer should execute exactly once");
+                // Only first component should be registered
+                assertEquals(new TestComponent("first"), config.getComponent(TestComponent.class, "first"));
+                assertFalse(config.getOptionalComponent(TestComponent.class, "target").isPresent(),
+                            "TargetEnhancer's component should not exist");
+            }
+
+            @Test
+            void disableEnhancerWithNonExistentClassNameCompletesNormally() {
+                // given...
+                AtomicBoolean enhancerInvoked = new AtomicBoolean(false);
+
+                ConfigurationEnhancer enhancer = registry -> {
+                    enhancerInvoked.set(true);
+                    // Try to disable a non-existent enhancer class - should not throw exception
+                    registry.disableEnhancer("com.nonexistent.FakeEnhancer");
+                    registry.disableEnhancer("another.fake.EnhancerClass");
+                    registry.registerComponent(TestComponent.class, "component", c -> new TestComponent("component"));
+                };
+
+                testSubject.componentRegistry(cr -> cr.registerEnhancer(enhancer));
+
+                // when...
+                Configuration config = buildConfiguration();
+
+                // then...
+                // Should complete normally without throwing exceptions
+                assertTrue(enhancerInvoked.get(), "Enhancer should execute normally");
+                assertEquals(new TestComponent("component"), config.getComponent(TestComponent.class, "component"));
+            }
+        }
+
         record TestConfigurationEnhancer(AtomicBoolean invoked) implements ConfigurationEnhancer {
 
             @Override
