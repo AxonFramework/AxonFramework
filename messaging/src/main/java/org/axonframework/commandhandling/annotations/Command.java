@@ -61,7 +61,7 @@ public @interface Command {
      *
      * @return The business or domain name of the command.
      */
-    String name();
+    String name() default "";
 
     /**
      * The version of the command.

@@ -99,9 +99,8 @@ class DefaultCommandGatewayTest {
 
     @Test
     void dispatchReturnsExceptionallyCompletedFutureWhenCommandBusReturnsExceptionalMessage() {
-        when(mockCommandBus.dispatch(any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(
-                new GenericCommandResultMessage(new MessageType("result"), new MockException())
-        ));
+        when(mockCommandBus.dispatch(any(), any()))
+                .thenAnswer(i -> CompletableFuture.failedFuture(new MockException()));
         TestPayload payload = new TestPayload();
         CommandResult result = testSubject.send(payload, null);
         verify(mockCommandBus).dispatch(

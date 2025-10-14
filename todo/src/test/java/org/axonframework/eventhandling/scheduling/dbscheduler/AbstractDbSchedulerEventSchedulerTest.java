@@ -22,11 +22,11 @@ import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.annotations.Event;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventhandling.scheduling.java.SimpleScheduleToken;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.serialization.Revision;
 import org.axonframework.serialization.TestConverter;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.hsqldb.jdbc.JDBCDataSource;
@@ -47,7 +47,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+
 import jakarta.annotation.Nonnull;
+
 import javax.sql.DataSource;
 
 import static org.awaitility.Awaitility.await;
@@ -238,7 +240,7 @@ abstract class AbstractDbSchedulerEventSchedulerTest {
         }
     }
 
-    @Revision("Foo")
+    @Event(version = "Foo")
     private static class PayloadWithRevision {
 
         PayloadWithRevision() {

@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Random;
 
 /**
  * Abstract test suite for integration tests using an AxonServerContainer. Concrete implementations have to provide a
@@ -48,17 +49,10 @@ public abstract class AbstractAxonServerIntegrationTest {
     protected AxonConfiguration startedConfiguration;
 
     @BeforeAll
-    static void beforeAll() {
+    static void beforeAll() throws IOException {
         container.start();
-    }
 
-    @AfterAll
-    static void afterAll() {
-        container.stop();
-    }
-
-    @BeforeEach
-    void setUp() throws IOException {
+        // Mainly needed to create DBC context now:
         AxonServerContainerUtils.purgeEventsFromAxonServer(container.getHost(),
                                                            container.getHttpPort(),
                                                            "default",
@@ -90,4 +84,10 @@ public abstract class AbstractAxonServerIntegrationTest {
      * @return The {@link ApplicationConfigurer} defining the Axon Framework test context.
      */
     protected abstract ApplicationConfigurer createConfigurer();
+
+    private static final Random RND = new Random();
+
+    protected static final String createId(String prefix) {
+        return prefix + "-" + RND.nextInt(Integer.MAX_VALUE);
+    }
 }

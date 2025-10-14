@@ -77,15 +77,7 @@ public class DefaultCommandGateway implements CommandGateway {
     @Nonnull
     public CommandResult send(@Nonnull Object command,
                               @Nullable ProcessingContext context) {
-        CommandMessage commandMessage = asCommandMessage(command, Metadata.emptyInstance());
-        return new FutureCommandResult(
-                commandBus.dispatch(commandMessage, context)
-                          .thenCompose(
-                                  msg -> msg instanceof ResultMessage resultMessage && resultMessage.isExceptional()
-                                          ? CompletableFuture.failedFuture(resultMessage.exceptionResult())
-                                          : CompletableFuture.completedFuture(msg)
-                          )
-        );
+        return new FutureCommandResult(commandBus.dispatch(asCommandMessage(command, Metadata.emptyInstance()), context));
     }
 
     @Override
@@ -93,15 +85,7 @@ public class DefaultCommandGateway implements CommandGateway {
     public CommandResult send(@Nonnull Object command,
                               @Nonnull Metadata metadata,
                               @Nullable ProcessingContext context) {
-        CommandMessage commandMessage = asCommandMessage(command, metadata);
-        return new FutureCommandResult(
-                commandBus.dispatch(commandMessage, context)
-                          .thenCompose(
-                                  msg -> msg instanceof ResultMessage resultMessage && resultMessage.isExceptional()
-                                          ? CompletableFuture.failedFuture(resultMessage.exceptionResult())
-                                          : CompletableFuture.completedFuture(msg)
-                          )
-        );
+        return new FutureCommandResult(commandBus.dispatch(asCommandMessage(command, metadata), context));
     }
 
     /**

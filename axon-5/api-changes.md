@@ -1470,6 +1470,18 @@ usages of a `MessageConverter` and `EventConverter` whenever Axon Framework expe
 For example, an `EventStorageEngine` would **always** need an `EventConverter` and nothing else. Hence, constructors of
 the `EventStorageEngines` expect an `EventConverter`.
 
+### Revision / Version Resolution
+
+As of Axon Framework 5, the `RevisionResolver`, it's implementations, and `@Revision` annotation have been removed.
+The `RevisionResolver` used to be an integral part of the `Serializers` in Axon Framework since 2.0. With the shift
+towards a [Message Type](#message-type-and-qualified-name) carrying the `version`, defining the version is no longer
+just a `Serializer` concern. Instead, it's a concern for any `Message` implementation, at all times.
+
+Due to this shift, the `RevisionResolver` has been replaced by the `MessageTypeResolver`. Furthermore, the `@Revision`
+annotation has been replaced by the `@Command`, `@Event`, and `@Query` for commands, events, and queries respectively
+with their `version` field. For snapshots, through the default `RevisionSnapshotFilter`, this will be replaced (likely)
+by a dedicated `@Snapshot` annotation.
+
 ## Message Handler Interceptors and Dispatch Interceptors
 
 Axon Framework's message interceptor supports is split in two main parts:
@@ -1798,8 +1810,13 @@ Minor API Changes
 * The `MessageHandlerInterceptor` and `MessageDispatchInterceptor` have undergone some minor changes to align with
   the [Async Native API](#async-native-apis) of Axon Framework 5. For more details, please check
   the [interceptors section](#message-handler-interceptors-and-dispatch-interceptors).
-* The annotation logic of all modules is moved to a separate `annotation` package.
-* All reflection logic is moved to a dedicated "reflection" package per module.
+* The annotation logic of all modules is moved to a separate `annotations` package.
+__* All reflection logic is moved to a dedicated "reflection" package per module.
+* The `MessageOriginaProvider` adjusted its use of `correlationId` and `traceId` to align with the current industry
+  standard. As such, the old `traceId` is now the `correlationId`. Furthermore, the old `correlationId` is now called
+  the `causationId`, as it refers to the `Message` that caused it. Thus, for those basing **any** logic on the old
+  `Message#metadata` keys called `traceId` and `correlationId`, we recommend to either (1) override the
+  `MessageOriginaProvider` to use the old format or (2) have a transition period from the old to the new approach.
 
 Stored Format Changes
 =====================
@@ -2121,6 +2138,11 @@ This section contains five tables:
 | org.axonframework.messaging.responsetypes.PublisherResponseType                          | Removed to simplify querying and support none-JVM space, as described [here](#query-gateway-and-response-types).                               |
 | org.axonframework.messaging.responsetypes.ResponseType                                   | Removed to simplify querying and support none-JVM space, as described [here](#query-gateway-and-response-types).                               |
 | org.axonframework.messaging.responsetypes.ResponseTypes                                  | Removed to simplify querying and support none-JVM space, as described [here](#query-gateway-and-response-types).                               |
+| org.axonframework.serialization.Revision                                                 | See [here](#revision--version-resolution)                                                                                                      |
+| org.axonframework.serialization.RevisionResolver                                         | See [here](#revision--version-resolution)                                                                                                      |
+| org.axonframework.serialization.FixedValueRevisionResolver                               | See [here](#revision--version-resolution)                                                                                                      |
+| org.axonframework.serialization.MavenArtifactRevisionResolver                            | See [here](#revision--version-resolution)                                                                                                      |
+| org.axonframework.serialization.AnnotationRevisionResolver                               | See [here](#revision--version-resolution)                                                                                                      |
 
 ### Marked for removal Classes
 

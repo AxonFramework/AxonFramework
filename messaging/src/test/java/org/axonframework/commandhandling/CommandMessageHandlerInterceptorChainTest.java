@@ -17,6 +17,8 @@
 package org.axonframework.commandhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.commandhandling.interceptors.CommandMessageHandlerInterceptorChain;
+import org.axonframework.messaging.FluxUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptorChain;
@@ -50,7 +52,7 @@ class CommandMessageHandlerInterceptorChainTest {
     void setUp() {
         mockHandler = mock();
         when(mockHandler.handle(any(), any()))
-                .thenReturn(MessageStream.just(commandResult("result", "Result")).cast());
+                .then(invocation -> MessageStream.just(commandResult("result", "Result")));
     }
 
     @Test
@@ -64,18 +66,17 @@ class CommandMessageHandlerInterceptorChainTest {
         MessageHandlerInterceptorChain<CommandMessage> testSubject =
                 new CommandMessageHandlerInterceptorChain(asList(interceptorOne, interceptorTwo), mockHandler);
 
-        Message result = testSubject.proceed(testCommand, StubProcessingContext.forMessage(testCommand))
-                                    .first()
-                                    .asMono()
-                                    .map(MessageStream.Entry::message)
-                                    .block();
+        Message result = FluxUtils.of(testSubject.proceed(testCommand, StubProcessingContext.forMessage(testCommand)).first())
+            .singleOrEmpty()
+            .map(MessageStream.Entry::message)
+            .block();
         assertNotNull(result);
         assertSame("Result", result.payload());
         verify(mockHandler).handle(argThat(x -> (x != null) && "testing".equals(x.payload())), any());
     }
 
     @Test
-    void subsequentChainInvocationsSTartFromBeginningAndInvokeInOrder() {
+    void subsequentChainInvocationsStartFromBeginningAndInvokeInOrder() {
         // given...
         AtomicInteger invocationCount = new AtomicInteger(0);
         CommandMessage firstCommand = command("message", "first");
@@ -109,11 +110,10 @@ class CommandMessageHandlerInterceptorChainTest {
                 new CommandMessageHandlerInterceptorChain(asList(interceptorOne, interceptorTwo), mockHandler);
 
         // when first invocation...
-        Message firstResult = testSubject.proceed(firstCommand, firstContext)
-                                         .first()
-                                         .asMono()
-                                         .map(MessageStream.Entry::message)
-                                         .block();
+        Message firstResult = FluxUtils.of(testSubject.proceed(firstCommand, firstContext).first())
+            .singleOrEmpty()
+            .map(MessageStream.Entry::message)
+            .block();
         // then response is...
         assertNotNull(firstResult);
         assertSame("Result", firstResult.payload());
@@ -123,14 +123,13 @@ class CommandMessageHandlerInterceptorChainTest {
         firstInterceptorOrder.verify(interceptorOne).interceptOnHandle(eq(firstCommand), eq(firstContext), any());
         firstInterceptorOrder.verify(interceptorTwo).interceptOnHandle(eq(firstCommand), eq(firstContext), any());
         // when second invocation...
-        Message secondResult = testSubject.proceed(secondCommand, secondContext)
-                                          .first()
-                                          .asMono()
-                                          .map(MessageStream.Entry::message)
-                                          .block();
+        Message secondResult = FluxUtils.of(testSubject.proceed(secondCommand, secondContext).first())
+            .singleOrEmpty()
+            .map(MessageStream.Entry::message)
+            .block();
         // then response is...
         assertNotNull(secondResult);
-        assertSame("Result", firstResult.payload());
+        assertSame("Result", secondResult.payload());
         assertThat(invocationCount.get()).isEqualTo(4);
         // and ordering is...
         InOrder secondInterceptorOrder = inOrder(interceptorOne, interceptorTwo);

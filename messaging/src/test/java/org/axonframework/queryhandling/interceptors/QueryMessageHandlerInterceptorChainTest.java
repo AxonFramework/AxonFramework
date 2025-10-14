@@ -17,6 +17,7 @@
 package org.axonframework.queryhandling.interceptors;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.messaging.FluxUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptorChain;
@@ -52,7 +53,7 @@ class QueryMessageHandlerInterceptorChainTest {
     void setUp() {
         mockHandler = mock();
         when(mockHandler.handle(any(), any()))
-                .thenReturn(MessageStream.just(queryResponse("response")));
+                .then(invocation -> MessageStream.just(queryResponse("response")));
     }
 
     @Test
@@ -66,18 +67,17 @@ class QueryMessageHandlerInterceptorChainTest {
         MessageHandlerInterceptorChain<QueryMessage> testSubject =
                 new QueryMessageHandlerInterceptorChain(asList(interceptorOne, interceptorTwo), mockHandler);
 
-        Message result = testSubject.proceed(testQuery, StubProcessingContext.forMessage(testQuery))
-                                    .first()
-                                    .asMono()
-                                    .map(MessageStream.Entry::message)
-                                    .block();
+        Message result = FluxUtils.of(testSubject.proceed(testQuery, StubProcessingContext.forMessage(testQuery)).first())
+            .singleOrEmpty()
+            .map(MessageStream.Entry::message)
+            .block();
         assertNotNull(result);
         assertSame("response", result.payload());
         verify(mockHandler).handle(argThat(x -> (x != null) && "testing".equals(x.payload())), any());
     }
 
     @Test
-    void subsequentChainInvocationsSTartFromBeginningAndInvokeInOrder() {
+    void subsequentChainInvocationsStartFromBeginningAndInvokeInOrder() {
         // given...
         AtomicInteger invocationCount = new AtomicInteger(0);
         QueryMessage firstQuery = query("first", String.class);
@@ -111,11 +111,10 @@ class QueryMessageHandlerInterceptorChainTest {
                 new QueryMessageHandlerInterceptorChain(asList(interceptorOne, interceptorTwo), mockHandler);
 
         // when first invocation...
-        Message firstResult = testSubject.proceed(firstQuery, firstContext)
-                                         .first()
-                                         .asMono()
-                                         .map(MessageStream.Entry::message)
-                                         .block();
+        Message firstResult = FluxUtils.of(testSubject.proceed(firstQuery, firstContext).first())
+            .singleOrEmpty()
+            .map(MessageStream.Entry::message)
+            .block();
         // then response is...
         assertNotNull(firstResult);
         assertSame("response", firstResult.payload());
@@ -125,11 +124,10 @@ class QueryMessageHandlerInterceptorChainTest {
         firstInterceptorOrder.verify(interceptorOne).interceptOnHandle(eq(firstQuery), eq(firstContext), any());
         firstInterceptorOrder.verify(interceptorTwo).interceptOnHandle(eq(firstQuery), eq(firstContext), any());
         // when second invocation...
-        Message secondResult = testSubject.proceed(secondQuery, secondContext)
-                                          .first()
-                                          .asMono()
-                                          .map(MessageStream.Entry::message)
-                                          .block();
+        Message secondResult = FluxUtils.of(testSubject.proceed(secondQuery, secondContext).first())
+            .singleOrEmpty()
+            .map(MessageStream.Entry::message)
+            .block();
         // then response is...
         assertNotNull(secondResult);
         assertSame("response", firstResult.payload());

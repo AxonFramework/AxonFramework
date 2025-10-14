@@ -29,6 +29,7 @@ import org.axonframework.eventhandling.processors.errorhandling.PropagatingError
 import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.eventhandling.sequencing.SequencingPolicy;
 import org.axonframework.eventhandling.sequencing.SequentialPerAggregatePolicy;
+import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.Decisions;
@@ -285,7 +286,7 @@ public class DeadLetteringEventHandlerInvoker
             // Otherwise, faulty events would not be dead lettered.
             super.listenerInvocationErrorHandler(
                     (exception, event, eventHandler) -> PropagatingErrorHandler.instance().handleError(
-                            new ErrorContext("processor", exception, List.of(event))
+                            new ErrorContext("processor", exception, List.of(event), Context.empty())
                     )
             );
         }

@@ -18,7 +18,6 @@ package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.FutureUtils;
-import reactor.core.publisher.Flux;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -52,11 +51,6 @@ class EmptyMessageStream implements MessageStream.Empty<Message> {
     @Override
     public CompletableFuture<Entry<Message>> asCompletableFuture() {
         return FutureUtils.emptyCompletedFuture();
-    }
-
-    @Override
-    public Flux<Entry<Message>> asFlux() {
-        return Flux.empty();
     }
 
     @Override

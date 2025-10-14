@@ -17,7 +17,7 @@
 package org.axonframework.configuration;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.InterceptingCommandBus;
+import org.axonframework.commandhandling.interceptors.InterceptingCommandBus;
 import org.axonframework.commandhandling.retry.RetryingCommandBus;
 import org.axonframework.commandhandling.tracing.TracingCommandBus;
 import org.axonframework.common.infra.ComponentDescriptor;

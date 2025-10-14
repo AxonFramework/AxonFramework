@@ -16,15 +16,16 @@
 
 package org.axonframework.eventhandling.scheduling.jobrunr;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.annotations.Event;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventhandling.scheduling.java.SimpleScheduleToken;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.serialization.Revision;
 import org.axonframework.serialization.TestConverter;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.jobrunr.configuration.JobRunr;
@@ -43,7 +44,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
-import jakarta.annotation.Nonnull;
 
 import static org.awaitility.Awaitility.await;
 import static org.jobrunr.server.BackgroundJobServerConfiguration.usingStandardBackgroundJobServerConfiguration;
@@ -96,7 +96,7 @@ class JobRunrEventSchedulerTest {
         eventScheduler.schedule(Duration.ZERO, 1);
         Instant rightAfterSchedule = Instant.now();
 
-        await().atMost(Duration.ofSeconds(2)).until(() -> !publishedMessages.isEmpty());
+        await().until(() -> !publishedMessages.isEmpty());
         assertEquals(1, publishedMessages.size());
 
         EventMessage publishedMessage = publishedMessages.getFirst();
@@ -110,7 +110,7 @@ class JobRunrEventSchedulerTest {
     void whenScheduledInPastIsCalledThanShouldPublishEvent() {
         eventScheduler.schedule(Duration.ofSeconds(-10L), 1);
 
-        await().atMost(Duration.ofSeconds(2)).until(() -> !publishedMessages.isEmpty());
+        await().until(() -> !publishedMessages.isEmpty());
         assertEquals(1, publishedMessages.size());
 
         EventMessage publishedMessage = publishedMessages.getFirst();
@@ -127,7 +127,7 @@ class JobRunrEventSchedulerTest {
         eventScheduler.schedule(Instant.now(), originalMessage);
         Instant rightAfterSchedule = Instant.now();
 
-        await().atMost(Duration.ofSeconds(2)).until(() -> !publishedMessages.isEmpty());
+        await().until(() -> !publishedMessages.isEmpty());
         assertEquals(1, publishedMessages.size());
 
         EventMessage publishedMessage = publishedMessages.getFirst();
@@ -142,7 +142,7 @@ class JobRunrEventSchedulerTest {
         eventScheduler.schedule(Duration.ZERO, new PayloadWithRevision());
         Instant rightAfterSchedule = Instant.now();
 
-        await().atMost(Duration.ofSeconds(2)).until(() -> !publishedMessages.isEmpty());
+        await().until(() -> !publishedMessages.isEmpty());
         assertEquals(1, publishedMessages.size());
 
         EventMessage publishedMessage = publishedMessages.getFirst();
@@ -162,7 +162,7 @@ class JobRunrEventSchedulerTest {
         eventScheduler.schedule(Instant.now(), originalMessage);
         Instant rightAfterSchedule = Instant.now();
 
-        await().atMost(Duration.ofSeconds(2)).until(() -> !publishedMessages.isEmpty());
+        await().until(() -> !publishedMessages.isEmpty());
         assertEquals(1, publishedMessages.size());
 
         EventMessage publishedMessage = publishedMessages.getFirst();
@@ -177,7 +177,7 @@ class JobRunrEventSchedulerTest {
         ScheduleToken token = eventScheduler.schedule(Duration.ofMillis(100L), 3);
         eventScheduler.reschedule(token, Duration.ofMillis(100L), 4);
 
-        await().atMost(Duration.ofSeconds(2)).until(() -> !publishedMessages.isEmpty());
+        await().until(() -> !publishedMessages.isEmpty());
         assertEquals(1, publishedMessages.size());
 
         EventMessage publishedMessage = publishedMessages.getFirst();
@@ -189,7 +189,7 @@ class JobRunrEventSchedulerTest {
         ScheduleToken token = eventScheduler.schedule(Instant.now().plusMillis(100L), 5);
         eventScheduler.reschedule(token, Instant.now().plusMillis(100L), 6);
 
-        await().atMost(Duration.ofSeconds(2)).until(() -> !publishedMessages.isEmpty());
+        await().until(() -> !publishedMessages.isEmpty());
         assertEquals(1, publishedMessages.size());
 
         EventMessage publishedMessage = publishedMessages.getFirst();
@@ -249,7 +249,7 @@ class JobRunrEventSchedulerTest {
         }
     }
 
-    @Revision("Foo")
+    @Event(version = "Foo")
     private static class PayloadWithRevision {
 
         PayloadWithRevision() {
