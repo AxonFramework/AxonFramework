@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,20 +43,19 @@ class StreamableFluxResponse implements StreamableResponse {
      *
      * @param result          a {@link Flux} of responses to be sent
      * @param responseHandler the {@link ReplyChannel} used for sending the result to the Axon Server
-     * @param serializer      the serializer used to serialize items
      * @param requestId       the identifier of the request these responses refer to
      * @param clientId        the identifier of the client
      * @param <T>             the type of items to be sent
      */
     public <T> StreamableFluxResponse(Flux<QueryResponseMessage> result,
                                       ReplyChannel<QueryResponse> responseHandler,
-                                      QuerySerializer serializer,
                                       String requestId,
                                       String clientId) {
         SendingSubscriber subscriber = new SendingSubscriber(responseHandler, clientId, requestId);
         this.subscription = subscriber;
-        result.map(message -> serializer.serializeResponse(message, requestId))
-              .subscribeWith(subscriber);
+        // TODO #3488 - Use QueryConverter (that is styled after CommandConverter) to convert the QueryRequest to a QueryMessage
+//        result.map(message -> serializer.serializeResponse(message, requestId))
+//              .subscribeWith(subscriber);
     }
 
     @Override
