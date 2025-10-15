@@ -64,9 +64,7 @@ public abstract class AbstractEventBus implements EventBus {
     public CompletableFuture<Void> publish(@Nullable ProcessingContext context, @Nonnull List<EventMessage> events) {
         if (context == null) {
             // No processing context, publish immediately
-            prepareCommit(events, null);
-            commit(events, null);
-            afterCommit(events, null);
+            eventSubscribers.notifySubscribers(events, context);
             return FutureUtils.emptyCompletedFuture();
         }
 
@@ -90,23 +88,7 @@ public abstract class AbstractEventBus implements EventBus {
             context.onPrepareCommit(ctx -> {
                 List<EventMessage> queuedEvents = ctx.getResource(eventsKey);
                 if (queuedEvents != null && !queuedEvents.isEmpty()) {
-                    return processEventsInPhase(queuedEvents, ctx, this::prepareCommit);
-                }
-                return FutureUtils.emptyCompletedFuture();
-            });
-
-            context.onCommit(ctx -> {
-                List<EventMessage> queuedEvents = ctx.getResource(eventsKey);
-                if (queuedEvents != null && !queuedEvents.isEmpty()) {
-                    return processEventsInPhase(queuedEvents, ctx, this::commit);
-                }
-                return FutureUtils.emptyCompletedFuture();
-            });
-
-            context.onAfterCommit(ctx -> {
-                List<EventMessage> queuedEvents = ctx.getResource(eventsKey);
-                if (queuedEvents != null && !queuedEvents.isEmpty()) {
-                    return processEventsInPhase(queuedEvents, ctx, this::afterCommit);
+                    return processEventsInPhase(queuedEvents, ctx, eventSubscribers::notifySubscribers);
                 }
                 return FutureUtils.emptyCompletedFuture();
             });
@@ -149,40 +131,6 @@ public abstract class AbstractEventBus implements EventBus {
         }
 
         return CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new));
-    }
-
-    /**
-     * Process given {@code events} while the ProcessingContext is preparing for commit. The default implementation
-     * passes the events to each registered event processor.
-     *
-     * @param events  Events to be published by this Event Bus
-     * @param context The processing context, or {@code null} if no context is active
-     */
-    protected CompletableFuture<Void> prepareCommit(@Nonnull List<? extends EventMessage> events,
-                                                    @Nullable ProcessingContext context) {
-        return eventSubscribers.notifySubscribers(events, context);
-    }
-
-    /**
-     * Process given {@code events} while the ProcessingContext is being committed. The default implementation does
-     * nothing.
-     *
-     * @param events Events to be published by this Event Bus
-     */
-    protected CompletableFuture<Void> commit(@Nonnull List<? extends EventMessage> events,
-                                             @Nullable ProcessingContext context) {
-        return FutureUtils.emptyCompletedFuture();
-    }
-
-    /**
-     * Process given {@code events} after the ProcessingContext has been committed. The default implementation does
-     * nothing.
-     *
-     * @param events Events to be published by this Event Bus
-     */
-    protected CompletableFuture<Void> afterCommit(@Nonnull List<? extends EventMessage> events,
-                                                  @Nullable ProcessingContext context) {
-        return FutureUtils.emptyCompletedFuture();
     }
 
     @Override

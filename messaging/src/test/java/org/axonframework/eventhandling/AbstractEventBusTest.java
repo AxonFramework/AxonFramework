@@ -77,80 +77,6 @@ class AbstractEventBusTest {
         }
 
         @Test
-        void allLifecyclePhasesAreCalled() {
-            // given
-            List<String> phaseCalls = new ArrayList<>();
-            StubPublishingEventBus trackingBus = new StubPublishingEventBus(false) {
-                @Override
-                protected CompletableFuture<Void> prepareCommit(@Nonnull List<? extends EventMessage> events, ProcessingContext context) {
-                    phaseCalls.add("prepareCommit");
-                    return super.prepareCommit(events, context);
-                }
-
-                @Override
-                protected CompletableFuture<Void> commit(@Nonnull List<? extends EventMessage> events, ProcessingContext context) {
-                    phaseCalls.add("commit");
-                    return super.commit(events, context);
-                }
-
-                @Override
-                protected CompletableFuture<Void> afterCommit(@Nonnull List<? extends EventMessage> events, ProcessingContext context) {
-                    phaseCalls.add("afterCommit");
-                    return super.afterCommit(events, context);
-                }
-            };
-            UnitOfWork uow = unitOfWorkFactory.create();
-
-            // when
-            uow.runOnInvocation(ctx -> trackingBus.publish(ctx, newEvent()));
-            uow.execute().join();
-
-            // then
-            assertThat(phaseCalls).containsExactly("prepareCommit", "commit", "afterCommit");
-        }
-
-        @Test
-        void lifecycleHandlersCalledOnlyOncePerPhase() {
-            // given
-            List<String> phaseCalls = new ArrayList<>();
-            StubPublishingEventBus trackingBus = new StubPublishingEventBus(false) {
-                @Override
-                protected CompletableFuture<Void> prepareCommit(@Nonnull List<? extends EventMessage> events,
-                                            @Nullable ProcessingContext context) {
-                    phaseCalls.add("prepareCommit");
-                    return super.prepareCommit(events, context);
-                }
-
-                @Override
-                protected CompletableFuture<Void> commit(@Nonnull List<? extends EventMessage> events,
-                                    @Nullable ProcessingContext context) {
-                    phaseCalls.add("commit");
-                    return super.commit(events, context);
-                }
-
-                @Override
-                protected CompletableFuture<Void> afterCommit(@Nonnull List<? extends EventMessage> events,
-                                          @Nullable ProcessingContext context) {
-                    phaseCalls.add("afterCommit");
-                    return super.afterCommit(events, context);
-                }
-            };
-            UnitOfWork uow = unitOfWorkFactory.create();
-
-            // when - publish multiple events in same context
-            uow.runOnInvocation(ctx -> {
-                trackingBus.publish(ctx, newEvent());
-                trackingBus.publish(ctx, newEvent());
-            });
-            uow.execute().join();
-
-            // then - each phase should be called exactly once
-            assertThat(phaseCalls.stream().filter(s -> s.equals("prepareCommit")).count()).isEqualTo(1);
-            assertThat(phaseCalls.stream().filter(s -> s.equals("commit")).count()).isEqualTo(1);
-            assertThat(phaseCalls.stream().filter(s -> s.equals("afterCommit")).count()).isEqualTo(1);
-        }
-
-        @Test
         void multipleEventsArePublishedInOrder() {
             // given
             EventMessage eventA = newEvent();
@@ -231,51 +157,6 @@ class AbstractEventBusTest {
         }
 
         @Test
-        void allPhasesCalledCorrectNumberOfTimesWithRecursivePublishing() {
-            // given
-            List<String> phaseCalls = new ArrayList<>();
-            StubPublishingEventBus trackingBus = new StubPublishingEventBus(false) {
-                @Override
-                protected CompletableFuture<Void> prepareCommit(@Nonnull List<? extends EventMessage> events, ProcessingContext context) {
-                    for (EventMessage event : events) {
-                        phaseCalls.add("prepareCommit-" + event.payload());
-                    }
-                    return super.prepareCommit(events, context);
-                }
-
-                @Override
-                protected CompletableFuture<Void> commit(@Nonnull List<? extends EventMessage> events, ProcessingContext context) {
-                    for (EventMessage event : events) {
-                        phaseCalls.add("commit-" + event.payload());
-                    }
-                    return super.commit(events, context);
-                }
-
-                @Override
-                protected CompletableFuture<Void> afterCommit(@Nonnull List<? extends EventMessage> events, ProcessingContext context) {
-                    for (EventMessage event : events) {
-                        phaseCalls.add("afterCommit-" + event.payload());
-                    }
-                    return super.afterCommit(events, context);
-                }
-            };
-            UnitOfWork uow = unitOfWorkFactory.create();
-
-            // when
-            uow.runOnInvocation(ctx -> trackingBus.publish(ctx, numberedEvent(2)));
-            uow.execute().join();
-
-            // then
-            // Events: 2, 1, 0 (each prepareCommit publishes N-1)
-            // Each event should go through all three phases
-            assertThat(phaseCalls).contains(
-                    "prepareCommit-2", "prepareCommit-1", "prepareCommit-0",
-                    "commit-2", "commit-1", "commit-0",
-                    "afterCommit-2", "afterCommit-1", "afterCommit-0"
-            );
-        }
-
-        @Test
         void publicationForbiddenDuringCommitPhase() {
             // given
             UnitOfWork uow = unitOfWorkFactory.create();
@@ -322,8 +203,8 @@ class AbstractEventBusTest {
         }
 
         @Override
-        protected CompletableFuture<Void> prepareCommit(@Nonnull List<? extends EventMessage> events,
-                                    @Nullable ProcessingContext context) {
+        protected CompletableFuture<Void> onPrepareCommit(@Nonnull List<? extends EventMessage> events,
+                                                          @Nullable ProcessingContext context) {
             if (throwExceptionDuringPrepare) {
                 throw new RuntimeException("Simulated failure during prepare commit");
             }
@@ -342,7 +223,7 @@ class AbstractEventBusTest {
             }
 
             committedEvents.addAll(events);
-            return super.prepareCommit(events, context);
+            return super.onPrepareCommit(events, context);
         }
 
         @Override
