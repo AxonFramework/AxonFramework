@@ -37,6 +37,7 @@ import java.lang.invoke.MethodHandles;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -58,6 +59,7 @@ public class DistributedQueryBus implements QueryBus {
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private static final int QUERY_AND_RESPONSE_QUEUE_CAPACITY = 1000;
+    private static final AtomicLong TASK_SEQUENCE = new AtomicLong(Long.MIN_VALUE);
 
     private final QueryBus localSegment;
     private final QueryBusConnector connector;
