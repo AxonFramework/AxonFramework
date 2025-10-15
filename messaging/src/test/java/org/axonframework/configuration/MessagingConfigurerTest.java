@@ -20,7 +20,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.InterceptingCommandBus;
+import org.axonframework.commandhandling.interceptors.InterceptingCommandBus;
 import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.ConvertingCommandGateway;
@@ -29,6 +29,7 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
+import org.axonframework.eventhandling.InterceptingEventBus;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.gateway.DefaultEventGateway;
 import org.axonframework.eventhandling.gateway.EventGateway;
@@ -48,11 +49,11 @@ import org.axonframework.messaging.interceptors.HandlerInterceptorRegistry;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.DefaultQueryGateway;
 import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryBusTestUtils;
 import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryBus;
-import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
+import org.axonframework.queryhandling.configuration.QueryHandlingModule;
 import org.junit.jupiter.api.*;
 
 import java.util.List;
@@ -103,7 +104,8 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
 
         Optional<EventBus> eventBus = result.getOptionalComponent(EventBus.class);
         assertTrue(eventBus.isPresent());
-        assertInstanceOf(SimpleEventBus.class, eventBus.get());
+        // Intercepting at all times, since we have a MessageOriginProvider that leads to the CorrelationDataInterceptor
+        assertInstanceOf(InterceptingEventBus.class, eventBus.get());
 
         Optional<QueryGateway> queryGateway = result.getOptionalComponent(QueryGateway.class);
         assertTrue(queryGateway.isPresent());
@@ -112,10 +114,6 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
         Optional<QueryBus> queryBus = result.getOptionalComponent(QueryBus.class);
         assertTrue(queryBus.isPresent());
         assertInstanceOf(SimpleQueryBus.class, queryBus.get());
-
-        Optional<QueryUpdateEmitter> queryUpdateEmitter = result.getOptionalComponent(QueryUpdateEmitter.class);
-        assertTrue(queryUpdateEmitter.isPresent());
-        assertInstanceOf(SimpleQueryUpdateEmitter.class, queryUpdateEmitter.get());
     }
 
     @Test
@@ -192,22 +190,12 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
 
     @Test
     void registerQueryBusOverridesDefault() {
-        QueryBus expected = SimpleQueryBus.builder().build();
+        QueryBus expected = QueryBusTestUtils.aQueryBus();
 
         Configuration result = testSubject.registerQueryBus(c -> expected)
                                           .build();
 
         assertEquals(expected, result.getComponent(QueryBus.class));
-    }
-
-    @Test
-    void registerQueryUpdateEmitterOverridesDefault() {
-        QueryUpdateEmitter expected = SimpleQueryUpdateEmitter.builder().build();
-
-        Configuration result = testSubject.registerQueryUpdateEmitter(c -> expected)
-                                          .build();
-
-        assertEquals(expected, result.getComponent(QueryUpdateEmitter.class));
     }
 
     @Test
@@ -395,6 +383,23 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
 
         Configuration configuration =
                 testSubject.registerCommandHandlingModule(statelessCommandHandlingModule)
+                           .build();
+
+        assertThat(configuration.getModuleConfiguration("test")).isPresent();
+    }
+
+    @Test
+    void registerQueryHandlingModuleAddsAModuleConfiguration() {
+        ModuleBuilder<QueryHandlingModule> statefulCommandHandlingModule =
+                QueryHandlingModule.named("test")
+                                   .queryHandlers(handlerPhase -> handlerPhase.queryHandler(
+                                           new QualifiedName(String.class),
+                                           new QualifiedName(String.class),
+                                           (command, context) -> MessageStream.empty().cast()
+                                   ));
+
+        Configuration configuration =
+                testSubject.registerQueryHandlingModule(statefulCommandHandlingModule)
                            .build();
 
         assertThat(configuration.getModuleConfiguration("test")).isPresent();

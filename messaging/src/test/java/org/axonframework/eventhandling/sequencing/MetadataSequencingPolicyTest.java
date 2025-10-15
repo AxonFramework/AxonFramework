@@ -44,10 +44,10 @@ public class MetadataSequencingPolicyTest {
     }
 
     @Test
-    void fallbackShouldBeAppliedWhenMetadataDoesNotContainsTheKey() {
+    void shouldReturnEmptyIfMetaDataDoesNotContainsTheKey() {
         final MetadataSequencingPolicy metadataPolicy = new MetadataSequencingPolicy("metadataKey");
 
-        assertThat(metadataPolicy.getSequenceIdentifierFor(EventTestUtils.asEventMessage("42"), new StubProcessingContext())).isPresent();
+        assertThat(metadataPolicy.getSequenceIdentifierFor(EventTestUtils.asEventMessage("42"), new StubProcessingContext())).isEmpty();
     }
 
     @Test

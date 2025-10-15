@@ -26,8 +26,8 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageStreamTestUtils;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.modelling.entity.ChildEntityNotFoundException;
 import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.entity.child.mock.RecordingChildEntity;
@@ -71,6 +71,7 @@ class ListEntityChildMetamodelTest {
     @Nested
     @DisplayName("Command handling")
     public class CommandHandling {
+
         private final CommandMessage commandMessage = new GenericCommandMessage(
                 new MessageType(COMMAND), "myPayload"
         );
@@ -80,7 +81,7 @@ class ListEntityChildMetamodelTest {
         void setUp() {
             when(childEntityMetamodel.handleInstance(any(), any(), any())).thenAnswer(answ -> {
                 RecordingChildEntity child = answ.getArgument(1);
-                return MessageStream.just(new GenericCommandResultMessage<>(
+                return MessageStream.just(new GenericCommandResultMessage(
                         new MessageType(String.class),
                         child.getId() + "-result")
                 );

@@ -81,11 +81,13 @@ class CommandHandlingModuleTest {
                 .componentRegistry(cr -> cr.registerComponent(CorrelationDataProviderRegistry.class,
                                                               c -> new DefaultCorrelationDataProviderRegistry()))
                 .componentRegistry(cr -> cr.registerModule(entityModule))
-                .componentRegistry(cr -> cr.registerModule(setupPhase
-                                          .commandHandlers()
-                                          .commandHandler(new QualifiedName(Integer.class),
-                                                          (command, context) -> MessageStream.just(null))
-                                          .build()))
+                .componentRegistry(cr -> cr.registerModule(
+                        setupPhase.commandHandlers()
+                                  .commandHandler(new QualifiedName(Integer.class),
+                                                  (command, context) -> MessageStream.just(
+                                                          null))
+                                  .build()
+                ))
                 .start();
 
         Configuration resultConfig = configuration.getModuleConfiguration("test-subject").orElseThrow();
@@ -105,12 +107,12 @@ class CommandHandlingModuleTest {
 
     @Test
     void buildAnnotatedCommandHandlingComponentSucceedsAndRegisters() {
+        //noinspection unused
         var myCommandHandlingObject = new Object() {
-            @org.axonframework.commandhandling.annotation.CommandHandler
+            @org.axonframework.commandhandling.annotations.CommandHandler
             public void handle(String command) {
             }
         };
-
 
         Configuration resultConfig =
                 setupPhase.commandHandlers()
@@ -126,24 +128,27 @@ class CommandHandlingModuleTest {
 
     @Test
     void buildModellingConfigurationSucceedsAndRegistersTheModuleWithComponent() {
+        //noinspection unused
         var myCommandHandlingObject = new Object() {
-            @org.axonframework.commandhandling.annotation.CommandHandler
+            @org.axonframework.commandhandling.annotations.CommandHandler
             public void handle(String command) {
             }
         };
 
-
-        Configuration resultConfig = ModellingConfigurer.create()
-                                                        .registerCommandHandlingModule(
-                                                                setupPhase.commandHandlers()
-                                                                          .annotatedCommandHandlingComponent(c -> myCommandHandlingObject)
-                                                                          .build()
-                                                        ).build();
+        Configuration resultConfig =
+                ModellingConfigurer.create()
+                                   .registerCommandHandlingModule(
+                                           setupPhase.commandHandlers()
+                                                     .annotatedCommandHandlingComponent(c -> myCommandHandlingObject)
+                                                     .build()
+                                   ).build();
 
 
         Optional<CommandHandlingComponent> optionalHandlingComponent = resultConfig
                 .getModuleConfiguration("test-subject")
-                .flatMap(m -> m.getOptionalComponent(CommandHandlingComponent.class, "CommandHandlingComponent[test-subject]"));
+                .flatMap(m -> m.getOptionalComponent(
+                        CommandHandlingComponent.class, "CommandHandlingComponent[test-subject]"
+                ));
         assertTrue(optionalHandlingComponent.isPresent());
         assertTrue(optionalHandlingComponent.get().supportedCommands().contains(new QualifiedName(String.class)));
     }
@@ -202,7 +207,6 @@ class CommandHandlingModuleTest {
         assertThrows(NullPointerException.class, () -> commandHandlerPhase.commandHandlingComponent(null));
     }
 
-
     @Test
     void annotatedCommandHandlingComponentThrowsNullPointerExceptionForNullCommandHandlingComponentBuilder() {
         //noinspection DataFlowIssue
@@ -212,6 +216,6 @@ class CommandHandlingModuleTest {
     @Test
     void commandHandlingThrowsNullPointerExceptionForNullCommandHandlerPhaseConsumer() {
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> commandHandlerPhase.commandHandlers(null));
+        assertThrows(NullPointerException.class, () -> setupPhase.commandHandlers(null));
     }
 }

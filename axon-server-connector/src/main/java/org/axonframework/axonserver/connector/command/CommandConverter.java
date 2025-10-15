@@ -33,7 +33,7 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.common.AxonException;
 import org.axonframework.common.FutureUtils;
-import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.annotations.Internal;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
@@ -147,7 +147,7 @@ public class CommandConverter {
      * @return The {@code commandResponse} converted to a {@link CommandResultMessage}, wrapped in a
      * {@link CompletableFuture} for convenience.
      */
-    public static CompletableFuture<CommandResultMessage<?>> convertCommandResponse(
+    public static CompletableFuture<CommandResultMessage> convertCommandResponse(
             @Nonnull CommandResponse commandResponse
     ) {
         if (commandResponse.hasErrorMessage()) {
@@ -161,7 +161,7 @@ public class CommandConverter {
         MessageType messageType = new MessageType(commandResponse.getPayload().getType(),
                                                   commandResponse.getPayload().getRevision());
         Map<String, String> metadata = convertMetadataValuesToGrpc(commandResponse.getMetaDataMap());
-        return CompletableFuture.completedFuture(new GenericCommandResultMessage<>(new GenericMessage(
+        return CompletableFuture.completedFuture(new GenericCommandResultMessage(new GenericMessage(
                 commandResponse.getMessageIdentifier(),
                 messageType,
                 commandResponse.getPayload().getData().toByteArray(),
@@ -218,7 +218,7 @@ public class CommandConverter {
      *                          to the response.
      * @return A {@link CommandResponse} based on the given {@code resultMessage} and {@code requestIdentifier}.
      */
-    public static CommandResponse convertResultMessage(@Nullable CommandResultMessage<?> resultMessage,
+    public static CommandResponse convertResultMessage(@Nullable CommandResultMessage resultMessage,
                                                        @Nonnull String requestIdentifier) {
         if (resultMessage == null) {
             return CommandResponse.newBuilder()

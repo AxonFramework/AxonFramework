@@ -48,10 +48,10 @@ import org.axonframework.modelling.repository.Repository;
  * <p>
  * Upon a mismatch a {@link RuntimeException} will be thrown:
  * <ul>
- *     <li>If an instance command is invoked for a non-existing entity, an {@link EntityMissingForInstanceCommandHandler}
- *     will be thrown.</li>
- *     <li>If a creational command is invoked for an existing entity, an {@link EntityExistsForCreationalCommandHandler}
- *     will be thrown.</li>
+ *     <li>If an instance command is invoked for a non-existing entity, an
+ *     {@link EntityMissingForInstanceCommandHandlerException} will be thrown.</li>
+ *     <li>If a creational command is invoked for an existing entity, an
+ *     {@link EntityAlreadyExistsForCreationalCommandHandlerException} will be thrown.</li>
  * </ul>
  *
  * @param <E> The type of the entity modeled by this interface.

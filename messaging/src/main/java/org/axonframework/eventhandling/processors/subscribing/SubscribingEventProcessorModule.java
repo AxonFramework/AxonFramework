@@ -17,7 +17,6 @@
 package org.axonframework.eventhandling.processors.subscribing;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.FutureUtils;
 import org.axonframework.configuration.BaseModule;
 import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.ComponentDefinition;
@@ -110,10 +109,9 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
                         cfg.getComponent(SubscribingEventProcessorConfiguration.class)
                 ))
                 .onStart(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, (cfg, processor) -> {
-                    processor.start();
-                    return FutureUtils.emptyCompletedFuture();
+                    return processor.start();
                 }).onShutdown(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, (cfg, processor) -> {
-                    return processor.shutdownAsync();
+                    return processor.shutdown();
                 });
 
         componentRegistry(cr -> cr.registerComponent(processorComponentDefinition));
@@ -161,19 +159,15 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
         return "EventHandlingComponent[" + processorName + "][" + index + "]";
     }
 
-    // TODO #3098 - Move it somewhere else! Like a decorator if certain enhancer applied.
     @Nonnull
-    private static TracingEventHandlingComponent withDefaultDecoration(
+    private static EventHandlingComponent withDefaultDecoration(
             EventHandlingComponent c,
             EventProcessorConfiguration configuration
     ) {
-        return new TracingEventHandlingComponent(
-                (event) -> configuration.spanFactory().createProcessEventSpan(false, event),
-                // TODO #3595 - Move this monitoring decorator to be placed around **all** other decorators for an EHC.
-                new MonitoringEventHandlingComponent(
-                        configuration.messageMonitor(),
-                        new SequenceCachingEventHandlingComponent(c)
-                )
+        // TODO #3595 - Move this monitoring decorator to be placed around **all** other decorators for an EHC.
+        return new MonitoringEventHandlingComponent(
+                configuration.messageMonitor(),
+                new SequenceCachingEventHandlingComponent(c)
         );
     }
 
@@ -202,7 +196,8 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
     private static SubscribingEventProcessorConfiguration defaultEventProcessorsConfiguration(Configuration cfg) {
         return new SubscribingEventProcessorConfiguration(
                 parentSharedCustomizationOrDefault(cfg)
-                        .apply(cfg, new EventProcessorConfiguration(cfg))
+                        .apply(cfg, new EventProcessorConfiguration(cfg)),
+                cfg
         );
     }
 

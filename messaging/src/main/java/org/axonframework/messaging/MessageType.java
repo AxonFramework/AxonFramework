@@ -145,6 +145,11 @@ public record MessageType(@Nonnull QualifiedName qualifiedName, @Nonnull String 
         this(clazz, DEFAULT_VERSION);
     }
 
+    /**
+     * Returns the outcome {@link QualifiedName#name()} of this {@code MessageType's} {@link QualifiedName}.
+     *
+     * @return The outcome {@link QualifiedName#name()} of this {@code MessageType's} {@link QualifiedName}.
+     */
     public String name() {
         return qualifiedName.toString();
     }
@@ -159,13 +164,15 @@ public record MessageType(@Nonnull QualifiedName qualifiedName, @Nonnull String 
      * set to a {@link QualifiedName} of {@code "my.context.BusinessName"} and the {@link #version()} is set to
      * {@code "1.0.5"}.
      *
-     * @param messageTypeString The output of {@link MessageType#toString()}, given to reconstruct it into a {@code MessageType}.
+     * @param messageTypeString The output of {@link MessageType#toString()}, given to reconstruct it into a
+     *                          {@code MessageType}.
      * @return A reconstructed {@code MessageType} based on the expected output of {@link MessageType#toString()}.
      */
     public static MessageType fromString(@Nonnull String messageTypeString) {
-        Matcher matcher = DEBUG_STRING_PATTERN.matcher(
-                Objects.requireNonNull(messageTypeString, "Cannot construct a MessageType based on a null or empty String.")
-        );
+        Matcher matcher = DEBUG_STRING_PATTERN.matcher(Objects.requireNonNull(
+                messageTypeString,
+                "Cannot construct a MessageType based on a null or empty String."
+        ));
         Assert.isTrue(matcher.matches(),
                       () -> "The given simple String [" + messageTypeString + "] does not match the expected pattern.");
         return new MessageType(new QualifiedName(matcher.group(QUALIFIED_NAME_GROUP)), matcher.group(VERSION_GROUP));

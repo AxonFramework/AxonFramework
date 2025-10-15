@@ -17,7 +17,7 @@
 package org.axonframework.updates.configuration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.annotations.Internal;
 
 import java.util.Comparator;
 import java.util.List;

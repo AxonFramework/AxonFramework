@@ -21,7 +21,7 @@ import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.annotations.AnnotatedEventHandlingComponent;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotations.ParameterResolverFactory;
 
 import java.util.List;
 import java.util.function.BiFunction;

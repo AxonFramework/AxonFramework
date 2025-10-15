@@ -28,6 +28,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.common.Assert;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.lifecycle.ShutdownLatch;
 import org.axonframework.messaging.QualifiedName;
@@ -89,8 +90,8 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
 
     @Nonnull
     @Override
-    public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage command,
-                                                               @Nullable ProcessingContext processingContext) {
+    public CompletableFuture<CommandResultMessage> dispatch(@Nonnull CommandMessage command,
+                                                            @Nullable ProcessingContext processingContext) {
         shutdownLatch.ifShuttingDown("Cannot dispatch new commands as this bus is being shutdown");
         try (ShutdownLatch.ActivityHandle commandInTransit = shutdownLatch.registerActivity()) {
             return connection.commandChannel()
@@ -101,7 +102,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
     }
 
     @Override
-    public void subscribe(@Nonnull QualifiedName commandName, int loadFactor) {
+    public CompletableFuture<Void> subscribe(@Nonnull QualifiedName commandName, int loadFactor) {
         Assert.isTrue(loadFactor >= 0, () -> "Load factor must be greater than 0.");
         logger.debug("Subscribing to command [{}] with load factor [{}]", commandName, loadFactor);
         Registration registration = connection.commandChannel()
@@ -123,6 +124,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
             }
         }
         this.subscriptions.put(commandName, registration);
+        return FutureUtils.emptyCompletedFuture();
     }
 
     private CompletableFuture<CommandResponse> handle(Command command) {
@@ -198,7 +200,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
     ) implements ResultCallback {
 
         @Override
-        public void onSuccess(CommandResultMessage<?> resultMessage) {
+        public void onSuccess(CommandResultMessage resultMessage) {
             logger.debug("Command [{}] completed successfully with result [{}]", command.getName(), resultMessage);
             result.complete(CommandConverter.convertResultMessage(resultMessage, command.getMessageIdentifier()));
         }

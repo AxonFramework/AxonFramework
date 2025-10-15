@@ -22,6 +22,7 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.StringUtils;
 
 import static java.util.Objects.requireNonNull;
+import static org.axonframework.common.ReflectionUtils.resolvePrimitiveWrapperTypeIfPrimitive;
 
 /**
  * Interface describing a qualified {@code qualifiedName}, providing space for a {@link #namespace() namespace},
@@ -92,7 +93,9 @@ public record QualifiedName(@Nonnull String name) {
      * @param clazz The {@code Class} from which to use the {@link Class#getName()} as the {@link #name()}.
      */
     public QualifiedName(@Nonnull Class<?> clazz) {
-        this(requireNonNull(clazz, "The given Class cannot be null.").getName());
+        this(((Class<?>) resolvePrimitiveWrapperTypeIfPrimitive(requireNonNull(
+                clazz, "The given Class cannot be null."
+        ))).getName());
     }
 
     @Nullable

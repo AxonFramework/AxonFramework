@@ -17,7 +17,7 @@
 package org.axonframework.spring.messaging;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.SubscribableMessageSource;
+import org.axonframework.messaging.SubscribableEventSource;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
@@ -26,14 +26,15 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.context.PayloadApplicationEvent;
 
 import jakarta.annotation.Nonnull;
+import java.util.concurrent.CompletableFuture;
 
 /**
- * Component that forward events received from a {@link SubscribableMessageSource} as Spring {@link ApplicationEvent} to
+ * Component that forward events received from a {@link SubscribableEventSource} as Spring {@link ApplicationEvent} to
  * the ApplicationContext.
  */
 public class ApplicationContextEventPublisher implements InitializingBean, ApplicationContextAware {
 
-    private final SubscribableMessageSource<? extends EventMessage> messageSource;
+    private final SubscribableEventSource messageSource;
     private ApplicationContext applicationContext;
 
     /**
@@ -42,7 +43,7 @@ public class ApplicationContextEventPublisher implements InitializingBean, Appli
      *
      * @param messageSource The source to subscribe to.
      */
-    public ApplicationContextEventPublisher(SubscribableMessageSource<? extends EventMessage> messageSource) {
+    public ApplicationContextEventPublisher(SubscribableEventSource messageSource) {
         this.messageSource = messageSource;
     }
 
@@ -68,11 +69,14 @@ public class ApplicationContextEventPublisher implements InitializingBean, Appli
 
     @Override
     public void afterPropertiesSet() {
-        messageSource.subscribe(msgs -> msgs.forEach(msg -> {
-            ApplicationEvent converted = convert(msg);
-            if (converted != null) {
-                applicationContext.publishEvent(convert(msg));
-            }
-        }));
+        messageSource.subscribe((msgs, ctx) -> {
+            msgs.forEach(msg -> {
+                ApplicationEvent converted = convert(msg);
+                if (converted != null) {
+                    applicationContext.publishEvent(convert(msg));
+                }
+            });
+            return CompletableFuture.completedFuture(null);
+        });
     }
 }

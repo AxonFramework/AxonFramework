@@ -45,6 +45,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 import static java.util.stream.Collectors.toMap;
+import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 
 /**
  * Service that listens to {@link PlatformOutboundInstruction PlatformOutboundInstructions} to control
@@ -210,12 +211,11 @@ public class EventProcessorControlService {
                                 name);
                     return CompletableFuture.completedFuture(false);
                 } else {
-                    ((StreamingEventProcessor) processor).releaseSegment(segmentId);
+                    return ((StreamingEventProcessor) processor).releaseSegment(segmentId).thenApply(r -> true);
                 }
             } catch (Exception e) {
                 return CompletableFuture.failedFuture(e);
             }
-            return CompletableFuture.completedFuture(true);
         }
 
         @Override

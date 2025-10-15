@@ -22,7 +22,6 @@ import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.processors.EventProcessor;
@@ -72,40 +71,6 @@ public class GlobalMetricRegistry {
      */
     public GlobalMetricRegistry(MeterRegistry meterRegistry) {
         this.registry = meterRegistry;
-    }
-
-    /**
-     * Registers the {@link MeterRegistry} with the given {@code configurer} via
-     * {@link LegacyConfigurer#configureMessageMonitor(Function)}. Components registered by the {@link LegacyConfigurer} will be
-     * added by invocation of {@link #registerComponent(Class, String)}.
-     *
-     * @param configurer the application's {@link LegacyConfigurer}
-     * @return the {@link LegacyConfigurer}, with the new registration applied, for chaining
-     */
-    @SuppressWarnings("unchecked")
-    public LegacyConfigurer registerWithConfigurer(LegacyConfigurer configurer) {
-        return configurer.configureMessageMonitor(
-                configuration
-                        -> (componentType, componentName)
-                        -> (MessageMonitor<Message>) registerComponent(componentType, componentName)
-        );
-    }
-
-    /**
-     * Registers the {@link MeterRegistry} with the given {@code configurer} via
-     * {@link LegacyConfigurer#configureMessageMonitor(Function)}. Components registered by the {@link LegacyConfigurer} will be
-     * added by invocation of {@link #registerComponentWithDefaultTags(Class, String)}.
-     *
-     * @param configurer the application's {@link LegacyConfigurer}
-     * @return the {@link LegacyConfigurer}, with the new registration applied using {@link Tag}s, for chaining
-     */
-    @SuppressWarnings("unchecked")
-    public LegacyConfigurer registerWithConfigurerWithDefaultTags(LegacyConfigurer configurer) {
-        return configurer.configureMessageMonitor(
-                configuration
-                        -> (componentType, componentName)
-                        -> (MessageMonitor<Message>) registerComponentWithDefaultTags(componentType, componentName)
-        );
     }
 
     /**
@@ -230,7 +195,7 @@ public class GlobalMetricRegistry {
      * {@code componentType}
      */
     public MessageMonitor<? extends Message> registerComponentWithDefaultTags(Class<?> componentType,
-                                                                                 String componentName) {
+                                                                              String componentName) {
         if (EventProcessor.class.isAssignableFrom(componentType)) {
             return registerEventProcessor(
                     EVENT_PROCESSOR_METRICS_NAME,
@@ -275,8 +240,8 @@ public class GlobalMetricRegistry {
      */
 
     public MessageMonitor<? super EventMessage> registerEventProcessor(String eventProcessorName,
-                                                                          Function<Message, Iterable<Tag>> tagsBuilder,
-                                                                          Function<Message, Iterable<Tag>> latencyTagsBuilder
+                                                                       Function<Message, Iterable<Tag>> tagsBuilder,
+                                                                       Function<Message, Iterable<Tag>> latencyTagsBuilder
     ) {
         List<MessageMonitor<? super EventMessage>> monitors = new ArrayList<>();
         MessageTimerMonitor messageTimerMonitor = MessageTimerMonitor.builder()
@@ -305,7 +270,7 @@ public class GlobalMetricRegistry {
      * @return a {@link MessageMonitor} to monitor the behavior of a {@link CommandBus}
      */
     public MessageMonitor<? super CommandMessage> registerCommandBus(String commandBusName,
-                                                                        Function<Message, Iterable<Tag>> tagsBuilder) {
+                                                                     Function<Message, Iterable<Tag>> tagsBuilder) {
         return registerDefaultHandlerMessageMonitor(commandBusName, tagsBuilder);
     }
 
@@ -319,7 +284,7 @@ public class GlobalMetricRegistry {
      * @return a {@link MessageMonitor} to monitor the behavior of an {@link EventBus}
      */
     public MessageMonitor<? super EventMessage> registerEventBus(String eventBusName,
-                                                                    Function<Message, Iterable<Tag>> tagsBuilder) {
+                                                                 Function<Message, Iterable<Tag>> tagsBuilder) {
         MessageCountingMonitor messageCountingMonitor = MessageCountingMonitor.buildMonitor(eventBusName, registry);
         MessageTimerMonitor messageTimerMonitor = MessageTimerMonitor.builder()
                                                                      .meterNamePrefix(eventBusName)
@@ -340,7 +305,7 @@ public class GlobalMetricRegistry {
      * @return a {@link MessageMonitor} to monitor the behavior of a {@link QueryBus}
      */
     public MessageMonitor<? super QueryMessage> registerQueryBus(String queryBusName,
-                                                                       Function<Message, Iterable<Tag>> tagsBuilder) {
+                                                                 Function<Message, Iterable<Tag>> tagsBuilder) {
         return registerDefaultHandlerMessageMonitor(queryBusName, tagsBuilder);
     }
 
@@ -356,7 +321,7 @@ public class GlobalMetricRegistry {
      * @return a {@link MessageMonitor} to monitor the behavior of a {@link QueryUpdateEmitter}
      */
     private MessageMonitor<? extends Message> registerQueryUpdateEmitter(String updateEmitterName,
-                                                                            Function<Message, Iterable<Tag>> tagsBuilder) {
+                                                                         Function<Message, Iterable<Tag>> tagsBuilder) {
         return registerDefaultHandlerMessageMonitor(updateEmitterName, tagsBuilder);
     }
 
@@ -372,7 +337,7 @@ public class GlobalMetricRegistry {
     }
 
     private MessageMonitor<Message> registerDefaultHandlerMessageMonitor(String name,
-                                                                            Function<Message, Iterable<Tag>> tagsBuilder) {
+                                                                         Function<Message, Iterable<Tag>> tagsBuilder) {
         MessageTimerMonitor messageTimerMonitor = MessageTimerMonitor.builder()
                                                                      .meterNamePrefix(name)
                                                                      .meterRegistry(registry)

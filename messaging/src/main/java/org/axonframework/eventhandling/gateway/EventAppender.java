@@ -23,6 +23,7 @@ import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.annotations.EventAppenderParameterResolverFactory;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageTypeResolver;
+import org.axonframework.messaging.annotations.MessageHandler;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Arrays;
@@ -36,7 +37,7 @@ import java.util.Objects;
  * The events will be appended in the context this appender was created for. You can construct one through the
  * {@link #forContext(ProcessingContext)}.
  * <p>
- * When using annotation-based {@link org.axonframework.messaging.annotation.MessageHandler @MessageHandler-methods} and
+ * When using annotation-based {@link MessageHandler @MessageHandler-methods} and
  * you have declared an argument of type {@link EventAppender}, the appender will automatically be injected by the
  * {@link EventAppenderParameterResolverFactory}.
  * <p>

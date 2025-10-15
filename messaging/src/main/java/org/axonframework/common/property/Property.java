@@ -24,6 +24,7 @@ package org.axonframework.common.property;
  * @author Allard Buijze
  * @since 2.0
  */
+@FunctionalInterface
 public interface Property<T> {
 
     /**

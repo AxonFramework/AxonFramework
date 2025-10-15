@@ -18,16 +18,9 @@ package org.axonframework.springboot;
 
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.jpa.EntityManagerProvider;
-import org.axonframework.config.EventProcessingModule;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.deadletter.jpa.JpaSequencedDeadLetterQueue;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.eventhandling.processors.streaming.token.store.jpa.JpaTokenStore;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
-import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
-import org.axonframework.modelling.saga.repository.SagaStore;
-import org.axonframework.modelling.saga.repository.jpa.JpaSagaStore;
-import org.axonframework.springboot.util.DeadLetterQueueProviderConfigurerModule;
 import org.axonframework.springboot.util.jpa.ContainerManagedEntityManagerProvider;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -37,7 +30,6 @@ import org.springframework.test.context.ContextConfiguration;
 import java.time.Duration;
 import java.time.temporal.TemporalAmount;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -72,12 +64,11 @@ class JpaAutoConfigurationTest {
             assertEquals(JpaTokenStore.class,
                          tokenStores.get("tokenStore").getClass());
 
-            //noinspection rawtypes
-            Map<String, SagaStore> sagaStores =
-                    context.getBeansOfType(SagaStore.class);
-            assertTrue(sagaStores.containsKey("sagaStore"));
-            assertEquals(JpaSagaStore.class,
-                         sagaStores.get("sagaStore").getClass());
+//            Map<String, SagaStore> sagaStores =
+//                    context.getBeansOfType(SagaStore.class);
+//            assertTrue(sagaStores.containsKey("sagaStore"));
+//            assertEquals(JpaSagaStore.class,
+//                         sagaStores.get("sagaStore").getClass());
 
             Map<String, SQLErrorCodesResolver> persistenceExceptionResolvers =
                     context.getBeansOfType(SQLErrorCodesResolver.class);
@@ -103,22 +94,23 @@ class JpaAutoConfigurationTest {
     }
 
     @Test
+    @Disabled("TODO #3517")
     void sequencedDeadLetterQueueCanBeSetViaSpringConfiguration() {
-        testContext.withPropertyValues("axon.eventhandling.processors.first.dlq.enabled=true")
-                   .run(context -> {
-                       assertNotNull(context.getBean(DeadLetterQueueProviderConfigurerModule.class));
-
-                       EventProcessingModule eventProcessingConfig = context.getBean(EventProcessingModule.class);
-                       assertNotNull(eventProcessingConfig);
-
-                       Optional<SequencedDeadLetterQueue<EventMessage>> dlq =
-                               eventProcessingConfig.deadLetterQueue("first");
-                       assertTrue(dlq.isPresent());
-                       assertTrue(dlq.get() instanceof JpaSequencedDeadLetterQueue);
-
-                       dlq = eventProcessingConfig.deadLetterQueue("second");
-                       assertFalse(dlq.isPresent());
-                   });
+//        testContext.withPropertyValues("axon.eventhandling.processors.first.dlq.enabled=true")
+//                   .run(context -> {
+//                       assertNotNull(context.getBean(DeadLetterQueueProviderConfigurerModule.class));
+//
+//                       EventProcessingModule eventProcessingConfig = context.getBean(EventProcessingModule.class);
+//                       assertNotNull(eventProcessingConfig);
+//
+//                       Optional<SequencedDeadLetterQueue<EventMessage>> dlq =
+//                               eventProcessingConfig.deadLetterQueue("first");
+//                       assertTrue(dlq.isPresent());
+//                       assertTrue(dlq.get() instanceof JpaSequencedDeadLetterQueue);
+//
+//                       dlq = eventProcessingConfig.deadLetterQueue("second");
+//                       assertFalse(dlq.isPresent());
+//                   });
     }
 
     @ContextConfiguration

@@ -19,6 +19,7 @@ package org.axonframework.test.fixture;
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.configuration.AxonConfiguration;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
@@ -166,6 +167,25 @@ class AxonTestWhen implements AxonTestPhase.When {
         @Override
         public AxonTestPhase.Then.Event then() {
             return new AxonTestThenEvent(
+                    configuration,
+                    customization,
+                    commandBus,
+                    eventSink,
+                    actualException
+            );
+        }
+    }
+
+    @Override
+    public AxonTestPhase.When.Nothing nothing() {
+        return new Nothing();
+    }
+
+    class Nothing implements AxonTestPhase.When.Nothing {
+
+        @Override
+        public AxonTestPhase.Then.Nothing then() {
+            return new AxonTestThenNothing(
                     configuration,
                     customization,
                     commandBus,

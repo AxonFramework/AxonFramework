@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling.processors.errorhandling;
 
 import org.axonframework.eventhandling.processors.EventProcessingException;
+import org.axonframework.messaging.Context;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 
@@ -24,32 +25,43 @@ import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Test class validating the {@link PropagatingErrorHandler}.
+ *
+ * @author Allard Buijze
+ */
 class PropagatingErrorHandlerTest {
 
-    private PropagatingErrorHandler testSubject = PropagatingErrorHandler.instance();
+    private final PropagatingErrorHandler testSubject = PropagatingErrorHandler.instance();
 
     @Test
-    void handleErrorRethrowsOriginalWhenError() throws Exception {
-        ErrorContext context = new ErrorContext("test", new MockError(), Collections.emptyList());
+    void handleErrorRethrowsOriginalWhenError() {
+        ErrorContext context = new ErrorContext("test", new MockError(), Collections.emptyList(), Context.empty());
 
         assertThrows(MockError.class, () -> testSubject.handleError(context));
     }
 
     @Test
-    void handleErrorRethrowsOriginalWhenException() throws Exception {
-        ErrorContext context = new ErrorContext("test", new MockException(), Collections.emptyList());
+    void handleErrorRethrowsOriginalWhenException() {
+        ErrorContext context = new ErrorContext("test", new MockException(), Collections.emptyList(), Context.empty());
 
         assertThrows(MockException.class, () -> testSubject.handleError(context));
     }
 
     @Test
-    void handleErrorWrapsOriginalWhenThrowable() throws Exception {
-        ErrorContext context = new ErrorContext("test", new Throwable("Unknown"), Collections.emptyList());
+    void handleErrorWrapsOriginalWhenThrowable() {
+        ErrorContext context = new ErrorContext("test",
+                                                new Throwable("Unknown"),
+                                                Collections.emptyList(),
+                                                Context.empty());
 
         assertThrows(EventProcessingException.class, () -> testSubject.handleError(context));
     }
 
     private static class MockError extends Error {
-        public MockError() {super("Mock");}
+
+        public MockError() {
+            super("Mock");
+        }
     }
 }

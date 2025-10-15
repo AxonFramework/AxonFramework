@@ -21,6 +21,7 @@ import junit.framework.AssertionFailedError;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
+import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventstreaming.EventCriteria;
@@ -28,16 +29,21 @@ import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.eventstreaming.Tag;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 import org.mockito.*;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
@@ -46,6 +52,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.axonframework.eventhandling.EventTestUtils.createEvent;
 import static org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils.aUnitOfWork;
 import static org.axonframework.utils.AssertUtils.awaitSuccessfulCompletion;
@@ -59,20 +66,14 @@ import static org.mockito.Mockito.*;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
+@ExtendWith(MockitoExtension.class)
 class SimpleEventStoreTest {
 
-    private EventStorageEngine mockStorageEngine;
-    private TagResolver tagResolver;
+    private EventStorageEngine mockStorageEngine = mock(EventStorageEngine.class);
+    private TagResolver tagResolver = mock(TagResolver.class);
+    private ProcessingContext processingContext = mock(ProcessingContext.class);
 
-    private SimpleEventStore testSubject;
-
-    @BeforeEach
-    void setUp() {
-        mockStorageEngine = mock(EventStorageEngine.class);
-        tagResolver = mock(TagResolver.class);
-
-        testSubject = new SimpleEventStore(mockStorageEngine, tagResolver);
-    }
+    private SimpleEventStore testSubject = new SimpleEventStore(mockStorageEngine, new SimpleEventBus(), tagResolver);
 
     private static GlobalSequenceTrackingToken aGlobalSequenceToken() {
         return new GlobalSequenceTrackingToken(999);
@@ -86,46 +87,45 @@ class SimpleEventStoreTest {
     class DelegatingToStorageEngine {
 
         @Test
-        void openStreamDelegatesConditionToStorageEngine() {
+        void openStreamDelegatesConditionToStorageEngine(@Mock MessageStream<EventMessage> expectedStream) {
             // given
             StreamingCondition condition = aStreamingCondition();
-            MessageStream<EventMessage> expectedStream = mock(MessageStream.class);
-            when(mockStorageEngine.stream(condition)).thenReturn(expectedStream);
+            when(mockStorageEngine.stream(condition, processingContext)).thenReturn(expectedStream);
 
             // when
-            MessageStream<EventMessage> result = testSubject.open(condition);
+            MessageStream<EventMessage> result = testSubject.open(condition, processingContext);
 
             // then
             assertSame(expectedStream, result);
-            verify(mockStorageEngine).stream(condition);
+            verify(mockStorageEngine).stream(condition, processingContext);
         }
 
         @Test
         void firstTokenDelegatesToStorageEngine() {
             // given
             CompletableFuture<TrackingToken> expectedFuture = completedFuture(aGlobalSequenceToken());
-            when(mockStorageEngine.firstToken()).thenReturn(expectedFuture);
+            when(mockStorageEngine.firstToken(processingContext)).thenReturn(expectedFuture);
 
             // when
-            CompletableFuture<TrackingToken> result = testSubject.firstToken();
+            CompletableFuture<TrackingToken> result = testSubject.firstToken(processingContext);
 
             // then
             assertSame(expectedFuture, result);
-            verify(mockStorageEngine).firstToken();
+            verify(mockStorageEngine).firstToken(processingContext);
         }
 
         @Test
         void latestTokenDelegatesToStorageEngine() {
             // given
             CompletableFuture<TrackingToken> expectedFuture = completedFuture(aGlobalSequenceToken());
-            when(mockStorageEngine.latestToken()).thenReturn(expectedFuture);
+            when(mockStorageEngine.latestToken(processingContext)).thenReturn(expectedFuture);
 
             // when
-            CompletableFuture<TrackingToken> result = testSubject.latestToken();
+            CompletableFuture<TrackingToken> result = testSubject.latestToken(processingContext);
 
             // then
             assertSame(expectedFuture, result);
-            verify(mockStorageEngine).latestToken();
+            verify(mockStorageEngine).latestToken(processingContext);
         }
 
         @Test
@@ -133,14 +133,14 @@ class SimpleEventStoreTest {
             // given
             Instant timestamp = Instant.now();
             CompletableFuture<TrackingToken> expectedFuture = completedFuture(aGlobalSequenceToken());
-            when(mockStorageEngine.tokenAt(timestamp)).thenReturn(expectedFuture);
+            when(mockStorageEngine.tokenAt(timestamp, processingContext)).thenReturn(expectedFuture);
 
             // when
-            CompletableFuture<TrackingToken> result = testSubject.tokenAt(timestamp);
+            CompletableFuture<TrackingToken> result = testSubject.tokenAt(timestamp, processingContext);
 
             // then
             assertSame(expectedFuture, result);
-            verify(mockStorageEngine).tokenAt(timestamp);
+            verify(mockStorageEngine).tokenAt(timestamp, processingContext);
         }
     }
 
@@ -149,12 +149,13 @@ class SimpleEventStoreTest {
 
         @Test
         void appendingWithoutReadMustUseInfinityConsistencyMarker() throws Exception {
-            EventStorageEngine.AppendTransaction mockAppendTransaction = mock();
+            EventStorageEngine.AppendTransaction<?> mockAppendTransaction = mock();
             GlobalIndexConsistencyMarker markerAfterCommit = new GlobalIndexConsistencyMarker(42);
 
             UnitOfWork unitOfWork = aUnitOfWork();
-            when(mockStorageEngine.appendEvents(any(), anyList())).thenReturn(completedFuture(mockAppendTransaction));
-            when(mockAppendTransaction.commit()).thenReturn(completedFuture(markerAfterCommit));
+            when(mockStorageEngine.appendEvents(any(), any(ProcessingContext.class), anyList())).thenReturn(completedFuture(mockAppendTransaction));
+            when(mockAppendTransaction.commit(any(ProcessingContext.class))).thenReturn(completedFuture(null));
+            when(mockAppendTransaction.afterCommit(any(), any(ProcessingContext.class))).thenReturn(completedFuture(markerAfterCommit));
             var result = unitOfWork.executeWithResult(pc -> {
                 EventStoreTransaction transaction = testSubject.transaction(pc);
                 transaction.appendEvent(createEvent(0));
@@ -164,18 +165,20 @@ class SimpleEventStoreTest {
 
             assertSame(newAppendPosition, markerAfterCommit);
             verify(mockStorageEngine).appendEvents(argThat(c -> ConsistencyMarker.INFINITY.equals(c.consistencyMarker())),
+                                                   any(ProcessingContext.class),
                                                    anyList());
         }
 
         @Test
         void appendingAfterReadsUpdatesTheAppendCondition() throws Exception {
-            EventStorageEngine.AppendTransaction mockAppendTransaction = mock();
+            EventStorageEngine.AppendTransaction<?> mockAppendTransaction = mock();
             GlobalIndexConsistencyMarker markerAfterCommit = new GlobalIndexConsistencyMarker(42);
 
             UnitOfWork unitOfWork = aUnitOfWork();
-            when(mockStorageEngine.source(any())).thenReturn(messageStreamOf(10));
-            when(mockStorageEngine.appendEvents(any(), anyList())).thenReturn(completedFuture(mockAppendTransaction));
-            when(mockAppendTransaction.commit()).thenReturn(completedFuture(markerAfterCommit));
+            when(mockStorageEngine.source(any(), any(ProcessingContext.class))).thenReturn(messageStreamOf(10));
+            when(mockStorageEngine.appendEvents(any(), any(ProcessingContext.class), anyList())).thenReturn(completedFuture(mockAppendTransaction));
+            when(mockAppendTransaction.commit(any(ProcessingContext.class))).thenReturn(completedFuture(null));
+            when(mockAppendTransaction.afterCommit(any(), any(ProcessingContext.class))).thenReturn(completedFuture(markerAfterCommit));
 
             var result = unitOfWork.executeWithResult(pc -> {
                 EventStoreTransaction transaction = testSubject.transaction(pc);
@@ -189,6 +192,7 @@ class SimpleEventStoreTest {
             assertSame(newAppendPosition, markerAfterCommit);
             verify(mockStorageEngine).appendEvents(argThat(c -> c.consistencyMarker()
                                                                  .equals(new GlobalIndexConsistencyMarker(9))),
+                                                   any(ProcessingContext.class),
                                                    anyList());
         }
 
@@ -204,15 +208,16 @@ class SimpleEventStoreTest {
         @MethodSource("generateRandomNumbers")
         void readingMultipleTimesShouldKeepTheConsistencyMarkerAtTheSmallestPosition(int size1, int size2, int size3)
                 throws Exception {
-            EventStorageEngine.AppendTransaction mockAppendTransaction = mock();
+            EventStorageEngine.AppendTransaction<?> mockAppendTransaction = mock();
             GlobalIndexConsistencyMarker markerAfterCommit = new GlobalIndexConsistencyMarker(101);
 
             UnitOfWork unitOfWork = aUnitOfWork();
-            when(mockStorageEngine.source(any())).thenReturn(messageStreamOf(size1))
-                                                 .thenReturn(messageStreamOf(size2))
-                                                 .thenReturn(messageStreamOf(size3));
-            when(mockStorageEngine.appendEvents(any(), anyList())).thenReturn(completedFuture(mockAppendTransaction));
-            when(mockAppendTransaction.commit()).thenReturn(completedFuture(markerAfterCommit));
+            when(mockStorageEngine.source(any(), any(ProcessingContext.class))).thenReturn(messageStreamOf(size1))
+                                                                               .thenReturn(messageStreamOf(size2))
+                                                                               .thenReturn(messageStreamOf(size3));
+            when(mockStorageEngine.appendEvents(any(), any(ProcessingContext.class), anyList())).thenReturn(completedFuture(mockAppendTransaction));
+            when(mockAppendTransaction.commit(any(ProcessingContext.class))).thenReturn(completedFuture(null));
+            when(mockAppendTransaction.afterCommit(any(), any(ProcessingContext.class))).thenReturn(completedFuture(markerAfterCommit));
             var result = unitOfWork.executeWithResult(pc -> {
                 EventStoreTransaction transaction = testSubject.transaction(pc);
                 var firstStream = transaction.source(SourcingCondition.conditionFor(EventCriteria.havingAnyTag()));
@@ -229,6 +234,7 @@ class SimpleEventStoreTest {
             verify(mockStorageEngine).appendEvents(argThat(c -> c.consistencyMarker()
                                                                  .equals(new GlobalIndexConsistencyMarker(
                                                                          Math.min(Math.min(size1, size2), size3) - 1))),
+                                                   any(ProcessingContext.class),
                                                    anyList());
         }
     }
@@ -238,9 +244,10 @@ class SimpleEventStoreTest {
 
         @Test
         void publishUsesTheGivenContextToInvokeTheTransactionInCompletingTheReturnedFutureImmediately() {
-            EventStorageEngine.AppendTransaction mockAppendTransaction = mock();
-            when(mockAppendTransaction.commit()).thenReturn(completedFuture(mock(ConsistencyMarker.class)));
-            when(mockStorageEngine.appendEvents(any(), anyList())).thenReturn(completedFuture(mockAppendTransaction));
+            EventStorageEngine.AppendTransaction<?> mockAppendTransaction = mock();
+            when(mockAppendTransaction.commit(any(ProcessingContext.class))).thenReturn(completedFuture(null));
+            when(mockAppendTransaction.afterCommit(any(), any(ProcessingContext.class))).thenReturn(completedFuture(mock(ConsistencyMarker.class)));
+            when(mockStorageEngine.appendEvents(any(), any(ProcessingContext.class), anyList())).thenReturn(completedFuture(mockAppendTransaction));
 
             EventMessage testEventZero = createEvent(0);
             EventMessage testEventOne = createEvent(1);
@@ -253,29 +260,28 @@ class SimpleEventStoreTest {
                    return result;
                })
                .runOnInvocation(context -> verifyNoInteractions(mockStorageEngine))
-               .runOnCommit(context -> verify(mockStorageEngine).appendEvents(any(), anyList()));
+               .runOnCommit(context -> verify(mockStorageEngine).appendEvents(any(), any(ProcessingContext.class), anyList()));
 
             awaitSuccessfulCompletion(uow.execute());
         }
 
         @Test
-        void publishInvokeEventStorageEngineRightAwayWithAppendConditionNone() {
+        void publishInvokeEventStorageEngineRightAwayWithAppendConditionNone(@Captor ArgumentCaptor<List<TaggedEventMessage<?>>> eventCaptor) {
             // given...
-            EventStorageEngine.AppendTransaction mockAppendTransaction = mock();
-            when(mockAppendTransaction.commit()).thenReturn(completedFuture(mock(ConsistencyMarker.class)));
-            when(mockStorageEngine.appendEvents(any(), anyList())).thenReturn(completedFuture(mockAppendTransaction));
+            EventStorageEngine.AppendTransaction<String> mockAppendTransaction = mock();
+            when(mockAppendTransaction.commit(any())).thenReturn(completedFuture("anything"));
+            when(mockAppendTransaction.afterCommit(any(), any(ProcessingContext.class))).thenReturn(completedFuture(mock(ConsistencyMarker.class)));
+            when(mockStorageEngine.appendEvents(any(), isNull(), anyList())).thenReturn(completedFuture(mockAppendTransaction));
             Tag testTag = new Tag("id", "value");
             when(tagResolver.resolve(any())).thenReturn(Set.of(testTag));
             EventMessage testEvent = createEvent(0);
-            //noinspection unchecked
-            ArgumentCaptor<List<TaggedEventMessage<?>>> eventCaptor = ArgumentCaptor.forClass(List.class);
 
             // when...
             CompletableFuture<Void> result = testSubject.publish(null, testEvent);
 
             // then...
             awaitSuccessfulCompletion(result);
-            verify(mockStorageEngine).appendEvents(eq(AppendCondition.none()), eventCaptor.capture());
+            verify(mockStorageEngine).appendEvents(eq(AppendCondition.none()), isNull(), eventCaptor.capture());
             List<TaggedEventMessage<?>> capturedEvents = eventCaptor.getValue();
             assertEquals(1, capturedEvents.size());
             TaggedEventMessage<?> resultEvent = capturedEvents.getFirst();
@@ -286,6 +292,244 @@ class SimpleEventStoreTest {
         }
 
     }
+
+
+    @Nested
+    class Subscription {
+
+        @Test
+        void subscribeAddsConsumerAndReturnsRegistration() {
+            // given
+            RecordingEventListener listener = new RecordingEventListener();
+
+            // when
+            var registration = testSubject.subscribe(listener);
+
+            // then
+            assertNotNull(registration);
+            assertTrue(registration.cancel());
+            assertFalse(registration.cancel()); // Second cancellation should return false
+        }
+
+        @Test
+        void subscribingSameConsumerTwiceOnlyAddsItOnce() {
+            // given
+            RecordingEventListener listener = new RecordingEventListener();
+
+            // when
+            var registration1 = testSubject.subscribe(listener);
+            var registration2 = testSubject.subscribe(listener);
+
+            // then
+            assertNotNull(registration1);
+            assertNotNull(registration2);
+            assertTrue(registration1.cancel());
+            assertFalse(registration2.cancel()); // Already removed by registration1
+        }
+
+        @Test
+        void subscribersAreNotifiedWhenEventsArePublishedWithoutContext() {
+            // given
+            EventStorageEngine.AppendTransaction<String> mockAppendTransaction = mock();
+            when(mockAppendTransaction.commit(any())).thenReturn(completedFuture("anything"));
+            when(mockAppendTransaction.afterCommit(any(), any(ProcessingContext.class)))
+                    .thenReturn(completedFuture(mock(ConsistencyMarker.class)));
+            when(mockStorageEngine.appendEvents(any(), isNull(), anyList()))
+                    .thenReturn(completedFuture(mockAppendTransaction));
+            when(tagResolver.resolve(any())).thenReturn(Set.of());
+
+            RecordingEventListener listener = new RecordingEventListener();
+            testSubject.subscribe(listener);
+            EventMessage testEvent = createEvent(0);
+
+            // when
+            CompletableFuture<Void> result = testSubject.publish(null, testEvent);
+
+            // then
+            awaitSuccessfulCompletion(result);
+            assertThat(listener.getReceivedEvents())
+                    .hasSize(1)
+                    .containsExactly(testEvent);
+            assertThat(listener.getInvocationCount()).isEqualTo(1);
+            assertThat(listener.getCapturedContexts()).containsExactly((ProcessingContext) null);
+        }
+
+        @Test
+        void subscribersAreNotifiedWhenEventsArePublishedWithContext() {
+            // given
+            EventStorageEngine.AppendTransaction<?> mockAppendTransaction = mock();
+            when(mockAppendTransaction.commit(any(ProcessingContext.class))).thenReturn(completedFuture(null));
+            when(mockAppendTransaction.afterCommit(any(), any(ProcessingContext.class)))
+                    .thenReturn(completedFuture(mock(ConsistencyMarker.class)));
+            when(mockStorageEngine.appendEvents(any(), any(ProcessingContext.class), anyList()))
+                    .thenReturn(completedFuture(mockAppendTransaction));
+            when(tagResolver.resolve(any())).thenReturn(Set.of());
+
+            RecordingEventListener listener = new RecordingEventListener();
+            testSubject.subscribe(listener);
+            EventMessage testEventZero = createEvent(0);
+            EventMessage testEventOne = createEvent(1);
+
+            // when
+            UnitOfWork uow = aUnitOfWork();
+            uow.onPreInvocation(context -> testSubject.publish(context, testEventZero, testEventOne));
+
+            awaitSuccessfulCompletion(uow.execute());
+
+            // then
+            assertThat(listener.getReceivedEvents())
+                    .hasSize(2)
+                    .containsExactly(testEventZero, testEventOne);
+            assertThat(listener.getInvocationCount()).isEqualTo(1);
+            assertThat(listener.getCapturedContexts())
+                    .hasSize(1)
+                    .first()
+                    .isNotNull();
+        }
+
+        @Test
+        void unsubscribedConsumersAreNotNotified() {
+            // given
+            EventStorageEngine.AppendTransaction<String> mockAppendTransaction = mock();
+            when(mockAppendTransaction.commit(any())).thenReturn(completedFuture("anything"));
+            when(mockAppendTransaction.afterCommit(any(), any(ProcessingContext.class)))
+                    .thenReturn(completedFuture(mock(ConsistencyMarker.class)));
+            when(mockStorageEngine.appendEvents(any(), isNull(), anyList()))
+                    .thenReturn(completedFuture(mockAppendTransaction));
+            when(tagResolver.resolve(any())).thenReturn(Set.of());
+
+            RecordingEventListener listener = new RecordingEventListener();
+            var registration = testSubject.subscribe(listener);
+            EventMessage testEvent = createEvent(0);
+
+            // when
+            registration.cancel();
+            CompletableFuture<Void> result = testSubject.publish(null, testEvent);
+
+            // then
+            awaitSuccessfulCompletion(result);
+            assertThat(listener.getReceivedEvents()).isEmpty();
+            assertThat(listener.getInvocationCount()).isEqualTo(0);
+        }
+
+        @Test
+        void subscriberExceptionRollsBackTransaction() {
+            // given
+            EventStorageEngine.AppendTransaction<?> mockAppendTransaction = mock();
+            when(mockStorageEngine.appendEvents(any(), any(ProcessingContext.class), anyList()))
+                    .thenReturn(completedFuture(mockAppendTransaction));
+            when(tagResolver.resolve(any())).thenReturn(Set.of());
+
+            RuntimeException subscriberException = new RuntimeException("Subscriber failed");
+            FailingEventListener listener = new FailingEventListener(subscriberException);
+            testSubject.subscribe(listener);
+            EventMessage testEvent = createEvent(0);
+
+            // when
+            UnitOfWork uow = aUnitOfWork();
+            uow.onPreInvocation(context -> testSubject.publish(context, testEvent));
+            CompletableFuture<Void> result = uow.execute();
+
+            // then
+            ExecutionException exception = assertThrows(ExecutionException.class, () -> result.get(5, TimeUnit.SECONDS));
+            assertSame(subscriberException, exception.getCause());
+            assertThat(listener.getInvocationCount()).isEqualTo(1);
+            verify(mockAppendTransaction, never()).commit(any(ProcessingContext.class));
+            verify(mockAppendTransaction).rollback(any(ProcessingContext.class));
+        }
+
+        @Test
+        void subscribersAreNotifiedWhenEventsAreAppendedViaTransaction() {
+            // given
+            EventStorageEngine.AppendTransaction<?> mockAppendTransaction = mock();
+            when(mockAppendTransaction.commit(any(ProcessingContext.class))).thenReturn(completedFuture(null));
+            when(mockAppendTransaction.afterCommit(any(), any(ProcessingContext.class)))
+                    .thenReturn(completedFuture(mock(ConsistencyMarker.class)));
+            when(mockStorageEngine.appendEvents(any(), any(ProcessingContext.class), anyList()))
+                    .thenReturn(completedFuture(mockAppendTransaction));
+            when(tagResolver.resolve(any())).thenReturn(Set.of());
+
+            RecordingEventListener listener = new RecordingEventListener();
+            testSubject.subscribe(listener);
+            EventMessage testEventZero = createEvent(0);
+            EventMessage testEventOne = createEvent(1);
+
+            // when
+            UnitOfWork uow = aUnitOfWork();
+            uow.onPreInvocation(context -> {
+                EventStoreTransaction transaction = testSubject.transaction(context);
+                transaction.appendEvent(testEventZero);
+                transaction.appendEvent(testEventOne);
+                return completedFuture(null);
+            });
+
+            awaitSuccessfulCompletion(uow.execute());
+
+            // then
+            assertThat(listener.getReceivedEvents())
+                    .hasSize(2)
+                    .containsExactly(testEventZero, testEventOne);
+            assertThat(listener.getInvocationCount()).isEqualTo(1);
+            assertThat(listener.getCapturedContexts())
+                    .hasSize(1)
+                    .first()
+                    .isNotNull();
+        }
+
+        // Test listener implementations
+
+        /**
+         * Recording listener that tracks all invocations, events, and contexts received.
+         */
+        private static class RecordingEventListener implements java.util.function.BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> {
+            private final List<EventMessage> receivedEvents = new CopyOnWriteArrayList<>();
+            private final List<ProcessingContext> capturedContexts = new CopyOnWriteArrayList<>();
+            private int invocationCount = 0;
+
+            @Override
+            public CompletableFuture<?> apply(List<? extends EventMessage> events, ProcessingContext context) {
+                invocationCount++;
+                receivedEvents.addAll(events);
+                capturedContexts.add(context);
+                return CompletableFuture.completedFuture(null);
+            }
+
+            public List<EventMessage> getReceivedEvents() {
+                return new ArrayList<>(receivedEvents);
+            }
+
+            public List<ProcessingContext> getCapturedContexts() {
+                return new ArrayList<>(capturedContexts);
+            }
+
+            public int getInvocationCount() {
+                return invocationCount;
+            }
+        }
+
+        /**
+         * Listener that throws an exception when invoked.
+         */
+        private static class FailingEventListener implements java.util.function.BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> {
+            private final RuntimeException exceptionToThrow;
+            private int invocationCount = 0;
+
+            public FailingEventListener(RuntimeException exceptionToThrow) {
+                this.exceptionToThrow = exceptionToThrow;
+            }
+
+            @Override
+            public CompletableFuture<?> apply(List<? extends EventMessage> events, ProcessingContext context) {
+                invocationCount++;
+                throw exceptionToThrow;
+            }
+
+            public int getInvocationCount() {
+                return invocationCount;
+            }
+        }
+    }
+
     @Test
     void describeToDescribesPropertiesForEventStorageEngineAndTheContext() {
         // given

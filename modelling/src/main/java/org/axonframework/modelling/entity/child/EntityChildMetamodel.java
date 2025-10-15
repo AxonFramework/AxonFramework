@@ -28,9 +28,9 @@ import org.axonframework.modelling.entity.EntityMetamodel;
 import java.util.Set;
 
 /**
- * Interface describing a child {@link EntityMetamodel} that can be handled in the context of its parent.
- * Handling commands for this metamodel is done in the context of the parent. This metamodel resolves the child from the
- * given parent and can then invoke the right child instance to handle the command.
+ * Interface describing a child {@link EntityMetamodel} that can be handled in the context of its parent. Handling
+ * commands for this metamodel is done in the context of the parent. This metamodel resolves the child from the given
+ * parent and can then invoke the right child instance to handle the command.
  *
  * @param <C> The type of the child entity.
  * @param <P> The type of the parent entity.
@@ -67,9 +67,9 @@ public interface EntityChildMetamodel<C, P> extends EntityEvolver<P> {
      * @return The result of the command handling, which may be a {@link CommandResultMessage} or an error message.
      */
     @Nonnull
-    MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage message,
-                                                         @Nonnull P parentEntity,
-                                                         @Nonnull ProcessingContext context);
+    MessageStream.Single<CommandResultMessage> handle(@Nonnull CommandMessage message,
+                                                      @Nonnull P parentEntity,
+                                                      @Nonnull ProcessingContext context);
 
     /**
      * Returns the {@link Class} of the child entity this metamodel describes.

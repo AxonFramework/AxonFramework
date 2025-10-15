@@ -16,19 +16,18 @@
 
 package org.axonframework.metrics;
 
-import org.axonframework.config.LegacyConfigurer;
-import org.axonframework.config.ConfigurerModule;
-
 import jakarta.annotation.Nonnull;
+import org.axonframework.configuration.ComponentRegistry;
+import org.axonframework.configuration.ConfigurationEnhancer;
 
 /**
- * Implementation of the {@link ConfigurerModule} which uses the {@link org.axonframework.metrics.GlobalMetricRegistry}
- * to register several Metrics Modules to the given {@link LegacyConfigurer}.
+ * Implementation of the {@link ConfigurationEnhancer} which uses the {@link GlobalMetricRegistry} to register several
+ * Metrics Modules to the given {@link ComponentRegistry}.
  *
  * @author Steven van Beelen
  * @since 3.2
  */
-public class MetricsConfigurerModule implements ConfigurerModule {
+public class MetricsConfigurerModule implements ConfigurationEnhancer {
 
     private final GlobalMetricRegistry globalMetricRegistry;
 
@@ -37,7 +36,7 @@ public class MetricsConfigurerModule implements ConfigurerModule {
     }
 
     @Override
-    public void configureModule(@Nonnull LegacyConfigurer configurer) {
-        globalMetricRegistry.registerWithConfigurer(configurer);
+    public void enhance(@Nonnull ComponentRegistry configurer) {
+//        globalMetricRegistry.registerWithConfigurer(configurer);
     }
 }

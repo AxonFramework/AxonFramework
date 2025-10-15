@@ -109,7 +109,6 @@ public class ConverterAutoConfiguration implements ApplicationContextAware, Bean
                 || converterProperties.getGeneral() == messagesConverterType) {
             return new DelegatingMessageConverter(generalConverter);
         } else {
-            // TODO @smcvb -> why a delegating here?
             return new DelegatingMessageConverter(buildConverter(messagesConverterType));
         }
     }
@@ -135,11 +134,10 @@ public class ConverterAutoConfiguration implements ApplicationContextAware, Bean
         ConverterProperties.ConverterType eventsConverterType = converterProperties.getEvents();
         if (ConverterProperties.ConverterType.DEFAULT == eventsConverterType
                 || converterProperties.getMessages() == eventsConverterType) {
-            return new DelegatingEventConverter(messageConverter); // TODO @smcvb -> why a delegating here? it is double-delegating...
+            return new DelegatingEventConverter(messageConverter);
         } else if (converterProperties.getGeneral() == eventsConverterType) {
             return new DelegatingEventConverter(generalConverter);
         }
-        // TODO @smcvb -> why a delegating here?
         return new DelegatingEventConverter(buildConverter(eventsConverterType));
     }
 

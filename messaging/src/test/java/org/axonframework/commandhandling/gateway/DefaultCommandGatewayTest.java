@@ -17,17 +17,26 @@
 package org.axonframework.commandhandling.gateway;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandPriorityCalculator;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
+import org.axonframework.commandhandling.annotations.AnnotationRoutingStrategy;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
+import org.axonframework.messaging.Metadata;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
+import org.mockito.*;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -35,28 +44,40 @@ import static org.mockito.Mockito.*;
  * Test class validating the {@link DefaultCommandGateway}.
  *
  * @author Allard Buijze
- * @author Nakul Mishra
  */
 class DefaultCommandGatewayTest {
 
-    private DefaultCommandGateway testSubject;
+    private static final MessageTypeResolver TEST_MESSAGE_NAME_RESOLVER =
+            payloadType -> Optional.of(new MessageType(payloadType.getSimpleName()));
+
     private CommandBus mockCommandBus;
-    private static final MessageTypeResolver TEST_MESSAGE_NAME_RESOLVER = payloadType -> Optional.of(new MessageType(payloadType.getSimpleName()));
+
+    private DefaultCommandGateway testSubject;
 
     @BeforeEach
     void setUp() {
         mockCommandBus = mock(CommandBus.class);
-        testSubject = new DefaultCommandGateway(mockCommandBus, TEST_MESSAGE_NAME_RESOLVER);
+
+        testSubject = new DefaultCommandGateway(mockCommandBus,
+                                                TEST_MESSAGE_NAME_RESOLVER,
+                                                CommandPriorityCalculator.defaultCalculator(),
+                                                new AnnotationRoutingStrategy());
     }
 
     @Test
     void wrapsObjectIntoCommandMessage() throws ExecutionException, InterruptedException {
         when(mockCommandBus.dispatch(any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(
-                new GenericCommandResultMessage<>(new MessageType("result"), "OK")
+                new GenericCommandResultMessage(new MessageType("result"), "OK")
         ));
         TestPayload payload = new TestPayload();
         CommandResult result = testSubject.send(payload, null);
-        verify(mockCommandBus).dispatch(argThat(m -> m.payload().equals(payload)), isNull());
+        verify(mockCommandBus).dispatch(
+                argThat(m -> {
+                    Object resultPayload = m.payload();
+                    return resultPayload != null && resultPayload.equals(payload);
+                }),
+                isNull()
+        );
         assertEquals("OK", result.getResultMessage().get().payload());
     }
 
@@ -66,18 +87,29 @@ class DefaultCommandGatewayTest {
                                      any())).thenAnswer(i -> CompletableFuture.failedFuture(new MockException()));
         TestPayload payload = new TestPayload();
         CommandResult result = testSubject.send(payload, null);
-        verify(mockCommandBus).dispatch(argThat(m -> m.payload().equals(payload)), isNull());
+        verify(mockCommandBus).dispatch(
+                argThat(m -> {
+                    Object resultPayload = m.payload();
+                    return resultPayload != null && resultPayload.equals(payload);
+                }),
+                isNull()
+        );
         assertTrue(result.getResultMessage().isCompletedExceptionally());
     }
 
     @Test
     void dispatchReturnsExceptionallyCompletedFutureWhenCommandBusReturnsExceptionalMessage() {
-        when(mockCommandBus.dispatch(any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(
-                new GenericCommandResultMessage<>(new MessageType("result"), new MockException())
-        ));
+        when(mockCommandBus.dispatch(any(), any()))
+                .thenAnswer(i -> CompletableFuture.failedFuture(new MockException()));
         TestPayload payload = new TestPayload();
         CommandResult result = testSubject.send(payload, null);
-        verify(mockCommandBus).dispatch(argThat(m -> m.payload().equals(payload)), isNull());
+        verify(mockCommandBus).dispatch(
+                argThat(m -> {
+                    Object resultPayload = m.payload();
+                    return resultPayload != null && resultPayload.equals(payload);
+                }),
+                isNull()
+        );
         assertTrue(result.getResultMessage().isCompletedExceptionally());
     }
 
@@ -85,7 +117,7 @@ class DefaultCommandGatewayTest {
     void resolvesMessageTypeUsingMessageNameResolver() throws ExecutionException, InterruptedException {
         // given
         when(mockCommandBus.dispatch(any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(
-                new GenericCommandResultMessage<>(new MessageType("result"), "OK")
+                new GenericCommandResultMessage(new MessageType("result"), "OK")
         ));
 
         // when
@@ -102,18 +134,124 @@ class DefaultCommandGatewayTest {
     void passCommandMessageAsIs() throws ExecutionException, InterruptedException {
         // given
         when(mockCommandBus.dispatch(any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(
-                new GenericCommandResultMessage<>(new MessageType("result"), "OK")
+                new GenericCommandResultMessage(new MessageType("result"), "OK")
         ));
 
         // when
         TestPayload payload = new TestPayload();
-        var testCommand =
-                new GenericCommandMessage(new MessageType("command"), payload);
+        CommandMessage testCommand = new GenericCommandMessage(
+                new MessageType("command"), payload, Metadata.emptyInstance(), "routingKey", 42
+        );
+
         CommandResult result = testSubject.send(testCommand, null);
 
         // then
-        verify(mockCommandBus).dispatch(argThat(m -> m.equals(testCommand)), isNull());
+        ArgumentCaptor<CommandMessage> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
+        verify(mockCommandBus).dispatch(commandCaptor.capture(), isNull());
+        CommandMessage resultCommand = commandCaptor.getValue();
+        assertThat(testCommand.identifier()).isEqualTo(resultCommand.identifier());
+        assertThat(testCommand.type()).isEqualTo(resultCommand.type());
+        assertThat(testCommand.payload()).isEqualTo(resultCommand.payload());
+        assertThat(testCommand.payloadType()).isEqualTo(resultCommand.payloadType());
+        assertThat(testCommand.metadata()).isEqualTo(resultCommand.metadata());
+        assertThat(testCommand.routingKey()).isEqualTo(resultCommand.routingKey());
+        assertThat(testCommand.priority()).isEqualTo(resultCommand.priority());
         assertEquals("OK", result.getResultMessage().get().payload());
+    }
+
+    @Test
+    void sendAndWaitReturnsExpectedResult() {
+        // given...
+        String expectedResult = "OK";
+        when(mockCommandBus.dispatch(any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(
+                new GenericCommandResultMessage(new MessageType("result"), expectedResult)
+        ));
+        TestPayload payload = new TestPayload();
+        // when...
+        Object result = testSubject.sendAndWait(payload);
+        // then...
+        assertThat(result).isEqualTo(expectedResult);
+        verify(mockCommandBus).dispatch(
+                argThat(m -> {
+                    Object resultPayload = m.payload();
+                    return resultPayload != null && resultPayload.equals(payload);
+                }),
+                isNull()
+        );
+    }
+
+    @Test
+    void sendAndWaitWithContextPassesAlongContextAndReturnsExpectedResult() {
+        // given...
+        String expectedResult = "OK";
+        when(mockCommandBus.dispatch(any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(
+                new GenericCommandResultMessage(new MessageType("result"), expectedResult)
+        ));
+        TestPayload payload = new TestPayload();
+        ProcessingContext testContext = new StubProcessingContext();
+        // when...
+        Object result = testSubject.sendAndWait(payload, testContext);
+        // then...
+        assertThat(result).isEqualTo(expectedResult);
+        verify(mockCommandBus).dispatch(
+                argThat(m -> {
+                    Object resultPayload = m.payload();
+                    return resultPayload != null && resultPayload.equals(payload);
+                }),
+                eq(testContext)
+        );
+    }
+
+    @Test
+    void sendAndWaitForResultTypeReturnsExpectedResult() {
+        // given...
+        String expectedResult = "OK";
+        when(mockCommandBus.dispatch(any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(
+                new GenericCommandResultMessage(new MessageType("result"), expectedResult)
+        ));
+        TestPayload payload = new TestPayload();
+        // when...
+        String result = testSubject.sendAndWait(payload, String.class);
+        // then...
+        assertThat(result).isEqualTo(expectedResult);
+        verify(mockCommandBus).dispatch(
+                argThat(m -> {
+                    Object resultPayload = m.payload();
+                    return resultPayload != null && resultPayload.equals(payload);
+                }),
+                isNull()
+        );
+    }
+
+    @Test
+    void sendAndWaitForResultTypeAndContextPassesAlongContextAndReturnsExpectedResult() {
+        // given...
+        String expectedResult = "OK";
+        when(mockCommandBus.dispatch(any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(
+                new GenericCommandResultMessage(new MessageType("result"), expectedResult)
+        ));
+        TestPayload payload = new TestPayload();
+        ProcessingContext testContext = new StubProcessingContext();
+        // when...
+        String result = testSubject.sendAndWait(payload, String.class, testContext);
+        // then...
+        assertThat(result).isEqualTo(expectedResult);
+        verify(mockCommandBus).dispatch(
+                argThat(m -> {
+                    Object resultPayload = m.payload();
+                    return resultPayload != null && resultPayload.equals(payload);
+                }),
+                eq(testContext)
+        );
+    }
+
+    @Test
+    void sendAndWaitReturnsUnwrapExecutionException() {
+        // given...
+        when(mockCommandBus.dispatch(any(), any())).thenReturn(CompletableFuture.failedFuture(new MockException()));
+        TestPayload payload = new TestPayload();
+        // when/then...
+        assertThatThrownBy(() -> testSubject.sendAndWait(payload, String.class)).isInstanceOf(MockException.class);
     }
 
     private static class TestPayload {

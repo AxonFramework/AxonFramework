@@ -16,13 +16,15 @@
 
 package org.axonframework.integrationtests.testsuite.student.state;
 
-import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.axonframework.eventsourcing.annotation.EventCriteriaBuilder;
-import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
+import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
+import org.axonframework.eventsourcing.annotations.EventCriteriaBuilder;
+import org.axonframework.eventsourcing.annotations.EventSourcedEntity;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.Tag;
 import org.axonframework.integrationtests.testsuite.student.common.StudentMentorModelIdentifier;
 import org.axonframework.integrationtests.testsuite.student.events.MentorAssignedToStudentEvent;
+
+import java.util.List;
 
 @EventSourcedEntity
 public class StudentMentorAssignment {
@@ -56,11 +58,12 @@ public class StudentMentorAssignment {
     @EventCriteriaBuilder
     public static EventCriteria resolveCriteria(StudentMentorModelIdentifier id) {
         return EventCriteria.either(
-                EventCriteria.havingTags(new Tag("Student", id.menteeId()))
-                             .andBeingOneOfTypes(MentorAssignedToStudentEvent.class.getName()),
-                EventCriteria.havingTags(new Tag("Student", id.mentorId()))
-                             .andBeingOneOfTypes(MentorAssignedToStudentEvent.class.getName())
-
+                List.of(
+                        EventCriteria.havingTags(new Tag("Student", id.menteeId()))
+                                     .andBeingOneOfTypes(MentorAssignedToStudentEvent.class.getName()),
+                        EventCriteria.havingTags(new Tag("Student", id.mentorId()))
+                                     .andBeingOneOfTypes(MentorAssignedToStudentEvent.class.getName())
+                )
         );
     }
 }

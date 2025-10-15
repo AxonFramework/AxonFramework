@@ -69,27 +69,27 @@ public class RetryingCommandBus implements CommandBus {
     }
 
     @Override
-    public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage command,
-                                                               @Nullable ProcessingContext processingContext) {
+    public CompletableFuture<CommandResultMessage> dispatch(@Nonnull CommandMessage command,
+                                                            @Nullable ProcessingContext processingContext) {
         return dispatchToDelegate(command, processingContext)
                 .exceptionallyCompose(e -> performRetry(command, processingContext, unwrap(e)));
     }
 
-    private CompletableFuture<CommandResultMessage<?>> dispatchToDelegate(CommandMessage command,
-                                                                          ProcessingContext processingContext) {
+    private CompletableFuture<CommandResultMessage> dispatchToDelegate(CommandMessage command,
+                                                                       ProcessingContext processingContext) {
         return delegate.dispatch(command, processingContext)
                        .thenApply(Function.identity());
     }
 
-    private CompletableFuture<CommandResultMessage<?>> performRetry(CommandMessage command,
-                                                                    ProcessingContext processingContext,
-                                                                    Throwable e) {
+    private CompletableFuture<CommandResultMessage> performRetry(CommandMessage command,
+                                                                 ProcessingContext processingContext,
+                                                                 Throwable e) {
         return retryScheduler.scheduleRetry(command, processingContext, e, this::redispatch)
                              .first().asCompletableFuture()
                              .thenApply(Entry::message);
     }
 
-    private MessageStream<CommandResultMessage<?>> redispatch(CommandMessage cmd, ProcessingContext ctx) {
+    private MessageStream<CommandResultMessage> redispatch(CommandMessage cmd, ProcessingContext ctx) {
         return MessageStream.fromFuture(dispatchToDelegate(cmd, ctx));
     }
 

@@ -19,26 +19,26 @@ package org.axonframework.integrationtests.eventsourcing.eventstore.jpa;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.PersistenceContext;
+import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.processors.streaming.token.GapAwareTrackingToken;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.processors.streaming.token.GapAwareTrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedStorageEngineTestSuite;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
-import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
-import org.axonframework.eventsourcing.eventstore.jdbc.JdbcSQLErrorCodesResolver;
 import org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedJpaEventStorageEngine;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.eventstreaming.Tag;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
@@ -98,8 +98,23 @@ class AggregateBasedJpaEventStorageEngineTest
                 entityManagerProvider,
                 transactionManager,
                 converter,
-                config -> config.persistenceExceptionResolver(new JdbcSQLErrorCodesResolver())
+                config -> config.persistenceExceptionResolver(new PersistenceExceptionResolver() {
+                    @Override
+                    public boolean isDuplicateKeyViolation(Exception exception) {
+                        return causeIsEntityExistsException(exception);
+                    }
+
+                    private boolean causeIsEntityExistsException(Throwable exception) {
+                        return exception instanceof java.sql.SQLIntegrityConstraintViolationException
+                                || (exception.getCause() != null && causeIsEntityExistsException(exception.getCause()));
+                    }
+                })
         );
+    }
+
+    @Override
+    protected ProcessingContext processingContext() {
+        return null;
     }
 
     @Override
@@ -121,7 +136,8 @@ class AggregateBasedJpaEventStorageEngineTest
     void sourcingFromNonGapAwareTrackingTokenShouldThrowException() {
         assertThrows(
                 IllegalArgumentException.class,
-                () -> testSubject.stream(StreamingCondition.startingFrom(new GlobalSequenceTrackingToken(5)))
+                () -> testSubject.stream(StreamingCondition.startingFrom(new GlobalSequenceTrackingToken(5)),
+                                         processingContext())
         );
     }
 
@@ -165,7 +181,8 @@ class AggregateBasedJpaEventStorageEngineTest
                      .executeUpdate();
         transaction.commit();
 
-        testSubject.stream(StreamingCondition.startingFrom(new GapAwareTrackingToken(0, Collections.emptySet())))
+        testSubject.stream(StreamingCondition.startingFrom(new GapAwareTrackingToken(0, Collections.emptySet())),
+                           processingContext())
                    .reduce(
                            new ArrayList<TrackingToken>(), (tokens, entry) -> {
                                Optional<TrackingToken> optionalToken = TrackingToken.fromContext(entry);
@@ -270,7 +287,7 @@ class AggregateBasedJpaEventStorageEngineTest
         GapAwareTrackingToken startPosition = GapAwareTrackingToken.newInstance(secondLastEventIndex, gaps);
 
         MessageStream<EventMessage> eventStream =
-                gapConfigTestSubject.stream(StreamingCondition.startingFrom(startPosition));
+                gapConfigTestSubject.stream(StreamingCondition.startingFrom(startPosition), processingContext());
         assertThat(eventStream.hasNextAvailable()).isTrue();
         TrackingToken token = eventStream.next()
                                          .flatMap(TrackingToken::fromContext)
@@ -289,11 +306,13 @@ class AggregateBasedJpaEventStorageEngineTest
         transaction.commit();
     }
 
-    private static void appendCommitAndWait(AggregateBasedJpaEventStorageEngine subject,
-                                            AppendCondition condition,
-                                            TaggedEventMessage<?>... events) {
-        subject.appendEvents(condition, events)
-               .thenCompose(EventStorageEngine.AppendTransaction::commit)
+    private void appendCommitAndWait(AggregateBasedJpaEventStorageEngine subject,
+                                     AppendCondition condition,
+                                     TaggedEventMessage<?>... events) {
+        subject.appendEvents(condition, processingContext(), events)
+               .thenApply(this::castTransaction)
+               .thenCompose(tx -> tx.commit(processingContext())
+                                    .thenCompose(v -> tx.afterCommit(v, processingContext())))
                .join();
     }
 

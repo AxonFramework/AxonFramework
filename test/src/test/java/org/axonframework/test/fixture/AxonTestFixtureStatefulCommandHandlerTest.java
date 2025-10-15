@@ -19,6 +19,7 @@ package org.axonframework.test.fixture;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandHandlingComponent;
 import org.axonframework.configuration.MessagingConfigurer;
+import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -33,7 +34,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.modelling.AnnotationBasedEntityEvolvingComponent;
+import org.axonframework.modelling.annotations.AnnotationBasedEntityEvolvingComponent;
 import org.axonframework.modelling.SimpleStateManager;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.test.fixture.sampledomain.ChangeStudentNameCommand;
@@ -261,6 +262,7 @@ class AxonTestFixtureStatefulCommandHandlerTest {
                         })
                 .registerComponent(EventStore.class,
                                    c -> new SimpleEventStore(new InMemoryEventStorageEngine(),
+                                                             new SimpleEventBus(),
                                                              new AnnotationBasedTagResolver()))
                 .registerComponent(EventSink.class,
                                    c -> c.getComponent(EventStore.class))

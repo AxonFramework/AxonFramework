@@ -59,7 +59,7 @@ class GrpcBackedResponseMessageTest {
     void metadataReturnsTheSameMapAsWasInsertedInTheQueryResponseMessage() {
         Metadata expectedMetadata = Metadata.with("some-key", "some-value");
         QueryResponseMessage testQueryResponseMessage =
-                GrpcBackedResponseMessageTest.<TestQueryResponse>asResponseMessage(TEST_QUERY_RESPONSE)
+                GrpcBackedResponseMessageTest.asResponseMessage(TEST_QUERY_RESPONSE)
                         .withMetadata(expectedMetadata);
         QueryResponse testQueryResponse =
                 querySerializer.serializeResponse(testQueryResponseMessage, REQUEST_MESSAGE_ID);
@@ -153,7 +153,7 @@ class GrpcBackedResponseMessageTest {
     void withMetadataCompletelyReplacesTheInitialMetadataMap() {
         Metadata testMetadata = Metadata.with("some-key", "some-value");
         QueryResponseMessage testQueryResponseMessage =
-                GrpcBackedResponseMessageTest.<TestQueryResponse>asResponseMessage(TEST_QUERY_RESPONSE)
+                GrpcBackedResponseMessageTest.asResponseMessage(TEST_QUERY_RESPONSE)
                         .withMetadata(testMetadata);
         QueryResponse testQueryResponse =
                 querySerializer.serializeResponse(testQueryResponseMessage, REQUEST_MESSAGE_ID);
@@ -172,7 +172,7 @@ class GrpcBackedResponseMessageTest {
     void andMetadataAppendsToTheExistingMetadata() {
         Metadata testMetadata = Metadata.with("some-key", "some-value");
         QueryResponseMessage testQueryResponseMessage =
-                GrpcBackedResponseMessageTest.<TestQueryResponse>asResponseMessage(TEST_QUERY_RESPONSE)
+                GrpcBackedResponseMessageTest.asResponseMessage(TEST_QUERY_RESPONSE)
                         .withMetadata(testMetadata);
         QueryResponse testQueryResponse =
                 querySerializer.serializeResponse(testQueryResponseMessage, REQUEST_MESSAGE_ID);
@@ -194,8 +194,7 @@ class GrpcBackedResponseMessageTest {
                 declaredType);
     }
 
-    @SuppressWarnings("unchecked")
-    private static <R> QueryResponseMessage asResponseMessage(Object result) {
+    private static QueryResponseMessage asResponseMessage(Object result) {
         if (result instanceof QueryResponseMessage) {
             return (QueryResponseMessage) result;
         } else if (result instanceof ResultMessage) {

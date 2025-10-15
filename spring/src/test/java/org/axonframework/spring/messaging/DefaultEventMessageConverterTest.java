@@ -17,9 +17,7 @@
 package org.axonframework.spring.messaging;
 
 
-import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MessageType;
 import org.junit.jupiter.api.*;
@@ -62,36 +60,6 @@ class DefaultEventMessageConverterTest {
         assertEquals("world", convertedAxonMessage.metadata().get("string"));
         assertEquals("hello", convertedAxonMessage.payloadAs(EventPayload.class).name);
         assertEquals(id, convertedAxonMessage.identifier());
-    }
-
-    @Test
-    void givenDomainEventMessageWhenConvertingTwiceThenResultingEventShouldBeTheSame() {
-        String aggId = UUID.randomUUID().toString();
-        String id = UUID.randomUUID().toString();
-        MessageType name = new MessageType("event");
-        EventPayload payload = new EventPayload("hello");
-        Map<String, String> metadata = new HashMap<>();
-        metadata.put("number", "100");
-        metadata.put("string", "world");
-        Instant instant = Instant.EPOCH;
-
-        EventMessage axonMessage =
-                new GenericDomainEventMessage("foo", aggId, 1, id, name, payload, metadata, instant);
-        EventMessage convertedAxonMessage = eventMessageConverter.convertFromInboundMessage(
-                eventMessageConverter.convertToOutboundMessage(axonMessage)
-        );
-
-        assertInstanceOf(DomainEventMessage.class, convertedAxonMessage);
-
-        DomainEventMessage convertDomainMessage = (DomainEventMessage) convertedAxonMessage;
-        assertEquals(instant, convertDomainMessage.timestamp());
-        assertEquals("100", convertDomainMessage.metadata().get("number"));
-        assertEquals("world", convertDomainMessage.metadata().get("string"));
-        assertEquals("hello", convertDomainMessage.payloadAs(EventPayload.class).name);
-        assertEquals(id, convertDomainMessage.identifier());
-        assertEquals("foo", convertDomainMessage.getType());
-        assertEquals(aggId, convertDomainMessage.getAggregateIdentifier());
-        assertEquals(1, convertDomainMessage.getSequenceNumber());
     }
 
     private record EventPayload(String name) {

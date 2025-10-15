@@ -16,62 +16,42 @@
 
 package org.axonframework.eventhandling.processors.errorhandling;
 
-import java.util.List;
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.Context;
+
+import java.util.List;
+import java.util.Objects;
 
 /**
- * Describes the context of an error.
+ * Describes the context of an error caught by an {@link org.axonframework.eventhandling.processors.EventProcessor}
+ * while processing a batch of events.
  *
+ * @param eventProcessor The name of the {@link org.axonframework.eventhandling.processors.EventProcessor} that failed
+ *                       to process the given {@code failedEvents}.
+ * @param error          The error that was raised during processing of the {@code failedEvents}.
+ * @param failedEvents   The list of events that triggered the error.
+ * @param context        The {@code Context} carrying the resources that applied for the given {@code failedEvents} when
+ *                       they were handled.
  * @author Allard Buijze
- * @since 3.0
+ * @since 3.0.0
  */
-public class ErrorContext {
-
-    private final String eventProcessor;
-    private final Throwable error;
-    private final List<? extends EventMessage> failedEvents;
-
-    /**
-     * Instantiate an ErrorContext for the given {@code eventProcessor}, due to the given {@code error}, with the given
-     * {@code failedEvents}.
-     *
-     * @param eventProcessor the name of the event processor that failed to process the given events
-     * @param error          the error that was raised during processing
-     * @param failedEvents   the list of events that triggered the error
-     */
-    public ErrorContext(@Nonnull String eventProcessor, @Nonnull Throwable error,
-                        @Nonnull List<? extends EventMessage> failedEvents) {
-        this.eventProcessor = eventProcessor;
-        this.error = error;
-        this.failedEvents = failedEvents;
-    }
+public record ErrorContext(
+        @Nonnull String eventProcessor,
+        @Nonnull Throwable error,
+        @Nonnull List<? extends EventMessage> failedEvents,
+        @Nonnull Context context
+) {
 
     /**
-     * Returns the name of the Event Processor where the error occurred.
-     *
-     * @return the name of the Event Processor where the error occurred
+     * Compact constructor of the {@code ErrorContext} to validate the {@code eventProcessor}, {@code error},
+     * {@code failedEvents}, and {@code context} are not null.
      */
-    public String eventProcessor() {
-        return eventProcessor;
-    }
-
-    /**
-     * Returns the error that was raised in the processor
-     *
-     * @return the error that was raised in the processor
-     */
-    public Throwable error() {
-        return error;
-    }
-
-    /**
-     * The events part of the batch that failed. May be empty if an error occurred outside of the scope of processing a
-     * batch (e.g. while preparing the next batch).
-     *
-     * @return events part of the batch that failed, if any
-     */
-    public List<? extends EventMessage> failedEvents() {
-        return failedEvents;
+    @SuppressWarnings("MissingJavadoc")
+    public ErrorContext {
+        Objects.requireNonNull(eventProcessor, "The event processor must not be null.");
+        Objects.requireNonNull(error, "The error must not be null.");
+        Objects.requireNonNull(failedEvents, "The failed events must not be null.");
+        Objects.requireNonNull(context, "The context must not be null.");
     }
 }

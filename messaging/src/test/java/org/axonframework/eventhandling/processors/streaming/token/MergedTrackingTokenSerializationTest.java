@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.processors.streaming.token;
 
-import org.axonframework.serialization.TestSerializer;
+import org.axonframework.serialization.TestConverter;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 
@@ -32,15 +32,15 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class MergedTrackingTokenSerializationTest {
 
-    static Collection<TestSerializer> serializers() {
-        return TestSerializer.all();
+    static Collection<TestConverter> converters() {
+        return TestConverter.all();
     }
 
-    @MethodSource("serializers")
+    @MethodSource("converters")
     @ParameterizedTest
-    void tokenShouldBeSerializable(TestSerializer serializer) {
+    void tokenShouldBeSerializable(TestConverter converter) {
         MergedTrackingToken testSubject = new MergedTrackingToken(new MergedTrackingToken(token(1), token(5)), token(3));
-        assertEquals(testSubject, serializer.serializeDeserialize(testSubject));
+        assertEquals(testSubject, converter.serializeDeserialize(testSubject));
     }
 
     private GlobalSequenceTrackingToken token(int sequence) {

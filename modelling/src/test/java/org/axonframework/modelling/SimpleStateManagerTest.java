@@ -18,6 +18,7 @@ package org.axonframework.modelling;
 
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.modelling.repository.Repository;
+import org.axonframework.modelling.repository.SimpleRepository;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.CompletableFuture;

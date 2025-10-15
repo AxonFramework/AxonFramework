@@ -16,12 +16,15 @@
 
 package org.axonframework.eventhandling.processors.streaming.token.store.inmemory;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.eventhandling.processors.streaming.token.store.UnableToClaimTokenException;
 import org.axonframework.eventhandling.processors.streaming.token.store.UnableToInitializeTokenException;
-import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,9 +33,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import jakarta.annotation.Nonnull;
 
+import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
@@ -40,6 +44,7 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  *
  * @author Rene de Waele
  * @author Christophe Bouhier
+ * @since 3.0.0
  */
 public class InMemoryTokenStore implements TokenStore {
 
@@ -50,90 +55,123 @@ public class InMemoryTokenStore implements TokenStore {
     private final String identifier = UUID.randomUUID().toString();
 
     /**
-     * No-arg constructor for the {@link InMemoryTokenStore} which will log a warning on initialization.
+     * No-arg constructor which will log a warning on initialization.
      */
     public InMemoryTokenStore() {
-        logger.warn("An in memory token store is being created.\nThis means the event processor using this token store might process the same events again when the application is restarted.\nIf the use of an in memory token store is intentional, this warning can be ignored.\nIf the tokens should be persisted, use the JPA, JDBC or MongoDB token store instead.");
+        logger.warn(
+                """
+                        An in memory token store is being created.
+                        This means the event processor using this token store might process the same events again when the application is restarted.
+                        If the use of an in memory token store is intentional, this warning can be ignored.
+                        If the tokens should be persisted, use the JPA, JDBC or MongoDB token store instead.
+                        """
+        );
     }
 
+    @Nonnull
     @Override
-    public void initializeTokenSegments(@Nonnull String processorName, int segmentCount)
-            throws UnableToClaimTokenException {
-        initializeTokenSegments(processorName, segmentCount, null);
+    public CompletableFuture<Void> initializeTokenSegments(
+            @Nonnull String processorName,
+            int segmentCount,
+            @Nullable TrackingToken initialToken,
+            @Nullable ProcessingContext context
+    ) throws UnableToClaimTokenException {
+        return fetchSegments(processorName, context)
+                .thenAccept(segments -> {
+                    if (segments.length > 0) {
+                        throw new UnableToClaimTokenException(
+                                "Could not initialize segments. Some segments were already present.");
+                    }
+                    for (int segment = 0; segment < segmentCount; segment++) {
+                        tokens.put(new ProcessAndSegment(processorName, segment),
+                                   getOrDefault(initialToken, NULL_TOKEN));
+                    }
+                });
     }
 
+    @Nonnull
     @Override
-    public void initializeTokenSegments(@Nonnull String processorName, int segmentCount, TrackingToken initialToken)
-            throws UnableToClaimTokenException {
-        if (fetchSegments(processorName).length > 0) {
-            throw new UnableToClaimTokenException("Could not initialize segments. Some segments were already present.");
-        }
-        for (int segment = 0; segment < segmentCount; segment++) {
-            tokens.put(new ProcessAndSegment(processorName, segment), getOrDefault(initialToken, NULL_TOKEN));
-        }
-    }
-
-    // TODO #3432 - CurrentUnitOfWork is here to mimic transactional behavior, adjust it by mean of ProcessingContext
-    @Override
-    public void storeToken(TrackingToken token, @Nonnull String processorName, int segment) {
-        if (CurrentUnitOfWork.isStarted()) {
-            CurrentUnitOfWork.get().afterCommit(uow -> tokens.put(new ProcessAndSegment(processorName, segment),
-                                                                  getOrDefault(token, NULL_TOKEN)));
+    public CompletableFuture<Void> storeToken(@Nullable TrackingToken token,
+                                              @Nonnull String processorName,
+                                              int segment,
+                                              @Nullable ProcessingContext context) {
+        Objects.requireNonNull(context, "processingContext may not be null for an InMemoryTokenStore");
+        if (context.isStarted()) {
+            context.runOnAfterCommit(c -> tokens.put(new ProcessAndSegment(processorName, segment),
+                                                     getOrDefault(token, NULL_TOKEN)));
         } else {
             tokens.put(new ProcessAndSegment(processorName, segment), getOrDefault(token, NULL_TOKEN));
         }
+        return FutureUtils.emptyCompletedFuture();
     }
 
+    @Nonnull
     @Override
-    public TrackingToken fetchToken(@Nonnull String processorName, int segment) {
+    public CompletableFuture<TrackingToken> fetchToken(@Nonnull String processorName,
+                                                       int segment,
+                                                       @Nullable ProcessingContext context) {
         TrackingToken trackingToken = tokens.get(new ProcessAndSegment(processorName, segment));
         if (trackingToken == null) {
             throw new UnableToClaimTokenException(
                     "No token was initialized for segment " + segment + " for processor " + processorName);
         } else if (NULL_TOKEN == trackingToken) {
-            return null;
+            return FutureUtils.emptyCompletedFuture();
         }
-        return trackingToken;
+        return completedFuture(trackingToken);
     }
 
+    @Nonnull
     @Override
-    public void releaseClaim(@Nonnull String processorName, int segment) {
+    public CompletableFuture<Void> releaseClaim(@Nonnull String processorName,
+                                                int segment,
+                                                @Nullable ProcessingContext context) {
         // no-op, the in-memory implementation isn't accessible by multiple processes
+        return FutureUtils.emptyCompletedFuture();
     }
 
+    @Nonnull
     @Override
-    public void deleteToken(@Nonnull String processorName, int segment) throws UnableToClaimTokenException {
+    public CompletableFuture<Void> deleteToken(
+            @Nonnull String processorName,
+            int segment,
+            @Nullable ProcessingContext context
+    ) throws UnableToClaimTokenException {
         tokens.remove(new ProcessAndSegment(processorName, segment));
+        return FutureUtils.emptyCompletedFuture();
     }
 
+    @Nonnull
     @Override
-    public void initializeSegment(TrackingToken token, @Nonnull String processorName, int segment)
-            throws UnableToInitializeTokenException {
+    public CompletableFuture<Void> initializeSegment(
+            @Nullable TrackingToken token,
+            @Nonnull String processorName,
+            int segment,
+            @Nullable ProcessingContext context
+    ) throws UnableToInitializeTokenException {
         TrackingToken previous = tokens.putIfAbsent(new ProcessAndSegment(processorName, segment),
                                                     token == null ? NULL_TOKEN : token);
         if (previous != null) {
             throw new UnableToInitializeTokenException("Token was already present");
         }
+        return completedFuture(null);
     }
 
+    @Nonnull
     @Override
-    public boolean requiresExplicitSegmentInitialization() {
-        return true;
+    public CompletableFuture<int[]> fetchSegments(@Nonnull String processorName,
+                                                  @Nullable ProcessingContext context) {
+        return completedFuture(tokens.keySet().stream()
+                                     .filter(ps -> ps.processorName.equals(processorName))
+                                     .map(ProcessAndSegment::getSegment)
+                                     .distinct()
+                                     .mapToInt(Number::intValue)
+                                     .sorted().toArray());
     }
 
+    @Nonnull
     @Override
-    public int[] fetchSegments(@Nonnull String processorName) {
-        return tokens.keySet().stream()
-                     .filter(ps -> ps.processorName.equals(processorName))
-                     .map(ProcessAndSegment::getSegment)
-                     .distinct()
-                     .mapToInt(Number::intValue)
-                     .sorted().toArray();
-    }
-
-    @Override
-    public Optional<String> retrieveStorageIdentifier() {
-        return Optional.of(identifier);
+    public CompletableFuture<Optional<String>> retrieveStorageIdentifier(@Nullable ProcessingContext context) {
+        return completedFuture(Optional.of(identifier));
     }
 
     private static class ProcessAndSegment {

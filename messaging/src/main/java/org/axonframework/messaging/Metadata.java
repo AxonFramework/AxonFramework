@@ -189,6 +189,7 @@ public class Metadata implements Map<String, String> {
     }
 
     @Override
+    @Nullable
     public String get(Object key) {
         return values.get(key);
     }

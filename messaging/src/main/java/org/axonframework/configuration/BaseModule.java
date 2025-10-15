@@ -52,7 +52,10 @@ public abstract class BaseModule<S extends BaseModule<S>> implements Module {
 
     @Override
     public Configuration build(@Nonnull Configuration parent, @Nonnull LifecycleRegistry lifecycleRegistry) {
-        return postProcessConfiguration(componentRegistry.buildNested(parent, lifecycleRegistry));
+        return postProcessConfiguration(
+                componentRegistry.disableEnhancerScanning()
+                                 .buildNested(parent, lifecycleRegistry)
+        );
     }
 
     /**

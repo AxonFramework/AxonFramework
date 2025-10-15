@@ -23,12 +23,13 @@ import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.configuration.EventProcessingConfigurer;
+import org.axonframework.eventhandling.configuration.EventBusConfigurationDefaults;
 import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageTypeResolver;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotations.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.CorrelationDataProviderRegistry;
 import org.axonframework.messaging.interceptors.DispatchInterceptorRegistry;
@@ -36,7 +37,7 @@ import org.axonframework.messaging.interceptors.HandlerInterceptorRegistry;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.queryhandling.QueryUpdateEmitter;
+import org.axonframework.queryhandling.configuration.QueryHandlingModule;
 
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -93,6 +94,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     public static MessagingConfigurer enhance(@Nonnull ApplicationConfigurer applicationConfigurer) {
         return new MessagingConfigurer(applicationConfigurer)
                 .componentRegistry(cr -> cr
+                        .registerEnhancer(new EventBusConfigurationDefaults())
                         .registerEnhancer(new MessagingConfigurationDefaults())
                 );
     }
@@ -190,24 +192,6 @@ public class MessagingConfigurer implements ApplicationConfigurer {
                 registry,
                 parameterResolverFactoryBuilder::build
         ));
-        return this;
-    }
-
-    /**
-     * Registers the given {@link QueryUpdateEmitter} factory in this {@code Configurer}.
-     * <p>
-     * The {@code queryUpdateEmitterBuilder} receives the {@link Configuration} as input and is expected to return a
-     * {@link QueryUpdateEmitter} instance.
-     *
-     * @param queryUpdateEmitterBuilder The builder constructing the {@link QueryUpdateEmitter}.
-     * @return The current instance of the {@code Configurer} for a fluent API.
-     */
-    public MessagingConfigurer registerQueryUpdateEmitter(
-            @Nonnull ComponentBuilder<QueryUpdateEmitter> queryUpdateEmitterBuilder
-    ) {
-        delegate.componentRegistry(
-                cr -> cr.registerComponent(QueryUpdateEmitter.class, queryUpdateEmitterBuilder)
-        );
         return this;
     }
 
@@ -455,12 +439,33 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * {@code Modules} registered with the resulting {@link CommandHandlingModule} itself.
      *
      * @param moduleBuilder The builder returning a command handling module to register with
-     *                      {@code this ModellingConfigurer}.
-     * @return A {@code ModellingConfigurer} instance for further configuring.
+     *                      {@code this MessagingConfigurer}.
+     * @return A {@code MessagingConfigurer} instance for further configuring.
      */
     @Nonnull
     public MessagingConfigurer registerCommandHandlingModule(
             @Nonnull ModuleBuilder<CommandHandlingModule> moduleBuilder
+    ) {
+        Objects.requireNonNull(moduleBuilder, "The moduleBuilder cannot be null.");
+        delegate.componentRegistry(cr -> cr.registerModule(moduleBuilder.build()));
+        return this;
+    }
+
+    /**
+     * Registers the given {@link ModuleBuilder builder} for a {@link QueryHandlingModule} to use in this
+     * configuration.
+     * <p>
+     * As a {@link Module} implementation, any components registered with the result of the given {@code moduleBuilder}
+     * will not be accessible from other {@code Modules} to enforce encapsulation. The sole exception to this, are
+     * {@code Modules} registered with the resulting {@link QueryHandlingModule} itself.
+     *
+     * @param moduleBuilder The builder returning a query handling module to register with
+     *                      {@code this MessagingConfigurer}.
+     * @return A {@code MessagingConfigurer} instance for further configuring.
+     */
+    @Nonnull
+    public MessagingConfigurer registerQueryHandlingModule(
+            @Nonnull ModuleBuilder<QueryHandlingModule> moduleBuilder
     ) {
         Objects.requireNonNull(moduleBuilder, "The moduleBuilder cannot be null.");
         delegate.componentRegistry(cr -> cr.registerModule(moduleBuilder.build()));

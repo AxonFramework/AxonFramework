@@ -18,7 +18,7 @@ package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.annotations.Internal;
 import org.axonframework.configuration.Configuration;
 
 import java.util.Objects;
@@ -48,5 +48,11 @@ public class ConfigurationApplicationContext implements ApplicationContext {
     @Override
     public <C> C component(@Nonnull Class<C> type, @Nullable String name) {
         return configuration.getComponent(type, name);
+    }
+
+    @Nonnull
+    @Override
+    public <C> C component(@Nonnull Class<C> type) {
+        return configuration.getComponent(type);
     }
 }

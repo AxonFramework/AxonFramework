@@ -16,9 +16,7 @@
 
 package org.axonframework.eventhandling.sequencing;
 
-import org.axonframework.eventhandling.DomainEventMessage;
-import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.axonframework.messaging.MessageType;
+import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
@@ -37,20 +35,16 @@ class SequentialPolicyTest {
     void sequencingIdentifier() {
         // ok, pretty useless, but everything should be tested
         SequentialPolicy testSubject = SequentialPolicy.INSTANCE;
-        Object id1 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID()), new StubProcessingContext()).orElse(null);
-        Object id2 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID()), new StubProcessingContext()).orElse(null);
-        Object id3 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID()), new StubProcessingContext()).orElse(null);
+        Object id1 = testSubject.getSequenceIdentifierFor(EventTestUtils.asEventMessage(UUID.randomUUID()),
+                                                          new StubProcessingContext()).orElse(null);
+        Object id2 = testSubject.getSequenceIdentifierFor(EventTestUtils.asEventMessage(UUID.randomUUID()),
+                                                          new StubProcessingContext()).orElse(null);
+        Object id3 = testSubject.getSequenceIdentifierFor(EventTestUtils.asEventMessage(UUID.randomUUID()),
+                                                          new StubProcessingContext()).orElse(null);
 
         assertEquals(id1, id2);
         assertEquals(id2, id3);
         // this can only fail if equals is not implemented correctly
         assertEquals(id1, id3);
-    }
-
-    private DomainEventMessage newStubDomainEvent(Object aggregateIdentifier) {
-        return new GenericDomainEventMessage(
-                "aggregateType", aggregateIdentifier.toString(), 0L,
-                new MessageType("event"), new Object()
-        );
     }
 }

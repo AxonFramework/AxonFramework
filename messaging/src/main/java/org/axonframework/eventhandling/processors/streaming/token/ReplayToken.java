@@ -20,7 +20,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.messaging.Message;
 
 import jakarta.annotation.Nonnull;
@@ -75,18 +74,6 @@ public class ReplayToken implements TrackingToken, WrappedToken {
     }
 
     /**
-     * Indicates whether the given message is "redelivered", as a result of a previous reset. If {@code true}, this
-     * means this message has been delivered to this processor before its token was reset.
-     *
-     * @param message The message to inspect
-     * @return {@code true} if the message is a replay
-     */
-    public static boolean isReplay(Message message) {
-        return message instanceof TrackedEventMessage
-                && isReplay(((TrackedEventMessage) message).trackingToken());
-    }
-
-    /**
      * Creates a new TrackingToken that represents the given {@code startPosition} of a stream. It will be in replay
      * state until the position of the provided {@code tokenAtReset}. After that, the {@code tokenAtReset} will become
      * the active token and the stream will no longer be considered as replaying.
@@ -136,25 +123,6 @@ public class ReplayToken implements TrackingToken, WrappedToken {
      */
     public static TrackingToken createReplayToken(TrackingToken tokenAtReset) {
         return createReplayToken(tokenAtReset, null);
-    }
-
-    /**
-     * Extracts the context from a {@code message} of the matching {@code contextClass}.
-     * <p>
-     * Will resolve to an empty {@code Optional} if the provided message is not a {@link TrackedEventMessage}, doesn't
-     * contain a {@link ReplayToken}, or the context isn't an instance of the provided {@code contextClass}, or there is
-     * no context at all.
-     *
-     * @param message      The message to extract the context from
-     * @param contextClass The class the context should match
-     * @param <T>          The type of the context
-     * @return The context, if present in the message
-     */
-    public static <T> Optional<T> replayContext(EventMessage message, @Nonnull Class<T> contextClass) {
-        if (message instanceof TrackedEventMessage) {
-            return replayContext(((TrackedEventMessage) message).trackingToken(), contextClass);
-        }
-        return Optional.empty();
     }
 
     /**

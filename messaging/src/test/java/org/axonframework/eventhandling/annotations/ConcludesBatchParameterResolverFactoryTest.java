@@ -18,6 +18,7 @@ package org.axonframework.eventhandling.annotations;
 
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.LegacyBatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
@@ -27,7 +28,6 @@ import org.junit.jupiter.api.*;
 import java.lang.reflect.Method;
 import java.util.List;
 
-import static org.axonframework.eventhandling.DomainEventTestUtils.createDomainEvents;
 import static org.axonframework.eventhandling.EventTestUtils.asEventMessage;
 import static org.axonframework.messaging.unitofwork.StubProcessingContext.forMessage;
 import static org.junit.jupiter.api.Assertions.*;
@@ -67,17 +67,17 @@ class ConcludesBatchParameterResolverFactoryTest {
 
     @Test
     void resolvesToFalseWithBatchingUnitOfWorkIfMessageIsNotLast() {
-        List<? extends EventMessage> events = createDomainEvents(5);
+        List<? extends EventMessage> events = EventTestUtils.createEvents(5);
         new LegacyBatchingUnitOfWork<>(events)
                 .execute((ctx) -> {
-                    ProcessingContext event0Context = forMessage(events.get(0));
+                    ProcessingContext event0Context = forMessage(events.getFirst());
                     assertFalse(testSubject.resolveParameterValue(event0Context));
                 });
     }
 
     @Test
     void resolvesToTrueWithBatchingUnitOfWorkIfMessageIsLast() {
-        List<? extends EventMessage> events = createDomainEvents(5);
+        List<? extends EventMessage> events = EventTestUtils.createEvents(5);
         new LegacyBatchingUnitOfWork<>(events)
                 .execute((ctx) -> {
                     ProcessingContext lastEventContext = forMessage(events.get(4));

@@ -29,7 +29,6 @@ import java.util.Optional;
 /**
  * Generic implementation of {@link ResultMessage} interface.
  *
- * @param <R> The type of {@link #payload() result} contained in this {@link ResultMessage}.
  * @author Milan Savic
  * @author Steven van Beelen
  * @since 4.0.0

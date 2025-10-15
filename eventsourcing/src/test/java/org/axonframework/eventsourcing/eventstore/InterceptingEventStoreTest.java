@@ -20,6 +20,7 @@ import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.MockComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.InterceptingEventBus;
 import org.axonframework.eventhandling.InterceptingEventSink;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventstreaming.EventCriteria;
@@ -55,6 +56,7 @@ class InterceptingEventStoreTest {
 
     private EventStoreTransaction eventStoreTransaction;
     private EventStore eventStore;
+    private ProcessingContext processingContext;
     private AtomicInteger interceptorCounterOne;
     private MessageDispatchInterceptor<Message> interceptorOne;
     private AtomicInteger interceptorCounterTwo;
@@ -66,6 +68,7 @@ class InterceptingEventStoreTest {
     void setUp() {
         eventStoreTransaction = mock(EventStoreTransaction.class);
         eventStore = mock(EventStore.class);
+        processingContext = mock(ProcessingContext.class);
         when(eventStore.transaction(any())).thenReturn(eventStoreTransaction);
         //noinspection unchecked
         when(eventStore.publish(any(), any(List.class)))
@@ -203,32 +206,32 @@ class InterceptingEventStoreTest {
     void delegateOpenStreamDirectly() {
         StreamingCondition testCondition = StreamingCondition.startingFrom(TrackingToken.FIRST);
 
-        testSubject.open(testCondition);
+        testSubject.open(testCondition, processingContext);
 
-        verify(eventStore).open(testCondition);
+        verify(eventStore).open(testCondition, processingContext);
     }
 
     @Test
     void delegateFirstTokenDirectly() {
-        testSubject.firstToken();
+        testSubject.firstToken(processingContext);
 
-        verify(eventStore).firstToken();
+        verify(eventStore).firstToken(processingContext);
     }
 
     @Test
     void delegateLatestTokenDirectly() {
-        testSubject.latestToken();
+        testSubject.latestToken(processingContext);
 
-        verify(eventStore).latestToken();
+        verify(eventStore).latestToken(processingContext);
     }
 
     @Test
     void delegateTokenAtDirectly() {
         Instant testInstant = Instant.now();
 
-        testSubject.tokenAt(testInstant);
+        testSubject.tokenAt(testInstant, processingContext);
 
-        verify(eventStore).tokenAt(testInstant);
+        verify(eventStore).tokenAt(testInstant, processingContext);
     }
 
     @Test
@@ -246,7 +249,7 @@ class InterceptingEventStoreTest {
         List<MessageDispatchInterceptor<? super Message>> dispatchInterceptors =
                 (List<MessageDispatchInterceptor<? super Message>>) describedProperties.get("dispatchInterceptors");
         assertThat(dispatchInterceptors).containsExactly(interceptorOne, interceptorTwo);
-        assertThat(describedProperties).containsKey("delegateSink");
-        assertThat(describedProperties.get("delegateSink")).isInstanceOf(InterceptingEventSink.class);
+        assertThat(describedProperties).containsKey("delegateBus");
+        assertThat(describedProperties.get("delegateBus")).isInstanceOf(InterceptingEventBus.class);
     }
 }

@@ -387,7 +387,7 @@ public abstract class MessageStreamTest<M extends Message> {
 
         MessageStream<M> testSubject = completedTestSubject(List.of(in));
 
-        StepVerifier.create(testSubject.map(entry -> entry.map(input -> out)).asFlux())
+        StepVerifier.create(FluxUtils.of(testSubject.map(entry -> entry.map(input -> out))))
                     .expectNextMatches(entry -> entry.message().equals(out))
                     .verifyComplete();
     }
@@ -399,7 +399,7 @@ public abstract class MessageStreamTest<M extends Message> {
 
         MessageStream.Single<M> testSubject = completedSingleStreamTestSubject(in);
 
-        StepVerifier.create(testSubject.map(entry -> entry.map(input -> out)).asMono())
+        StepVerifier.create(FluxUtils.of(testSubject.map(entry -> entry.map(input -> out))).singleOrEmpty())
                     .expectNextMatches(entry -> entry.message().equals(out))
                     .verifyComplete();
     }
@@ -411,7 +411,7 @@ public abstract class MessageStreamTest<M extends Message> {
 
         MessageStream<M> testSubject = completedTestSubject(List.of(in));
 
-        StepVerifier.create(testSubject.mapMessage(input -> out).asFlux())
+        StepVerifier.create(FluxUtils.of(testSubject.mapMessage(input -> out)))
                     .expectNextMatches(entry -> entry.message().equals(out))
                     .verifyComplete();
     }
@@ -423,7 +423,7 @@ public abstract class MessageStreamTest<M extends Message> {
 
         MessageStream.Single<M> testSubject = completedSingleStreamTestSubject(in);
 
-        StepVerifier.create(testSubject.mapMessage(input -> out).asMono())
+        StepVerifier.create(FluxUtils.of(testSubject.mapMessage(input -> out)).singleOrEmpty())
                     .expectNextMatches(entry -> entry.message().equals(out))
                     .verifyComplete();
     }
@@ -437,7 +437,7 @@ public abstract class MessageStreamTest<M extends Message> {
 
         MessageStream<M> testSubject = completedTestSubject(List.of(in1, in2));
 
-        StepVerifier.create(testSubject.map(entry -> entry.map(input -> input == in1 ? out1 : out2)).asFlux())
+        StepVerifier.create(FluxUtils.of(testSubject.map(entry -> entry.map(input -> input == in1 ? out1 : out2))))
                     .expectNextMatches(entry -> entry.message().equals(out1))
                     .expectNextMatches(entry -> entry.message().equals(out2))
                     .verifyComplete();
@@ -452,7 +452,7 @@ public abstract class MessageStreamTest<M extends Message> {
 
         MessageStream<M> testSubject = completedTestSubject(List.of(in1, in2));
 
-        StepVerifier.create(testSubject.mapMessage(input -> input == in1 ? out1 : out2).asFlux())
+        StepVerifier.create(FluxUtils.of(testSubject.mapMessage(input -> input == in1 ? out1 : out2)))
                     .expectNextMatches(entry -> entry.message().equals(out1))
                     .expectNextMatches(entry -> entry.message().equals(out2))
                     .verifyComplete();
@@ -467,7 +467,7 @@ public abstract class MessageStreamTest<M extends Message> {
                 .map(entry -> entry.map(input -> out))
                 .onErrorContinue(MessageStream::failed);
 
-        StepVerifier.create(testSubject.asFlux())
+        StepVerifier.create(FluxUtils.of(testSubject))
                     .expectNextMatches(entry -> entry.message().equals(out))
                     .expectErrorMatches(MockException.class::isInstance)
                     .verify();
@@ -482,7 +482,7 @@ public abstract class MessageStreamTest<M extends Message> {
                 .mapMessage(input -> out)
                 .onErrorContinue(MessageStream::failed);
 
-        StepVerifier.create(testSubject.asFlux())
+        StepVerifier.create(FluxUtils.of(testSubject))
                     .expectNextMatches(entry -> entry.message().equals(out))
                     .expectErrorMatches(MockException.class::isInstance)
                     .verify();
@@ -546,7 +546,7 @@ public abstract class MessageStreamTest<M extends Message> {
                     return entry;
                 });
 
-        StepVerifier.create(testSubject.asFlux())
+        StepVerifier.create(FluxUtils.of(testSubject))
                     .verifyComplete();
         assertFalse(invoked.get(), "Mapper function should not be invoked for empty streams");
     }
@@ -561,7 +561,7 @@ public abstract class MessageStreamTest<M extends Message> {
                     return entry;
                 });
 
-        StepVerifier.create(testSubject.asFlux())
+        StepVerifier.create(FluxUtils.of(testSubject))
                     .verifyComplete();
         assertFalse(invoked.get(), "Mapper function should not be invoked for empty streams");
     }
@@ -576,7 +576,7 @@ public abstract class MessageStreamTest<M extends Message> {
                     return entry;
                 });
 
-        StepVerifier.create(testSubject.asMono())
+        StepVerifier.create(FluxUtils.of(testSubject).singleOrEmpty())
                     .verifyComplete();
         assertFalse(invoked.get(), "Mapper function should not be invoked for empty streams");
     }
@@ -591,7 +591,7 @@ public abstract class MessageStreamTest<M extends Message> {
                     return message;
                 });
 
-        StepVerifier.create(testSubject.asFlux())
+        StepVerifier.create(FluxUtils.of(testSubject))
                     .verifyComplete();
         assertFalse(invoked.get(), "Mapper function should not be invoked for empty streams");
     }
@@ -606,7 +606,7 @@ public abstract class MessageStreamTest<M extends Message> {
                     return message;
                 });
 
-        StepVerifier.create(testSubject.asFlux())
+        StepVerifier.create(FluxUtils.of(testSubject))
                     .verifyComplete();
         assertFalse(invoked.get(), "Mapper function should not be invoked for empty streams");
     }
@@ -621,7 +621,7 @@ public abstract class MessageStreamTest<M extends Message> {
                     return message;
                 });
 
-        StepVerifier.create(testSubject.asMono())
+        StepVerifier.create(FluxUtils.of(testSubject).singleOrEmpty())
                     .verifyComplete();
         assertFalse(invoked.get(), "Mapper function should not be invoked for empty streams");
     }
@@ -772,8 +772,7 @@ public abstract class MessageStreamTest<M extends Message> {
 
         MessageStream<M> testSubject = completedTestSubject(List.of(expected));
 
-        StepVerifier.create(testSubject.onNext(entry -> invoked.set(true))
-                                       .asFlux())
+        StepVerifier.create(FluxUtils.of(testSubject.onNext(entry -> invoked.set(true))))
                     .expectNextMatches(entry -> entry.message().equals(expected))
                     .verifyComplete();
         assertTrue(invoked.get());
@@ -807,14 +806,15 @@ public abstract class MessageStreamTest<M extends Message> {
 
         MessageStream<M> testSubject = failingTestSubject(List.of(expectedFirst), expectedError);
 
-        StepVerifier.create(testSubject.onErrorContinue(error -> {
-                                           assertEquals(expectedError, FutureUtils.unwrap(error));
-                                           return onErrorStream;
-                                       })
-                                       .asFlux())
-                    .expectNextMatches(entry -> entry.message().equals(expectedFirst))
-                    .expectNextMatches(entry -> entry.message().equals(expectedSecond))
-                    .verifyComplete();
+        StepVerifier.create(
+            FluxUtils.of(testSubject.onErrorContinue(error -> {
+                assertEquals(expectedError, FutureUtils.unwrap(error));
+                return onErrorStream;
+            })
+        ))
+        .expectNextMatches(entry -> entry.message().equals(expectedFirst))
+        .expectNextMatches(entry -> entry.message().equals(expectedSecond))
+        .verifyComplete();
     }
 
     @Test
@@ -851,7 +851,7 @@ public abstract class MessageStreamTest<M extends Message> {
 
         MessageStream<M> testSubject = completedTestSubject(List.of(expectedFirst));
 
-        StepVerifier.create(testSubject.concatWith(secondStream).asFlux())
+        StepVerifier.create(FluxUtils.of(testSubject.concatWith(secondStream)))
                     .expectNextMatches(entry -> entry.message().equals(expectedFirst))
                     .expectNextMatches(entry -> entry.message().equals(expectedSecond))
                     .verifyComplete();
@@ -869,7 +869,7 @@ public abstract class MessageStreamTest<M extends Message> {
 
         MessageStream<M> concatenated = stream1.concatWith(stream2).concatWith(stream3);
 
-        StepVerifier.create(concatenated.asFlux())
+        StepVerifier.create(FluxUtils.of(concatenated))
                     .expectNextMatches(entry -> entry.message().equals(first))
                     .expectNextMatches(entry -> entry.message().equals(second))
                     .expectNextMatches(entry -> entry.message().equals(third))
@@ -884,7 +884,7 @@ public abstract class MessageStreamTest<M extends Message> {
 
         MessageStream<M> concatenated = firstStream.concatWith(secondStream);
 
-        StepVerifier.create(concatenated.asFlux())
+        StepVerifier.create(FluxUtils.of(concatenated))
                     .expectErrorMatches(e -> e instanceof RuntimeException && e.getMessage().equals("First stream failed"))
                     .verify();
     }
@@ -898,7 +898,7 @@ public abstract class MessageStreamTest<M extends Message> {
 
         MessageStream<M> concatenated = firstStream.concatWith(secondStream);
 
-        StepVerifier.create(concatenated.asFlux())
+        StepVerifier.create(FluxUtils.of(concatenated))
                     .expectNextMatches(entry -> entry.message().equals(firstMessage))
                     .expectErrorMatches(e -> e instanceof RuntimeException && e.getMessage().equals("Second stream failed"))
                     .verify();
@@ -916,7 +916,7 @@ public abstract class MessageStreamTest<M extends Message> {
 
         MessageStream<M> concatenated = stream1.concatWith(stream2);
 
-        StepVerifier.create(concatenated.asFlux())
+        StepVerifier.create(FluxUtils.of(concatenated))
                     .expectNextMatches(entry -> entry.message().equals(first1))
                     .expectNextMatches(entry -> entry.message().equals(first2))
                     .expectNextMatches(entry -> entry.message().equals(second1))
@@ -957,8 +957,7 @@ public abstract class MessageStreamTest<M extends Message> {
 
         MessageStream<M> testSubject = completedTestSubject(List.of());
 
-        StepVerifier.create(testSubject.whenComplete(() -> invoked.set(true))
-                                       .asFlux())
+        StepVerifier.create(FluxUtils.of(testSubject.whenComplete(() -> invoked.set(true))))
                     .verifyComplete();
         assertTrue(invoked.get());
     }
@@ -969,8 +968,7 @@ public abstract class MessageStreamTest<M extends Message> {
 
         MessageStream.Single<M> testSubject = completedSingleStreamTestSubject(createRandomMessage());
 
-        StepVerifier.create(testSubject.whenComplete(() -> invoked.set(true))
-                                       .asMono())
+        StepVerifier.create(FluxUtils.of(testSubject.whenComplete(() -> invoked.set(true))).singleOrEmpty())
                     .expectNextCount(1)
                     .verifyComplete();
         assertTrue(invoked.get());
@@ -983,8 +981,7 @@ public abstract class MessageStreamTest<M extends Message> {
         RuntimeException oops = new RuntimeException("oops");
         MessageStream<M> testSubject = failingTestSubject(List.of(), oops);
 
-        StepVerifier.create(testSubject.whenComplete(() -> invoked.set(true))
-                                       .asFlux())
+        StepVerifier.create(FluxUtils.of(testSubject.whenComplete(() -> invoked.set(true))))
                     .verifyErrorMatches(e -> e == oops);
         assertFalse(invoked.get());
     }
@@ -997,9 +994,12 @@ public abstract class MessageStreamTest<M extends Message> {
         MessageStream<M> testSubject = failingTestSubject(List.of(), oops);
         Assumptions.assumeTrue(testSubject instanceof MessageStream.Single<M>);
 
-        StepVerifier.create(((MessageStream.Single<M>) testSubject).whenComplete(() -> invoked.set(true))
-                                                                   .asMono())
-                    .verifyErrorMatches(e -> e == oops);
+        StepVerifier.create(
+            FluxUtils.of(((MessageStream.Single<M>) testSubject).whenComplete(() -> invoked.set(true)))
+                .singleOrEmpty()
+        )
+        .verifyErrorMatches(e -> e == oops);
+
         assertFalse(invoked.get());
     }
 
@@ -1010,12 +1010,13 @@ public abstract class MessageStreamTest<M extends Message> {
 
         MessageStream<M> testSubject = completedTestSubject(List.of(expectedMessage));
 
-        StepVerifier.create(testSubject.whenComplete(() -> {
-                                           throw expected;
-                                       })
-                                       .asFlux())
-                    .expectNextMatches(entry -> entry.message().equals(expectedMessage))
-                    .verifyErrorMatches(expected::equals);
+        StepVerifier.create(
+            FluxUtils.of(testSubject.whenComplete(() -> {
+                throw expected;
+            }))
+        )
+        .expectNextMatches(entry -> entry.message().equals(expectedMessage))
+        .verifyErrorMatches(expected::equals);
     }
 
     @Test
@@ -1031,7 +1032,7 @@ public abstract class MessageStreamTest<M extends Message> {
             })
             .whenComplete(() -> callbackExecuted.set(true));
 
-        StepVerifier.create(testSubject.asFlux())
+        StepVerifier.create(FluxUtils.of(testSubject))
                     .expectNextCount(3)
                     .verifyComplete();
 
@@ -1047,7 +1048,7 @@ public abstract class MessageStreamTest<M extends Message> {
         MessageStream<M> testSubject = failingTestSubject(List.of(), testException)
             .whenComplete(() -> callbackExecuted.set(true));
 
-        StepVerifier.create(testSubject.asFlux())
+        StepVerifier.create(FluxUtils.of(testSubject))
                     .expectErrorMatches(e -> e instanceof RuntimeException && e.getMessage().equals("Stream failed"))
                     .verify();
 
@@ -1062,7 +1063,7 @@ public abstract class MessageStreamTest<M extends Message> {
         MessageStream<M> original = completedTestSubject(originalMessages);
         MessageStream<M> withCallback = original.whenComplete(() -> callbackExecuted.set(true));
 
-        StepVerifier.create(withCallback.asFlux())
+        StepVerifier.create(FluxUtils.of(withCallback))
                     .expectNextMatches(entry -> entry.message().equals(originalMessages.get(0)))
                     .expectNextMatches(entry -> entry.message().equals(originalMessages.get(1)))
                     .expectNextMatches(entry -> entry.message().equals(originalMessages.get(2)))
@@ -1080,7 +1081,7 @@ public abstract class MessageStreamTest<M extends Message> {
             .whenComplete(callbackCount::incrementAndGet)
             .whenComplete(callbackCount::incrementAndGet);
 
-        StepVerifier.create(testSubject.asFlux())
+        StepVerifier.create(FluxUtils.of(testSubject))
                     .expectNextCount(1)
                     .verifyComplete();
 
@@ -1100,7 +1101,7 @@ public abstract class MessageStreamTest<M extends Message> {
 
         MessageStream<M> concatenated = stream1.concatWith(stream2);
 
-        StepVerifier.create(concatenated.asFlux())
+        StepVerifier.create(FluxUtils.of(concatenated))
                     .expectNextCount(2)
                     .verifyComplete();
 

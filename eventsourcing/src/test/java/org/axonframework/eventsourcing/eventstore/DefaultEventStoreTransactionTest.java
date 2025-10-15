@@ -19,10 +19,12 @@ package org.axonframework.eventsourcing.eventstore;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine.AppendTransaction;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.Tag;
 import org.axonframework.messaging.Context;
+import org.axonframework.messaging.FluxUtils;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -41,6 +43,7 @@ import static org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils.aUnitOf
 import static org.axonframework.utils.AssertUtils.awaitExceptionalCompletion;
 import static org.axonframework.utils.AssertUtils.awaitSuccessfulCompletion;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
 
 /**
  * Test class validating the {@link DefaultEventStoreTransaction}.
@@ -57,6 +60,7 @@ class DefaultEventStoreTransactionTest {
             EventCriteria.havingTags(AGGREGATE_ID_TAG);
     private final Context.ResourceKey<EventStoreTransaction> testEventStoreTransactionKey =
             Context.ResourceKey.withLabel("eventStoreTransaction");
+    private final ProcessingContext processingContext = mock(ProcessingContext.class);
     private final InMemoryEventStorageEngine eventStorageEngine = new InMemoryEventStorageEngine();
 
     @Nested
@@ -86,9 +90,9 @@ class DefaultEventStoreTransactionTest {
                    transaction.appendEvent(event2);
                    transaction.appendEvent(event3);
                })
-               // Event are given to the store in the PREPARE_COMMIT phase.
-               // Hence, we retrieve the sourced set after that.
-               .runOnAfterCommit(context -> {
+               // Consistency marker is computed in AFTER_COMMIT phase, so we retrieve
+               // it and the source set after that:
+               .whenComplete(context -> {
                    EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
                    afterCommitEvents.set(transaction.source(sourcingCondition));
 
@@ -98,7 +102,7 @@ class DefaultEventStoreTransactionTest {
 
             // then
             assertNull(beforeCommitEvents.get().first().asCompletableFuture().join());
-            StepVerifier.create(afterCommitEvents.get().asFlux())
+            StepVerifier.create(FluxUtils.of(afterCommitEvents.get()))
                         .assertNext(entry -> assertPositionAndEvent(entry, 1, event1))
                         .assertNext(entry -> assertPositionAndEvent(entry, 2, event2))
                         .assertNext(entry -> assertPositionAndEvent(entry, 3, event3))
@@ -133,11 +137,11 @@ class DefaultEventStoreTransactionTest {
             awaitSuccessfulCompletion(uow.execute());
 
             // then: before commit - no events should be visible
-            StepVerifier.create(beforeCommitEvents.get().asFlux())
+            StepVerifier.create(FluxUtils.of(beforeCommitEvents.get()))
                         .verifyComplete();
 
             // then: after commit - both events should be visible
-            StepVerifier.create(afterCommitEvents.get().asFlux())
+            StepVerifier.create(FluxUtils.of(afterCommitEvents.get()))
                         .assertNext(entry -> assertPositionAndEvent(entry, 1, event1))
                         .assertNext(entry -> assertPositionAndEvent(entry, 2, event2))
                         .verifyComplete();
@@ -166,13 +170,25 @@ class DefaultEventStoreTransactionTest {
         }
 
         private ConsistencyMarker appendEventForTag(Tag tag) {
-            return eventStorageEngine.appendEvents(AppendCondition.none(),
-                                                   new GenericTaggedEventMessage<>(
-                                                           new GenericEventMessage(
-                                                                   new MessageType(String.class), "my payload"
-                                                           ),
-                                                           Set.of(tag)
-                                                   )).join().commit().join();
+            AppendTransaction<Object> appendTransaction = eventStorageEngine.appendEvents(
+                AppendCondition.none(),
+                processingContext,
+                new GenericTaggedEventMessage<>(
+                    new GenericEventMessage(new MessageType(String.class), "my payload"),
+                    Set.of(tag)
+                )
+            )
+            .thenApply(this::castTransaction)
+            .join();
+
+            return appendTransaction.commit(processingContext)
+                .thenCompose(v -> appendTransaction.afterCommit(v, processingContext))
+                .join();
+        }
+
+        @SuppressWarnings("unchecked")
+        private AppendTransaction<Object> castTransaction(AppendTransaction<?> at) {
+            return (AppendTransaction<Object>) at;
         }
 
         private void testCanCommitTag(EventCriteria nonExistingCriteria, EventCriteria existingCriteria,
@@ -185,8 +201,8 @@ class DefaultEventStoreTransactionTest {
                                                                                     m -> Set.of(tagToCommitOn));
 
                 // Read both streams, with non-existing empty
-                transaction.source(SourcingCondition.conditionFor(nonExistingCriteria)).asFlux().blockLast();
-                transaction.source(SourcingCondition.conditionFor(existingCriteria)).asFlux().blockLast();
+                FluxUtils.of(transaction.source(SourcingCondition.conditionFor(nonExistingCriteria))).blockLast();
+                FluxUtils.of(transaction.source(SourcingCondition.conditionFor(existingCriteria))).blockLast();
 
                 transaction.appendEvent(new GenericEventMessage(new MessageType(String.class), "my payload"));
 
@@ -273,7 +289,9 @@ class DefaultEventStoreTransactionTest {
                 transaction.appendEvent(eventMessage(1));
                 transaction.appendEvent(eventMessage(2));
                 transaction.appendEvent(eventMessage(3));
-            }).runOnAfterCommit(context -> {
+            })
+            // Consistency marker is computed in AFTER_COMMIT phase, so retrieve after that:
+            .whenComplete(context -> {
                 EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
                 result.set(transaction.appendPosition());
             });
@@ -319,7 +337,7 @@ class DefaultEventStoreTransactionTest {
             });
             awaitSuccessfulCompletion(verificationUow.execute());
 
-            StepVerifier.create(eventsAfterRollback.get().asFlux())
+            StepVerifier.create(FluxUtils.of(eventsAfterRollback.get()))
                         .verifyComplete();
         }
 

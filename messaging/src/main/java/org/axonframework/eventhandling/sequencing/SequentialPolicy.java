@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling.sequencing;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotations.Internal;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
@@ -34,7 +35,12 @@ public class SequentialPolicy implements SequencingPolicy {
      * Singleton instance of the {@code SequentialPolicy}.
      */
     public static final SequentialPolicy INSTANCE = new SequentialPolicy();
-    private static final Object FULL_SEQUENTIAL_POLICY = new Object();
+
+    /**
+     * Object used to represent the full sequential policy.
+     */
+    @Internal
+    public static final Object FULL_SEQUENTIAL_POLICY = new Object();
 
     private SequentialPolicy() {
     }

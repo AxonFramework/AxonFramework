@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.monitoring;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.messaging.Message;
 
@@ -23,13 +24,11 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
-import jakarta.annotation.Nonnull;
 
 /**
- * Specifies a mechanism to monitor message processing. When a message is supplied to
- * a message monitor it returns a callback which should be used to notify the message monitor
- * of the result of the processing of the event.
- *
+ * Specifies a mechanism to monitor message processing. When a message is supplied to a message monitor it returns a
+ * callback which should be used to notify the message monitor of the result of the processing of the event.
+ * <p>
  * For example, a message monitor can track various things like message processing times, failure and success rates and
  * occurred exceptions. It also can gather information contained in messages headers like timestamps and tracers
  *
@@ -37,7 +36,6 @@ import jakarta.annotation.Nonnull;
  * @author Nakul Mishra
  * @since 3.0
  */
-@Deprecated
 public interface MessageMonitor<T extends Message> {
 
     /**
@@ -60,8 +58,7 @@ public interface MessageMonitor<T extends Message> {
     }
 
     /**
-     * An interface to let the message processor inform the message monitor of the result
-     * of processing the message
+     * An interface to let the message processor inform the message monitor of the result of processing the message
      */
     interface MonitorCallback {
 
@@ -72,6 +69,7 @@ public interface MessageMonitor<T extends Message> {
 
         /**
          * Notify the monitor that a failure occurred during processing of the message
+         *
          * @param cause or {@code null} if unknown
          */
         void reportFailure(Throwable cause);
@@ -81,7 +79,7 @@ public interface MessageMonitor<T extends Message> {
          */
         void reportIgnored();
 
-        default BiConsumer<? super CommandResultMessage<?>,? super Throwable> complete() {
+        default BiConsumer<? super CommandResultMessage, ? super Throwable> complete() {
             return (r, e) -> {
                 if (e == null) {
                     reportSuccess();

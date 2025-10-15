@@ -17,9 +17,11 @@
 package org.axonframework.eventstreaming;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
@@ -46,10 +48,11 @@ public interface TrackingTokenSource {
      * Subsequent invocation of this method will yield the same result, <em>unless</em> the stream's initial values are
      * deleted.
      *
+     * @param context The current {@link ProcessingContext}, if any.
      * @return A {@link CompletableFuture} of a {@link TrackingToken} representing the <b>first</b> event of the
      * {@link MessageStream event stream}.
      */
-    CompletableFuture<TrackingToken> firstToken();
+    CompletableFuture<TrackingToken> firstToken(@Nullable ProcessingContext context);
 
     /**
      * Creates a {@link TrackingToken} representing the <b>latest</b> position, thus pointing at the next event of the
@@ -62,10 +65,11 @@ public interface TrackingTokenSource {
      * invocation of this operation typically return a different token. Only if this {@code StreamableEventSource} is
      * idle, will several {@code latestToken()} invocations result in the same {@code TrackingToken}.
      *
+     * @param context The current {@link ProcessingContext}, if any.
      * @return A {@link CompletableFuture} of a {@link TrackingToken} representing the <b>latest</b> event, thus
      * pointing at the next event of the {@link MessageStream event stream}.
      */
-    CompletableFuture<TrackingToken> latestToken();
+    CompletableFuture<TrackingToken> latestToken(@Nullable ProcessingContext context);
 
     /**
      * Creates a {@link TrackingToken} tracking all {@link EventMessage events} after the given {@code at} from an
@@ -73,10 +77,11 @@ public interface TrackingTokenSource {
      * <p>
      * When there is an {@link EventMessage} exactly at the given {@code dateTime}, it will be tracked too.
      *
-     * @param at The {@link Instant} determining how the {@link TrackingToken} should be created. The returned token
-     *           points at very first event before this {@code Instant}.
+     * @param at      The {@link Instant} determining how the {@link TrackingToken} should be created. The returned token
+     *                points at very first event before this {@code Instant}.
+     * @param context The current {@link ProcessingContext}, if any.
      * @return A {@link CompletableFuture} of {@link TrackingToken} pointing at the very first event before the given
      * {@code at} of the {@link MessageStream event stream}.
      */
-    CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at);
+    CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at, @Nullable ProcessingContext context);
 }

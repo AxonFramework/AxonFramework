@@ -17,7 +17,7 @@
 package org.axonframework.spring.config;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.annotations.Internal;
 import org.springframework.context.SmartLifecycle;
 
 import java.util.concurrent.CompletableFuture;

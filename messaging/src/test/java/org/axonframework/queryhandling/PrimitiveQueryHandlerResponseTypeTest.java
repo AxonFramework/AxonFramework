@@ -17,9 +17,9 @@
 package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.responsetypes.ResponseTypes;
-import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
-import org.axonframework.queryhandling.annotation.QueryHandler;
+import org.axonframework.queryhandling.annotations.AnnotatedQueryHandlingComponent;
+import org.axonframework.queryhandling.annotations.QueryHandler;
+import org.axonframework.serialization.PassThroughConverter;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -29,14 +29,16 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class PrimitiveQueryHandlerResponseTypeTest {
 
-    private final SimpleQueryBus queryBus = SimpleQueryBus.builder().build();
-    private final PrimitiveQueryHandler queryHandler = new PrimitiveQueryHandler();
-    private final AnnotationQueryHandlerAdapter<PrimitiveQueryHandler> annotationQueryHandlerAdapter =
-            new AnnotationQueryHandlerAdapter<>(queryHandler);
+    private QueryBus queryBus;
 
     @BeforeEach
     void setUp() {
-        annotationQueryHandlerAdapter.subscribe(queryBus);
+        queryBus = QueryBusTestUtils.aQueryBus();
+
+        PrimitiveQueryHandler queryHandler = new PrimitiveQueryHandler();
+        QueryHandlingComponent queryHandlingComponent =
+                new AnnotatedQueryHandlingComponent<>(queryHandler, PassThroughConverter.MESSAGE_INSTANCE);
+        queryBus.subscribe(queryHandlingComponent);
     }
 
     @Test
@@ -83,23 +85,24 @@ class PrimitiveQueryHandlerResponseTypeTest {
      * Sends out two queries to ensure they both can be resolved - the first expecting a response type of the wrapper
      * class, and the second expecting a response type of the primitive class.
      *
-     * @param value     a {@link T} value used as the query
-     * @param boxed     the boxed primitive wrapper type, eg {@link Integer}.class, {@link Long}.class, etc.
-     * @param primitive the unboxed primitive type, eg {@code int}.class, {@code long}.class, etc.
-     * @param <T>       the type being tested
+     * @param value     A {@link T} value used as the query.
+     * @param boxed     The boxed primitive wrapper type, eg {@link Integer}.class, {@link Long}.class, etc.
+     * @param primitive The unboxed primitive type, eg {@code int}.class, {@code long}.class, etc.
+     * @param <T>       The type being tested.
      */
     private <T> void test(final T value, final Class<T> boxed, final Class<T> primitive) {
         MessageType type = new MessageType(value.getClass().getName());
-        final QueryMessage queryBoxed = new GenericQueryMessage(
-                type, value, ResponseTypes.instanceOf(boxed)
-        );
-        final QueryMessage queryPrimitive = new GenericQueryMessage(
-                type, value, ResponseTypes.instanceOf(primitive)
-        );
+        final QueryMessage queryBoxed = new GenericQueryMessage(type, value, new MessageType(boxed));
+        final QueryMessage queryPrimitive = new GenericQueryMessage(type, value, new MessageType(primitive));
 
-
-        final T responseBoxed = queryBus.query(queryBoxed).join().payloadAs(boxed);
-        final T responsePrimitive = queryBus.query(queryPrimitive).join().payloadAs(boxed);
+        final T responseBoxed = queryBus.query(queryBoxed, null)
+                                        .next()
+                                        .map(entry -> entry.message().payloadAs(boxed))
+                                        .orElseGet(() -> Assertions.fail("Boxed query returned nothing."));
+        final T responsePrimitive = queryBus.query(queryPrimitive, null)
+                                            .next()
+                                            .map(entry -> entry.message().payloadAs(boxed))
+                                            .orElseGet(() -> Assertions.fail("Primitive query returned nothing."));
 
         assertEquals(value, responseBoxed);
         assertEquals(value, responsePrimitive);

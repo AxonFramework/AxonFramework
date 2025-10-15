@@ -27,10 +27,10 @@ import java.util.OptionalLong;
  * processors use this token to keep track of the events they have processed and still need to process.
  *
  * @author Rene de Waele
+ * @since 3.0.0
  */
 public interface TrackingToken {
 
-    // TODO Discuss if we see away around having the ResourceKey here, assuming we want the add/from methods to reside here.
     /**
      * The {@link ResourceKey} used whenever a {@link Context} would contain a {@link TrackingToken}.
      */
@@ -40,18 +40,20 @@ public interface TrackingToken {
      * Adds the given {@code token} to the given {@code context} using the {@link #RESOURCE_KEY}.
      *
      * @param context The {@link Context} to add the given {@code token} to.
-     * @param token   The {@link TrackingToken} to add to the given {@code context} using the {@link #RESOURCE_KEY}.
+     * @param token   The {TrackingToken} to add to the given {@code context} using the {@link #RESOURCE_KEY}.
+     *
+     * @return The resulting context.
      */
     static Context addToContext(Context context, TrackingToken token) {
         return context.withResource(RESOURCE_KEY, token);
     }
 
     /**
-     * Returns an {@link Optional} of {@link TrackingToken}, returning the resource keyed under the
+     * Returns an {@link Optional} of {TrackingToken}, returning the resource keyed under the
      * {@link #RESOURCE_KEY} in the given {@code context}.
      *
      * @param context The {@link Context} to retrieve the {@link TrackingToken} from, if present.
-     * @return An {@link Optional} of {@link TrackingToken}, returning the resource keyed under the
+     * @return An {@link Optional} of {TrackingToken}, returning the resource keyed under the
      * {@link #RESOURCE_KEY} in the given {@code context}.
      */
     static Optional<TrackingToken> fromContext(Context context) {
@@ -68,14 +70,14 @@ public interface TrackingToken {
     /**
      * A special {@link TrackingToken} that represents the latest (tail) position in an event stream.
      * <p>
-     * This can be used to indicate that a processor wants to start at the newest available event,
-     * skipping historical events.
+     * This can be used to indicate that a processor wants to start at the newest available event, skipping historical
+     * events.
      */
     TrackingToken LATEST = LatestTrackingToken.INSTANCE;
 
     /**
      * Returns a token that represents the lower bound between this and the {@code other} token. Effectively, the
-     * returned token will cause messages not received by both this and the {@code other} token to be redelivered.
+     * returned token will cause events not received by both this and the {@code other} token to be redelivered.
      *
      * @param other The token to compare to this one
      * @return The token representing the lower bound of the two
@@ -84,8 +86,8 @@ public interface TrackingToken {
 
     /**
      * Returns the token that represents the furthest possible position in a stream that either this token or the given
-     * {@code other} represents. Effectively, this means this token will only deliver messages that neither this, nor
-     * the other have been received.
+     * {@code other} represents. Effectively, this means this token will only deliver events that neither this, nor the
+     * other have been received.
      *
      * @param other The token to compare this token to
      * @return a token that represents the furthest position of this or the other stream
@@ -94,11 +96,11 @@ public interface TrackingToken {
 
     /**
      * Indicates whether this token covers the {@code other} token completely. That means that this token represents a
-     * position in a stream that has received all of the messages that a stream represented by the {@code other} token
-     * has received.
+     * position in a stream that has received all the events that a stream represented by the {@code other} token has
+     * received.
      * <p>
-     * Note that this operation is only safe when comparing tokens obtained from messages from the same
-     * {@link org.axonframework.messaging.StreamableMessageSource}.
+     * Note that this operation is only safe when comparing tokens obtained from events from the same
+     * {@link org.axonframework.eventstreaming.StreamableEventSource}.
      *
      * @param other The token to compare to this one
      * @return {@code true} if this token covers the other, otherwise {@code false}

@@ -32,12 +32,11 @@ import java.util.Map;
 /**
  * Generic implementation of the {@link CommandResultMessage} interface.
  *
- * @param <R> The type of {@link #payload() result} contained in this {@link CommandResultMessage}.
  * @author Milan Savic
  * @author Steven van Beelen
  * @since 4.0.0
  */
-public class GenericCommandResultMessage<R> extends GenericResultMessage implements CommandResultMessage<R> {
+public class GenericCommandResultMessage extends GenericResultMessage implements CommandResultMessage {
 
     /**
      * Constructs a {@link GenericResultMessage} for the given {@code type} and {@code commandResult}.
@@ -45,10 +44,10 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage impleme
      * Uses the correlation data of the current Unit of Work, if present.
      *
      * @param type          The {@link MessageType type} for this {@link CommandResultMessage}.
-     * @param commandResult The result of type {@code R} for this {@link CommandResultMessage}.
+     * @param commandResult The result for this {@link CommandResultMessage}.
      */
     public GenericCommandResultMessage(@Nonnull MessageType type,
-                                       @Nullable R commandResult) {
+                                       @Nullable Object commandResult) {
         super(type, commandResult);
     }
 
@@ -71,11 +70,11 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage impleme
      * {@code metadata}.
      *
      * @param type          The {@link MessageType type} for this {@link CommandResultMessage}.
-     * @param commandResult The result of type {@code R} for this {@link CommandResultMessage}.
+     * @param commandResult The result for this {@link CommandResultMessage}.
      * @param metadata      The metadata for this {@link CommandResultMessage}.
      */
     public GenericCommandResultMessage(@Nonnull MessageType type,
-                                       @Nullable R commandResult,
+                                       @Nullable Object commandResult,
                                        @Nonnull Map<String, String> metadata) {
         super(type, commandResult, metadata);
     }
@@ -130,32 +129,32 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage impleme
 
     @Override
     @Nonnull
-    public CommandResultMessage<R> withMetadata(@Nonnull Map<String, String> metadata) {
+    public CommandResultMessage withMetadata(@Nonnull Map<String, String> metadata) {
         Throwable exception = optionalExceptionResult().orElse(null);
-        return new GenericCommandResultMessage<>(delegate().withMetadata(metadata), exception);
+        return new GenericCommandResultMessage(delegate().withMetadata(metadata), exception);
     }
 
     @Override
     @Nonnull
-    public CommandResultMessage<R> andMetadata(@Nonnull Map<String, String> metadata) {
+    public CommandResultMessage andMetadata(@Nonnull Map<String, String> metadata) {
         Throwable exception = optionalExceptionResult().orElse(null);
-        return new GenericCommandResultMessage<>(delegate().andMetadata(metadata), exception);
+        return new GenericCommandResultMessage(delegate().andMetadata(metadata), exception);
     }
 
     @Override
     @Nonnull
-    public CommandResultMessage<R> withConvertedPayload(@Nonnull Type type,
-                                                        @Nonnull Converter converter) {
+    public CommandResultMessage withConvertedPayload(@Nonnull Type type,
+                                                     @Nonnull Converter converter) {
         Object convertedPayload = payloadAs(type, converter);
         if (ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())) {
             return this;
         }
         Message delegate = delegate();
         Message converted = new GenericMessage(delegate.identifier(),
-                                                    delegate.type(),
-                                                    convertedPayload,
-                                                    delegate.metadata());
-        return new GenericCommandResultMessage<>(converted, optionalExceptionResult().orElse(null));
+                                               delegate.type(),
+                                               convertedPayload,
+                                               delegate.metadata());
+        return new GenericCommandResultMessage(converted, optionalExceptionResult().orElse(null));
     }
 
     @Override

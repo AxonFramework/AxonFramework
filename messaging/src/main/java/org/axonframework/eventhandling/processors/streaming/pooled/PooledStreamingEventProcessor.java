@@ -18,22 +18,22 @@ package org.axonframework.eventhandling.processors.streaming.pooled;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.common.infra.DescribableComponent;
-import org.axonframework.eventhandling.processors.errorhandling.ErrorContext;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.processors.EventProcessingException;
 import org.axonframework.eventhandling.processors.EventProcessor;
-import org.axonframework.eventhandling.processors.streaming.segmenting.EventTrackerStatus;
-import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.processors.ProcessorEventHandlingComponents;
-import org.axonframework.eventhandling.replay.ResetNotSupportedException;
-import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
+import org.axonframework.eventhandling.processors.errorhandling.ErrorContext;
 import org.axonframework.eventhandling.processors.streaming.StreamingEventProcessor;
+import org.axonframework.eventhandling.processors.streaming.segmenting.EventTrackerStatus;
+import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.eventhandling.processors.streaming.segmenting.TrackerStatus;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
+import org.axonframework.eventhandling.replay.ResetNotSupportedException;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.eventstreaming.TrackingTokenSource;
@@ -80,9 +80,9 @@ import static org.axonframework.common.FutureUtils.joinAndUnwrap;
  *
  * @author Allard Buijze
  * @author Steven van Beelen
- * @since 4.5
+ * @since 4.5.0
  */
-public class PooledStreamingEventProcessor implements StreamingEventProcessor, DescribableComponent {
+public class PooledStreamingEventProcessor implements StreamingEventProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -114,40 +114,11 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor, D
      * </ul>
      * If any of these is not present or does not comply to the requirements an {@link AxonConfigurationException} is thrown.
      *
-     * @param name A {@link String} defining this {@link EventProcessor} instance.
-     * @param eventHandlingComponents The {@link EventHandlingComponent}s which will handle all the individual {@link EventMessage}s.
-     * @param customization The function that allows to customize default {@link PooledStreamingEventProcessorConfiguration} used to configure a {@code PooledStreamingEventProcessor} instance.
-     */
-    public PooledStreamingEventProcessor(
-            @Nonnull String name,
-            @Nonnull List<EventHandlingComponent> eventHandlingComponents,
-            @Nonnull UnaryOperator<PooledStreamingEventProcessorConfiguration> customization
-    ) {
-        this(
-                Objects.requireNonNull(name, "Name may not be null"),
-                Objects.requireNonNull(eventHandlingComponents, "EventHandlingComponents may not be null"),
-                Objects.requireNonNull(customization, "Customization may not be null")
-                       .apply(new PooledStreamingEventProcessorConfiguration())
-        );
-    }
-
-    /**
-     * Instantiate a {@code PooledStreamingEventProcessor} with given {@code name}, {@code eventHandlingComponents} and
-     * based on the fields contained in the {@link PooledStreamingEventProcessorConfiguration}.
-     * <p>
-     * Will assert the following for their presence in the configuration, prior to constructing this processor:
-     * <ul>
-     *     <li>A {@link StreamableEventSource}.</li>
-     *     <li>A {@link TokenStore}.</li>
-     *     <li>A {@link UnitOfWorkFactory}.</li>
-     *     <li>A {@link ScheduledExecutorService} for coordination.</li>
-     *     <li>A {@link ScheduledExecutorService} to process work packages.</li>
-     * </ul>
-     * If any of these is not present or does not comply to the requirements an {@link AxonConfigurationException} is thrown.
-     *
-     * @param name A {@link String} defining this {@link EventProcessor} instance.
-     * @param eventHandlingComponents The {@link EventHandlingComponent}s which will handle all the individual {@link EventMessage}s.
-     * @param configuration The {@link PooledStreamingEventProcessorConfiguration} used to configure a {@code PooledStreamingEventProcessor} instance.
+     * @param name                    A {@link String} defining this {@link EventProcessor} instance.
+     * @param eventHandlingComponents The {@link EventHandlingComponent}s which will handle all the individual
+     *                                {@link EventMessage}s.
+     * @param configuration           The {@link PooledStreamingEventProcessorConfiguration} used to configure a
+     *                                {@code PooledStreamingEventProcessor} instance.
      */
     public PooledStreamingEventProcessor(
             @Nonnull String name,
@@ -202,18 +173,14 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor, D
     }
 
     @Override
-    public void start() {
+    public CompletableFuture<Void> start() {
         logger.info("Starting PooledStreamingEventProcessor [{}].", name);
         coordinator.start();
+        return FutureUtils.emptyCompletedFuture();
     }
 
     @Override
-    public void shutDown() {
-        shutdownAsync().join();
-    }
-
-    @Override
-    public CompletableFuture<Void> shutdownAsync() {
+    public CompletableFuture<Void> shutdown() {
         logger.info("Stopping PooledStreamingEventProcessor [{}]", name);
         return coordinator.stop();
     }
@@ -235,24 +202,22 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor, D
 
     private String calculateIdentifier() {
         var unitOfWork = unitOfWorkFactory.create();
-        return joinAndUnwrap(
-                unitOfWork.executeWithResult(context -> CompletableFuture.completedFuture(
-                        tokenStore.retrieveStorageIdentifier().orElse("--unknown--"))
-                )
-        );
+        return joinAndUnwrap(unitOfWork.executeWithResult(tokenStore::retrieveStorageIdentifier))
+                .orElse("--unknown--");
     }
 
     @Override
-    public void releaseSegment(int segmentId) {
+    public CompletableFuture<Void> releaseSegment(int segmentId) {
         var tokenClaimInterval = this.configuration.tokenClaimInterval();
-        releaseSegment(segmentId, tokenClaimInterval * 2, MILLISECONDS);
+        return releaseSegment(segmentId, tokenClaimInterval * 2, MILLISECONDS);
     }
 
     @Override
-    public void releaseSegment(int segmentId, long releaseDuration, TimeUnit unit) {
+    public CompletableFuture<Void> releaseSegment(int segmentId, long releaseDuration, TimeUnit unit) {
         coordinator.releaseUntil(
                 segmentId, GenericEventMessage.clock.instant().plusMillis(unit.toMillis(releaseDuration))
         );
+        return FutureUtils.emptyCompletedFuture();
     }
 
     @Override
@@ -262,27 +227,11 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor, D
 
     @Override
     public CompletableFuture<Boolean> splitSegment(int segmentId) {
-        if (!tokenStore.requiresExplicitSegmentInitialization()) {
-            CompletableFuture<Boolean> result = new CompletableFuture<>();
-            result.completeExceptionally(new UnsupportedOperationException(
-                    "TokenStore must require explicit initialization to safely split tokens."
-            ));
-            return result;
-        }
-
         return coordinator.splitSegment(segmentId);
     }
 
     @Override
     public CompletableFuture<Boolean> mergeSegment(int segmentId) {
-        if (!tokenStore.requiresExplicitSegmentInitialization()) {
-            CompletableFuture<Boolean> result = new CompletableFuture<>();
-            result.completeExceptionally(new UnsupportedOperationException(
-                    "TokenStore must require explicit initialization to safely merge tokens."
-            ));
-            return result;
-        }
-
         return coordinator.mergeSegment(segmentId);
     }
 
@@ -294,41 +243,43 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor, D
     }
 
     @Override
-    public void resetTokens() {
+    public CompletableFuture<Void> resetTokens() {
         var initialToken = configuration.initialToken();
-        resetTokens(initialToken);
+        return resetTokens(initialToken);
     }
 
     @Override
-    public <R> void resetTokens(R resetContext) {
+    public <R> CompletableFuture<Void> resetTokens(R resetContext) {
         var initialToken = configuration.initialToken();
-        resetTokens(initialToken, resetContext);
+        return resetTokens(initialToken, resetContext);
     }
 
     @Override
-    public void resetTokens(
+    public CompletableFuture<Void> resetTokens(
             @Nonnull Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier
     ) {
-        resetTokens(joinAndUnwrap(initialTrackingTokenSupplier.apply(eventSource)));
+        return initialTrackingTokenSupplier.apply(eventSource).thenCompose(this::resetTokens);
     }
 
     @Override
-    public <R> void resetTokens(
+    public <R> CompletableFuture<Void> resetTokens(
             @Nonnull Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier,
             R resetContext
     ) {
-        resetTokens(joinAndUnwrap(initialTrackingTokenSupplier.apply(eventSource)), resetContext);
+        return initialTrackingTokenSupplier.apply(eventSource).thenCompose(r -> resetTokens(r, resetContext));
     }
 
     @Override
-    public void resetTokens(@Nonnull TrackingToken startPosition) {
-        resetTokens(startPosition, null);
+    public CompletableFuture<Void> resetTokens(@Nonnull TrackingToken startPosition) {
+        return resetTokens(startPosition, null);
     }
 
     @Override
-    public <R> void resetTokens(@Nonnull TrackingToken startPosition, R resetContext) {
+    public <R> CompletableFuture<Void> resetTokens(@Nonnull TrackingToken startPosition, R resetContext) {
         // TODO #3304 - Integrate event replay logic into Event Handling Component
-        throw new ResetNotSupportedException("TODO #3304 - Integrate event replay logic into Event Handling Component");
+        var exception = new ResetNotSupportedException(
+                "TODO #3304 - Integrate event replay logic into Event Handling Component");
+        return CompletableFuture.failedFuture(exception);
 //        Assert.state(supportsReset(), () -> "The handlers assigned to this Processor do not support a reset.");
 //        Assert.state(!isRunning(), () -> "The Processor must be shut down before triggering a reset.");
 //
@@ -358,7 +309,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor, D
     /**
      * {@inheritDoc}
      * <p>
-     * The maximum capacity of the {@link PooledStreamingEventProcessor} defaults to {@value Short#MAX_VALUE}. If
+     * The maximum capacity of the {@code PooledStreamingEventProcessor} defaults to {@value Short#MAX_VALUE}. If
      * required, this value can be adjusted through the
      * {@link PooledStreamingEventProcessorConfiguration#maxClaimedSegments(int)} method.
      */
@@ -393,6 +344,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor, D
                                   segment.getSegmentId(), new TrackerStatus(segment, initialToken)
                           ))
                           .clock(clock)
+                          .schedulingProcessingContextProvider(configuration.schedulingProcessingContextProvider())
                           .build();
     }
 
@@ -401,15 +353,14 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor, D
         return eventHandlingComponents.handle(events, context)
                                       .onErrorContinue(ex -> {
                                           try {
-                                              configuration.errorHandler().handleError(new ErrorContext(name,
-                                                                                                        ex,
-                                                                                                        events));
+                                              configuration.errorHandler()
+                                                           .handleError(new ErrorContext(name, ex, events, context));
                                           } catch (RuntimeException re) {
                                               return MessageStream.failed(re);
                                           } catch (Exception e) {
                                               return MessageStream.failed(new EventProcessingException(
-                                                      "Exception occurred while processing events",
-                                                      e));
+                                                      "Exception occurred while processing events", e
+                                              ));
                                           }
                                           return MessageStream.empty().cast();
                                       })

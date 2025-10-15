@@ -19,7 +19,9 @@ package org.axonframework.commandhandling;
 import jakarta.annotation.Nonnull;
 
 /**
- * Calculate the priority of {@link CommandMessage} based on its content. Higher value means higher priority.
+ * Calculate the priority of {@link CommandMessage} based on its content.
+ * <p>
+ * Higher value means higher priority.
  *
  * @author Marc Gathier
  * @since 4.0.0
@@ -34,4 +36,14 @@ public interface CommandPriorityCalculator {
      * @return An {@code int} defining the priority of the given {@code command}.
      */
     int determinePriority(@Nonnull CommandMessage command);
+
+    /**
+     * Returns a default implementation of the {@code CommandPriorityCalculator}, always returning priority {@code 0}.
+     *
+     * @return A lambda taking in a {@link CommandMessage} to prioritize to the default of priority {@code 0}.
+     */
+    @Nonnull
+    static CommandPriorityCalculator defaultCalculator() {
+        return command -> 0;
+    }
 }

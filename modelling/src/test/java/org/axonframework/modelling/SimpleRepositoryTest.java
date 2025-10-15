@@ -16,10 +16,8 @@
 
 package org.axonframework.modelling;
 
-import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.repository.ManagedEntity;
+import org.axonframework.modelling.repository.SimpleRepository;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 

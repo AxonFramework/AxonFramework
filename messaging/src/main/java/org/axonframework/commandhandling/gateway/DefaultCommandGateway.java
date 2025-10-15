@@ -23,13 +23,14 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandPriorityCalculator;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.RoutingStrategy;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import java.util.OptionalInt;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import static java.util.Objects.requireNonNull;
@@ -59,73 +60,44 @@ public class DefaultCommandGateway implements CommandGateway {
      *                            {@link org.axonframework.messaging.QualifiedName names} for
      *                            {@link org.axonframework.commandhandling.CommandMessage CommandMessages} being
      *                            dispatched on the {@code commandBus}.
-     */
-    public DefaultCommandGateway(@Nonnull CommandBus commandBus,
-                                 @Nonnull MessageTypeResolver messageTypeResolver) {
-        this(commandBus, messageTypeResolver, null, null);
-    }
-
-    /**
-     * Initialize the {@code DefaultCommandGateway} to send commands through given {@code commandBus}.
-     * <p>
-     * The {@link org.axonframework.messaging.QualifiedName names} for
-     * {@link org.axonframework.commandhandling.CommandMessage CommandMessages} are resolved through the given
-     * {@code nameResolver}.
-     *
-     * @param commandBus          The {@link CommandBus} to send commands on.
-     * @param messageTypeResolver The {@link MessageTypeResolver} resolving the
-     *                            {@link org.axonframework.messaging.QualifiedName names} for
-     *                            {@link org.axonframework.commandhandling.CommandMessage CommandMessages} being
-     *                            dispatched on the {@code commandBus}.
-     * @param priorityCalculator  The {@link CommandPriorityCalculator} determining the priority of commands. Can be
-     *                            omitted.
-     * @param routingKeyResolver  The {@link RoutingStrategy} determining the routing key for commands. Can be omitted.
+     * @param priorityCalculator  The {@link CommandPriorityCalculator} determining the priority of commands.
+     * @param routingKeyResolver  The {@link RoutingStrategy} determining the routing key for commands.
      */
     public DefaultCommandGateway(@Nonnull CommandBus commandBus,
                                  @Nonnull MessageTypeResolver messageTypeResolver,
-                                 @Nullable CommandPriorityCalculator priorityCalculator,
-                                 @Nullable RoutingStrategy routingKeyResolver) {
+                                 @Nonnull CommandPriorityCalculator priorityCalculator,
+                                 @Nonnull RoutingStrategy routingKeyResolver) {
         this.commandBus = requireNonNull(commandBus, "The commandBus may not be null.");
         this.messageTypeResolver = requireNonNull(messageTypeResolver, "The messageTypeResolver may not be null.");
-        this.priorityCalculator = priorityCalculator;
-        this.routingKeyResolver = routingKeyResolver;
+        this.priorityCalculator = requireNonNull(priorityCalculator, "The CommandPriorityCalculator may not be null.");
+        this.routingKeyResolver = requireNonNull(routingKeyResolver, "The RoutingStrategy may not be null.");
     }
 
     @Override
+    @Nonnull
     public CommandResult send(@Nonnull Object command,
                               @Nullable ProcessingContext context) {
-        CommandMessage commandMessage = asCommandMessage(command, Metadata.emptyInstance());
-        return new FutureCommandResult(
-                commandBus.dispatch(commandMessage, context)
-                          .thenCompose(
-                                  msg -> msg instanceof ResultMessage resultMessage && resultMessage.isExceptional()
-                                          ? CompletableFuture.failedFuture(resultMessage.exceptionResult())
-                                          : CompletableFuture.completedFuture(msg)
-                          )
-        );
+        return new FutureCommandResult(commandBus.dispatch(asCommandMessage(command, Metadata.emptyInstance()), context));
     }
 
     @Override
+    @Nonnull
     public CommandResult send(@Nonnull Object command,
                               @Nonnull Metadata metadata,
                               @Nullable ProcessingContext context) {
-        CommandMessage commandMessage = asCommandMessage(command, metadata);
-        return new FutureCommandResult(
-                commandBus.dispatch(commandMessage, context)
-                          .thenCompose(
-                                  msg -> msg instanceof ResultMessage resultMessage && resultMessage.isExceptional()
-                                          ? CompletableFuture.failedFuture(resultMessage.exceptionResult())
-                                          : CompletableFuture.completedFuture(msg)
-                          )
-        );
+        return new FutureCommandResult(commandBus.dispatch(asCommandMessage(command, metadata), context));
     }
 
     /**
-     * Returns the given command as a {@link CommandMessage}. If {@code command} already implements
-     * {@code CommandMessage}, it is returned as-is. When the {@code command} is another implementation of
-     * {@link Message}, the {@link Message#payload()} and {@link Message#metadata()} are used as input for a new
-     * {@link GenericCommandMessage}. Otherwise, the given {@code command} is wrapped into a
+     * Returns the given command as a {@link CommandMessage}.
+     * <p>
+     * If {@code command} already implements {@code CommandMessage}, it is returned as-is. When the {@code command} is
+     * another implementation of {@link Message}, the {@link Message#payload()} and {@link Message#metadata()} are used
+     * as input for a new {@link GenericCommandMessage}. Otherwise, the given {@code command} is wrapped into a
      * {@code GenericCommandMessage} as its payload.
+     * <p>
+     * When {@link CommandMessage#routingKey()} or {@link CommandMessage#priority()} are {@link Optional#empty() empty},
+     * the configured {@link CommandPriorityCalculator} and {@link RoutingStrategy} will be invoked.
      *
      * @param command The command to wrap as {@link CommandMessage}.
      * @return A {@link CommandMessage} containing given {@code command} as payload, a {@code command} if it already
@@ -133,37 +105,26 @@ public class DefaultCommandGateway implements CommandGateway {
      * and {@link Message#metadata()} for other {@link Message} implementations.
      */
     private CommandMessage asCommandMessage(Object command, Metadata metadata) {
-        CommandMessage commandMessage = createCommandMessage(command, metadata);
-        return enrichCommandMessage(commandMessage);
-    }
-
-    private CommandMessage createCommandMessage(Object command, Metadata metadata) {
+        CommandMessage commandMessage;
         if (command instanceof CommandMessage) {
-            return (CommandMessage) command;
-        }
-        return command instanceof Message message
-                ? new GenericCommandMessage(message.type(), message.payload(), message.metadata())
-                : new GenericCommandMessage(messageTypeResolver.resolveOrThrow(command), command, metadata);
-    }
-
-    private CommandMessage enrichCommandMessage(CommandMessage commandMessage) {
-        if (routingKeyResolver == null && priorityCalculator == null) {
-            return commandMessage;
+            commandMessage = (CommandMessage) command;
+        } else {
+            commandMessage = command instanceof Message message
+                    ? new GenericCommandMessage(message.type(), message.payload(), message.metadata())
+                    : new GenericCommandMessage(messageTypeResolver.resolveOrThrow(command), command, metadata);
         }
         return new GenericCommandMessage(
                 commandMessage,
-                commandMessage.routingKey().orElse(resolveRoutingKey(commandMessage)),
-                commandMessage.priority().orElse(resolvePriority(commandMessage).orElse(0))
+                commandMessage.routingKey().orElse(routingKeyResolver.getRoutingKey(commandMessage)),
+                commandMessage.priority().orElse(priorityCalculator.determinePriority(commandMessage))
         );
     }
 
-    private String resolveRoutingKey(CommandMessage commandMessage) {
-        return routingKeyResolver == null ? null : routingKeyResolver.getRoutingKey(commandMessage);
-    }
-
-    private OptionalInt resolvePriority(CommandMessage commandMessage) {
-        return priorityCalculator == null
-                ? OptionalInt.empty()
-                : OptionalInt.of(priorityCalculator.determinePriority(commandMessage));
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("commandBus", commandBus);
+        descriptor.describeProperty("messageTypeResolver", messageTypeResolver);
+        descriptor.describeProperty("priorityCalculator", priorityCalculator);
+        descriptor.describeProperty("routingKeyResolver", routingKeyResolver);
     }
 }

@@ -23,8 +23,6 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTestSuite;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.responsetypes.ResponseType;
-import org.axonframework.messaging.responsetypes.ResponseTypes;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -35,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class GenericQueryMessageTest extends MessageTestSuite<QueryMessage> {
 
-    private static final ResponseType<String> TEST_RESPONSE_TYPE = ResponseTypes.instanceOf(String.class);
+    private static final MessageType TEST_RESPONSE_TYPE = new MessageType(String.class);
 
     @Override
     protected QueryMessage buildDefaultMessage() {
@@ -47,8 +45,8 @@ class GenericQueryMessageTest extends MessageTestSuite<QueryMessage> {
     @Override
     protected <P> QueryMessage buildMessage(@Nullable P payload) {
         return new GenericQueryMessage(new MessageType(ObjectUtils.nullSafeTypeOf(payload)),
-                                         payload,
-                                         TEST_RESPONSE_TYPE);
+                                       payload,
+                                       TEST_RESPONSE_TYPE);
     }
 
     @Override

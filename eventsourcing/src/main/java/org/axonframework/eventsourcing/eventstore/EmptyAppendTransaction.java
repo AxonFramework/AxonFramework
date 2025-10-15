@@ -16,6 +16,9 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import jakarta.annotation.Nullable;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
+
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -25,28 +28,32 @@ import java.util.concurrent.CompletableFuture;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public record EmptyAppendTransaction() implements EventStorageEngine.AppendTransaction {
+public record EmptyAppendTransaction() implements EventStorageEngine.AppendTransaction<Void> {
 
     /**
      * The single instance of the {@code EmptyAppendTransaction}.
      */
-    public static final EventStorageEngine.AppendTransaction INSTANCE = new EmptyAppendTransaction();
+    public static final EventStorageEngine.AppendTransaction<Void> INSTANCE = new EmptyAppendTransaction();
 
-    /**
-     * Commits the empty append transaction. Always completes successfully with the provided consistency marker.
-     *
-     * @return always a completed future with the consistency marker {@link ConsistencyMarker#ORIGIN}
-     */
     @Override
-    public CompletableFuture<ConsistencyMarker> commit() {
-        return CompletableFuture.completedFuture(ConsistencyMarker.ORIGIN);
+    public CompletableFuture<Void> commit(@Nullable ProcessingContext context) {
+        return CompletableFuture.completedFuture(null);
+    }
+
+    @Override
+    public void rollback(@Nullable ProcessingContext context) {
+        // No action needed
     }
 
     /**
-     * Rolls back the empty append transaction. This does nothing as the transaction has no effect.
+     * Always provides the consistency marker {@link ConsistencyMarker#ORIGIN}.
+     *
+     * @param commitResult The result returned from the commit call.
+     * @param context The current {@link ProcessingContext}, if any.
+     * @return An empty always a completed future with the consistency marker {@link ConsistencyMarker#ORIGIN}.
      */
     @Override
-    public void rollback() {
-        // No action needed
+    public CompletableFuture<ConsistencyMarker> afterCommit(@Nullable Void commitResult, @Nullable ProcessingContext context) {
+        return CompletableFuture.completedFuture(ConsistencyMarker.ORIGIN);
     }
 }

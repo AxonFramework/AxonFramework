@@ -44,10 +44,9 @@ class SingleEntityChildMetamodelTest {
     public static final QualifiedName COMMAND = new QualifiedName("Command");
     public static final QualifiedName EVENT = new QualifiedName("Event");
 
-    private final EntityMetamodel<RecordingChildEntity> childEntityMetamodel = mock(
-            EntityMetamodel.class);
-    private final ChildEntityFieldDefinition<RecordingParentEntity, RecordingChildEntity> childEntityFieldDefinition = mock(
-            ChildEntityFieldDefinition.class);
+    private final EntityMetamodel<RecordingChildEntity> childEntityMetamodel = mock();
+    private final ChildEntityFieldDefinition<RecordingParentEntity, RecordingChildEntity> childEntityFieldDefinition =
+            mock();
 
     private final SingleEntityChildMetamodel<RecordingChildEntity, RecordingParentEntity> testSubject = SingleEntityChildMetamodel
             .forEntityModel(RecordingParentEntity.class, childEntityMetamodel)
@@ -68,7 +67,7 @@ class SingleEntityChildMetamodelTest {
         @BeforeEach
         void setUp() {
             when(childEntityMetamodel.handleInstance(any(), any(), any())).thenReturn(
-                    MessageStream.just(new GenericCommandResultMessage<>(new MessageType(String.class), "result")));
+                    MessageStream.just(new GenericCommandResultMessage(new MessageType(String.class), "result")));
         }
 
         @Test

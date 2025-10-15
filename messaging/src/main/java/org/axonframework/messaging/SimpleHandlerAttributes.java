@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging;
 
+
+import org.axonframework.messaging.annotations.HandlerAttributes;
 
 import java.util.Collections;
 import java.util.HashMap;

@@ -67,8 +67,8 @@ public class TracingCommandBus implements CommandBus {
     }
 
     @Override
-    public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage command,
-                                                               @Nullable ProcessingContext processingContext) {
+    public CompletableFuture<CommandResultMessage> dispatch(@Nonnull CommandMessage command,
+                                                            @Nullable ProcessingContext processingContext) {
         Span span = spanFactory.createDispatchCommandSpan(
                 requireNonNull(command, "The command message cannot be null."), false
         );
@@ -91,7 +91,7 @@ public class TracingCommandBus implements CommandBus {
 
         @Nonnull
         @Override
-        public MessageStream.Single<CommandResultMessage<?>> handle(
+        public MessageStream.Single<CommandResultMessage> handle(
                 @Nonnull CommandMessage message,
                 @Nonnull ProcessingContext processingContext
         ) {

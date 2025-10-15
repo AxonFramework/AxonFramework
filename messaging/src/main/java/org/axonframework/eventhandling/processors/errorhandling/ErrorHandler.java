@@ -20,29 +20,37 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
 
 /**
- * Interface of the error handler that will be invoked if event processing fails. The error handler is generally invoked
- * by an EventProcessor when the UnitOfWork created to coordinate the event processing was rolled back.
+ * Interface of the error handler that will be invoked if event processing fails.
+ * <p>
+ * The error handler is generally invoked by an {@link org.axonframework.eventhandling.processors.EventProcessor} when
+ * the {@link org.axonframework.messaging.unitofwork.ProcessingContext} created to coordinate the event processing was
+ * rolled back.
  *
  * @author Rene de Waele
+ * @since 3.0.0
  */
+@FunctionalInterface
 public interface ErrorHandler {
 
     /**
-     * Handle an error raised during event processing. Generally this means that the UnitOfWork created to coordinate
-     * the event processing was rolled back. Using default configuration the ErrorHandler is only invoked when there is
-     * a serious error, for instance when the database transaction connected to the UnitOfWork can not be committed.
+     * Handle an error raised during event processing.
      * <p>
-     * The error handler has the option to simply log or ignore the error. Depending on the type of EventProcessor this
-     * will put an end to the processing of any further events (in case of a {@link PooledStreamingEventProcessor}) or simply
-     * skip over the list of given {@code failedEvents}.
+     * Generally this means that the {@link org.axonframework.messaging.unitofwork.ProcessingContext} created to
+     * coordinate the event processing was rolled back. Using default configuration the {@code ErrorHandler} is only
+     * invoked when there is a serious error, for instance when the database transaction connected to the
+     * {@code ProcessingContext} can not be committed.
      * <p>
-     * Note that although the UnitOfWork and hence any related database transactions have been rolled back when the
-     * error handler is invoked, the processing of one or more of the failedEvents may in fact have caused other side
-     * effects which could not be reverted.
+     * The error handler has the option to simply log or ignore the error. Depending on the type of
+     * {@code EventProcessor} this will put an end to the processing of any further events (in case of a
+     * {@link PooledStreamingEventProcessor}) or simply skip over the list of {@code failedEvents} in the given
+     * {@code errorContext}.
+     * <p>
+     * Note that although the {@code ProcessingContext} and hence any related database transactions have been rolled
+     * back when the error handler is invoked, the processing of one or more of the {@link ErrorContext#failedEvents()}
+     * may in fact have caused other side effects which could not be reverted.
      *
-     * @param errorContext Contextual information describing the error
-     * @throws Exception if the handler decides to propagate the error
+     * @param errorContext Contextual information describing the error.
+     * @throws Exception If this handler decides to propagate the error.
      */
     void handleError(@Nonnull ErrorContext errorContext) throws Exception;
-
 }

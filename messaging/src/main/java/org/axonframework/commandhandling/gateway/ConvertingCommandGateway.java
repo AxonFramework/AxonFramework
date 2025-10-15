@@ -18,6 +18,7 @@ package org.axonframework.commandhandling.gateway;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.conversion.MessageConverter;
@@ -54,16 +55,24 @@ public class ConvertingCommandGateway implements CommandGateway {
     }
 
     @Override
+    @Nonnull
     public CommandResult send(@Nonnull Object command,
                               @Nullable ProcessingContext context) {
         return new ConvertingCommandResult(converter, delegate.send(command, context));
     }
 
     @Override
+    @Nonnull
     public CommandResult send(@Nonnull Object command,
                               @Nonnull Metadata metadata,
                               @Nullable ProcessingContext context) {
         return new ConvertingCommandResult(converter, delegate.send(command, metadata, context));
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeWrapperOf(delegate);
+        descriptor.describeProperty("converter", converter);
     }
 
     private record ConvertingCommandResult(
@@ -79,7 +88,9 @@ public class ConvertingCommandGateway implements CommandGateway {
         @Override
         public <R> CompletableFuture<R> resultAs(@Nonnull Class<R> type) {
             return delegate.getResultMessage()
-                           .thenApply(resultMessage -> resultMessage.payloadAs(type, commandConverter));
+                           .thenApply(resultMessage -> resultMessage != null
+                                   ? resultMessage.payloadAs(type, commandConverter)
+                                   : null);
         }
 
         @Override

@@ -30,7 +30,6 @@ import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryGateway;
-import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.serialization.Converter;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
@@ -83,15 +82,12 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
             assertThat(context).hasSingleBean(EventGateway.class);
             assertThat(context).hasBean(EventGateway.class.getName());
             assertThat(context).hasSingleBean(EventSink.class);
-            assertThat(context).hasBean(EventSink.class.getName());
             assertThat(context).hasSingleBean(EventBus.class);
             assertThat(context).hasBean(EventBus.class.getName());
             assertThat(context).hasSingleBean(QueryGateway.class);
             assertThat(context).hasBean(QueryGateway.class.getName());
             assertThat(context).hasSingleBean(QueryBus.class);
             assertThat(context).hasBean(QueryBus.class.getName());
-            assertThat(context).hasSingleBean(QueryUpdateEmitter.class);
-            assertThat(context).hasBean(QueryUpdateEmitter.class.getName());
         });
     }
 
@@ -116,15 +112,12 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
             assertThat(context).hasSingleBean(EventGateway.class);
             assertThat(context).hasBean("customEventGateway");
             assertThat(context).hasSingleBean(EventSink.class);
-            assertThat(context).hasBean("customEventSink");
             assertThat(context).hasSingleBean(EventBus.class);
             assertThat(context).hasBean("customEventBus");
             assertThat(context).hasSingleBean(QueryGateway.class);
             assertThat(context).hasBean("customQueryGateway");
             assertThat(context).hasSingleBean(QueryBus.class);
             assertThat(context).hasBean("customQueryBus");
-            assertThat(context).hasSingleBean(QueryUpdateEmitter.class);
-            assertThat(context).hasBean("customQueryUpdateEmitter");
         });
     }
 
@@ -200,11 +193,6 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
         }
 
         @Bean
-        public EventSink customEventSink() {
-            return mock(EventSink.class);
-        }
-
-        @Bean
         public EventBus customEventBus() {
             return mock(EventBus.class);
         }
@@ -217,11 +205,6 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
         @Bean
         public QueryBus customQueryBus() {
             return mock(QueryBus.class);
-        }
-
-        @Bean
-        public QueryUpdateEmitter customQueryUpdateEmitter() {
-            return mock(QueryUpdateEmitter.class);
         }
     }
 }

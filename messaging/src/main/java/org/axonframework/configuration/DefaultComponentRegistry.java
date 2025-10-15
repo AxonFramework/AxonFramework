@@ -27,13 +27,16 @@ import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
@@ -57,7 +60,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     private final Map<String, Module> modules = new ConcurrentHashMap<>();
     private final List<ComponentFactory<?>> factories = new ArrayList<>();
 
-    private final AtomicBoolean initialized = new AtomicBoolean(false);
+    private final AtomicReference<Configuration> initialized = new AtomicReference<>();
     private final Map<String, Configuration> moduleConfigurations = new ConcurrentHashMap<>();
 
     private OverridePolicy overridePolicy = OverridePolicy.WARN;
@@ -181,8 +184,9 @@ public class DefaultComponentRegistry implements ComponentRegistry {
 
     private Configuration doBuild(@Nullable Configuration optionalParent,
                                   @Nonnull LifecycleRegistry lifecycleRegistry) {
-        if (initialized.getAndSet(true)) {
-            throw new IllegalStateException("Component registry has already been initialized.");
+        Configuration configuration = initialized.get();
+        if (configuration != null) {
+            return configuration;
         }
         this.parentConfig = Optional.ofNullable(optionalParent);
         if (enhancerScanning) {
@@ -194,6 +198,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
         buildModules(config, lifecycleRegistry);
         initializeComponents(config, lifecycleRegistry);
         registerFactoryShutdownHandlers(lifecycleRegistry);
+        initialized.set(config);
 
         return config;
     }
@@ -220,19 +225,37 @@ public class DefaultComponentRegistry implements ComponentRegistry {
      * The disabled enhancers filter is invoked in a for-loop instead of as a Stream operation, as a
      * {@code ConfigurationEnhancer} can add more enhancers that should be disabled. By making the filter part of the
      * stream operation, that update is lost.
+     * <p>
+     * This method supports dynamic enhancer registration - if an enhancer registers another enhancer during its
+     * {@link ConfigurationEnhancer#enhance(ComponentRegistry)} call, the newly registered enhancer will be processed in
+     * the correct order based on its {@link ConfigurationEnhancer#order()} value relative to all unprocessed enhancers.
+     * Each enhancer is processed one at a time to ensure proper ordering when new enhancers are registered
+     * dynamically.
      */
     private void invokeEnhancers() {
-        List<ConfigurationEnhancer>
-                distinctAndOrderedEnhancers = enhancers.values()
-                                                       .stream()
-                                                       .distinct()
-                                                       .sorted(Comparator.comparingInt(ConfigurationEnhancer::order))
-                                                       .toList();
-        for (ConfigurationEnhancer enhancer : distinctAndOrderedEnhancers) {
+        Set<String> processedEnhancerKeys = new HashSet<>();
+
+        while (processedEnhancerKeys.size() < enhancers.size()) {
+            // Find the next unprocessed enhancer with the lowest order value
+            Optional<Map.Entry<String, ConfigurationEnhancer>> nextEnhancer =
+                    enhancers.entrySet()
+                             .stream()
+                             .filter(entry -> !processedEnhancerKeys.contains(entry.getKey()))
+                             .min(Comparator.comparingInt(entry -> entry.getValue().order()));
+
+            if (nextEnhancer.isEmpty()) {
+                break; // No more enhancers to process
+            }
+
+            Map.Entry<String, ConfigurationEnhancer> entry = nextEnhancer.get();
+            String key = entry.getKey();
+            ConfigurationEnhancer enhancer = entry.getValue();
+
             if (!disabledEnhancers.contains(enhancer.getClass())) {
                 enhancer.enhance(this);
                 invokedEnhancers.add(enhancer.getClass());
             }
+            processedEnhancerKeys.add(key);
         }
     }
 
@@ -273,6 +296,26 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     @Override
     public DefaultComponentRegistry setOverridePolicy(@Nonnull OverridePolicy overridePolicy) {
         this.overridePolicy = requireNonNull(overridePolicy, "The override policy must not be null.");
+        return this;
+    }
+
+    @Override
+    public ComponentRegistry disableEnhancer(@Nonnull String fullyQualifiedClassName) {
+        Objects.requireNonNull(fullyQualifiedClassName, "The fully qualified class name must not be null.");
+        try {
+            var enhancerClass = Class.forName(fullyQualifiedClassName);
+            if (!ConfigurationEnhancer.class.isAssignableFrom(enhancerClass)) {
+                throw new IllegalArgumentException(
+                        String.format("Class %s is not a ConfigurationEnhancer", fullyQualifiedClassName)
+                );
+            }
+            //noinspection unchecked
+            return disableEnhancer((Class<? extends ConfigurationEnhancer>) enhancerClass);
+        } catch (ClassNotFoundException e) {
+            logger.warn(
+                    "Disabling Configuration Enhancer [{}] won't take effect as the enhancer class could not be found.",
+                    fullyQualifiedClassName);
+        }
         return this;
     }
 
@@ -325,7 +368,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
 
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
-        descriptor.describeProperty("initialized", initialized.get());
+        descriptor.describeProperty("initialized", initialized.get() != null);
         descriptor.describeProperty("components", components);
         descriptor.describeProperty("decorators", decoratorDefinitions);
         descriptor.describeProperty("configurerEnhancers", enhancers);

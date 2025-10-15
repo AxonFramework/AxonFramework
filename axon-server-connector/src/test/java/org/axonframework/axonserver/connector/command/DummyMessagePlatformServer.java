@@ -130,7 +130,7 @@ public class DummyMessagePlatformServer {
         @Override
         public StreamObserver<CommandProviderOutbound> openStream(
                 StreamObserver<CommandProviderInbound> responseObserver) {
-            return new StreamObserver<CommandProviderOutbound>() {
+            return new StreamObserver<>() {
                 @Override
                 public void onNext(CommandProviderOutbound commandProviderOutbound) {
                     switch (commandProviderOutbound.getRequestCase()) {
@@ -148,6 +148,7 @@ public class DummyMessagePlatformServer {
                         case FLOW_CONTROL:
                         case COMMAND_RESPONSE:
                         case REQUEST_NOT_SET:
+                        case ACK:
                             break;
                     }
                     String instructionId = commandProviderOutbound.getInstructionId();

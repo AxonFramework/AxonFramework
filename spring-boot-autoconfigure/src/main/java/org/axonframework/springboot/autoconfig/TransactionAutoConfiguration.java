@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,13 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean;
 import org.springframework.transaction.PlatformTransactionManager;
 
+/**
+ * Autoconfiguration class that registers a bean creation method for the {@link SpringTransactionManager} if a
+ * {@link PlatformTransactionManager} is present.
+ *
+ * @author Allard Buijze
+ * @since 3.0.3
+ */
 @AutoConfiguration
 @ConditionalOnClass(PlatformTransactionManager.class)
 @AutoConfigureAfter(name = {
@@ -34,6 +41,14 @@ import org.springframework.transaction.PlatformTransactionManager;
 })
 public class TransactionAutoConfiguration {
 
+    /**
+     * Bean creation method constructing a {@link SpringTransactionManager} based on the given
+     * {@code transactionManager}.
+     *
+     * @param transactionManager The {@code PlatformTransactionManager} used to construct a
+     *                           {@link SpringTransactionManager}.
+     * @return The {@link TransactionManager} to be used by Axon Framework.
+     */
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnBean(PlatformTransactionManager.class)

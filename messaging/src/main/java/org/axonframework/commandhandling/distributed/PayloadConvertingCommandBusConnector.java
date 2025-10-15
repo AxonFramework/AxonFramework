@@ -59,8 +59,8 @@ public class PayloadConvertingCommandBusConnector extends DelegatingCommandBusCo
 
     @Nonnull
     @Override
-    public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage command,
-                                                               @Nullable ProcessingContext processingContext) {
+    public CompletableFuture<CommandResultMessage> dispatch(@Nonnull CommandMessage command,
+                                                            @Nullable ProcessingContext processingContext) {
         return delegate.dispatch(command.withConvertedPayload(targetType, converter), processingContext);
     }
 
@@ -92,7 +92,7 @@ public class PayloadConvertingCommandBusConnector extends DelegatingCommandBusCo
         }
 
         @Override
-        public void onSuccess(CommandResultMessage<?> resultMessage) {
+        public void onSuccess(CommandResultMessage resultMessage) {
             if (resultMessage == null || resultMessage.payload() == null) {
                 callback.onSuccess(resultMessage);
                 return;

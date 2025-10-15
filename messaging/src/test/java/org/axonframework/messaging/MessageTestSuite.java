@@ -113,6 +113,18 @@ public abstract class MessageTestSuite<M extends Message> {
     }
 
     @Test
+    void payloadAsWithPayloadTypeOfVoidCastsPayloadDirectly() {
+        Converter spiedConverter = spy(CONVERTER);
+
+        M testSubject = buildMessage(null);
+
+        String result = testSubject.payloadAs(TEST_PAYLOAD_TYPE, spiedConverter);
+
+        assertThat(result).isNull();
+        verifyNoInteractions(spiedConverter);
+    }
+
+    @Test
     void payloadAsWithClassConvertsPayload() {
         String testPayload = STRING_PAYLOAD;
 

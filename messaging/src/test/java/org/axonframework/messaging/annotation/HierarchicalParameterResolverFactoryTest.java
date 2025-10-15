@@ -16,6 +16,10 @@
 
 package org.axonframework.messaging.annotation;
 
+import org.axonframework.messaging.annotations.FixedValueParameterResolver;
+import org.axonframework.messaging.annotations.HierarchicalParameterResolverFactory;
+import org.axonframework.messaging.annotations.ParameterResolver;
+import org.axonframework.messaging.annotations.ParameterResolverFactory;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -30,11 +34,15 @@ class HierarchicalParameterResolverFactoryTest {
     @Test
     void resolvesComponentFromChildIfExistsInBoth() throws NoSuchMethodException {
         ParameterResolverFactory parent = Mockito.mock(ParameterResolverFactory.class);
-        FixedValueParameterResolver<String> resolverParent = new FixedValueParameterResolver<>("parent");
+        //noinspection rawtypes
+        FixedValueParameterResolver resolverParent = new FixedValueParameterResolver<>("parent");
+        //noinspection unchecked
         when(parent.createInstance(any(), any(), eq(0))).thenReturn(resolverParent);
 
         ParameterResolverFactory child = Mockito.mock(ParameterResolverFactory.class);
-        FixedValueParameterResolver<String> resolverChild = new FixedValueParameterResolver<>("child");
+        //noinspection rawtypes
+        FixedValueParameterResolver resolverChild = new FixedValueParameterResolver<>("child");
+        //noinspection unchecked
         when(child.createInstance(any(), any(), eq(0))).thenReturn(resolverChild);
 
         HierarchicalParameterResolverFactory factory = HierarchicalParameterResolverFactory.create(parent, child);
@@ -48,7 +56,9 @@ class HierarchicalParameterResolverFactoryTest {
     @Test
     void resolvesComponentFromParentIfDoesntExistInChild() throws NoSuchMethodException {
         ParameterResolverFactory parent = Mockito.mock(ParameterResolverFactory.class);
-        FixedValueParameterResolver<String> resolverParent = new FixedValueParameterResolver<>("parent");
+        //noinspection rawtypes
+        FixedValueParameterResolver resolverParent = new FixedValueParameterResolver<>("parent");
+        //noinspection unchecked
         when(parent.createInstance(any(), any(), eq(0))).thenReturn(resolverParent);
 
         ParameterResolverFactory child = Mockito.mock(ParameterResolverFactory.class);

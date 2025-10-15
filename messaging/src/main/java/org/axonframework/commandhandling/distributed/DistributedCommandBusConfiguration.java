@@ -33,7 +33,7 @@ import static org.axonframework.common.BuilderUtils.assertStrictPositive;
  * Can be used to modify non-critical settings of the bus, such as the load factor and thread pool.
  *
  * @param loadFactor             The load factor for the {@link DistributedCommandBus}.
- * @param numberOfThreads        The number of threads used by the {@link DistributedCommandBus}.
+ * @param commandThreads            The number of threads used by the {@link DistributedCommandBus}.
  * @param executorServiceFactory The {@link ExecutorServiceFactory} constructing the priority-aware
  *                               {@link ExecutorService} for the {@link DistributedCommandBus}.
  * @author Mitchell Herrijgers
@@ -42,39 +42,38 @@ import static org.axonframework.common.BuilderUtils.assertStrictPositive;
  */
 public record DistributedCommandBusConfiguration(
         int loadFactor,
-        int numberOfThreads,
+        int commandThreads,
         @Nonnull ExecutorServiceFactory<DistributedCommandBusConfiguration> executorServiceFactory
 ) {
 
     private static final int DEFAULT_LOAD_FACTOR = 100;
-    private static final int DEFAULT_NUMBER_OF_THREADS = 10;
+    private static final int DEFAULT_COMMAND_THREADS = 10;
     private static final ExecutorServiceFactory<DistributedCommandBusConfiguration> DEFAULT_EXECUTOR_SERVICE_FACTORY =
             (configuration, commandProcessQueue) -> new ThreadPoolExecutor(
-                    configuration.numberOfThreads(),
-                    configuration.numberOfThreads(),
+                    configuration.commandThreads(),
+                    configuration.commandThreads(),
                     0L,
                     TimeUnit.MILLISECONDS,
                     commandProcessQueue,
-                    new AxonThreadFactory("Command")
+                    new AxonThreadFactory("CommandProcessor")
             );
 
     /**
-     * Compact constructor validating that the given {@code loadFactor} and {@code numberOfThreads} are strictly
-     * positive.
+     * Compact constructor validating that the given {@code loadFactor} and {@code commandThreads} are strictly positive.
      */
     @SuppressWarnings("MissingJavadoc")
     public DistributedCommandBusConfiguration {
-        assertStrictPositive(loadFactor, "Load factor must be greater than 0");
-        assertStrictPositive(numberOfThreads, "Number of threads must be greater than 0");
+        assertStrictPositive(loadFactor, "Load factor must be greater than 0.");
+        assertStrictPositive(commandThreads, "Number of threads must be greater than 0.");
     }
 
     /**
      * A default instance of the {@link DistributedCommandBusConfiguration}, setting the {@link #loadFactor()} to 100,
-     * the {@link #numberOfThreads()} to 10, and the {@link #executorServiceFactory()} to a priority-aware
+     * the {@link #commandThreads()} to 10, and the {@link #executorServiceFactory()} to a priority-aware
      * {@link ExecutorServiceFactory} using the configured number of threads.
      */
     public static final DistributedCommandBusConfiguration DEFAULT = new DistributedCommandBusConfiguration(
-            DEFAULT_LOAD_FACTOR, DEFAULT_NUMBER_OF_THREADS, DEFAULT_EXECUTOR_SERVICE_FACTORY);
+            DEFAULT_LOAD_FACTOR, DEFAULT_COMMAND_THREADS, DEFAULT_EXECUTOR_SERVICE_FACTORY);
 
     /**
      * Sets the load factor for the distributed command bus. The load factor determines how many commands are sent to
@@ -85,17 +84,17 @@ public record DistributedCommandBusConfiguration(
      * @return The configuration itself, for fluent API usage.
      */
     public DistributedCommandBusConfiguration loadFactor(int loadFactor) {
-        return new DistributedCommandBusConfiguration(loadFactor, numberOfThreads, executorServiceFactory);
+        return new DistributedCommandBusConfiguration(loadFactor, commandThreads, executorServiceFactory);
     }
 
     /**
      * Sets the number of threads to use for the distributed command bus. Defaults to 10.
      *
-     * @param numberOfThreads The number of threads to use for the distributed command bus.
+     * @param commandThreads The number of threads to use for the distributed command bus.
      * @return The configuration itself, for fluent API usage.
      */
-    public DistributedCommandBusConfiguration numberOfThreads(int numberOfThreads) {
-        return new DistributedCommandBusConfiguration(loadFactor, numberOfThreads, executorServiceFactory);
+    public DistributedCommandBusConfiguration commandThreads(int commandThreads) {
+        return new DistributedCommandBusConfiguration(loadFactor, commandThreads, executorServiceFactory);
     }
 
     /**
@@ -107,6 +106,6 @@ public record DistributedCommandBusConfiguration(
      */
     public DistributedCommandBusConfiguration executorService(@Nonnull ExecutorService executorService) {
         Objects.requireNonNull(executorService, "The ExecutorService may not be null.");
-        return new DistributedCommandBusConfiguration(loadFactor, numberOfThreads, (config, queue) -> executorService);
+        return new DistributedCommandBusConfiguration(loadFactor, commandThreads, (config, queue) -> executorService);
     }
 }

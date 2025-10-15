@@ -68,7 +68,7 @@ public class GrpcMessageSizeInterceptor implements ClientInterceptor {
                                                            Channel channel) {
         ClientCall<REQ, RESP> call = channel.newCall(methodDescriptor, callOptions);
 
-        return new ForwardingClientCall.SimpleForwardingClientCall<REQ, RESP>(call) {
+        return new ForwardingClientCall.SimpleForwardingClientCall<>(call) {
             @Override
             public void sendMessage(REQ message) {
 
@@ -102,7 +102,7 @@ public class GrpcMessageSizeInterceptor implements ClientInterceptor {
 
             @Override
             public void start(Listener<RESP> responseListener, Metadata headers) {
-                super.start(new ForwardingClientCallListener.SimpleForwardingClientCallListener<RESP>(
+                super.start(new ForwardingClientCallListener.SimpleForwardingClientCallListener<>(
                         responseListener
                 ) {
                     @Override

@@ -21,7 +21,7 @@ import org.axonframework.modelling.repository.Repository;
 /**
  * Exception thrown by the {@link StateManager} when trying to register an {@link Repository} for a combination of
  * entity type and id type for which a repository was already registered. Super- or subtypes are considered a match of
- * eachother, so the repository can unambiguously resolve an {@link Repository} for a given combination of entity type
+ * each other, so the repository can unambiguously resolve an {@link Repository} for a given combination of entity type
  * and id type and prevent runtime errors.
  *
  * @author Mitchell Herrijgers

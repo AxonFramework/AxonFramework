@@ -16,6 +16,9 @@
 
 package org.axonframework.eventhandling.processors;
 
+import jakarta.annotation.Nonnull;
+import org.axonframework.common.FutureUtils;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
 import org.axonframework.eventhandling.monitoring.MonitoringEventHandlingComponent;
@@ -29,6 +32,7 @@ import org.junit.jupiter.api.*;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -102,11 +106,13 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
         }
 
         @Override
-        public void start() {
+        public CompletableFuture<Void> start() {
+            return FutureUtils.emptyCompletedFuture();
         }
 
         @Override
-        public void shutDown() {
+        public CompletableFuture<Void> shutdown() {
+            return FutureUtils.emptyCompletedFuture();
         }
 
         @Override
@@ -126,6 +132,11 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
                     .handle(eventMessages, ctx)
                     .asCompletableFuture()
             ).get(2, TimeUnit.SECONDS);
+        }
+
+        @Override
+        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+            throw new UnsupportedOperationException("Not required for tests.");
         }
     }
 }

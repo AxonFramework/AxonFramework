@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.entity.domain.development;
 
-import org.axonframework.commandhandling.annotation.RoutingKey;
+import org.axonframework.commandhandling.annotations.RoutingKey;
 
 public class Feature {
     @RoutingKey

@@ -16,8 +16,8 @@
 
 package org.axonframework.eventhandling.processors.streaming.pooled;
 
-import org.axonframework.eventhandling.processors.streaming.token.MergedTrackingToken;
 import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
+import org.axonframework.eventhandling.processors.streaming.token.MergedTrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -29,7 +29,6 @@ import java.lang.invoke.MethodHandles;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import static org.axonframework.common.FutureUtils.emptyCompletedFuture;
 import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 
 /**
@@ -40,8 +39,8 @@ import static org.axonframework.common.FutureUtils.joinAndUnwrap;
  * not in charge of one of the two segments, it will try to claim either segment's {@link TrackingToken} and perform the
  * merge then.
  * <p>
- * In either approach, this operation will delete one of the segments and release the claim on the other, so that
- * another thread can proceed with processing it.
+ * In either approach, this operation will delete one of the segments and release the claim on the other so that another
+ * thread can proceed with processing it.
  *
  * @author Steven van Beelen
  * @see Coordinator
@@ -58,12 +57,12 @@ class MergeTask extends CoordinatorTask {
     private final UnitOfWorkFactory unitOfWorkFactory;
 
     /**
-     * Constructs a {@link MergeTask}.
+     * Constructs a {@code MergeTask}.
      *
      * @param result            The {@link CompletableFuture} to {@link #complete(Boolean, Throwable)} once
      *                          {@link #run()} has finalized.
-     * @param name              The name of the {@link Coordinator} this instruction will be ran in. Used to correctly
-     *                          deal with the {@code tokenStore}.
+     * @param name              The name of the {@link Coordinator} this instruction will run in. Used to correctly deal
+     *                          with the {@code tokenStore}.
      * @param segmentId         The identifier of the {@link Segment} this instruction should merge.
      * @param workPackages      The collection of {@link WorkPackage}s controlled by the {@link Coordinator}. Will be
      *                          queried for the presence of the given {@code segmentId} and the segment to merge it
@@ -99,13 +98,9 @@ class MergeTask extends CoordinatorTask {
     protected CompletableFuture<Boolean> task() {
         logger.debug("Processor [{}] will perform merge instruction for segment {}.", name, segmentId);
 
-        int[] segments = joinAndUnwrap(
-                unitOfWorkFactory
-                        .create()
-                        .executeWithResult(context ->
-                                                   CompletableFuture.completedFuture(tokenStore.fetchSegments(name))
-                        )
-        );
+        int[] segments = joinAndUnwrap(unitOfWorkFactory.create().executeWithResult(
+                context -> tokenStore.fetchSegments(name, context)
+        ));
         Segment thisSegment = Segment.computeSegment(segmentId, segments);
         int thatSegmentId = thisSegment.mergeableSegmentId();
         Segment thatSegment = Segment.computeSegment(thatSegmentId, segments);
@@ -135,11 +130,9 @@ class MergeTask extends CoordinatorTask {
     }
 
     private CompletableFuture<TrackingToken> fetchTokenInUnitOfWork(int segmentId) {
-        return unitOfWorkFactory
-                .create()
-                .executeWithResult(context ->
-                                           CompletableFuture.completedFuture(tokenStore.fetchToken(name, segmentId))
-                );
+        return unitOfWorkFactory.create().executeWithResult(
+                context -> tokenStore.fetchToken(name, segmentId, context)
+        );
     }
 
     private Boolean mergeSegments(Segment thisSegment, TrackingToken thisToken,
@@ -152,16 +145,16 @@ class MergeTask extends CoordinatorTask {
                 ? MergedTrackingToken.merged(thatToken, thisToken)
                 : MergedTrackingToken.merged(thisToken, thatToken);
 
-        joinAndUnwrap(
-                unitOfWorkFactory
-                        .create()
-                        .executeWithResult(context -> {
-                            tokenStore.deleteToken(name, tokenToDelete);
-                            tokenStore.storeToken(mergedToken, name, mergedSegment.getSegmentId());
-                            tokenStore.releaseClaim(name, mergedSegment.getSegmentId());
-                            return emptyCompletedFuture();
-                        })
-        );
+        joinAndUnwrap(unitOfWorkFactory.create().executeWithResult(
+                context -> tokenStore.deleteToken(name, tokenToDelete, context)
+                                     .thenCompose(result -> tokenStore.storeToken(mergedToken,
+                                                                                  name,
+                                                                                  mergedSegment.getSegmentId(),
+                                                                                  context))
+                                     .thenCompose(result -> tokenStore.releaseClaim(name,
+                                                                                    mergedSegment.getSegmentId(),
+                                                                                    context))
+        ));
 
         logger.info("Processor [{}] successfully merged {} with {} into {}.",
                     name, thisSegment, thatSegment, mergedSegment);

@@ -18,7 +18,7 @@ package org.axonframework.updates.api;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.annotations.Internal;
 
 import java.util.ArrayList;
 import java.util.List;

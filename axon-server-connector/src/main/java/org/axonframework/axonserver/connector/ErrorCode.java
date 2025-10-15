@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ import org.axonframework.common.ExceptionUtils;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.messaging.EventPublicationFailedException;
 import org.axonframework.messaging.HandlerExecutionException;
-import org.axonframework.modelling.command.ConcurrencyException;
+import org.axonframework.modelling.ConcurrencyException;
 import org.axonframework.queryhandling.NoHandlerForQueryException;
 import org.axonframework.queryhandling.QueryExecutionException;
 
@@ -235,6 +235,7 @@ public enum ErrorCode {
 
     /**
      * Returns an Query Execution ErrorCode variation based on the transiency of the given {@link Throwable}
+     *
      * @param throwable The {@link Throwable} to inspect for transiency
      * @return {@link ErrorCode} variation
      */
@@ -248,6 +249,7 @@ public enum ErrorCode {
 
     /**
      * Returns an Command Execution ErrorCode variation based on the transiency of the given {@link Throwable}
+     *
      * @param throwable The {@link Throwable} to inspect for transiency
      * @return {@link ErrorCode} variation
      */
@@ -260,9 +262,9 @@ public enum ErrorCode {
     }
 
     /**
-     * Functional interface towards building an {@link AxonException} based on an {@code errorCode}, {@link
-     * ErrorMessage} and the {@link Supplier} of an {@link Object}. This provides the option for users to specify more
-     * thorough exception messages when it is serialized from one Axon client to another.
+     * Functional interface towards building an {@link AxonException} based on an {@code errorCode},
+     * {@link ErrorMessage} and the {@link Supplier} of an {@link Object}. This provides the option for users to specify
+     * more thorough exception messages when it is serialized from one Axon client to another.
      */
     @FunctionalInterface
     private interface ExceptionBuilder {

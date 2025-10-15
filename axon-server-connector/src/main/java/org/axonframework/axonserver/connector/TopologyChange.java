@@ -90,25 +90,14 @@ public class TopologyChange {
     }
 
     private Type mapToType(UpdateType updateType) {
-        Type result = null;
-        switch (updateType) {
-            case ADD_COMMAND_HANDLER:
-                result = Type.COMMAND_HANDLER_ADDED;
-                break;
-            case REMOVE_COMMAND_HANDLER:
-                result = Type.COMMAND_HANDLER_REMOVED;
-                break;
-            case ADD_QUERY_HANDLER:
-                result = Type.QUERY_HANDLER_ADDED;
-                break;
-            case REMOVE_QUERY_HANDLER:
-                result = Type.QUERY_HANDLER_REMOVED;
-                break;
-            case RESET_ALL:
-                result = Type.RESET;
-                break;
-        }
-        return result;
+        return switch (updateType) {
+            case ADD_COMMAND_HANDLER -> Type.COMMAND_HANDLER_ADDED;
+            case REMOVE_COMMAND_HANDLER -> Type.COMMAND_HANDLER_REMOVED;
+            case ADD_QUERY_HANDLER -> Type.QUERY_HANDLER_ADDED;
+            case REMOVE_QUERY_HANDLER -> Type.QUERY_HANDLER_REMOVED;
+            case RESET_ALL -> Type.RESET;
+            case UNRECOGNIZED -> null;
+        };
     }
 
     /**

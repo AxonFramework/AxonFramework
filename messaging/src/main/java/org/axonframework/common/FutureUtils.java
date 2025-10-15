@@ -16,6 +16,9 @@
 
 package org.axonframework.common;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
@@ -106,7 +109,8 @@ public abstract class FutureUtils {
      * @return The result of the future.
      * @throws Throwable the unwrapped cause if the future completed exceptionally (exact type preserved).
      */
-    public static <T> T joinAndUnwrap(CompletableFuture<T> future) {
+    @Nullable
+    public static <T> T joinAndUnwrap(@Nonnull CompletableFuture<T> future) {
         try {
             return future.join();
         } catch (CompletionException e) {
