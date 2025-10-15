@@ -48,6 +48,10 @@ public interface SubscribableEventSource {
      * published to this source since the subscription.
      * <p>
      * If the given {@code eventsBatchConsumer} is already subscribed, nothing happens.
+     * <p>
+     * <b>Note on {@link ProcessingContext}:</b> The {@link ProcessingContext} parameter passed to the consumer may be
+     * {@code null}. When {@code null}, it is the responsibility of the registered {@code eventsBatchConsumer} to create
+     * an appropriate {@link ProcessingContext} as needed for processing the events.
      *
      * @param eventsBatchConsumer The event batches consumer to subscribe.
      * @return A {@link Registration} handle to unsubscribe the {@code eventsBatchConsumer}. When unsubscribed, it will

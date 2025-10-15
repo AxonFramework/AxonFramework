@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
+import org.axonframework.common.annotations.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -40,6 +41,7 @@ import java.util.function.BiFunction;
  * @author René de Waele
  * @since 3.0
  */
+@Internal
 public abstract class AbstractEventBus implements EventBus {
 
     private final Context.ResourceKey<List<EventMessage>> eventsKey = Context.ResourceKey.withLabel("EventBus_Events");

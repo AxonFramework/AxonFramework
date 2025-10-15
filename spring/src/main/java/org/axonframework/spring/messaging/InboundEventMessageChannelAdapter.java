@@ -97,7 +97,6 @@ public class InboundEventMessageChannelAdapter implements MessageHandler, Subscr
     @SuppressWarnings({"unchecked"})
     @Override
     public void handleMessage(@Nonnull Message message) {
-        // todo: what with processing context here?
         List<? extends EventMessage> messages = singletonList(transformMessage(message));
         for (BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> messageProcessor : messageProcessors) {
             messageProcessor.apply(messages, null);
