@@ -25,8 +25,7 @@ import io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction;
 import jakarta.annotation.Nonnull;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
-import org.axonframework.common.FutureUtils;
-import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.annotations.Internal;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.processors.EventProcessor;
@@ -194,7 +193,7 @@ public class EventProcessorControlService {
         // TODO #3521 - Be sure to be able to retrieve processor-specific components from their respective Modules
         TokenStore tokenStore = configuration.getComponent(TokenStore.class);
         return configuration.getComponent(TransactionManager.class)
-                            .fetchInTransaction(tokenStore::retrieveStorageIdentifier);
+                            .fetchInTransaction(() -> tokenStore.retrieveStorageIdentifier(null).join());
     }
 
     protected record AxonProcessorInstructionHandler(
@@ -273,22 +272,12 @@ public class EventProcessorControlService {
 
         @Override
         public CompletableFuture<Void> pauseProcessor() {
-            try {
-                processor.shutDown();
-                return FutureUtils.emptyCompletedFuture();
-            } catch (Exception e) {
-                return CompletableFuture.failedFuture(e);
-            }
+            return processor.shutdown();
         }
 
         @Override
         public CompletableFuture<Void> startProcessor() {
-            try {
-                processor.start();
-                return FutureUtils.emptyCompletedFuture();
-            } catch (Exception e) {
-                return CompletableFuture.failedFuture(e);
-            }
+            return processor.start();
         }
     }
 }
