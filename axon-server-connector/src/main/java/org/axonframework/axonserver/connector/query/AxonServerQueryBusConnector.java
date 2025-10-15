@@ -28,7 +28,6 @@ import io.axoniq.axonserver.connector.query.QueryHandler;
 import io.axoniq.axonserver.grpc.ErrorMessage;
 import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
-import io.axoniq.axonserver.grpc.query.QueryUpdate;
 import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
 import io.grpc.netty.shaded.io.netty.util.internal.OutOfDirectMemoryError;
 import jakarta.annotation.Nonnull;
@@ -40,13 +39,15 @@ import org.axonframework.axonserver.connector.util.ProcessingInstructionHelper;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.lifecycle.ShutdownLatch;
+import org.axonframework.messaging.FluxUtils;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryHandlerName;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.distributed.QueryBusConnector;
+import org.axonframework.queryhandling.tracing.QueryBusSpanFactory;
+import org.axonframework.util.ClasspathResolver;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,8 +94,6 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
     private final ShutdownLatch shutdownLatch = new ShutdownLatch();
     private final Duration queryInProgressAwait = Duration.ofSeconds(5);
 
-    // TODO find better configuration place for this duration
-    private Duration queryInProgressAwait = Duration.ofSeconds(5);
     private Handler incomingHandler;
 
     /**
@@ -177,11 +176,10 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
     }
 
     // TODO I think this switch belongs in the DistributedQueryBus i.o. the Connector implementation.
-    private final boolean localSegmentShortCut;
-
-    private boolean shouldRunQueryLocally(String queryName) {
-        return localSegmentShortCut && queryHandlerNames.contains(queryName);
-    }
+//    private final boolean localSegmentShortCut;
+//    private boolean shouldRunQueryLocally(String queryName) {
+//        return localSegmentShortCut && queryHandlerNames.contains(queryName);
+//    }
 
     @Nonnull
     @Override
@@ -189,8 +187,8 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
                                                           @Nullable ProcessingContext context) {
         // TODO missing use of ExecutorService here. Should the DistributedQueryBus do the threading or is that an Axon Server concern?
         return Mono.fromSupplier(this::registerStreamingQueryActivity)
-                   .flatMapMany(activity -> doQuery(query).asFlux()
-                                                          .doFinally(new ActivityFinisher(activity)))
+                   .flatMapMany(activity -> FluxUtils.of(doQuery(query))
+                                                     .doFinally(new ActivityFinisher(activity)))
                    .map(MessageStream.Entry::message);
     }
 
@@ -202,8 +200,8 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
     /**
      * Ends a streaming query activity.
      * <p>
-     * The reason for this static class to exist at all is the ability of instantiating {@link AxonServerQueryBus} even
-     * without Project Reactor on the classpath.
+     * The reason for this static class to exist at all is the ability of instantiating
+     * {@link AxonServerQueryBusConnector} even without Project Reactor on the classpath.
      * </p>
      * <p>
      * If we had Project Reactor on the classpath, this class would be replaced with a lambda (which would compile into
@@ -217,71 +215,16 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
     private static class ActivityFinisher implements Consumer<SignalType> {
 
         private final ShutdownLatch.ActivityHandle activity;
-        private final Span span;
 
         private ActivityFinisher(ShutdownLatch.ActivityHandle activity) {
             this.activity = activity;
-            this.span = span;
         }
 
         @Override
         public void accept(SignalType signalType) {
-            span.end();
             activity.end();
         }
     }
-
-    private QueryRequest serialize(QueryMessage query, boolean stream, int priority) {
-        return serializer.serializeRequest(query,
-                                           1,
-                                           TimeUnit.HOURS.toMillis(1),
-                                           priority,
-                                           stream);
-    }
-
-    private ResultStream<QueryResponse> sendRequest(QueryMessage queryMessage, QueryRequest queryRequest) {
-        return axonServerConnectionManager.getConnection(targetContextResolver.resolveContext(queryMessage))
-                                          .queryChannel()
-                                          .query(queryRequest);
-    }
-
-    private Publisher<QueryResponseMessage> deserialize(QueryMessage queryMessage,
-                                                        QueryResponse queryResponse) {
-        // TODO #3488 - Replace Serializer and ResponseType use
-        //noinspection unchecked
-//        Class<R> expectedResponseType = (Class<R>) queryMessage.responseType().getExpectedResponseType();
-        QueryResponseMessage responseMessage = serializer.deserializeResponse(queryResponse);
-        if (responseMessage.isExceptional()) {
-            return Flux.error(responseMessage.exceptionResult());
-        }
-//        if (expectedResponseType.isAssignableFrom(responseMessage.payloadType())) {
-//            InstanceResponseType<R> instanceResponseType = new InstanceResponseType<>(expectedResponseType);
-//            return Flux.just(new ConvertingResponseMessage<>(instanceResponseType, responseMessage));
-//        } else {
-//            MultipleInstancesResponseType<R> multiResponseType =
-//                    new MultipleInstancesResponseType<>(expectedResponseType);
-//            ConvertingResponseMessage<List<R>> convertingMessage =
-//                    new ConvertingResponseMessage<>(multiResponseType, responseMessage);
-//            return Flux.fromStream(convertingMessage.payload()
-//                                                    .stream()
-//                                                    .map(payload -> singleMessage(responseMessage,
-//                                                                                  payload,
-//                                                                                  expectedResponseType)));
-//        }
-        return null;
-    }
-
-    private <R> QueryResponseMessage singleMessage(QueryResponseMessage original,
-                                                      R newPayload,
-                                                      Class<R> expectedPayloadType) {
-        GenericMessage delegate = new GenericMessage(original.identifier(),
-                                                          original.type(),
-                                                          newPayload,
-                                                          expectedPayloadType,
-                                                          original.metadata());
-        return new GenericQueryResponseMessage(delegate);
-    }
-    */
 
     /* AxonServerQueryBus subscriptionQuery implementation
     @Nonnull
@@ -385,7 +328,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
     /**
      * A {@link QueryHandler} implementation serving as a wrapper around the local {@code QueryBus} to push through the
      * message handling and subscription query registration.
-     *
+     * <p>
      * TODO This should be used on AxonServerQueryBusConnector#subscribe, and the implementation should use the QueryBusConnector.Handler that is TBD.
      */
     private class LocalSegmentAdapter implements QueryHandler {
@@ -403,7 +346,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
             CloseAwareReplyChannel<QueryResponse> replyChannel =
                     new CloseAwareReplyChannel<>(responseHandler, onClose);
             long priority = ProcessingInstructionHelper.priority(query.getProcessingInstructionsList());
-            QueryProcessingTask processingTask = new QueryProcessingTask(query, replyChannel, null, clientId, null);
+            QueryProcessingTask processingTask = new QueryProcessingTask(query, replyChannel, clientId, null);
             queriesInProgress.put(query.getMessageIdentifier(), processingTask);
             return new FlowControl() {
                 @Override
@@ -460,7 +403,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
 
         private final QueryRequest queryRequest;
         private final ReplyChannel<QueryResponse> responseHandler;
-        private final QuerySerializer serializer;
+        //        private final QuerySerializer serializer;
         private final String clientId;
         private final AtomicReference<StreamableResponse> streamableResultRef = new AtomicReference<>();
         private final AtomicLong requestedBeforeInit = new AtomicLong();
@@ -475,19 +418,14 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
          *
          * @param queryRequest    The request received from Axon Server.
          * @param responseHandler The {@link ReplyChannel} used for sending items to the Axon Server.
-         * @param serializer      The serializer used to serialize items.
          * @param clientId        The identifier of the client.
-         * @param spanFactory     The {@link QueryBusSpanFactory} implementation to use to provide tracing
-         *                        capabilities.
          */
         QueryProcessingTask(QueryRequest queryRequest,
                             ReplyChannel<QueryResponse> responseHandler,
-                            QuerySerializer serializer,
                             String clientId,
                             QueryBusSpanFactory spanFactory) {
             this(queryRequest,
                  responseHandler,
-                 serializer,
                  clientId,
                  ClasspathResolver::projectReactorOnClasspath,
                  spanFactory);
@@ -498,7 +436,6 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
          *
          * @param queryRequest       The request received from Axon Server.
          * @param responseHandler    The {@link ReplyChannel} used for sending items to the Axon Server.
-         * @param serializer         The serializer used to serialize items.
          * @param clientId           The identifier of the client.
          * @param reactorOnClassPath Indicates whether Project Reactor is on the classpath.
          * @param spanFactory        The {@link QueryBusSpanFactory} implementation to use to provide tracing
@@ -506,13 +443,11 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
          */
         QueryProcessingTask(QueryRequest queryRequest,
                             ReplyChannel<QueryResponse> responseHandler,
-                            QuerySerializer serializer,
                             String clientId,
                             Supplier<Boolean> reactorOnClassPath,
                             QueryBusSpanFactory spanFactory) {
             this.queryRequest = queryRequest;
             this.responseHandler = responseHandler;
-            this.serializer = serializer;
             this.clientId = clientId;
             this.supportsStreaming = supportsStreaming(queryRequest);
             this.reactorOnClassPath = reactorOnClassPath;
@@ -523,7 +458,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
         public void run() {
             try {
                 logger.debug("Will process query [{}]", queryRequest.getQuery());
-                QueryMessage queryMessage = serializer.deserializeRequest(queryRequest);
+                QueryMessage queryMessage = null; // serializer.deserializeRequest(queryRequest);
                 spanFactory.createQueryProcessingSpan(queryMessage).run(() -> {
                     if (numberOfResults(queryRequest.getProcessingInstructionsList())
                             == DIRECT_QUERY_NUMBER_OF_RESULTS) {
@@ -609,7 +544,6 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
         private StreamableResponse streamableResponseFrom(Publisher<QueryResponseMessage> resultPublisher) {
             return new StreamableFluxResponse(Flux.from(resultPublisher),
                                               responseHandler,
-                                              serializer,
                                               queryRequest.getMessageIdentifier(),
                                               clientId);
         }
@@ -618,7 +552,6 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
         private StreamableInstanceResponse streamableResponseFrom(QueryResponseMessage response) {
             return new StreamableInstanceResponse(response,
                                                   responseHandler,
-                                                  serializer,
                                                   queryRequest.getMessageIdentifier());
         }
 
