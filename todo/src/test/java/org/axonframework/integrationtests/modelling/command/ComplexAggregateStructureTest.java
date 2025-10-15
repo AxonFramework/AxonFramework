@@ -48,7 +48,7 @@ class ComplexAggregateStructureTest {
     @Test
     void commandsAreRoutedToCorrectEntity() throws Exception {
         AggregateModel<Book> bookAggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(Book.class);
-        EventBus mockEventBus = SimpleEventBus.builder().build();
+        EventBus mockEventBus = new SimpleEventBus();
         AnnotatedAggregate<Book> bookAggregate = AnnotatedAggregate.initialize(
                 (Callable<Book>) () -> {
                     Book aggregate = new Book();

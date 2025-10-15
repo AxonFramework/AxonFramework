@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.test.AxonAssertionError;
@@ -30,6 +31,7 @@ import org.hamcrest.StringDescription;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 import static java.lang.String.format;
 import static org.axonframework.test.matchers.Matchers.*;
@@ -102,7 +104,10 @@ public class EventValidator implements EventMessageHandler {
      */
     public void startRecording() {
         if (!recording) {
-            eventBus.subscribe(eventMessages -> eventMessages.forEach(m -> handleSync(m, new LegacyMessageSupportingContext(m))));
+            eventBus.subscribe((eventMessages, context) -> {
+                eventMessages.forEach(m -> handleSync(m, context == null ? new LegacyMessageSupportingContext(m) : Message.addToContext(context, m)));
+                return CompletableFuture.completedFuture(null);
+            });
             recording = true;
         }
         publishedEvents.clear();

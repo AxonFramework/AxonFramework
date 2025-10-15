@@ -29,6 +29,7 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
+import org.axonframework.eventhandling.InterceptingEventBus;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.gateway.DefaultEventGateway;
 import org.axonframework.eventhandling.gateway.EventGateway;
@@ -103,7 +104,8 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
 
         Optional<EventBus> eventBus = result.getOptionalComponent(EventBus.class);
         assertTrue(eventBus.isPresent());
-        assertInstanceOf(SimpleEventBus.class, eventBus.get());
+        // Intercepting at all times, since we have a MessageOriginProvider that leads to the CorrelationDataInterceptor
+        assertInstanceOf(InterceptingEventBus.class, eventBus.get());
 
         Optional<QueryGateway> queryGateway = result.getOptionalComponent(QueryGateway.class);
         assertTrue(queryGateway.isPresent());

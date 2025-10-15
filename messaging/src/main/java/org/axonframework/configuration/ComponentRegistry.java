@@ -422,10 +422,15 @@ public interface ComponentRegistry extends DescribableComponent {
     ComponentRegistry disableEnhancerScanning();
 
     /**
-     * Disables the given {@link ConfigurationEnhancer} class from being registered as an enhancer through the
-     * {@link java.util.ServiceLoader}. Only specific classes can be disabled, and class hierarchies are not taken into
-     * account. Does not affect enhancers that are registered through the
-     * {@link #registerEnhancer(ConfigurationEnhancer)} method.
+     * Disables the given {@link ConfigurationEnhancer} class from executing during the configuration initialization
+     * phase. This affects both enhancers registered through the {@link java.util.ServiceLoader} mechanism and those
+     * registered programmatically via {@link #registerEnhancer(ConfigurationEnhancer)}.
+     * <p>
+     * Only specific classes can be disabled, and class hierarchies are not taken into account. If the enhancer has
+     * already been invoked when this method is called, disabling will have no effect and a warning will be logged.
+     * <p>
+     * This method is typically called from within another enhancer's
+     * {@link ConfigurationEnhancer#enhance(ComponentRegistry)} method to prevent subsequent enhancers from executing.
      *
      * @param enhancerClass The class of the enhancer to disable.
      * @return The current instance of the {@code Configurer} for a fluent API.
@@ -433,12 +438,19 @@ public interface ComponentRegistry extends DescribableComponent {
     ComponentRegistry disableEnhancer(Class<? extends ConfigurationEnhancer> enhancerClass);
 
     /**
-     * Disables the given {@link ConfigurationEnhancer} class from being registered as an enhancer through the
-     * {@link java.util.ServiceLoader}. Only specific classes can be disabled, and class hierarchies are not taken into
-     * account. Does not affect enhancers that are registered through the
-     * {@link #registerEnhancer(ConfigurationEnhancer)} method.
+     * Disables the given {@link ConfigurationEnhancer} class from executing during the configuration initialization
+     * phase. This affects both enhancers registered through the {@link java.util.ServiceLoader} mechanism and those
+     * registered programmatically via {@link #registerEnhancer(ConfigurationEnhancer)}.
+     * <p>
+     * Only specific classes can be disabled, and class hierarchies are not taken into account. If the enhancer has
+     * already been invoked when this method is called, disabling will have no effect and a warning will be logged.
+     * <p>
+     * This method is typically called from within another enhancer's
+     * {@link ConfigurationEnhancer#enhance(ComponentRegistry)} method to prevent subsequent enhancers from executing.
+     * <p>
+     * If the class cannot be found on the classpath, a warning will be logged and the call will have no effect.
      *
-     * @param fullyQualifiedClassName The name of the class of the enhancer to disable.
+     * @param fullyQualifiedClassName The fully qualified class name of the enhancer to disable.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
     ComponentRegistry disableEnhancer(@Nonnull String fullyQualifiedClassName);
