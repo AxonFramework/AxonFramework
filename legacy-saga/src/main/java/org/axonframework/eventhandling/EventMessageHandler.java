@@ -18,8 +18,8 @@ package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.annotations.EventHandler;
+import org.axonframework.messaging.LegacyMessageHandler;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
@@ -37,7 +37,7 @@ import java.util.Set;
  * @deprecated Replace in favor of org.axonframework.eventhandling.EventHandler
  */
 @Deprecated // Replace in favor of org.axonframework.eventhandling.EventHandler
-public interface EventMessageHandler extends MessageHandler<EventMessage, Message> {
+public interface EventMessageHandler extends LegacyMessageHandler<EventMessage, Message> {
 
     /**
      * Process the given event. The implementation may decide to process or skip the given event. It is highly

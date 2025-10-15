@@ -44,9 +44,9 @@ import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.LegacyMessageHandler;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
@@ -236,13 +236,13 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public FixtureConfiguration<T> registerCommandHandler(Class<?> payloadType,
-                                                          MessageHandler<CommandMessage, CommandResultMessage> commandHandler) {
+                                                          LegacyMessageHandler<CommandMessage, CommandResultMessage> commandHandler) {
         return registerCommandHandler(payloadType.getName(), commandHandler);
     }
 
     @Override
     public FixtureConfiguration<T> registerCommandHandler(String commandName,
-                                                          MessageHandler<CommandMessage, CommandResultMessage> commandHandler) {
+                                                          LegacyMessageHandler<CommandMessage, CommandResultMessage> commandHandler) {
         registerAggregateCommandHandlers();
         explicitCommandHandlersSet = true;
         commandBus.subscribe(new QualifiedName(commandName), (CommandHandler) commandHandler);
