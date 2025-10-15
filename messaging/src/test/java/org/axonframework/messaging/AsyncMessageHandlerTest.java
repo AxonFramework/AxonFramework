@@ -73,8 +73,7 @@ class AsyncMessageHandlerTest {
     private final QueryGateway queryGateway = new DefaultQueryGateway(queryBus,
                                                                       new ClassBasedMessageTypeResolver(),
                                                                       QueryPriorityCalculator.defaultCalculator());
-    private final EventBus eventBus = SimpleEventBus.builder()
-                                                    .build();  // TODO #3392 - Replace for actual EventSink implementation.
+    private final EventBus eventBus = new SimpleEventBus();
     private final AtomicBoolean eventHandlerCalled = new AtomicBoolean();
 
     record CheckIfPrime(int value) {
@@ -105,7 +104,10 @@ class AsyncMessageHandlerTest {
                 ProcessingContext testContext =
                         StubProcessingContext.withComponent(EventConverter.class, PassThroughConverter.EVENT_INSTANCE);
 
-                eventBus.subscribe(messages -> messages.forEach(m -> ehc.handle(m, testContext)));
+                eventBus.subscribe((messages, context) -> {
+                    messages.forEach(m -> ehc.handle(m, testContext));
+                    return CompletableFuture.completedFuture(null);
+                });
 
                 assertEvents();
             }
@@ -116,7 +118,10 @@ class AsyncMessageHandlerTest {
                 ProcessingContext testContext =
                         StubProcessingContext.withComponent(EventConverter.class, PassThroughConverter.EVENT_INSTANCE);
 
-                eventBus.subscribe(messages -> messages.forEach(m -> ehc.handle(m, testContext)));
+                eventBus.subscribe((messages, context) -> {
+                    messages.forEach(m -> ehc.handle(m, testContext));
+                    return CompletableFuture.completedFuture(null);
+                });
 
                 assertEvents();
             }
@@ -128,7 +133,10 @@ class AsyncMessageHandlerTest {
                 ProcessingContext testContext =
                         StubProcessingContext.withComponent(EventConverter.class, PassThroughConverter.EVENT_INSTANCE);
 
-                eventBus.subscribe(messages -> messages.forEach(m -> ehc.handle(m, testContext)));
+                eventBus.subscribe((messages, context) -> {
+                    messages.forEach(m -> ehc.handle(m, testContext));
+                    return CompletableFuture.completedFuture(null);
+                });
 
                 assertEvents();
             }
@@ -353,7 +361,7 @@ class AsyncMessageHandlerTest {
     }
 
     private void assertEvents() {
-        eventBus.publish(new GenericEventMessage(new MessageType(PrimeChecked.class), new PrimeChecked(5)));
+        eventBus.publish(null, new GenericEventMessage(new MessageType(PrimeChecked.class), new PrimeChecked(5)));
 
         Awaitility.await().untilAsserted(() -> assertThat(eventHandlerCalled).isTrue());
     }

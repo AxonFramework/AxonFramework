@@ -44,21 +44,21 @@ class StreamableFluxResponse implements StreamableResponse {
     /**
      * Instantiates this streamable flux result.
      *
-     * @param result          A {@link Flux} of responses to be sent.
-     * @param responseHandler The {@link ReplyChannel} used for sending the result to the Axon Server.
-     * @param serializer      The serializer used to serialize items.
-     * @param requestId       The identifier of the request these responses refer to.
-     * @param clientId        The identifier of the client.
+     * @param result          a {@link Flux} of responses to be sent
+     * @param responseHandler the {@link ReplyChannel} used for sending the result to the Axon Server
+     * @param requestId       the identifier of the request these responses refer to
+     * @param clientId        the identifier of the client
+     * @param <T>             the type of items to be sent
      */
-    public StreamableFluxResponse(@Nonnull Flux<QueryResponseMessage> result,
-                                  @Nonnull ReplyChannel<QueryResponse> responseHandler,
-                                  @Nonnull QuerySerializer serializer,
-                                  @Nonnull String requestId,
-                                  @Nonnull String clientId) {
+    public <T> StreamableFluxResponse(Flux<QueryResponseMessage> result,
+                                      ReplyChannel<QueryResponse> responseHandler,
+                                      String requestId,
+                                      String clientId) {
         SendingSubscriber subscriber = new SendingSubscriber(responseHandler, clientId, requestId);
         this.subscription = subscriber;
-        result.map(message -> serializer.serializeResponse(message, requestId))
-              .subscribeWith(subscriber);
+        // TODO #3488 - Use QueryConverter (that is styled after CommandConverter) to convert the QueryRequest to a QueryMessage
+//        result.map(message -> serializer.serializeResponse(message, requestId))
+//              .subscribeWith(subscriber);
     }
 
     @Override

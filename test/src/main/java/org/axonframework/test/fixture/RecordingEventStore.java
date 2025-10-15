@@ -18,6 +18,7 @@ package org.axonframework.test.fixture;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.Registration;
 import org.axonframework.common.annotations.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
@@ -33,6 +34,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 
 /**
  * An {@link EventStore} implementation recording all the events that are
@@ -70,7 +72,8 @@ public class RecordingEventStore extends RecordingEventSink implements EventStor
     }
 
     @Override
-    public MessageStream<EventMessage> open(@Nonnull StreamingCondition condition, @Nullable ProcessingContext context) {
+    public MessageStream<EventMessage> open(@Nonnull StreamingCondition condition,
+                                            @Nullable ProcessingContext context) {
         return eventStore.open(condition, context);
     }
 
@@ -87,5 +90,11 @@ public class RecordingEventStore extends RecordingEventSink implements EventStor
     @Override
     public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at, @Nullable ProcessingContext context) {
         return eventStore.tokenAt(at, context);
+    }
+
+    @Override
+    public Registration subscribe(
+            @Nonnull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
+        return eventStore.subscribe(eventsBatchConsumer);
     }
 }

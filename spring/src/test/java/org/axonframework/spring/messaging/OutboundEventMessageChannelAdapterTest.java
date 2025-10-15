@@ -20,6 +20,7 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.spring.utils.StubDomainEvent;
 import org.junit.jupiter.api.*;
 import org.springframework.messaging.Message;
@@ -52,7 +53,7 @@ class OutboundEventMessageChannelAdapterTest {
         StubDomainEvent event = new StubDomainEvent();
         EventMessage testMessage =
                 new GenericEventMessage(new MessageType("event"), event);
-        testSubject.handle(singletonList(testMessage));
+        testSubject.handle(singletonList(testMessage), null);
 
         verify(mockChannel).send(messageWithPayload(event));
     }
@@ -69,8 +70,8 @@ class OutboundEventMessageChannelAdapterTest {
         testSubject = new OutboundEventMessageChannelAdapter(
                 mockEventBus, mockChannel, m -> !m.payloadType().isAssignableFrom(Class.class)
         );
-        testSubject.handle(singletonList(newDomainEvent()));
-        verify(mockEventBus, never()).publish(isA(EventMessage.class));
+        testSubject.handle(singletonList(newDomainEvent()), null);
+        verify(mockEventBus, never()).publish(any(ProcessingContext.class), isA(EventMessage.class));
     }
 
     private EventMessage newDomainEvent() {

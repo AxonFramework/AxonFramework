@@ -19,6 +19,7 @@ package org.axonframework.integrationtests.commandhandling;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventsourcing.LegacyEventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -54,7 +55,7 @@ class AggregateCreationFromCommandsTest {
     @BeforeEach
     void setUp() {
         this.commandBus = aCommandBus();
-        eventStore = spy(new SimpleEventStore(new InMemoryEventStorageEngine(), new AnnotationBasedTagResolver()));
+        eventStore = spy(new SimpleEventStore(new InMemoryEventStorageEngine(), new SimpleEventBus(), new AnnotationBasedTagResolver()));
         repository = LegacyEventSourcingRepository.builder(StubAggregateForCreation.class)
                                                   .eventStore(eventStore)
                                                   .build();

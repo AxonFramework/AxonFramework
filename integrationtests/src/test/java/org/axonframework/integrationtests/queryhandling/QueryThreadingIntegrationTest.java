@@ -19,13 +19,15 @@ package org.axonframework.integrationtests.queryhandling;
 import io.grpc.ManagedChannelBuilder;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
-import org.axonframework.axonserver.connector.query.AxonServerQueryBus;
+import org.axonframework.axonserver.connector.query.AxonServerQueryBusConnector;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryBusTestUtils;
 import org.axonframework.queryhandling.QueryResponseMessage;
+import org.axonframework.queryhandling.distributed.DistributedQueryBus;
+import org.axonframework.queryhandling.distributed.DistributedQueryBusConfiguration;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.test.server.AxonServerContainer;
@@ -68,8 +70,10 @@ class QueryThreadingIntegrationTest {
                     .withNetworkAliases("axonserver");
 
     private AxonServerConnectionManager connectionManager;
-    private AxonServerQueryBus queryBus;
-    private AxonServerQueryBus queryBus2;
+    private AxonServerQueryBusConnector connector;
+    private DistributedQueryBus queryBus;
+    private AxonServerQueryBusConnector connector2;
+    private DistributedQueryBus queryBus2;
 
     @BeforeEach
     void setUp() {
@@ -92,34 +96,24 @@ class QueryThreadingIntegrationTest {
 
         // The application having a query that depends on another one
         QueryBus localQueryBus = QueryBusTestUtils.aQueryBus();
-        queryBus = AxonServerQueryBus.builder()
-                                     .axonServerConnectionManager(connectionManager)
-                                     .configuration(configuration)
-                                     .localSegment(localQueryBus)
-                                     .messageSerializer(serializer)
-                                     .genericSerializer(serializer)
-                                     .build();
-        queryBus.start();
+        connector = new AxonServerQueryBusConnector(connectionManager.getConnection(), configuration);
+        queryBus = new DistributedQueryBus(localQueryBus, connector, DistributedQueryBusConfiguration.DEFAULT);
+        connector.start();
 
         // The secondary application
         QueryBus localQueryBus2 = QueryBusTestUtils.aQueryBus();
-        queryBus2 = AxonServerQueryBus.builder()
-                                      .axonServerConnectionManager(connectionManager)
-                                      .configuration(configuration)
-                                      .localSegment(localQueryBus2)
-                                      .messageSerializer(serializer)
-                                      .genericSerializer(serializer)
-                                      .build();
-        queryBus2.start();
+        connector2 = new AxonServerQueryBusConnector(connectionManager.getConnection(), configuration);
+        queryBus2 = new DistributedQueryBus(localQueryBus2, connector, DistributedQueryBusConfiguration.DEFAULT);
+        connector2.start();
         waitingQueries.set(0);
     }
 
     @AfterEach
     void tearDown() {
-        queryBus.shutdownDispatching();
-        queryBus.disconnect();
-        queryBus2.shutdownDispatching();
-        queryBus2.disconnect();
+        connector.shutdownDispatching();
+        connector.disconnect();
+        connector2.shutdownDispatching();
+        connector2.disconnect();
 
         connectionManager.shutdown();
     }

@@ -32,9 +32,9 @@ import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.annotations.AnnotatedQueryHandlingComponent;
 import org.axonframework.queryhandling.annotations.QueryHandler;
+import org.axonframework.queryhandling.distributed.DistributedQueryBus;
+import org.axonframework.queryhandling.distributed.DistributedQueryBusConfiguration;
 import org.axonframework.serialization.PassThroughConverter;
-import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.test.server.AxonServerContainer;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
@@ -71,10 +71,10 @@ class StreamingQueryIT {
     private static String axonServerAddress;
     private static String nonStreamingAxonServerAddress;
 
-    private AxonServerQueryBus senderQueryBus;
-    private AxonServerQueryBus nonStreamingSenderQueryBus;
+    private DistributedQueryBus senderQueryBus;
+    private DistributedQueryBus nonStreamingSenderQueryBus;
 
-
+    @SuppressWarnings("resource")
     @Container
     private static final AxonServerContainer axonServerContainer =
             new AxonServerContainer()
@@ -109,10 +109,10 @@ class StreamingQueryIT {
     void setUp() {
         QueryBus senderLocalSegment = QueryBusTestUtils.aQueryBus();
 
-        AxonServerQueryBus handlerQueryBus = axonServerQueryBus(QueryBusTestUtils.aQueryBus(), axonServerAddress);
+        DistributedQueryBus handlerQueryBus = axonServerQueryBus(QueryBusTestUtils.aQueryBus(), axonServerAddress);
         senderQueryBus = axonServerQueryBus(senderLocalSegment, axonServerAddress);
 
-        AxonServerQueryBus nonStreamingHandlerQueryBus =
+        DistributedQueryBus nonStreamingHandlerQueryBus =
                 axonServerQueryBus(QueryBusTestUtils.aQueryBus(), nonStreamingAxonServerAddress);
         nonStreamingSenderQueryBus =
                 axonServerQueryBus(senderLocalSegment, nonStreamingAxonServerAddress);
@@ -123,16 +123,15 @@ class StreamingQueryIT {
         nonStreamingHandlerQueryBus.subscribe(queryHandlingComponent);
     }
 
-    private AxonServerQueryBus axonServerQueryBus(QueryBus localSegment, String axonServerAddress) {
-        Serializer serializer = JacksonSerializer.defaultSerializer();
-        return AxonServerQueryBus.builder()
-                                 .localSegment(localSegment)
-                                 .configuration(configuration(axonServerAddress))
-                                 .axonServerConnectionManager(connectionManager(axonServerAddress))
-                                 .updateEmitter(null)
-                                 .genericSerializer(serializer)
-                                 .messageSerializer(serializer)
-                                 .build();
+    private DistributedQueryBus axonServerQueryBus(QueryBus localSegment, String axonServerAddress) {
+        return new DistributedQueryBus(
+                localSegment,
+                new AxonServerQueryBusConnector(
+                        connectionManager(axonServerAddress).getConnection(),
+                        configuration(axonServerAddress)
+                ),
+                DistributedQueryBusConfiguration.DEFAULT
+        );
     }
 
     private AxonServerConnectionManager connectionManager(String axonServerAddress) {

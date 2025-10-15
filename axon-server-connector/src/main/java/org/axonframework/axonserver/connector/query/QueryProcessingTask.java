@@ -64,7 +64,8 @@ class QueryProcessingTask implements Runnable, FlowControl {
     private final QueryBus localSegment;
     private final QueryRequest queryRequest;
     private final ReplyChannel<QueryResponse> responseHandler;
-    private final QuerySerializer serializer;
+    // TODO #3488 - Replace for QueryConverter in style of CommandConverter
+//    private final QuerySerializer serializer;
     private final String clientId;
     private final AtomicReference<StreamableResponse> streamableResultRef = new AtomicReference<>();
     private final AtomicLong requestedBeforeInit = new AtomicLong();
@@ -81,20 +82,17 @@ class QueryProcessingTask implements Runnable, FlowControl {
      *                        application instance.
      * @param queryRequest    The request received from Axon Server.
      * @param responseHandler The {@link ReplyChannel} used for sending items to the Axon Server.
-     * @param serializer      The serializer used to serialize items.
      * @param clientId        The identifier of the client.
      * @param spanFactory     The {@link QueryBusSpanFactory} implementation to use to provide tracing capabilities.
      */
     QueryProcessingTask(QueryBus localSegment,
                         QueryRequest queryRequest,
                         ReplyChannel<QueryResponse> responseHandler,
-                        QuerySerializer serializer,
                         String clientId,
                         QueryBusSpanFactory spanFactory) {
         this(localSegment,
              queryRequest,
              responseHandler,
-             serializer,
              clientId,
              ClasspathResolver::projectReactorOnClasspath,
              spanFactory);
@@ -107,7 +105,6 @@ class QueryProcessingTask implements Runnable, FlowControl {
      *                           application instance.
      * @param queryRequest       The request received from Axon Server.
      * @param responseHandler    The {@link ReplyChannel} used for sending items to the Axon Server.
-     * @param serializer         The serializer used to serialize items.
      * @param clientId           The identifier of the client.
      * @param reactorOnClassPath Indicates whether Project Reactor is on the classpath.
      * @param spanFactory        The {@link QueryBusSpanFactory} implementation to use to provide tracing capabilities.
@@ -115,14 +112,12 @@ class QueryProcessingTask implements Runnable, FlowControl {
     QueryProcessingTask(QueryBus localSegment,
                         QueryRequest queryRequest,
                         ReplyChannel<QueryResponse> responseHandler,
-                        QuerySerializer serializer,
                         String clientId,
                         Supplier<Boolean> reactorOnClassPath,
                         QueryBusSpanFactory spanFactory) {
         this.localSegment = localSegment;
         this.queryRequest = queryRequest;
         this.responseHandler = responseHandler;
-        this.serializer = serializer;
         this.clientId = clientId;
         this.supportsStreaming = supportsStreaming(queryRequest);
         this.reactorOnClassPath = reactorOnClassPath;
@@ -133,7 +128,8 @@ class QueryProcessingTask implements Runnable, FlowControl {
     public void run() {
         try {
             logger.debug("Will process query [{}]", queryRequest.getQuery());
-            QueryMessage queryMessage = serializer.deserializeRequest(queryRequest);
+            // TODO #3488 - Use QueryConverter (that is styled after CommandConverter) to convert the QueryRequest to a QueryMessage
+            QueryMessage queryMessage = null;
             spanFactory.createQueryProcessingSpan(queryMessage).run(() -> {
                 if (numberOfResults(queryRequest.getProcessingInstructionsList()) == DIRECT_QUERY_NUMBER_OF_RESULTS) {
                     if (supportsStreaming && reactorOnClassPath.get()) {
@@ -187,7 +183,7 @@ class QueryProcessingTask implements Runnable, FlowControl {
         return streamableResultRef.get() == null;
     }
 
-    private <Q, R> void streamingQuery(QueryMessage originalQueryMessage) {
+    private void streamingQuery(QueryMessage originalQueryMessage) {
         // noinspection unchecked
         QueryMessage streamingQueryMessage = new GenericQueryMessage(
                 originalQueryMessage,
@@ -198,7 +194,7 @@ class QueryProcessingTask implements Runnable, FlowControl {
         setResult(streamableFluxResult(resultPublisher));
     }
 
-    private <T> void directQuery(QueryMessage queryMessage) {
+    private void directQuery(QueryMessage queryMessage) {
         // TODO #3488 - Implement as part of Axon Server Query Bus implementation
 //        localSegment.query(queryMessage)
 //                    .whenComplete((result, e) -> {
@@ -237,22 +233,22 @@ class QueryProcessingTask implements Runnable, FlowControl {
     private StreamableResponse streamableFluxResult(Publisher<QueryResponseMessage> resultPublisher) {
         return new StreamableFluxResponse(Flux.from(resultPublisher),
                                           responseHandler,
-                                          serializer,
                                           queryRequest.getMessageIdentifier(),
                                           clientId);
     }
 
+    @SuppressWarnings("unused")
     private <R> StreamableMultiInstanceResponse<R> streamableMultiInstanceResult(QueryResponseMessage result,
                                                                                  Class<R> responseType) {
         return new StreamableMultiInstanceResponse<>(result,
                                                      responseType,
                                                      responseHandler,
-                                                     serializer,
                                                      queryRequest.getMessageIdentifier());
     }
 
+    @SuppressWarnings("unused")
     private StreamableInstanceResponse streamableInstanceResult(QueryResponseMessage result) {
-        return new StreamableInstanceResponse(result, responseHandler, serializer, queryRequest.getMessageIdentifier());
+        return new StreamableInstanceResponse(result, responseHandler, queryRequest.getMessageIdentifier());
     }
 
     private boolean supportsStreaming(QueryRequest queryRequest) {

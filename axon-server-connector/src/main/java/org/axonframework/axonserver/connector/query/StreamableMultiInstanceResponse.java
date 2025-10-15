@@ -48,7 +48,8 @@ class StreamableMultiInstanceResponse<T> implements StreamableResponse {
     private final Class<T> responseType;
     private final Iterator<T> result;
     private final ReplyChannel<QueryResponse> responseHandler;
-    private final QuerySerializer serializer;
+    // TODO #3488 - Use QueryConverter (that is styled after CommandConverter) to convert the QueryRequest to a QueryMessage
+//    private final QuerySerializer serializer;
     private final String requestId;
 
     private final AtomicLong requestedRef = new AtomicLong();
@@ -62,19 +63,17 @@ class StreamableMultiInstanceResponse<T> implements StreamableResponse {
      * @param resultMessage   The result message which payload should be streamed/
      * @param responseType    The type of single item that needs to be streamed/
      * @param responseHandler The {@link ReplyChannel} used for sending items to the Axon Server/
-     * @param serializer      The serializer used to serialize items/
      * @param requestId       The identifier of the request these responses refer to/
      */
-    public StreamableMultiInstanceResponse(@Nonnull QueryResponseMessage resultMessage,
-                                           @Nonnull Class<T> responseType,
-                                           @Nonnull ReplyChannel<QueryResponse> responseHandler,
-                                           @Nonnull QuerySerializer serializer,
-                                           @Nonnull String requestId) {
+    public StreamableMultiInstanceResponse(QueryResponseMessage resultMessage,
+                                           Class<T> responseType,
+                                           ReplyChannel<QueryResponse> responseHandler,
+                                           String requestId) {
         this.resultMessage = resultMessage;
         this.responseType = responseType;
         this.responseHandler = responseHandler;
-        this.serializer = serializer;
         this.requestId = requestId;
+        @SuppressWarnings("unchecked")
         List<T> payload = (List<T>) resultMessage.payload();
         this.result = payload != null ? payload.iterator() : emptyIterator();
     }
@@ -133,6 +132,7 @@ class StreamableMultiInstanceResponse<T> implements StreamableResponse {
                                           Metadata.emptyInstance());
         }
         GenericQueryResponseMessage message = new GenericQueryResponseMessage(delegate);
-        responseHandler.send(serializer.serializeResponse(message, requestId));
+        // TODO #3488 - Use QueryConverter (that is styled after CommandConverter) to convert the QueryRequest to a QueryMessage
+//        responseHandler.send(serializer.serializeResponse(message, requestId));
     }
 }

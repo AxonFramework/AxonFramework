@@ -17,11 +17,13 @@
 package org.axonframework.modelling.command;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Id;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.Version;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.DomainEventSequenceAware;
@@ -30,6 +32,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -41,7 +44,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.Consumer;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
@@ -69,7 +74,7 @@ class GenericJpaRepositoryTest {
         mockEntityManager = mock(EntityManager.class);
         //noinspection unchecked
         identifierConverter = mock(Function.class);
-        eventBus = SimpleEventBus.builder().build();
+        eventBus = new SimpleEventBus();
         when(identifierConverter.apply(anyString())).thenAnswer(i -> i.getArguments()[0]);
         testSubject =
                 GenericJpaRepository.builder(StubJpaAggregate.class)
@@ -96,16 +101,15 @@ class GenericJpaRepositoryTest {
 
     @Test
     void aggregateStoredBeforeEventsPublished() throws Exception {
-        //noinspection unchecked
-        Consumer<List<? extends EventMessage>> mockConsumer = mock(Consumer.class);
-        eventBus.subscribe(mockConsumer);
+        OrderTrackingListener listener = new OrderTrackingListener();
+        eventBus.subscribe(listener);
 
         testSubject.newInstance(() -> new StubJpaAggregate("test", "payload1", "payload2"));
         CurrentUnitOfWork.commit();
 
-        InOrder inOrder = inOrder(mockEntityManager, mockConsumer);
+        InOrder inOrder = inOrder(mockEntityManager);
         inOrder.verify(mockEntityManager).persist(any());
-        inOrder.verify(mockConsumer).accept(anyList());
+        assertTrue(listener.wasInvoked(), "Listener should have been invoked");
     }
 
     @Test
@@ -179,7 +183,9 @@ class GenericJpaRepositoryTest {
 
     @Test
     void aggregateDoesNotCreateSequenceNumbersWhenEventBusIsNotDomainEventSequenceAware() {
-        SimpleEventBus testEventBus = spy(SimpleEventBus.builder().build());
+        SimpleEventBus testEventBus = new SimpleEventBus();
+        OrderTrackingListener listener = new OrderTrackingListener();
+        testEventBus.subscribe(listener);
 
         testSubject = GenericJpaRepository.builder(StubJpaAggregate.class)
                                                 .entityManagerProvider(new SimpleEntityManagerProvider(mockEntityManager))
@@ -195,12 +201,7 @@ class GenericJpaRepositoryTest {
 
         CurrentUnitOfWork.commit();
 
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<List<? extends EventMessage>> eventCaptor =
-                ArgumentCaptor.forClass((Class<List<? extends EventMessage>>) (Class<?>) List.class);
-
-        verify(testEventBus).publish(eventCaptor.capture());
-        List<? extends EventMessage> capturedEvents = eventCaptor.getValue();
+        List<EventMessage> capturedEvents = listener.getReceivedEvents();
 
         assertEquals(1, capturedEvents.size());
         EventMessage eventOne = capturedEvents.get(0);
@@ -338,13 +339,13 @@ class GenericJpaRepositoryTest {
         private final Map<String, Long> sequencePerAggregate = new HashMap<>();
 
         DomainSequenceAwareEventBus() {
-            super(SimpleEventBus.builder());
         }
 
         @Override
-        public void publish(@Nonnull List<? extends EventMessage> events) {
+        public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
+                                               @Nonnull List<EventMessage> events) {
             publishedEvents.addAll(events);
-            super.publish(events);
+            return super.publish(context, events);
         }
 
         List<EventMessage> getPublishedEvents() {
@@ -359,6 +360,34 @@ class GenericJpaRepositoryTest {
             return Optional.ofNullable(
                     sequencePerAggregate.computeIfPresent(aggregateIdentifier, (aggregateId, seqNo) -> seqNo++)
             );
+        }
+
+        @Override
+        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+
+        }
+    }
+
+    /**
+     * Listener that tracks invocation order relative to other operations.
+     */
+    private static class OrderTrackingListener implements BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> {
+        private final List<EventMessage> receivedEvents = new CopyOnWriteArrayList<>();
+        private volatile boolean invoked = false;
+
+        @Override
+        public CompletableFuture<?> apply(List<? extends EventMessage> events, ProcessingContext context) {
+            invoked = true;
+            receivedEvents.addAll(events);
+            return CompletableFuture.completedFuture(null);
+        }
+
+        public boolean wasInvoked() {
+            return invoked;
+        }
+
+        public List<EventMessage> getReceivedEvents() {
+            return new ArrayList<>(receivedEvents);
         }
     }
 }

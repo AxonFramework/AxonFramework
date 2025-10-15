@@ -39,7 +39,7 @@ public class EventProcessorInfoConfiguration implements Module {
 
 //    private final Component<EventProcessorControlService> eventProcessorControlService;
 
-    private Configuration config;
+//    private Configuration config;
 
     /**
      * Create an default EventProcessorInfoConfiguration, which uses the {@link Configuration} as a means to retrieve
@@ -95,7 +95,7 @@ public class EventProcessorInfoConfiguration implements Module {
 
     @Override
     public Configuration build(@Nonnull Configuration parent, @Nonnull LifecycleRegistry lifecycleRegistry) {
-        this.config = config;
+//        this.config = config;
         // if there are no event handlers registered, there may be no EventProcessingConfiguration at all.
 //        if (config.eventProcessingConfiguration() != null) {
 //            lifecycleRegistry.onStart(Phase.INBOUND_EVENT_CONNECTORS, eventProcessorControlService::get);

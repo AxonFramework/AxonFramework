@@ -34,25 +34,23 @@ class StreamableInstanceResponse implements StreamableResponse {
 
     private final QueryResponseMessage result;
     private final ReplyChannel<QueryResponse> responseHandler;
-    private final QuerySerializer serializer;
+    // TODO #3488 - Use QueryConverter (that is styled after CommandConverter) to convert the QueryRequest to a QueryMessage
+//    private final QuerySerializer serializer;
     private final String requestId;
     private volatile boolean cancelled = false;
 
     /**
      * Instantiates this streamable instance result.
      *
-     * @param result          The result to be streamed.
-     * @param responseHandler The {@link ReplyChannel} used for sending the result to the Axon Server.
-     * @param serializer      The serializer used to serialize items.
-     * @param requestId       The identifier of the request these responses refer to.
+     * @param result          the result to be streamed
+     * @param responseHandler the {@link ReplyChannel} used for sending the result to the Axon Server
+     * @param requestId       the identifier of the request these responses refer to
      */
-    public StreamableInstanceResponse(@Nonnull QueryResponseMessage result,
-                                      @Nonnull ReplyChannel<QueryResponse> responseHandler,
-                                      @Nonnull QuerySerializer serializer,
-                                      @Nonnull String requestId) {
+    public StreamableInstanceResponse(QueryResponseMessage result,
+                                      ReplyChannel<QueryResponse> responseHandler,
+                                      String requestId) {
         this.result = result;
         this.responseHandler = responseHandler;
-        this.serializer = serializer;
         this.requestId = requestId;
     }
 
@@ -61,7 +59,8 @@ class StreamableInstanceResponse implements StreamableResponse {
         if (requested <= 0 || cancelled) {
             return;
         }
-        responseHandler.sendLast(serializer.serializeResponse(result, requestId));
+        // TODO #3488 - Use QueryConverter (that is styled after CommandConverter) to convert the QueryRequest to a QueryMessage
+//        responseHandler.sendLast(serializer.serializeResponse(result, requestId));
     }
 
     @Override

@@ -27,6 +27,7 @@ import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotations.AnnotatedCommandHandlingComponent;
 import org.axonframework.common.Assert;
 import org.axonframework.common.FutureUtils;
+import org.axonframework.common.Registration;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventBus;
@@ -105,6 +106,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -1111,6 +1113,12 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
         @Override
         public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at, @Nullable ProcessingContext context) {
+            return null;
+        }
+
+        @Override
+        public Registration subscribe(
+                @Nonnull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
             return null;
         }
     }

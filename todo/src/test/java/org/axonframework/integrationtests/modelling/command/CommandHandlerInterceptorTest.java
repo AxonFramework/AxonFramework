@@ -26,6 +26,7 @@ import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventsourcing.LegacyEventSourcingRepository;
 import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
@@ -68,7 +69,7 @@ class CommandHandlerInterceptorTest {
 
     @BeforeEach
     void setUp() {
-        eventStore = spy(new SimpleEventStore(new InMemoryEventStorageEngine(), new AnnotationBasedTagResolver()));
+        eventStore = spy(new SimpleEventStore(new InMemoryEventStorageEngine(), new SimpleEventBus(), new AnnotationBasedTagResolver()));
         Repository<MyAggregate> myAggregateRepository = LegacyEventSourcingRepository.builder(MyAggregate.class)
                                                                                      .eventStore(eventStore)
                                                                                      .build();
