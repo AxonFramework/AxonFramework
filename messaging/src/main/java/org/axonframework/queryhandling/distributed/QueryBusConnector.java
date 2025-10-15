@@ -33,7 +33,7 @@ import java.util.concurrent.CompletableFuture;
  * {@link org.axonframework.queryhandling.QueryBus} instances.
  * <p>
  * It allows for the dispatching of queries across different query bus instances, whether they are local or remote. One
- * connector can be wrapped with another through the {@link DelegatingQueryBusConnector}, upon which more functionality
+ * connector can be wrapped with another through the {@code DelegatingQueryBusConnector}, upon which more functionality
  * can be added, such as payload conversion or serialization.
  *
  * @author Steven van Beelen
@@ -84,51 +84,5 @@ public interface QueryBusConnector extends DescribableComponent {
     Publisher<QueryResponseMessage> streamingQuery(@Nonnull QueryMessage query,
                                                    @Nullable ProcessingContext context);
 
-    /**
-     * Registers a handler that will be called when an incoming query is received. The handler should process the query
-     * and call the provided {@code ResultCallback} to indicate success or failure.
-     *
-     * @param handler A lambda that takes a {@link QueryMessage} and a {@link ResultCallback}.
-     */
-    void onIncomingQuery(@Nonnull Handler handler);
-
-    /**
-     * A functional interface representing a handler for incoming query messages. The handler processes the query and
-     * uses the provided {@link ResultCallback} to report the result.
-     */// TODO unsure whether this is the style we should follow here.
-    interface Handler {
-
-        /**
-         * Handles the incoming query message.
-         *
-         * @param query    The query message to handle.
-         * @param callback The callback to invoke with the result of handling the query.
-         */
-        void query(@Nonnull QueryMessage query, @Nonnull ResultCallback callback);
-
-        Publisher<QueryResponseMessage> streamingQuery(@Nonnull QueryMessage query);
-    }
-
-    /**
-     * A callback interface for handling the result of query processing.
-     * <p>
-     * It provides methods to indicate success or failure of query handling.
-     */// TODO unsure whether this is the style we should follow here.
-    interface ResultCallback {
-
-        /**
-         * Called when the query processing is successful.
-         *
-         * @param resultMessage The result message containing the outcome of the query processing. If the message
-         *                      handling yielded no result message, a {@code null} should be passed.
-         */
-        void onSuccess(@Nullable QueryResponseMessage resultMessage);
-
-        /**
-         * Called when an error occurs during query processing.
-         *
-         * @param cause The exception that caused the error.
-         */
-        void onError(@Nonnull Throwable cause);
-    }
+    // TODO #3488 - Introduce a form of integration like the CommandBusConnector.Handler, but then for queries
 }

@@ -92,14 +92,15 @@ public class DistributedQueryBus implements QueryBus {
     @Override
     public QueryBus subscribe(@Nonnull QueryHandlerName handlerName,
                               @Nonnull QueryHandler queryHandler) {
-        return null;
+        connector.subscribe(handlerName);
+        return this;
     }
 
     @Nonnull
     @Override
     public MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage query,
                                                      @Nullable ProcessingContext context) {
-        return null;
+        return connector.query(query, context);
     }
 
     @Nonnull
@@ -134,8 +135,10 @@ public class DistributedQueryBus implements QueryBus {
     @Nonnull
     @Override
     public CompletableFuture<Void> completeSubscriptionsExceptionally(
-            @Nonnull Predicate<SubscriptionQueryMessage> filter, @Nonnull Throwable cause,
-            @Nullable ProcessingContext context) {
+            @Nonnull Predicate<SubscriptionQueryMessage> filter,
+            @Nonnull Throwable cause,
+            @Nullable ProcessingContext context
+    ) {
         return null;
     }
 

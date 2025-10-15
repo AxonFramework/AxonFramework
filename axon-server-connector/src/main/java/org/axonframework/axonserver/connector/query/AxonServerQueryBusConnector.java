@@ -18,23 +18,28 @@ package org.axonframework.axonserver.connector.query;
 
 import io.axoniq.axonserver.connector.AxonServerConnection;
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.common.FutureUtils;
-import org.axonframework.common.Registration;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.lifecycle.ShutdownLatch;
+import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.QueryHandlerName;
+import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.distributed.QueryBusConnector;
+import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
+ * TODO Implement methods and fine tune JavaDoc
+ *
  * @author Steven van Beelen
  * @since 5.0.0
  */
@@ -49,6 +54,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
     private final ShutdownLatch shutdownLatch = new ShutdownLatch();
 
     /**
+     * TODO add JavaDoc
      *
      * @param connection
      * @param configuration
@@ -67,6 +73,34 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
     public void start() {
         shutdownLatch.initialize();
         logger.trace("The AxonServerQueryBusConnector started.");
+    }
+
+    // TODO Implement
+    @Override
+    public CompletableFuture<Void> subscribe(@Nonnull QueryHandlerName name) {
+        return null;
+    }
+
+    // TODO Implement
+    @Override
+    public boolean unsubscribe(@Nonnull QueryHandlerName name) {
+        return false;
+    }
+
+    // TODO Implement
+    @Nonnull
+    @Override
+    public MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage query,
+                                                     @Nullable ProcessingContext context) {
+        return null;
+    }
+
+    // TODO Implement
+    @Nonnull
+    @Override
+    public Publisher<QueryResponseMessage> streamingQuery(@Nonnull QueryMessage query,
+                                                          @Nullable ProcessingContext context) {
+        return null;
     }
 
     /**
