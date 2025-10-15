@@ -32,7 +32,7 @@ public interface MessageHandlerInterceptor<M extends Message> {
 
     /**
      * Intercepts a given {@code message} on handling before reaching the designated
-     * {@link org.axonframework.messaging.configuration.MessageHandler}.
+     * {@link MessageHandler}.
      * <p/>
      * The interceptor is responsible for the continuation of the handling process by invoking the
      * {@link MessageHandlerInterceptorChain#proceed(Message, ProcessingContext)} method on the given

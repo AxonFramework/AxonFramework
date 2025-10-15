@@ -19,7 +19,7 @@ package org.axonframework.test.aggregate;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.LegacyMessageHandler;
 import org.axonframework.test.AxonAssertionError;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
@@ -204,7 +204,7 @@ class FixtureTest_MatcherParams {
         List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
                                             new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));
-        MessageHandler<CommandMessage, CommandResultMessage> mockCommandHandler = mock(MessageHandler.class);
+        LegacyMessageHandler<CommandMessage, CommandResultMessage> mockCommandHandler = mock(LegacyMessageHandler.class);
         fixture.registerCommandHandler(StrangeCommand.class, mockCommandHandler);
         fixture
                 .given(givenEvents)

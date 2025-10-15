@@ -16,80 +16,14 @@
 
 package org.axonframework.messaging;
 
-import jakarta.annotation.Nonnull;
-import org.axonframework.common.annotations.Internal;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
-
 /**
- * Interface for a component that processes Messages.
+ * Marker interface for a handlers or components of {@link org.axonframework.messaging.Message messages}.
  *
- * @param <T> The message type this handler can process
+ * @author Allard Buijze
  * @author Rene de Waele
- * @since 3.0
+ * @author Steven van Beelen
+ * @since 3.0.0
  */
-public interface MessageHandler<T extends Message, R extends Message> {
+public interface MessageHandler {
 
-    /**
-     * Handles the given {@code message}.
-     *
-     * @param message The message to be processed.
-     * @return The result of the message processing.
-     * @throws Exception any exception that occurs during message handling
-     * @deprecated In favor of {@link #handle(Message, ProcessingContext)}
-     */
-    // TODO Remove entirely once #3065, #3195, #3517, and #3728 have been resolved.
-    @Deprecated
-    @Internal
-    Object handleSync(@Nonnull T message, @Nonnull ProcessingContext context) throws Exception;
-
-    /**
-     * Handles the given {@code message} and returns a {@link MessageStream} containing the result of the processing.
-     *
-     * @param message The message to be processed.
-     * @param context The {@code ProcessingContext} in which the reset is being prepared.
-     * @return A {@link MessageStream} containing the result of the message processing.
-     */
-    default MessageStream<R> handle(@Nonnull T message, @Nonnull ProcessingContext context) {
-        try {
-            var result = handleSync(message, context);
-            if (result instanceof MessageStream<?> messageStream) {
-                return (MessageStream<R>) messageStream;
-            }
-            return MessageStream.just((R) GenericResultMessage.asResultMessage(result));
-        } catch (Exception e) {
-            return MessageStream.failed(e);
-        }
-    }
-
-    /**
-     * Indicates whether this handler can handle the given message
-     *
-     * @param message The message to verify
-     * @return {@code true} if this handler can handle the message, otherwise {@code false}
-     */
-    @Deprecated
-    default boolean canHandle(@Nonnull T message, @Nonnull ProcessingContext context) {
-        return true;
-    }
-
-    /**
-     * Returns the instance type that this handler delegates to.
-     *
-     * @return Returns the instance type that this handler delegates to
-     */
-    @Deprecated
-    default Class<?> getTargetType() {
-        return getClass();
-    }
-
-    /**
-     * Indicates whether this handler can handle messages of given type
-     *
-     * @param payloadType The payloadType to verify
-     * @return {@code true} if this handler can handle the payloadType, otherwise {@code false}
-     */
-    @Deprecated
-    default boolean canHandleType(Class<?> payloadType) {
-        return true;
-    }
 }

@@ -20,7 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.configuration.MessageHandler;
+import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 /**
