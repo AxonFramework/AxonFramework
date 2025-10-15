@@ -37,6 +37,8 @@ import java.util.Map;
  */
 public interface QueryMessage extends Message {
 
+    // todo #613 add priority just like CommandMessage
+
     /**
      * Returns the query {@link MessageType response type} of this {@code QueryMessage}.
      *
