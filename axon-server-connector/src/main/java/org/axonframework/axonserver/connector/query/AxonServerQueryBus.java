@@ -129,12 +129,12 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
     private static final int DIRECT_QUERY_NUMBER_OF_RESULTS = 1;
     private static final long DIRECT_QUERY_TIMEOUT_MS = TimeUnit.HOURS.toMillis(1);
-    private static final int SCATTER_GATHER_NUMBER_OF_RESULTS = -1;
 
     private static final int QUERY_QUEUE_CAPACITY = 1000;
 
     private final AxonServerConnectionManager axonServerConnectionManager;
     private final AxonServerConfiguration configuration;
+    @SuppressWarnings("unused")
     private final QueryUpdateEmitter updateEmitter;
     private final QueryBus localSegment;
     private final QuerySerializer serializer;
@@ -410,19 +410,19 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                           .query(queryRequest);
     }
 
-    private <R> Publisher<QueryResponseMessage> deserialize(QueryMessage queryMessage,
-                                                            QueryResponse queryResponse) {
+    private Publisher<QueryResponseMessage> deserialize(QueryMessage queryMessage,
+                                                        QueryResponse queryResponse) {
         // TODO #3488 - Replace Serializer and ResponseType use
         //noinspection unchecked
-        Class<R> expectedResponseType = null; // (Class<R>) queryMessage.responseType().getExpectedResponseType();
+//        Class<R> expectedResponseType = (Class<R>) queryMessage.responseType().getExpectedResponseType();
         QueryResponseMessage responseMessage = serializer.deserializeResponse(queryResponse);
         if (responseMessage.isExceptional()) {
             return Flux.error(responseMessage.exceptionResult());
         }
-        if (expectedResponseType.isAssignableFrom(responseMessage.payloadType())) {
+//        if (expectedResponseType.isAssignableFrom(responseMessage.payloadType())) {
 //            InstanceResponseType<R> instanceResponseType = new InstanceResponseType<>(expectedResponseType);
 //            return Flux.just(new ConvertingResponseMessage<>(instanceResponseType, responseMessage));
-        } else {
+//        } else {
 //            MultipleInstancesResponseType<R> multiResponseType =
 //                    new MultipleInstancesResponseType<>(expectedResponseType);
 //            ConvertingResponseMessage<List<R>> convertingMessage =
@@ -432,10 +432,11 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 //                                                    .map(payload -> singleMessage(responseMessage,
 //                                                                                  payload,
 //                                                                                  expectedResponseType)));
-        }
+//        }
         return null;
     }
 
+    @SuppressWarnings("unused")
     private <R> QueryResponseMessage singleMessage(QueryResponseMessage original,
                                                       R newPayload,
                                                       Class<R> expectedPayloadType) {
@@ -475,6 +476,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
             logger.debug("Subscription Query requested with subscription Id [{}]", subscriptionId);
 
+            @SuppressWarnings("unused")
             io.axoniq.axonserver.connector.query.SubscriptionQueryResult result =
                     axonServerConnectionManager.getConnection(targetContext)
                                                .queryChannel()
@@ -907,6 +909,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         }
     }
 
+    @SuppressWarnings("unused")  // Check if still needed as part of TODO #3488 - Replace Serializer and ResponseType use
     private static class QueryResponseSpliterator implements Spliterator<QueryResponseMessage> {
 
         private final QueryMessage queryMessage;
@@ -972,8 +975,10 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
         private final AtomicBoolean singleExecutionCheck = new AtomicBoolean();
         private final ResultStream<QueryResponse> result;
+        @SuppressWarnings("unused")
         private final QuerySerializer serializer;
         private final CompletableFuture<QueryResponseMessage> queryTransaction;
+        @SuppressWarnings("unused")
         private final Class<R> expectedResponseType;
         private final Span span;
 

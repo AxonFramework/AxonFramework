@@ -23,8 +23,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.lang.management.ManagementFactory;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -37,7 +35,6 @@ import java.util.Map;
 @ConfigurationProperties(prefix = "axon.axonserver")
 public class AxonServerConfiguration {
 
-    private static final int DEFAULT_GRPC_PORT = 8124;
     private static final String DEFAULT_SERVERS = "localhost";
     private static final String DEFAULT_CONTEXT = "default";
 

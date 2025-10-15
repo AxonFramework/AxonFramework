@@ -96,7 +96,7 @@ public class PlatformService extends PlatformServiceGrpc.PlatformServiceImplBase
     public StreamObserver<PlatformInboundInstruction> openStream(
             StreamObserver<PlatformOutboundInstruction> responseObserver
     ) {
-        return new StreamObserver<PlatformInboundInstruction>() {
+        return new StreamObserver<>() {
             @Override
             public void onNext(PlatformInboundInstruction platformInboundInstruction) {
 
