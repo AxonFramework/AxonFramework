@@ -70,7 +70,8 @@ class QueryProcessingTaskIntegrationTest {
     private static final int DIRECT_QUERY_NUMBER_OF_RESULTS = 1;
     private QueryBus localSegment;
     private CachingReplyChannel<QueryResponse> responseHandler;
-    private QuerySerializer querySerializer;
+    // TODO #3488 - Use QueryConverter (that is styled after CommandConverter) to convert the QueryRequest to a QueryMessage
+//    private QuerySerializer querySerializer;
     private TestSpanFactory spanFactory;
     private QueryBusSpanFactory queryBusSpanFactory;
 
@@ -89,7 +90,6 @@ class QueryProcessingTaskIntegrationTest {
                                                                 .clientId(CLIENT_ID)
                                                                 .componentName(COMPONENT_NAME)
                                                                 .build();
-        querySerializer = new QuerySerializer(serializer, serializer, config);
         queryHandlingComponent1 = new QueryHandlingComponent1();
         MessageConverter converter = PassThroughConverter.MESSAGE_INSTANCE;
         localSegment.subscribe(new AnnotatedQueryHandlingComponent<>(queryHandlingComponent1, converter));
@@ -102,13 +102,12 @@ class QueryProcessingTaskIntegrationTest {
                 new GenericQueryMessage(new MessageType(FluxQuery.class),
                                         new FluxQuery(1000),
                                         new MessageType(String.class));
-        QueryRequest request =
-                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1);
+        QueryRequest request = null;
+//                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1);
 
         QueryProcessingTask task = new QueryProcessingTask(localSegment,
                                                            request,
                                                            responseHandler,
-                                                           querySerializer,
                                                            CLIENT_ID,
                                                            queryBusSpanFactory);
 
@@ -125,13 +124,12 @@ class QueryProcessingTaskIntegrationTest {
                 new GenericQueryMessage(new MessageType(FluxQuery.class),
                                         new FluxQuery(1000),
                                         new MessageType(String.class));
-        QueryRequest request =
-                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1);
+        QueryRequest request = null;
+//                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1);
 
         QueryProcessingTask task = new QueryProcessingTask(localSegment,
                                                            request,
                                                            responseHandler,
-                                                           querySerializer,
                                                            CLIENT_ID,
                                                            queryBusSpanFactory);
 
@@ -145,13 +143,12 @@ class QueryProcessingTaskIntegrationTest {
                 new GenericQueryMessage(new MessageType(FluxQuery.class),
                                         new FluxQuery(1000),
                                         new MessageType(String.class));
-        QueryRequest request =
-                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1);
+        QueryRequest request = null;
+//                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1);
 
         QueryProcessingTask task = new QueryProcessingTask(localSegment,
                                                            request,
                                                            responseHandler,
-                                                           querySerializer,
                                                            CLIENT_ID,
                                                            queryBusSpanFactory);
 
@@ -168,13 +165,12 @@ class QueryProcessingTaskIntegrationTest {
                 new GenericQueryMessage(new MessageType(FluxQuery.class),
                                         new FluxQuery(1000),
                                         new MessageType(String.class));
-        QueryRequest request =
-                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1);
+        QueryRequest request = null;
+//                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1);
 
         QueryProcessingTask task = new QueryProcessingTask(localSegment,
                                                            request,
                                                            responseHandler,
-                                                           querySerializer,
                                                            CLIENT_ID,
                                                            queryBusSpanFactory);
 
@@ -190,16 +186,15 @@ class QueryProcessingTaskIntegrationTest {
                 new GenericQueryMessage(new MessageType(FluxQuery.class),
                                         new FluxQuery(1000),
                                         new MessageType(String.class));
-        QueryRequest request =
-                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
-                               .toBuilder()
-                               .addProcessingInstructions(asSupportsStreaming())
-                               .build();
+        QueryRequest request = null;
+//                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
+//                               .toBuilder()
+//                               .addProcessingInstructions(asSupportsStreaming())
+//                               .build();
 
         QueryProcessingTask task = new QueryProcessingTask(localSegment,
                                                            request,
                                                            responseHandler,
-                                                           querySerializer,
                                                            CLIENT_ID,
                                                            queryBusSpanFactory);
 
@@ -223,16 +218,15 @@ class QueryProcessingTaskIntegrationTest {
         QueryMessage queryMessage = new GenericQueryMessage(
                 new MessageType(ListQuery.class), new ListQuery(1000), new MessageType(String.class)
         );
-        QueryRequest request =
-                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
-                               .toBuilder()
-                               .addProcessingInstructions(asSupportsStreaming())
-                               .build();
+        QueryRequest request = null;
+//                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
+//                               .toBuilder()
+//                               .addProcessingInstructions(asSupportsStreaming())
+//                               .build();
 
         QueryProcessingTask task = new QueryProcessingTask(localSegment,
                                                            request,
                                                            responseHandler,
-                                                           querySerializer,
                                                            CLIENT_ID,
                                                            queryBusSpanFactory);
 
@@ -256,16 +250,15 @@ class QueryProcessingTaskIntegrationTest {
         QueryMessage queryMessage = new GenericQueryMessage(
                 new MessageType(ListQuery.class), new ListQuery(1000), new MessageType(String.class)
         );
-        QueryRequest request =
-                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
-                               .toBuilder()
-                               .addProcessingInstructions(asSupportsStreaming())
-                               .build();
+        QueryRequest request = null;
+//                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
+//                               .toBuilder()
+//                               .addProcessingInstructions(asSupportsStreaming())
+//                               .build();
 
         QueryProcessingTask task = new QueryProcessingTask(localSegment,
                                                            request,
                                                            responseHandler,
-                                                           querySerializer,
                                                            CLIENT_ID,
                                                            () -> false, queryBusSpanFactory);
 
@@ -289,16 +282,15 @@ class QueryProcessingTaskIntegrationTest {
         QueryMessage queryMessage = new GenericQueryMessage(
                 new MessageType(ListQuery.class), new ListQuery(1000), new MessageType(String.class)
         );
-        QueryRequest request =
-                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
-                               .toBuilder()
-                               .addProcessingInstructions(asSupportsStreaming())
-                               .build();
+        QueryRequest request = null;
+//                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
+//                               .toBuilder()
+//                               .addProcessingInstructions(asSupportsStreaming())
+//                               .build();
 
         QueryProcessingTask task = new QueryProcessingTask(localSegment,
                                                            request,
                                                            responseHandler,
-                                                           querySerializer,
                                                            CLIENT_ID,
                                                            () -> false, queryBusSpanFactory);
 
@@ -340,16 +332,15 @@ class QueryProcessingTaskIntegrationTest {
                 new GenericQueryMessage(new MessageType(FluxQuery.class),
                                         new FluxQuery(1000),
                                         new MessageType(String.class));
-        QueryRequest request =
-                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
-                               .toBuilder()
-                               .addProcessingInstructions(asSupportsStreaming())
-                               .build();
+        QueryRequest request = null;
+//                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
+//                               .toBuilder()
+//                               .addProcessingInstructions(asSupportsStreaming())
+//                               .build();
 
         QueryProcessingTask task = new QueryProcessingTask(localSegment,
                                                            request,
                                                            responseHandler,
-                                                           querySerializer,
                                                            CLIENT_ID,
                                                            queryBusSpanFactory);
 
@@ -391,16 +382,15 @@ class QueryProcessingTaskIntegrationTest {
                 new GenericQueryMessage(new MessageType(InstanceQuery.class),
                                         new InstanceQuery(),
                                         new MessageType(String.class));
-        QueryRequest request =
-                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1)
-                               .toBuilder()
-                               .addProcessingInstructions(asSupportsStreaming())
-                               .build();
+        QueryRequest request = null;
+//                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1)
+//                               .toBuilder()
+//                               .addProcessingInstructions(asSupportsStreaming())
+//                               .build();
 
         QueryProcessingTask task = new QueryProcessingTask(localSegment,
                                                            request,
                                                            responseHandler,
-                                                           querySerializer,
                                                            CLIENT_ID,
                                                            queryBusSpanFactory);
 
@@ -423,16 +413,15 @@ class QueryProcessingTaskIntegrationTest {
                 new MultipleInstanceQuery(1000),
                 new MessageType(String.class)
         );
-        QueryRequest request =
-                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
-                               .toBuilder()
-                               .addProcessingInstructions(asSupportsStreaming())
-                               .build();
+        QueryRequest request = null;
+//                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
+//                               .toBuilder()
+//                               .addProcessingInstructions(asSupportsStreaming())
+//                               .build();
 
         QueryProcessingTask task = new QueryProcessingTask(localSegment,
                                                            request,
                                                            responseHandler,
-                                                           querySerializer,
                                                            CLIENT_ID,
                                                            queryBusSpanFactory);
 
@@ -453,16 +442,15 @@ class QueryProcessingTaskIntegrationTest {
                 new GenericQueryMessage(new MessageType(FluxQuery.class),
                                         new FluxQuery(1000),
                                         new MessageType(String.class));
-        QueryRequest request =
-                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
-                               .toBuilder()
-                               .addProcessingInstructions(asSupportsStreaming())
-                               .build();
+        QueryRequest request = null;
+//                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
+//                               .toBuilder()
+//                               .addProcessingInstructions(asSupportsStreaming())
+//                               .build();
 
         QueryProcessingTask task = new QueryProcessingTask(localSegment,
                                                            request,
                                                            responseHandler,
-                                                           querySerializer,
                                                            CLIENT_ID,
                                                            queryBusSpanFactory);
         task.run();
@@ -483,16 +471,15 @@ class QueryProcessingTaskIntegrationTest {
                 new GenericQueryMessage(new MessageType(FluxQuery.class),
                                         new FluxQuery(1000),
                                         new MessageType(String.class));
-        QueryRequest request =
-                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
-                               .toBuilder()
-                               .addProcessingInstructions(asSupportsStreaming())
-                               .build();
+        QueryRequest request = null;
+//                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
+//                               .toBuilder()
+//                               .addProcessingInstructions(asSupportsStreaming())
+//                               .build();
 
         QueryProcessingTask task = new QueryProcessingTask(localSegment,
                                                            request,
                                                            responseHandler,
-                                                           querySerializer,
                                                            CLIENT_ID,
                                                            queryBusSpanFactory);
         task.cancel();
@@ -506,16 +493,15 @@ class QueryProcessingTaskIntegrationTest {
         QueryMessage queryMessage = new GenericQueryMessage(
                 new MessageType(ListQuery.class), new ListQuery(1000), new MessageType(String.class)
         );
-        QueryRequest request =
-                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
-                               .toBuilder()
-                               .addProcessingInstructions(asSupportsStreaming())
-                               .build();
+        QueryRequest request = null;
+//                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
+//                               .toBuilder()
+//                               .addProcessingInstructions(asSupportsStreaming())
+//                               .build();
 
         QueryProcessingTask task = new QueryProcessingTask(localSegment,
                                                            request,
                                                            responseHandler,
-                                                           querySerializer,
                                                            CLIENT_ID,
                                                            () -> false, queryBusSpanFactory);
         task.run();
@@ -534,16 +520,15 @@ class QueryProcessingTaskIntegrationTest {
         QueryMessage queryMessage = new GenericQueryMessage(
                 new MessageType(ListQuery.class), new ListQuery(1000), new MessageType(String.class)
         );
-        QueryRequest request =
-                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
-                               .toBuilder()
-                               .addProcessingInstructions(asSupportsStreaming())
-                               .build();
+        QueryRequest request = null;
+//                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
+//                               .toBuilder()
+//                               .addProcessingInstructions(asSupportsStreaming())
+//                               .build();
 
         QueryProcessingTask task = new QueryProcessingTask(localSegment,
                                                            request,
                                                            responseHandler,
-                                                           querySerializer,
                                                            CLIENT_ID,
                                                            () -> false, queryBusSpanFactory);
         task.cancel();
@@ -559,16 +544,15 @@ class QueryProcessingTaskIntegrationTest {
                 new ErrorAfterAWhileFluxQuery(),
                 new MessageType(String.class)
         );
-        QueryRequest request =
-                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
-                               .toBuilder()
-                               .addProcessingInstructions(asSupportsStreaming())
-                               .build();
+        QueryRequest request = null;
+//                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
+//                               .toBuilder()
+//                               .addProcessingInstructions(asSupportsStreaming())
+//                               .build();
 
         QueryProcessingTask task = new QueryProcessingTask(localSegment,
                                                            request,
                                                            responseHandler,
-                                                           querySerializer,
                                                            CLIENT_ID,
                                                            queryBusSpanFactory);
 
@@ -587,16 +571,15 @@ class QueryProcessingTaskIntegrationTest {
                 new GenericQueryMessage(new MessageType(ErrorFluxQuery.class),
                                         new ErrorFluxQuery(),
                                         new MessageType(String.class));
-        QueryRequest request =
-                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1)
-                               .toBuilder()
-                               .addProcessingInstructions(asSupportsStreaming())
-                               .build();
+        QueryRequest request = null;
+//                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1)
+//                               .toBuilder()
+//                               .addProcessingInstructions(asSupportsStreaming())
+//                               .build();
 
         QueryProcessingTask task = new QueryProcessingTask(localSegment,
                                                            request,
                                                            responseHandler,
-                                                           querySerializer,
                                                            CLIENT_ID,
                                                            queryBusSpanFactory);
 
@@ -615,16 +598,15 @@ class QueryProcessingTaskIntegrationTest {
                 new ThrowingExceptionFluxQuery(),
                 new MessageType(String.class)
         );
-        QueryRequest request =
-                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1)
-                               .toBuilder()
-                               .addProcessingInstructions(asSupportsStreaming())
-                               .build();
+        QueryRequest request = null;
+//                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1)
+//                               .toBuilder()
+//                               .addProcessingInstructions(asSupportsStreaming())
+//                               .build();
 
         QueryProcessingTask task = new QueryProcessingTask(localSegment,
                                                            request,
                                                            responseHandler,
-                                                           querySerializer,
                                                            CLIENT_ID,
                                                            queryBusSpanFactory);
 
@@ -643,16 +625,15 @@ class QueryProcessingTaskIntegrationTest {
                 new ThrowingExceptionListQuery(),
                 new MessageType(String.class)
         );
-        QueryRequest request =
-                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1)
-                               .toBuilder()
-                               .addProcessingInstructions(asSupportsStreaming())
-                               .build();
+        QueryRequest request = null;
+//                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1)
+//                               .toBuilder()
+//                               .addProcessingInstructions(asSupportsStreaming())
+//                               .build();
 
         QueryProcessingTask task = new QueryProcessingTask(localSegment,
                                                            request,
                                                            responseHandler,
-                                                           querySerializer,
                                                            CLIENT_ID,
                                                            queryBusSpanFactory);
 
@@ -670,16 +651,15 @@ class QueryProcessingTaskIntegrationTest {
                 new GenericQueryMessage(new MessageType(FluxQuery.class),
                                         new FluxQuery(1000),
                                         new MessageType(String.class));
-        QueryRequest request =
-                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
-                               .toBuilder()
-                               .addProcessingInstructions(asSupportsStreaming())
-                               .build();
+        QueryRequest request = null;
+//                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
+//                               .toBuilder()
+//                               .addProcessingInstructions(asSupportsStreaming())
+//                               .build();
 
         QueryProcessingTask task = new QueryProcessingTask(localSegment,
                                                            request,
                                                            responseHandler,
-                                                           querySerializer,
                                                            CLIENT_ID,
                                                            queryBusSpanFactory);
 
@@ -697,16 +677,15 @@ class QueryProcessingTaskIntegrationTest {
         QueryMessage queryMessage = new GenericQueryMessage(
                 new MessageType("query"), new ListQuery(1000), new MessageType(String.class)
         );
-        QueryRequest request =
-                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
-                               .toBuilder()
-                               .addProcessingInstructions(asSupportsStreaming())
-                               .build();
+        QueryRequest request = null;
+//                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
+//                               .toBuilder()
+//                               .addProcessingInstructions(asSupportsStreaming())
+//                               .build();
 
         QueryProcessingTask task = new QueryProcessingTask(localSegment,
                                                            request,
                                                            responseHandler,
-                                                           querySerializer,
                                                            CLIENT_ID,
                                                            queryBusSpanFactory);
 
@@ -723,11 +702,11 @@ class QueryProcessingTaskIntegrationTest {
         QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType(FluxQuery.class), new FluxQuery(1000), new MessageType(String.class)
         );
-        QueryRequest testRequest = querySerializer.serializeRequest(testQuery, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1);
+        QueryRequest testRequest = null;
+//                querySerializer.serializeRequest(testQuery, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1);
         QueryProcessingTask testSubject = new QueryProcessingTask(localSegment,
                                                                   testRequest,
                                                                   responseHandler,
-                                                                  querySerializer,
                                                                   CLIENT_ID,
                                                                   queryBusSpanFactory);
 
@@ -739,11 +718,11 @@ class QueryProcessingTaskIntegrationTest {
         QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType(FluxQuery.class), new FluxQuery(1), new MessageType(String.class)
         );
-        QueryRequest testRequest = querySerializer.serializeRequest(testQuery, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1);
+        QueryRequest testRequest = null;
+//                querySerializer.serializeRequest(testQuery, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1);
         QueryProcessingTask testSubject = new QueryProcessingTask(localSegment,
                                                                   testRequest,
                                                                   responseHandler,
-                                                                  querySerializer,
                                                                   CLIENT_ID,
                                                                   queryBusSpanFactory);
 
