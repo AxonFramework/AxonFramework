@@ -30,7 +30,54 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 
 /**
- * Simple implementation of the {@link  EventBus}.
+ * Simple implementation of the {@link EventBus} that provides synchronous event publication with optional
+ * {@link ProcessingContext} integration for transactional event handling.
+ * <p>
+ * This event bus supports two publication modes depending on whether a {@link ProcessingContext} is provided:
+ * <ul>
+ *     <li><b>Immediate publication (context is {@code null}):</b> Events are published directly to all subscribers
+ *     without any queueing or lifecycle management. This mode is useful for fire-and-forget event publication
+ *     outside of any transactional boundary.</li>
+ *     <li><b>Deferred publication (context is provided):</b> Events are queued and published during the
+ *     {@link org.axonframework.messaging.unitofwork.ProcessingLifecycle.DefaultPhases#PREPARE_COMMIT PREPARE_COMMIT}
+ *     phase of the processing lifecycle. This ensures that events are only published if the processing context
+ *     successfully reaches the commit phase, providing transactional consistency.</li>
+ * </ul>
+ * <p>
+ * <b>ProcessingContext Integration:</b>
+ * <p>
+ * When events are published with a {@link ProcessingContext}, this event bus registers lifecycle hooks on the first
+ * publication within that context:
+ * <ul>
+ *     <li>A {@code onPrepareCommit} handler that publishes all queued events to subscribers</li>
+ *     <li>A {@code doFinally} handler that cleans up the event queue to free memory</li>
+ * </ul>
+ * All events published within the same {@link ProcessingContext} are queued together and published as a single batch
+ * during the PREPARE_COMMIT phase. If additional events are published by event handlers during this phase, they are
+ * also processed in the same phase to ensure complete event propagation.
+ * <p>
+ * <b>Publication Restrictions:</b>
+ * <p>
+ * Event publication is <b>forbidden</b> once the {@link ProcessingContext} has been committed. Attempting to publish
+ * events during or after the
+ * {@link org.axonframework.messaging.unitofwork.ProcessingLifecycle.DefaultPhases#COMMIT COMMIT} phase will result
+ * in an {@link IllegalStateException}. This restriction ensures that events cannot be published after the
+ * transactional boundary has been crossed, preventing inconsistent state.
+ * <p>
+ * Example usage:
+ * <pre>{@code
+ * // Immediate publication (no transactional context)
+ * EventBus eventBus = new SimpleEventBus();
+ * eventBus.publish(null, List.of(new GenericEventMessage<>(new OrderPlacedEvent())));
+ *
+ * // Deferred publication within a UnitOfWork
+ * UnitOfWork uow = unitOfWorkFactory.create();
+ * uow.runOnInvocation(ctx -> {
+ *     eventBus.publish(ctx, List.of(new GenericEventMessage<>(new OrderPlacedEvent())));
+ *     // Events are not yet published - they're queued
+ * });
+ * uow.execute(); // Events are published during PREPARE_COMMIT phase
+ * }</pre>
  *
  * @author Allard Buijze
  * @author Mateusz Nowak
@@ -83,10 +130,7 @@ public class SimpleEventBus implements EventBus {
 
             context.onPrepareCommit(ctx -> {
                 List<EventMessage> queuedEvents = ctx.getResource(eventsKey);
-                if (queuedEvents != null && !queuedEvents.isEmpty()) {
-                    return processEventsInPhase(queuedEvents, ctx, eventSubscribers::notifySubscribers);
-                }
-                return FutureUtils.emptyCompletedFuture();
+                return processEventsInPhase(queuedEvents, ctx, eventSubscribers::notifySubscribers);
             });
 
             // Clean up events resource on completion or error to free memory
