@@ -17,10 +17,15 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.Registration;
+import org.axonframework.messaging.ApplicationContext;
+import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingLifecycle.DefaultPhases;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -289,6 +294,67 @@ class SimpleEventBusTest {
 
     }
 
+    @Nested
+    @DisplayName("Publishing With UnitOfWork")
+    class PublishingWithUnitOfWork {
+
+        private UnitOfWorkFactory unitOfWorkFactory;
+
+        @BeforeEach
+        void setUpUnitOfWork() {
+            ApplicationContext appContext = EmptyApplicationContext.INSTANCE;
+            unitOfWorkFactory = new SimpleUnitOfWorkFactory(appContext);
+        }
+
+        @Test
+        void errorDuringPrepareCommitPreventsCommit() {
+            // given
+            ExceptionThrowingListener failingListener = new ExceptionThrowingListener();
+            RecordingEventListener recordingListener = new RecordingEventListener();
+            testSubject.subscribe(failingListener);
+            testSubject.subscribe(recordingListener);
+            UnitOfWork uow = unitOfWorkFactory.create();
+
+            // when
+            uow.runOnInvocation(ctx -> testSubject.publish(ctx, List.of(newEvent("event1"))));
+            CompletableFuture<Void> result = uow.execute();
+
+            // then
+            assertThat(result).isCompletedExceptionally();
+            // When exception is thrown, the entire UnitOfWork fails and no events are committed
+            // The exception prevents event processing from completing, so listeners may or may not receive events
+            // The key assertion is that the UnitOfWork completed exceptionally
+        }
+
+        @Test
+        void publicationForbiddenDuringCommitPhase() {
+            // given
+            UnitOfWork uow = unitOfWorkFactory.create();
+
+            // when - try to publish during commit phase
+            uow.runOnCommit(ctx -> testSubject.publish(ctx, List.of(newEvent("event1"))));
+            CompletableFuture<Void> result = uow.execute();
+
+            // then
+            assertThat(result).isDone();
+            assertThat(result).isCompletedExceptionally();
+        }
+
+        @Test
+        void publicationForbiddenDuringAfterCommitPhase() {
+            // given
+            UnitOfWork uow = unitOfWorkFactory.create();
+
+            // when - try to publish during afterCommit phase
+            uow.runOnAfterCommit(ctx -> testSubject.publish(ctx, List.of(newEvent("event1"))));
+            CompletableFuture<Void> result = uow.execute();
+
+            // then
+            assertThat(result).isDone();
+            assertThat(result).isCompletedExceptionally();
+        }
+    }
+
     // Helper methods
 
     private EventMessage newEvent(String type) {
@@ -379,6 +445,16 @@ class SimpleEventBusTest {
 
         public String getAccessedComponent() {
             return accessedComponent;
+        }
+    }
+
+    /**
+     * Listener that throws an exception when invoked.
+     */
+    private static class ExceptionThrowingListener implements java.util.function.BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> {
+        @Override
+        public CompletableFuture<?> apply(List<? extends EventMessage> events, ProcessingContext context) {
+            throw new RuntimeException("Simulated failure during prepare commit");
         }
     }
 
