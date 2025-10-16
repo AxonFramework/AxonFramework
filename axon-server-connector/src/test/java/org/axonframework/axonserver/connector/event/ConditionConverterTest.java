@@ -25,6 +25,7 @@ import io.axoniq.axonserver.grpc.event.dcb.TagsAndNamesCriterion;
 import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.GlobalIndexConsistencyMarker;
+import org.axonframework.eventsourcing.eventstore.GlobalIndexPositions;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.StreamingCondition;
@@ -91,7 +92,7 @@ class ConditionConverterTest {
     void convertSourcingConditionConstructsSourceEventRequestAsExpected() {
         // given...
         SourcingCondition testCondition = SourcingCondition.conditionFor(
-                START,
+                GlobalIndexPositions.of(START),
                 EventCriteria.havingTags(
                                      Tag.of("key1OnCriterion1", "value1OnCriterion1"),
                                      Tag.of("key2OnCriterion1", "value2OnCriterion1")
