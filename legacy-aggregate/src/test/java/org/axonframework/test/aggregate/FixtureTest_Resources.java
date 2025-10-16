@@ -63,7 +63,7 @@ class FixtureTest_Resources {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3195 - Migration Module")
     void resourcesAreScopedToSingleTest_MethodPartOne() {
         // executing the same test should pass, as resources are scoped to a single test only
         final Executor resource = mock(Executor.class);
@@ -77,7 +77,7 @@ class FixtureTest_Resources {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3195 - Migration Module")
     void resourcesAreScopedToSingleTest_MethodPartTwo() {
         resourcesAreScopedToSingleTest_MethodPartOne();
     }

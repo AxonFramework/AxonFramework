@@ -809,7 +809,9 @@ class PooledStreamingEventProcessorTest {
 
             assertWithin(1, TimeUnit.SECONDS, () -> {
                 assertThat(testSubject.processingStatus()).hasSize(7);
-                assertThat(testSubject.processingStatus()).containsKey(2);
+                // JohnH: the key of the processes that was removed is pretty much random, asserting that processor
+                // 2 must always exists seems incorrect (but you have an 87.5% chance...)
+                //assertThat(testSubject.processingStatus()).containsKey(2);
             });
         }
 

@@ -20,7 +20,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.InterceptingCommandBus;
+import org.axonframework.commandhandling.interceptors.InterceptingCommandBus;
 import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.ConvertingCommandGateway;
@@ -29,6 +29,7 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
+import org.axonframework.eventhandling.InterceptingEventBus;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.gateway.DefaultEventGateway;
 import org.axonframework.eventhandling.gateway.EventGateway;
@@ -51,9 +52,7 @@ import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryBusTestUtils;
 import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryBus;
-import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.queryhandling.configuration.QueryHandlingModule;
 import org.junit.jupiter.api.*;
 
@@ -105,7 +104,8 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
 
         Optional<EventBus> eventBus = result.getOptionalComponent(EventBus.class);
         assertTrue(eventBus.isPresent());
-        assertInstanceOf(SimpleEventBus.class, eventBus.get());
+        // Intercepting at all times, since we have a MessageOriginProvider that leads to the CorrelationDataInterceptor
+        assertInstanceOf(InterceptingEventBus.class, eventBus.get());
 
         Optional<QueryGateway> queryGateway = result.getOptionalComponent(QueryGateway.class);
         assertTrue(queryGateway.isPresent());

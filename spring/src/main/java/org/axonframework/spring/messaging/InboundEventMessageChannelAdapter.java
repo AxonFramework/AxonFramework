@@ -20,12 +20,15 @@ import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.SubscribableEventSource;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHandler;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Consumer;
+import java.util.function.BiFunction;
+
 import jakarta.annotation.Nonnull;
 
 import static java.util.Collections.emptyList;
@@ -42,7 +45,7 @@ import static java.util.Collections.singletonList;
  */
 public class InboundEventMessageChannelAdapter implements MessageHandler, SubscribableEventSource {
 
-    private final CopyOnWriteArrayList<Consumer<List<? extends EventMessage>>> messageProcessors = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>>> messageProcessors = new CopyOnWriteArrayList<>();
     private final EventMessageConverter eventMessageConverter;
 
     /**
@@ -60,7 +63,10 @@ public class InboundEventMessageChannelAdapter implements MessageHandler, Subscr
      * @param eventBus The EventBus instance for forward all messages to
      */
     public InboundEventMessageChannelAdapter(EventBus eventBus) {
-        this(singletonList(eventBus::publish), new DefaultEventMessageConverter());
+        this(singletonList((events, context) -> {
+            eventBus.publish(context, events.stream().map(it -> (EventMessage) it).toList());
+            return CompletableFuture.completedFuture(null);
+        }), new DefaultEventMessageConverter());
     }
 
     /**
@@ -70,7 +76,7 @@ public class InboundEventMessageChannelAdapter implements MessageHandler, Subscr
      * @param processors Processors to be subscribed
      * @param eventMessageConverter The message converter to use to convert spring message into event message
      */
-    public InboundEventMessageChannelAdapter(List<Consumer<List<? extends EventMessage>>> processors,
+    public InboundEventMessageChannelAdapter(List<BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>>> processors,
                                              EventMessageConverter eventMessageConverter){
         messageProcessors.addAll(processors);
         this.eventMessageConverter = eventMessageConverter;
@@ -78,7 +84,7 @@ public class InboundEventMessageChannelAdapter implements MessageHandler, Subscr
 
     @Nonnull
     @Override
-    public Registration subscribe(@Nonnull Consumer<List<? extends EventMessage>> eventsBatchConsumer) {
+    public Registration subscribe(@Nonnull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
         messageProcessors.add(eventsBatchConsumer);
         return () -> messageProcessors.remove(eventsBatchConsumer);
     }
@@ -92,8 +98,8 @@ public class InboundEventMessageChannelAdapter implements MessageHandler, Subscr
     @Override
     public void handleMessage(@Nonnull Message message) {
         List<? extends EventMessage> messages = singletonList(transformMessage(message));
-        for (Consumer<List<? extends EventMessage>> messageProcessor : messageProcessors) {
-            messageProcessor.accept(messages);
+        for (BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> messageProcessor : messageProcessors) {
+            messageProcessor.apply(messages, null);
         }
     }
 

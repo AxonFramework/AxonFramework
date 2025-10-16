@@ -18,6 +18,7 @@ package org.axonframework.spring.eventsourcing;
 
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
+import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -83,7 +84,7 @@ class SpringPrototypeAggregateFactoryTest {
         // Wired to ensure an EventStore is present for the aggregate to allow event sourcing.
         @Bean
         public EventStore eventStore() {
-            return new SimpleEventStore(new InMemoryEventStorageEngine(), new AnnotationBasedTagResolver());
+            return new SimpleEventStore(new InMemoryEventStorageEngine(), new SimpleEventBus(), new AnnotationBasedTagResolver());
         }
 
         /**

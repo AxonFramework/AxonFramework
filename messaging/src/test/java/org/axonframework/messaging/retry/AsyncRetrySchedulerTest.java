@@ -17,6 +17,7 @@
 package org.axonframework.messaging.retry;
 
 import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.messaging.FluxUtils;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
@@ -150,7 +151,7 @@ class AsyncRetrySchedulerTest {
 
         assertTrue(actual.hasNextAvailable());
 
-        StepVerifier.create(actual.asFlux())
+        StepVerifier.create(FluxUtils.of(actual))
                     .expectNextCount(1)
                     .verifyError(MockException.class);
 

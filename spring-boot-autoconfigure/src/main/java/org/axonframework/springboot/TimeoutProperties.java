@@ -18,7 +18,6 @@ package org.axonframework.springboot;
 import org.axonframework.messaging.annotations.MessageHandlerTimeout;
 import org.axonframework.messaging.timeout.HandlerTimeoutConfiguration;
 import org.axonframework.messaging.timeout.TaskTimeoutSettings;
-import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
@@ -41,8 +40,8 @@ public class TimeoutProperties {
     private boolean enabled = true;
 
     /**
-     * Timeout settings for transactions ({@link LegacyUnitOfWork}). Default to 30-second timeout, 10-second warning threshold
-     * and a warning interval of 1 second for all types of transactions.
+     * Timeout settings for transactions ({@link org.axonframework.messaging.unitofwork.UnitOfWork}). Default to
+     * 30-second timeout, 10-second warning threshold and a warning interval of 1 second for all types of transactions.
      */
     private TransactionTimeoutProperties transaction = new TransactionTimeoutProperties();
 
@@ -70,8 +69,8 @@ public class TimeoutProperties {
     }
 
     /**
-     * Timeout settings for transactions ({@link LegacyUnitOfWork}). Default to 30-second timeout, 10-second warning threshold
-     * and a warning interval of 1 second for all types of transactions.
+     * Timeout settings for transactions ({@link org.axonframework.messaging.unitofwork.UnitOfWork}). Default to
+     * 30-second timeout, 10-second warning threshold and a warning interval of 1 second for all types of transactions.
      *
      * @return the timeout settings for transactions
      */

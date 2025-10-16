@@ -19,6 +19,7 @@ package org.axonframework.integrationtests.commandhandling;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventsourcing.LegacyEventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -54,7 +55,7 @@ class AggregateCreationFromCommandsTest {
     @BeforeEach
     void setUp() {
         this.commandBus = aCommandBus();
-        eventStore = spy(new SimpleEventStore(new InMemoryEventStorageEngine(), new AnnotationBasedTagResolver()));
+        eventStore = spy(new SimpleEventStore(new InMemoryEventStorageEngine(), new SimpleEventBus(), new AnnotationBasedTagResolver()));
         repository = LegacyEventSourcingRepository.builder(StubAggregateForCreation.class)
                                                   .eventStore(eventStore)
                                                   .build();
@@ -62,7 +63,7 @@ class AggregateCreationFromCommandsTest {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3195 - Migration Module")
     void createAlwaysCreationWithoutFactory() {
         createAndRegisterDefaultCommandHandler();
         String aggregateId = UUID.randomUUID().toString();
@@ -82,7 +83,7 @@ class AggregateCreationFromCommandsTest {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3195 - Migration Module")
     void createIfMissingCreationWithoutFactory() {
         createAndRegisterDefaultCommandHandler();
         String aggregateId = UUID.randomUUID().toString();
@@ -101,7 +102,7 @@ class AggregateCreationFromCommandsTest {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3195 - Migration Module")
     void createAlwaysCreationWithFactory() {
         createAndRegisterCommandHandlerWithFactory();
         String aggregateId = UUID.randomUUID().toString();
@@ -121,7 +122,7 @@ class AggregateCreationFromCommandsTest {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3195 - Migration Module")
     void createIfMissingCreationWithFactory() {
         createAndRegisterCommandHandlerWithFactory();
         String aggregateId = UUID.randomUUID().toString();

@@ -16,14 +16,8 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.eventhandling.tracing.DefaultEventBusSpanFactory;
-import org.axonframework.eventhandling.tracing.EventBusSpanFactory;
-import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.monitoring.NoOpMessageMonitor;
-import org.axonframework.tracing.SpanFactory;
-
-import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotations.Internal;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 
 /**
  * Implementation of the {@link EventBus} that dispatches events in the thread the publishes them.
@@ -34,66 +28,10 @@ import jakarta.annotation.Nonnull;
 public class SimpleEventBus extends AbstractEventBus {
 
     /**
-     * Instantiate a Builder to be able to create a {@link SimpleEventBus}.
-     * <p>
-     * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor}, the {@code queueCapacity} to
-     * {@link Integer#MAX_VALUE} and the {@link EventBusSpanFactory} to a {@link DefaultEventBusSpanFactory} backed by a
-     * {@link org.axonframework.tracing.NoOpSpanFactory}.
-     *
-     * @return a Builder to be able to create a {@link SimpleEventBus}
-     */
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    /**
-     * Instantiate a {@link SimpleEventBus} based on the fields contained in the {@link Builder}.
-     *
-     * @param builder the {@link Builder} used to instantiate a {@link SimpleEventBus} instance
-     */
-    protected SimpleEventBus(Builder builder) {
-        super(builder);
-    }
-
-    /**
-     * Builder class to instantiate a {@link SimpleEventBus}.
-     * <p>
-     * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor} and the {@link SpanFactory} is defaulted
-     * to {@link DefaultEventBusSpanFactory} backed by a {@link org.axonframework.tracing.NoOpSpanFactory}.
-     */
-    public static class Builder extends AbstractEventBus.Builder {
-
-        @Override
-        public Builder messageMonitor(@Nonnull MessageMonitor<? super EventMessage> messageMonitor) {
-            super.messageMonitor(messageMonitor);
-            return this;
-        }
-
-        @Override
-        public Builder spanFactory(@Nonnull EventBusSpanFactory spanFactory) {
-            super.spanFactory(spanFactory);
-            return this;
-        }
-
-        /**
-         * Initializes a {@link SimpleEventBus} as specified through this Builder.
-         *
-         * @return a {@link SimpleEventBus} as specified through this Builder
-         */
-        public SimpleEventBus build() {
-            return new SimpleEventBus(this);
-        }
-
-        /**
-         * Validates whether the fields contained in this Builder are set accordingly.
-         *
-         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
-         *                                    specifications
-         */
-        @Override
-        protected void validate() throws AxonConfigurationException {
-            super.validate();
-        }
+     * Instantiate an {@code SimpleEventBus}.
+     **/
+    public SimpleEventBus() {
+        super();
     }
 
 }

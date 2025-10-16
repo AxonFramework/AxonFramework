@@ -56,6 +56,7 @@ public class QuerySerializer {
     private final GrpcObjectSerializer<Object> exceptionDetailsSerializer;
     private final GrpcPayloadSerializer payloadSerializer;
     private final GrpcMetadataSerializer metadataSerializer;
+    @SuppressWarnings("unused")
     private final GrpcObjectSerializer<Object> responseTypeSerializer;
 
     /**

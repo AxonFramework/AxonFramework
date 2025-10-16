@@ -33,7 +33,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;
-import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 import static org.mockito.Mockito.*;
 
 /**

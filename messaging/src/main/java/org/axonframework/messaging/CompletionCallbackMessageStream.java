@@ -17,7 +17,6 @@
 package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
-import reactor.core.publisher.Flux;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -53,12 +52,6 @@ class CompletionCallbackMessageStream<M extends Message> extends DelegatingMessa
         this.delegate = delegate;
         this.completeHandler = completeHandler;
         delegate.onAvailable(this::invokeCompletionHandlerIfCompleted);
-    }
-
-    @Override
-    public Flux<Entry<M>> asFlux() {
-        return delegate.asFlux()
-                       .doOnComplete(completeHandler);
     }
 
     @Override

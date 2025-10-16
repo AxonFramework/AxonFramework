@@ -65,7 +65,7 @@ class FixtureRepositoryRegistrationTest {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3195 - Migration Module")
     void fixturesDefaultRepositoryCanBeWiredAsMessageHandlingParameter() {
         testSubject.givenNoPriorActivity()
                    .when("some-command")
@@ -73,7 +73,7 @@ class FixtureRepositoryRegistrationTest {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3195 - Migration Module")
     void customRepositoryCanBeWiredAsMessageHandlingParameter() {
         Repository<MyAggregate> testRepository =
                 CustomRepository.builder()
@@ -93,7 +93,7 @@ class FixtureRepositoryRegistrationTest {
                                     .entityManagerProvider(
                                             new SimpleEntityManagerProvider(mock(EntityManager.class))
                                     )
-                                    .eventBus(SimpleEventBus.builder().build())
+                                    .eventBus(new SimpleEventBus())
                                     .build();
         testSubject.registerRepository(testRepository);
 
@@ -126,7 +126,7 @@ class FixtureRepositoryRegistrationTest {
                                     .entityManagerProvider(
                                             new SimpleEntityManagerProvider(mock(EntityManager.class))
                                     )
-                                    .eventBus(SimpleEventBus.builder().build())
+                                    .eventBus(new SimpleEventBus())
                                     .build();
         testSubject.registerRepository(testRepository);
 
@@ -149,7 +149,7 @@ class FixtureRepositoryRegistrationTest {
                                     .entityManagerProvider(
                                             new SimpleEntityManagerProvider(mock(EntityManager.class))
                                     )
-                                    .eventBus(SimpleEventBus.builder().build())
+                                    .eventBus(new SimpleEventBus())
                                     .build();
         testSubject.registerRepository(testRepository);
 
@@ -172,7 +172,7 @@ class FixtureRepositoryRegistrationTest {
                                     .entityManagerProvider(
                                             new SimpleEntityManagerProvider(mock(EntityManager.class))
                                     )
-                                    .eventBus(SimpleEventBus.builder().build())
+                                    .eventBus(new SimpleEventBus())
                                     .build();
         testSubject.registerRepository(testRepository);
 

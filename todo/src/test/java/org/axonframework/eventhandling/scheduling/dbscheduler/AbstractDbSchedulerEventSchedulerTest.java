@@ -18,15 +18,19 @@ package org.axonframework.eventhandling.scheduling.dbscheduler;
 
 import com.github.kagkarlsson.scheduler.Scheduler;
 import com.github.kagkarlsson.scheduler.task.Task;
+import jakarta.annotation.Nullable;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.annotations.Event;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventhandling.scheduling.java.SimpleScheduleToken;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.serialization.Revision;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.serialization.TestConverter;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.hsqldb.jdbc.JDBCDataSource;
@@ -41,13 +45,19 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+
 import jakarta.annotation.Nonnull;
+
 import javax.sql.DataSource;
 
 import static org.awaitility.Awaitility.await;
@@ -223,22 +233,29 @@ abstract class AbstractDbSchedulerEventSchedulerTest {
         }
 
         @Override
-        public void publish(@Nonnull List<? extends EventMessage> events) {
-            publishedMessages.addAll(events);
+        public CompletableFuture<Void> publish(@Nullable ProcessingContext context, EventMessage... events) {
+            return publish(context, Arrays.asList(events));
         }
 
         @Override
-        public Registration subscribe(@Nonnull Consumer<List<? extends EventMessage>> eventsBatchConsumer) {
+        public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
+                                               @Nonnull List<EventMessage> events) {
+            publishedMessages.addAll(events);
+            return FutureUtils.emptyCompletedFuture();
+        }
+
+        @Override
+        public Registration subscribe(@Nonnull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
             throw new UnsupportedOperationException();
         }
 
-        public Registration registerDispatchInterceptor(
-                @Nonnull MessageDispatchInterceptor<? super EventMessage> dispatchInterceptor) {
-            throw new UnsupportedOperationException();
+        @Override
+        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+            // not needed in the test
         }
     }
 
-    @Revision("Foo")
+    @Event(version = "Foo")
     private static class PayloadWithRevision {
 
         PayloadWithRevision() {

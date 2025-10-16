@@ -87,7 +87,7 @@ public class EventStoreImpl extends EventStoreGrpc.EventStoreImplBase {
 
     @Override
     public StreamObserver<Event> appendEvent(StreamObserver<Confirmation> responseObserver) {
-        return new StreamObserver<Event>() {
+        return new StreamObserver<>() {
 
             private final List<Event> eventsInTx = new LinkedList<>();
 
@@ -147,7 +147,7 @@ public class EventStoreImpl extends EventStoreGrpc.EventStoreImplBase {
 
     @Override
     public StreamObserver<GetEventsRequest> listEvents(StreamObserver<EventWithToken> responseObserver) {
-        return new StreamObserver<GetEventsRequest>() {
+        return new StreamObserver<>() {
 
             private final AtomicLong permits = new AtomicLong();
             private Iterator<Event> eventsAtRead;
@@ -189,7 +189,7 @@ public class EventStoreImpl extends EventStoreGrpc.EventStoreImplBase {
 
     @Override
     public StreamObserver<QueryEventsRequest> queryEvents(StreamObserver<QueryEventsResponse> responseObserver) {
-        return new StreamObserver<QueryEventsRequest>() {
+        return new StreamObserver<>() {
             @Override
             public void onNext(QueryEventsRequest value) {
                 queryEventsRequests.add(value);
