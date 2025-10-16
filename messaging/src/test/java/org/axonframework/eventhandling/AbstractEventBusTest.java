@@ -16,7 +16,6 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.common.Registration;
 import org.axonframework.messaging.ApplicationContext;
 import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.MessageType;
@@ -30,7 +29,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BiFunction;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
@@ -38,7 +36,7 @@ import jakarta.annotation.Nullable;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Test class validating the {@link AbstractEventBus}.
+ * Test class validating the {@link SimpleEventBus}.
  *
  * @author Rene de Waele
  * @author Mateusz Nowak
@@ -193,18 +191,23 @@ class AbstractEventBusTest {
         return new StubNumberedEvent(number);
     }
 
-    private static class StubPublishingEventBus extends AbstractEventBus {
+    private static class StubPublishingEventBus extends DelegatingEventBus {
 
         private final List<EventMessage> committedEvents = new ArrayList<>();
         private final boolean throwExceptionDuringPrepare;
 
         private StubPublishingEventBus(boolean throwExceptionDuringPrepare) {
+            super(new SimpleEventBus());
             this.throwExceptionDuringPrepare = throwExceptionDuringPrepare;
+
+            // Subscribe to receive events during processing
+            super.subscribe((events, context) -> {
+                handleEvents(events, context);
+                return CompletableFuture.completedFuture(null);
+            });
         }
 
-        @Override
-        protected CompletableFuture<Void> onPrepareCommit(@Nonnull List<? extends EventMessage> events,
-                                                          @Nullable ProcessingContext context) {
+        private void handleEvents(@Nonnull List<? extends EventMessage> events, @Nullable ProcessingContext context) {
             if (throwExceptionDuringPrepare) {
                 throw new RuntimeException("Simulated failure during prepare commit");
             }
@@ -223,14 +226,6 @@ class AbstractEventBusTest {
             }
 
             committedEvents.addAll(events);
-            return super.onPrepareCommit(events, context);
-        }
-
-        @Override
-        public Registration subscribe(
-                @Nonnull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer
-        ) {
-            throw new UnsupportedOperationException();
         }
     }
 
