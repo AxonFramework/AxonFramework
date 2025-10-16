@@ -26,6 +26,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
+import org.axonframework.modelling.EntityIdResolutionException;
 import org.axonframework.modelling.EntityIdResolver;
 import org.axonframework.modelling.repository.ManagedEntity;
 import org.axonframework.modelling.repository.Repository;
@@ -82,7 +83,7 @@ class EntityCommandHandlingComponentTest {
     private EntityCommandHandlingComponent<String, TestEntity> testComponent;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws EntityIdResolutionException {
         lenient().when(idResolver.resolve(any(), any())).thenReturn(entityId);
     }
 
@@ -226,7 +227,7 @@ class EntityCommandHandlingComponentTest {
     }
 
     @Test
-    void failureToResolveIdWillResultInFailedMessageStream() {
+    void failureToResolveIdWillResultInFailedMessageStream() throws EntityIdResolutionException {
         when(idResolver.resolve(eq(creationalCommandMessage), any()))
                 .thenThrow(new RuntimeException("Failed to resolve ID"));
 

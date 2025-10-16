@@ -32,7 +32,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
  * @author Allard Buijze
  * @author Mitchell Herrijgers
  * @see org.axonframework.modelling.StateManager
- * @since 1.2.0
+ * @since 5.0.0
  */
 @FunctionalInterface
 public interface EntityIdResolver<ID> {
@@ -43,7 +43,8 @@ public interface EntityIdResolver<ID> {
      * @param message The message to resolve the id from.
      * @param context The context in which the message is processed.
      * @return The id of the entity.
+     * @throws EntityIdResolutionException When the id could not be resolved.
      */
     @Nonnull
-    ID resolve(@Nonnull Message message, @Nonnull ProcessingContext context);
+    ID resolve(@Nonnull Message message, @Nonnull ProcessingContext context) throws EntityIdResolutionException;
 }
