@@ -62,7 +62,7 @@ public class JpaAutoConfiguration {
     /**
      * Retrieves an entity manager provider.
      *
-     * @return an entity manager provider.
+     * @return An entity manager provider.
      */
     @Bean
     @ConditionalOnMissingBean
