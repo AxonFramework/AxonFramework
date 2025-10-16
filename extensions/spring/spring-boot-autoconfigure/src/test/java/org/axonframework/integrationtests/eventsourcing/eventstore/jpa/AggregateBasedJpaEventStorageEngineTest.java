@@ -368,7 +368,7 @@ class AggregateBasedJpaEventStorageEngineTest
         }
 
         @Bean
-        public PersistenceAnnotationBeanPostProcessor persistenceAnnotationBeanPostProcessor() {
+        public static  PersistenceAnnotationBeanPostProcessor persistenceAnnotationBeanPostProcessor() {
             return new PersistenceAnnotationBeanPostProcessor();
         }
     }
