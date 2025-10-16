@@ -76,7 +76,7 @@ public class JpaAutoConfiguration {
      * @param entityManagerProvider   An entity manager provider to retrieve connections.
      * @param tokenStoreProperties    A set of properties to configure the token store.
      * @param defaultAxonObjectMapper An object mapper to use for token conversion to JSON.
-     * @return instance of JPA token store.
+     * @return Instance of JPA token store.
      */
     @Bean
     @ConditionalOnMissingBean
