@@ -20,7 +20,13 @@ import org.axonframework.eventhandling.processors.streaming.token.GapAwareTracki
 import org.axonframework.eventsourcing.eventstore.jpa.AggregateEventEntry;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@ConfigurationProperties("axon.storage.jpa")
+/**
+ * Properties describing configuration of Aggregate-based JPA Event Storage engine.
+ *
+ * @since 5.0.0
+ * @author Simon Zambrovski
+ */
+@ConfigurationProperties("axon.eventstorage.jpa")
 public class JpaEventStorageEngineConfigurationProperties {
 
     private int batchSize = 100;
@@ -79,7 +85,7 @@ public class JpaEventStorageEngineConfigurationProperties {
      *
      * @param batchSize The batch size used to retrieve events from the storage layer. Defaults to {@code 100}.
      */
-    public void setBatchSize(int batchSize) {
+    public void batchSize(int batchSize) {
         this.batchSize = batchSize;
     }
 
@@ -89,7 +95,7 @@ public class JpaEventStorageEngineConfigurationProperties {
      * @param gapCleaningThreshold The threshold of the number of gaps in a {@link GapAwareTrackingToken} before an
      *                             attempt to clean them up. Defaults to an integer of {@code 250}.
      */
-    public void setGapCleaningThreshold(int gapCleaningThreshold) {
+    public void gapCleaningThreshold(int gapCleaningThreshold) {
         this.gapCleaningThreshold = gapCleaningThreshold;
     }
 
@@ -99,7 +105,7 @@ public class JpaEventStorageEngineConfigurationProperties {
      * @param gapTimeout The amount of time until a gap in a {@link GapAwareTrackingToken} may be considered timed out
      *                   and thus ready for removal. Defaults to {@code 60000}ms.
      */
-    public void setGapTimeout(int gapTimeout) {
+    public void gapTimeout(int gapTimeout) {
         this.gapTimeout = gapTimeout;
     }
 
@@ -110,7 +116,7 @@ public class JpaEventStorageEngineConfigurationProperties {
      *                             {@link AggregateEventEntry#globalIndex() global index} of an
      *                             {@link AggregateEventEntry}. Defaults to {@code 1}.
      */
-    public void setLowestGlobalSequence(long lowestGlobalSequence) {
+    public void lowestGlobalSequence(long lowestGlobalSequence) {
         this.lowestGlobalSequence = lowestGlobalSequence;
     }
 
@@ -120,7 +126,7 @@ public class JpaEventStorageEngineConfigurationProperties {
      * @param maxGapOffset The maximum distance in sequence numbers between a gap and the event with the highest known
      *                     index. Defaults to an integer of {@code 10000}.
      */
-    public void setMaxGapOffset(int maxGapOffset) {
+    public void maxGapOffset(int maxGapOffset) {
         this.maxGapOffset = maxGapOffset;
     }
 }

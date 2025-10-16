@@ -29,6 +29,7 @@ import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngine;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -37,6 +38,7 @@ import static org.mockito.Mockito.*;
  * Tests JPA EventStore auto-configuration
  *
  * @author Sara Pellegrini
+ * @author Simon Zambrovski
  */
 class JpaEventStoreAutoConfigurationWithoutAxonServerTest {
 
@@ -51,6 +53,19 @@ class JpaEventStoreAutoConfigurationWithoutAxonServerTest {
                             AggregateBasedJpaEventStorageEngine.class);
                 });
     }
+
+    @Test
+    void axonServerWinsIfEnabled() {
+        new ApplicationContextRunner()
+                .withPropertyValues("axon.axonserver.enabled=true")
+                .withUserConfiguration(EmptyTestContext.class)
+                .run(context -> {
+                    assertThat(context).hasSingleBean(EventStore.class);
+                    assertThat(context).getBean(EventStorageEngine.class).isInstanceOf(
+                            AxonServerEventStorageEngine.class);
+                });
+    }
+
 
     @Test
     void notConstructIfEventStoreDefinitionPresent() {
@@ -79,7 +94,6 @@ class JpaEventStoreAutoConfigurationWithoutAxonServerTest {
                 });
     }
 
-
     @ContextConfiguration
     @EnableAutoConfiguration
     @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
@@ -102,7 +116,7 @@ class JpaEventStoreAutoConfigurationWithoutAxonServerTest {
 
         @Bean(STORE_NAME)
         public EventStore eventStore() {
-            return new SimpleEventStore(mock(), mock());
+            return new SimpleEventStore(mock(), mock(), mock());
         }
     }
 
