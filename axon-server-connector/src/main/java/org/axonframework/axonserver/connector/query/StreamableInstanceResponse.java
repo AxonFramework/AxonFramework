@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,8 @@ class StreamableInstanceResponse implements StreamableResponse {
 
     private final QueryResponseMessage result;
     private final ReplyChannel<QueryResponse> responseHandler;
-    private final QuerySerializer serializer;
+    // TODO #3488 - Use QueryConverter (that is styled after CommandConverter) to convert the QueryRequest to a QueryMessage
+//    private final QuerySerializer serializer;
     private final String requestId;
     private volatile boolean cancelled = false;
 
@@ -40,16 +41,13 @@ class StreamableInstanceResponse implements StreamableResponse {
      *
      * @param result          the result to be streamed
      * @param responseHandler the {@link ReplyChannel} used for sending the result to the Axon Server
-     * @param serializer      the serializer used to serialize items
      * @param requestId       the identifier of the request these responses refer to
      */
     public StreamableInstanceResponse(QueryResponseMessage result,
                                       ReplyChannel<QueryResponse> responseHandler,
-                                      QuerySerializer serializer,
                                       String requestId) {
         this.result = result;
         this.responseHandler = responseHandler;
-        this.serializer = serializer;
         this.requestId = requestId;
     }
 
@@ -58,7 +56,8 @@ class StreamableInstanceResponse implements StreamableResponse {
         if (requested <= 0 || cancelled) {
             return;
         }
-        responseHandler.sendLast(serializer.serializeResponse(result, requestId));
+        // TODO #3488 - Use QueryConverter (that is styled after CommandConverter) to convert the QueryRequest to a QueryMessage
+//        responseHandler.sendLast(serializer.serializeResponse(result, requestId));
     }
 
     @Override
