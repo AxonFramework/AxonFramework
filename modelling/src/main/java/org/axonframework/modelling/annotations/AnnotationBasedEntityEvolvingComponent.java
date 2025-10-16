@@ -31,6 +31,7 @@ import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.EntityEvolvingComponent;
 import org.axonframework.modelling.StateEvolvingException;
 
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -67,7 +68,8 @@ public class AnnotationBasedEntityEvolvingComponent<E> implements EntityEvolving
         this(entityType,
              AnnotatedHandlerInspector.inspectType(entityType,
                                                    ClasspathParameterResolverFactory.forClass(entityType),
-                                                   ClasspathHandlerDefinition.forClass(entityType)),
+                                                   ClasspathHandlerDefinition.forClass(entityType),
+                                                   collectSealedHierarchy(entityType)),
              converter,
              messageTypeResolver);
     }
@@ -130,9 +132,9 @@ public class AnnotationBasedEntityEvolvingComponent<E> implements EntityEvolving
     private E entityFromStreamResultOrUpdatedExisting(MessageStream.Entry<?> potentialEntityFromStream, E existing) {
         if (potentialEntityFromStream != null) {
             var resultPayload = potentialEntityFromStream.message().payload();
-            if (resultPayload != null && existing.getClass().isAssignableFrom(resultPayload.getClass())) {
+            if (resultPayload != null && entityType.isAssignableFrom(resultPayload.getClass())) {
                 //noinspection unchecked
-                return (E) existing.getClass().cast(resultPayload);
+                return (E) entityType.cast(resultPayload);
             }
         }
         return existing;
@@ -146,5 +148,49 @@ public class AnnotationBasedEntityEvolvingComponent<E> implements EntityEvolving
                         .map(MessageHandlingMember::payloadType)
                         .map(QualifiedName::new)
                         .collect(Collectors.toSet());
+    }
+
+    /**
+     * Collects all concrete types from a sealed hierarchy, including the root type if it's concrete. Recursively scans
+     * permitted subtypes to handle nested sealed hierarchies.
+     * <p>
+     * This is essential for polymorphic entity support where event handlers may be defined on concrete implementations
+     * of a sealed interface. The {@link AnnotatedHandlerInspector} needs to know about all concrete types upfront to
+     * discover their handlers.
+     *
+     * @param rootType The root type to scan for sealed hierarchy.
+     * @param <T>      The type parameter.
+     * @return A set of all concrete types in the hierarchy, or an empty set if the type is not sealed.
+     */
+    private static <T> Set<Class<? extends T>> collectSealedHierarchy(@Nonnull Class<T> rootType) {
+        Set<Class<? extends T>> result = new HashSet<>();
+        collectSealedHierarchyRecursive(rootType, result);
+        return result;
+    }
+
+    /**
+     * Recursively collects all concrete types from a sealed hierarchy.
+     *
+     * @param type        The current type to scan.
+     * @param accumulator The set to accumulate concrete types into.
+     * @param <T>         The root type parameter.
+     */
+    @SuppressWarnings("unchecked")
+    private static <T> void collectSealedHierarchyRecursive(@Nonnull Class<T> type,
+                                                            @Nonnull Set<Class<? extends T>> accumulator) {
+        if (type.isSealed()) {
+            Class<?>[] permittedSubclasses = type.getPermittedSubclasses();
+            if (permittedSubclasses != null) {
+                for (Class<?> subclass : permittedSubclasses) {
+                    // Recursively scan if the subclass is also sealed
+                    if (subclass.isSealed()) {
+                        collectSealedHierarchyRecursive((Class<T>) subclass, accumulator);
+                    } else {
+                        // Add concrete types to the accumulator
+                        accumulator.add((Class<? extends T>) subclass);
+                    }
+                }
+            }
+        }
     }
 }
