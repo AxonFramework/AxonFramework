@@ -24,7 +24,6 @@ import org.axonframework.eventhandling.processors.streaming.token.store.TokenSto
 import org.axonframework.eventhandling.processors.streaming.token.store.jpa.JpaTokenStore;
 import org.axonframework.eventhandling.processors.streaming.token.store.jpa.JpaTokenStoreConfiguration;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
-import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonConverter;
 import org.axonframework.springboot.TokenStoreProperties;
 import org.axonframework.springboot.util.RegisterDefaultEntities;
@@ -32,6 +31,7 @@ import org.axonframework.springboot.util.jpa.ContainerManagedEntityManagerProvid
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -44,42 +44,59 @@ import javax.sql.DataSource;
  * Autoconfiguration class for Axon's JPA specific infrastructure components.
  *
  * @author Allard Buijze
+ * @author Simon Zambrovski
  * @since 3.0.3
  */
 @AutoConfiguration
+@ConditionalOnClass(EntityManagerFactory.class)
 @ConditionalOnBean(EntityManagerFactory.class)
 @EnableConfigurationProperties(TokenStoreProperties.class)
 @RegisterDefaultEntities(packages = {
         "org.axonframework.eventhandling.tokenstore",
-        "org.axonframework.eventhandling.deadletter.jpa",
-        "org.axonframework.modelling.saga.repository.jpa",
+        //  "org.axonframework.eventhandling.deadletter.jpa", // TODO re-enable as part of #3097
+        // "org.axonframework.modelling.saga.repository.jpa", // TODO re-enable as part of #3517
 })
-@AutoConfigureAfter(HibernateJpaAutoConfiguration.class)
 public class JpaAutoConfiguration {
 
-    private final TokenStoreProperties tokenStoreProperties;
 
-    public JpaAutoConfiguration(TokenStoreProperties tokenStoreProperties) {
-        this.tokenStoreProperties = tokenStoreProperties;
-    }
-
+    /**
+     * Retrieves an entity manager provider.
+     *
+     * @return An entity manager provider.
+     */
     @Bean
     @ConditionalOnMissingBean
     public EntityManagerProvider entityManagerProvider() {
         return new ContainerManagedEntityManagerProvider();
     }
 
+    /**
+     * Builds a JPA Token Store.
+     *
+     * @param entityManagerProvider   An entity manager provider to retrieve connections.
+     * @param tokenStoreProperties    A set of properties to configure the token store.
+     * @param defaultAxonObjectMapper An object mapper to use for token conversion to JSON.
+     * @return Instance of JPA token store.
+     */
     @Bean
     @ConditionalOnMissingBean
-    public TokenStore tokenStore(EntityManagerProvider entityManagerProvider, ObjectMapper defaultAxonObjectMapper) {
+    public TokenStore tokenStore(EntityManagerProvider entityManagerProvider,
+                                 TokenStoreProperties tokenStoreProperties,
+                                 ObjectMapper defaultAxonObjectMapper) {
         var config = JpaTokenStoreConfiguration.DEFAULT.claimTimeout(tokenStoreProperties.getClaimTimeout());
         var converter = new JacksonConverter(defaultAxonObjectMapper);
         return new JpaTokenStore(entityManagerProvider, converter, config);
     }
 
+    /**
+     * Provides a persistence exception resolver for a data source.
+     *
+     * @param dataSource A data source configured to resolve exception for.
+     * @return A working copy of Persistence Exception Resolver.
+     * @throws SQLException on any construction errors.
+     */
     @Bean
     @ConditionalOnMissingBean
-    @ConditionalOnBean(DataSource.class)
     public PersistenceExceptionResolver persistenceExceptionResolver(DataSource dataSource) throws SQLException {
         return new SQLErrorCodesResolver(dataSource);
     }
