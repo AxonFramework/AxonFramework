@@ -134,16 +134,72 @@ class AnnotatedEventSourcedEntityModule<I, E>
     private Set<Class<? extends E>> getConcreteEntityTypes(Map<String, Object> attributes) {
         //noinspection unchecked
         Class<? extends E>[] concreteTypes = (Class<? extends E>[]) attributes.get("concreteTypes");
-        Arrays.stream(concreteTypes)
-              .filter(concreteType -> !entityType.isAssignableFrom(concreteType))
-              .forEach(concreteType -> {
-                  throw new IllegalArgumentException(
-                          ("The declared concrete type [%s] is not assignable to the entity type [%s]. "
-                                  + "Please ensure the concrete type is a subclass of the entity type.")
-                                  .formatted(concreteType.getName(), entityType.getName())
-                  );
-              });
-        return Set.of(concreteTypes);
+
+        // If concrete types are explicitly provided, validate and use them
+        if (concreteTypes != null && concreteTypes.length > 0) {
+            Arrays.stream(concreteTypes)
+                  .filter(concreteType -> !entityType.isAssignableFrom(concreteType))
+                  .forEach(concreteType -> {
+                      throw new IllegalArgumentException(
+                              ("The declared concrete type [%s] is not assignable to the entity type [%s]. "
+                                      + "Please ensure the concrete type is a subclass of the entity type.")
+                                      .formatted(concreteType.getName(), entityType.getName())
+                      );
+                  });
+            return Set.of(concreteTypes);
+        }
+
+        // If no concrete types provided, check if entity is sealed and collect sealed hierarchy
+        if (entityType.isSealed()) {
+            return collectSealedHierarchy(entityType);
+        }
+
+        // Not polymorphic - return empty set for concrete type handling
+        return Set.of();
+    }
+
+    /**
+     * Collects all concrete types from a sealed hierarchy. Recursively scans permitted subtypes to handle nested sealed
+     * hierarchies.
+     * <p>
+     * This is essential for polymorphic entity support where event handlers may be defined on concrete implementations
+     * of a sealed interface. The {@link AnnotatedEntityMetamodel} needs to know about all concrete types upfront to
+     * discover their handlers.
+     *
+     * @param rootType The root type to scan for sealed hierarchy.
+     * @param <T>      The type parameter.
+     * @return A set of all concrete types in the hierarchy.
+     */
+    private <T> Set<Class<? extends T>> collectSealedHierarchy(@Nonnull Class<T> rootType) {
+        Set<Class<? extends T>> result = new java.util.HashSet<>();
+        collectSealedHierarchyRecursive(rootType, result);
+        return result;
+    }
+
+    /**
+     * Recursively collects all concrete types from a sealed hierarchy.
+     *
+     * @param type        The current type to scan.
+     * @param accumulator The set to accumulate concrete types into.
+     * @param <T>         The root type parameter.
+     */
+    @SuppressWarnings("unchecked")
+    private <T> void collectSealedHierarchyRecursive(@Nonnull Class<T> type,
+                                                      @Nonnull Set<Class<? extends T>> accumulator) {
+        if (type.isSealed()) {
+            Class<?>[] permittedSubclasses = type.getPermittedSubclasses();
+            if (permittedSubclasses != null) {
+                for (Class<?> subclass : permittedSubclasses) {
+                    // Recursively scan if the subclass is also sealed
+                    if (subclass.isSealed()) {
+                        collectSealedHierarchyRecursive((Class<T>) subclass, accumulator);
+                    } else {
+                        // Add concrete types to the accumulator
+                        accumulator.add((Class<? extends T>) subclass);
+                    }
+                }
+            }
+        }
     }
 
     @Override

@@ -226,7 +226,11 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
 
     private EntityMetamodel<E> initializePolymorphicMetamodel(Class<E> entityType,
                                                               Set<Class<? extends E>> concreteTypes) {
-        AnnotatedHandlerInspector<E> inspected = inspectType(entityType, parameterResolverFactory);
+        AnnotatedHandlerInspector<E> inspected = inspectType(entityType,
+                                                              parameterResolverFactory,
+                                                              org.axonframework.messaging.annotations.ClasspathHandlerDefinition.forClass(
+                                                                      entityType),
+                                                              concreteTypes);
         var builder = PolymorphicEntityMetamodel.forSuperType(entityType);
         builder.entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(entityType,
                                                                            inspected,

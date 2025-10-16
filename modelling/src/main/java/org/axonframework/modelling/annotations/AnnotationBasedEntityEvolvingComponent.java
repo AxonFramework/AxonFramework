@@ -56,7 +56,8 @@ public class AnnotationBasedEntityEvolvingComponent<E> implements EntityEvolving
     private final MessageTypeResolver messageTypeResolver;
 
     /**
-     * Initialize a new annotation-based {@link EntityEvolver}.
+     * Initialize a new annotation-based {@link EntityEvolver}. If the entity type is sealed, all concrete types in the
+     * sealed hierarchy will be automatically discovered and their event handlers will be registered.
      *
      * @param entityType          The type of entity this instance will handle state changes for.
      * @param converter           The converter to use for converting event payloads to the handler's expected type.
@@ -69,7 +70,7 @@ public class AnnotationBasedEntityEvolvingComponent<E> implements EntityEvolving
              AnnotatedHandlerInspector.inspectType(entityType,
                                                    ClasspathParameterResolverFactory.forClass(entityType),
                                                    ClasspathHandlerDefinition.forClass(entityType),
-                                                   collectSealedHierarchy(entityType)),
+                                                   collectSealedHierarchyIfSealed(entityType)),
              converter,
              messageTypeResolver);
     }
@@ -151,8 +152,8 @@ public class AnnotationBasedEntityEvolvingComponent<E> implements EntityEvolving
     }
 
     /**
-     * Collects all concrete types from a sealed hierarchy, including the root type if it's concrete. Recursively scans
-     * permitted subtypes to handle nested sealed hierarchies.
+     * Collects all concrete types from a sealed hierarchy if the given type is sealed. Returns an empty set if the type
+     * is not sealed.
      * <p>
      * This is essential for polymorphic entity support where event handlers may be defined on concrete implementations
      * of a sealed interface. The {@link AnnotatedHandlerInspector} needs to know about all concrete types upfront to
@@ -162,7 +163,10 @@ public class AnnotationBasedEntityEvolvingComponent<E> implements EntityEvolving
      * @param <T>      The type parameter.
      * @return A set of all concrete types in the hierarchy, or an empty set if the type is not sealed.
      */
-    private static <T> Set<Class<? extends T>> collectSealedHierarchy(@Nonnull Class<T> rootType) {
+    private static <T> Set<Class<? extends T>> collectSealedHierarchyIfSealed(@Nonnull Class<T> rootType) {
+        if (!rootType.isSealed()) {
+            return Set.of();
+        }
         Set<Class<? extends T>> result = new HashSet<>();
         collectSealedHierarchyRecursive(rootType, result);
         return result;
