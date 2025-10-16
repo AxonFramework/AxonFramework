@@ -19,6 +19,7 @@ package org.axonframework.integrationtests.eventsourcing.eventstore.jpa;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.PersistenceContext;
+import org.assertj.core.api.Assertions;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
@@ -143,7 +144,7 @@ class AggregateBasedJpaEventStorageEngineTest
 
     @Test
     void appendEventsIsPerformedInATransaction() {
-        appendCommitAndWait(testSubject, AppendCondition.none(), taggedEventMessage("event-2", emptySet()));
+        appendCommitAndWait(testSubject, AppendCondition.none(), AggregateBasedStorageEngineTestSuite.taggedEventMessage("event-2", emptySet()));
 
         verify(transactionManager).startTransaction();
     }
@@ -159,20 +160,20 @@ class AggregateBasedJpaEventStorageEngineTest
         GenericEventMessage.clock =
                 Clock.fixed(Clock.systemUTC().instant().minus(1, ChronoUnit.HOURS), Clock.systemUTC().getZone());
         appendCommitAndWait(testSubject, AppendCondition.none(),
-                            taggedEventMessage("-1", Set.of()), taggedEventMessage("0", Set.of()));
+                            AggregateBasedStorageEngineTestSuite.taggedEventMessage("-1", Set.of()), AggregateBasedStorageEngineTestSuite.taggedEventMessage("0", Set.of()));
         GenericEventMessage.clock =
                 Clock.fixed(Clock.systemUTC().instant().minus(2, ChronoUnit.MINUTES), Clock.systemUTC().getZone());
         appendCommitAndWait(testSubject, AppendCondition.none(),
-                            taggedEventMessage("-2", Set.of()), taggedEventMessage("1", Set.of()));
+                            AggregateBasedStorageEngineTestSuite.taggedEventMessage("-2", Set.of()), AggregateBasedStorageEngineTestSuite.taggedEventMessage("1", Set.of()));
 
         GenericEventMessage.clock =
                 Clock.fixed(Clock.systemUTC().instant().minus(50, ChronoUnit.SECONDS), Clock.systemUTC().getZone());
         appendCommitAndWait(testSubject, AppendCondition.none(),
-                            taggedEventMessage("-3", Set.of()), taggedEventMessage("2", Set.of()));
+                            AggregateBasedStorageEngineTestSuite.taggedEventMessage("-3", Set.of()), AggregateBasedStorageEngineTestSuite.taggedEventMessage("2", Set.of()));
 
         GenericEventMessage.clock = Clock.fixed(Clock.systemUTC().instant(), Clock.systemUTC().getZone());
         appendCommitAndWait(testSubject, AppendCondition.none(),
-                            taggedEventMessage("-4", Set.of()), taggedEventMessage("3", Set.of()));
+                            AggregateBasedStorageEngineTestSuite.taggedEventMessage("-4", Set.of()), AggregateBasedStorageEngineTestSuite.taggedEventMessage("3", Set.of()));
 
         entityManager.clear();
         transaction.commit();
@@ -193,7 +194,7 @@ class AggregateBasedJpaEventStorageEngineTest
                    )
                    .join()
                    .forEach(token -> {
-                       assertThat(token).isInstanceOf(GapAwareTrackingToken.class);
+                       Assertions.assertThat(token).isInstanceOf(GapAwareTrackingToken.class);
                        GapAwareTrackingToken gapAwareToken = (GapAwareTrackingToken) token;
                        assertThat(!gapAwareToken.hasGaps() || gapAwareToken.getGaps().first() >= 5L).isTrue();
                    });
@@ -227,30 +228,30 @@ class AggregateBasedJpaEventStorageEngineTest
                 AppendCondition.withCriteria(EventCriteria.havingTags(aggregateToKeep));
         GenericEventMessage.clock = Clock.fixed(now.minus(1, ChronoUnit.HOURS), Clock.systemUTC().getZone());
         appendCommitAndWait(gapConfigTestSubject, removeAggregateCondition,
-                            taggedEventMessage("-1", Set.of(aggregateToRemove)));
+                            AggregateBasedStorageEngineTestSuite.taggedEventMessage("-1", Set.of(aggregateToRemove)));
         appendCommitAndWait(gapConfigTestSubject, keepAggregateCondition,
-                            taggedEventMessage("1", Set.of(aggregateToKeep)));
+                            AggregateBasedStorageEngineTestSuite.taggedEventMessage("1", Set.of(aggregateToKeep)));
         GenericEventMessage.clock = Clock.fixed(now.minus(2, ChronoUnit.MINUTES), Clock.systemUTC().getZone());
         appendCommitAndWait(gapConfigTestSubject,
                             removeAggregateCondition.withMarker(new AggregateBasedConsistencyMarker("remove", 1)),
-                            taggedEventMessage("-2", Set.of(aggregateToRemove)));
+                            AggregateBasedStorageEngineTestSuite.taggedEventMessage("-2", Set.of(aggregateToRemove)));
         appendCommitAndWait(gapConfigTestSubject,
                             keepAggregateCondition.withMarker(new AggregateBasedConsistencyMarker("keep", 1)),
-                            taggedEventMessage("2", Set.of(aggregateToKeep)));
+                            AggregateBasedStorageEngineTestSuite.taggedEventMessage("2", Set.of(aggregateToKeep)));
         GenericEventMessage.clock = Clock.fixed(now.minus(50, ChronoUnit.SECONDS), Clock.systemUTC().getZone());
         appendCommitAndWait(gapConfigTestSubject,
                             removeAggregateCondition.withMarker(new AggregateBasedConsistencyMarker("remove", 3)),
-                            taggedEventMessage("-3", Set.of(aggregateToRemove)));
+                            AggregateBasedStorageEngineTestSuite.taggedEventMessage("-3", Set.of(aggregateToRemove)));
         appendCommitAndWait(gapConfigTestSubject,
                             keepAggregateCondition.withMarker(new AggregateBasedConsistencyMarker("keep", 3)),
-                            taggedEventMessage("3", Set.of(aggregateToKeep)));
+                            AggregateBasedStorageEngineTestSuite.taggedEventMessage("3", Set.of(aggregateToKeep)));
         GenericEventMessage.clock = Clock.fixed(now, Clock.systemUTC().getZone());
         appendCommitAndWait(gapConfigTestSubject,
                             keepAggregateCondition.withMarker(new AggregateBasedConsistencyMarker("remove", 5)),
-                            taggedEventMessage("-4", Set.of(aggregateToRemove)));
+                            AggregateBasedStorageEngineTestSuite.taggedEventMessage("-4", Set.of(aggregateToRemove)));
         appendCommitAndWait(gapConfigTestSubject,
                             keepAggregateCondition.withMarker(new AggregateBasedConsistencyMarker("keep", 5)),
-                            taggedEventMessage("4", Set.of(aggregateToKeep)));
+                            AggregateBasedStorageEngineTestSuite.taggedEventMessage("4", Set.of(aggregateToKeep)));
 
         // Let's create some gaps by removing all events where the aggregate identifier is not "remove"
         transaction = transactionManager.startTransaction();

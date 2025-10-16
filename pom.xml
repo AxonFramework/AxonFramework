@@ -32,12 +32,10 @@
         <module>metrics-micrometer</module>
         <module>migration</module>
         <module>modelling</module>
-        <module>spring</module>
-        <module>spring-boot-autoconfigure</module>
-        <module>spring-boot-starter</module>
         <module>test</module>
         <module>tracing-opentelemetry</module>
         <module>todo</module>
+        <module>extensions</module>
     </modules>
     <packaging>pom</packaging>
 
