@@ -77,7 +77,7 @@ public class EventProcessingDeclarativeEventSourcedPooledStreamingIT extends Abs
         await().atMost(10, TimeUnit.SECONDS)
                .untilAsserted(() -> verifyNotificationSentTo(studentId));
 
-        assertThat(reportedMessages).hasSize(10);
+        assertThat(reportedMessages).hasSize(12);
     }
 
     record StudentCoursesAutomationState(String studentId, List<String> courses, boolean notified) {
