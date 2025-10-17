@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -75,6 +76,8 @@ public class EventProcessingDeclarativeEventSourcedPooledStreamingIT extends Abs
         // then
         await().atMost(10, TimeUnit.SECONDS)
                .untilAsserted(() -> verifyNotificationSentTo(studentId));
+
+        assertThat(reportedMessages).hasSize(10);
     }
 
     record StudentCoursesAutomationState(String studentId, List<String> courses, boolean notified) {
