@@ -220,7 +220,5 @@ public interface Configuration extends DescribableComponent {
      * component.
      */
     @Nonnull
-    default <C> Map<String, C> getComponents(@Nonnull Class<C> type) {
-        return Map.of();
-    }
+    <C> Map<String, C> getComponents(@Nonnull Class<C> type);
 }
