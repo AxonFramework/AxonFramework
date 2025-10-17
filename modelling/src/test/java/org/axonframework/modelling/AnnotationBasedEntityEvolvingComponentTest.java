@@ -360,4 +360,103 @@ class AnnotationBasedEntityEvolvingComponentTest {
             this.handledCount++;
         }
     }
+
+    @Nested
+    class PolymorphicEntitySupport {
+
+        /**
+         * These tests demonstrate support for truly polymorphic entities where the entity type itself changes
+         * between different concrete implementations of a sealed hierarchy.
+         * <p>
+         * The implementation uses Java's sealed types feature to automatically discover all concrete types
+         * in a sealed hierarchy. When creating an {@link AnnotationBasedEntityEvolvingComponent} with a sealed
+         * interface or abstract class, it recursively scans all permitted subtypes and registers their event handlers
+         * with the {@link org.axonframework.messaging.annotations.AnnotatedHandlerInspector}.
+         * <p>
+         * This allows event handlers defined on concrete implementations (like InitialCourse, CreatedCourse,
+         * PublishedCourse) to be discovered even when the component is created with the interface type (Course.class).
+         */
+
+        // Sealed interface where the ENTITY ITSELF is polymorphic (not state inside)
+        sealed interface Course permits InitialCourse, CreatedCourse, PublishedCourse {
+        }
+
+        @SuppressWarnings("unused")
+        private record InitialCourse() implements Course {
+            @EventHandler
+            CreatedCourse onCreate(String courseCreatedEvent) {
+                // Handler returns a different type of entity (sibling type)
+                return new CreatedCourse(courseCreatedEvent);
+            }
+        }
+
+        @SuppressWarnings("unused")
+        private record CreatedCourse(String courseName) implements Course {
+            @EventHandler
+            PublishedCourse onPublish(Integer coursePublishedEvent) {
+                // Handler returns a different type of entity (sibling type)
+                return new PublishedCourse(courseName, coursePublishedEvent);
+            }
+        }
+
+        @SuppressWarnings("unused")
+        private record PublishedCourse(String courseName, Integer publishedVersion) implements Course {
+        }
+
+        private static final EntityEvolver<Course> COURSE_EVOLVER = new AnnotationBasedEntityEvolvingComponent<>(
+                Course.class,
+                converter,
+                messageTypeResolver
+        );
+
+        @Test
+        void evolvesPolymorphicEntityFromInitialToCreatedType() {
+            // given
+            Course course = new InitialCourse();
+            var event = asEventMessage("Introduction to Axon");
+            var context = StubProcessingContext.forMessage(event);
+
+            // when
+            course = COURSE_EVOLVER.evolve(course, event, context);
+
+            // then
+            assertInstanceOf(CreatedCourse.class, course);
+            assertEquals("Introduction to Axon", ((CreatedCourse) course).courseName());
+        }
+
+        @Test
+        void evolvesPolymorphicEntityFromCreatedToPublishedType() {
+            // given
+            Course course = new CreatedCourse("Introduction to Axon");
+            var event = asEventMessage(1);
+            var context = StubProcessingContext.forMessage(event);
+
+            // when
+            course = COURSE_EVOLVER.evolve(course, event, context);
+
+            // then
+            assertInstanceOf(PublishedCourse.class, course);
+            assertEquals("Introduction to Axon", ((PublishedCourse) course).courseName());
+            assertEquals(1, ((PublishedCourse) course).publishedVersion());
+        }
+
+        @Test
+        void evolvesPolymorphicEntityThroughMultipleTypeTransitions() {
+            // given
+            Course course = new InitialCourse();
+            var createEvent = asEventMessage("Introduction to Axon");
+            var publishEvent = asEventMessage(1);
+            var createContext = StubProcessingContext.forMessage(createEvent);
+            var publishContext = StubProcessingContext.forMessage(publishEvent);
+
+            // when
+            course = COURSE_EVOLVER.evolve(course, createEvent, createContext);
+            course = COURSE_EVOLVER.evolve(course, publishEvent, publishContext);
+
+            // then
+            assertInstanceOf(PublishedCourse.class, course);
+            assertEquals("Introduction to Axon", ((PublishedCourse) course).courseName());
+            assertEquals(1, ((PublishedCourse) course).publishedVersion());
+        }
+    }
 }

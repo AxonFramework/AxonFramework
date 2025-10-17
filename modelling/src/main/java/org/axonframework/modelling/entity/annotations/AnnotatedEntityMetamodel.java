@@ -226,6 +226,9 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
 
     private EntityMetamodel<E> initializePolymorphicMetamodel(Class<E> entityType,
                                                               Set<Class<? extends E>> concreteTypes) {
+        // Note: We do NOT pass concreteTypes to the inspector here because the framework creates
+        // separate metamodels for each concrete type (see below). Passing them would cause double-registration
+        // of handlers, leading to ChildAmbiguityException.
         AnnotatedHandlerInspector<E> inspected = inspectType(entityType, parameterResolverFactory);
         var builder = PolymorphicEntityMetamodel.forSuperType(entityType);
         builder.entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(entityType,
