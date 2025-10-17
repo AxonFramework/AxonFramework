@@ -36,6 +36,7 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
+import org.axonframework.monitoring.configuration.MessageMonitorRegistry;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.SpanFactory;
 
@@ -88,6 +89,8 @@ public class EventProcessorConfiguration implements DescribableComponent {
     public EventProcessorConfiguration(@Nonnull Configuration configuration) {
         this.interceptors = configuration.getComponent(HandlerInterceptorRegistry.class)
                                          .eventInterceptors(configuration);
+        this.messageMonitor(configuration.getComponent(MessageMonitorRegistry.class)
+                                         .eventMonitor(configuration));
     }
 
     /**
