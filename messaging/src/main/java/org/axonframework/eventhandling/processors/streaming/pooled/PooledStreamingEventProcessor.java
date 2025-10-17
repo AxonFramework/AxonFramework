@@ -88,7 +88,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
 
     private final String name;
     private final PooledStreamingEventProcessorConfiguration configuration;
-    private final StreamableEventSource<? extends EventMessage> eventSource;
+    private final StreamableEventSource eventSource;
     private final ProcessorEventHandlingComponents eventHandlingComponents;
     private final EventCriteria eventCriteria;
     private final UnitOfWorkFactory unitOfWorkFactory;

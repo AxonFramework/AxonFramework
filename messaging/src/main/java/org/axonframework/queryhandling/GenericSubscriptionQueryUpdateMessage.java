@@ -86,7 +86,7 @@ public class GenericSubscriptionQueryUpdateMessage
     public <P> GenericSubscriptionQueryUpdateMessage(@Nonnull MessageType type,
                                                      @Nullable P payload,
                                                      @Nonnull Class<P> declaredUpdateType,
-                                                     @Nonnull Map<String, ?> metadata) {
+                                                     @Nonnull Map<String, String> metadata) {
         super(new GenericMessage(type, payload, declaredUpdateType, metadata));
     }
 
@@ -103,7 +103,7 @@ public class GenericSubscriptionQueryUpdateMessage
     public GenericSubscriptionQueryUpdateMessage(@Nonnull MessageType type,
                                                  @Nonnull Throwable exception,
                                                  @Nonnull Class<?> declaredUpdateType,
-                                                 @Nonnull Map<String, ?> metadata) {
+                                                 @Nonnull Map<String, String> metadata) {
         super(new GenericMessage(type, null, declaredUpdateType, metadata), exception);
     }
 

@@ -21,7 +21,6 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.processors.streaming.StreamingEventProcessor;
 import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.eventhandling.processors.streaming.segmenting.TrackerStatus;
-import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.ReplayToken;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.WrappedToken;
@@ -85,7 +84,7 @@ class Coordinator {
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final String name;
-    private final StreamableEventSource<? extends EventMessage> eventSource;
+    private final StreamableEventSource eventSource;
     private final TokenStore tokenStore;
     private final UnitOfWorkFactory unitOfWorkFactory;
     private final ScheduledExecutorService executorService;
@@ -394,7 +393,7 @@ class Coordinator {
     static class Builder {
 
         private String name;
-        private StreamableEventSource<? extends EventMessage> eventSource;
+        private StreamableEventSource eventSource;
         private TokenStore tokenStore;
         private UnitOfWorkFactory unitOfWorkFactory;
         private ScheduledExecutorService executorService;
@@ -432,7 +431,7 @@ class Coordinator {
          * @param eventSource The source of events this coordinator should schedule per work package.
          * @return The current Builder instance, for fluent interfacing.
          */
-        Builder eventSource(StreamableEventSource<? extends EventMessage> eventSource) {
+        Builder eventSource(StreamableEventSource eventSource) {
             this.eventSource = eventSource;
             return this;
         }

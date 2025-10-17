@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.modelling.EntityIdResolutionException;
 import org.axonframework.modelling.EntityIdResolver;
 
 import java.lang.reflect.AnnotatedElement;
@@ -37,8 +38,7 @@ import java.util.stream.StreamSupport;
  * <p>
  * Multiple fields may be annotated, but only exactly one must resolve one distinct non-null value.
  * <p>
- * If multiple ids are found, an {@link MultipleTargetEntityIdsFoundInPayloadException} is thrown. If no identifier is found at
- * all, a {@link NoEntityIdFoundInPayloadException} is thrown as components depending on the identifier will not work.
+ * If no ids or multiple ids are found, an {@link EntityIdResolutionException} is thrown.
  * <p>
  * For performance reasons, the resolved identifier members are cached per payload type.
  *
@@ -55,20 +55,21 @@ public class AnnotationBasedEntityIdResolver<T> implements EntityIdResolver<T> {
 
     @Nonnull
     @Override
-    public T resolve(@Nonnull Message message, @Nonnull ProcessingContext context) {
+    public T resolve(@Nonnull Message message, @Nonnull ProcessingContext context) throws EntityIdResolutionException {
         Object payload = message.payload();
         List<Object> identifiers = getIdentifiers(payload)
                 .stream()
                 .filter(Objects::nonNull)
                 .toList();
-        if (identifiers.size() > 1) {
-            throw new MultipleTargetEntityIdsFoundInPayloadException(identifiers, payload.getClass());
+
+        if (identifiers.size() == 1) {
+            @SuppressWarnings("unchecked")
+            T first = (T) identifiers.getFirst();
+
+            return first;
         }
-        if (identifiers.isEmpty()) {
-            throw new NoEntityIdFoundInPayloadException(payload.getClass());
-        }
-        //noinspection unchecked
-        return (T) identifiers.getFirst();
+
+        throw new EntityIdResolutionException(payload.getClass(), identifiers);
     }
 
     /**

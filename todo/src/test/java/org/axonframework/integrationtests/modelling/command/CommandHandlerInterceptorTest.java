@@ -87,7 +87,7 @@ class CommandHandlerInterceptorTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3485 - Annotated interceptor support")
     void interceptor() {
         CommandMessage createCommand =
                 new GenericCommandMessage(TEST_COMMAND_TYPE, new CreateMyAggregateCommand("id"));
@@ -111,7 +111,7 @@ class CommandHandlerInterceptorTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3485 - Annotated interceptor support")
     void interceptorWithChainProceeding() {
         CommandMessage createCommand =
                 new GenericCommandMessage(TEST_COMMAND_TYPE, new CreateMyAggregateCommand("id"));
@@ -131,7 +131,7 @@ class CommandHandlerInterceptorTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3485 - Annotated interceptor support")
     void interceptorWithoutChainProceeding() {
         CommandMessage createCommand =
                 new GenericCommandMessage(TEST_COMMAND_TYPE, new CreateMyAggregateCommand("id"));
@@ -149,7 +149,7 @@ class CommandHandlerInterceptorTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3485 - Annotated interceptor support")
     void interceptorWithNestedEntity() {
         CommandMessage createCommand =
                 new GenericCommandMessage(TEST_COMMAND_TYPE, new CreateMyAggregateCommand("id"));
@@ -171,7 +171,7 @@ class CommandHandlerInterceptorTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3485 - Annotated interceptor support")
     void interceptorWithNestedNestedEntity() {
         CommandMessage createCommand =
                 new GenericCommandMessage(TEST_COMMAND_TYPE, new CreateMyAggregateCommand("id"));
@@ -214,7 +214,7 @@ class CommandHandlerInterceptorTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3485 - Annotated interceptor support")
     void interceptorThrowingAnException() {
         CommandMessage createCommand =
                 new GenericCommandMessage(TEST_COMMAND_TYPE, new CreateMyAggregateCommand("id"));

@@ -22,6 +22,7 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
+import org.axonframework.modelling.EntityIdResolutionException;
 import org.axonframework.modelling.annotations.AnnotationBasedEntityIdResolver;
 import org.axonframework.modelling.annotations.TargetEntityId;
 import org.axonframework.serialization.json.JacksonConverter;
@@ -30,6 +31,7 @@ import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
 import org.mockito.junit.jupiter.*;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -50,7 +52,7 @@ class AnnotatedEntityIdResolverTest {
     }
 
     @Test
-    void canResolveIdFromSerializedMessage() {
+    void canResolveIdFromSerializedMessage() throws EntityIdResolutionException {
         MessageType messageType = new MessageType(MyIdHoldingObject.class);
         var serializedMessage = new GenericMessage(messageType, """
                 {"identifier": "test5362"}""");
@@ -63,6 +65,20 @@ class AnnotatedEntityIdResolverTest {
 
         String resolvedId = resolver.resolve(serializedMessage, new StubProcessingContext());
         assertEquals("test5362", resolvedId);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenUnableToResolveId() {
+        MessageType messageType = new MessageType(MyIdHoldingObject.class);
+        var serializedMessage = new GenericMessage(messageType, "{}");
+
+        QualifiedName qualifiedName = messageType.qualifiedName();
+        Mockito.doReturn(MyIdHoldingObject.class)
+               .when(metamodel)
+               .getExpectedRepresentation(qualifiedName);
+
+        assertThatThrownBy(() -> resolver.resolve(serializedMessage, new StubProcessingContext()))
+            .isInstanceOf(EntityIdResolutionException.class);
     }
 
     @Test

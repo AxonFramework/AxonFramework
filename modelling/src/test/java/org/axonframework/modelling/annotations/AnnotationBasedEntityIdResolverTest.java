@@ -19,6 +19,7 @@ package org.axonframework.modelling.annotations;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
+import org.axonframework.modelling.EntityIdResolutionException;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -28,7 +29,7 @@ class AnnotationBasedEntityIdResolverTest {
     private final AnnotationBasedEntityIdResolver<Object> testSubject = new AnnotationBasedEntityIdResolver<>();
 
     @Test
-    void resolvesIdOfSingleTargetCommand() {
+    void resolvesIdOfSingleTargetCommand() throws EntityIdResolutionException {
         // given
         SingleTargetCommand command = new SingleTargetCommand("id-2792793");
         var message = new GenericCommandMessage(new MessageType(command.getClass()), command);
@@ -41,7 +42,7 @@ class AnnotationBasedEntityIdResolverTest {
     }
 
     @Test
-    void resolvesIdOfSingleTargetCommandWithGetterAnnotated() {
+    void resolvesIdOfSingleTargetCommandWithGetterAnnotated() throws EntityIdResolutionException {
         // given
         SingleTargetGetterCommand command = new SingleTargetGetterCommand("id-2792794");
         var message = new GenericCommandMessage(new MessageType(command.getClass()), command);
@@ -54,7 +55,7 @@ class AnnotationBasedEntityIdResolverTest {
     }
 
     @Test
-    void resolvesIdOfSingleTargetCommandWithRecord() {
+    void resolvesIdOfSingleTargetCommandWithRecord() throws EntityIdResolutionException {
         // given
         SingleTargetRecordCommand command = new SingleTargetRecordCommand("id-2792795");
         var message = new GenericCommandMessage(new MessageType(command.getClass()), command);
@@ -73,12 +74,12 @@ class AnnotationBasedEntityIdResolverTest {
         var message = new GenericCommandMessage(new MessageType(command.getClass()), command);
 
         // then
-        assertThrows(MultipleTargetEntityIdsFoundInPayloadException.class, () -> testSubject.resolve(
+        assertThrows(EntityIdResolutionException.class, () -> testSubject.resolve(
                 message, StubProcessingContext.forMessage(message)));
     }
 
     @Test
-    void resolvesNonNullIdWhenOnlyOneTargedIdFieldIsNonNull() {
+    void resolvesNonNullIdWhenOnlyOneTargedIdFieldIsNonNull() throws EntityIdResolutionException {
         // given
         MultipleTargetCommand command = new MultipleTargetCommand("id-2792798", null);
 
@@ -91,7 +92,7 @@ class AnnotationBasedEntityIdResolverTest {
     }
 
     @Test
-    void resolvesNonNullIdWhenAllTargetIdFieldsHaveSameValue() {
+    void resolvesNonNullIdWhenAllTargetIdFieldsHaveSameValue() throws EntityIdResolutionException {
         // given
         MultipleTargetCommand command = new MultipleTargetCommand("id-2792700", "id-2792700");
         var message = new GenericCommandMessage(new MessageType(command.getClass()), command);
@@ -104,7 +105,7 @@ class AnnotationBasedEntityIdResolverTest {
     }
 
     @Test
-    void throwsNoEntityIdFoundInPayloadWhenNoTargetAnnotationPresent() {
+    void throwsEntityIdResolutionExceptionWhenNoTargetAnnotationPresent() {
         // given
         NoTargetCommand command = new NoTargetCommand();
         GenericCommandMessage commandMessage = new GenericCommandMessage(
@@ -112,7 +113,7 @@ class AnnotationBasedEntityIdResolverTest {
         );
 
         // when & then
-        assertThrows(NoEntityIdFoundInPayloadException.class,
+        assertThrows(EntityIdResolutionException.class,
                      () -> testSubject.resolve(commandMessage, StubProcessingContext.forMessage(commandMessage)));
     }
 

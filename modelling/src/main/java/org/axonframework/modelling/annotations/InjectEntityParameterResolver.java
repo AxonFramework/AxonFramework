@@ -22,6 +22,7 @@ import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotations.ParameterResolver;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.modelling.EntityIdResolutionException;
 import org.axonframework.modelling.EntityIdResolver;
 import org.axonframework.modelling.StateManager;
 
@@ -74,16 +75,25 @@ class InjectEntityParameterResolver implements ParameterResolver<Object> {
     @Override
     public Object resolveParameterValue(@Nonnull ProcessingContext context) {
         Message message = Message.fromContext(context);
-        Object resolvedId = identifierResolver.resolve(message, context);
-        //noinspection ConstantValue Users can still make the mistake to return null.
-        if (resolvedId == null) {
-            throw new NullEntityIdInPayloadException(message.payload().getClass());
+
+        try {
+            Object resolvedId = identifierResolver.resolve(message, context);
+            StateManager stateManager = configuration.getComponent(StateManager.class);
+            if (managedEntity) {
+                return stateManager.loadManagedEntity(type, resolvedId, context).join();
+            }
+            return stateManager.loadEntity(type, resolvedId, context).join();
         }
-        StateManager stateManager = configuration.getComponent(StateManager.class);
-        if (managedEntity) {
-            return stateManager.loadManagedEntity(type, resolvedId, context).join();
+        catch (EntityIdResolutionException e) {
+            throw new IllegalStateException(
+                "Unable to inject entity parameter of type [%s] because [%s] was unable to resolve an entity id from [%s]".formatted(
+                    type,
+                    identifierResolver,
+                    message
+                ),
+                e
+            );
         }
-        return stateManager.loadEntity(type, resolvedId, context).join();
     }
 
     @Override

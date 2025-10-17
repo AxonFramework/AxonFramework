@@ -48,7 +48,6 @@ import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 
 import java.time.Clock;
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -92,7 +91,7 @@ import static org.axonframework.common.BuilderUtils.assertStrictPositive;
  */
 public class PooledStreamingEventProcessorConfiguration extends EventProcessorConfiguration {
 
-    private StreamableEventSource<? extends EventMessage> eventSource;
+    private StreamableEventSource eventSource;
     private TokenStore tokenStore;
     private ScheduledExecutorService coordinatorExecutor;
     private ScheduledExecutorService workerExecutor;
@@ -191,7 +190,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * @return The current instance, for fluent interfacing.
      */
     public PooledStreamingEventProcessorConfiguration eventSource(
-            @Nonnull StreamableEventSource<? extends EventMessage> eventSource) {
+            @Nonnull StreamableEventSource eventSource) {
         assertNonNull(eventSource, "StreamableEventSource may not be null");
         this.eventSource = eventSource;
         return this;
@@ -500,7 +499,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      *
      * @return The {@link StreamableEventSource} for this processor.
      */
-    public StreamableEventSource<? extends EventMessage> eventSource() {
+    public StreamableEventSource eventSource() {
         return eventSource;
     }
 

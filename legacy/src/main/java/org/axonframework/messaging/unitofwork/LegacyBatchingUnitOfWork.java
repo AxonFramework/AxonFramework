@@ -87,7 +87,7 @@ public class LegacyBatchingUnitOfWork<T extends Message> extends AbstractLegacyU
         Assert.state(phase() == Phase.STARTED,
                      () -> String.format("The UnitOfWork has an incompatible phase: %s", phase()));
         R result = null;
-        ResultMessage resultMessage = asResultMessage(result);
+        ResultMessage resultMessage = GenericResultMessage.asResultMessage(result);
         Throwable cause = null;
         for (MessageProcessingContext<T> processingContext : processingContexts) {
             this.processingContext = processingContext;
@@ -109,15 +109,15 @@ public class LegacyBatchingUnitOfWork<T extends Message> extends AbstractLegacyU
             } catch (Error | Exception e) {
                 if (rollbackConfiguration.rollBackOn(e)) {
                     rollback(e);
-                    return asResultMessage(e);
+                    return GenericResultMessage.asResultMessage(e);
                 }
-                setExecutionResult(new ExecutionResult(asResultMessage(e)));
+                setExecutionResult(new ExecutionResult(GenericResultMessage.asResultMessage(e)));
                 if (cause != null) {
                     cause.addSuppressed(e);
                 } else {
                     cause = e;
                 }
-                resultMessage = asResultMessage(cause);
+                resultMessage = GenericResultMessage.asResultMessage(cause);
                 continue;
             }
             setExecutionResult(new ExecutionResult(resultMessage));
@@ -125,7 +125,7 @@ public class LegacyBatchingUnitOfWork<T extends Message> extends AbstractLegacyU
         try {
             commit();
         } catch (Exception e) {
-            resultMessage = asResultMessage(e);
+            resultMessage = GenericResultMessage.asResultMessage(e);
         }
         return resultMessage;
     }

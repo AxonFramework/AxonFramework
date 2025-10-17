@@ -518,7 +518,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                           if (e == null) {
                               resultValidator.recordResult(commandMessage, r);
                           } else {
-                              resultValidator.recordException(e);
+                              resultValidator.recordException(e.getCause());
                           }
                       });
         });

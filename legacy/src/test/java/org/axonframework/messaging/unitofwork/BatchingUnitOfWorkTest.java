@@ -17,6 +17,7 @@
 package org.axonframework.messaging.unitofwork;
 
 import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.GenericResultMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.Metadata;
@@ -64,7 +65,7 @@ class BatchingUnitOfWorkTest {
         });
         validatePhaseTransitions(Arrays.asList(PREPARE_COMMIT, COMMIT, AFTER_COMMIT, CLEANUP), messages);
         Map<Message, ExecutionResult> expectedResults = new HashMap<>();
-        messages.forEach(m -> expectedResults.put(m, new ExecutionResult(asResultMessage(resultFor(m)))));
+        messages.forEach(m -> expectedResults.put(m, new ExecutionResult(GenericResultMessage.asResultMessage(resultFor(m)))));
         assertExecutionResults(expectedResults, subject.getExecutionResults());
     }
 
@@ -85,7 +86,7 @@ class BatchingUnitOfWorkTest {
         }
         validatePhaseTransitions(Arrays.asList(ROLLBACK, CLEANUP), messages.subList(0, 2));
         Map<Message, ExecutionResult> expectedResult = new HashMap<>();
-        messages.forEach(m -> expectedResult.put(m, new ExecutionResult(asResultMessage(e))));
+        messages.forEach(m -> expectedResult.put(m, new ExecutionResult(GenericResultMessage.asResultMessage(e))));
         assertExecutionResults(expectedResult, subject.getExecutionResults());
     }
 
@@ -118,9 +119,9 @@ class BatchingUnitOfWorkTest {
         }
         validatePhaseTransitions(Arrays.asList(PREPARE_COMMIT, ROLLBACK, CLEANUP), messages);
         Map<Message, ExecutionResult> expectedResult = new HashMap<>();
-        expectedResult.put(messages.get(0), new ExecutionResult(asResultMessage(commitException)));
-        expectedResult.put(messages.get(1), new ExecutionResult(asResultMessage(commitException)));
-        expectedResult.put(messages.get(2), new ExecutionResult(asResultMessage(taskException)));
+        expectedResult.put(messages.get(0), new ExecutionResult(GenericResultMessage.asResultMessage(commitException)));
+        expectedResult.put(messages.get(1), new ExecutionResult(GenericResultMessage.asResultMessage(commitException)));
+        expectedResult.put(messages.get(2), new ExecutionResult(GenericResultMessage.asResultMessage(taskException)));
         assertExecutionResults(expectedResult, subject.getExecutionResults());
         assertSame(commitException, taskException.getSuppressed()[0]);
         assertEquals(2, cleanupCounter.get());

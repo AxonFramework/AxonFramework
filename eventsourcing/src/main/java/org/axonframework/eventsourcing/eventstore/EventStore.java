@@ -54,7 +54,7 @@ import java.util.List;
  * @author Steven van Beelen
  * @since 0.1.0
  */
-public interface EventStore extends StreamableEventSource<EventMessage>, EventBus, DescribableComponent {
+public interface EventStore extends StreamableEventSource, EventBus, DescribableComponent {
 
     /**
      * Retrieves the {@link EventStoreTransaction transaction for appending events} for the given

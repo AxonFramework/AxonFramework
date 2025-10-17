@@ -31,12 +31,15 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.modelling.EntityIdResolutionException;
 import org.axonframework.modelling.EntityIdResolver;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.annotations.InjectEntity;
 import org.axonframework.modelling.repository.ManagedEntity;
 import org.axonframework.serialization.Converter;
 import org.junit.jupiter.api.*;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
@@ -180,12 +183,12 @@ class MultiEntityCommandHandlingComponentIT extends AbstractCommandHandlingStude
 
             @Override
             @Nonnull
-            public String resolve(@Nonnull Message command, @Nonnull ProcessingContext context) {
+            public String resolve(@Nonnull Message command, @Nonnull ProcessingContext context) throws EntityIdResolutionException {
                 //noinspection unused
                 if (command.payload() instanceof AssignMentorCommand(String studentId, String mentorId)) {
                     return studentId;
                 }
-                throw new IllegalArgumentException("Can not resolve mentor id from command");
+                throw new EntityIdResolutionException(command.payloadType(), List.of());
             }
         }
     }

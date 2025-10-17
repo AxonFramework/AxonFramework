@@ -114,8 +114,7 @@ class DeadLetterParameterResolverFactoryTest {
         ParameterResolver<DeadLetter<?>> resolver =
                 testSubject.createInstance(deadLetterMethod, deadLetterMethod.getParameters(), 0);
 
-        DeadLetter<?> result = resolver.resolveParameterValue(org.axonframework.messaging.unitofwork.StubProcessingContext.forUnitOfWork(
-                uow));
+        DeadLetter<?> result = resolver.resolveParameterValue(StubProcessingContext.forMessage(uow.getMessage()));
         assertEquals(expected, result);
     }
 

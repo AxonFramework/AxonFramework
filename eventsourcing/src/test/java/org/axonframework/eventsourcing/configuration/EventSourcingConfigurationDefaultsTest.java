@@ -80,7 +80,7 @@ class EventSourcingConfigurationDefaultsTest {
         assertInstanceOf(InterceptingEventStore.class, eventSink);
         assertInstanceOf(InterceptingEventStore.class, eventBus);
 
-        StreamableEventSource<?> streamableEventSource = resultConfig.getComponent(StreamableEventSource.class);
+        StreamableEventSource streamableEventSource = resultConfig.getComponent(StreamableEventSource.class);
         assertEquals(eventBus, streamableEventSource);
 
         SubscribableEventSource subscribableEventSource = resultConfig.getComponent(SubscribableEventSource.class);

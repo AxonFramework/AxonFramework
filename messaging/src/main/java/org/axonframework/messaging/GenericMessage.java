@@ -21,8 +21,6 @@ import jakarta.annotation.Nullable;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.TypeReference;
-import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.serialization.ConversionException;
 import org.axonframework.serialization.Converter;
 
@@ -32,9 +30,6 @@ import java.util.Map;
 /**
  * Generic implementation of the {@link Message} interface containing the {@link #payload() payload} and
  * {@link #metadata() metadata} in deserialized form.
- * <p>
- * If a {@link GenericMessage} is created while a {@link LegacyUnitOfWork} is active it copies over the correlation data
- * of the {@code UnitOfWork} to the created message.
  * <p>
  * This {@code Message} implementation is "conversion aware," as it maintains <b>any</b> conversion results from
  * {@link #payloadAs(Type, Converter)} and {@link #withConvertedPayload(Type, Converter)} (either invoked with a
@@ -100,12 +95,8 @@ public class GenericMessage extends AbstractMessage {
     public <P> GenericMessage(@Nonnull MessageType type,
                               @Nullable P payload,
                               @Nonnull Class<P> declaredPayloadType,
-                              @Nonnull Map<String, ?> metadata) {
-        this(IdentifierFactory.getInstance().generateIdentifier(),
-             type,
-             payload,
-             declaredPayloadType,
-             CurrentUnitOfWork.correlationData().mergedWith(Metadata.from((Map<String, String>) metadata)));
+                              @Nonnull Map<String, String> metadata) {
+        this(IdentifierFactory.getInstance().generateIdentifier(), type, payload, declaredPayloadType, metadata);
     }
 
     /**

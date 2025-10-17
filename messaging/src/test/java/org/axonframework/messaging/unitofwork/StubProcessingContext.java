@@ -286,18 +286,6 @@ public class StubProcessingContext implements ProcessingContext {
         return Message.addToContext(this, message);
     }
 
-    /**
-     * Creates a new stub {@link ProcessingContext} for the given {@link LegacyUnitOfWork}. You can use this to create a
-     * context compatible with most of the framework. Do note that this context does not commit or advance phases on its
-     * own, but you can use {@link #moveToPhase(Phase)} to advance the context to a specific phase.
-     *
-     * @param uow The unit of work to create a context for.
-     * @return A new {@link ProcessingContext} instance containing the given {@code message} as a resource.
-     */
-    public static ProcessingContext forUnitOfWork(LegacyUnitOfWork<?> uow) {
-        return forMessage(uow.getMessage());
-    }
-
     @Nonnull
     @Override
     public <C> C component(@Nonnull Class<C> type, @Nullable String name) {

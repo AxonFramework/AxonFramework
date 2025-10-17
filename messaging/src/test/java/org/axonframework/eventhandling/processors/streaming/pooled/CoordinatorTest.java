@@ -73,7 +73,7 @@ class CoordinatorTest {
     private final TokenStore tokenStore = mock(TokenStore.class);
     private final ScheduledThreadPoolExecutor executorService = mock(ScheduledThreadPoolExecutor.class);
     @SuppressWarnings("unchecked")
-    private final StreamableEventSource<EventMessage> messageSource = mock(StreamableEventSource.class);
+    private final StreamableEventSource messageSource = mock(StreamableEventSource.class);
     private final WorkPackage workPackage = mock(WorkPackage.class);
     private Coordinator testSubject;
 

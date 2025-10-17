@@ -75,7 +75,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class AsyncInMemoryStreamableEventSource implements StreamableEventSource<EventMessage> {
+public class AsyncInMemoryStreamableEventSource implements StreamableEventSource {
 
     /**
      * An {@link EventMessage#payload()} representing a failed event.
