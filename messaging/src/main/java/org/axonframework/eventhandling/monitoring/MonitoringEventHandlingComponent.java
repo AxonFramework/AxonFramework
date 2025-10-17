@@ -42,6 +42,7 @@ import java.util.Objects;
  * @since 5.0.0
  */
 // TODO #3595 - The MessageMonitor should align with the new async-native API.
+// TODO(JG): Do we still need this when using interceptors?
 public class MonitoringEventHandlingComponent extends DelegatingEventHandlingComponent {
 
     private final Logger logger = LoggerFactory.getLogger(MonitoringEventHandlingComponent.class);

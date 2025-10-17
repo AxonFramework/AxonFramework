@@ -35,6 +35,8 @@ import org.axonframework.messaging.correlation.CorrelationDataProviderRegistry;
 import org.axonframework.messaging.interceptors.DispatchInterceptorRegistry;
 import org.axonframework.messaging.interceptors.HandlerInterceptorRegistry;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
+import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.monitoring.configuration.MessageMonitorRegistry;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.configuration.QueryHandlingModule;
@@ -223,7 +225,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * components through the {@link CorrelationDataProviderRegistry}.
      *
      * @param providerBuilder The builder constructing the {@link CorrelationDataProvider}.
-     * @return A {@code ModellingConfigurer} instance for further configuring.
+     * @return The current instance of the {@code Configurer} for a fluent API
      */
     public MessagingConfigurer registerCorrelationDataProvider(
             @Nonnull ComponentBuilder<CorrelationDataProvider> providerBuilder
@@ -248,7 +250,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      *
      * @param interceptorBuilder The builder constructing the generic {@link Message}
      *                           {@link MessageDispatchInterceptor}.
-     * @return A {@code ModellingConfigurer} instance for further configuring.
+     * @return The current instance of the {@code Configurer} for a fluent API
      */
     public MessagingConfigurer registerDispatchInterceptor(
             @Nonnull ComponentBuilder<MessageDispatchInterceptor<Message>> interceptorBuilder
@@ -273,7 +275,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      *
      * @param interceptorBuilder The builder constructing the {@link CommandMessage}-specific
      *                           {@link MessageDispatchInterceptor}.
-     * @return A {@code ModellingConfigurer} instance for further configuring.
+     * @return The current instance of the {@code Configurer} for a fluent API
      */
     public MessagingConfigurer registerCommandDispatchInterceptor(
             @Nonnull ComponentBuilder<MessageDispatchInterceptor<? super CommandMessage>> interceptorBuilder
@@ -298,7 +300,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      *
      * @param interceptorBuilder The builder constructing the {@link EventMessage}-specific
      *                           {@link MessageDispatchInterceptor}.
-     * @return A {@code ModellingConfigurer} instance for further configuring.
+     * @return The current instance of the {@code Configurer} for a fluent API
      */
     public MessagingConfigurer registerEventDispatchInterceptor(
             @Nonnull ComponentBuilder<MessageDispatchInterceptor<? super EventMessage>> interceptorBuilder
@@ -323,7 +325,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      *
      * @param interceptorBuilder The builder constructing the {@link QueryMessage}-specific
      *                           {@link MessageDispatchInterceptor}.
-     * @return A {@code ModellingConfigurer} instance for further configuring.
+     * @return The current instance of the {@code Configurer} for a fluent API
      */
     public MessagingConfigurer registerQueryDispatchInterceptor(
             @Nonnull ComponentBuilder<MessageDispatchInterceptor<? super QueryMessage>> interceptorBuilder
@@ -348,7 +350,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      *
      * @param interceptorBuilder The builder constructing the generic {@link Message}
      *                           {@link MessageHandlerInterceptor}.
-     * @return A {@code ModellingConfigurer} instance for further configuring.
+     * @return The current instance of the {@code Configurer} for a fluent API
      */
     public MessagingConfigurer registerMessageHandlerInterceptor(
             @Nonnull ComponentBuilder<MessageHandlerInterceptor<Message>> interceptorBuilder
@@ -371,7 +373,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * applicable infrastructure components through the {@link HandlerInterceptorRegistry}.
      *
      * @param interceptorBuilder The builder constructing the {@link CommandMessage} {@link MessageHandlerInterceptor}.
-     * @return A {@code ModellingConfigurer} instance for further configuring.
+     * @return The current instance of the {@code Configurer} for a fluent API
      */
     public MessagingConfigurer registerCommandHandlerInterceptor(
             @Nonnull ComponentBuilder<MessageHandlerInterceptor<? super CommandMessage>> interceptorBuilder
@@ -394,7 +396,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * applicable infrastructure components through the {@link HandlerInterceptorRegistry}.
      *
      * @param interceptorBuilder The builder constructing the {@link EventMessage} {@link MessageHandlerInterceptor}.
-     * @return A {@code ModellingConfigurer} instance for further configuring.
+     * @return The current instance of the {@code Configurer} for a fluent API
      */
     public MessagingConfigurer registerEventHandlerInterceptor(
             @Nonnull ComponentBuilder<MessageHandlerInterceptor<? super EventMessage>> interceptorBuilder
@@ -417,7 +419,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * applicable infrastructure components through the {@link HandlerInterceptorRegistry}.
      *
      * @param interceptorBuilder The builder constructing the {@link QueryMessage} {@link MessageHandlerInterceptor}.
-     * @return A {@code ModellingConfigurer} instance for further configuring.
+     * @return The current instance of the {@code Configurer} for a fluent API
      */
     public MessagingConfigurer registerQueryHandlerInterceptor(
             @Nonnull ComponentBuilder<MessageHandlerInterceptor<? super QueryMessage>> interceptorBuilder
@@ -440,7 +442,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      *
      * @param moduleBuilder The builder returning a command handling module to register with
      *                      {@code this MessagingConfigurer}.
-     * @return A {@code MessagingConfigurer} instance for further configuring.
+     * @return The current instance of the {@code Configurer} for a fluent API
      */
     @Nonnull
     public MessagingConfigurer registerCommandHandlingModule(
@@ -461,7 +463,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      *
      * @param moduleBuilder The builder returning a query handling module to register with
      *                      {@code this MessagingConfigurer}.
-     * @return A {@code MessagingConfigurer} instance for further configuring.
+     * @return The current instance of the {@code Configurer} for a fluent API
      */
     @Nonnull
     public MessagingConfigurer registerQueryHandlingModule(
@@ -469,6 +471,79 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     ) {
         Objects.requireNonNull(moduleBuilder, "The moduleBuilder cannot be null.");
         delegate.componentRegistry(cr -> cr.registerModule(moduleBuilder.build()));
+        return this;
+    }
+
+    /**
+     * Registers a message monitor for the messaging components in the configuration. Multiple {@link MessageMonitor}s
+     * are possible via {@link MessageMonitorRegistry}.
+     *
+     * @param messageMonitorBuilder A builder for creating a {@link MessageMonitor} instance to monitor messages.
+     * @return The current instance of the {@code Configurer} for a fluent API
+     */
+    public MessagingConfigurer registerMessageMonitor(
+            @Nonnull ComponentBuilder<MessageMonitor<Message>> messageMonitorBuilder) {
+        delegate.componentRegistry(cr -> cr.registerDecorator(
+                MessageMonitorRegistry.class,
+                0,
+                (config, name, delegate) -> delegate.registerMonitor(messageMonitorBuilder)
+        ));
+        return this;
+    }
+
+    /**
+     * Registers a command monitor using the given message monitor builder.
+     * This method allows customization of the monitoring logic for command messages
+     * by providing a component builder that creates a message monitor for commands.
+     *
+     * @param messageMonitorBuilder the builder for creating a message monitor
+     *                              to monitor command messages; it must not be null
+     * @return The current instance of the {@code Configurer} for a fluent API
+     */
+    public MessagingConfigurer registerCommandMonitor(
+            @Nonnull ComponentBuilder<MessageMonitor<? super CommandMessage>> messageMonitorBuilder) {
+
+        delegate.componentRegistry(cr -> cr.registerDecorator(
+                MessageMonitorRegistry.class,
+                0,
+                (config, name, delegate) -> delegate.registerCommandMonitor(messageMonitorBuilder)
+        ));
+        return this;
+    }
+
+    /**
+     * Registers a component builder to configure the {@link MessageMonitor} used for monitoring {@link EventMessage}.
+     *
+     * @param messageMonitorBuilder the {@link ComponentBuilder} for constructing the {@link MessageMonitor}
+     *                              to be registered for monitoring EventMessages.
+     * @return The current instance of the {@code Configurer} for a fluent API
+     */
+    public MessagingConfigurer registerEventMonitor(
+            @Nonnull ComponentBuilder<MessageMonitor<? super EventMessage>> messageMonitorBuilder) {
+
+        delegate.componentRegistry(cr -> cr.registerDecorator(
+                MessageMonitorRegistry.class,
+                0,
+                (config, name, delegate) -> delegate.registerEventMonitor(messageMonitorBuilder)
+        ));
+        return this;
+    }
+
+    /**
+     * Registers a query monitor using the specified {@code messageMonitorBuilder}.
+     *
+     * @param messageMonitorBuilder The builder for a {@link MessageMonitor}
+     *                              specifically designed to monitor {@link QueryMessage} messages.
+     * @return The current instance of the {@code Configurer} for a fluent API
+     */
+    public MessagingConfigurer registerQueryMonitor(
+            @Nonnull ComponentBuilder<MessageMonitor<? super QueryMessage>> messageMonitorBuilder) {
+
+        delegate.componentRegistry(cr -> cr.registerDecorator(
+                MessageMonitorRegistry.class,
+                0,
+                (config, name, delegate) -> delegate.registerQueryMonitor(messageMonitorBuilder)
+        ));
         return this;
     }
 
@@ -487,7 +562,6 @@ public class MessagingConfigurer implements ApplicationConfigurer {
         );
         return this;
     }
-
 
     /**
      * Delegates given {@code configurerTask} to the {@link EventProcessingConfigurer}.
