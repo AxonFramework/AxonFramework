@@ -46,6 +46,8 @@ import org.junit.jupiter.api.*;
 
 import java.util.Objects;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 /**
  * Sets up the basics for the testsuite of the Student/Mentor/Course model.
  * <p>
@@ -88,6 +90,9 @@ public abstract class AbstractStudentIT extends AbstractAxonServerIT {
                 .entityFactory(c -> EventSourcedEntityFactory.fromIdentifier(Course::new))
                 .criteriaResolver(this::courseCriteriaResolver)
                 .build();
+
+        reportedMessages.clear();
+        assertThat(reportedMessages).isEmpty();
     }
 
     @Override
@@ -97,7 +102,8 @@ public abstract class AbstractStudentIT extends AbstractAxonServerIT {
                                                 .componentRegistry(cr -> cr.registerModule(courseEntity));
 
         configurer.messaging(mc -> mc
-                .registerMessageMonitor(c -> new RecordingMessageMonitor(reportedMessages, RecordingMessageMonitor.class.getSimpleName()))
+                .registerMessageMonitor(c -> new RecordingMessageMonitor(reportedMessages,
+                                                                         RecordingMessageMonitor.class.getSimpleName()))
         );
 
         return testSuiteConfigurer(configurer);
