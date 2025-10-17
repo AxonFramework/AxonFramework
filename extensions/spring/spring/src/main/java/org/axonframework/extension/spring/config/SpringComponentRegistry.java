@@ -54,8 +54,10 @@ import org.springframework.core.ResolvableType;
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -641,6 +643,24 @@ public class SpringComponentRegistry implements
         public void describeTo(@Nonnull ComponentDescriptor descriptor) {
             descriptor.describeProperty("components", components);
             descriptor.describeProperty("modules", moduleConfigurations.values());
+        }
+
+        @Nonnull
+        @Override
+        public <C> Map<String, C> getComponents(@Nonnull Class<C> type) {
+            Map<String, C> result = new LinkedHashMap<>();
+
+            // 1. Get all beans of the specified type from Spring context
+            Map<String, C> beansOfType = beanFactory.getBeansOfType(type);
+            result.putAll(beansOfType);
+
+            // 2. Collect from all module configurations (recursively)
+            for (Configuration moduleConfig : getModuleConfigurations()) {
+                Map<String, C> moduleComponents = moduleConfig.getComponents(type);
+                result.putAll(moduleComponents);
+            }
+
+            return Collections.unmodifiableMap(result);
         }
     }
 

@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -475,6 +476,30 @@ public class DefaultComponentRegistry implements ComponentRegistry {
         public Optional<Configuration> getModuleConfiguration(@Nonnull String name) {
             Assert.nonEmpty(name, "The name must not be null.");
             return Optional.ofNullable(moduleConfigurations.get(name));
+        }
+
+        @Nonnull
+        @Override
+        public <C> Map<String, C> getComponents(@Nonnull Class<C> type) {
+            Map<String, C> result = new LinkedHashMap<>();
+
+            // 1. Collect from current configuration's components
+            for (Identifier<?> identifier : components.identifiers()) {
+                if (type.isAssignableFrom(identifier.typeAsClass())) {
+                    @SuppressWarnings("unchecked")
+                    Optional<Component<C>> component = (Optional<Component<C>>) components.get((Identifier<C>) identifier);
+                    component.ifPresent(c -> result.put(identifier.name(), c.resolve(this)));
+                }
+            }
+
+            // 2. Collect from all module configurations (recursively)
+            for (Configuration moduleConfig : getModuleConfigurations()) {
+                Map<String, C> moduleComponents = moduleConfig.getComponents(type);
+                // Note: module components might override main components with same name
+                result.putAll(moduleComponents);
+            }
+
+            return Collections.unmodifiableMap(result);
         }
     }
 }

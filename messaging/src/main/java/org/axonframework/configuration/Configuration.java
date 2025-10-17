@@ -21,6 +21,7 @@ import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.DescribableComponent;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -184,4 +185,42 @@ public interface Configuration extends DescribableComponent {
      */
     @Nullable
     Configuration getParent();
+
+    /**
+     * Returns all components declared under the given {@code type} as a map of component names to component instances.
+     * <p>
+     * This method retrieves all registered components matching the specified type. The returned map contains:
+     * <ul>
+     *     <li>An entry with {@code null} key for the component registered without a name (if one exists)</li>
+     *     <li>Entries with {@link String} keys for components registered with specific names</li>
+     * </ul>
+     * This is useful when multiple components of the same type are registered, such as multiple
+     * {@link org.axonframework.eventhandling.EventProcessor EventProcessors} or interceptors.
+     * <p>
+     * The method searches in the current configuration and all {@link #getModuleConfigurations() module configurations}.
+     * It does NOT search the {@link #getParent() parent configuration}. To get the full hierarchy of components,
+     * call this method on the top-level (root) configuration.
+     * <p>
+     * <b>Important:</b> This method only returns components that are already registered or have been instantiated.
+     * Components that could be created on-demand by a {@link ComponentFactory} but have not yet been accessed will
+     * not be included in the results. If you need to access a specific component that might be factory-created, use
+     * {@link #getComponent(Class, String)} or {@link #getOptionalComponent(Class, String)} instead.
+     * <p>
+     * Example usage:
+     * <pre>{@code
+     * Map<String, EventProcessor> processors = configuration.getComponents(EventProcessor.class);
+     * EventProcessor defaultProcessor = processors.get(null);  // unnamed processor
+     * EventProcessor orderProcessor = processors.get("orderProcessor");  // named processor
+     * }</pre>
+     *
+     * @param type The type of component, typically the interface the component implements.
+     * @param <C>  The type of component.
+     * @return A map of component names to component instances for the given {@code type}. Returns an empty map if no
+     * components are registered for the given type. The map may contain a {@code null} key for the unnamed
+     * component.
+     */
+    @Nonnull
+    default <C> Map<String, C> getComponents(@Nonnull Class<C> type) {
+        return Map.of();
+    }
 }

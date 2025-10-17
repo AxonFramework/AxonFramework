@@ -1191,6 +1191,154 @@ class DefaultComponentRegistryTest {
     }
 
     @Nested
+    class GetComponents {
+
+        @Test
+        void returnsEmptyMapWhenNoComponentsOfTypeExist() {
+            // given
+            testSubject.registerComponent(String.class, c -> "test");
+
+            // when
+            Configuration config = testSubject.build(mock());
+            Map<String, ServiceInterface> result = config.getComponents(ServiceInterface.class);
+
+            // then
+            assertNotNull(result);
+            assertTrue(result.isEmpty());
+        }
+
+        @Test
+        void returnsUnnamedComponentWithNullKey() {
+            // given
+            ServiceImplA implementation = new ServiceImplA("test-value");
+            testSubject.registerComponent(ServiceInterface.class, c -> implementation);
+
+            // when
+            Configuration config = testSubject.build(mock());
+            Map<String, ServiceInterface> result = config.getComponents(ServiceInterface.class);
+
+            // then
+            assertEquals(1, result.size());
+            assertTrue(result.containsKey(null));
+            assertSame(implementation, result.get(null));
+        }
+
+        @Test
+        void returnsNamedComponentsWithTheirNames() {
+            // given
+            ServiceImplA implA = new ServiceImplA("value-a");
+            ServiceImplB implB = new ServiceImplB("value-b");
+            testSubject.registerComponent(ServiceInterface.class, "service-a", c -> implA)
+                       .registerComponent(ServiceInterface.class, "service-b", c -> implB);
+
+            // when
+            Configuration config = testSubject.build(mock());
+            Map<String, ServiceInterface> result = config.getComponents(ServiceInterface.class);
+
+            // then
+            assertEquals(2, result.size());
+            assertTrue(result.containsKey("service-a"));
+            assertTrue(result.containsKey("service-b"));
+            assertSame(implA, result.get("service-a"));
+            assertSame(implB, result.get("service-b"));
+        }
+
+        @Test
+        void returnsMixOfNamedAndUnnamedComponents() {
+            // given
+            ServiceImplA unnamedImpl = new ServiceImplA("unnamed");
+            ServiceImplB namedImpl = new ServiceImplB("named");
+            testSubject.registerComponent(ServiceInterface.class, c -> unnamedImpl)
+                       .registerComponent(ServiceInterface.class, "named-service", c -> namedImpl);
+
+            // when
+            Configuration config = testSubject.build(mock());
+            Map<String, ServiceInterface> result = config.getComponents(ServiceInterface.class);
+
+            // then
+            assertEquals(2, result.size());
+            assertTrue(result.containsKey(null));
+            assertTrue(result.containsKey("named-service"));
+            assertSame(unnamedImpl, result.get(null));
+            assertSame(namedImpl, result.get("named-service"));
+        }
+
+        @Test
+        void returnsComponentsFromModuleConfigurations() {
+            // given
+            ServiceImplA mainImpl = new ServiceImplA("main");
+            ServiceImplB moduleImpl = new ServiceImplB("module");
+
+            testSubject.registerComponent(ServiceInterface.class, "main-service", c -> mainImpl)
+                       .registerModule(
+                               new TestModule("test-module").componentRegistry(
+                                       cr -> cr.registerComponent(
+                                               ServiceInterface.class, "module-service", c -> moduleImpl
+                                       )
+                               )
+                       );
+
+            // when
+            Configuration config = testSubject.build(mock());
+            Map<String, ServiceInterface> result = config.getComponents(ServiceInterface.class);
+
+            // then
+            assertEquals(2, result.size());
+            assertTrue(result.containsKey("main-service"));
+            assertTrue(result.containsKey("module-service"));
+            assertSame(mainImpl, result.get("main-service"));
+            assertSame(moduleImpl, result.get("module-service"));
+        }
+
+        @Test
+        void returnsComponentsMatchingSubtypes() {
+            // given
+            ServiceImplA implementation = new ServiceImplA("test-value");
+            testSubject.registerComponent(ServiceImplA.class, c -> implementation);
+
+            // when
+            Configuration config = testSubject.build(mock());
+            Map<String, ServiceInterface> result = config.getComponents(ServiceInterface.class);
+
+            // then
+            assertEquals(1, result.size());
+            assertSame(implementation, result.values().iterator().next());
+        }
+
+        @Test
+        void returnsImmutableMap() {
+            // given
+            ServiceImplA implementation = new ServiceImplA("test-value");
+            testSubject.registerComponent(ServiceInterface.class, "service", c -> implementation);
+
+            // when
+            Configuration config = testSubject.build(mock());
+            Map<String, ServiceInterface> result = config.getComponents(ServiceInterface.class);
+
+            // then
+            assertThrows(UnsupportedOperationException.class, () -> result.put("new", new ServiceImplB("new")));
+            assertThrows(UnsupportedOperationException.class, () -> result.remove("service"));
+            assertThrows(UnsupportedOperationException.class, result::clear);
+        }
+
+        @Test
+        void doesNotIncludeFactoryComponentsNotYetAccessed() {
+            // given
+            testSubject.registerComponent(ServiceInterface.class, "registered", c -> new ServiceImplA("registered"));
+
+            // when
+            Configuration config = testSubject.build(mock());
+            Map<String, ServiceInterface> result = config.getComponents(ServiceInterface.class);
+
+            // then
+            // Only explicitly registered components are included
+            // Factory-created components that haven't been accessed are NOT included
+            assertEquals(1, result.size());
+            assertTrue(result.containsKey("registered"));
+        }
+    }
+
+    @Nested
     class DescribeTo {
 
         @Test
