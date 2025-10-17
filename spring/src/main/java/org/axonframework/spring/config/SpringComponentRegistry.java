@@ -648,11 +648,10 @@ public class SpringComponentRegistry implements
         @Nonnull
         @Override
         public <C> Map<String, C> getComponents(@Nonnull Class<C> type) {
-            Map<String, C> result = new LinkedHashMap<>();
 
             // 1. Get all beans of the specified type from Spring context
             Map<String, C> beansOfType = beanFactory.getBeansOfType(type);
-            result.putAll(beansOfType);
+            Map<String, C> result = new LinkedHashMap<>(beansOfType);
 
             // 2. Collect from all module configurations (recursively)
             for (Configuration moduleConfig : getModuleConfigurations()) {
