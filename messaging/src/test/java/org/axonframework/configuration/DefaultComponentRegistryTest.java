@@ -1324,17 +1324,60 @@ class DefaultComponentRegistryTest {
         @Test
         void doesNotIncludeFactoryComponentsNotYetAccessed() {
             // given
-            testSubject.registerComponent(ServiceInterface.class, "registered", c -> new ServiceImplA("registered"));
+            // Register a component factory that can create components on-demand
+            ComponentFactory<ServiceInterface> factory = new ComponentFactory<>() {
+                @Override
+                public Class<ServiceInterface> forType() {
+                    return ServiceInterface.class;
+                }
+
+                @Override
+                public Optional<Component<ServiceInterface>> construct(String name, Configuration config) {
+                    // Factory can create components with names like "factory-1", "factory-2", etc.
+                    if (name != null && name.startsWith("factory-")) {
+                        return Optional.of(new LazyInitializedComponentDefinition<>(
+                                new Component.Identifier<>(ServiceInterface.class, name),
+                                c -> new ServiceImplA("from-factory-" + name)
+                        ));
+                    }
+                    return Optional.empty();
+                }
+
+                @Override
+                public void registerShutdownHandlers(LifecycleRegistry registry) {
+                    // No shutdown needed for this test
+                }
+
+                @Override
+                public void describeTo(org.axonframework.common.infra.ComponentDescriptor descriptor) {
+                    descriptor.describeProperty("type", "TestFactory");
+                }
+            };
+
+            testSubject.registerComponent(ServiceInterface.class, "registered", c -> new ServiceImplA("registered"))
+                       .registerFactory(factory);
 
             // when
             Configuration config = testSubject.build(mock());
-            Map<String, ServiceInterface> result = config.getComponents(ServiceInterface.class);
+            Map<String, ServiceInterface> resultBeforeAccess = config.getComponents(ServiceInterface.class);
 
             // then
             // Only explicitly registered components are included
             // Factory-created components that haven't been accessed are NOT included
-            assertEquals(1, result.size());
-            assertTrue(result.containsKey("registered"));
+            assertEquals(1, resultBeforeAccess.size());
+            assertTrue(resultBeforeAccess.containsKey("registered"));
+            assertFalse(resultBeforeAccess.containsKey("factory-1"));
+
+            // when - access a factory component
+            ServiceInterface factoryComponent = config.getComponent(ServiceInterface.class, "factory-1");
+            Map<String, ServiceInterface> resultAfterAccess = config.getComponents(ServiceInterface.class);
+
+            // then
+            // After accessing a factory component, it should now appear in getComponents()
+            assertEquals(2, resultAfterAccess.size());
+            assertTrue(resultAfterAccess.containsKey("registered"));
+            assertTrue(resultAfterAccess.containsKey("factory-1"));
+            assertSame(factoryComponent, resultAfterAccess.get("factory-1"));
         }
     }
 
