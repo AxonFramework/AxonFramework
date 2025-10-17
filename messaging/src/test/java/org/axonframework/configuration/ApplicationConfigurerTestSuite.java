@@ -454,7 +454,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
             // then
             assertEquals(1, result.size());
-            assertTrue(result.containsKey(null));
+            assertTrue(containsNotNamedComponent(result));
             assertSame(component, result.get(null));
         }
 
@@ -464,7 +464,9 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             TestComponent componentOne = new TestComponent("one");
             TestComponent componentTwo = new TestComponent("two");
             testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class, "name-one", c -> componentOne)
-                                                  .registerComponent(TestComponent.class, "name-two", c -> componentTwo));
+                                                  .registerComponent(TestComponent.class,
+                                                                     "name-two",
+                                                                     c -> componentTwo));
 
             // when
             Configuration config = buildConfiguration();
@@ -484,7 +486,9 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             TestComponent unnamedComponent = new TestComponent("unnamed");
             TestComponent namedComponent = new TestComponent("named");
             testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class, c -> unnamedComponent)
-                                                  .registerComponent(TestComponent.class, "named", c -> namedComponent));
+                                                  .registerComponent(TestComponent.class,
+                                                                     "named",
+                                                                     c -> namedComponent));
 
             // when
             Configuration config = buildConfiguration();
@@ -492,7 +496,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
             // then
             assertEquals(2, result.size());
-            assertTrue(result.containsKey(null));
+            assertTrue(containsNotNamedComponent(result));
             assertTrue(result.containsKey("named"));
             assertSame(unnamedComponent, result.get(null));
             assertSame(namedComponent, result.get("named"));
@@ -502,15 +506,15 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
         void getComponentsReturnsComponentsMatchingSubtypes() {
             // given
             SpecificTestComponent specificComponent = SPECIFIC_TEST_COMPONENT;
-            testSubject.componentRegistry(cr -> cr.registerComponent(SpecificTestComponent.class, c -> specificComponent));
+            testSubject.componentRegistry(cr -> cr.registerComponent(SpecificTestComponent.class,
+                                                                     c -> specificComponent));
 
             // when
             Configuration config = buildConfiguration();
             Map<String, TestComponent> result = config.getComponents(TestComponent.class);
-
             // then
             assertEquals(1, result.size());
-            assertTrue(result.containsKey(null));
+            assertTrue(containsNotNamedComponent(result));
             assertSame(specificComponent, result.get(null));
         }
 
@@ -526,6 +530,13 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             // then
             assertThrows(UnsupportedOperationException.class, () -> result.put("new", TEST_COMPONENT));
         }
+    }
+
+    /**
+     * When Axon registers a component without a name, Spring uses the FQCN as bean name.
+     */
+    private static boolean containsNotNamedComponent(Map<String, TestComponent> result) {
+        return result.containsKey(null) || result.containsKey(TestComponent.class.getName());
     }
 
     @Nested
@@ -806,8 +817,12 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             TestComponent firstComponent = new TestComponent("first");
             TestComponent secondComponent = new TestComponent("second");
 
-            testSubject.componentRegistry(cr -> cr.registerIfNotPresent(TestComponent.class, "first", c -> firstComponent)
-                                                  .registerIfNotPresent(TestComponent.class, "first", c -> secondComponent));
+            testSubject.componentRegistry(cr -> cr.registerIfNotPresent(TestComponent.class,
+                                                                        "first",
+                                                                        c -> firstComponent)
+                                                  .registerIfNotPresent(TestComponent.class,
+                                                                        "first",
+                                                                        c -> secondComponent));
 
             // when
             Configuration config = buildConfiguration();
