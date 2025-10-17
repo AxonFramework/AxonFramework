@@ -37,9 +37,11 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
-import org.axonframework.modelling.annotations.AnnotationBasedEntityEvolvingComponent;
 import org.axonframework.modelling.EntityEvolver;
+import org.axonframework.modelling.annotations.AnnotationBasedEntityEvolvingComponent;
 import org.axonframework.serialization.Converter;
+import org.axonframework.test.utils.MessageMonitorReport;
+import org.axonframework.test.utils.RecordingMessageMonitor;
 import org.junit.jupiter.api.*;
 
 import java.util.Objects;
@@ -56,6 +58,8 @@ import java.util.Objects;
  * @author Steven van Beelen
  */
 public abstract class AbstractStudentIT extends AbstractAxonServerIT {
+
+    protected MessageMonitorReport reportedMessages = new MessageMonitorReport();
 
     protected static final GenericCommandResultMessage SUCCESSFUL_COMMAND_RESULT =
             new GenericCommandResultMessage(new MessageType("empty"), "successful");
@@ -91,6 +95,11 @@ public abstract class AbstractStudentIT extends AbstractAxonServerIT {
         var configurer = EventSourcingConfigurer.create()
                                                 .componentRegistry(cr -> cr.registerModule(studentEntity))
                                                 .componentRegistry(cr -> cr.registerModule(courseEntity));
+
+        configurer.messaging(mc -> mc
+                .registerMessageMonitor(c -> new RecordingMessageMonitor(reportedMessages, RecordingMessageMonitor.class.getSimpleName()))
+        );
+
         return testSuiteConfigurer(configurer);
     }
 
