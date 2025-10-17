@@ -511,6 +511,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             assertSame(namedComponent, result.get("named"));
         }
 
+        // fixme: null / FQCN Spring Registry
         @Test
         void getComponentsReturnsComponentsMatchingSubtypes() {
             // given
