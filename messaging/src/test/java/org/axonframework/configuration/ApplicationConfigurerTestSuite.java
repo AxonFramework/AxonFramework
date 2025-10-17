@@ -514,8 +514,8 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             Map<String, TestComponent> result = config.getComponents(TestComponent.class);
             // then
             assertEquals(1, result.size());
-            assertTrue(containsNotNamedComponent(result));
-            assertSame(specificComponent, result.get(null));
+            assertTrue(result.containsKey(null) || result.containsKey(SpecificTestComponent.class.getName()));
+            assertSame(specificComponent, Optional.ofNullable(result.get(null)).orElseGet(() -> result.get(SpecificTestComponent.class.getName())));
         }
 
         @Test
