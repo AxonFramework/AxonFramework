@@ -50,7 +50,7 @@ public interface ApplicationContext {
      */
     @Nonnull
     default <C> C component(@Nonnull Class<C> type) {
-        return component(type, (String) null);
+        return component(type, type.getName());
     }
 
     /**

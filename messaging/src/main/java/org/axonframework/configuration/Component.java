@@ -93,21 +93,21 @@ public interface Component<C> extends DescribableComponent {
      * A tuple representing a {@code Component's} uniqueness, consisting out of a {@code type} and {@code name}.
      *
      * @param type The type reference of the component this object identifies.
-     * @param name The name of the component this object identifies, potentially {@code null} when unimportant. Will
-     *             throw an {@link IllegalArgumentException} for an empty {@code name}.
+     * @param name The name of the component this object identifies. Will throw an {@link IllegalArgumentException} for
+     *             an empty {@code name}.
      * @param <C>  The type of the component this object identifies, typically an interface.
      */
-    record Identifier<C>(@Nonnull TypeReference<C> type, @Nullable String name) {
+    record Identifier<C>(@Nonnull TypeReference<C> type, @Nonnull String name) {
 
         /**
          * A tuple representing a {@code Component's} uniqueness, consisting out of a {@code clazz} and {@code name}.
          *
          * @param clazz The clazz of the component this object identifies, typically an interface.
-         * @param name  The name of the component this object identifies, potentially {@code null} when unimportant.
-         *              Will throw an {@link IllegalArgumentException} for an empty {@code name}.
+         * @param name  The name of the component this object identifies. Will throw an {@link IllegalArgumentException}
+         *              for an empty {@code name}.
          */
         public Identifier(@Nonnull Class<C> clazz,
-                          @Nullable String name) {
+                          @Nonnull String name) {
             this(TypeReference.fromClass(clazz), name);
         }
 
@@ -115,11 +115,11 @@ public interface Component<C> extends DescribableComponent {
          * A tuple representing a {@code Component's} uniqueness, consisting out of a {@code type} and {@code name}.
          *
          * @param type The type of the component this object identifies, typically an interface.
-         * @param name The name of the component this object identifies, potentially {@code null} when unimportant. Will
-         *             throw an {@link IllegalArgumentException} for an empty {@code name}.
+         * @param name The name of the component this object identifies. Will throw an {@link IllegalArgumentException}
+         *             for an empty {@code name}.
          */
         public Identifier(@Nonnull Type type,
-                          @Nullable String name) {
+                          @Nonnull String name) {
             this(TypeReference.fromType(type), name);
         }
 
@@ -131,9 +131,8 @@ public interface Component<C> extends DescribableComponent {
          */
         public Identifier {
             requireNonNull(type, "The given type is unsupported because it is null.");
-            if (name != null) {
-                nonEmpty(name, "The given name is unsupported because it is empty.");
-            }
+            requireNonNull(name, "The given name is unsupported because it is null.");
+            nonEmpty(name, "The given name is unsupported because it is empty.");
         }
 
         /**

@@ -196,7 +196,7 @@ public class DefaultHandlerInterceptorRegistry implements HandlerInterceptorRegi
             LazyInitializedComponentDefinition<MessageHandlerInterceptor<Message>, MessageHandlerInterceptor<Message>> {
 
         public GenericInterceptorDefinition(ComponentBuilder<MessageHandlerInterceptor<Message>> builder) {
-            super(new Component.Identifier<>(MESSAGE_INTERCEPTOR_TYPE_REF, null), builder);
+            super(new Component.Identifier<>(MESSAGE_INTERCEPTOR_TYPE_REF, MESSAGE_INTERCEPTOR_TYPE_REF.getTypeAsClass().getName()), builder);
         }
     }
 }

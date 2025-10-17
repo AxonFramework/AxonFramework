@@ -44,7 +44,7 @@ public interface Configuration extends DescribableComponent {
      */
     @Nonnull
     default <C> C getComponent(@Nonnull Class<C> type) {
-        return getComponent(type, (String) null);
+        return getComponent(type, type.getName());
     }
 
     /**
@@ -75,7 +75,7 @@ public interface Configuration extends DescribableComponent {
      * there is no component present for the given {@code type}.
      */
     default <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type) {
-        return getOptionalComponent(type, null);
+        return getOptionalComponent(type, type.getName());
     }
 
     /**
@@ -99,7 +99,7 @@ public interface Configuration extends DescribableComponent {
      * otherwise.
      */
     default boolean hasComponent(@Nonnull Class<?> type) {
-        return hasComponent(type, null);
+        return hasComponent(type, type.getName());
     }
 
     /**
@@ -132,7 +132,7 @@ public interface Configuration extends DescribableComponent {
     @Nonnull
     default <C> C getComponent(@Nonnull Class<C> type,
                                @Nonnull Supplier<C> defaultImpl) {
-        return getComponent(type, null, defaultImpl);
+        return getComponent(type, type.getName(), defaultImpl);
     }
 
     /**

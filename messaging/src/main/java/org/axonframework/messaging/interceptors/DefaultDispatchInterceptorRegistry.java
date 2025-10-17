@@ -184,7 +184,7 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
             LazyInitializedComponentDefinition<MessageDispatchInterceptor<Message>, MessageDispatchInterceptor<Message>> {
 
         public GenericInterceptorDefinition(ComponentBuilder<MessageDispatchInterceptor<Message>> builder) {
-            super(new Component.Identifier<>(INTERCEPTOR_TYPE_REF, null), builder);
+            super(new Component.Identifier<>(INTERCEPTOR_TYPE_REF, INTERCEPTOR_TYPE_REF.getTypeAsClass().getName()), builder);
         }
     }
 }

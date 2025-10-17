@@ -109,7 +109,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
 
     @Override
     public boolean hasComponent(@Nonnull Class<?> type,
-                                @Nullable String name,
+                                @Nonnull String name,
                                 @Nonnull SearchScope searchScope) {
         return switch (searchScope) {
             case ALL -> components.contains(new Identifier<>(type, name)) || parentHasComponent(type, name);
@@ -436,7 +436,8 @@ public class DefaultComponentRegistry implements ComponentRegistry {
 
         private <C> Optional<Component<C>> fromFactory(Class<C> type, String name) {
             if (name == null) {
-                // The ComponentFactory requires a non-null name at all times.
+                // Defensive check: ComponentFactory requires a non-null name.
+                // This should not occur as ComponentRegistry now requires non-null names.
                 return Optional.empty();
             }
 

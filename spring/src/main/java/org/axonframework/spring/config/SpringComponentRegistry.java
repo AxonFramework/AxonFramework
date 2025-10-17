@@ -161,7 +161,7 @@ public class SpringComponentRegistry implements
 
     @Override
     public boolean hasComponent(@Nonnull Class<?> type,
-                                @Nullable String name,
+                                @Nonnull String name,
                                 @Nonnull SearchScope searchScope) {
         // Checks both the local Components as the BeanFactory,
         //  since the ConfigurationEnhancers act before component registration with the Application Context.
@@ -173,15 +173,10 @@ public class SpringComponentRegistry implements
     }
 
     /**
-     * If the given {@code name} is {@code null}, we check if there is <b>a</b> bean for the given {@code type}.
-     * <p>
-     * If the given {@code name} is <b>not</b> {@code null}, we validate if there is a bean of the given {@code type}
-     * with that exact name.
+     * Validates if there is a bean of the given {@code type} with the exact {@code name}.
      */
     private boolean contextHasComponent(Class<?> type, String name) {
-        return name != null
-                ? Arrays.stream(beanFactory.getBeanNamesForType(type)).toList().contains(name)
-                : beanFactory.getBeanNamesForType(type).length > 0;
+        return Arrays.stream(beanFactory.getBeanNamesForType(type)).toList().contains(name);
     }
 
     @Override
@@ -350,7 +345,7 @@ public class SpringComponentRegistry implements
             return true;
         }
         if (beanComponentId.areTypeAndNameEqual()) {
-            return components.contains(new Component.Identifier<>(beanComponentId.type(), null));
+            return components.contains(new Component.Identifier<>(beanComponentId.type(), beanComponentId.typeAsClass().getName()));
         }
         return false;
     }
@@ -498,8 +493,7 @@ public class SpringComponentRegistry implements
      */
     private void registerLocalComponentsWithApplicationContext() {
         components.postProcessComponents(component -> {
-            String name = Objects.requireNonNullElseGet(component.identifier().name(),
-                                                        () -> component.identifier().typeAsClass().getName());
+            String name = component.identifier().name();
             if (beanFactory.containsBeanDefinition(name)) {
                 logger.info("Component with name [{}] is already available. Skipping registration.", name);
                 return;

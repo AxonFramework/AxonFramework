@@ -225,6 +225,17 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
         }
 
         @Test
+        void registerComponentForTypeExposesRegisteredComponentOnGetWithTypeName() {
+            TestComponent testComponent = TEST_COMPONENT;
+            testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class, c -> testComponent));
+
+            Configuration config = buildConfiguration();
+
+            assertEquals(testComponent, config.getComponent(TestComponent.class, TestComponent.class.getName()));
+        }
+
+
+        @Test
         void registerComponentForTypeExposesRegisteredComponentOnGetWhenAssignableFrom() {
             SpecificTestComponent testComponent = SPECIFIC_TEST_COMPONENT;
             testSubject.componentRegistry(

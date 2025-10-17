@@ -170,24 +170,24 @@ class ComponentsTest {
     }
 
     @Test
-    void containsMatchesWithAssignableFromTypesWhenNoNameIsGiven() {
+    void containsMatchesWithExactNameOnly() {
         // given...
-        Identifier<InterceptingCommandBus> idOne = new Identifier<>(InterceptingCommandBus.class, null);
+        Identifier<InterceptingCommandBus> idOne = new Identifier<>(InterceptingCommandBus.class, InterceptingCommandBus.class.getName());
         InterceptingCommandBus mockOne = mock(InterceptingCommandBus.class);
         testSubject.put(new InstantiatedComponentDefinition<>(idOne, mockOne));
 
-        Identifier<RetryingCommandBus> idTwo = new Identifier<>(RetryingCommandBus.class, null);
+        Identifier<RetryingCommandBus> idTwo = new Identifier<>(RetryingCommandBus.class, RetryingCommandBus.class.getName());
         RetryingCommandBus mockTwo = mock(RetryingCommandBus.class);
         testSubject.put(new InstantiatedComponentDefinition<>(idTwo, mockTwo));
 
         // when/then...
-        // exact type match succeeds...
-        assertTrue(testSubject.contains(new Identifier<>(InterceptingCommandBus.class, null)));
-        assertTrue(testSubject.contains(new Identifier<>(RetryingCommandBus.class, null)));
-        // assignable from type match succeeds...
-        assertTrue(testSubject.contains(new Identifier<>(CommandBus.class, null)));
-        // non-existent type match fails...
-        assertFalse(testSubject.contains(new Identifier<>(TracingCommandBus.class, null)));
+        // exact type and name match succeeds...
+        assertTrue(testSubject.contains(new Identifier<>(InterceptingCommandBus.class, InterceptingCommandBus.class.getName())));
+        assertTrue(testSubject.contains(new Identifier<>(RetryingCommandBus.class, RetryingCommandBus.class.getName())));
+        // parent type with different FQCN fails (names don't match)...
+        assertFalse(testSubject.contains(new Identifier<>(CommandBus.class, CommandBus.class.getName())));
+        // non-existent type fails...
+        assertFalse(testSubject.contains(new Identifier<>(TracingCommandBus.class, TracingCommandBus.class.getName())));
     }
 
     @Test

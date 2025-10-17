@@ -32,8 +32,8 @@ import java.util.function.Consumer;
  * Components are identified by a combination of their declared type and a name. The declared type is generally an
  * interface that all implementations are expected to implement. The name can be any non-empty string value that
  * identifies a particular instance of a component. If the name is not relevant, for example because only a single
- * instance is expected to be present, it can be omitted in the definition, in which case it will default to the simple
- * class name of the declared {@code Component} type.
+ * instance is expected to be present, it can be omitted in the definition, in which case it will default to the fully
+ * qualified class name of the declared {@code Component} type.
  * <p>
  * For example, to create a component of type {@code MyComponentInterface} with an implementation that has a dependency,
  * it would look as follows:
@@ -78,7 +78,7 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * @see #ofTypeAndName(Class, String)
      */
     static <C> IncompleteComponentDefinition<C> ofType(@Nonnull Class<C> type) {
-        return ofTypeAndName(type, null);
+        return ofTypeAndName(type, type.getName());
     }
 
     /**
@@ -88,12 +88,11 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * during registration of the component.
      *
      * @param type The declared type of this component.
-     * @param name The name of this component. Use {@code null} when there is no name or use {@link #ofType(Class)}
-     *             instead.
+     * @param name The name of this component.
      * @param <C>  The declared type of this component.
      * @return A builder to complete the creation of a {@code ComponentDefinition}.
      */
-    static <C> IncompleteComponentDefinition<C> ofTypeAndName(@Nonnull Class<C> type, @Nullable String name) {
+    static <C> IncompleteComponentDefinition<C> ofTypeAndName(@Nonnull Class<C> type, @Nonnull String name) {
         return new IncompleteComponentDefinition<>() {
 
             @Override
@@ -126,7 +125,7 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * @see #ofTypeAndName(Class, String)
      */
     static <C> IncompleteComponentDefinition<C> ofType(@Nonnull TypeReference<C> type) {
-        return ofTypeAndName(type, null);
+        return ofTypeAndName(type, type.getTypeAsClass().getName());
     }
 
     /**
@@ -142,7 +141,7 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * @param <C>  The declared type of this component.
      * @return A builder to complete the creation of a {@code ComponentDefinition}.
      */
-    static <C> IncompleteComponentDefinition<C> ofTypeAndName(@Nonnull TypeReference<C> type, @Nullable String name) {
+    static <C> IncompleteComponentDefinition<C> ofTypeAndName(@Nonnull TypeReference<C> type, @Nonnull String name) {
         return new IncompleteComponentDefinition<>() {
             private final Component.Identifier<C> identifier = new Component.Identifier<>(type, name);
 
@@ -255,7 +254,7 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      *
      * @return The given name of this {@code ComponentDefinition}.
      */
-    @Nullable
+    @Nonnull
     String name();
 
     /**

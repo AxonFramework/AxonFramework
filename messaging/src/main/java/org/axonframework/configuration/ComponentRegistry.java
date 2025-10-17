@@ -54,8 +54,7 @@ public interface ComponentRegistry extends DescribableComponent {
      */
     default <C> ComponentRegistry registerComponent(@Nonnull Class<C> type,
                                                     @Nonnull ComponentBuilder<C> builder) {
-        return registerComponent(ComponentDefinition.ofType(type)
-                                                    .withBuilder(builder));
+        return registerComponent(type, type.getName(), builder);
     }
 
     /**
@@ -67,8 +66,7 @@ public interface ComponentRegistry extends DescribableComponent {
      * {@code type} and {@code name} combination.
      *
      * @param type    The declared type of the component to build, typically an interface.
-     * @param name    The name of the component to build. Use {@code null} when there is no name or use
-     *                {@link #registerComponent(Class, ComponentBuilder)} instead.
+     * @param name    The name of the component to build.
      * @param builder The builder building the component.
      * @param <C>     The type of component the {@code builder} builds.
      * @return The current instance of the {@code Configurer} for a fluent API.
@@ -77,7 +75,7 @@ public interface ComponentRegistry extends DescribableComponent {
      *                                    with the same type and name is already defined.
      */
     default <C> ComponentRegistry registerComponent(@Nonnull Class<C> type,
-                                                    @Nullable String name,
+                                                    @Nonnull String name,
                                                     @Nonnull ComponentBuilder<? extends C> builder) {
         return registerComponent(ComponentDefinition.ofTypeAndName(type, name)
                                                     .withBuilder(builder));
@@ -126,7 +124,7 @@ public interface ComponentRegistry extends DescribableComponent {
      * {@link #registerComponent(Class, String, ComponentBuilder) registered} components of the given {@code type}
      * <b>and</b> {@code name} combination.
      * <p>
-     * Decorators are invoked based on the given {@code order}. Decorators with a lowe {@code order} will be executed
+     * Decorators are invoked based on the given {@code order}. Decorators with a lower {@code order} will be executed
      * before those with a higher one. If decorators depend on the result of another decorator, their {@code order} must
      * be strictly higher than the one they depend on.
      * <p>
@@ -167,7 +165,7 @@ public interface ComponentRegistry extends DescribableComponent {
      * otherwise.
      */
     default boolean hasComponent(@Nonnull Class<?> type) {
-        return hasComponent(type, (String) null);
+        return hasComponent(type, type.getName());
     }
 
     /**
@@ -184,7 +182,7 @@ public interface ComponentRegistry extends DescribableComponent {
      * otherwise.
      */
     default boolean hasComponent(@Nonnull Class<?> type, @Nonnull SearchScope searchScope) {
-        return hasComponent(type, null, searchScope);
+        return hasComponent(type, type.getName(), searchScope);
     }
 
     /**
@@ -192,13 +190,12 @@ public interface ComponentRegistry extends DescribableComponent {
      * {@code name} combination.
      *
      * @param type The type of the {@link Component} to check if it exists, typically an interface.
-     * @param name The name of the {@link Component} to check if it exists. Use {@code null} when there is no name or
-     *             use {@link #hasComponent(Class)} instead.
+     * @param name The name of the {@link Component} to check if it exists.
      * @return {@code true} when there is a {@link Component} registered under the given {@code type} and
      * {@code name combination}, {@code false} otherwise.
      */
     default boolean hasComponent(@Nonnull Class<?> type,
-                                 @Nullable String name) {
+                                 @Nonnull String name) {
         return hasComponent(type, name, SearchScope.ALL);
     }
 
@@ -211,15 +208,14 @@ public interface ComponentRegistry extends DescribableComponent {
      * current registry and all ancestors.
      *
      * @param type        The type of the {@link Component} to check if it exists, typically an interface.
-     * @param name        The name of the {@link Component} to check if it exists. Use {@code null} when there is no
-     *                    name or use {@link #hasComponent(Class)} instead.
+     * @param name        The name of the {@link Component} to check if it exists.
      * @param searchScope The enumeration defining the search scope used to check if this registry has a
      *                    {@link Component}.
      * @return {@code true} when there is a {@link Component} registered under the given {@code type} and
      * {@code name combination}, {@code false} otherwise.
      */
     boolean hasComponent(@Nonnull Class<?> type,
-                         @Nullable String name,
+                         @Nonnull String name,
                          @Nonnull SearchScope searchScope);
 
     /**
@@ -236,7 +232,7 @@ public interface ComponentRegistry extends DescribableComponent {
      */
     default <C> ComponentRegistry registerIfNotPresent(@Nonnull Class<C> type,
                                                        @Nonnull ComponentBuilder<C> builder) {
-        return registerIfNotPresent(type, null, builder);
+        return registerIfNotPresent(type, type.getName(), builder);
     }
 
 
@@ -261,7 +257,7 @@ public interface ComponentRegistry extends DescribableComponent {
     default <C> ComponentRegistry registerIfNotPresent(@Nonnull Class<C> type,
                                                        @Nonnull ComponentBuilder<C> builder,
                                                        @Nonnull SearchScope searchScope) {
-        return registerIfNotPresent(type, null, builder, searchScope);
+        return registerIfNotPresent(type, type.getName(), builder, searchScope);
     }
 
     /**
@@ -280,7 +276,7 @@ public interface ComponentRegistry extends DescribableComponent {
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
     default <C> ComponentRegistry registerIfNotPresent(@Nonnull Class<C> type,
-                                                       @Nullable String name,
+                                                       @Nonnull String name,
                                                        @Nonnull ComponentBuilder<C> builder) {
         return registerIfNotPresent(ComponentDefinition.ofTypeAndName(type, name).withBuilder(builder));
     }
@@ -308,7 +304,7 @@ public interface ComponentRegistry extends DescribableComponent {
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
     default <C> ComponentRegistry registerIfNotPresent(@Nonnull Class<C> type,
-                                                       @Nullable String name,
+                                                       @Nonnull String name,
                                                        @Nonnull ComponentBuilder<C> builder,
                                                        @Nonnull SearchScope searchScope) {
         return registerIfNotPresent(ComponentDefinition.ofTypeAndName(type, name).withBuilder(builder), searchScope);
