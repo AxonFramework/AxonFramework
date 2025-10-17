@@ -72,6 +72,7 @@ class AbstractMonitoringInterceptor<T extends Message> {
             processingContext.onError((cts, phase, error) -> monitorCallback.reportFailure(error));
             processingContext.onAfterCommit(c -> CompletableFuture.runAsync(monitorCallback::reportSuccess));
         } else {
+            // TODO(JG): what to do in this case?
             monitorCallback.reportIgnored();
         }
     }
