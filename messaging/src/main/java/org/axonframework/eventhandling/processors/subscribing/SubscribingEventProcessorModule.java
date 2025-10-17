@@ -164,6 +164,7 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
             EventHandlingComponent c,
             EventProcessorConfiguration configuration
     ) {
+        // TODO(JG): derive from registry
         // TODO #3595 - Move this monitoring decorator to be placed around **all** other decorators for an EHC.
         return new MonitoringEventHandlingComponent(
                 configuration.messageMonitor(),

@@ -79,6 +79,7 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
                 List.of(interceptor),
                 eventHandlingComponent
         );
+        // TODO(JG): #3595 - How to combine tracing/monitoring?
         var decoratedEventHandlingComponent = new MonitoringEventHandlingComponent(
                 messageMonitor,
                 interceptingEventHandlingComponent
