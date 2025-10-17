@@ -648,12 +648,25 @@ public class SpringComponentRegistry implements
         @Nonnull
         @Override
         public <C> Map<String, C> getComponents(@Nonnull Class<C> type) {
+            Map<String, C> result = new LinkedHashMap<>();
 
             // 1. Get all beans of the specified type from Spring context
             Map<String, C> beansOfType = beanFactory.getBeansOfType(type);
-            Map<String, C> result = new LinkedHashMap<>(beansOfType);
 
-            // 2. Collect from all module configurations (recursively)
+            // 2. Process each bean - check if it's an "unnamed" Axon component
+            //    When Axon registers a component without a name, Spring uses the component's actual class FQCN as bean name
+            beansOfType.forEach((beanName, bean) -> {
+                // Check if the bean name equals the bean's actual runtime class name
+                // If yes, this is an unnamed Axon component -> use null as key
+                // If no, this is a named component -> use the bean name as key
+                if (beanName.equals(bean.getClass().getName())) {
+                    result.put(null, bean);
+                } else {
+                    result.put(beanName, bean);
+                }
+            });
+
+            // 3. Collect from all module configurations (recursively)
             for (Configuration moduleConfig : getModuleConfigurations()) {
                 Map<String, C> moduleComponents = moduleConfig.getComponents(type);
                 result.putAll(moduleComponents);
