@@ -127,49 +127,19 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
     @Nonnull
     @Override
     public List<MessageDispatchInterceptor<? super CommandMessage>> commandInterceptors(@Nonnull Configuration config) {
-        List<MessageDispatchInterceptor<? super CommandMessage>> dispatchInterceptors = new ArrayList<>();
-        for (ComponentDefinition<MessageDispatchInterceptor<? super CommandMessage>> interceptorBuilder : commandInterceptorDefinitions) {
-            if (!(interceptorBuilder instanceof ComponentDefinition.ComponentCreator<MessageDispatchInterceptor<? super CommandMessage>> creator)) {
-                // The compiler should avoid this from happening.
-                throw new IllegalArgumentException("Unsupported component definition type: " + interceptorBuilder);
-            }
-            MessageDispatchInterceptor<? super CommandMessage> dispatchInterceptor = creator.createComponent().resolve(
-                    config);
-            dispatchInterceptors.add(dispatchInterceptor);
-        }
-        return dispatchInterceptors;
+        return resolveInterceptors(commandInterceptorDefinitions, config);
     }
 
     @Nonnull
     @Override
     public List<MessageDispatchInterceptor<? super EventMessage>> eventInterceptors(@Nonnull Configuration config) {
-        List<MessageDispatchInterceptor<? super EventMessage>> dispatchInterceptors = new ArrayList<>();
-        for (ComponentDefinition<MessageDispatchInterceptor<? super EventMessage>> interceptorBuilder : eventInterceptorDefinitions) {
-            if (!(interceptorBuilder instanceof ComponentDefinition.ComponentCreator<MessageDispatchInterceptor<? super EventMessage>> creator)) {
-                // The compiler should avoid this from happening.
-                throw new IllegalArgumentException("Unsupported component definition type: " + interceptorBuilder);
-            }
-            MessageDispatchInterceptor<? super EventMessage> dispatchInterceptor = creator.createComponent().resolve(
-                    config);
-            dispatchInterceptors.add(dispatchInterceptor);
-        }
-        return dispatchInterceptors;
+        return resolveInterceptors(eventInterceptorDefinitions, config);
     }
 
     @Nonnull
     @Override
     public List<MessageDispatchInterceptor<? super QueryMessage>> queryInterceptors(@Nonnull Configuration config) {
-        List<MessageDispatchInterceptor<? super QueryMessage>> dispatchInterceptors = new ArrayList<>();
-        for (ComponentDefinition<MessageDispatchInterceptor<? super QueryMessage>> interceptorBuilder : queryInterceptorDefinitions) {
-            if (!(interceptorBuilder instanceof ComponentDefinition.ComponentCreator<MessageDispatchInterceptor<? super QueryMessage>> creator)) {
-                // The compiler should avoid this from happening.
-                throw new IllegalArgumentException("Unsupported component definition type: " + interceptorBuilder);
-            }
-            MessageDispatchInterceptor<? super QueryMessage> dispatchInterceptor = creator.createComponent().resolve(
-                    config);
-            dispatchInterceptors.add(dispatchInterceptor);
-        }
-        return dispatchInterceptors;
+        return resolveInterceptors(queryInterceptorDefinitions, config);
     }
 
     @Override
@@ -186,5 +156,22 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
         public GenericInterceptorDefinition(ComponentBuilder<MessageDispatchInterceptor<Message>> builder) {
             super(new Component.Identifier<>(INTERCEPTOR_TYPE_REF, null), builder);
         }
+    }
+
+    // Solves common verification, creation and combining for all dispatch interceptors.
+    private static <T extends Message> List<MessageDispatchInterceptor<? super T>> resolveInterceptors(
+            List<ComponentDefinition<MessageDispatchInterceptor<? super T>>> definitions,
+            Configuration config
+    ) {
+        List<MessageDispatchInterceptor<? super T>> dispatchInterceptors = new ArrayList<>();
+        for (ComponentDefinition<MessageDispatchInterceptor<? super T>> interceptorBuilder : definitions) {
+            if (!(interceptorBuilder instanceof ComponentDefinition.ComponentCreator<MessageDispatchInterceptor<? super T>> creator)) {
+                // The compiler should avoid this from happening.
+                throw new IllegalArgumentException("Unsupported component definition type: " + interceptorBuilder);
+            }
+            MessageDispatchInterceptor<? super T> dispatchInterceptor = creator.createComponent().resolve(config);
+            dispatchInterceptors.add(dispatchInterceptor);
+        }
+        return dispatchInterceptors;
     }
 }
