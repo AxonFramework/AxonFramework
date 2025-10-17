@@ -195,7 +195,7 @@ public interface Configuration extends DescribableComponent {
      *     <li>Entries with {@link String} keys for components registered with specific names</li>
      * </ul>
      * This is useful when multiple components of the same type are registered, such as multiple
-     * {@link org.axonframework.eventhandling.EventProcessor EventProcessors} or interceptors.
+     * {@code EventProcessors}.
      * <p>
      * The method searches in the current configuration and all {@link #getModuleConfigurations() module configurations}.
      * It does NOT search the {@link #getParent() parent configuration}. To get the full hierarchy of components,

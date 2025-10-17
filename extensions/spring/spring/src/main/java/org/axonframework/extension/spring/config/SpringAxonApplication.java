@@ -29,6 +29,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -143,6 +144,12 @@ public class SpringAxonApplication implements ApplicationConfigurer {
             @Override
             public Configuration getParent() {
                 return componentRegistry.configuration().getParent();
+            }
+
+            @Nonnull
+            @Override
+            public <C> Map<String, C> getComponents(@Nonnull Class<C> type) {
+                return componentRegistry.configuration().getComponents(type);
             }
 
             @Override

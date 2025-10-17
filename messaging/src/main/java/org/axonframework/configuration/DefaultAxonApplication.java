@@ -286,6 +286,12 @@ class DefaultAxonApplication implements ApplicationConfigurer, LifecycleRegistry
             return config.getModuleConfiguration(name);
         }
 
+        @Nonnull
+        @Override
+        public <C> Map<String, C> getComponents(@Nonnull Class<C> type) {
+            return config.getComponents(type);
+        }
+
         @Override
         public void describeTo(@Nonnull ComponentDescriptor descriptor) {
             descriptor.describeProperty("components", componentRegistry);
