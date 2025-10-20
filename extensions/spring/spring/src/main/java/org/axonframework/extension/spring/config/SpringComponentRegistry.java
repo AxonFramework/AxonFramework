@@ -54,8 +54,10 @@ import org.springframework.core.ResolvableType;
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -641,6 +643,36 @@ public class SpringComponentRegistry implements
         public void describeTo(@Nonnull ComponentDescriptor descriptor) {
             descriptor.describeProperty("components", components);
             descriptor.describeProperty("modules", moduleConfigurations.values());
+        }
+
+        @Nonnull
+        @Override
+        public <C> Map<String, C> getComponents(@Nonnull Class<C> type) {
+            Map<String, C> result = new LinkedHashMap<>();
+
+            // 1. Get all beans of the specified type from Spring context
+            Map<String, C> beansOfType = beanFactory.getBeansOfType(type);
+
+            // 2. Process each bean - check if it's an "unnamed" Axon component
+            //    When Axon registers a component without a name, Spring uses the component's actual class FQCN as bean name
+            beansOfType.forEach((beanName, bean) -> {
+                // Check if the bean name equals the bean's actual runtime class name
+                // If yes, this is an unnamed Axon component -> use null as key
+                // If no, this is a named component -> use the bean name as key
+                if (beanName.equals(bean.getClass().getName())) {
+                    result.put(null, bean);
+                } else {
+                    result.put(beanName, bean);
+                }
+            });
+
+            // 3. Collect from all module configurations (recursively)
+            for (Configuration moduleConfig : getModuleConfigurations()) {
+                Map<String, C> moduleComponents = moduleConfig.getComponents(type);
+                result.putAll(moduleComponents);
+            }
+
+            return Collections.unmodifiableMap(result);
         }
     }
 

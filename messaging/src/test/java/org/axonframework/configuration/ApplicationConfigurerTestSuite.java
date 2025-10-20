@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -58,10 +59,18 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
     protected static final SpecificTestComponent SPECIFIC_TEST_COMPONENT = new SpecificTestComponent(INIT_STATE);
 
     protected C testSubject;
+    private AxonConfiguration configuration;
 
     @BeforeEach
     void setUp() {
         testSubject = createConfigurer();
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (configuration != null) {
+            configuration.shutdown();
+        }
     }
 
     /**
@@ -75,7 +84,8 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
     private AxonConfiguration buildConfiguration() {
         initialize(testSubject);
-        return testSubject.build();
+        configuration = testSubject.build();
+        return configuration;
     }
 
     /**
@@ -427,6 +437,115 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             assertEquals(defaultComponent, result);
             assertNotEquals(registeredComponent, result);
         }
+
+        @Test
+        void getComponentsReturnsEmptyMapWhenNoComponentsOfTypeExist() {
+            // given
+            testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class, c -> TEST_COMPONENT));
+
+            // when
+            Configuration config = buildConfiguration();
+            Map<String, SpecificTestComponent> result = config.getComponents(SpecificTestComponent.class);
+
+            // then
+            assertTrue(result.isEmpty());
+        }
+
+        @Test
+        void getComponentsReturnsUnnamedComponentWithNullKey() {
+            // given
+            TestComponent component = TEST_COMPONENT;
+            testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class, c -> component));
+
+            // when
+            Configuration config = buildConfiguration();
+            Map<String, TestComponent> result = config.getComponents(TestComponent.class);
+
+            // then
+            assertEquals(1, result.size());
+            assertTrue(containsNotNamedComponent(result));
+            assertSame(component, result.get(null));
+        }
+
+        @Test
+        void getComponentsReturnsNamedComponentsWithTheirNames() {
+            // given
+            TestComponent componentOne = new TestComponent("one");
+            TestComponent componentTwo = new TestComponent("two");
+            testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class, "name-one", c -> componentOne)
+                                                  .registerComponent(TestComponent.class,
+                                                                     "name-two",
+                                                                     c -> componentTwo));
+
+            // when
+            Configuration config = buildConfiguration();
+            Map<String, TestComponent> result = config.getComponents(TestComponent.class);
+
+            // then
+            assertEquals(2, result.size());
+            assertTrue(result.containsKey("name-one"));
+            assertTrue(result.containsKey("name-two"));
+            assertSame(componentOne, result.get("name-one"));
+            assertSame(componentTwo, result.get("name-two"));
+        }
+
+        @Test
+        void getComponentsReturnsMixOfNamedAndUnnamedComponents() {
+            // given
+            TestComponent unnamedComponent = new TestComponent("unnamed");
+            TestComponent namedComponent = new TestComponent("named");
+            testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class, c -> unnamedComponent)
+                                                  .registerComponent(TestComponent.class,
+                                                                     "named",
+                                                                     c -> namedComponent));
+
+            // when
+            Configuration config = buildConfiguration();
+            Map<String, TestComponent> result = config.getComponents(TestComponent.class);
+
+            // then
+            assertEquals(2, result.size());
+            assertTrue(containsNotNamedComponent(result));
+            assertTrue(result.containsKey("named"));
+            assertSame(unnamedComponent, result.get(null));
+            assertSame(namedComponent, result.get("named"));
+        }
+
+        @Test
+        void getComponentsReturnsComponentsMatchingSubtypes() {
+            // given
+            SpecificTestComponent specificComponent = SPECIFIC_TEST_COMPONENT;
+            testSubject.componentRegistry(cr -> cr.registerComponent(SpecificTestComponent.class,
+                                                                     c -> specificComponent));
+
+            // when
+            Configuration config = buildConfiguration();
+            Map<String, TestComponent> result = config.getComponents(TestComponent.class);
+            // then
+            assertEquals(1, result.size());
+            assertTrue(result.containsKey(null));
+            assertSame(specificComponent, result.get(null));
+        }
+
+        @Test
+        void getComponentsReturnsImmutableMap() {
+            // given
+            testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class, c -> TEST_COMPONENT));
+
+            // when
+            Configuration config = buildConfiguration();
+            Map<String, TestComponent> result = config.getComponents(TestComponent.class);
+
+            // then
+            assertThrows(UnsupportedOperationException.class, () -> result.put("new", TEST_COMPONENT));
+        }
+    }
+
+    /**
+     * When Axon registers a component without a name, Spring uses the FQCN as bean name.
+     */
+    private static boolean containsNotNamedComponent(Map<String, TestComponent> result) {
+        return result.containsKey(null) || result.containsKey(TestComponent.class.getName());
     }
 
     @Nested
@@ -700,6 +819,29 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             buildConfiguration().getComponent(TestComponent.class, testName);
             assertFalse(secondConstruction.get());
         }
+
+        @Test
+        void getComponentsReturnsConditionallyRegisteredComponents() {
+            // given
+            TestComponent firstComponent = new TestComponent("first");
+            TestComponent secondComponent = new TestComponent("second");
+
+            testSubject.componentRegistry(cr -> cr.registerIfNotPresent(TestComponent.class,
+                                                                        "first",
+                                                                        c -> firstComponent)
+                                                  .registerIfNotPresent(TestComponent.class,
+                                                                        "first",
+                                                                        c -> secondComponent));
+
+            // when
+            Configuration config = buildConfiguration();
+            Map<String, TestComponent> result = config.getComponents(TestComponent.class);
+
+            // then
+            assertEquals(1, result.size());
+            assertTrue(result.containsKey("first"));
+            assertSame(firstComponent, result.get("first"), "Only first component should be present");
+        }
     }
 
     @Nested
@@ -778,6 +920,31 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             assertThatThrownBy(() -> config.getComponent(TestComponent.class, testName)).hasStackTraceContaining(
                     "Make sure decorators return matching components, as component retrieval otherwise fails!"
             );
+        }
+
+        @Test
+        void getComponentsReturnsDecoratedInstances() {
+            // given
+            String expectedState = TEST_COMPONENT.state() + "123";
+            testSubject.componentRegistry(
+                    cr -> cr.registerComponent(TestComponent.class, c -> TEST_COMPONENT)
+                            .registerDecorator(TestComponent.class, 0,
+                                               (c, name, delegate) -> new TestComponent(delegate.state + "1"))
+                            .registerDecorator(TestComponent.class, 1,
+                                               (c, name, delegate) -> new TestComponent(delegate.state + "2"))
+                            .registerDecorator(TestComponent.class, 2,
+                                               (c, name, delegate) -> new TestComponent(delegate.state + "3"))
+            );
+
+            // when
+            Configuration config = buildConfiguration();
+            Map<String, TestComponent> result = config.getComponents(TestComponent.class);
+
+            // then
+            assertEquals(1, result.size());
+            TestComponent component = result.get(null);
+            assertNotNull(component);
+            assertEquals(expectedState, component.state(), "Should return decorated instance, not original");
         }
     }
 
@@ -1447,6 +1614,25 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             }
         }
 
+        @Test
+        void getComponentsReturnsEnhancerRegisteredComponents() {
+            // given
+            TestComponent enhancerComponent = new TestComponent("enhancer-registered");
+            testSubject.componentRegistry(cr -> cr.registerEnhancer(registry -> registry.registerComponent(
+                    TestComponent.class, "enhancer-component", c -> enhancerComponent
+            )));
+
+            // when
+            Configuration config = buildConfiguration();
+            Map<String, TestComponent> result = config.getComponents(TestComponent.class);
+
+            // then
+            assertEquals(1, result.size());
+            assertTrue(result.containsKey("enhancer-component"));
+            assertSame(enhancerComponent, result.get("enhancer-component"),
+                       "Components registered by enhancers should be findable via getComponents()");
+        }
+
         record TestConfigurationEnhancer(AtomicBoolean invoked) implements ConfigurationEnhancer {
 
             @Override
@@ -1677,6 +1863,31 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             assertNotEquals(defaultComponent, result);
             assertEquals(registeredComponent, result);
         }
+
+        @Test
+        void getComponentsReturnsComponentsFromModules() {
+            // given
+            TestComponent rootComponent = new TestComponent("root");
+            TestComponent moduleComponent = new TestComponent("module");
+
+            testSubject.componentRegistry(
+                    cr -> cr.registerComponent(TestComponent.class, "root", c -> rootComponent)
+                            .registerModule(new TestModule("test-module").componentRegistry(
+                                    mcr -> mcr.registerComponent(TestComponent.class, "module", c -> moduleComponent)
+                            ))
+            );
+
+            // when
+            Configuration config = buildConfiguration();
+            Map<String, TestComponent> result = config.getComponents(TestComponent.class);
+
+            // then
+            assertEquals(2, result.size(), "Should include components from both root and modules");
+            assertTrue(result.containsKey("root"));
+            assertTrue(result.containsKey("module"));
+            assertSame(rootComponent, result.get("root"));
+            assertSame(moduleComponent, result.get("module"));
+        }
     }
 
     @Nested
@@ -1778,6 +1989,33 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             assertEquals(expectedDefaultComponent, result);
             assertNotEquals(expectedFactoryState, result.state());
             verify(testFactory, times(2)).construct(any(), any());
+        }
+
+        @Test
+        void getComponentsDoesNotIncludeFactoryComponentsNotYetAccessed() {
+            Assumptions.assumeTrue(supportsComponentFactories(),
+                                   "Ignore test since ComponentFactories are not supported.");
+
+            // given
+            TestComponent registeredComponent = new TestComponent("registered");
+            TestComponentFactory testFactory = spy(new TestComponentFactory("factory-created"));
+
+            testSubject.componentRegistry(
+                    registry -> registry.registerComponent(TestComponent.class, "registered", c -> registeredComponent)
+                                        .registerFactory(testFactory)
+            );
+
+            // when
+            Configuration config = buildConfiguration();
+            Map<String, TestComponent> result = config.getComponents(TestComponent.class);
+
+            // then
+            assertEquals(1, result.size(), "Only registered components should be included, not factory-created ones");
+            assertTrue(result.containsKey("registered"));
+            assertSame(registeredComponent, result.get("registered"));
+            // Factory should not be consulted by getComponents()
+            verify(testFactory).registerShutdownHandlers(any());
+            verifyNoMoreInteractions(testFactory);
         }
     }
 
