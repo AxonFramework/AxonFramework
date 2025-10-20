@@ -69,9 +69,11 @@ class MonitoringEventHandlerInterceptorTest {
     }
 
     @Test
-    void reportIgnoreWhenContextNotStarted() {
+    void noopWhenContextNotStarted() {
         testSubject.interceptOnHandle(message, processingContext, interceptorChain);
 
-        verify(callback).reportIgnored();
+        verify(callback, never()).reportSuccess();
+        verify(callback, never()).reportFailure(any(Throwable.class));
+        verify(callback, never()).reportIgnored();
     }
 }

@@ -41,13 +41,6 @@ public class MessageMonitorReport extends AbstractList<MessageMonitorReport.Repo
     public sealed interface Report {
 
         /**
-         * Returns the context associated with the report. Can be used to identify the origin of reports.
-         *
-         * @return the context information as a string
-         */
-        String context();
-
-        /**
          * Retrieves the message associated with the report.
          *
          * @return the reported message
@@ -56,130 +49,80 @@ public class MessageMonitorReport extends AbstractList<MessageMonitorReport.Repo
 
         /**
          * Represents a successful report indicating that a message has been processed successfully. This class is an
-         * immutable record that provides details about the context and the associated message.
+         * immutable record that provides details about the associated message.
          *
-         * @param context the context information as a string
-         * @param message the reported message
+         * @param message The reported message.
          * @see MessageMonitor.MonitorCallback#reportSuccess()
          */
-        record Success(String context, Message message) implements Report {
+        record Success(Message message) implements Report {
 
-            @Override
-            public @Nonnull String toString() {
-                return "Success{context=%s, message=%s}".formatted(context, message);
-            }
         }
 
         /**
          * Represents a failure report indicating an error occurred during the processing of a message. This record
-         * provides details about the context, the associated message, and the underlying cause of the failure.
+         * provides details about the associated message and the underlying cause of the failure.
          *
-         * @param context the context information as a string, typically identifying the origin of the failure
-         * @param message the message associated with the failure
-         * @param cause   the exception that caused the failure
+         * @param message The message associated with the failure.
+         * @param cause   The exception that caused the failure.
          * @see MessageMonitor.MonitorCallback#reportFailure(Throwable)
          */
-        record Failure(String context, Message message, Throwable cause) implements Report {
+        record Failure(Message message, Throwable cause) implements Report {
 
-            @Override
-            public @Nonnull String toString() {
-                return "Failure{context=%s, message=%s, caus=%s}".formatted(context, message, cause.getMessage());
-            }
         }
 
         /**
          * Represents an ignored report, indicating that the processing of a message was bypassed or not handled. This
-         * record provides information about the context and the associated message but does not reflect success or
-         * failure in processing.
+         * record provides information about the associated message.
          *
-         * @param context the context information as a string, typically identifying the origin of the report
-         * @param message the message associated with the ignored report
+         * @param message The message associated with the ignored report.
          * @see MessageMonitor.MonitorCallback#reportIgnored()
          */
-        record Ignored(String context, Message message) implements Report {
+        record Ignored(Message message) implements Report {
 
-            @Override
-            public @Nonnull String toString() {
-                return "Ignored{context=%s, message=%s}".formatted(context, message);
-            }
         }
     }
 
     /**
-     * Creates a new instance of {@link Success} with a default context of "unknown".
+     * Creates a new instance of {@link Success} with the specified message.
      *
-     * @param message the message associated with the success report; must not be null
-     * @return a {@link Success} instance with the specified message and a context of "unknown"
+     * @param message The message associated with the success report; must not be null.
+     * @return A {@link Success} instance with the provided message.
      */
     public static Report.Success success(Message message) {
-        return success("unknown", message);
+        return new Report.Success(message);
     }
 
     /**
-     * Creates a new instance of {@link Success} with the specified context and message.
+     * Creates a new instance of {@link Report.Ignored} with the specified message.
      *
-     * @param context the context information associated with the success report; must not be null
-     * @param message the message associated with the success report; must not be null
-     * @return a {@link Success} instance with the provided context and message
-     */
-    public static Report.Success success(String context, Message message) {
-        return new Report.Success(context, message);
-    }
-
-    /**
-     * Creates a new instance of {@link Report.Ignored} with a default context of "unknown".
-     *
-     * @param message the message associated with the ignored report; must not be null
-     * @return a {@link Report.Ignored} instance with the specified message and a context of "unknown"
+     * @param message The message associated with the ignored report; must not be null.
+     * @return An {@link Report.Ignored} instance with the specified message.
      */
     public static Report.Ignored ignored(Message message) {
-        return ignored("unknown", message);
+        return new Report.Ignored(message);
     }
 
     /**
-     * Creates a new instance of {@link Report.Ignored} with the specified context and message.
+     * Creates a new instance of {@link Report.Failure} with the specified message and cause.
      *
-     * @param context the context information associated with the ignored report; must not be null
-     * @param message the message associated with the ignored report; must not be null
-     * @return a {@link Report.Ignored} instance with the provided context and message
-     */
-    public static Report.Ignored ignored(String context, Message message) {
-        return new Report.Ignored(context, message);
-    }
-
-    /**
-     * Creates a new instance of {@link Report.Failure} with a default context of "unknown".
-     *
-     * @param message the message associated with the failure report; must not be null
-     * @param cause   the exception that caused the failure; must not be null
-     * @return a {@link Report.Failure} instance with the specified message, cause, and a context of "unknown"
+     * @param message The message associated with the failure report; must not be null.
+     * @param cause   The exception that caused the failure; must not be null.
+     * @return A {@link Report.Failure} instance with the specified message and cause.
      */
     public static Report.Failure failure(Message message, Throwable cause) {
-        return failure("unknown", message, cause);
+        return new Report.Failure(message, cause);
     }
 
-    /**
-     * Creates a new instance of {@link Report.Failure} with the provided context, message, and cause.
-     *
-     * @param context the context information associated with the failure report; must not be null
-     * @param message the message associated with the failure report; must not be null
-     * @param cause   the exception that caused the failure; must not be null
-     * @return a {@link Report.Failure} instance with the specified context, message, and cause
-     */
-    public static Report.Failure failure(String context, Message message, Throwable cause) {
-        return new Report.Failure(context, message, cause);
-    }
-
-    private final List<Report> reports = new CopyOnWriteArrayList<>();
+    private final List<Report> delegate = new CopyOnWriteArrayList<>();
 
     @Override
     public void add(int index, @Nonnull Report report) {
-        reports.add(index, report);
+        delegate.add(index, report);
     }
 
     @Override
     public Report get(int index) {
-        return reports.get(index);
+        return delegate.get(index);
     }
 
     /**
@@ -187,11 +130,11 @@ public class MessageMonitorReport extends AbstractList<MessageMonitorReport.Repo
      *
      * @return a list of {@link Report.Success} instances representing the successful reports
      */
-    public List<Report.Success> getSuccess() {
-        return reports.stream()
-                      .filter(Report.Success.class::isInstance)
-                      .map(Report.Success.class::cast)
-                      .toList();
+    public List<Report.Success> successReports() {
+        return delegate.stream()
+                       .filter(Report.Success.class::isInstance)
+                       .map(Report.Success.class::cast)
+                       .toList();
     }
 
     /**
@@ -200,11 +143,11 @@ public class MessageMonitorReport extends AbstractList<MessageMonitorReport.Repo
      *
      * @return a list of {@link Report.Failure} instances representing the failure reports
      */
-    public List<Report.Failure> getFailures() {
-        return reports.stream()
-                      .filter(Report.Failure.class::isInstance)
-                      .map(Report.Failure.class::cast)
-                      .toList();
+    public List<Report.Failure> failureReports() {
+        return delegate.stream()
+                       .filter(Report.Failure.class::isInstance)
+                       .map(Report.Failure.class::cast)
+                       .toList();
     }
 
     /**
@@ -213,20 +156,20 @@ public class MessageMonitorReport extends AbstractList<MessageMonitorReport.Repo
      *
      * @return a list of {@link Report.Ignored} instances representing the ignored reports
      */
-    public List<Report.Ignored> getIgnored() {
-        return reports.stream()
-                      .filter(Report.Ignored.class::isInstance)
-                      .map(Report.Ignored.class::cast)
-                      .toList();
+    public List<Report.Ignored> ignoredReports() {
+        return delegate.stream()
+                       .filter(Report.Ignored.class::isInstance)
+                       .map(Report.Ignored.class::cast)
+                       .toList();
     }
 
     @Override
     public @NotNull Iterator<Report> iterator() {
-        return Collections.unmodifiableList(reports).iterator();
+        return Collections.unmodifiableList(delegate).iterator();
     }
 
     @Override
     public int size() {
-        return reports.size();
+        return delegate.size();
     }
 }

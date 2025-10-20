@@ -28,7 +28,6 @@ import org.axonframework.eventsourcing.annotations.reflection.EntityCreator;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.modelling.annotations.InjectEntity;
-import org.axonframework.monitoring.interceptors.MonitoringEventHandlerInterceptor;
 import org.axonframework.test.fixture.AxonTestFixture.Customization;
 import org.axonframework.test.fixture.AxonTestFixtureMonitoringTest.Domain.CourseAlreadyExists;
 import org.axonframework.test.fixture.AxonTestFixtureMonitoringTest.Domain.CourseCreated;
@@ -62,9 +61,7 @@ public class AxonTestFixtureMonitoringTest {
             final var entity = EventSourcedEntityModule.annotated(String.class,
                                                                   Domain.CourseCreatedCommandHandler.State.class);
 
-            configurer.messaging(mc -> mc.registerMessageMonitor(c -> new RecordingMessageMonitor(report,
-                                                                                                  MonitoringEventHandlerInterceptor.class.getSimpleName(),
-                                                                                                  isLoggingEnabled)));
+            configurer.messaging(mc -> mc.registerMessageMonitor(c -> new RecordingMessageMonitor(report)));
 
             return configurer.registerEntity(entity)
                              .registerCommandHandlingModule(CommandHandlingModule.named("CreateCourse")
@@ -158,8 +155,8 @@ public class AxonTestFixtureMonitoringTest {
 
         // running the sample produced reports via the registered message monitor
         assertThat(report).hasSize(4);
-        assertThat(report.getSuccess()).hasSize(3);
-        assertThat(report.getFailures()).hasSize(1);
-        assertThat(report.getFailures().getFirst().message().payloadType()).isEqualTo(Domain.CreateCourse.class);
+        assertThat(report.successReports()).hasSize(3);
+        assertThat(report.failureReports()).hasSize(1);
+        assertThat(report.failureReports().getFirst().message().payloadType()).isEqualTo(Domain.CreateCourse.class);
     }
 }

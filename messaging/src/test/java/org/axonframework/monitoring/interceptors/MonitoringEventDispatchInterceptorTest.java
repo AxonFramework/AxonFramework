@@ -69,9 +69,11 @@ class MonitoringEventDispatchInterceptorTest {
     }
 
     @Test
-    void reportIgnoreWhenContextIsNull() {
+    void noopWhenContextIsNull() {
         testSubject.interceptOnDispatch(message, null, interceptorChain);
 
-        verify(callback).reportIgnored();
+        verify(callback, never()).reportSuccess();
+        verify(callback, never()).reportFailure(any(Throwable.class));
+        verify(callback, never()).reportIgnored();
     }
 }

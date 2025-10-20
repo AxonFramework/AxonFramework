@@ -16,11 +16,10 @@
 
 package org.axonframework.test.utils;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.Message;
 import org.axonframework.monitoring.MessageMonitor;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A message monitor implementation that records the processing results of messages in the provided
@@ -33,70 +32,89 @@ import org.slf4j.LoggerFactory;
  * <p>
  * The monitor provides functionality to handle messages as they are ingested and uses a callback to record the
  * processing result for each message.
+ * <p/>
+ * For further inspection, for example logging, you can overwrite the {@link #onReportSuccess(Message)}, {@link #onReportFailure(Message, Throwable)}
+ * and {@link #onReportIgnored(Message)} methods.
  */
 public class RecordingMessageMonitor implements MessageMonitor<Message> {
 
-    private final MessageMonitorReport report;
-    private final Logger logger;
-    private final String context;
-    private final boolean isLoggingEnabled;
+    protected final MessageMonitorReport report;
+
+    /**
+     * Constructs a RecordingMessageMonitor that records message processing outcomes in a new {@link MessageMonitorReport}.
+     *
+     * @see #RecordingMessageMonitor(MessageMonitorReport)
+     */
+    public RecordingMessageMonitor() {
+        this(new MessageMonitorReport());
+    }
 
     /**
      * Constructs a RecordingMessageMonitor that records message processing outcomes in the provided
      * {@link MessageMonitorReport} and configures optional logging.
      *
-     * @param report           the {@link MessageMonitorReport} instance to record message processing results
-     * @param context          the contextual name used for logging and to differentiate monitoring instances
-     * @param isLoggingEnabled a flag indicating if logging should be enabled for message outcomes
+     * @param report The {@link MessageMonitorReport} instance to record message processing results.
      */
-    public RecordingMessageMonitor(MessageMonitorReport report, String context, boolean isLoggingEnabled) {
+    public RecordingMessageMonitor(@Nonnull MessageMonitorReport report) {
         this.report = report;
-        this.context = context;
-        this.isLoggingEnabled = isLoggingEnabled;
-        this.logger = LoggerFactory.getLogger(context);
-    }
-
-    /**
-     * Constructs a RecordingMessageMonitor that records message processing outcomes in the provided
-     * {@link MessageMonitorReport} and uses the given context for logging and differentiation purposes.
-     *
-     * @param report  the {@link MessageMonitorReport} instance to record message processing results
-     * @param context the contextual name used for logging and to differentiate monitoring instances
-     */
-    public RecordingMessageMonitor(MessageMonitorReport report, String context) {
-        this(report, context, false);
     }
 
     @Override
-    public MonitorCallback onMessageIngested(@NotNull Message message) {
+    public final MonitorCallback onMessageIngested(@NotNull Message message) {
 
         return new MonitorCallback() {
             @Override
             public void reportSuccess() {
-                if (isLoggingEnabled) {
-                    logger.info("Report Success {}: message={}", message.getClass().getSimpleName(), message);
-                }
-                report.add(MessageMonitorReport.success(context, message));
+                onReportSuccess(message);
+                report.add(MessageMonitorReport.success(message));
             }
 
             @Override
             public void reportFailure(Throwable cause) {
-                if (isLoggingEnabled) {
-                    logger.error("Report Failure {}: message:{}",
-                                 message.getClass().getSimpleName(),
-                                 message,
-                                 cause);
-                }
-                report.add(MessageMonitorReport.failure(context, message, cause));
+                onReportFailure(message, cause);
+                report.add(MessageMonitorReport.failure(message, cause));
             }
 
             @Override
             public void reportIgnored() {
-                if (isLoggingEnabled) {
-                    logger.info("Report Ignored {}: message={}", message.getClass().getSimpleName(), message);
-                }
-                report.add(MessageMonitorReport.ignored(context, message));
+                onReportIgnored(message);
+                report.add(MessageMonitorReport.ignored(message));
             }
         };
+    }
+
+    /**
+     * @return Returns the report that stores the results of messages processed by this monitor.
+     */
+    public MessageMonitorReport report() {
+        return report;
+    }
+
+    /**
+     * Hook for subclasses to perform additional actions when a message is reported as successful.
+     *
+     * @param message The message that was reported as successful.
+     */
+    protected void onReportSuccess(@Nonnull Message message) {
+        // noop
+    }
+
+    /**
+     * Hook fur sublasses to perform additional actions when a message is reported as failed.
+     *
+     * @param message The message that was reported as failed.
+     * @param cause   The cause of the failure.
+     */
+    protected void onReportFailure(@Nonnull Message message, @Nonnull Throwable cause) {
+        // noop
+    }
+
+    /**
+     * Hook for subclasses to perform additional actions when a message is reported as ignored.
+     *
+     * @param message The message that was reported as ignored.
+     */
+    protected void onReportIgnored(@Nonnull Message message) {
+        // noop
     }
 }

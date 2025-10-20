@@ -65,7 +65,7 @@ public class MonitoringPooledEventProcessingReportIT extends AbstractStudentIT {
         storeEvent(UnknownEvent.class, new UnknownEvent(id), Metadata.with("id", id));
 
         await().untilAsserted(() -> {
-            assertThat(reportedMessages.getIgnored().stream()
+            assertThat(reportedMessages.ignoredReports().stream()
                                        .filter(it -> it.message().metadata().get("id").equals(id))
                                        .findFirst())
                     .as("UnknownEvent(%s) should have been reported as ignored, but wasn't.", id)
@@ -80,7 +80,7 @@ public class MonitoringPooledEventProcessingReportIT extends AbstractStudentIT {
         storeEvent(KnownEvent.class, new KnownEvent(id), Metadata.with("id", id).and("type", "ERROR"));
 
         await().untilAsserted(() -> {
-            assertThat(reportedMessages.getFailures().stream()
+            assertThat(reportedMessages.failureReports().stream()
                                        .filter(it -> it.message().metadata().get("id").equals(id))
                                        .findFirst())
                     .as("Error on KnownEvent(%s) should have been reported as failure, but wasn't.", id)
@@ -95,7 +95,7 @@ public class MonitoringPooledEventProcessingReportIT extends AbstractStudentIT {
         storeEvent(KnownEvent.class, new KnownEvent(id), Metadata.with("id", id));
 
         await().untilAsserted(() -> {
-            assertThat(reportedMessages.getSuccess().stream()
+            assertThat(reportedMessages.successReports().stream()
                                        .filter(it -> it.message().metadata().get("id").equals(id))
                                        .findFirst())
                     .as("KnownEvent(%s) should have been reported as success, but wasn't.", id)
@@ -107,11 +107,7 @@ public class MonitoringPooledEventProcessingReportIT extends AbstractStudentIT {
     protected EventSourcingConfigurer testSuiteConfigurer(EventSourcingConfigurer configurer) {
         // a noop setup that allows verification of ignored event
         configurer.messaging(mc -> mc
-                .registerMessageMonitor(c -> new RecordingMessageMonitor(
-                                                reportedMessages,
-                                                NAME
-                                        )
-                )
+                .registerMessageMonitor(c -> new RecordingMessageMonitor(reportedMessages))
                 .eventProcessing(ep -> ep.pooledStreaming(
 
                         ps -> ps.processor(EventProcessorModule.pooledStreaming(NAME)
@@ -121,8 +117,10 @@ public class MonitoringPooledEventProcessingReportIT extends AbstractStudentIT {
                                                                                .subscribe(new QualifiedName(
                                                                                                   KnownEvent.class),
                                                                                           (event, context) -> {
-                                                                                              if ("ERROR".equals(event.metadata().get("type"))) {
-                                                                                                  throw new RuntimeException("Failures are expected");
+                                                                                              if ("ERROR".equals(event.metadata()
+                                                                                                                      .get("type"))) {
+                                                                                                  throw new RuntimeException(
+                                                                                                          "Failures are expected");
                                                                                               }
                                                                                               return MessageStream.empty();
                                                                                           })
