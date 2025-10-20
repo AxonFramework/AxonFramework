@@ -43,7 +43,7 @@ public class MonitoringEventHandlerInterceptor implements MessageHandlerIntercep
     /**
      * Constructs a new MonitoringEventHandlerInterceptor using the given {@link MessageMonitor}.
      *
-     * @param messageMonitor the message monitor to use for reporting.
+     * @param messageMonitor The {@link MessageMonitor} instance used for reporting.
      */
     public MonitoringEventHandlerInterceptor(final @Nonnull MessageMonitor<? super EventMessage> messageMonitor) {
         this.messageMonitor = messageMonitor;

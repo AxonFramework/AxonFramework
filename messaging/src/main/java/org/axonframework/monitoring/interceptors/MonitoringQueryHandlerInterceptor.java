@@ -45,7 +45,7 @@ public class MonitoringQueryHandlerInterceptor implements MessageHandlerIntercep
     /**
      * Constructs a MonitoringQueryHandlerInterceptor using the given {@link MessageMonitor}.
      *
-     * @param messageMonitor used for reporting
+     * @param messageMonitor The {@link MessageMonitor} instance used for reporting.
      */
     public MonitoringQueryHandlerInterceptor(final @Nonnull MessageMonitor<? super QueryMessage> messageMonitor) {
         this.messageMonitor = messageMonitor;

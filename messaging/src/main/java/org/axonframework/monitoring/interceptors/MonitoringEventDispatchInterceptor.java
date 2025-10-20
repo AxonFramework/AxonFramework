@@ -40,9 +40,9 @@ public class MonitoringEventDispatchInterceptor implements MessageDispatchInterc
     private final MessageMonitor<? super EventMessage> messageMonitor;
 
     /**
-     * Constructs a new  MonitoringEventDispatchInterceptor using the given {@link MessageMonitor}.
+     * Constructs a new MonitoringEventDispatchInterceptor using the given {@link MessageMonitor}.
      *
-     * @param messageMonitor the message monitor to use for reporting.
+     * @param messageMonitor The {@link MessageMonitor} instance used for reporting.
      */
     public MonitoringEventDispatchInterceptor(final @Nonnull MessageMonitor<? super EventMessage> messageMonitor) {
         this.messageMonitor = messageMonitor;

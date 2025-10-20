@@ -100,7 +100,7 @@ public class RecordingMessageMonitor implements MessageMonitor<Message> {
     }
 
     /**
-     * Hook fur sublasses to perform additional actions when a message is reported as failed.
+     * Hook for subclasses to perform additional actions when a message is reported as failed.
      *
      * @param message The message that was reported as failed.
      * @param cause   The cause of the failure.

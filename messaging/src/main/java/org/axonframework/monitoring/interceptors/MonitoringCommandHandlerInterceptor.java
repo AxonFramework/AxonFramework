@@ -45,7 +45,7 @@ public class MonitoringCommandHandlerInterceptor implements MessageHandlerInterc
     /**
      * Constructs a MonitoringCommandHandlerInterceptor using the given {@link MessageMonitor}.
      *
-     * @param messageMonitor used for reporting
+     * @param messageMonitor The {@link MessageMonitor} instance used for reporting.
      */
     public MonitoringCommandHandlerInterceptor(final @Nonnull MessageMonitor<? super CommandMessage> messageMonitor) {
         this.messageMonitor = messageMonitor;
