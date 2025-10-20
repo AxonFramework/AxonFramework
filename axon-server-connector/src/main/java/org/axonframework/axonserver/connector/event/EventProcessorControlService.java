@@ -25,14 +25,15 @@ import io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction;
 import jakarta.annotation.Nonnull;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.annotations.Internal;
-import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.eventhandling.processors.streaming.StreamingEventProcessor;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessor;
 import org.axonframework.lifecycle.Phase;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -91,9 +92,8 @@ public class EventProcessorControlService {
         this.axonServerConnectionManager = Objects.requireNonNull(
                 connectionManager, "The Axon Server Connection Manager must not be null."
         );
-        this.configuration = configuration;
-        // TODO #3521 - We should actually know the context of the Event Processor for th is...
-        this.context = context;
+        this.configuration = Objects.requireNonNull(configuration, "The Configuration must not be null.");
+        this.context = Objects.requireNonNull(context, "The Context must not be null.");
         this.processorConfig = Objects.requireNonNull(processorConfig, "The Processor Configuration must not be null.");
     }
 
@@ -151,8 +151,8 @@ public class EventProcessorControlService {
                                .collect(toMap(Map.Entry::getKey, entry -> entry.getValue().getLoadBalancingStrategy()));
 
         strategiesPerProcessor.forEach((processorName, strategy) -> {
-            Optional<String> optionalIdentifier = tokenStoreIdentifierFor(processorName);
-            if (!optionalIdentifier.isPresent()) {
+            Optional<String> optionalIdentifier = processorTokenStoreOrGlobal(processorName);
+            if (optionalIdentifier.isEmpty()) {
                 logger.warn(
                         "Cannot find token store identifier for processor [{}]. Load balancing cannot be configured without this identifier.",
                         processorName
@@ -188,11 +188,30 @@ public class EventProcessorControlService {
         });
     }
 
-    private Optional<String> tokenStoreIdentifierFor(String processorName) {
-        // TODO #3521 - Be sure to be able to retrieve processor-specific components from their respective Modules
-        TokenStore tokenStore = configuration.getComponent(TokenStore.class);
-        return configuration.getComponent(TransactionManager.class)
-                            .fetchInTransaction(() -> tokenStore.retrieveStorageIdentifier(null).join());
+    private Optional<String> processorTokenStoreOrGlobal(String processorName) {
+        Optional<Configuration> moduleConfiguration = configuration.getModuleConfiguration(processorName);
+
+        Optional<TokenStore> tokenStore = moduleConfiguration
+                .flatMap(m -> m.getOptionalComponent(TokenStore.class, "TokenStore[" + processorName + "]"))
+                .or(() -> configuration.getOptionalComponent(TokenStore.class));
+        if (tokenStore.isEmpty()) {
+            logger.warn(
+                    "Cannot find TokenStore for processor [{}]. Please ensure the processor module is properly configured.",
+                    processorName);
+            return Optional.empty();
+        }
+
+        var unitOfWorkFactory = moduleConfiguration.flatMap(m -> m.getOptionalComponent(UnitOfWorkFactory.class, "UnitOfWorkFactory[" + processorName + "]"))
+                                                   .or(() -> configuration.getOptionalComponent(UnitOfWorkFactory.class));
+        if (unitOfWorkFactory.isEmpty()) {
+            logger.warn(
+                    "Cannot find UnitOfWorkFactory for processor [{}]. Please ensure the processor module is properly configured.",
+                    processorName);
+            return Optional.empty();
+        }
+
+        var unitOfWork = unitOfWorkFactory.get().create();
+        return FutureUtils.joinAndUnwrap(unitOfWork.executeWithResult(ctx -> tokenStore.get().retrieveStorageIdentifier(ctx)));
     }
 
     protected record AxonProcessorInstructionHandler(
