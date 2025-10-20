@@ -140,7 +140,6 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
                                   });
     }
 
-    // TODO #3521 - Add tests
     private static ComponentDefinition<EventProcessorControlService> eventProcessorControlService() {
         return ComponentDefinition.ofType(EventProcessorControlService.class)
                                   .withBuilder(c -> {
