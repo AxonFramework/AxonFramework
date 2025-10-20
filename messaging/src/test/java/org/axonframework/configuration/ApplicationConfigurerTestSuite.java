@@ -502,7 +502,6 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             assertSame(namedComponent, result.get("named"));
         }
 
-        // fixme: null / FQCN Spring Registry
         @Test
         void getComponentsReturnsComponentsMatchingSubtypes() {
             // given
@@ -515,8 +514,12 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             Map<String, TestComponent> result = config.getComponents(TestComponent.class);
             // then
             assertEquals(1, result.size());
+            // FIXME #3711 - There is an alternative in the assertion, because of the difference in the ComponentRegistry implementations.
+            //  Eg. DefaultComponentRegistry uses null for default components, whereas SpringComponentRegistry uses FQCN
             assertTrue(result.containsKey(null) || result.containsKey(SpecificTestComponent.class.getName()));
-            assertSame(specificComponent, Optional.ofNullable(result.get(null)).orElseGet(() -> result.get(SpecificTestComponent.class.getName())));
+            assertSame(specificComponent,
+                       Optional.ofNullable(result.get(null))
+                               .orElseGet(() -> result.get(SpecificTestComponent.class.getName())));
         }
 
         @Test
