@@ -59,10 +59,18 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
     protected static final SpecificTestComponent SPECIFIC_TEST_COMPONENT = new SpecificTestComponent(INIT_STATE);
 
     protected C testSubject;
+    private AxonConfiguration configuration;
 
     @BeforeEach
     void setUp() {
         testSubject = createConfigurer();
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (configuration != null) {
+            configuration.shutdown();
+        }
     }
 
     /**
@@ -76,7 +84,8 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
     private AxonConfiguration buildConfiguration() {
         initialize(testSubject);
-        return testSubject.build();
+        configuration = testSubject.build();
+        return configuration;
     }
 
     /**
@@ -514,12 +523,8 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             Map<String, TestComponent> result = config.getComponents(TestComponent.class);
             // then
             assertEquals(1, result.size());
-            // FIXME #3711 - There is an alternative in the assertion, because of the difference in the ComponentRegistry implementations.
-            //  Eg. DefaultComponentRegistry uses null for default components, whereas SpringComponentRegistry uses FQCN
-            assertTrue(result.containsKey(null) || result.containsKey(SpecificTestComponent.class.getName()));
-            assertSame(specificComponent,
-                       Optional.ofNullable(result.get(null))
-                               .orElseGet(() -> result.get(SpecificTestComponent.class.getName())));
+            assertTrue(result.containsKey(null));
+            assertSame(specificComponent, result.get(null));
         }
 
         @Test
