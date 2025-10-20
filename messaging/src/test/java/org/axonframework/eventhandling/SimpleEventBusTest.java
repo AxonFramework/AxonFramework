@@ -251,7 +251,7 @@ class SimpleEventBusTest {
                     .first()
                     .isNotNull()
                     .satisfies(ctx -> {
-                        assertThat(ctx.component(String.class, String.class.getName()))
+                        assertThat(ctx.component(String.class, null))
                                 .isEqualTo("TestComponent");
                     });
         }
@@ -438,7 +438,7 @@ class SimpleEventBusTest {
         @Override
         public CompletableFuture<?> apply(List<? extends EventMessage> events, ProcessingContext context) {
             if (context != null) {
-                accessedComponent = context.component(String.class, String.class.getName());
+                accessedComponent = context.component(String.class, null);
             }
             return CompletableFuture.completedFuture(null);
         }

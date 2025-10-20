@@ -97,17 +97,17 @@ public interface Component<C> extends DescribableComponent {
      *             an empty {@code name}.
      * @param <C>  The type of the component this object identifies, typically an interface.
      */
-    record Identifier<C>(@Nonnull TypeReference<C> type, @Nonnull String name) {
+    record Identifier<C>(@Nonnull TypeReference<C> type, @Nullable String name) {
 
         /**
          * A tuple representing a {@code Component's} uniqueness, consisting out of a {@code clazz} and {@code name}.
          *
          * @param clazz The clazz of the component this object identifies, typically an interface.
-         * @param name  The name of the component this object identifies. Will throw an {@link IllegalArgumentException}
-         *              for an empty {@code name}.
+         * @param name  The name of the component this object identifies. May be {@code null} for type-only searches, or will
+         *              throw an {@link IllegalArgumentException} for an empty {@code name}.
          */
         public Identifier(@Nonnull Class<C> clazz,
-                          @Nonnull String name) {
+                          @Nullable String name) {
             this(TypeReference.fromClass(clazz), name);
         }
 
@@ -115,24 +115,25 @@ public interface Component<C> extends DescribableComponent {
          * A tuple representing a {@code Component's} uniqueness, consisting out of a {@code type} and {@code name}.
          *
          * @param type The type of the component this object identifies, typically an interface.
-         * @param name The name of the component this object identifies. Will throw an {@link IllegalArgumentException}
-         *             for an empty {@code name}.
+         * @param name The name of the component this object identifies. May be {@code null} for type-only searches, or will
+         *             throw an {@link IllegalArgumentException} for an empty {@code name}.
          */
         public Identifier(@Nonnull Type type,
-                          @Nonnull String name) {
+                          @Nullable String name) {
             this(TypeReference.fromType(type), name);
         }
 
         /**
-         * Compact constructor asserting whether the {@code type} and {@code name} are non-null and not empty.
+         * Compact constructor asserting whether the {@code type} is non-null and {@code name} is not empty.
          *
          * @param type The type of the component.
-         * @param name The name of the component.
+         * @param name The name of the component. May be {@code null} for type-only searches.
          */
         public Identifier {
             requireNonNull(type, "The given type is unsupported because it is null.");
-            requireNonNull(name, "The given name is unsupported because it is null.");
-            nonEmpty(name, "The given name is unsupported because it is empty.");
+            if (name != null) {
+                nonEmpty(name, "The given name is unsupported because it is empty.");
+            }
         }
 
         /**

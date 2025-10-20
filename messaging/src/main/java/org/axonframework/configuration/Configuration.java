@@ -44,7 +44,7 @@ public interface Configuration extends DescribableComponent {
      */
     @Nonnull
     default <C> C getComponent(@Nonnull Class<C> type) {
-        return getComponent(type, type.getName());
+        return getComponent(type, (String) null);
     }
 
     /**
@@ -75,7 +75,7 @@ public interface Configuration extends DescribableComponent {
      * there is no component present for the given {@code type}.
      */
     default <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type) {
-        return getOptionalComponent(type, type.getName());
+        return getOptionalComponent(type, null);
     }
 
     /**
@@ -93,13 +93,16 @@ public interface Configuration extends DescribableComponent {
 
     /**
      * Check whether there is a {@link Component} present in this {@code Configuration} for the given {@code type}.
+     * <p>
+     * This method searches for components using type assignability, matching components registered with the fully
+     * qualified class name of the type or any assignable type.
      *
      * @param type The type of the {@link Component} to check if it exists, typically an interface.
      * @return {@code true} when there is a {@link Component} registered under the given {@code type}, {@code false}
      * otherwise.
      */
     default boolean hasComponent(@Nonnull Class<?> type) {
-        return hasComponent(type, type.getName());
+        return hasComponent(type, null);
     }
 
     /**
@@ -132,7 +135,7 @@ public interface Configuration extends DescribableComponent {
     @Nonnull
     default <C> C getComponent(@Nonnull Class<C> type,
                                @Nonnull Supplier<C> defaultImpl) {
-        return getComponent(type, type.getName(), defaultImpl);
+        return getComponent(type, null, defaultImpl);
     }
 
     /**

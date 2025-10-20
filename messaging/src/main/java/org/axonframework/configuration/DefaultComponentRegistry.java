@@ -402,6 +402,14 @@ public class DefaultComponentRegistry implements ComponentRegistry {
         @Override
         public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type,
                                                     @Nullable String name) {
+            if (name == null) {
+                // When name is null, search by type assignability only (not exact name match)
+                // This maintains backwards compatibility for assignability-based lookups
+                return getComponentByTypeOnly(type)
+                        .or(() -> Optional.ofNullable(fromParent(type, null, () -> null)));
+            }
+
+            // When name is provided, search with exact name matching
             return components.get(new Identifier<>(type, name))
                              .map(c -> c.resolve(this))
                              .or(() -> {
@@ -415,15 +423,24 @@ public class DefaultComponentRegistry implements ComponentRegistry {
                              .or(() -> Optional.ofNullable(fromParent(type, name, () -> null)));
         }
 
+        private <C> Optional<C> getComponentByTypeOnly(Class<C> type) {
+            // When name is null, Components.get() searches by type assignability only
+            // This maintains backwards compatibility for finding components by type alone
+            Identifier<C> searchId = new Identifier<>(type, null);
+            return components.get(searchId).map(c -> c.resolve(this));
+        }
+
         @Nonnull
         @Override
         public <C> C getComponent(@Nonnull Class<C> type,
                                   @Nullable String name,
                                   @Nonnull Supplier<C> defaultImpl) {
-            Identifier<C> identifier = new Identifier<>(type, name);
+            // Convert null to FQCN for Identifier compliance
+            String effectiveName = name != null ? name : type.getName();
+            Identifier<C> identifier = new Identifier<>(type, effectiveName);
             Object component = components.computeIfAbsent(
                                                  identifier,
-                                                 () -> fromFactory(type, name).orElseGet(
+                                                 () -> fromFactory(type, effectiveName).orElseGet(
                                                          () -> new LazyInitializedComponentDefinition<>(
                                                                  identifier,
                                                                  c -> fromParent(type, name, defaultImpl)

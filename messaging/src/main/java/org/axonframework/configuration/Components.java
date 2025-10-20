@@ -73,7 +73,14 @@ public class Components implements DescribableComponent {
     private <C> List<Component<C>> getComponentsAssignableTo(Identifier<C> identifier) {
         //noinspection unchecked
         List<Component<C>> matches = components.entrySet().stream()
-                                               .filter(entry -> identifier.matches(entry.getKey()))
+                                               .filter(entry -> {
+                                                   // When searching with null name, match by type assignability
+                                                   // but only for components where name equals their type's FQCN (not custom names)
+                                                   // When searching with non-null name, match both type and name
+                                                   return identifier.name() == null
+                                                           ? identifier.matchesType(entry.getKey()) && entry.getKey().areTypeAndNameEqual()
+                                                           : identifier.matches(entry.getKey());
+                                               })
                                                .map(Map.Entry::getValue)
                                                .map(component -> (Component<C>) component)
                                                .toList();
@@ -124,7 +131,7 @@ public class Components implements DescribableComponent {
      * <p>
      * If the given {@code identifier} has a nullable {@link Identifier#name() name}, <b>all</b> identifiers of this
      * collection trigger a match if their {@link Identifier#type() type} is assignable to the given
-     * {@code identifier's} type.
+     * {@code identifier's} type <b>and</b> their name equals their type's fully qualified class name.
      *
      * @param identifier The identifier for which to check if there is a {@link Component} present.
      * @return {@code true} if this collection contains a {@link Component} identified by the given {@code identifier},
@@ -135,7 +142,7 @@ public class Components implements DescribableComponent {
                 ? components.containsKey(identifier)
                 : components.keySet()
                             .stream()
-                            .anyMatch(identifier::matchesType);
+                            .anyMatch(key -> identifier.matchesType(key) && key.areTypeAndNameEqual());
     }
 
     /**
