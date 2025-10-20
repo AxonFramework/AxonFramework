@@ -16,20 +16,16 @@
 
 package org.axonframework.integrationtests.testsuite.student;
 
-import org.axonframework.eventhandling.EventHandler;
-import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.sequencing.SequentialPolicy;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.eventstreaming.EventCriteria;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.test.utils.MessageMonitorReport;
 import org.axonframework.test.utils.RecordingMessageMonitor;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
 
 import java.util.UUID;
@@ -41,7 +37,6 @@ import static org.awaitility.Awaitility.await;
  * This tests uses a {@link RecordingMessageMonitor} to verify that successfully processed events and ignored events are
  * reported correctly.
  */
-@Disabled("TODO: has to be fixed")
 public class MonitoringPooledEventProcessingReportIT extends AbstractStudentIT {
 
     private static final String NAME = MonitoringPooledEventProcessingReportIT.class.getSimpleName();
@@ -49,12 +44,14 @@ public class MonitoringPooledEventProcessingReportIT extends AbstractStudentIT {
     protected MessageMonitorReport reportedMessages = new MessageMonitorReport();
 
     record UnknownEvent(String id) {
-        // just to trigger something not configured in the test
+        // not configured in test setup, will be ignored
     }
 
     record KnownEvent(String id) {
-        // just to trigger something not configured in the test
+        // configured in test setup, will be reported as success or failure
     }
+
+    private final String id = UUID.randomUUID().toString();
 
     @BeforeEach
     void setUp() {
@@ -64,13 +61,12 @@ public class MonitoringPooledEventProcessingReportIT extends AbstractStudentIT {
     @Test
     void reportsIgnoredForUnknownEvent() {
         startApp();
-        var id = UUID.randomUUID().toString();
 
-        storeEvent(UnknownEvent.class, new UnknownEvent(id));
+        storeEvent(UnknownEvent.class, new UnknownEvent(id), Metadata.with("id", id));
 
         await().untilAsserted(() -> {
             assertThat(reportedMessages.getIgnored().stream()
-                                       .filter(it -> it.message().identifier().equals(id))
+                                       .filter(it -> it.message().metadata().get("id").equals(id))
                                        .findFirst())
                     .as("UnknownEvent(%s) should have been reported as ignored, but wasn't.", id)
                     .isNotEmpty();
@@ -80,13 +76,12 @@ public class MonitoringPooledEventProcessingReportIT extends AbstractStudentIT {
     @Test
     void reportsFailureForKnownEventWithError() {
         startApp();
-        var id = "ERROR-" +UUID.randomUUID().toString();
 
-        storeEvent(KnownEvent.class, new KnownEvent(id));
+        storeEvent(KnownEvent.class, new KnownEvent(id), Metadata.with("id", id).and("type", "ERROR"));
 
         await().untilAsserted(() -> {
             assertThat(reportedMessages.getFailures().stream()
-                                       .filter(it -> it.message().identifier().equals(id))
+                                       .filter(it -> it.message().metadata().get("id").equals(id))
                                        .findFirst())
                     .as("Error on KnownEvent(%s) should have been reported as failure, but wasn't.", id)
                     .isNotEmpty();
@@ -97,12 +92,11 @@ public class MonitoringPooledEventProcessingReportIT extends AbstractStudentIT {
     void reportsSuccessForKnownEvent() {
         startApp();
 
-        var id = UUID.randomUUID().toString();
-        storeEvent(KnownEvent.class, new KnownEvent(id));
+        storeEvent(KnownEvent.class, new KnownEvent(id), Metadata.with("id", id));
 
         await().untilAsserted(() -> {
             assertThat(reportedMessages.getSuccess().stream()
-                                       .filter(it -> it.message().identifier().equals(id))
+                                       .filter(it -> it.message().metadata().get("id").equals(id))
                                        .findFirst())
                     .as("KnownEvent(%s) should have been reported as success, but wasn't.", id)
                     .isNotEmpty();
@@ -126,24 +120,18 @@ public class MonitoringPooledEventProcessingReportIT extends AbstractStudentIT {
                                                                                SequentialPolicy.INSTANCE)
                                                                                .subscribe(new QualifiedName(
                                                                                                   KnownEvent.class),
-                                                                                          new EventHandler() {
-                                                                                              @Override
-                                                                                              public @NotNull MessageStream.Empty<Message> handle(
-                                                                                                      @NotNull EventMessage event,
-                                                                                                      @NotNull ProcessingContext context) {
-                                                                                                  if (event.identifier().startsWith("ERROR")) {
-                                                                                                      throw new RuntimeException("Failures are expected");
-                                                                                                  }
-                                                                                                  return MessageStream.empty();
+                                                                                          (event, context) -> {
+                                                                                              if ("ERROR".equals(event.metadata().get("type"))) {
+                                                                                                  throw new RuntimeException("Failures are expected");
                                                                                               }
+                                                                                              return MessageStream.empty();
                                                                                           })
                                                                        )
 
                                                                )
-                                                   .notCustomized()
-//                                                               .customized((cfg, cust) -> cust
-//                                                                       .eventCriteria((supportedTyped) -> EventCriteria.havingAnyTag())
-//                                                               )
+                                                               .customized((cfg, cust) -> cust
+                                                                       .eventCriteria((supportedTyped) -> EventCriteria.havingAnyTag())
+                                                               )
 
                         )
                 ))
