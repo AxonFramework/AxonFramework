@@ -66,14 +66,16 @@ class AbstractMonitoringInterceptor<T extends Message> {
      */
     protected void registerMonitorCallback(@Nullable ProcessingContext processingContext,
                                            @Nonnull T message) {
-        var monitorCallback = messageMonitor.onMessageIngested(message);
 
         if (processingContext != null && processingContext.isStarted()) {
-            processingContext.onError((cts, phase, error) -> monitorCallback.reportFailure(error));
-            processingContext.onAfterCommit(c -> CompletableFuture.runAsync(monitorCallback::reportSuccess));
-        } else {
-            // TODO(JG): what to do in this case?
-            monitorCallback.reportIgnored();
+            final var monitorCallback = messageMonitor.onMessageIngested(message);
+
+            processingContext.onError(
+                    (cts, phase, error) -> monitorCallback.reportFailure(error)
+            );
+            processingContext.onAfterCommit(
+                    c -> CompletableFuture.runAsync(monitorCallback::reportSuccess)
+            );
         }
     }
 }
