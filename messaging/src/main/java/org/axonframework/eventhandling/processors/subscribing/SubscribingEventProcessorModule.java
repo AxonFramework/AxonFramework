@@ -30,9 +30,7 @@ import org.axonframework.eventhandling.configuration.EventProcessorConfiguration
 import org.axonframework.eventhandling.configuration.EventProcessorCustomization;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
-import org.axonframework.eventhandling.monitoring.MonitoringEventHandlingComponent;
 import org.axonframework.eventhandling.processors.streaming.segmenting.SequenceCachingEventHandlingComponent;
-import org.axonframework.eventhandling.tracing.TracingEventHandlingComponent;
 import org.axonframework.lifecycle.Phase;
 
 import java.util.List;
@@ -125,10 +123,7 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
                 cr.registerComponent(EventHandlingComponent.class, componentName,
                                      cfg -> {
                                          var component = componentBuilder.build(cfg);
-                                         var configuration = cfg.getComponent(
-                                                 SubscribingEventProcessorConfiguration.class
-                                         );
-                                         return withDefaultDecoration(component, configuration);
+                                         return new SequenceCachingEventHandlingComponent(component);
                                      });
                 cr.registerDecorator(EventHandlingComponent.class, componentName,
                                      InterceptingEventHandlingComponent.DECORATION_ORDER,
@@ -157,19 +152,6 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
     @Nonnull
     private String processorEventHandlingComponentName(int index) {
         return "EventHandlingComponent[" + processorName + "][" + index + "]";
-    }
-
-    @Nonnull
-    private static EventHandlingComponent withDefaultDecoration(
-            EventHandlingComponent c,
-            EventProcessorConfiguration configuration
-    ) {
-        // TODO(JG): derive from registry
-        // TODO #3595 - Move this monitoring decorator to be placed around **all** other decorators for an EHC.
-        return new MonitoringEventHandlingComponent(
-                configuration.messageMonitor(),
-                new SequenceCachingEventHandlingComponent(c)
-        );
     }
 
     @Override
