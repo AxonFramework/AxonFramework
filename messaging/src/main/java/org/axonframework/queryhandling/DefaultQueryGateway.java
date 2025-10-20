@@ -25,12 +25,12 @@ import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
-import reactor.util.concurrent.Queues;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 
 /**
  * Default implementation of the {@link QueryGateway} interface.
@@ -127,33 +127,21 @@ public class DefaultQueryGateway implements QueryGateway {
 
     @Nonnull
     @Override
-    public <R> Publisher<R> subscriptionQuery(@Nonnull Object query,
-                                              @Nonnull Class<R> responseType,
-                                              @Nullable ProcessingContext context) {
-        SubscriptionQueryMessage queryMessage = asSubscriptionQueryMessage(query, responseType, responseType);
-        return queryBus.subscriptionQuery(queryMessage, context, Queues.SMALL_BUFFER_SIZE)
-                       .asFlux()
-                       .mapNotNull(message -> message.payloadAs(responseType));
-    }
-
-    @Nonnull
-    @Override
-    public <I, U> SubscriptionQueryResponse<I, U> subscriptionQuery(@Nonnull Object query,
-                                                                    @Nonnull Class<I> initialResponseType,
-                                                                    @Nonnull Class<U> updateResponseType,
-                                                                    @Nullable ProcessingContext context,
-                                                                    int updateBufferSize) {
+    public <T> Publisher<T> subscriptionQuery(@Nonnull Object query,
+                                              @Nonnull Class<T> responseType,
+                                              @Nonnull Function<QueryResponseMessage, T> mapper,
+                                              @Nullable ProcessingContext context,
+                                              int updateBufferSize) {
         SubscriptionQueryMessage queryMessage = asSubscriptionQueryMessage(query,
-                                                                           initialResponseType,
-                                                                           updateResponseType);
-        SubscriptionQueryResponseMessages response = queryBus.subscriptionQuery(queryMessage,
-                                                                                context,
-                                                                                updateBufferSize);
-        return new GenericSubscriptionQueryResponse<>(response,
-                                                      message -> message.payloadAs(initialResponseType),
-                                                      message -> message.payloadAs(updateResponseType));
+                                                                           resolveTypeFor(responseType));
+        MessageStream<QueryResponseMessage> response = queryBus.subscriptionQuery(queryMessage,
+                                                                                  context,
+                                                                                  updateBufferSize);
+        return response.asFlux()
+                       .mapNotNull(m -> mapper.apply(m.message()))
+                       .doOnCancel(response::close)
+                       .doOnError((e) -> response.close());
     }
-
 
     private QueryMessage asQueryMessage(Object query, Class<?> responseType) {
         if (query instanceof QueryMessage queryMessage) {
@@ -164,20 +152,16 @@ public class DefaultQueryGateway implements QueryGateway {
                 : new GenericQueryMessage(resolveTypeFor(query), query, resolveTypeFor(responseType));
     }
 
-    private <I, U> SubscriptionQueryMessage asSubscriptionQueryMessage(Object query,
-                                                                       Class<I> initialType,
-                                                                       Class<U> updateType) {
+    private SubscriptionQueryMessage asSubscriptionQueryMessage(Object query,
+                                                                MessageType initialMessageType) {
         if (query instanceof SubscriptionQueryMessage queryMessage) {
             return queryMessage;
         }
-        MessageType initialMessageType = resolveTypeFor(initialType);
-        MessageType updateMessageType = resolveTypeFor(updateType);
         return query instanceof Message
-                ? new GenericSubscriptionQueryMessage((Message) query, initialMessageType, updateMessageType)
+                ? new GenericSubscriptionQueryMessage((Message) query, initialMessageType)
                 : new GenericSubscriptionQueryMessage(resolveTypeFor(query),
                                                       query,
-                                                      initialMessageType,
-                                                      updateMessageType);
+                                                      initialMessageType);
     }
 
     private MessageType resolveTypeFor(Object payload) {

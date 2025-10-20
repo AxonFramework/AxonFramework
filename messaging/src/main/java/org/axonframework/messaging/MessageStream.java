@@ -21,6 +21,7 @@ import jakarta.annotation.Nullable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
@@ -57,6 +58,19 @@ public interface MessageStream<M extends Message> {
      */
     static <M extends Message> MessageStream<M> fromIterable(@Nonnull Iterable<M> iterable) {
         return fromIterable(iterable, message -> Context.empty());
+    }
+
+    /**
+     * Creates a MessageStream that provides the given {@code items} and then completes. Each item can only be consumed
+     * once.
+     *
+     * @param items The items to return in the stream.
+     * @param <M>   The type of message the stream contains
+     * @return a MessageStream that contains the given {@code items} and then completes.
+     */
+    @SafeVarargs
+    static <M extends Message> MessageStream<M> fromItems(@Nonnull M... items) {
+        return fromIterable(List.of(items), message -> Context.empty());
     }
 
     /**
@@ -535,6 +549,17 @@ public interface MessageStream<M extends Message> {
     @SuppressWarnings("unchecked")
     default <T extends Message> MessageStream<T> cast() {
         return (MessageStream<T>) this;
+    }
+
+    /**
+     * Returns a stream that, when it is either explicitly closed using {@link #close()}, or when this stream completes
+     * (regularly or with an error) calls the given {@code closeHandler}.
+     *
+     * @param closeHandler The handler to invoke when this stream is closed or terminates.
+     * @return a stream that invokes the given {@code closeHandler} upon closing or termination.
+     */
+    default MessageStream<M> onClose(Runnable closeHandler) {
+        return new CloseCallbackMessageStream<>(this, closeHandler);
     }
 
     /**

@@ -39,7 +39,6 @@ import org.axonframework.axonserver.connector.query.subscription.SubscriptionMes
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
 import org.axonframework.axonserver.connector.util.PriorityTaskSchedulers;
 import org.axonframework.axonserver.connector.util.ProcessingInstructionHelper;
-import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonException;
 import org.axonframework.common.AxonThreadFactory;
@@ -56,7 +55,6 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.responsetypes.ConvertingResponseMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.QueryBus;
@@ -66,9 +64,7 @@ import org.axonframework.queryhandling.QueryPriorityCalculator;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
-import org.axonframework.queryhandling.SubscriptionQueryResponseMessages;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
-import org.axonframework.queryhandling.UpdateHandler;
 import org.axonframework.queryhandling.tracing.DefaultQueryBusSpanFactory;
 import org.axonframework.queryhandling.tracing.QueryBusSpanFactory;
 import org.axonframework.serialization.Serializer;
@@ -130,13 +126,11 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
     private static final int DIRECT_QUERY_NUMBER_OF_RESULTS = 1;
     private static final long DIRECT_QUERY_TIMEOUT_MS = TimeUnit.HOURS.toMillis(1);
-    private static final int SCATTER_GATHER_NUMBER_OF_RESULTS = -1;
 
     private static final int QUERY_QUEUE_CAPACITY = 1000;
 
     private final AxonServerConnectionManager axonServerConnectionManager;
     private final AxonServerConfiguration configuration;
-    private final QueryUpdateEmitter updateEmitter;
     private final QueryBus localSegment;
     private final QuerySerializer serializer;
     private final SubscriptionMessageSerializer subscriptionSerializer;
@@ -447,7 +441,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
     @Nonnull
     @Override
-    public SubscriptionQueryResponseMessages subscriptionQuery(
+    public MessageStream<QueryResponseMessage> subscriptionQuery(
             @Nonnull SubscriptionQueryMessage query,
             @Nullable ProcessingContext context,
             int updateBufferSize
@@ -494,7 +488,8 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
     @Nonnull
     @Override
-    public UpdateHandler subscribeToUpdates(@Nonnull SubscriptionQueryMessage query, int updateBufferSize) {
+    public MessageStream<SubscriptionQueryUpdateMessage> subscribeToUpdates(@Nonnull SubscriptionQueryMessage query,
+                                                                            int updateBufferSize) {
         // TODO #3488 implement as part of AxonServerQueryBus implementation
         return null;
     }
@@ -1059,11 +1054,13 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         @Override
         public io.axoniq.axonserver.connector.Registration registerSubscriptionQuery(SubscriptionQuery query,
                                                                                      UpdateHandler sendUpdate) {
-            org.axonframework.queryhandling.UpdateHandler updateHandler =
-                    localSegment.subscribeToUpdates(subscriptionSerializer.deserialize(query), 1024);
+            MessageStream<SubscriptionQueryUpdateMessage> updates = localSegment.subscribeToUpdates(
+                    subscriptionSerializer.deserialize(query),
+                    1024);
 
-            updateHandler.updates()
-                         .doOnError(e -> {
+            updates.asFlux()
+                   .map(MessageStream.Entry::message)
+                   .doOnError(e -> {
                              ErrorMessage error = ExceptionSerializer.serialize(configuration.getClientId(), e);
                              String errorCode = ErrorCode.getQueryExecutionErrorCode(e).errorCode();
                              QueryUpdate queryUpdate = QueryUpdate.newBuilder()
@@ -1073,12 +1070,12 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                              sendUpdate.sendUpdate(queryUpdate);
                              sendUpdate.complete();
                          })
-                         .doOnComplete(sendUpdate::complete)
-                         .map(subscriptionSerializer::serialize)
-                         .subscribe(sendUpdate::sendUpdate);
+                   .doOnComplete(sendUpdate::complete)
+                   .map(subscriptionSerializer::serialize)
+                   .subscribe(sendUpdate::sendUpdate);
 
             return () -> {
-                updateHandler.cancel();
+                updates.close();
                 return FutureUtils.emptyCompletedFuture();
             };
         }

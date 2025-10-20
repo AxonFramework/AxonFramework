@@ -123,28 +123,30 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      * @return query result containing initial result and incremental updates
      */
     @Nonnull
-    SubscriptionQueryResponseMessages subscriptionQuery(@Nonnull SubscriptionQueryMessage query,
-                                                        @Nullable ProcessingContext context,
-                                                        int updateBufferSize);
+    MessageStream<QueryResponseMessage> subscriptionQuery(@Nonnull SubscriptionQueryMessage query,
+                                                          @Nullable ProcessingContext context,
+                                                          int updateBufferSize);
 
     /**
-     * Subscribes the given {@code query} with the given {@code updateBufferSize}, resulting in an {@link UpdateHandler}
-     * providing a {@link reactor.core.publisher.Flux} to the emitted updates.
+     * Subscribes the given {@code query} with the given {@code updateBufferSize}, and returns the MessageStream
+     * that provides the updates of the subscription query.
      * <p>
      * Can be used directly instead when fine-grained control of update handlers is required. If using the
-     * {@link UpdateHandler} directly is not mandatory for your use case, we strongly recommend using
+     * updates directly is not mandatory for your use case, we strongly recommend using
      * {@link #subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int)} instead.
+     * <p>
+     * Note that the returned MessageStream must be consumed from before the buffer fills up. Once the buffer is full,
+     * any attempt to add an update will complete the stream with an exception.
      *
      * @param query            The subscription query for which we register an update handler.
-     * @param updateBufferSize The size of buffer that accumulates updates before a subscription to the
-     *                         {@link UpdateHandler#updates()} is made.
-     * @return The update handler containing the {@link reactor.core.publisher.Flux} of emitted updates, as well as
-     * {@link UpdateHandler#cancel()} and {@link UpdateHandler#complete()} hooks.
+     * @param updateBufferSize The size of the buffer that accumulates updates.
+     * @return a MessageStream of updates for the given subscription query.
      * @throws SubscriptionQueryAlreadyRegisteredException Whenever an update handler was already registered for the
      *                                                     given {@code query}.
      */
     @Nonnull
-    UpdateHandler subscribeToUpdates(@Nonnull SubscriptionQueryMessage query, int updateBufferSize);
+    MessageStream<SubscriptionQueryUpdateMessage> subscribeToUpdates(@Nonnull SubscriptionQueryMessage query,
+                                                                     int updateBufferSize);
 
     /**
      * Emits the outcome of the {@code updateSupplier} to

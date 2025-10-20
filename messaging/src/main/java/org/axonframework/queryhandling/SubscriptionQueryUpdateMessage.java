@@ -30,7 +30,7 @@ import java.util.Map;
  * @author Milan Savic
  * @since 3.3.0
  */
-public interface SubscriptionQueryUpdateMessage extends ResultMessage {
+public interface SubscriptionQueryUpdateMessage extends QueryResponseMessage {
 
     @Override
     @Nonnull
