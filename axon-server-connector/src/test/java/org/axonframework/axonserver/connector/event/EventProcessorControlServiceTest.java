@@ -199,9 +199,8 @@ class EventProcessorControlServiceTest {
                 .thenReturn(completedFuture(Optional.of(TOKEN_STORE_IDENTIFIER)));
 
         UnitOfWork unitOfWork = mock(UnitOfWork.class);
-        when(unitOfWork.executeWithResult(any())).thenAnswer(invocation ->
-                invocation.getArgument(0, java.util.function.Function.class).apply(null)
-        );
+        when(unitOfWork.executeWithResult(any()))
+                .thenAnswer(invocation -> invocation.<java.util.function.Function<?, ?>>getArgument(0).apply(null));
         UnitOfWorkFactory unitOfWorkFactory = mock(UnitOfWorkFactory.class);
         when(unitOfWorkFactory.create()).thenReturn(unitOfWork);
 
