@@ -15,46 +15,46 @@
   ~ limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>org.axonframework</groupId>
-        <artifactId>axon-framework-extension-spring</artifactId>
+        <groupId>org.axonframework.extensions.spring</groupId>
+        <artifactId>axon-spring-extension</artifactId>
         <version>5.0.0-SNAPSHOT</version>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
-
-    <artifactId>axon-spring-boot-autoconfigure</artifactId>
-
-    <name>Axon Framework - Spring Boot Support</name>
-    <description>
-        Module providing support for auto-configuration of Axon Framework through Spring Boot.
-    </description>
 
     <dependencies>
+
         <!-- Axon dependencies -->
         <dependency>
             <groupId>org.axonframework</groupId>
+            <artifactId>axon-server-connector</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.axonframework.extensions.spring</groupId>
             <artifactId>axon-spring</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
-            <groupId>org.axonframework</groupId>
-            <artifactId>axon-metrics</artifactId>
+            <groupId>org.axonframework.extensions.metrics</groupId>
+            <artifactId>axon-metrics-dropwizard</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
 
         <dependency>
-            <groupId>org.axonframework</groupId>
+            <groupId>org.axonframework.extensions.tracing</groupId>
             <artifactId>axon-tracing-opentelemetry</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
 
         <dependency>
-            <groupId>org.axonframework</groupId>
-            <artifactId>axon-micrometer</artifactId>
+            <groupId>org.axonframework.extensions.metrics</groupId>
+            <artifactId>axon-metrics-micrometer</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
@@ -69,11 +69,6 @@
             <groupId>com.github.kagkarlsson</groupId>
             <artifactId>db-scheduler</artifactId>
             <optional>true</optional>
-        </dependency>
-
-        <dependency>
-            <groupId>org.axonframework</groupId>
-            <artifactId>axon-server-connector</artifactId>
         </dependency>
 
         <!-- Spring dependencies -->
@@ -133,6 +128,13 @@
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
+        <dependency>
+            <groupId>org.axonframework</groupId>
+            <artifactId>axon-eventsourcing</artifactId>
+            <version>${project.version}</version>
+            <classifier>tests</classifier>
+            <scope>test</scope>
+        </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -151,18 +153,11 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-testcontainers</artifactId>
             <version>${spring.boot.version}</version>
-            <!-- FIXME TestContainer on production class path? -->
-            <!-- scope>test</scope-->
         </dependency>
-
         <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>axon-eventsourcing</artifactId>
-            <version>${project.version}</version>
-            <classifier>tests</classifier>
-            <scope>test</scope>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
         </dependency>
-
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -212,7 +207,6 @@
             <scope>test</scope>
         </dependency>
 
-
         <dependency>
             <groupId>com.lmax</groupId>
             <artifactId>disruptor</artifactId>
@@ -231,7 +225,6 @@
             <scope>test</scope>
         </dependency>
 
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-docker-compose</artifactId>
@@ -246,14 +239,17 @@
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
-            <artifactId>testcontainers</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.testcontainers</groupId>
             <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <artifactId>axon-spring-boot-autoconfigure</artifactId>
+    <name>Axon Framework - Spring Boot Support</name>
+
+    <description>
+        Module providing support for autoconfiguration of Axon Framework through Spring Boot.
+    </description>
 
     <build>
         <plugins>
@@ -262,7 +258,7 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <Automatic-Module-Name>org.axonframework.springboot</Automatic-Module-Name>
+                            <Automatic-Module-Name>org.axonframework.extension.springboot</Automatic-Module-Name>
                         </manifestEntries>
                     </archive>
                 </configuration>

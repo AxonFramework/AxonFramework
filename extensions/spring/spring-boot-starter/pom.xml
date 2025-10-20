@@ -16,37 +16,22 @@
   -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>org.axonframework</groupId>
-        <artifactId>axon-framework-extension-spring</artifactId>
+        <groupId>org.axonframework.extensions.spring</groupId>
+        <artifactId>axon-spring-extension</artifactId>
         <version>5.0.0-SNAPSHOT</version>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
 
     <artifactId>axon-spring-boot-starter</artifactId>
     <version>5.0.0-SNAPSHOT</version>
 
     <name>Spring Boot Starter module for Axon Framework</name>
 
-    <organization>
-        <name>AxonIQ B.V.</name>
-        <url>https://axoniq.io</url>
-    </organization>
-
-    <licenses>
-        <license>
-            <name>Apache 2.0</name>
-            <url>http://www.apache.org/licenses/LICENSE-2.0</url>
-        </license>
-    </licenses>
-    <issueManagement>
-        <system>GitHub</system>
-        <url>http://issues.axonframework.org</url>
-    </issueManagement>
 
     <dependencies>
         <dependency>
-            <groupId>org.axonframework</groupId>
+            <groupId>org.axonframework.extensions.spring</groupId>
             <artifactId>axon-spring-boot-autoconfigure</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -54,10 +39,11 @@
         <!-- explicitly define transitive dependencies to increase version priority -->
         <!-- see https://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html#Transitive_Dependencies -->
         <dependency>
-            <groupId>org.axonframework</groupId>
+            <groupId>org.axonframework.extensions.spring</groupId>
             <artifactId>axon-spring</artifactId>
             <version>${project.version}</version>
         </dependency>
+
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-eventsourcing</artifactId>

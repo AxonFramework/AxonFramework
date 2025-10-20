@@ -18,41 +18,43 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>org.axonframework</groupId>
-        <artifactId>axon</artifactId>
+        <groupId>org.axonframework.extensions.tracing</groupId>
+        <artifactId>axon-tracing-extension</artifactId>
         <version>5.0.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>axon-metrics</artifactId>
+    <artifactId>axon-tracing-opentelemetry</artifactId>
 
-    <name>Axon Framework - Dropwizard Metrics</name>
+    <name>Axon Framework - OpenTelemetry Tracing</name>
     <description>
-        This module contains components that provide metrics for standard Axon components using the Dropwizard metrics
-        library.
+        This module contains components that provide tracing support specifically for OpenTelemetry.
     </description>
 
     <packaging>bundle</packaging>
 
+    <properties>
+        <opentelemetry-api.version>1.54.1</opentelemetry-api.version>
+    </properties>
+
     <dependencies>
         <dependency>
-            <groupId>${project.groupId}</groupId>
+            <groupId>org.axonframework</groupId>
             <artifactId>axon-messaging</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>jakarta.annotation</groupId>
-            <artifactId>jakarta.annotation-api</artifactId>
-            <version>${jakarta.annotation.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.dropwizard.metrics</groupId>
-            <artifactId>metrics-core</artifactId>
-            <version>${dropwizard.metrics.version}</version>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-api</artifactId>
+            <version>${opentelemetry-api.version}</version>
         </dependency>
         <dependency>
             <groupId>com.google.code.findbugs</groupId>
             <artifactId>jsr305</artifactId>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
         </dependency>
     </dependencies>
 
@@ -63,7 +65,7 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <Automatic-Module-Name>org.axonframework.metrics</Automatic-Module-Name>
+                            <Automatic-Module-Name>org.axonframework.tracing.opentelemetry</Automatic-Module-Name>
                         </manifestEntries>
                     </archive>
                 </configuration>
@@ -80,10 +82,9 @@
                         <Bundle-Description>${project.description}</Bundle-Description>
                         <Bundle-Version>${project.version}</Bundle-Version>
                         <Export-Package>
-                            org.axonframework.metrics.*
+                            org.axonframework.tracing.opentelemetry.*
                         </Export-Package>
                         <Import-Package>
-                            org.slf4j.*,
                             *;resolution:=optional
                         </Import-Package>
                     </instructions>
@@ -112,10 +113,6 @@
                                     <excludes>
                                         <exclude>org.springframework</exclude>
                                     </excludes>
-                                    <includes>
-                                        <!-- allow any spring dependency with test scope -->
-                                        <include>org.springframework:*:*:*:test</include>
-                                    </includes>
                                 </bannedDependencies>
                             </rules>
                             <fail>true</fail>

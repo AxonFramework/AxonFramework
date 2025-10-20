@@ -18,23 +18,24 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>org.axonframework</groupId>
-        <artifactId>axon</artifactId>
+        <groupId>org.axonframework.extensions.metrics</groupId>
+        <artifactId>axon-metrics-extension</artifactId>
         <version>5.0.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>axon-micrometer</artifactId>
+    <artifactId>axon-metrics-dropwizard</artifactId>
 
-    <name>Axon Framework - Micrometer Metrics</name>
+    <name>Axon Framework - Dropwizard Metrics</name>
     <description>
-        This module contains components that provide metrics for standard Axon components using the Micrometer library.
+        This module contains components that provide metrics for standard Axon components using the Dropwizard metrics
+        library.
     </description>
 
     <packaging>bundle</packaging>
 
     <dependencies>
         <dependency>
-            <groupId>${project.groupId}</groupId>
+            <groupId>org.axonframework</groupId>
             <artifactId>axon-messaging</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -44,17 +45,10 @@
             <version>${jakarta.annotation.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-core</artifactId>
-            <version>${micrometer.version}</version>
-        </dependency>
-        <dependency>
             <groupId>io.dropwizard.metrics</groupId>
             <artifactId>metrics-core</artifactId>
             <version>${dropwizard.metrics.version}</version>
-            <scope>test</scope>
         </dependency>
-
         <dependency>
             <groupId>com.google.code.findbugs</groupId>
             <artifactId>jsr305</artifactId>
@@ -69,7 +63,7 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <Automatic-Module-Name>org.axonframework.micrometer</Automatic-Module-Name>
+                            <Automatic-Module-Name>org.axonframework.metrics</Automatic-Module-Name>
                         </manifestEntries>
                     </archive>
                 </configuration>
@@ -86,7 +80,7 @@
                         <Bundle-Description>${project.description}</Bundle-Description>
                         <Bundle-Version>${project.version}</Bundle-Version>
                         <Export-Package>
-                            org.axonframework.micrometer.*
+                            org.axonframework.metrics.*
                         </Export-Package>
                         <Import-Package>
                             org.slf4j.*,

@@ -18,21 +18,21 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>org.axonframework</groupId>
-        <artifactId>axon</artifactId>
+        <groupId>org.axonframework.extensions</groupId>
+        <artifactId>axon-extensions</artifactId>
         <version>5.0.0-SNAPSHOT</version>
     </parent>
 
-    <groupId>org.axonframework.extensions</groupId>
-    <artifactId>axon-extensions</artifactId>
+    <groupId>org.axonframework.extensions.metrics</groupId>
+    <artifactId>axon-metrics-extension</artifactId>
     <packaging>pom</packaging>
 
-    <name>Axon Framework - Extensions Parent</name>
-    <description>Module providing root for Axon Framework Extensions.</description>
+    <name>Axon Framework - Metrics Extension Parent</name>
+    <description>Module providing parent for Axon Framework Metrics Extension.</description>
+
     <modules>
-        <module>spring</module>
-        <module>metrics</module>
-        <module>tracing</module>
+        <module>metrics-dropwizard</module>
+        <module>metrics-micrometer</module>
     </modules>
 
 </project>
