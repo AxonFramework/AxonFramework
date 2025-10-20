@@ -22,6 +22,7 @@ import io.axoniq.axonserver.connector.control.ControlChannel;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.junit.jupiter.api.*;
@@ -33,6 +34,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -40,7 +42,6 @@ import static org.mockito.Mockito.*;
  *
  * @author Steven van Beelen
  */
-@Disabled("TODO #3521")
 class EventProcessorControlServiceTest {
 
     private static final String CONTEXT = "some-context";
@@ -51,7 +52,7 @@ class EventProcessorControlServiceTest {
     private static final String LOAD_BALANCING_STRATEGY = "some-strategy";
 
     private AxonServerConnectionManager connectionManager;
-    //    private EventProcessingConfiguration processingConfiguration;
+    private Configuration processingConfiguration;
     private Map<String, AxonServerConfiguration.Eventhandling.ProcessorSettings> processorSettings;
 
     private EventProcessorControlService testSubject;
@@ -61,11 +62,11 @@ class EventProcessorControlServiceTest {
     @BeforeEach
     void setUp() {
         mockConnectionManager();
-//        processingConfiguration = mock(EventProcessingConfiguration.class);
+        processingConfiguration = mock(Configuration.class);
         processorSettings = new HashMap<>();
 
         testSubject = new EventProcessorControlService(
-                null, connectionManager, /*processingConfiguration*/  CONTEXT, processorSettings
+                processingConfiguration, connectionManager, CONTEXT, processorSettings
         );
     }
 
@@ -86,24 +87,21 @@ class EventProcessorControlServiceTest {
                 .thenReturn(loadBalancingResult);
         when(connection.adminChannel()).thenReturn(adminChannel);
     }
+
     @Test
-    void startDoesNothingForNullAxonServerConnectionManager() {
-        EventProcessorControlService unusableControlService =
-                new EventProcessorControlService(null, null, /*processingConfiguration*/ CONTEXT, processorSettings);
-
-        unusableControlService.start();
-
-        verifyNoInteractions(/*processingConfiguration*/null);
+    void cannotConstructForNullAxonServerConnectionManager() {
+        assertThrows(
+                NullPointerException.class,
+                () -> new EventProcessorControlService(processingConfiguration, null, CONTEXT, processorSettings)
+        );
     }
 
     @Test
-    void startDoesNothingForNullEventProcessingConfiguration() {
-        EventProcessorControlService unusableControlService =
-                new EventProcessorControlService(null, null, /*processingConfiguration*/ CONTEXT, processorSettings);
-
-        unusableControlService.start();
-
-        verifyNoInteractions(connectionManager);
+    void cannotConstructForNullEventProcessingConfiguration() {
+        assertThrows(
+                NullPointerException.class,
+                () -> new EventProcessorControlService(null, connectionManager, CONTEXT, processorSettings)
+        );
     }
 
     @Test
@@ -111,7 +109,7 @@ class EventProcessorControlServiceTest {
         Map<String, EventProcessor> eventProcessors = new HashMap<>();
         eventProcessors.put(THIS_PROCESSOR, mock(EventProcessor.class));
         eventProcessors.put(THAT_PROCESSOR, mock(EventProcessor.class));
-//        when(processingConfiguration.eventProcessors()).thenReturn(eventProcessors);
+        when(processingConfiguration.getComponents(EventProcessor.class)).thenReturn(eventProcessors);
         TokenStore tokenStore = mock(TokenStore.class);
         when(tokenStore.retrieveStorageIdentifier(any())).thenReturn(completedFuture(Optional.of(TOKEN_STORE_IDENTIFIER)));
 //        when(processingConfiguration.tokenStore(anyString())).thenReturn(tokenStore);

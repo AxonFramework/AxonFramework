@@ -70,7 +70,7 @@ public class EventProcessorControlService {
      * <p>
      * This service adds processor instruction handlers to the {@link ControlChannel} of the given {@code context}.
      * Doing so ensures operation like the {@link EventProcessor#start() start} and
-     * {@link EventProcessor#shutDown() shutdown} can be triggered through Axon Server. Furthermore, it sets the
+     * {@link EventProcessor#shutdown() shutdown} can be triggered through Axon Server. Furthermore, it sets the
      * configured load balancing strategies through the {@link AdminChannel} of the {@code context}.
      *
      * @param configuration     The {@link EventProcessor} configuration of this application, used to retrieve the
@@ -106,8 +106,7 @@ public class EventProcessorControlService {
      * this service provides control over have been started.
      */
     public void start() {
-        // TODO #3521 - Can Event Processors only live on the MessagingConfigurer, or in any Module?
-        Map<String, EventProcessor> eventProcessors = configuration.getComponent(Map.class);
+        Map<String, EventProcessor> eventProcessors = configuration.getComponents(EventProcessor.class);
 
         AxonServerConnection connection = axonServerConnectionManager.getConnection(context);
         registerInstructionHandlers(connection, eventProcessors);
