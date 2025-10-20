@@ -35,6 +35,7 @@ import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingCom
 import org.axonframework.eventhandling.processors.streaming.segmenting.SequenceCachingEventHandlingComponent;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.lifecycle.Phase;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 
 import java.util.List;
 import java.util.Objects;
@@ -93,6 +94,7 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
     public PooledStreamingEventProcessorModule build() {
         registerCustomizedConfiguration();
         registerTokenStore();
+        registerUnitOfWorkFactory();
         registerEventHandlingComponents();
         registerEventProcessor();
         return this;
@@ -129,6 +131,15 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
                         .ofTypeAndName(TokenStore.class, "TokenStore[" + processorName + "]")
                         .withBuilder(cfg -> cfg.getComponent(PooledStreamingEventProcessorConfiguration.class)
                                                .tokenStore())
+        ));
+    }
+
+    private void registerUnitOfWorkFactory() {
+        componentRegistry(cr -> cr.registerComponent(
+                ComponentDefinition
+                        .ofTypeAndName(UnitOfWorkFactory.class, "UnitOfWorkFactory[" + processorName + "]")
+                        .withBuilder(cfg -> cfg.getComponent(PooledStreamingEventProcessorConfiguration.class)
+                                               .unitOfWorkFactory())
         ));
     }
 

@@ -325,6 +325,31 @@ class PooledStreamingEventProcessorModuleTest {
         }
 
         @Test
+        void shouldRegisterUnitOfWorkFactoryAsComponent() {
+            // given
+            var processorName = "testProcessor";
+            var unitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
+            var module = EventProcessorModule
+                    .pooledStreaming(processorName)
+                    .eventHandlingComponents(singleTestEventHandlingComponent())
+                    .customized((cfg, c) -> c.eventSource(new AsyncInMemoryStreamableEventSource())
+                                             .tokenStore(new InMemoryTokenStore())
+                                             .unitOfWorkFactory(unitOfWorkFactory));
+
+            var configurer = MessagingConfigurer.create();
+            configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps.processor(module)));
+            var configuration = configurer.build();
+
+            // when
+            var registeredUnitOfWorkFactory = configuration.getModuleConfiguration(processorName)
+                                                           .flatMap(m -> m.getOptionalComponent(UnitOfWorkFactory.class, "UnitOfWorkFactory[" + processorName + "]"));
+
+            // then
+            assertThat(registeredUnitOfWorkFactory).isPresent();
+            assertThat(registeredUnitOfWorkFactory.get()).isSameAs(unitOfWorkFactory);
+        }
+
+        @Test
         void shouldRegisterEventHandlingComponentsAsComponents() {
             // given
             var processorName = "testProcessor";
