@@ -21,7 +21,7 @@ import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.CreationPolicy;
-import org.axonframework.spring.stereotype.EventSourced;
+import org.axonframework.extension.spring.stereotype.EventSourced;
 import org.springframework.security.access.annotation.Secured;
 
 import java.util.UUID;

@@ -60,14 +60,14 @@
             <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>org.axonframework</groupId>
-            <artifactId>axon-metrics</artifactId>
+            <groupId>org.axonframework.extensions.metrics</groupId>
+            <artifactId>axon-metrics-dropwizard</artifactId>
             <version>${project.version}</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>org.axonframework</groupId>
-            <artifactId>axon-micrometer</artifactId>
+            <groupId>org.axonframework.extensions.metrics</groupId>
+            <artifactId>axon-metrics-micrometer</artifactId>
             <version>${project.version}</version>
             <scope>runtime</scope>
         </dependency>
@@ -78,19 +78,19 @@
             <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>org.axonframework</groupId>
+            <groupId>org.axonframework.extensions.spring</groupId>
             <artifactId>axon-spring</artifactId>
             <version>${project.version}</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>org.axonframework</groupId>
+            <groupId>org.axonframework.extensions.spring</groupId>
             <artifactId>axon-spring-boot-autoconfigure</artifactId>
             <version>${project.version}</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>org.axonframework</groupId>
+            <groupId>org.axonframework.extensions.tracing</groupId>
             <artifactId>axon-tracing-opentelemetry</artifactId>
             <version>${project.version}</version>
             <scope>runtime</scope>

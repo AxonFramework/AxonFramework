@@ -17,7 +17,7 @@
 package org.axonframework.springboot;
 
 import com.codahale.metrics.MetricRegistry;
-import org.axonframework.metrics.GlobalMetricRegistry;
+import org.axonframework.extension.metrics.dropwizard.GlobalMetricRegistry;
 import org.axonframework.monitoring.MessageMonitorFactory;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.springboot.autoconfig.MicrometerMetricsAutoConfiguration;

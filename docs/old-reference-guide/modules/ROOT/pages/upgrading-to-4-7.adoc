@@ -54,9 +54,9 @@ Adjust packages in `import` statements and FQCNs according to the new locations 
 |`org.axonframework.messaging.interceptors.JSR303ViolationException`                  |`org.axonframework.messaging.interceptors.legacyvalidation.JSR303ViolationException`
 |`org.axonframework.modelling.command.GenericJpaRepository`                           |`org.axonframework.modelling.command.legacyjpa.GenericJpaRepository`
 |`org.axonframework.modelling.saga.repository.jpa.JpaSagaStore`                       |`org.axonframework.modelling.saga.repository.legacyjpa.JpaSagaStore`
-|`org.axonframework.springboot.autoconfig.JpaAutoConfiguration`                       |`org.axonframework.springboot.autoconfig.legacyjpa.JpaJavaxAutoConfiguration`
-|`org.axonframework.springboot.autoconfig.JpaEventStoreAutoConfiguration`             |`org.axonframework.springboot.autoconfig.legacyjpa.JpaJavaxEventStoreAutoConfiguration`
-|`org.axonframework.springboot.util.jpa.ContainerManagedEntityManagerProvider`        |`org.axonframework.springboot.util.legacyjpa.ContainerManagedEntityManagerProvider`
+|`org.axonframework.extension.springboot.autoconfig.JpaAutoConfiguration`                       |`org.axonframework.springboot.autoconfig.legacyjpa.JpaJavaxAutoConfiguration`
+|`org.axonframework.extension.springboot.autoconfig.JpaEventStoreAutoConfiguration`             |`org.axonframework.springboot.autoconfig.legacyjpa.JpaJavaxEventStoreAutoConfiguration`
+|`org.axonframework.extension.springboot.util.jpa.ContainerManagedEntityManagerProvider`        |`org.axonframework.springboot.util.legacyjpa.ContainerManagedEntityManagerProvider`
 |===
 
 === Step 2
@@ -159,7 +159,7 @@ However, you can combine recipes into a single command to, for example, upgrade 
 [source,shell]
 ----
 mvn -U org.openrewrite.maven:rewrite-maven-plugin:4.40.0:run \
- -Drewrite.recipeArtifactCoordinates=org.openrewrite.recipe:rewrite-spring:4.33.0,org.axonframework:axon-migration:LATEST \  
+ -Drewrite.recipeArtifactCoordinates=org.openrewrite.recipe:rewrite-spring:4.33.0,org.axonframework:axon-migration:LATEST \
  -DactiveRecipes=org.openrewrite.java.spring.boot3.UpgradeSpringBoot_3_0,org.axonframework.migration.UpgradeAxonFramework_4_7_Jakarta
 ----
 ====

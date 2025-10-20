@@ -17,10 +17,10 @@
 package org.axonframework.springboot;
 
 import com.codahale.metrics.MetricRegistry;
-import org.axonframework.metrics.GlobalMetricRegistry;
-import org.axonframework.metrics.MetricsConfigurerModule;
-import org.axonframework.springboot.autoconfig.AxonServerActuatorAutoConfiguration;
-import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
+import org.axonframework.extension.metrics.dropwizard.GlobalMetricRegistry;
+import org.axonframework.extension.metrics.dropwizard.MetricsConfigurerModule;
+import org.axonframework.extension.springboot.autoconfig.AxonServerActuatorAutoConfiguration;
+import org.axonframework.extension.springboot.autoconfig.AxonServerAutoConfiguration;
 import org.axonframework.springboot.autoconfig.MicrometerMetricsAutoConfiguration;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
