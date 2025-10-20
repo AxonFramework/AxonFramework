@@ -43,7 +43,7 @@ import java.util.concurrent.TimeoutException;
 import static org.axonframework.messaging.MessagingTestUtils.event;
 import static org.junit.jupiter.api.Assertions.*;
 
-class EventProcessorWithInterceptingEventHandlingComponentTest {
+class EventProcessorMonitoringTest {
 
     @Test
     void expectCallbackForAllMessages() throws Exception {

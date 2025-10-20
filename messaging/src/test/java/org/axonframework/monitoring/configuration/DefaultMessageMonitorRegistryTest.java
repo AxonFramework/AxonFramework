@@ -47,7 +47,7 @@ class DefaultMessageMonitorRegistryTest {
         final var result = testSubject.commandMonitor(config);
 
         assertThat(result).isInstanceOf(MultiMessageMonitor.class);
-        assertThat(((MultiMessageMonitor) result).getMessageMonitors()).containsExactly(monitor);
+        assertThat(((MultiMessageMonitor) result).messageMonitors()).containsExactly(monitor);
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -59,7 +59,7 @@ class DefaultMessageMonitorRegistryTest {
         final var result = testSubject.eventMonitor(config);
 
         assertThat(result).isInstanceOf(MultiMessageMonitor.class);
-        assertThat(((MultiMessageMonitor) result).getMessageMonitors()).containsExactly(monitor);
+        assertThat(((MultiMessageMonitor) result).messageMonitors()).containsExactly(monitor);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -71,7 +71,7 @@ class DefaultMessageMonitorRegistryTest {
         final var result = testSubject.queryMonitor(config);
 
         assertThat(result).isInstanceOf(MultiMessageMonitor.class);
-        assertThat(((MultiMessageMonitor) result).getMessageMonitors()).containsExactly(monitor);
+        assertThat(((MultiMessageMonitor) result).messageMonitors()).containsExactly(monitor);
     }
 
     @Test
@@ -91,15 +91,15 @@ class DefaultMessageMonitorRegistryTest {
 
         MessageMonitor<? super CommandMessage> commandMonitor = testSubject.commandMonitor(config);
         assertThat(commandMonitor).isInstanceOf(MultiMessageMonitor.class);
-        assertThat(((MultiMessageMonitor) commandMonitor).getMessageMonitors()).hasSize(1);
+        assertThat(((MultiMessageMonitor) commandMonitor).messageMonitors()).hasSize(1);
 
         MessageMonitor<? super EventMessage> eventMonitor = testSubject.eventMonitor(config);
         assertThat(eventMonitor).isInstanceOf(MultiMessageMonitor.class);
-        assertThat(((MultiMessageMonitor) eventMonitor).getMessageMonitors()).hasSize(1);
+        assertThat(((MultiMessageMonitor) eventMonitor).messageMonitors()).hasSize(1);
 
         MessageMonitor<? super QueryMessage> queryMonitor = testSubject.queryMonitor(config);
         assertThat(queryMonitor).isInstanceOf(MultiMessageMonitor.class);
-        assertThat(((MultiMessageMonitor) queryMonitor).getMessageMonitors()).hasSize(1);
+        assertThat(((MultiMessageMonitor) queryMonitor).messageMonitors()).hasSize(1);
     }
 
     @Test

@@ -91,7 +91,7 @@ public class MultiMessageMonitor<T extends Message> implements MessageMonitor<T>
      *
      * @return unmodifiable list of contained message monitors
      */
-    public List<MessageMonitor<? super T>> getMessageMonitors() {
+    public List<MessageMonitor<? super T>> messageMonitors() {
         return messageMonitors;
     }
 }

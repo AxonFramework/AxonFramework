@@ -306,8 +306,6 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
         );
     }
 
-
-    // register all at once if present
     private static DispatchInterceptorRegistry registerMonitoringDispatchInterceptors(
             @Nonnull DispatchInterceptorRegistry dispatchInterceptorRegistry, @Nonnull Configuration config
     ) {
@@ -322,7 +320,6 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
         return eventDispatcher.apply(dispatchInterceptorRegistry);
     }
 
-    // register all at once if present
     private static HandlerInterceptorRegistry registerMonitoringHandlerInterceptors(
             @Nonnull HandlerInterceptorRegistry handlerInterceptorRegistry,
             @Nonnull Configuration config

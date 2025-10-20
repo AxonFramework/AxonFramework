@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
  */
 public class RecordingMessageMonitor implements MessageMonitor<Message> {
 
-    final MessageMonitorReport report;
+    private final MessageMonitorReport report;
     private final Logger logger;
     private final String context;
     private final boolean isLoggingEnabled;

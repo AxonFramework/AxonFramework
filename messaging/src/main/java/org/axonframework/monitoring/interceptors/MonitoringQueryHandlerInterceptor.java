@@ -24,6 +24,8 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.queryhandling.QueryMessage;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
  * A {@link MessageHandlerInterceptor} for {@link QueryMessage} that intercepts the
  * {@link MessageHandlerInterceptorChain} to register the {@link MessageMonitor.MonitorCallback} functions on the
@@ -36,8 +38,9 @@ import org.axonframework.queryhandling.QueryMessage;
  * @author Jan Galinski
  * @since 5.0.0
  */
-public class MonitoringQueryHandlerInterceptor extends AbstractMonitoringInterceptor<QueryMessage>
-        implements MessageHandlerInterceptor<QueryMessage> {
+public class MonitoringQueryHandlerInterceptor implements MessageHandlerInterceptor<QueryMessage> {
+
+    private final MessageMonitor<? super QueryMessage> messageMonitor;
 
     /**
      * Constructs a MonitoringQueryHandlerInterceptor using the given {@link MessageMonitor}.
@@ -45,7 +48,7 @@ public class MonitoringQueryHandlerInterceptor extends AbstractMonitoringInterce
      * @param messageMonitor used for reporting
      */
     public MonitoringQueryHandlerInterceptor(final @Nonnull MessageMonitor<? super QueryMessage> messageMonitor) {
-        super(messageMonitor);
+        this.messageMonitor = messageMonitor;
     }
 
     @Nonnull
@@ -53,7 +56,16 @@ public class MonitoringQueryHandlerInterceptor extends AbstractMonitoringInterce
     public MessageStream<?> interceptOnHandle(@Nonnull QueryMessage message,
                                               @Nonnull ProcessingContext context,
                                               @Nonnull MessageHandlerInterceptorChain<QueryMessage> interceptorChain) {
-        registerMonitorCallback(context, message);
+        if (context.isStarted()) {
+            final var monitorCallback = messageMonitor.onMessageIngested(message);
+
+            context.onError(
+                    (cts, phase, error) -> monitorCallback.reportFailure(error)
+            );
+            context.onAfterCommit(
+                    c -> CompletableFuture.runAsync(monitorCallback::reportSuccess)
+            );
+        }
         return interceptorChain.proceed(message, context);
     }
 }
