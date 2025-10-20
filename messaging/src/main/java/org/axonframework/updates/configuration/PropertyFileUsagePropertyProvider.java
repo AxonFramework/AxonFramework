@@ -22,6 +22,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.Properties;
 
@@ -75,7 +77,9 @@ public class PropertyFileUsagePropertyProvider implements UsagePropertyProvider 
             if (!installationIdFile.exists()) {
                 createDefaultFile();
             }
-            properties.load(Files.newInputStream(installationIdFile.toPath()));
+            try (InputStream in = Files.newInputStream(installationIdFile.toPath())) {
+                properties.load(in);
+            }
             this.telemetryEndpoint = properties.getProperty("telemetry_url");
             this.optOut = Boolean.valueOf(properties.getProperty("disabled"));
         } catch (Exception e) {
@@ -105,7 +109,9 @@ public class PropertyFileUsagePropertyProvider implements UsagePropertyProvider 
         if (!parentDir.exists() && !parentDir.mkdirs()) {
             throw new IOException("Failed to create parent directory: " + parentDir.getAbsolutePath());
         }
-        properties.store(Files.newOutputStream(file.toPath()), "AxonIQ Anonymous Usage Reporting");
+        try (OutputStream out = Files.newOutputStream(file.toPath())) {
+            properties.store(out, "AxonIQ Anonymous Usage Reporting");
+        }
     }
 
     private File getFile() {
