@@ -69,7 +69,7 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <Automatic-Module-Name>org.axonframework.micrometer</Automatic-Module-Name>
+                            <Automatic-Module-Name>org.axonframework.extension.metrics.micrometer</Automatic-Module-Name>
                         </manifestEntries>
                     </archive>
                 </configuration>
@@ -86,7 +86,7 @@
                         <Bundle-Description>${project.description}</Bundle-Description>
                         <Bundle-Version>${project.version}</Bundle-Version>
                         <Export-Package>
-                            org.axonframework.micrometer.*
+                            org.axonframework.extension.metrics.micrometer.*
                         </Export-Package>
                         <Import-Package>
                             org.slf4j.*,
@@ -100,32 +100,6 @@
                         <goals>
                             <goal>manifest</goal>
                         </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-enforcer-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>enforce-banned-dependencies</id>
-                        <goals>
-                            <goal>enforce</goal>
-                        </goals>
-                        <configuration>
-                            <rules>
-                                <bannedDependencies>
-                                    <excludes>
-                                        <exclude>org.springframework</exclude>
-                                    </excludes>
-                                    <includes>
-                                        <!-- allow any spring dependency with test scope -->
-                                        <include>org.springframework:*:*:*:test</include>
-                                    </includes>
-                                </bannedDependencies>
-                            </rules>
-                            <fail>true</fail>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>

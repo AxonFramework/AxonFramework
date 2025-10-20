@@ -258,7 +258,7 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <Automatic-Module-Name>org.axonframework.spring</Automatic-Module-Name>
+                            <Automatic-Module-Name>org.axonframework.extension.spring</Automatic-Module-Name>
                         </manifestEntries>
                     </archive>
                 </configuration>
@@ -282,7 +282,7 @@
                         <Bundle-Description>${project.description}</Bundle-Description>
                         <Bundle-Version>${project.version}</Bundle-Version>
                         <Export-Package>
-                            org.axonframework.spring.*
+                            org.axonframework.extension.spring.*
                         </Export-Package>
                         <Import-Package>
                             org.slf4j.*,

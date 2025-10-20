@@ -16,7 +16,7 @@
 
 package org.axonframework.spring.eventsourcing.context;
 
-import org.axonframework.spring.stereotype.EventSourced;
+import org.axonframework.extension.spring.stereotype.EventSourced;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;

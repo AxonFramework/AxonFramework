@@ -24,6 +24,14 @@
         <version>5.0.0-SNAPSHOT</version>
     </parent>
 
+    <artifactId>axon-spring-boot-autoconfigure</artifactId>
+    <name>Axon Framework - Spring Boot Support</name>
+
+    <description>
+        Module providing support for autoconfiguration of Axon Framework through Spring Boot.
+    </description>
+
+
     <dependencies>
 
         <!-- Axon dependencies -->
@@ -151,6 +159,11 @@
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-docker-compose</artifactId>
+            <version>${spring.boot.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-testcontainers</artifactId>
             <version>${spring.boot.version}</version>
         </dependency>
@@ -172,6 +185,13 @@
             <artifactId>avro</artifactId>
             <optional>true</optional>
         </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.19.0</version>
+            <optional>true</optional>
+        </dependency>
+
         <dependency>
             <groupId>jakarta.persistence</groupId>
             <artifactId>jakarta.persistence-api</artifactId>
@@ -225,12 +245,6 @@
             <scope>test</scope>
         </dependency>
 
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-docker-compose</artifactId>
-            <version>${spring.boot.version}</version>
-        </dependency>
-
         <!-- Test-->
         <dependency>
             <groupId>org.awaitility</groupId>
@@ -244,12 +258,6 @@
         </dependency>
     </dependencies>
 
-    <artifactId>axon-spring-boot-autoconfigure</artifactId>
-    <name>Axon Framework - Spring Boot Support</name>
-
-    <description>
-        Module providing support for autoconfiguration of Axon Framework through Spring Boot.
-    </description>
 
     <build>
         <plugins>

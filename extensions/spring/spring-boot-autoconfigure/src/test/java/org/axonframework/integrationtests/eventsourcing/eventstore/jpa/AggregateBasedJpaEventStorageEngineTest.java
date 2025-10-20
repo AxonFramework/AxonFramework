@@ -40,7 +40,7 @@ import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.eventstreaming.Tag;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
+import org.axonframework.extension.spring.messaging.unitofwork.SpringTransactionManager;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -65,7 +65,7 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <Automatic-Module-Name>org.axonframework.tracing.opentelemetry</Automatic-Module-Name>
+                            <Automatic-Module-Name>org.axonframework.extension.tracing.opentelemetry</Automatic-Module-Name>
                         </manifestEntries>
                     </archive>
                 </configuration>
@@ -82,7 +82,7 @@
                         <Bundle-Description>${project.description}</Bundle-Description>
                         <Bundle-Version>${project.version}</Bundle-Version>
                         <Export-Package>
-                            org.axonframework.tracing.opentelemetry.*
+                            org.axonframework.extension.tracing.opentelemetry.*
                         </Export-Package>
                         <Import-Package>
                             *;resolution:=optional
@@ -95,28 +95,6 @@
                         <goals>
                             <goal>manifest</goal>
                         </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-enforcer-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>enforce-banned-dependencies</id>
-                        <goals>
-                            <goal>enforce</goal>
-                        </goals>
-                        <configuration>
-                            <rules>
-                                <bannedDependencies>
-                                    <excludes>
-                                        <exclude>org.springframework</exclude>
-                                    </excludes>
-                                </bannedDependencies>
-                            </rules>
-                            <fail>true</fail>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
