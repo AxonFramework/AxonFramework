@@ -26,12 +26,10 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.queryhandling.GenericQueryMessage;
-import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
 import org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.QueryBus;
@@ -285,6 +283,86 @@ class InterceptingQueryBusTest {
             QueryHandler wrappedHandler = handlerCaptor.getValue();
             assertNotNull(wrappedHandler);
             assertNotEquals(mockHandler, wrappedHandler, "Expected handler to be wrapped");
+        }
+    }
+
+    @Nested
+    @DisplayName("Subscription query tests")
+    class SubscriptionQueryTests {
+
+        @Test
+        void subscriptionQueryDelegatesToUnderlyingBus() {
+            // given
+            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
+                    TEST_QUERY_TYPE, "test", TEST_RESPONSE_TYPE
+            );
+            ProcessingContext context = StubProcessingContext.forMessage(testQuery);
+
+            MessageStream<QueryResponseMessage> expectedResponse = MessageStream.just(queryResponse("initial"));
+            when(mockQueryBus.subscriptionQuery(any(), any(), anyInt())).thenReturn(expectedResponse);
+
+            // when
+            MessageStream<QueryResponseMessage> result = testSubject.subscriptionQuery(testQuery, context, 10);
+
+            // then
+            verify(mockQueryBus).subscriptionQuery(eq(testQuery), eq(context), eq(10));
+            assertSame(expectedResponse, result, "Expected result to be from delegate bus");
+        }
+
+        @Test
+        void subscriptionQueryHandlerInterceptorsAppliedViaSubscribe() {
+            // given
+            QueryHandlerName handlerName = new QueryHandlerName(
+                    new QualifiedName("query"),
+                    new QualifiedName("response")
+            );
+            QueryHandler mockHandler = (query, context) -> MessageStream.just(queryResponse("result"));
+
+            testSubject.subscribe(handlerName, mockHandler);
+
+            // Capture the wrapped handler
+            ArgumentCaptor<QueryHandler> handlerCaptor = ArgumentCaptor.forClass(QueryHandler.class);
+            verify(mockQueryBus).subscribe(eq(handlerName), handlerCaptor.capture());
+
+            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test", TEST_RESPONSE_TYPE);
+            ProcessingContext context = StubProcessingContext.forMessage(testQuery);
+
+            // when
+            MessageStream<QueryResponseMessage> result = handlerCaptor.getValue().handle(testQuery, context);
+
+            // then
+            QueryResponseMessage response = result.first().asCompletableFuture().join().message();
+            assertTrue(response.metadata().containsKey("handler1"),
+                      "Expected handler1 interceptor to be applied");
+            assertTrue(response.metadata().containsKey("handler2"),
+                      "Expected handler2 interceptor to be applied");
+        }
+
+        @Test
+        void subscribeToUpdatesDelegatesToUnderlyingBus() {
+            // given
+            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
+                    TEST_QUERY_TYPE, "test", TEST_RESPONSE_TYPE
+            );
+            int updateBufferSize = 10;
+
+            GenericSubscriptionQueryUpdateMessage update1 =
+                    new GenericSubscriptionQueryUpdateMessage(TEST_RESPONSE_TYPE, "update1");
+            GenericSubscriptionQueryUpdateMessage update2 =
+                    new GenericSubscriptionQueryUpdateMessage(TEST_RESPONSE_TYPE, "update2");
+
+            MessageStream<SubscriptionQueryUpdateMessage> expectedUpdates =
+                    MessageStream.fromItems(update1, update2);
+
+            when(mockQueryBus.subscribeToUpdates(any(), anyInt())).thenReturn(expectedUpdates);
+
+            // when
+            MessageStream<SubscriptionQueryUpdateMessage> result =
+                    testSubject.subscribeToUpdates(testQuery, updateBufferSize);
+
+            // then
+            verify(mockQueryBus).subscribeToUpdates(eq(testQuery), eq(updateBufferSize));
+            assertSame(expectedUpdates, result, "Expected result to be from delegate bus");
         }
     }
 
