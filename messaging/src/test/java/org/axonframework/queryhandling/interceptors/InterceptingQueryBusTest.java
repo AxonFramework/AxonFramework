@@ -32,18 +32,24 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
+import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
+import org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.queryhandling.QueryHandlerName;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
+import org.axonframework.queryhandling.SubscriptionQueryMessage;
+import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 import org.mockito.ArgumentCaptor;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.axonframework.messaging.MessagingTestUtils.queryResponse;
@@ -78,7 +84,8 @@ class InterceptingQueryBusTest {
 
         testSubject = new InterceptingQueryBus(mockQueryBus,
                                                List.of(handlerInterceptor1, handlerInterceptor2),
-                                               List.of(dispatchInterceptor1, dispatchInterceptor2));
+                                               List.of(dispatchInterceptor1, dispatchInterceptor2),
+                                               List.of());
     }
 
     @Nested
@@ -122,7 +129,7 @@ class InterceptingQueryBusTest {
                 return chain.proceed(message, context);
             };
             InterceptingQueryBus countingTestSubject =
-                    new InterceptingQueryBus(mockQueryBus, List.of(), List.of(countingInterceptor));
+                    new InterceptingQueryBus(mockQueryBus, List.of(), List.of(countingInterceptor), List.of());
 
             when(mockQueryBus.query(any(), any()))
                     .thenReturn(MessageStream.just(queryResponse("ok")));
@@ -212,7 +219,7 @@ class InterceptingQueryBusTest {
                 return chain.proceed(message, context);
             };
             InterceptingQueryBus countingTestSubject =
-                    new InterceptingQueryBus(mockQueryBus, List.of(countingInterceptor), List.of());
+                    new InterceptingQueryBus(mockQueryBus, List.of(countingInterceptor), List.of(), List.of());
 
             QueryHandlerName testHandlerName = new QueryHandlerName(new QualifiedName("query"), new QualifiedName("response"));
             countingTestSubject.subscribe(testHandlerName, (query, context) -> MessageStream.just(queryResponse("ok")));
@@ -278,6 +285,121 @@ class InterceptingQueryBusTest {
             QueryHandler wrappedHandler = handlerCaptor.getValue();
             assertNotNull(wrappedHandler);
             assertNotEquals(mockHandler, wrappedHandler, "Expected handler to be wrapped");
+        }
+    }
+
+    @Nested
+    @DisplayName("Subscription update interception tests")
+    class SubscriptionUpdateInterceptionTests {
+
+        @Test
+        void updateDispatchInterceptorsInvokedOnEmitUpdate() {
+            // given
+            MessageDispatchInterceptor<SubscriptionQueryUpdateMessage> updateInterceptor1 =
+                    spy(new AddMetadataCountInterceptor<>("update1", "value"));
+            MessageDispatchInterceptor<SubscriptionQueryUpdateMessage> updateInterceptor2 =
+                    spy(new AddMetadataCountInterceptor<>("update2", "value"));
+
+            InterceptingQueryBus testSubjectWithUpdateInterceptors = new InterceptingQueryBus(
+                    mockQueryBus,
+                    List.of(),
+                    List.of(),
+                    List.of(updateInterceptor1, updateInterceptor2)
+            );
+
+            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
+                    TEST_QUERY_TYPE, "test", TEST_RESPONSE_TYPE
+            );
+            GenericSubscriptionQueryUpdateMessage updateMessage =
+                    new GenericSubscriptionQueryUpdateMessage(TEST_RESPONSE_TYPE, "update");
+
+            when(mockQueryBus.emitUpdate(any(), any(), any()))
+                    .thenReturn(CompletableFuture.completedFuture(null));
+
+            // when
+            testSubjectWithUpdateInterceptors.emitUpdate(
+                    query -> query.equals(testQuery),
+                    () -> updateMessage,
+                    null
+            ).join();
+
+            // then
+            verify(updateInterceptor1).interceptOnDispatch(any(), any(), any());
+            verify(updateInterceptor2).interceptOnDispatch(any(), any(), any());
+
+            ArgumentCaptor<Supplier<SubscriptionQueryUpdateMessage>> supplierCaptor =
+                    ArgumentCaptor.forClass(Supplier.class);
+            verify(mockQueryBus).emitUpdate(any(), supplierCaptor.capture(), any());
+
+            SubscriptionQueryUpdateMessage actualUpdate = supplierCaptor.getValue().get();
+            assertTrue(actualUpdate.metadata().containsKey("update1"),
+                      "Expected update1 interceptor to add metadata");
+            assertTrue(actualUpdate.metadata().containsKey("update2"),
+                      "Expected update2 interceptor to add metadata");
+        }
+
+        @Test
+        void emptyUpdateInterceptorListBypassesInterception() {
+            // given
+            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
+                    TEST_QUERY_TYPE, "test", TEST_RESPONSE_TYPE
+            );
+            GenericSubscriptionQueryUpdateMessage updateMessage =
+                    new GenericSubscriptionQueryUpdateMessage(TEST_RESPONSE_TYPE, "update");
+
+            when(mockQueryBus.emitUpdate(any(), any(), any()))
+                    .thenReturn(CompletableFuture.completedFuture(null));
+
+            // when
+            testSubject.emitUpdate(
+                    query -> query.equals(testQuery),
+                    () -> updateMessage,
+                    null
+            ).join();
+
+            // then
+            ArgumentCaptor<Supplier<SubscriptionQueryUpdateMessage>> supplierCaptor =
+                    ArgumentCaptor.forClass(Supplier.class);
+            verify(mockQueryBus).emitUpdate(any(), supplierCaptor.capture(), any());
+
+            SubscriptionQueryUpdateMessage actualUpdate = supplierCaptor.getValue().get();
+            assertSame(updateMessage, actualUpdate,
+                      "Expected update message to be passed through without interception");
+        }
+
+        @Test
+        void exceptionsInUpdateInterceptorReturnFailedFuture() {
+            // given
+            MessageDispatchInterceptor<SubscriptionQueryUpdateMessage> failingInterceptor =
+                    (message, context, chain) -> {
+                        throw new MockException("Simulating failure in update interceptor");
+                    };
+
+            InterceptingQueryBus testSubjectWithFailingInterceptor = new InterceptingQueryBus(
+                    mockQueryBus,
+                    List.of(),
+                    List.of(),
+                    List.of(failingInterceptor)
+            );
+
+            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
+                    TEST_QUERY_TYPE, "test", TEST_RESPONSE_TYPE
+            );
+            GenericSubscriptionQueryUpdateMessage updateMessage =
+                    new GenericSubscriptionQueryUpdateMessage(TEST_RESPONSE_TYPE, "update");
+
+            // when
+            CompletableFuture<Void> result = testSubjectWithFailingInterceptor.emitUpdate(
+                    query -> query.equals(testQuery),
+                    () -> updateMessage,
+                    null
+            );
+
+            // then
+            assertTrue(result.isCompletedExceptionally(),
+                      "Expected result to be completed exceptionally");
+            assertInstanceOf(MockException.class, result.exceptionNow());
+            verify(mockQueryBus, never()).emitUpdate(any(), any(), any());
         }
     }
 

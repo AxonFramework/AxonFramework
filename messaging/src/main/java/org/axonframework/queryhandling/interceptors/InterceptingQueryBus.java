@@ -76,23 +76,29 @@ public class InterceptingQueryBus implements QueryBus {
     private final QueryBus delegate;
     private final List<MessageHandlerInterceptor<? super QueryMessage>> handlerInterceptors;
     private final List<MessageDispatchInterceptor<? super QueryMessage>> dispatchInterceptors;
+    private final List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> updateDispatchInterceptors;
     private final InterceptingDispatcher interceptingDispatcher;
+    private final InterceptingUpdateEmitter interceptingUpdateEmitter;
 
     /**
      * Constructs a {@code InterceptingQueryBus}, delegating dispatching and handling logic to the given
      * {@code delegate}. The given {@code handlerInterceptors} are wrapped around the
      * {@link QueryHandler query handlers} when subscribing. The given {@code dispatchInterceptors} are invoked
-     * before dispatching is provided to the given {@code delegate}.
+     * before dispatching is provided to the given {@code delegate}. The given {@code updateDispatchInterceptors}
+     * are invoked before emitting subscription query updates.
      *
-     * @param delegate             The delegate {@code QueryBus} that will handle all dispatching and handling logic.
-     * @param handlerInterceptors  The interceptors to invoke before handling a query and if present on the query
-     *                             result.
-     * @param dispatchInterceptors The interceptors to invoke before dispatching a query and on the query result.
+     * @param delegate                   The delegate {@code QueryBus} that will handle all dispatching and handling
+     *                                   logic.
+     * @param handlerInterceptors        The interceptors to invoke before handling a query and if present on the query
+     *                                   result.
+     * @param dispatchInterceptors       The interceptors to invoke before dispatching a query and on the query result.
+     * @param updateDispatchInterceptors The interceptors to invoke before emitting subscription query updates.
      */
     public InterceptingQueryBus(
             @Nonnull QueryBus delegate,
             @Nonnull List<MessageHandlerInterceptor<? super QueryMessage>> handlerInterceptors,
-            @Nonnull List<MessageDispatchInterceptor<? super QueryMessage>> dispatchInterceptors
+            @Nonnull List<MessageDispatchInterceptor<? super QueryMessage>> dispatchInterceptors,
+            @Nonnull List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> updateDispatchInterceptors
     ) {
         this.delegate = requireNonNull(delegate, "The query bus delegate must not be null.");
         this.handlerInterceptors = new ArrayList<>(
@@ -101,7 +107,11 @@ public class InterceptingQueryBus implements QueryBus {
         this.dispatchInterceptors = new ArrayList<>(
                 requireNonNull(dispatchInterceptors, "The dispatch interceptors must not be null.")
         );
+        this.updateDispatchInterceptors = new ArrayList<>(
+                requireNonNull(updateDispatchInterceptors, "The update dispatch interceptors must not be null.")
+        );
         this.interceptingDispatcher = new InterceptingDispatcher(dispatchInterceptors, this::dispatchQuery);
+        this.interceptingUpdateEmitter = new InterceptingUpdateEmitter(updateDispatchInterceptors);
     }
 
     @Override
@@ -142,10 +152,17 @@ public class InterceptingQueryBus implements QueryBus {
     public CompletableFuture<Void> emitUpdate(@Nonnull Predicate<SubscriptionQueryMessage> filter,
                                               @Nonnull Supplier<SubscriptionQueryUpdateMessage> updateSupplier,
                                               @Nullable ProcessingContext context) {
-        // Delegate directly to the underlying bus
-        // Note: Subscription query updates are responses, not queries, so they're not intercepted
-        // by query dispatch interceptors
-        return delegate.emitUpdate(filter, updateSupplier, context);
+        if (updateDispatchInterceptors.isEmpty()) {
+            return delegate.emitUpdate(filter, updateSupplier, context);
+        }
+
+        try {
+            SubscriptionQueryUpdateMessage update = updateSupplier.get();
+            SubscriptionQueryUpdateMessage intercepted = interceptingUpdateEmitter.intercept(update, context);
+            return delegate.emitUpdate(filter, () -> intercepted, context);
+        } catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
+        }
     }
 
     @Nonnull
@@ -179,6 +196,7 @@ public class InterceptingQueryBus implements QueryBus {
         descriptor.describeWrapperOf(delegate);
         descriptor.describeProperty("handlerInterceptors", handlerInterceptors);
         descriptor.describeProperty("dispatchInterceptors", dispatchInterceptors);
+        descriptor.describeProperty("updateDispatchInterceptors", updateDispatchInterceptors);
     }
 
     private static class InterceptingHandler implements QueryHandler {
@@ -216,6 +234,32 @@ public class InterceptingQueryBus implements QueryBus {
         ) {
             return interceptorChain.proceed(query, context)
                                   .cast();
+        }
+    }
+
+    private static class InterceptingUpdateEmitter {
+
+        private final DefaultMessageDispatchInterceptorChain<? super SubscriptionQueryUpdateMessage> interceptorChain;
+
+        private InterceptingUpdateEmitter(
+                List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> interceptors
+        ) {
+            BiFunction<? super SubscriptionQueryUpdateMessage, ProcessingContext, MessageStream<?>> terminal =
+                    (message, context) -> MessageStream.just(message).cast();
+            this.interceptorChain = new DefaultMessageDispatchInterceptorChain<>(interceptors, terminal);
+        }
+
+        private SubscriptionQueryUpdateMessage intercept(
+                @Nonnull SubscriptionQueryUpdateMessage update,
+                @Nullable ProcessingContext context
+        ) throws Exception {
+            @SuppressWarnings("unchecked")
+            MessageStream<SubscriptionQueryUpdateMessage> intercepted =
+                    (MessageStream<SubscriptionQueryUpdateMessage>) interceptorChain.proceed(update, context);
+            return intercepted.first()
+                             .asCompletableFuture()
+                             .join()
+                             .message();
         }
     }
 }
