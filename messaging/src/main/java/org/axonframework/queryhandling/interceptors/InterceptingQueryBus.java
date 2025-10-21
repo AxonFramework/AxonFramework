@@ -55,6 +55,7 @@ import static java.util.Objects.requireNonNull;
  * present.
  *
  * @author Allard Buijze
+ * @author Mateusz Nowak
  * @author Steven van Beelen
  * @since 5.0.0
  */

@@ -57,7 +57,7 @@ import static org.mockito.Mockito.*;
 /**
  * Test class validating the {@link InterceptingQueryBus}.
  *
- * @author Steven van Beelen
+ * @author Mateusz Nowak
  * @since 5.0.0
  */
 class InterceptingQueryBusTest {

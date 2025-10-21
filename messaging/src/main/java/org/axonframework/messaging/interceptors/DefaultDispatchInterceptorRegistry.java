@@ -30,6 +30,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,10 +56,13 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
     };
     private static final TypeReference<MessageDispatchInterceptor<? super QueryMessage>> QUERY_INTERCEPTOR_TYPE_REF = new TypeReference<>() {
     };
+    private static final TypeReference<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> SUBSCRIPTION_QUERY_UPDATE_INTERCEPTOR_TYPE_REF = new TypeReference<>() {
+    };
 
     private final List<ComponentDefinition<MessageDispatchInterceptor<? super CommandMessage>>> commandInterceptorDefinitions = new ArrayList<>();
     private final List<ComponentDefinition<MessageDispatchInterceptor<? super EventMessage>>> eventInterceptorDefinitions = new ArrayList<>();
     private final List<ComponentDefinition<MessageDispatchInterceptor<? super QueryMessage>>> queryInterceptorDefinitions = new ArrayList<>();
+    private final List<ComponentDefinition<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>>> subscriptionQueryUpdateInterceptorDefinitions = new ArrayList<>();
 
     @Nonnull
     @Override
@@ -89,6 +93,14 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
                     message,
                     context,
                     (m, c) -> chain.proceed((QueryMessage) m, c)
+            );
+        });
+        registerSubscriptionQueryUpdateInterceptor(config -> {
+            MessageDispatchInterceptor<Message> genericInterceptor = genericInterceptorDef.doResolve(config);
+            return (message, context, chain) -> genericInterceptor.interceptOnDispatch(
+                    message,
+                    context,
+                    (m, c) -> chain.proceed((SubscriptionQueryUpdateMessage) m, c)
             );
         });
         return this;
@@ -126,6 +138,16 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
 
     @Nonnull
     @Override
+    public DispatchInterceptorRegistry registerSubscriptionQueryUpdateInterceptor(
+            @Nonnull ComponentBuilder<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> interceptorBuilder
+    ) {
+        this.subscriptionQueryUpdateInterceptorDefinitions.add(ComponentDefinition.ofType(SUBSCRIPTION_QUERY_UPDATE_INTERCEPTOR_TYPE_REF)
+                                                                                   .withBuilder(interceptorBuilder));
+        return this;
+    }
+
+    @Nonnull
+    @Override
     public List<MessageDispatchInterceptor<? super CommandMessage>> commandInterceptors(@Nonnull Configuration config) {
         return resolveInterceptors(commandInterceptorDefinitions, config);
     }
@@ -142,11 +164,18 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
         return resolveInterceptors(queryInterceptorDefinitions, config);
     }
 
+    @Nonnull
+    @Override
+    public List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> subscriptionQueryUpdateInterceptors(@Nonnull Configuration config) {
+        return resolveInterceptors(subscriptionQueryUpdateInterceptorDefinitions, config);
+    }
+
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("commandDispatchInterceptors", commandInterceptorDefinitions);
         descriptor.describeProperty("eventDispatchInterceptors", eventInterceptorDefinitions);
         descriptor.describeProperty("queryDispatchInterceptors", queryInterceptorDefinitions);
+        descriptor.describeProperty("subscriptionQueryUpdateDispatchInterceptors", subscriptionQueryUpdateInterceptorDefinitions);
     }
 
     // Private class there to simplify use in registerInterceptor(...) only.
