@@ -20,6 +20,8 @@ import io.axoniq.axonserver.grpc.ErrorMessage;
 import org.axonframework.messaging.RemoteExceptionDescription;
 import org.axonframework.messaging.RemoteHandlingException;
 
+import java.io.Serial;
+
 /**
  * An AxonServer Exception which is thrown on a Query Handling exception.
  * <p/>
@@ -31,6 +33,7 @@ import org.axonframework.messaging.RemoteHandlingException;
  */
 public class AxonServerRemoteQueryHandlingException extends RemoteHandlingException {
 
+    @Serial
     private static final long serialVersionUID = -8868624888839585045L;
 
     private final String errorCode;
