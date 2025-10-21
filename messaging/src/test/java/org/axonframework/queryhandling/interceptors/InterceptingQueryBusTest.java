@@ -16,239 +16,341 @@
 
 package org.axonframework.queryhandling.interceptors;
 
-// TODO 3488 - Implement once InterceptingQueryBus is in place
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageDispatchInterceptorChain;
+import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageHandlerInterceptorChain;
+import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.Metadata;
+import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
+import org.axonframework.queryhandling.GenericQueryMessage;
+import org.axonframework.queryhandling.GenericQueryResponseMessage;
+import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryHandler;
+import org.axonframework.queryhandling.QueryHandlerName;
+import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.queryhandling.QueryResponseMessage;
+import org.axonframework.utils.MockException;
+import org.junit.jupiter.api.*;
+import org.mockito.ArgumentCaptor;
+
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.axonframework.messaging.MessagingTestUtils.queryResponse;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+/**
+ * Test class validating the {@link InterceptingQueryBus}.
+ *
+ * @author Steven van Beelen
+ * @since 5.0.0
+ */
 class InterceptingQueryBusTest {
 
-    /* Correlation data tests
-    @Disabled("TODO: reintegrate as part of #3079")
-        @Test
-        void directQueryResultsInEmptyMessageStream() throws ExecutionException, InterruptedException {
-            QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, "query", SINGLE_STRING_RESPONSE);
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, (query, context) -> MessageStream.empty().cast());
-            QueryMessage testQuery =
-                    new GenericQueryMessage(new MessageType(String.class), "query", SINGLE_STRING_RESPONSE)
-                            .andMetaData(Collections.singletonMap(TRACE_ID, "fakeTraceId"));
-            CompletableFuture<QueryResponseMessage> result = testSubject.query(testQuery);
+    private static final MessageType TEST_QUERY_TYPE = new MessageType("testQuery");
+    private static final MessageType TEST_RESPONSE_TYPE = new MessageType(String.class);
 
-            assertTrue(result.isDone(), "SimpleQueryBus should resolve CompletableFutures directly");
-            assertNull(result.get().payload());
-            assertEquals(String.class, result.get().payloadType());
-            assertEquals(
-                    // TODO: this assumes the correlation and tracing data gets into response
-                    // but this is done via interceptors, which are currently not integrated
-                    MetaData.with(CORRELATION_ID, testQuery.identifier()).and(TRACE_ID, "fakeTraceId"),
-                    result.get().metaData()
-            );
+    private InterceptingQueryBus testSubject;
+    private QueryBus mockQueryBus;
+    private MessageHandlerInterceptor<QueryMessage> handlerInterceptor1;
+    private MessageHandlerInterceptor<QueryMessage> handlerInterceptor2;
+    private MessageDispatchInterceptor<Message> dispatchInterceptor1;
+    private MessageDispatchInterceptor<Message> dispatchInterceptor2;
+
+    @BeforeEach
+    void setUp() {
+        mockQueryBus = mock(QueryBus.class);
+        handlerInterceptor1 = spy(new AddMetadataCountInterceptor<>("handler1", "value"));
+        handlerInterceptor2 = spy(new AddMetadataCountInterceptor<>("handler2", "value"));
+        dispatchInterceptor1 = spy(new AddMetadataCountInterceptor<>("dispatch1", "value"));
+        dispatchInterceptor2 = spy(new AddMetadataCountInterceptor<>("dispatch2", "value"));
+
+        testSubject = new InterceptingQueryBus(mockQueryBus,
+                                               List.of(handlerInterceptor1, handlerInterceptor2),
+                                               List.of(dispatchInterceptor1, dispatchInterceptor2));
+    }
+
+    @Nested
+    @DisplayName("Dispatch interceptor tests")
+    class DispatchInterceptorTests {
+
+        // given
+        @Test
+        void dispatchInterceptorsInvokedOnQuery() {
+            when(mockQueryBus.query(any(), any()))
+                    .thenReturn(MessageStream.just(queryResponse("ok")));
+
+            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test", TEST_RESPONSE_TYPE);
+
+            // when
+            MessageStream<QueryResponseMessage> result = testSubject.query(testQuery, StubProcessingContext.forMessage(testQuery));
+
+            // then
+            ArgumentCaptor<QueryMessage> dispatchedMessage = ArgumentCaptor.forClass(QueryMessage.class);
+            verify(mockQueryBus).query(dispatchedMessage.capture(), any());
+
+            QueryMessage actualDispatched = dispatchedMessage.getValue();
+            assertTrue(actualDispatched.metadata().containsKey("dispatch1"),
+                      "Expected dispatch1 interceptor to add metadata");
+            assertTrue(actualDispatched.metadata().containsKey("dispatch2"),
+                      "Expected dispatch2 interceptor to add metadata");
+
+            QueryResponseMessage response = result.first().asCompletableFuture().join().message();
+            assertTrue(response.metadata().containsKey("dispatch1"),
+                      "Expected dispatch1 interceptor to modify response metadata");
+            assertTrue(response.metadata().containsKey("dispatch2"),
+                      "Expected dispatch2 interceptor to modify response metadata");
         }
 
-        /*
-         * This test ensures that the QueryResponseMessage is created inside the scope of the Unit of Work, and therefore
-         * contains the correlation data registered with the Unit of Work
-         */
-//    @Disabled("TODO: reintegrate as part of #3079")
-//    @Test
-//    void queryResultContainsCorrelationData() throws Exception {
-////        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "1234");
-//
-//        QueryMessage testQuery =
-//                new GenericQueryMessage(new MessageType(String.class), "query", SINGLE_STRING_RESPONSE)
-//                        .andMetaData(Collections.singletonMap(TRACE_ID, "fakeTraceId"));
-//        CompletableFuture<QueryResponseMessage> result = testSubject.query(testQuery);
-//
-//        assertTrue(result.isDone(), "SimpleQueryBus should resolve CompletableFutures directly");
-//        assertEquals("query1234", result.get().payload());
-//        assertEquals(
-//                MetaData.with(CORRELATION_ID, testQuery.identifier()).and(TRACE_ID, "fakeTraceId"),
-//                result.get().metaData()
-//        );
-//    }
-
-    /*
         @Test
-    public void handlerInterceptorThrowsException() throws ExecutionException, InterruptedException {
-        testSubject.subscribe("test", String.class, (q, ctx) -> q.payload().toString());
-        testSubject.registerHandlerInterceptor(( message,context, chain) ->
-            MessageStream.failed(new RuntimeException("Faking"))
-        );
-        QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType("test"), "hello", instanceOf(String.class)
-        );
+        void dispatchInterceptorsAreInvokedForEveryQuery() {
+            // given
+            AtomicInteger counter = new AtomicInteger(0);
+            MessageDispatchInterceptor<Message> countingInterceptor = (message, context, chain) -> {
+                counter.incrementAndGet();
+                return chain.proceed(message, context);
+            };
+            InterceptingQueryBus countingTestSubject =
+                    new InterceptingQueryBus(mockQueryBus, List.of(), List.of(countingInterceptor));
 
-        CompletableFuture<QueryResponseMessage> result = testSubject.query(testQuery);
+            when(mockQueryBus.query(any(), any()))
+                    .thenReturn(MessageStream.just(queryResponse("ok")));
 
-        assertTrue(result.isDone());
-        assertTrue(result.get().isExceptional());
-    }
-     */
+            QueryMessage firstQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "first", TEST_RESPONSE_TYPE);
+            QueryMessage secondQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "second", TEST_RESPONSE_TYPE);
 
-    /*
-    @Test
-    void queryWithInterceptors() throws Exception {
-        testSubject.registerDispatchInterceptor(
-                (message, context, chain) ->
-                        chain.proceed(message.andMetaData(Collections.singletonMap("key", "value")), context)
-        );
-        testSubject.registerHandlerInterceptor((message, context, chain) -> {
-            if (message.metaData().containsKey("key")) {
-                return MessageStream.just(new GenericQueryResponseMessage(new MessageType("response"), "fakeReply"));
-            }
-            return chain.proceed(message, context);
-        });
-        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "1234");
+            // when
+            countingTestSubject.query(firstQuery, StubProcessingContext.forMessage(firstQuery));
+            countingTestSubject.query(secondQuery, StubProcessingContext.forMessage(secondQuery));
 
-        QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType(String.class), "hello", singleStringResponse
-        );
-        CompletableFuture<Object> result = testSubject.query(testQuery)
-                                                      .thenApply(QueryResponseMessage::payload);
+            // then
+            assertThat(counter.get()).isEqualTo(2);
+        }
 
-        assertEquals("fakeReply", result.get());
-    }
-     */
+        @Test
+        void earlyReturnAvoidsQueryDispatch() {
+            // given
+            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test", TEST_RESPONSE_TYPE);
+            doReturn(MessageStream.failed(new MockException("Simulating early return")))
+                    .when(dispatchInterceptor2)
+                    .interceptOnDispatch(any(), any(), any());
 
-    /*
-    @Test
-    void scatterGatherWithInterceptors() {
-        testSubject.registerDispatchInterceptor(
-                (message, context, chain) ->
-                        chain.proceed(message.andMetaData(Collections.singletonMap("key", "value")), context)
-        );
-        testSubject.registerHandlerInterceptor((message, context, chain) -> {
-            if (message.metaData().containsKey("key")) {
-                return MessageStream.just(new GenericResultMessage(new MessageType("response"), "fakeReply"));
-            }
-            return chain.proceed(message, context);
-        });
-        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "1234");
-        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "567");
+            // when
+            MessageStream<QueryResponseMessage> result = testSubject.query(testQuery, StubProcessingContext.forMessage(testQuery));
 
-        QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType(String.class), "Hello, World", singleStringResponse
-        );
-        List<Object> results = testSubject.scatterGather(testQuery, 0, TimeUnit.SECONDS)
-                                          .map(Message::payload)
-                                          .collect(Collectors.toList());
+            // then
+            assertTrue(result.first().asCompletableFuture().isCompletedExceptionally());
+            assertInstanceOf(MockException.class, result.first().asCompletableFuture().exceptionNow());
+            verify(dispatchInterceptor1).interceptOnDispatch(any(), any(), any());
+            verify(dispatchInterceptor2).interceptOnDispatch(any(), any(), any());
+            verify(mockQueryBus, never()).query(any(), any());
+        }
 
-        assertEquals(2, results.size());
-        verify(messageMonitor, times(1)).onMessageIngested(any());
-        verify(monitorCallback, times(2)).reportSuccess();
-        assertEquals(asList("fakeReply", "fakeReply"), results);
-    }
-     */
+        @Test
+        void exceptionsInDispatchInterceptorReturnFailedStream() {
+            // given
+            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test", TEST_RESPONSE_TYPE);
+            doThrow(new MockException("Simulating failure in interceptor")).when(dispatchInterceptor2)
+                                                                           .interceptOnDispatch(any(), any(), any());
 
-    /*
-    @Test
-    void queryResponseMessageCorrelationData() throws ExecutionException, InterruptedException {
-        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "1234");
-        testSubject.registerHandlerInterceptor(new CorrelationDataInterceptor<>(new MessageOriginProvider()));
-        QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType(String.class), "Hello, World", singleStringResponse
-        );
-        QueryResponseMessage queryResponseMessage = testSubject.query(testQuery).get();
-        assertEquals(testQuery.identifier(), queryResponseMessage.metaData().get("traceId"));
-        assertEquals(testQuery.identifier(), queryResponseMessage.metaData().get("correlationId"));
-        assertEquals("Hello, World1234", queryResponseMessage.payload());
-    }
-     */
+            // when
+            MessageStream<QueryResponseMessage> result = testSubject.query(testQuery, StubProcessingContext.forMessage(testQuery));
 
-    /*
-    @Disabled("TODO reintegrate as part of #3079")
-    @Test
-    void dispatchInterceptor() {
-        AtomicBoolean hasBeenCalled = new AtomicBoolean();
-        queryBus.registerDispatchInterceptor((message, context, chain) -> {
-            hasBeenCalled.set(true);
-            return chain.proceed(message, context);
-        });
-
-        StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
-                new MessageType("fluxQuery"), "criteria", String.class
-        );
-
-        StepVerifier.create(streamingQueryPayloads(testQuery, String.class))
-                    .expectNext("a", "b", "c", "d")
-                    .verifyComplete();
-
-        assertTrue(hasBeenCalled.get());
+            // then
+            assertTrue(result.first().asCompletableFuture().isCompletedExceptionally());
+            assertInstanceOf(MockException.class, result.first().asCompletableFuture().exceptionNow());
+            verify(dispatchInterceptor1).interceptOnDispatch(any(), any(), any());
+            verify(dispatchInterceptor2).interceptOnDispatch(any(), any(), any());
+        }
     }
 
-    @Disabled("TODO reintegrate as part of #3079")
-    @Test
-    void handlerInterceptor() {
-        queryBus.registerHandlerInterceptor(
-                (message, context, chain) ->
-                        chain.proceed(message, context)
-                // TODO reintegrate as part of #3079
-                        // ((Flux) interceptorChain.proceedSync(context)).map(it -> "a")
-        );
+    @Nested
+    @DisplayName("Handler interceptor tests")
+    class HandlerInterceptorTests {
 
-        StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
-                new MessageType("fluxQuery"), "criteria", String.class
-        );
+        @Test
+        void handlerInterceptorsInvokedOnHandling() {
+            // given
+            QueryHandler actualHandler = subscribeHandler(
+                    (query, context) -> MessageStream.just(queryResponse("ok"))
+            );
 
-        StepVerifier.create(streamingQueryPayloads(testQuery, String.class))
-                    .expectNext("a", "a", "a", "a")
-                    .verifyComplete();
+            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test", TEST_RESPONSE_TYPE);
+            ProcessingContext context = StubProcessingContext.forMessage(testQuery);
+
+            // when
+            MessageStream<QueryResponseMessage> result = actualHandler.handle(testQuery, context);
+
+            // then
+            QueryResponseMessage response = result.first().asCompletableFuture().join().message();
+            assertTrue(response.metadata().containsKey("handler1"),
+                      "Expected handler1 interceptor to add metadata");
+            assertTrue(response.metadata().containsKey("handler2"),
+                      "Expected handler2 interceptor to add metadata");
+
+            verify(handlerInterceptor1).interceptOnHandle(any(), eq(context), any());
+            verify(handlerInterceptor2).interceptOnHandle(any(), eq(context), any());
+        }
+
+        @Test
+        void handlerInterceptorsAreInvokedForEveryQuery() {
+            // given
+            AtomicInteger counter = new AtomicInteger(0);
+            MessageHandlerInterceptor<QueryMessage> countingInterceptor = (message, context, chain) -> {
+                counter.incrementAndGet();
+                return chain.proceed(message, context);
+            };
+            InterceptingQueryBus countingTestSubject =
+                    new InterceptingQueryBus(mockQueryBus, List.of(countingInterceptor), List.of());
+
+            QueryHandlerName testHandlerName = new QueryHandlerName(new QualifiedName("query"), new QualifiedName("response"));
+            countingTestSubject.subscribe(testHandlerName, (query, context) -> MessageStream.just(queryResponse("ok")));
+
+            ArgumentCaptor<QueryHandler> handlerCaptor = ArgumentCaptor.forClass(QueryHandler.class);
+            verify(mockQueryBus).subscribe(eq(testHandlerName), handlerCaptor.capture());
+
+            QueryHandler actualHandler = handlerCaptor.getValue();
+
+            QueryMessage firstQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "first", TEST_RESPONSE_TYPE);
+            QueryMessage secondQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "second", TEST_RESPONSE_TYPE);
+
+            // when
+            actualHandler.handle(firstQuery, StubProcessingContext.forMessage(firstQuery)).first();
+            actualHandler.handle(secondQuery, StubProcessingContext.forMessage(secondQuery)).first();
+
+            // then
+            assertThat(counter.get()).isEqualTo(2);
+        }
+
+        @Test
+        void exceptionsInHandlerInterceptorReturnFailedStream() {
+            // given
+            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "Request", TEST_RESPONSE_TYPE);
+            doThrow(new MockException("Simulating failure in interceptor"))
+                    .when(handlerInterceptor2).interceptOnHandle(any(), any(), any());
+
+            QueryHandler actualHandler = subscribeHandler(
+                    (query, context) -> MessageStream.just(queryResponse("ok"))
+            );
+
+            ProcessingContext context = mock(ProcessingContext.class);
+
+            // when
+            var result = actualHandler.handle(testQuery, context);
+
+            // then
+            assertTrue(result.first().asCompletableFuture().isCompletedExceptionally());
+            assertInstanceOf(MockException.class, result.first().asCompletableFuture().exceptionNow());
+
+            verify(handlerInterceptor1).interceptOnHandle(any(), eq(context), any());
+            verify(handlerInterceptor2).interceptOnHandle(any(), eq(context), any());
+        }
     }
-     */
 
-    /*
-    Subscription query tests
+    @Nested
+    @DisplayName("Subscribe tests")
+    class SubscribeTests {
+
+        @Test
+        void subscribeWrapsHandlerWithInterceptors() {
+            // given
+            QueryHandlerName handlerName = new QueryHandlerName(new QualifiedName("query"), new QualifiedName("response"));
+            QueryHandler mockHandler = mock(QueryHandler.class);
+
+            // when
+            testSubject.subscribe(handlerName, mockHandler);
+
+            // then
+            ArgumentCaptor<QueryHandler> handlerCaptor = ArgumentCaptor.forClass(QueryHandler.class);
+            verify(mockQueryBus).subscribe(eq(handlerName), handlerCaptor.capture());
+
+            QueryHandler wrappedHandler = handlerCaptor.getValue();
+            assertNotNull(wrappedHandler);
+            assertNotEquals(mockHandler, wrappedHandler, "Expected handler to be wrapped");
+        }
+    }
+
     @Test
-    @Disabled("TODO #3488")
-    void subscriptionQueryWithInterceptors() {
+    void describeIncludesAllRelevantProperties() {
         // given
-        List<String> interceptedResponse = Arrays.asList("fakeReply1", "fakeReply2");
-//        queryBus.registerDispatchInterceptor((message, context, chain) -> chain.proceed(
-//                message.andMetadata(Collections.singletonMap("key", "value")), context
-//        ));
-//        queryBus.registerHandlerInterceptor((message, context, chain) -> {
-//            if (message.metadata().containsKey("key")) {
-//                return MessageStream.fromIterable(
-//                        interceptedResponse.stream()
-//                                           .map(p -> new GenericQueryResponseMessage(new MessageType("response"), p))
-//                                           .toList()
-//                );
-//            }
-//            return chain.proceed(message, context);
-//        });
-        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
-                TEST_QUERY_TYPE, TEST_QUERY_PAYLOAD,
-                multipleInstancesOf(String.class), instanceOf(String.class)
-        );
+        ComponentDescriptor mockComponentDescriptor = mock(ComponentDescriptor.class);
 
         // when
-        SubscriptionQueryResponseMessages result = queryBus.subscriptionQuery(queryMessage, null, 50);
+        testSubject.describeTo(mockComponentDescriptor);
 
         // then
-        StepVerifier.create(result.initialResult().map(Message::payload))
-                    .expectNext(interceptedResponse)
-                    .verifyComplete();
+        verify(mockComponentDescriptor).describeWrapperOf(eq(mockQueryBus));
+        verify(mockComponentDescriptor).describeProperty(argThat(i -> i.contains("dispatch")),
+                                                         eq(List.of(dispatchInterceptor1, dispatchInterceptor2)));
+        verify(mockComponentDescriptor).describeProperty(argThat(i -> i.contains("handler")),
+                                                         eq(List.of(handlerInterceptor1, handlerInterceptor2)));
     }
 
-    @Test
-    @Disabled("TODO #3488")
-    void subscriptionQueryUpdateWithInterceptors() {
-        // given
-        Map<String, String> metadata = Collections.singletonMap("key", "value");
-//        queryUpdateEmitter.registerDispatchInterceptor(
-//                (message, context, chain) -> chain.proceed(message.andMetadata(metadata), context)
-//        );
-        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
-                TEST_QUERY_TYPE, TEST_QUERY_PAYLOAD,
-                multipleInstancesOf(String.class), instanceOf(String.class)
-        );
-
-        // when
-        SubscriptionQueryResponseMessages result = queryBus.subscriptionQuery(queryMessage, null, 50);
-
-        queryBus.emitUpdate(String.class, TEST_QUERY_PAYLOAD::equals, "Update1");
-        result.close();
-
-        // then
-        StepVerifier.create(result.updates())
-                    .expectNextMatches(m -> m.metadata().equals(metadata))
-                    .verifyComplete();
-    }
+    /**
+     * Subscribes the given handler with the query bus and returns the handler as it is subscribed with its delegate.
+     *
+     * @param handler The handling logic for the query.
+     * @return the handler as wrapped by the surrounding query bus.
      */
+    private QueryHandler subscribeHandler(QueryHandler handler) {
+        QueryHandlerName name = new QueryHandlerName(new QualifiedName("query"), new QualifiedName("response"));
+        testSubject.subscribe(name, handler);
+
+        ArgumentCaptor<QueryHandler> handlerCaptor = ArgumentCaptor.forClass(QueryHandler.class);
+        verify(mockQueryBus).subscribe(eq(name), handlerCaptor.capture());
+        return handlerCaptor.getValue();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static class AddMetadataCountInterceptor<M extends Message>
+            implements MessageHandlerInterceptor<M>, MessageDispatchInterceptor<M> {
+
+        private final String key;
+        private final String value;
+
+        public AddMetadataCountInterceptor(String key, String prefix) {
+            this.key = key;
+            this.value = prefix;
+        }
+
+        @Override
+        @Nonnull
+        public MessageStream<?> interceptOnDispatch(@Nonnull M message,
+                                                    @Nullable ProcessingContext context,
+                                                    @Nonnull MessageDispatchInterceptorChain<M> interceptorChain) {
+            var intercepted = (M) message.andMetadata(Map.of(key, buildValue(message)));
+            return interceptorChain
+                    .proceed(intercepted, context)
+                    .mapMessage(m -> m.andMetadata(Map.of(key, buildValue(m))));
+        }
+
+        @Override
+        @Nonnull
+        public MessageStream<?> interceptOnHandle(@Nonnull M message,
+                                                  @Nonnull ProcessingContext context,
+                                                  @Nonnull MessageHandlerInterceptorChain<M> interceptorChain) {
+            var intercepted = (M) message.andMetadata(Map.of(key, buildValue(message)));
+            return interceptorChain
+                    .proceed(intercepted, context)
+                    .mapMessage(m -> m.andMetadata(Map.of(key, buildValue(m))));
+        }
+
+        private String buildValue(Message message) {
+            int count = message.metadata().containsKey(key)
+                    ? Integer.parseInt(message.metadata().get(key).split("-")[1])
+                    : -1;
+            return value + "-" + (count + 1);
+        }
+    }
 }
