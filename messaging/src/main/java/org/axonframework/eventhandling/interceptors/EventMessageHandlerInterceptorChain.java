@@ -52,9 +52,9 @@ public class EventMessageHandlerInterceptorChain implements MessageHandlerInterc
      * @param interceptors The list of handler interceptors that are part of this chain.
      * @param eventHandler The event handler to be invoked at the end of the interceptor chain.
      */
-    public EventMessageHandlerInterceptorChain(@Nonnull List<MessageHandlerInterceptor<EventMessage>> interceptors,
+    public EventMessageHandlerInterceptorChain(@Nonnull List<MessageHandlerInterceptor<? super EventMessage>> interceptors,
                                                @Nonnull EventHandler eventHandler) {
-        Iterator<MessageHandlerInterceptor<EventMessage>> interceptorIterator =
+        Iterator<MessageHandlerInterceptor<? super EventMessage>> interceptorIterator =
                 new LinkedList<>(interceptors).descendingIterator();
         EventHandler interceptingHandler = Objects.requireNonNull(eventHandler, "The Event Handler may not be null.");
         while (interceptorIterator.hasNext()) {

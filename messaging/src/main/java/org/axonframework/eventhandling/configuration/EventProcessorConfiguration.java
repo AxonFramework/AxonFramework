@@ -69,7 +69,7 @@ public class EventProcessorConfiguration implements DescribableComponent {
                                                                                       .spanFactory(NoOpSpanFactory.INSTANCE)
                                                                                       .build();
     protected UnitOfWorkFactory unitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
-    protected List<MessageHandlerInterceptor<EventMessage>> interceptors = new ArrayList<>();
+    protected List<MessageHandlerInterceptor<? super EventMessage>> interceptors = new ArrayList<>();
 
     /**
      * Constructs a new {@code EventProcessorConfiguration} with just default values. Do not retrieve any global default
@@ -218,7 +218,7 @@ public class EventProcessorConfiguration implements DescribableComponent {
      * @return The list of {@link EventMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors} to
      * add to the {@link EventProcessor} under construction with this configuration implementation.
      */
-    public List<MessageHandlerInterceptor<EventMessage>> interceptors() {
+    public List<MessageHandlerInterceptor<? super EventMessage>> interceptors() {
         return new ArrayList<>(interceptors);
     }
 

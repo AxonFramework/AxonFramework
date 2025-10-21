@@ -72,7 +72,7 @@ public class InterceptingCommandBus implements CommandBus {
     public static final int DECORATION_ORDER = Integer.MIN_VALUE + 100;
 
     private final CommandBus delegate;
-    private final List<MessageHandlerInterceptor<CommandMessage>> handlerInterceptors;
+    private final List<MessageHandlerInterceptor<? super CommandMessage>> handlerInterceptors;
     private final List<MessageDispatchInterceptor<? super CommandMessage>> dispatchInterceptors;
     private final InterceptingDispatcher interceptingDispatcher;
 
@@ -89,7 +89,7 @@ public class InterceptingCommandBus implements CommandBus {
      */
     public InterceptingCommandBus(
             @Nonnull CommandBus delegate,
-            @Nonnull List<MessageHandlerInterceptor<CommandMessage>> handlerInterceptors,
+            @Nonnull List<MessageHandlerInterceptor<? super CommandMessage>> handlerInterceptors,
             @Nonnull List<MessageDispatchInterceptor<? super CommandMessage>> dispatchInterceptors
     ) {
         this.delegate = requireNonNull(delegate, "The command bus delegate must be null.");
@@ -136,7 +136,7 @@ public class InterceptingCommandBus implements CommandBus {
         private final CommandMessageHandlerInterceptorChain interceptorChain;
 
         private InterceptingHandler(CommandHandler handler,
-                                    List<MessageHandlerInterceptor<CommandMessage>> interceptors) {
+                                    List<MessageHandlerInterceptor<? super CommandMessage>> interceptors) {
             this.interceptorChain = new CommandMessageHandlerInterceptorChain(interceptors, handler);
         }
 
