@@ -18,6 +18,7 @@ package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -26,7 +27,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * considered closed when a consumer explicitly calls {@link #close()} or when the stream is completed.
  * <p>
  * Note that when close is called on the delegate, or when the client does not attempt to consume this stream, the
- * closeHandler may never be invoked, even though the stream is completed.
+ * close handler may never be invoked, even though the stream is completed.
  *
  * @param <M> The type of Message handled by this MessageStream.
  */
@@ -43,9 +44,9 @@ public class CloseCallbackMessageStream<M extends Message> extends DelegatingMes
      * @param delegate     The MessageStream to wrap with the close handler invocation logic
      * @param closeHandler The handler to invoke when the stream is closed or completed
      */
-    public CloseCallbackMessageStream(@Nonnull MessageStream<M> delegate, Runnable closeHandler) {
+    public CloseCallbackMessageStream(@Nonnull MessageStream<M> delegate, @Nonnull Runnable closeHandler) {
         super(delegate);
-        this.closeHandler = closeHandler;
+        this.closeHandler = Objects.requireNonNull(closeHandler, "Close handler may not be null.");
     }
 
     /**

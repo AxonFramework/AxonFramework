@@ -154,15 +154,15 @@ public class DefaultQueryGateway implements QueryGateway {
     }
 
     private SubscriptionQueryMessage asSubscriptionQueryMessage(Object query,
-                                                                MessageType initialMessageType) {
+                                                                MessageType messageType) {
         if (query instanceof SubscriptionQueryMessage queryMessage) {
             return queryMessage;
         }
         return query instanceof Message
-                ? new GenericSubscriptionQueryMessage((Message) query, initialMessageType)
+                ? new GenericSubscriptionQueryMessage((Message) query, messageType)
                 : new GenericSubscriptionQueryMessage(resolveTypeFor(query),
                                                       query,
-                                                      initialMessageType);
+                                                      messageType);
     }
 
     private MessageType resolveTypeFor(Object payload) {
