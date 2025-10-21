@@ -68,6 +68,11 @@
             <scope>test</scope>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.axonframework</groupId>
+            <artifactId>axon-legacy</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <!-- Annotation -->
         <dependency>
             <groupId>jakarta.annotation</groupId>

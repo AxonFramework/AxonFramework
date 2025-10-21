@@ -68,7 +68,7 @@ public class InterceptingEventHandlingComponent extends DelegatingEventHandlingC
      * @param messageHandlerInterceptors The list of interceptors to initialize with.
      */
     public InterceptingEventHandlingComponent(
-            @Nonnull List<MessageHandlerInterceptor<EventMessage>> messageHandlerInterceptors,
+            @Nonnull List<MessageHandlerInterceptor<? super EventMessage>> messageHandlerInterceptors,
             @Nonnull EventHandlingComponent delegate
     ) {
         super(delegate);

@@ -35,6 +35,7 @@ import org.axonframework.integrationtests.testsuite.student.state.Course;
 import org.axonframework.integrationtests.testsuite.student.state.Student;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.modelling.annotations.AnnotationBasedEntityEvolvingComponent;
@@ -173,10 +174,15 @@ public abstract class AbstractStudentIT extends AbstractAxonServerIT {
     }
 
     protected <T> void storeEvent(Class<T> clazz, T payload) {
+        storeEvent(clazz, payload, null);
+    }
+
+    protected <T> void storeEvent(Class<T> clazz, T payload, Metadata metadata) {
         UnitOfWork uow = unitOfWorkFactory.create();
         var eventMessage = new GenericEventMessage(
                 new MessageType(clazz),
-                payload
+                payload,
+                metadata == null ? Metadata.emptyInstance() : metadata
         );
         uow.runOnInvocation(context -> context.component(EventGateway.class).publish(context, eventMessage));
         uow.execute().join();

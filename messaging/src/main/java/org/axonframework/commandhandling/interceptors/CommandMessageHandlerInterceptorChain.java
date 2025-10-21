@@ -52,9 +52,9 @@ public class CommandMessageHandlerInterceptorChain implements MessageHandlerInte
      * @param interceptors   The list of handler interceptors that are part of this chain.
      * @param commandHandler The command handler to be invoked at the end of the interceptor chain.
      */
-    public CommandMessageHandlerInterceptorChain(@Nonnull List<MessageHandlerInterceptor<CommandMessage>> interceptors,
+    public CommandMessageHandlerInterceptorChain(@Nonnull List<MessageHandlerInterceptor<? super CommandMessage>> interceptors,
                                                  @Nonnull CommandHandler commandHandler) {
-        Iterator<MessageHandlerInterceptor<CommandMessage>> interceptorIterator =
+        Iterator<MessageHandlerInterceptor<? super CommandMessage>> interceptorIterator =
                 new LinkedList<>(interceptors).descendingIterator();
         CommandHandler handler = Objects.requireNonNull(commandHandler, "The Command Handler may not be null.");
         while (interceptorIterator.hasNext()) {

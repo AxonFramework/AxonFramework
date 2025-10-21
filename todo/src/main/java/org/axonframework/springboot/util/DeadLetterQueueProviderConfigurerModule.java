@@ -19,13 +19,11 @@ package org.axonframework.springboot.util;
 import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.ConfigurationEnhancer;
-import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
-import org.axonframework.springboot.EventProcessorProperties;
+import org.axonframework.extension.springboot.EventProcessorProperties;
 
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 
 /**
  * A {@link ConfigurationEnhancer} implementation dedicated towards registering a {@link SequencedDeadLetterQueue}

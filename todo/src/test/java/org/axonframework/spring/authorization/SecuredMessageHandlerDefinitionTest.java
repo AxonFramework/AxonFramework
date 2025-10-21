@@ -16,6 +16,8 @@
 
 package org.axonframework.spring.authorization;
 
+import org.axonframework.extension.spring.authorization.SecuredMessageHandlerDefinition;
+import org.axonframework.extension.spring.authorization.UnauthorizedMessageException;
 import org.axonframework.test.aggregate.AggregateTestFixture;
 import org.axonframework.test.aggregate.FixtureConfiguration;
 import org.hamcrest.core.StringStartsWith;

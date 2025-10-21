@@ -117,4 +117,41 @@ class QueueMessageStreamTest extends MessageStreamTest<EventMessage> {
 
         assertSame(message2, testSubject.next().map(MessageStream.Entry::message).orElse(null));
     }
+
+    @Test
+    void closePreventsNewElementsFromBeingAdded() {
+        CompletableFuture<Void> completionCallback = new CompletableFuture<>();
+        QueueMessageStream<EventMessage> testSubject = uncompletedTestSubject(List.of(createRandomMessage()),
+                                                                              completionCallback);
+
+        assertTrue(testSubject.offer(createRandomMessage(), Context.empty()));
+        testSubject.close();
+        testSubject.next();
+
+        // the stream is not completed because it still has elements.
+        assertFalse(testSubject.isCompleted());
+        assertFalse(testSubject.offer(createRandomMessage(), Context.empty()));
+
+        testSubject.next();
+
+        assertTrue(testSubject.isCompleted());
+    }
+
+    @Test
+    void consumingTheLastElementMarksTheStreamAsClosed() {
+        CompletableFuture<Void> completionCallback = new CompletableFuture<>();
+        QueueMessageStream<EventMessage> testSubject = uncompletedTestSubject(List.of(createRandomMessage()),
+                                                                              completionCallback);
+
+        assertTrue(testSubject.offer(createRandomMessage(), Context.empty()));
+        testSubject.complete();
+        testSubject.next();
+
+        // the stream is not completed because it still has elements.
+        assertFalse(testSubject.isCompleted());
+        assertFalse(testSubject.offer(createRandomMessage(), Context.empty()));
+
+        testSubject.next();
+
+        assertTrue(testSubject.isCompleted());    }
 }

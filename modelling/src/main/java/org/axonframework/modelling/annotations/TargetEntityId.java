@@ -33,9 +33,8 @@ import java.lang.annotation.Target;
  * injecting entities into messsage handlers.
  * <p>
  * Multiple parameters annotated with {@link TargetEntityId} are allowed, but only one distinct non-null value may be
- * returned. If multiple non-null values are found that don't match, a
- * {@link MultipleTargetEntityIdsFoundInPayloadException} is thrown. If no non-null value is found, a
- * {@link NoEntityIdFoundInPayloadException} is thrown.
+ * returned. If multiple non-null values are found that don't match, or no non-null values were found, a
+ * {@link EntityIdResolutionException} is thrown.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0

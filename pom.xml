@@ -17,31 +17,28 @@
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
+    <modelVersion>4.0.0</modelVersion>
+
     <groupId>org.axonframework</groupId>
     <artifactId>axon</artifactId>
     <version>5.0.0-SNAPSHOT</version>
+
     <modules>
         <module>axon-server-connector</module>
         <module>eventsourcing</module>
+        <module>extensions</module>
         <module>integrationtests</module>
         <module>legacy</module>
         <module>legacy-aggregate</module>
         <module>legacy-saga</module>
         <module>messaging</module>
-        <module>metrics</module>
-        <module>metrics-micrometer</module>
         <module>migration</module>
         <module>modelling</module>
-        <module>spring</module>
-        <module>spring-boot-autoconfigure</module>
-        <module>spring-boot-starter</module>
         <module>test</module>
-        <module>tracing-opentelemetry</module>
         <module>todo</module>
     </modules>
     <packaging>pom</packaging>
 
-    <modelVersion>4.0.0</modelVersion>
 
     <name>Axon Framework</name>
     <description>
@@ -61,6 +58,10 @@
         <system>GitHub</system>
         <url>https://github.com/AxonFramework/AxonFramework/issues</url>
     </issueManagement>
+    <organization>
+        <name>AxonIQ B.V.</name>
+        <url>https://axoniq.io</url>
+    </organization>
 
     <properties>
         <java.version>21</java.version>
@@ -922,6 +923,16 @@
             <email>mateusz.nowak@axoniq.io</email>
             <organization>AxonIQ</organization>
             <organizationUrl>https://axoniq.io</organizationUrl>
+            <roles>
+                <role>Developer</role>
+            </roles>
+        </developer>
+        <developer>
+            <id>zambrovski</id>
+            <name>Simon Zambrovski</name>
+            <email>simon.zambrovski@holisticon.de</email>
+            <organization>Holisticon AG</organization>
+            <organizationUrl>https://holisticon.de</organizationUrl>
             <roles>
                 <role>Developer</role>
             </roles>

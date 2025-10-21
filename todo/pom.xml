@@ -70,30 +70,31 @@
             <artifactId>axon-legacy-saga</artifactId>
             <version>${project.version}</version>
         </dependency>
+
         <dependency>
-            <groupId>org.axonframework</groupId>
+            <groupId>org.axonframework.extensions.tracing</groupId>
             <artifactId>axon-tracing-opentelemetry</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.axonframework</groupId>
-            <artifactId>axon-metrics</artifactId>
+            <groupId>org.axonframework.extensions.metrics</groupId>
+            <artifactId>axon-metrics-dropwizard</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>org.axonframework</groupId>
-            <artifactId>axon-micrometer</artifactId>
+            <groupId>org.axonframework.extensions.metrics</groupId>
+            <artifactId>axon-metrics-micrometer</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>org.axonframework</groupId>
+            <groupId>org.axonframework.extensions.spring</groupId>
             <artifactId>axon-spring-boot-autoconfigure</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>${project.groupId}</groupId>
+            <groupId>org.axonframework</groupId>
             <artifactId>axon-messaging</artifactId>
             <type>test-jar</type>
             <scope>test</scope>

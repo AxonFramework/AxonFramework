@@ -44,7 +44,7 @@ class FixtureTest_MarkDeleted {
 
     @Test
     @SuppressWarnings("PMD.JUnitTestsShouldIncludeAssert") // Test succeeds when no Error is thrown
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3195 - Migration Module")
     void createAggregateYieldsLiveAggregate() {
         fixture.registerInjectableResource(new HardToCreateResource());
         fixture.givenNoPriorActivity()
@@ -66,7 +66,7 @@ class FixtureTest_MarkDeleted {
 
     @Test
     @SuppressWarnings("PMD.JUnitTestsShouldIncludeAssert") // Test succeeds when no Error is thrown
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3195 - Migration Module")
     void deletedAggregateYieldsAggregateMarkedDeleted() {
         fixture.given(new MyEvent("id", 0))
                .when(new DeleteCommand("id", false))

@@ -49,16 +49,16 @@ public class DefaultHandlerInterceptorRegistry implements HandlerInterceptorRegi
 
     private static final TypeReference<MessageHandlerInterceptor<Message>> MESSAGE_INTERCEPTOR_TYPE_REF = new TypeReference<>() {
     };
-    private static final TypeReference<MessageHandlerInterceptor<CommandMessage>> COMMAND_INTERCEPTOR_TYPE_REF = new TypeReference<>() {
+    private static final TypeReference<MessageHandlerInterceptor<? super CommandMessage>> COMMAND_INTERCEPTOR_TYPE_REF = new TypeReference<>() {
     };
-    private static final TypeReference<MessageHandlerInterceptor<EventMessage>> EVENT_INTERCEPTOR_TYPE_REF = new TypeReference<>() {
+    private static final TypeReference<MessageHandlerInterceptor<? super EventMessage>> EVENT_INTERCEPTOR_TYPE_REF = new TypeReference<>() {
     };
-    private static final TypeReference<MessageHandlerInterceptor<QueryMessage>> QUERY_INTERCEPTOR_TYPE_REF = new TypeReference<>() {
+    private static final TypeReference<MessageHandlerInterceptor<? super QueryMessage>> QUERY_INTERCEPTOR_TYPE_REF = new TypeReference<>() {
     };
 
-    private final List<ComponentDefinition<MessageHandlerInterceptor<CommandMessage>>> commandInterceptorDefinitions = new ArrayList<>();
-    private final List<ComponentDefinition<MessageHandlerInterceptor<EventMessage>>> eventInterceptorDefinitions = new ArrayList<>();
-    private final List<ComponentDefinition<MessageHandlerInterceptor<QueryMessage>>> queryInterceptorDefinitions = new ArrayList<>();
+    private final List<ComponentDefinition<MessageHandlerInterceptor<? super CommandMessage>>> commandInterceptorDefinitions = new ArrayList<>();
+    private final List<ComponentDefinition<MessageHandlerInterceptor<? super EventMessage>>> eventInterceptorDefinitions = new ArrayList<>();
+    private final List<ComponentDefinition<MessageHandlerInterceptor<? super QueryMessage>>> queryInterceptorDefinitions = new ArrayList<>();
 
     @Nonnull
     @Override
@@ -141,47 +141,20 @@ public class DefaultHandlerInterceptorRegistry implements HandlerInterceptorRegi
 
     @Nonnull
     @Override
-    public List<MessageHandlerInterceptor<CommandMessage>> commandInterceptors(@Nonnull Configuration config) {
-        List<MessageHandlerInterceptor<CommandMessage>> commandHandlerInterceptors = new ArrayList<>();
-        for (ComponentDefinition<MessageHandlerInterceptor<CommandMessage>> interceptorBuilder : commandInterceptorDefinitions) {
-            if (!(interceptorBuilder instanceof ComponentDefinition.ComponentCreator<MessageHandlerInterceptor<CommandMessage>> creator)) {
-                // The compiler should avoid this from happening.
-                throw new IllegalArgumentException("Unsupported component definition type: " + interceptorBuilder);
-            }
-            MessageHandlerInterceptor<CommandMessage> handlerInterceptor = creator.createComponent().resolve(config);
-            commandHandlerInterceptors.add(handlerInterceptor);
-        }
-        return commandHandlerInterceptors;
+    public List<MessageHandlerInterceptor<? super CommandMessage>> commandInterceptors(@Nonnull Configuration config) {
+        return resolveInterceptors(commandInterceptorDefinitions, config);
     }
 
     @Nonnull
     @Override
-    public List<MessageHandlerInterceptor<EventMessage>> eventInterceptors(@Nonnull Configuration config) {
-        List<MessageHandlerInterceptor<EventMessage>> eventHandlerInterceptors = new ArrayList<>();
-        for (ComponentDefinition<MessageHandlerInterceptor<EventMessage>> interceptorBuilder : eventInterceptorDefinitions) {
-            if (!(interceptorBuilder instanceof ComponentDefinition.ComponentCreator<MessageHandlerInterceptor<EventMessage>> creator)) {
-                // The compiler should avoid this from happening.
-                throw new IllegalArgumentException("Unsupported component definition type: " + interceptorBuilder);
-            }
-            MessageHandlerInterceptor<EventMessage> handlerInterceptor = creator.createComponent().resolve(config);
-            eventHandlerInterceptors.add(handlerInterceptor);
-        }
-        return eventHandlerInterceptors;
+    public List<MessageHandlerInterceptor<? super EventMessage>> eventInterceptors(@Nonnull Configuration config) {
+        return resolveInterceptors(eventInterceptorDefinitions, config);
     }
 
     @Nonnull
     @Override
-    public List<MessageHandlerInterceptor<QueryMessage>> queryInterceptors(@Nonnull Configuration config) {
-        List<MessageHandlerInterceptor<QueryMessage>> queryHandlerInterceptors = new ArrayList<>();
-        for (ComponentDefinition<MessageHandlerInterceptor<QueryMessage>> interceptorBuilder : queryInterceptorDefinitions) {
-            if (!(interceptorBuilder instanceof ComponentDefinition.ComponentCreator<MessageHandlerInterceptor<QueryMessage>> creator)) {
-                // The compiler should avoid this from happening.
-                throw new IllegalArgumentException("Unsupported component definition type: " + interceptorBuilder);
-            }
-            MessageHandlerInterceptor<QueryMessage> handlerInterceptor = creator.createComponent().resolve(config);
-            queryHandlerInterceptors.add(handlerInterceptor);
-        }
-        return queryHandlerInterceptors;
+    public List<MessageHandlerInterceptor<? super QueryMessage>> queryInterceptors(@Nonnull Configuration config) {
+        return resolveInterceptors(queryInterceptorDefinitions, config);
     }
 
     @Override
@@ -189,6 +162,24 @@ public class DefaultHandlerInterceptorRegistry implements HandlerInterceptorRegi
         descriptor.describeProperty("commandHandlerInterceptors", commandInterceptorDefinitions);
         descriptor.describeProperty("eventHandlerInterceptors", eventInterceptorDefinitions);
         descriptor.describeProperty("queryHandlerInterceptors", queryInterceptorDefinitions);
+    }
+
+
+    // Solves common verification, creation and combining for all handler interceptors.
+    private static <T extends Message> List<MessageHandlerInterceptor<? super T>> resolveInterceptors(
+            List<ComponentDefinition<MessageHandlerInterceptor<? super T>>> definitions,
+            Configuration config
+    ) {
+        List<MessageHandlerInterceptor<? super T>> handlerInterceptors = new ArrayList<>();
+        for (ComponentDefinition<MessageHandlerInterceptor<? super T>> interceptorBuilder : definitions) {
+            if (!(interceptorBuilder instanceof ComponentDefinition.ComponentCreator<MessageHandlerInterceptor<? super T>> creator)) {
+                // The compiler should avoid this from happening.
+                throw new IllegalArgumentException("Unsupported component definition type: " + interceptorBuilder);
+            }
+            MessageHandlerInterceptor<? super T> handlerInterceptor = creator.createComponent().resolve(config);
+            handlerInterceptors.add(handlerInterceptor);
+        }
+        return handlerInterceptors;
     }
 
     // Private class there to simplify use in registerInterceptor(...) only.

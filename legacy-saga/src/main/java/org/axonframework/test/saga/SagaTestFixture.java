@@ -95,7 +95,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     private final LinkedList<ParameterResolverFactory> registeredParameterResolverFactories = new LinkedList<>();
     private final LinkedList<HandlerDefinition> registeredHandlerDefinitions = new LinkedList<>();
     private final LinkedList<HandlerEnhancerDefinition> registeredHandlerEnhancerDefinitions = new LinkedList<>();
-    private final LinkedList<MessageHandlerInterceptor<EventMessage>> eventHandlerInterceptors = new LinkedList<>();
+    private final LinkedList<MessageHandlerInterceptor<? super EventMessage>> eventHandlerInterceptors = new LinkedList<>();
     private final RecordingListenerInvocationErrorHandler recordingListenerInvocationErrorHandler;
 
     private final Class<T> sagaType;

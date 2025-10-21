@@ -18,10 +18,10 @@ package org.axonframework.springboot;
 
 import com.codahale.metrics.MetricRegistry;
 import io.micrometer.core.instrument.MeterRegistry;
-import org.axonframework.micrometer.GlobalMetricRegistry;
-import org.axonframework.micrometer.MetricsConfigurerModule;
-import org.axonframework.springboot.autoconfig.AxonServerActuatorAutoConfiguration;
-import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
+import org.axonframework.extension.metrics.micrometer.GlobalMetricRegistry;
+import org.axonframework.extension.metrics.micrometer.MetricsConfigurerModule;
+import org.axonframework.extension.springboot.autoconfig.AxonServerActuatorAutoConfiguration;
+import org.axonframework.extension.springboot.autoconfig.AxonServerAutoConfiguration;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,10 +65,10 @@ class AxonAutoConfigurationWithMicrometerMetricsTest {
     private MetricRegistry dropwizardMetricRegistry;
 
     @Autowired(required = false)
-    private org.axonframework.metrics.GlobalMetricRegistry metricsModuleGlobalMetricRegistry;
+    private org.axonframework.extension.metrics.dropwizard.GlobalMetricRegistry metricsModuleGlobalMetricRegistry;
 
     @Autowired(required = false)
-    private org.axonframework.metrics.MetricsConfigurerModule metricsModuleMetricsConfigurerModule;
+    private org.axonframework.extension.metrics.dropwizard.MetricsConfigurerModule metricsModuleMetricsConfigurerModule;
 
     @Test
     void contextInitialization() {

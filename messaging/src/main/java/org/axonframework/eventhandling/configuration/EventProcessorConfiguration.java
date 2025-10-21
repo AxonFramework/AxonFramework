@@ -36,6 +36,7 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
+import org.axonframework.monitoring.configuration.MessageMonitorRegistry;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.SpanFactory;
 
@@ -68,7 +69,7 @@ public class EventProcessorConfiguration implements DescribableComponent {
                                                                                       .spanFactory(NoOpSpanFactory.INSTANCE)
                                                                                       .build();
     protected UnitOfWorkFactory unitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
-    protected List<MessageHandlerInterceptor<EventMessage>> interceptors = new ArrayList<>();
+    protected List<MessageHandlerInterceptor<? super EventMessage>> interceptors = new ArrayList<>();
 
     /**
      * Constructs a new {@code EventProcessorConfiguration} with just default values. Do not retrieve any global default
@@ -88,6 +89,8 @@ public class EventProcessorConfiguration implements DescribableComponent {
     public EventProcessorConfiguration(@Nonnull Configuration configuration) {
         this.interceptors = configuration.getComponent(HandlerInterceptorRegistry.class)
                                          .eventInterceptors(configuration);
+        this.messageMonitor(configuration.getComponent(MessageMonitorRegistry.class)
+                                         .eventMonitor(configuration));
     }
 
     /**
@@ -215,7 +218,7 @@ public class EventProcessorConfiguration implements DescribableComponent {
      * @return The list of {@link EventMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors} to
      * add to the {@link EventProcessor} under construction with this configuration implementation.
      */
-    public List<MessageHandlerInterceptor<EventMessage>> interceptors() {
+    public List<MessageHandlerInterceptor<? super EventMessage>> interceptors() {
         return new ArrayList<>(interceptors);
     }
 

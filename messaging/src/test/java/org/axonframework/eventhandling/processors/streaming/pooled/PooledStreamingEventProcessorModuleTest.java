@@ -299,6 +299,94 @@ class PooledStreamingEventProcessorModuleTest {
             // then
             assertThat(processor).isPresent();
         }
+
+        @Test
+        void shouldRegisterTokenStoreAsComponent() {
+            // given
+            var processorName = "testProcessor";
+            var tokenStore = new InMemoryTokenStore();
+            var module = EventProcessorModule
+                    .pooledStreaming(processorName)
+                    .eventHandlingComponents(singleTestEventHandlingComponent())
+                    .customized((cfg, c) -> c.eventSource(new AsyncInMemoryStreamableEventSource())
+                                             .tokenStore(tokenStore));
+
+            var configurer = MessagingConfigurer.create();
+            configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps.processor(module)));
+            var configuration = configurer.build();
+
+            // when
+            var registeredTokenStore = configuration.getModuleConfiguration(processorName)
+                                                    .flatMap(m -> m.getOptionalComponent(TokenStore.class, "TokenStore[" + processorName + "]"));
+
+            // then
+            assertThat(registeredTokenStore).isPresent();
+            assertThat(registeredTokenStore.get()).isSameAs(tokenStore);
+        }
+
+        @Test
+        void shouldRegisterUnitOfWorkFactoryAsComponent() {
+            // given
+            var processorName = "testProcessor";
+            var unitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
+            var module = EventProcessorModule
+                    .pooledStreaming(processorName)
+                    .eventHandlingComponents(singleTestEventHandlingComponent())
+                    .customized((cfg, c) -> c.eventSource(new AsyncInMemoryStreamableEventSource())
+                                             .tokenStore(new InMemoryTokenStore())
+                                             .unitOfWorkFactory(unitOfWorkFactory));
+
+            var configurer = MessagingConfigurer.create();
+            configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps.processor(module)));
+            var configuration = configurer.build();
+
+            // when
+            var registeredUnitOfWorkFactory = configuration.getModuleConfiguration(processorName)
+                                                           .flatMap(m -> m.getOptionalComponent(UnitOfWorkFactory.class, "UnitOfWorkFactory[" + processorName + "]"));
+
+            // then
+            assertThat(registeredUnitOfWorkFactory).isPresent();
+            assertThat(registeredUnitOfWorkFactory.get()).isSameAs(unitOfWorkFactory);
+        }
+
+        @Test
+        void shouldRegisterEventHandlingComponentsAsComponents() {
+            // given
+            var processorName = "testProcessor";
+            var component1 = new SimpleEventHandlingComponent();
+            component1.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
+            var component2 = new SimpleEventHandlingComponent();
+            component2.subscribe(new QualifiedName(Integer.class), (event, context) -> MessageStream.empty());
+            var component3 = new SimpleEventHandlingComponent();
+            component3.subscribe(new QualifiedName(Long.class), (event, context) -> MessageStream.empty());
+
+            var module = EventProcessorModule
+                    .pooledStreaming(processorName)
+                    .eventHandlingComponents(components -> components.declarative(cfg -> component1)
+                                                                      .declarative(cfg -> component2)
+                                                                      .declarative(cfg -> component3))
+                    .customized((cfg, c) -> c.eventSource(new AsyncInMemoryStreamableEventSource()));
+
+            var configurer = MessagingConfigurer.create();
+            configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps.processor(module)));
+            var configuration = configurer.build();
+
+            // when
+            var registeredComponent1 = configuration.getModuleConfiguration(processorName)
+                                                    .flatMap(m -> m.getOptionalComponent(org.axonframework.eventhandling.EventHandlingComponent.class,
+                                                                                          "EventHandlingComponent[" + processorName + "][0]"));
+            var registeredComponent2 = configuration.getModuleConfiguration(processorName)
+                                                    .flatMap(m -> m.getOptionalComponent(org.axonframework.eventhandling.EventHandlingComponent.class,
+                                                                                          "EventHandlingComponent[" + processorName + "][1]"));
+            var registeredComponent3 = configuration.getModuleConfiguration(processorName)
+                                                    .flatMap(m -> m.getOptionalComponent(org.axonframework.eventhandling.EventHandlingComponent.class,
+                                                                                          "EventHandlingComponent[" + processorName + "][2]"));
+
+            // then
+            assertThat(registeredComponent1).isPresent();
+            assertThat(registeredComponent2).isPresent();
+            assertThat(registeredComponent3).isPresent();
+        }
     }
 
     @Nested

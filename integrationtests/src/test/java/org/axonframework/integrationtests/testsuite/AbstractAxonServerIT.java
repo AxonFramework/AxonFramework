@@ -87,7 +87,7 @@ public abstract class AbstractAxonServerIT {
 
     private static final Random RND = new Random();
 
-    protected static final String createId(String prefix) {
+    protected static String createId(String prefix) {
         return prefix + "-" + RND.nextInt(Integer.MAX_VALUE);
     }
 }

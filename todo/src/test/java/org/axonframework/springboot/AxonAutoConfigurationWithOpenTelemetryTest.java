@@ -17,7 +17,7 @@
 package org.axonframework.springboot;
 
 import org.axonframework.tracing.SpanFactory;
-import org.axonframework.tracing.opentelemetry.OpenTelemetrySpanFactory;
+import org.axonframework.extension.tracing.opentelemetry.OpenTelemetrySpanFactory;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;

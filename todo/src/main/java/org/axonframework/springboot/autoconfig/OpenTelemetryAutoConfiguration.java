@@ -17,7 +17,7 @@
 package org.axonframework.springboot.autoconfig;
 
 import org.axonframework.tracing.SpanFactory;
-import org.axonframework.tracing.opentelemetry.OpenTelemetrySpanFactory;
+import org.axonframework.extension.tracing.opentelemetry.OpenTelemetrySpanFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -33,7 +33,7 @@ import org.springframework.context.annotation.Bean;
  */
 @AutoConfiguration
 @AutoConfigureBefore({AxonTracingAutoConfiguration.class, LegacyAxonAutoConfiguration.class})
-@ConditionalOnClass(name = "org.axonframework.tracing.opentelemetry.OpenTelemetrySpanFactory")
+@ConditionalOnClass(name = "org.axonframework.extension.tracing.opentelemetry.OpenTelemetrySpanFactory")
 public class OpenTelemetryAutoConfiguration {
 
     @Bean

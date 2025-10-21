@@ -23,7 +23,6 @@ import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.ResourceOverridingProcessingContext;
 
@@ -34,7 +33,7 @@ import java.util.function.Function;
 
 /**
  * Parameter resolver factory that adds support for resolving current {@link MessageHandlerInterceptorChain}. This can
- * function only if there is an active {@link LegacyUnitOfWork}.
+ * function only if there is a {@link ProcessingContext}.
  *
  * @author Milan Savic
  * @since 3.3.0

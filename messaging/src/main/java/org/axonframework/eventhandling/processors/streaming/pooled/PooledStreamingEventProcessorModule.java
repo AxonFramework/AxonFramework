@@ -32,10 +32,10 @@ import org.axonframework.eventhandling.configuration.EventProcessorConfiguration
 import org.axonframework.eventhandling.configuration.EventProcessorCustomization;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
-import org.axonframework.eventhandling.monitoring.MonitoringEventHandlingComponent;
 import org.axonframework.eventhandling.processors.streaming.segmenting.SequenceCachingEventHandlingComponent;
-import org.axonframework.eventhandling.tracing.TracingEventHandlingComponent;
+import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.lifecycle.Phase;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 
 import java.util.List;
 import java.util.Objects;
@@ -93,6 +93,8 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
     @Override
     public PooledStreamingEventProcessorModule build() {
         registerCustomizedConfiguration();
+        registerTokenStore();
+        registerUnitOfWorkFactory();
         registerEventHandlingComponents();
         registerEventProcessor();
         return this;
@@ -123,6 +125,24 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
         ));
     }
 
+    private void registerTokenStore() {
+        componentRegistry(cr -> cr.registerComponent(
+                ComponentDefinition
+                        .ofTypeAndName(TokenStore.class, "TokenStore[" + processorName + "]")
+                        .withBuilder(cfg -> cfg.getComponent(PooledStreamingEventProcessorConfiguration.class)
+                                               .tokenStore())
+        ));
+    }
+
+    private void registerUnitOfWorkFactory() {
+        componentRegistry(cr -> cr.registerComponent(
+                ComponentDefinition
+                        .ofTypeAndName(UnitOfWorkFactory.class, "UnitOfWorkFactory[" + processorName + "]")
+                        .withBuilder(cfg -> cfg.getComponent(PooledStreamingEventProcessorConfiguration.class)
+                                               .unitOfWorkFactory())
+        ));
+    }
+
     private void registerEventProcessor() {
         var processorComponentDefinition = ComponentDefinition
                 .ofTypeAndName(PooledStreamingEventProcessor.class, processorName)
@@ -149,10 +169,7 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
                 cr.registerComponent(EventHandlingComponent.class, componentName,
                                      cfg -> {
                                          var component = componentBuilder.build(cfg);
-                                         var configuration = cfg.getComponent(
-                                                 PooledStreamingEventProcessorConfiguration.class
-                                         );
-                                         return withDefaultDecoration(component, configuration);
+                                         return new SequenceCachingEventHandlingComponent(component);
                                      });
                 cr.registerDecorator(EventHandlingComponent.class, componentName,
                                      InterceptingEventHandlingComponent.DECORATION_ORDER,
@@ -184,18 +201,6 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
 
     private static ScheduledExecutorService defaultExecutor(int poolSize, String factoryName) {
         return Executors.newScheduledThreadPool(poolSize, new AxonThreadFactory(factoryName));
-    }
-
-    @Nonnull
-    private static EventHandlingComponent withDefaultDecoration(
-            EventHandlingComponent c,
-            EventProcessorConfiguration configuration
-    ) {
-        // TODO #3595 - Move this monitoring decorator to be placed around **all** other decorators for an EHC.
-        return new MonitoringEventHandlingComponent(
-                configuration.messageMonitor(),
-                new SequenceCachingEventHandlingComponent(c)
-        );
     }
 
     @Override
