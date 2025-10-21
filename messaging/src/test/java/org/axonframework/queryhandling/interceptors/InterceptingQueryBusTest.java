@@ -561,7 +561,6 @@ class InterceptingQueryBusTest {
      *   <li>Interceptor1 RESPONSE: adds "dispatch1" -> "value-1"</li>
      * </ol>
      */
-    @SuppressWarnings("unchecked")
     private record AddMetadataCountInterceptor<M extends Message>(String key, String value)
             implements MessageHandlerInterceptor<M>, MessageDispatchInterceptor<M> {
 
@@ -596,8 +595,8 @@ class InterceptingQueryBusTest {
         }
 
         /**
-         * Builds a value with an incrementing counter based on existing metadata.
-         * Counter starts at 0 and increments with each modification.
+         * Builds a value with an incrementing counter based on existing metadata. Counter starts at 0 and increments
+         * with each modification.
          */
         private String buildValue(Message message) {
             int count = message.metadata().containsKey(key)
