@@ -91,13 +91,6 @@ public class GrpcBackedSubscriptionQueryMessage implements SubscriptionQueryMess
     }
 
     @Override
-    @Nonnull
-    public MessageType updatesResponseType() {
-        // TODO #3488 - Not implementing this, as the GrpcBackedResponseMessage will be removed as part of #3488
-        return null;
-    }
-
-    @Override
     @Nullable
     public Object payload() {
         return grpcBackedQueryMessage.payload();

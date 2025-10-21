@@ -65,9 +65,7 @@ import org.axonframework.queryhandling.QueryPriorityCalculator;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
-import org.axonframework.queryhandling.SubscriptionQueryResponseMessages;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
-import org.axonframework.queryhandling.UpdateHandler;
 import org.axonframework.queryhandling.tracing.DefaultQueryBusSpanFactory;
 import org.axonframework.queryhandling.tracing.QueryBusSpanFactory;
 import org.axonframework.serialization.Serializer;
@@ -134,8 +132,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
     private final AxonServerConnectionManager axonServerConnectionManager;
     private final AxonServerConfiguration configuration;
-    @SuppressWarnings("unused")
-    private final QueryUpdateEmitter updateEmitter;
     private final QueryBus localSegment;
     private final QuerySerializer serializer;
     private final SubscriptionMessageSerializer subscriptionSerializer;
@@ -163,7 +159,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         builder.validate();
         this.axonServerConnectionManager = builder.axonServerConnectionManager;
         this.configuration = builder.configuration;
-        this.updateEmitter = builder.updateEmitter;
         this.localSegment = builder.localSegment;
         this.serializer = builder.buildQuerySerializer();
         this.subscriptionSerializer = builder.buildSubscriptionMessageSerializer();
@@ -450,7 +445,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
     @Nonnull
     @Override
-    public SubscriptionQueryResponseMessages subscriptionQuery(
+    public MessageStream<QueryResponseMessage> subscriptionQuery(
             @Nonnull SubscriptionQueryMessage query,
             @Nullable ProcessingContext context,
             int updateBufferSize
@@ -499,7 +494,8 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
     @Nonnull
     @Override
-    public UpdateHandler subscribeToUpdates(@Nonnull SubscriptionQueryMessage query, int updateBufferSize) {
+    public MessageStream<SubscriptionQueryUpdateMessage> subscribeToUpdates(@Nonnull SubscriptionQueryMessage query,
+                                                                            int updateBufferSize) {
         // TODO #3488 implement as part of AxonServerQueryBus implementation
         return null;
     }
@@ -1067,26 +1063,28 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         @Override
         public io.axoniq.axonserver.connector.Registration registerSubscriptionQuery(SubscriptionQuery query,
                                                                                      UpdateHandler sendUpdate) {
-            org.axonframework.queryhandling.UpdateHandler updateHandler =
-                    localSegment.subscribeToUpdates(subscriptionSerializer.deserialize(query), 1024);
+            MessageStream<SubscriptionQueryUpdateMessage> updates = localSegment.subscribeToUpdates(
+                    subscriptionSerializer.deserialize(query),
+                    1024);
 
-            updateHandler.updates()
-                         .doOnError(e -> {
-                             ErrorMessage error = ExceptionSerializer.serialize(configuration.getClientId(), e);
-                             String errorCode = ErrorCode.getQueryExecutionErrorCode(e).errorCode();
-                             QueryUpdate queryUpdate = QueryUpdate.newBuilder()
-                                                                  .setErrorMessage(error)
-                                                                  .setErrorCode(errorCode)
-                                                                  .build();
-                             sendUpdate.sendUpdate(queryUpdate);
-                             sendUpdate.complete();
-                         })
-                         .doOnComplete(sendUpdate::complete)
-                         .map(subscriptionSerializer::serialize)
-                         .subscribe(sendUpdate::sendUpdate);
+            FluxUtils.of(updates)
+                     .map(MessageStream.Entry::message)
+                     .doOnError(e -> {
+                         ErrorMessage error = ExceptionSerializer.serialize(configuration.getClientId(), e);
+                         String errorCode = ErrorCode.getQueryExecutionErrorCode(e).errorCode();
+                         QueryUpdate queryUpdate = QueryUpdate.newBuilder()
+                                                              .setErrorMessage(error)
+                                                              .setErrorCode(errorCode)
+                                                              .build();
+                         sendUpdate.sendUpdate(queryUpdate);
+                         sendUpdate.complete();
+                     })
+                     .doOnComplete(sendUpdate::complete)
+                     .map(subscriptionSerializer::serialize)
+                     .subscribe(sendUpdate::sendUpdate);
 
             return () -> {
-                updateHandler.cancel();
+                updates.close();
                 return FutureUtils.emptyCompletedFuture();
             };
         }

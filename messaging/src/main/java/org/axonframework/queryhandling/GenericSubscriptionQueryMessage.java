@@ -37,8 +37,6 @@ import java.util.Map;
  */
 public class GenericSubscriptionQueryMessage extends GenericQueryMessage implements SubscriptionQueryMessage {
 
-    private final MessageType updateResponseType;
-
     /**
      * Constructs a {@code GenericSubscriptionQueryMessage} for the given {@code type}, {@code payload},
      * {@code queryName}, {@code responseType}, and {@code updateResponseType}.
@@ -50,15 +48,11 @@ public class GenericSubscriptionQueryMessage extends GenericQueryMessage impleme
      *                           {@link SubscriptionQueryMessage}.
      * @param responseType       The expected {@link MessageType response type} for this
      *                           {@link SubscriptionQueryMessage}.
-     * @param updateResponseType The expected {@link MessageType type} of incremental updates for this
-     *                           {@link SubscriptionQueryMessage}.
      */
     public GenericSubscriptionQueryMessage(@Nonnull MessageType type,
                                            @Nullable Object payload,
-                                           @Nonnull MessageType responseType,
-                                           @Nonnull MessageType updateResponseType) {
+                                           @Nonnull MessageType responseType) {
         super(type, payload, responseType);
-        this.updateResponseType = updateResponseType;
     }
 
     /**
@@ -78,36 +72,24 @@ public class GenericSubscriptionQueryMessage extends GenericQueryMessage impleme
      *                           reconstruct.
      * @param responseType       The expected {@link MessageType response type} for this
      *                           {@link SubscriptionQueryMessage}.
-     * @param updateResponseType The expected {@link MessageType type} of incremental updates for this
-     *                           {@link SubscriptionQueryMessage}.
      */
     public GenericSubscriptionQueryMessage(@Nonnull Message delegate,
-                                           @Nonnull MessageType responseType,
-                                           @Nonnull MessageType updateResponseType) {
+                                           @Nonnull MessageType responseType) {
         super(delegate, responseType);
-        this.updateResponseType = updateResponseType;
-    }
-
-    @Override
-    @Nonnull
-    public MessageType updatesResponseType() {
-        return updateResponseType;
     }
 
     @Override
     @Nonnull
     public SubscriptionQueryMessage withMetadata(@Nonnull Map<String, String> metadata) {
         return new GenericSubscriptionQueryMessage(delegate().withMetadata(metadata),
-                                                   responseType(),
-                                                   updateResponseType);
+                                                   responseType());
     }
 
     @Override
     @Nonnull
     public SubscriptionQueryMessage andMetadata(@Nonnull Map<String, String> metadata) {
         return new GenericSubscriptionQueryMessage(delegate().andMetadata(metadata),
-                                                   responseType(),
-                                                   updateResponseType);
+                                                   responseType());
     }
 
     @Override
@@ -123,15 +105,7 @@ public class GenericSubscriptionQueryMessage extends GenericQueryMessage impleme
                                                delegate.type(),
                                                convertedPayload,
                                                delegate.metadata());
-        return new GenericSubscriptionQueryMessage(converted, responseType(), updatesResponseType());
-    }
-
-    @Override
-    protected void describeTo(StringBuilder stringBuilder) {
-        super.describeTo(stringBuilder);
-        stringBuilder.append(", updateResponseType='")
-                     .append(updateResponseType)
-                     .append('\'');
+        return new GenericSubscriptionQueryMessage(converted, responseType());
     }
 
     @Override

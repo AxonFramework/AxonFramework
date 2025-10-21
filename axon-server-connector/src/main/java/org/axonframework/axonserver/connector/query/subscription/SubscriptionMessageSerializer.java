@@ -53,6 +53,7 @@ import java.util.Optional;
  * @author Sara Pellegrini
  * @since 4.0
  */
+@Deprecated
 public class SubscriptionMessageSerializer {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
@@ -115,13 +116,13 @@ public class SubscriptionMessageSerializer {
      * Serializes the given {@code subscriptionQueryMessage} into a {@link SerializedObject}.
      *
      * @param subscriptionQueryMessage the {@link SubscriptionQueryMessage} who's
-     *                                 {@link SubscriptionQueryMessage#updatesResponseType()} to serialize into a
+     *                                 {@link SubscriptionQueryMessage#responseType()} to serialize into a
      *                                 {@link SerializedObject}
      * @return a {@link SerializedObject} based on the given {@code subscriptionQueryMessage} its
-     * {@link SubscriptionQueryMessage#updatesResponseType()}
+     * {@link SubscriptionQueryMessage#responseType()}
      */
     public SerializedObject serializeUpdateType(SubscriptionQueryMessage subscriptionQueryMessage) {
-        return responseTypeSerializer.apply(subscriptionQueryMessage.updatesResponseType());
+        return responseTypeSerializer.apply(subscriptionQueryMessage.responseType());
     }
 
     /**

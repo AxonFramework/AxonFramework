@@ -21,6 +21,7 @@ import jakarta.annotation.Nonnull;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TransferQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -41,7 +42,6 @@ public class QueueMessageStream<M extends Message> implements MessageStream<M> {
     private final AtomicBoolean completed = new AtomicBoolean(false);
     private final AtomicReference<Throwable> errorRef = new AtomicReference<>();
     private final AtomicReference<Runnable> onConsumeCallback = new AtomicReference<>(NO_OP_CALLBACK);
-    private final AtomicBoolean closed = new AtomicBoolean(false);
 
     /**
      * Constructs an instance with an unbounded queue. Offering {@link Entry entries} will always be possible, as long
@@ -57,7 +57,7 @@ public class QueueMessageStream<M extends Message> implements MessageStream<M> {
      * <p>
      * Note that delivery and consumption of entries is done through {@link BlockingQueue#offer(Object)} and
      * {@link BlockingQueue#poll()}, respectively. This means that a queue must be available to buffer elements.
-     * Implementations of a {@link java.util.concurrent.TransferQueue} typically don't have this, and will therefore not
+     * Implementations of a {@link TransferQueue} typically don't have this, and will therefore not
      * work.
      *
      * @param queue The queue to use to store {@link Entry entries} in transit from producer to consumer.
@@ -70,14 +70,15 @@ public class QueueMessageStream<M extends Message> implements MessageStream<M> {
      * Add the given {@code message} and accompanying {@code context} available for reading by a consumer. Any callback
      * that has been registered will be notified of the availability of a new {@link Entry entry}.
      * <p>
-     * If the underling buffer has insufficient space to store the offered element, the method returns {@code false}.
+     * If the underling buffer has insufficient space to store the offered element, or if the stream has been closed,
+     * the method returns {@code false}.
      *
      * @param message The message to add to the queue.
      * @param context The context to accompany the message.
      * @return {@code true} if the message was successfully buffered. Otherwise {@code false}.
      */
     public boolean offer(@Nonnull M message, @Nonnull Context context) {
-        if (queue.offer(new SimpleEntry<>(message, context))) {
+        if (!completed.get() && queue.offer(new SimpleEntry<>(message, context))) {
             onAvailableCallbackRef.get().run();
             return true;
         }
@@ -107,8 +108,9 @@ public class QueueMessageStream<M extends Message> implements MessageStream<M> {
      * @param error The cause of the exceptional completion
      */
     public void completeExceptionally(@Nonnull Throwable error) {
-        errorRef.set(error);
-        completed.set(true);
+        if (!completed.getAndSet(true)) {
+            errorRef.updateAndGet(e -> e == null ? error : e);
+        }
         onAvailableCallbackRef.get().run();
     }
 
@@ -122,17 +124,6 @@ public class QueueMessageStream<M extends Message> implements MessageStream<M> {
      */
     public void onConsumeCallback(@Nonnull Runnable callback) {
         this.onConsumeCallback.set(callback);
-    }
-
-    /**
-     * Whether the consumer has requested to {@link #close()} this stream. This is a signal to producing components to
-     * stop emitting more {@link Message messages}, complete the stream, and release any sources associated with this
-     * stream.
-     *
-     * @return {@code true} if a close was requested, otherwise {@code false}.
-     */
-    public boolean isClosed() {
-        return closed.get();
     }
 
     @Override
@@ -169,7 +160,7 @@ public class QueueMessageStream<M extends Message> implements MessageStream<M> {
 
     @Override
     public void close() {
-        this.closed.set(true);
+        this.completed.set(true);
         onConsumeCallback.get().run();
     }
 

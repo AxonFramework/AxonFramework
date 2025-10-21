@@ -19,22 +19,23 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.messaging.Context;
 import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.messaging.FluxUtils;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QueueMessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Sinks;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -73,7 +74,7 @@ public class SimpleQueryBus implements QueryBus {
 
     private final UnitOfWorkFactory unitOfWorkFactory;
     private final ConcurrentMap<QueryHandlerName, QueryHandler> subscriptions = new ConcurrentHashMap<>();
-    private final ConcurrentMap<SubscriptionQueryMessage, SinkWrapper<SubscriptionQueryUpdateMessage>> updateHandlers =
+    private final ConcurrentMap<SubscriptionQueryMessage, QueueMessageStream<SubscriptionQueryUpdateMessage>> updateHandlers =
             new ConcurrentHashMap<>();
 
     /**
@@ -157,41 +158,30 @@ public class SimpleQueryBus implements QueryBus {
 
     @Nonnull
     @Override
-    public SubscriptionQueryResponseMessages subscriptionQuery(@Nonnull SubscriptionQueryMessage query,
-                                                               @Nullable ProcessingContext context,
-                                                               int updateBufferSize) {
-        Flux<QueryResponseMessage> initialStream =
-                Flux.defer(() -> FluxUtils.of(query(query, context)))
-                    .map(MessageStream.Entry::message)
-                    .doOnError(error -> logger.error(
-                            "An error happened while trying to report an initial result. Query: {}",
-                            query, error
-                    ));
-        UpdateHandler updateHandler = subscribeToUpdates(query, updateBufferSize);
+    public MessageStream<QueryResponseMessage> subscriptionQuery(@Nonnull SubscriptionQueryMessage query,
+                                                                 @Nullable ProcessingContext context,
+                                                                 int updateBufferSize) {
+        MessageStream<SubscriptionQueryUpdateMessage> updates = subscribeToUpdates(query, updateBufferSize);
+        MessageStream<QueryResponseMessage> initialResult = query(query, context);
 
-        return new GenericSubscriptionQueryResponseMessages(initialStream,
-                                                            updateHandler.updates(),
-                                                            updateHandler::complete);
+        return initialResult.concatWith(updates.cast());
     }
 
     @Override
     @Nonnull
-    public UpdateHandler subscribeToUpdates(@Nonnull SubscriptionQueryMessage query,
-                                            int updateBufferSize) {
+    public MessageStream<SubscriptionQueryUpdateMessage> subscribeToUpdates(@Nonnull SubscriptionQueryMessage query,
+                                                                            int updateBufferSize) {
         if (hasHandlerFor(query.identifier())) {
             throw new SubscriptionQueryAlreadyRegisteredException(query.identifier());
         }
-        Runnable removeHandler = () -> updateHandlers.remove(query);
-        Sinks.Many<SubscriptionQueryUpdateMessage> sink = Sinks.many()
-                                                               .replay()
-                                                               .limit(updateBufferSize);
-        SinksManyWrapper<SubscriptionQueryUpdateMessage> sinksManyWrapper = new SinksManyWrapper<>(sink);
-        updateHandlers.put(query, sinksManyWrapper);
+        QueueMessageStream<SubscriptionQueryUpdateMessage> output = new QueueMessageStream<>(new ArrayBlockingQueue<>(
+                updateBufferSize));
+        QueueMessageStream<SubscriptionQueryUpdateMessage> previous = updateHandlers.put(query, output);
+        if (previous != null) {
+            previous.close();
+        }
 
-        Flux<SubscriptionQueryUpdateMessage> updateMessageFlux = sink.asFlux()
-                                                                     .doOnCancel(removeHandler)
-                                                                     .doOnTerminate(removeHandler);
-        return new UpdateHandler(updateMessageFlux, removeHandler, sinksManyWrapper::complete);
+        return output.onClose(() -> updateHandlers.remove(query, output));
     }
 
     private boolean hasHandlerFor(String queryId) {
@@ -217,7 +207,7 @@ public class SimpleQueryBus implements QueryBus {
 
     private void emitUpdate(Predicate<SubscriptionQueryMessage> filter,
                             Supplier<SubscriptionQueryUpdateMessage> updateSupplier) {
-        Map<SubscriptionQueryMessage, SinkWrapper<SubscriptionQueryUpdateMessage>> matchingHandlers =
+        Map<SubscriptionQueryMessage, QueueMessageStream<SubscriptionQueryUpdateMessage>> matchingHandlers =
                 updateHandlers.entrySet()
                               .stream()
                               .filter(entry -> filter.test(entry.getKey()))
@@ -229,13 +219,16 @@ public class SimpleQueryBus implements QueryBus {
         SubscriptionQueryUpdateMessage update = updateSupplier.get();
         matchingHandlers.forEach((query, updateHandler) -> {
             try {
-                updateHandler.next(update);
+                if (!updateHandler.offer(update, Context.empty())) {
+                    updateHandler.completeExceptionally(new QueryExecutionException("Subscription update buffer overflow", null));
+                    updateHandlers.remove(query, updateHandler);
+                }
             } catch (Exception e) {
                 logger.info("An error occurred while trying to emit an update to a query '{}'. " +
                                     "The subscription will be cancelled. Exception summary: {}",
                             query.type(), e.toString());
-                updateHandlers.remove(query);
-                emitError(updateHandler, e, query);
+                updateHandler.completeExceptionally(e);
+                updateHandlers.remove(query, updateHandler);
             }
         });
     }
@@ -252,12 +245,13 @@ public class SimpleQueryBus implements QueryBus {
                       .stream()
                       .filter(entry -> filter.test(entry.getKey()))
                       .forEach(entry -> {
-                          SinkWrapper<SubscriptionQueryUpdateMessage> updateHandler = entry.getValue();
+                          QueueMessageStream<SubscriptionQueryUpdateMessage> updateHandler = entry.getValue();
                           try {
                               updateHandler.complete();
                           } catch (Exception e) {
-                              emitError(updateHandler, e, entry.getKey());
+                              updateHandler.completeExceptionally(e);
                           }
+                          updateHandlers.remove(entry.getKey(), updateHandler);
                       });
     }
 
@@ -297,11 +291,11 @@ public class SimpleQueryBus implements QueryBus {
         return FutureUtils.emptyCompletedFuture();
     }
 
-    private void emitError(SinkWrapper<?> updateHandler,
+    private void emitError(QueueMessageStream<SubscriptionQueryUpdateMessage> updateHandler,
                            Throwable cause,
                            SubscriptionQueryMessage query) {
         try {
-            updateHandler.error(cause);
+            updateHandler.completeExceptionally(cause);
         } catch (Exception e) {
             logger.error("An error happened while trying to inform an update handler about the error. Query: {}",
                          query);
