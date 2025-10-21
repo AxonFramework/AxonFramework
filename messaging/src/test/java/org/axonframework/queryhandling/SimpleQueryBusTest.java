@@ -18,6 +18,7 @@ package org.axonframework.queryhandling;
 import org.axonframework.common.infra.MockComponentDescriptor;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.messaging.FluxUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
@@ -359,7 +360,7 @@ class SimpleQueryBusTest {
             MessageStream<QueryResponseMessage> result =
                     testSubject.subscriptionQuery(testQuery, null, Queues.SMALL_BUFFER_SIZE);
             // then...
-            StepVerifier.create(result.asFlux().map(MessageStream.Entry::message))
+            StepVerifier.create(FluxUtils.of(result).map(MessageStream.Entry::message))
                         .expectError(NoHandlerForQueryException.class)
                         .verify();
         }
@@ -375,7 +376,7 @@ class SimpleQueryBusTest {
                     testSubject.subscriptionQuery(testQuery, null, Queues.SMALL_BUFFER_SIZE);
             testSubject.completeSubscriptions(testQuery::equals, null);
             // then...
-            StepVerifier.create(result.asFlux().map(MessageStream.Entry::message))
+            StepVerifier.create(FluxUtils.of(result).map(MessageStream.Entry::message))
                         .expectNextMatches(response -> Objects.equals(response.payload(), "query1234"))
                         .verifyComplete();
         }
@@ -392,7 +393,7 @@ class SimpleQueryBusTest {
             testSubject.completeSubscriptions(testQuery::equals, null);
 
             // then...
-            StepVerifier.create(result.asFlux().map(MessageStream.Entry::message))
+            StepVerifier.create(FluxUtils.of(result).map(MessageStream.Entry::message))
                         .expectNextMatches(response -> Objects.equals(response.payload(), "query1234"))
                         .expectNextMatches(response -> Objects.equals(response.payload(), "query5678"))
                         .verifyComplete();
@@ -409,7 +410,7 @@ class SimpleQueryBusTest {
                     testSubject.subscriptionQuery(testQuery, null, Queues.SMALL_BUFFER_SIZE);
             testSubject.completeSubscriptions(testQuery::equals, null);
             // when/then...
-            StepVerifier.create(result.asFlux().map(MessageStream.Entry::message))
+            StepVerifier.create(FluxUtils.of(result).map(MessageStream.Entry::message))
                         .verifyComplete();
         }
 
@@ -426,7 +427,7 @@ class SimpleQueryBusTest {
             MessageStream<QueryResponseMessage> result =
                     testSubject.subscriptionQuery(testQuery, null, Queues.SMALL_BUFFER_SIZE);
             // then...
-            StepVerifier.create(result.asFlux().map(MessageStream.Entry::message))
+            StepVerifier.create(FluxUtils.of(result).map(MessageStream.Entry::message))
                         .expectError(MockException.class)
                         .verify();
         }
@@ -460,7 +461,7 @@ class SimpleQueryBusTest {
             // when...
             result.close();
             // then...
-            StepVerifier.create(result.asFlux().map(MessageStream.Entry::message)
+            StepVerifier.create(FluxUtils.of(result).map(MessageStream.Entry::message)
                                       .mapNotNull(Message::payload))
                         .expectNext(UPDATE_PAYLOAD)
                         .verifyComplete();
@@ -486,7 +487,7 @@ class SimpleQueryBusTest {
             // when...
             testSubject.emitUpdate(queryFilter, () -> updateMessage, null).join();
             // then...
-            StepVerifier.create(responses.asFlux().map(MessageStream.Entry::message))
+            StepVerifier.create(FluxUtils.of(responses).map(MessageStream.Entry::message))
                         .expectNextMatches(response -> Objects.equals(response.payload(), UPDATE_PAYLOAD))
                         .verifyTimeout(Duration.ofMillis(100));
         }
@@ -518,13 +519,13 @@ class SimpleQueryBusTest {
             // when...
             testSubject.emitUpdate(queryFilter, () -> updateMessage, null).join();
             // then...
-            StepVerifier.create(firstResponses.asFlux().map(MessageStream.Entry::message))
+            StepVerifier.create(FluxUtils.of(firstResponses).map(MessageStream.Entry::message))
                         .expectNextMatches(response -> Objects.equals(response.payload(), UPDATE_PAYLOAD))
                         .verifyTimeout(Duration.ofMillis(100));
-            StepVerifier.create(secondResponses.asFlux().map(MessageStream.Entry::message))
+            StepVerifier.create(FluxUtils.of(secondResponses).map(MessageStream.Entry::message))
                         .expectNextMatches(response -> Objects.equals(response.payload(), UPDATE_PAYLOAD))
                         .verifyTimeout(Duration.ofMillis(100));
-            StepVerifier.create(thirdResponses.asFlux().map(MessageStream.Entry::message))
+            StepVerifier.create(FluxUtils.of(thirdResponses).map(MessageStream.Entry::message))
                         .verifyTimeout(Duration.ofMillis(100));
         }
 
@@ -545,7 +546,7 @@ class SimpleQueryBusTest {
                 executor.shutdown();
             }
             // then...
-            Flux<SubscriptionQueryUpdateMessage> updates = updateHandler.asFlux().map(MessageStream.Entry::message);
+            Flux<SubscriptionQueryUpdateMessage> updates = FluxUtils.of(updateHandler).map(MessageStream.Entry::message);
             StepVerifier.create(updates)
                         .expectNextCount(100)
                         .then(() -> testSubject.completeSubscriptions(query -> true, null))
@@ -575,7 +576,7 @@ class SimpleQueryBusTest {
             uow.onInvocation(context -> testSubject.emitUpdate(queryFilter, () -> updateMessage, context));
             // then before the after commit phase validate the filter was not invoked yet...
             List<String> updateList = new ArrayList<>();
-            result.asFlux().map(MessageStream.Entry::message).mapNotNull(m -> m.payloadAs(String.class)).subscribe(
+            FluxUtils.of(result).map(MessageStream.Entry::message).mapNotNull(m -> m.payloadAs(String.class)).subscribe(
                     updateList::add);
             assertThat(filterInvoked).isFalse();
             assertThat(updateList).isEmpty();
@@ -640,11 +641,11 @@ class SimpleQueryBusTest {
             testSubject.completeSubscriptions(queryFilter, null).join();
             // then...
             testSubject.emitUpdate(query -> true, () -> updateMessage, null).join();
-            StepVerifier.create(firstResponses.asFlux().map(MessageStream.Entry::message))
+            StepVerifier.create(FluxUtils.of(firstResponses).map(MessageStream.Entry::message))
                         .verifyComplete();
-            StepVerifier.create(secondResponses.asFlux().map(MessageStream.Entry::message))
+            StepVerifier.create(FluxUtils.of(secondResponses).map(MessageStream.Entry::message))
                         .verifyComplete();
-            StepVerifier.create(thirdResponses.asFlux().map(MessageStream.Entry::message))
+            StepVerifier.create(FluxUtils.of(thirdResponses).map(MessageStream.Entry::message))
                         .expectNextMatches(response -> Objects.equals(response.payload(), UPDATE_PAYLOAD))
                         .verifyTimeout(Duration.ofMillis(100));
         }
@@ -709,13 +710,13 @@ class SimpleQueryBusTest {
             testSubject.completeSubscriptionsExceptionally(queryFilter, mockException, null).join();
             // then...
             testSubject.emitUpdate(query -> true, () -> updateMessage, null).join();
-            StepVerifier.create(firstResponses.asFlux().map(MessageStream.Entry::message))
+            StepVerifier.create(FluxUtils.of(firstResponses).map(MessageStream.Entry::message))
                         .expectNextCount(1)
                         .verifyError(MockException.class);
-            StepVerifier.create(secondResponses.asFlux().map(MessageStream.Entry::message))
+            StepVerifier.create(FluxUtils.of(secondResponses).map(MessageStream.Entry::message))
                         .expectNextCount(1)
                         .verifyError(MockException.class);
-            StepVerifier.create(thirdResponses.asFlux().map(MessageStream.Entry::message))
+            StepVerifier.create(FluxUtils.of(thirdResponses).map(MessageStream.Entry::message))
                         .expectNextCount(1)
                         .expectNextMatches(response -> Objects.equals(response.payload(), UPDATE_PAYLOAD))
                         .verifyTimeout(Duration.ofMillis(100));

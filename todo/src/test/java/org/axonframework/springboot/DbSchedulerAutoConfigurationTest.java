@@ -29,7 +29,7 @@ import org.axonframework.eventhandling.scheduling.dbscheduler.DbSchedulerEventSc
 import org.axonframework.eventhandling.scheduling.dbscheduler.DbSchedulerHumanReadableEventData;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.springboot.util.ConditionalOnMissingQualifiedBean;
+import org.axonframework.extension.springboot.util.ConditionalOnMissingQualifiedBean;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;

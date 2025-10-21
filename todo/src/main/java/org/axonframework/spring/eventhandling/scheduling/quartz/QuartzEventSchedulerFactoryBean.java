@@ -20,7 +20,7 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.scheduling.quartz.EventJobDataBinder;
 import org.axonframework.eventhandling.scheduling.quartz.QuartzEventScheduler;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
+import org.axonframework.extension.spring.messaging.unitofwork.SpringTransactionManager;
 import org.quartz.JobDataMap;
 import org.quartz.Scheduler;
 import org.springframework.beans.BeansException;

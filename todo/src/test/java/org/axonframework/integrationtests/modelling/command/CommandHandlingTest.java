@@ -17,26 +17,28 @@
 package org.axonframework.integrationtests.modelling.command;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.Registration;
-import org.axonframework.eventhandling.AbstractEventBus;
+import org.axonframework.eventhandling.DelegatingEventBus;
 import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.axonframework.eventhandling.TrackingEventStream;
-import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventsourcing.LegacyEventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.integrationtests.commandhandling.StubAggregate;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -48,7 +50,7 @@ class CommandHandlingTest {
 
     @BeforeEach
     void setUp() {
-        stubEventStore = StubEventStore.builder().build();
+        stubEventStore = new StubEventStore();
         repository = LegacyEventSourcingRepository.builder(StubAggregate.class)
 //                                                  .eventStore(stubEventStore)
                                                   .build();
@@ -77,16 +79,17 @@ class CommandHandlingTest {
         assertFalse(es.hasNext());
     }
 
-    private static class StubEventStore extends AbstractEventBus {
+    private static class StubEventStore extends DelegatingEventBus {
 
         private final List<DomainEventMessage> storedEvents = new LinkedList<>();
 
-        private StubEventStore(Builder builder) {
-            super(builder);
-        }
-
-        private static Builder builder() {
-            return new Builder();
+        /**
+         * Constructs the {@code DelegatingEventBus} with the given {@code delegate} to receive calls.
+         *
+         * @param delegate The {@link EventBus} instance to delegate calls to.
+         */
+        public StubEventStore() {
+            super(new SimpleEventBus());
         }
 
         public DomainEventStream readEvents(@Nonnull String identifier) {
@@ -94,8 +97,22 @@ class CommandHandlingTest {
         }
 
         @Override
-        protected void commit(List<? extends EventMessage> events) {
-            storedEvents.addAll(events.stream().map(StubEventStore::asDomainEventMessage).collect(Collectors.toList()));
+        public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
+                                               @Nonnull List<EventMessage> events) {
+            if (context == null) {
+                storeEvents(events);
+            } else {
+                context.runOnCommit(ctx -> storeEvents(events));
+            }
+            return super.publish(context, events);
+        }
+
+        private void storeEvents(@Nonnull List<EventMessage> events) {
+            storedEvents.addAll(
+                    events.stream()
+                          .map(StubEventStore::asDomainEventMessage)
+                          .toList()
+            );
         }
 
         private static DomainEventMessage asDomainEventMessage(EventMessage event) {
@@ -104,23 +121,10 @@ class CommandHandlingTest {
                     : new GenericDomainEventMessage(null, event.identifier(), 0L, event, event::timestamp);
         }
 
-        public void storeSnapshot(@Nonnull DomainEventMessage snapshot) {
-        }
-
-        public TrackingEventStream openStream(TrackingToken trackingToken) {
-            throw new UnsupportedOperationException();
-        }
-
         @Override
-        public Registration subscribe(@Nonnull Consumer<List<? extends EventMessage>> eventsBatchConsumer) {
+        public Registration subscribe(
+                @Nonnull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
             throw new UnsupportedOperationException();
-        }
-
-        private static class Builder extends AbstractEventBus.Builder {
-
-            private StubEventStore build() {
-                return new StubEventStore(this);
-            }
         }
     }
 }

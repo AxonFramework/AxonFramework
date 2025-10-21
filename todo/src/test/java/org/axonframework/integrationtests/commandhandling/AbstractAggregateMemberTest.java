@@ -26,7 +26,7 @@ import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.EntityId;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.axonframework.modelling.entity.ChildEntityNotFoundException;
-import org.axonframework.spring.stereotype.EventSourced;
+import org.axonframework.extension.spring.stereotype.EventSourced;
 import org.axonframework.test.aggregate.AggregateTestFixture;
 import org.axonframework.test.aggregate.FixtureConfiguration;
 import org.junit.jupiter.api.*;
@@ -51,7 +51,7 @@ public class AbstractAggregateMemberTest {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3195 - Migration Module")
     public void initializingFactoryAggregate_ShouldBeAbleToInitialize(){
         fixture.givenNoPriorActivity()
                 .when(new CreateFactoryCommand(factoryId))
@@ -59,7 +59,7 @@ public class AbstractAggregateMemberTest {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3195 - Migration Module")
     public void forwardingCommandToAggregateMemberWithTheSameGenericType_ShouldForwardCommandToEmployeeAggregate(){
         fixture.givenCommands(new CreateFactoryCommand(factoryId))
                 .when(new CreateTaskCommand(factoryId, "employeeId"))
@@ -67,7 +67,7 @@ public class AbstractAggregateMemberTest {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3195 - Migration Module")
     public void forwardingCommandToAggregateMemberWithTheSameGenericType_ShouldForwardCommandToManagerAggregate(){
         fixture.givenCommands(new CreateFactoryCommand(factoryId))
                 .when(new CreateTaskCommand(factoryId, "managerId"))
@@ -75,7 +75,7 @@ public class AbstractAggregateMemberTest {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3195 - Migration Module")
     public void sendCommandToNoneExistEntity_ShouldThrowAggregateEntityNotFoundException(){
         fixture.givenCommands(new CreateFactoryCommand(factoryId))
                 .when(new CreateTaskCommand(factoryId, "none-exist-id"))

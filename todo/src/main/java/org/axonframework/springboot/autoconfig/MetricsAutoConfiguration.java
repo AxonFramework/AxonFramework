@@ -17,9 +17,9 @@
 package org.axonframework.springboot.autoconfig;
 
 import com.codahale.metrics.MetricRegistry;
-import org.axonframework.metrics.GlobalMetricRegistry;
-import org.axonframework.metrics.MetricsConfigurerModule;
-import org.axonframework.springboot.MetricsProperties;
+import org.axonframework.extension.metrics.dropwizard.GlobalMetricRegistry;
+import org.axonframework.extension.metrics.dropwizard.MetricsConfigurerModule;
+import org.axonframework.extension.springboot.MetricsProperties;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -40,7 +40,7 @@ import org.springframework.context.annotation.Bean;
 @ConditionalOnMissingBean(MicrometerMetricsAutoConfiguration.class)
 @ConditionalOnClass(name = {
         "com.codahale.metrics.MetricRegistry",
-        "org.axonframework.metrics.GlobalMetricRegistry"
+  "org.axonframework.extension.metrics.dropwizard.GlobalMetricRegistry"
 })
 @EnableConfigurationProperties(MetricsProperties.class)
 public class MetricsAutoConfiguration {

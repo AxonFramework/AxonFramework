@@ -18,8 +18,6 @@ package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.Optional;
@@ -88,7 +86,7 @@ public interface MessageStream<M extends Message> {
      * {@code iterable} with a {@link Context} provided by the {@code contextSupplier}.
      */
     static <M extends Message> MessageStream<M> fromIterable(@Nonnull Iterable<M> iterable,
-                                                                @Nonnull Function<M, Context> contextSupplier) {
+                                                             @Nonnull Function<M, Context> contextSupplier) {
         return new IteratorMessageStream<>(StreamSupport.stream(iterable.spliterator(), false)
                                                         .<Entry<M>>map(message -> new SimpleEntry<>(message,
                                                                                                     contextSupplier.apply(
@@ -127,7 +125,7 @@ public interface MessageStream<M extends Message> {
      * {@code stream} with a {@link Context} provided by the {@code contextSupplier}.
      */
     static <M extends Message> MessageStream<M> fromStream(@Nonnull Stream<M> stream,
-                                                              @Nonnull Function<M, Context> contextSupplier) {
+                                                           @Nonnull Function<M, Context> contextSupplier) {
         return new IteratorMessageStream<>(stream.map(m -> (Entry<M>) new SimpleEntry<>(m, contextSupplier.apply(m)))
                                                  .iterator());
     }
@@ -156,75 +154,11 @@ public interface MessageStream<M extends Message> {
      * {@code messageSupplier} with a {@link Context} provided by the {@code contextSupplier}.
      */
     static <T, M extends Message> MessageStream<M> fromStream(@Nonnull Stream<T> stream,
-                                                                 @Nonnull Function<T, M> messageSupplier,
-                                                                 @Nonnull Function<T, Context> contextSupplier) {
+                                                              @Nonnull Function<T, M> messageSupplier,
+                                                              @Nonnull Function<T, Context> contextSupplier) {
         return new IteratorMessageStream<>(stream.map(item -> new SimpleEntry<>(messageSupplier.apply(item),
                                                                                 contextSupplier.apply(item)))
                                                  .iterator());
-    }
-
-    /**
-     * Create a stream that provides the {@link Message Messages} returned by the given {@code flux}, automatically
-     * wrapped in an {@link Entry}.
-     *
-     * @param flux The {@link Flux} providing the {@link Message Messages} to stream.
-     * @param <M>  The type of {@link Message} contained in the {@link Entry entries} of this stream.
-     * @return A stream of {@link Entry entries} that returns the {@link Message Messages} provided by the given
-     * {@code flux}.
-     */
-    static <M extends Message> MessageStream<M> fromFlux(@Nonnull Flux<M> flux) {
-        return fromFlux(flux, message -> Context.empty());
-    }
-
-    /**
-     * Create a stream that provides the {@link Message Messages} returned by the given {@code flux}, automatically
-     * wrapped in an {@link Entry} with the resulting {@link Context} from the {@code contextSupplier}.
-     *
-     * @param flux            The {@link Flux} providing the {@link Message Messages} to stream.
-     * @param contextSupplier A {@link Function} ingesting each {@link Message} from the given {@code flux} returning
-     *                        the {@link Context} to set for the {@link Entry} the {@code Message} is wrapped in.
-     * @param <M>             The type of {@link Message} contained in the {@link Entry entries} of this stream.
-     * @return A stream of {@link Entry entries} that returns the {@link Message Messages} provided by the given
-     * {@code flux} with a {@link Context} provided by the {@code contextSupplier}.
-     */
-    static <M extends Message> MessageStream<M> fromFlux(@Nonnull Flux<M> flux,
-                                                            @Nonnull Function<M, Context> contextSupplier) {
-        return new FluxMessageStream<>(flux.map(message -> new SimpleEntry<>(message, contextSupplier.apply(message))));
-    }
-
-    /**
-     * Create a stream that returns a single {@link Entry entry} wrapping the {@link Message} from the given
-     * {@code mono}, once the given {@code mono} completes.
-     * <p>
-     * The stream will contain at most a single entry. It may also contain no entries if the mono completes empty. The
-     * stream will complete with an exception when the given {@code mono} completes exceptionally.
-     *
-     * @param mono The {@link Mono} providing the {@link Message} to contain in the stream.
-     * @param <M>  The type of {@link Message} contained in the {@link Entry entries} of this stream.
-     * @return A stream containing at most one {@link Entry entry} from the given {@code mono}.
-     */
-    static <M extends Message> Single<M> fromMono(@Nonnull Mono<M> mono) {
-        return fromFuture(mono.toFuture());
-    }
-
-    /**
-     * Create a stream that returns a single {@link Entry entry} wrapping the {@link Message} from the given
-     * {@code mono}, once the given {@code mono} completes.
-     * <p>
-     * The automatically generated {@code Entry} will have the {@link Context} as given by the {@code contextSupplier}.
-     * <p>
-     * The stream will contain at most a single entry. It may also contain no entries if the mono completes empty. The
-     * stream will complete with an exception when the given {@code mono} completes exceptionally.
-     *
-     * @param mono            The {@link Mono} providing the {@link Message} to contain in the stream.
-     * @param contextSupplier A {@link Function} ingesting the {@link Message} from the given {@code mono} returning the
-     *                        {@link Context} to set for the {@link Entry} the {@code Message} is wrapped in.
-     * @param <M>             The type of {@link Message} contained in the {@link Entry entries} of this stream.
-     * @return A stream containing at most one {@link Entry entry} from the given {@code mono}.
-     */
-    static <M extends Message> Single<M> fromMono(@Nonnull Mono<M> mono,
-                                                  @Nonnull Function<M, Context> contextSupplier) {
-        return fromFuture(mono.toFuture(), contextSupplier);
     }
 
     /**
@@ -259,7 +193,7 @@ public interface MessageStream<M extends Message> {
      * provided by the {@code contextSupplier}.
      */
     static <M extends Message> Single<M> fromFuture(@Nonnull CompletableFuture<M> future,
-                                                       @Nonnull Function<M, Context> contextSupplier) {
+                                                    @Nonnull Function<M, Context> contextSupplier) {
         return new SingleValueMessageStream<>(
                 future.thenApply(message -> new SimpleEntry<>(message, contextSupplier.apply(message)))
         );
@@ -291,7 +225,7 @@ public interface MessageStream<M extends Message> {
      * {@link Context} provided by the {@code contextSupplier}.
      */
     static <M extends Message> Single<M> just(@Nullable M message,
-                                                 @Nonnull Function<M, Context> contextSupplier) {
+                                              @Nonnull Function<M, Context> contextSupplier) {
         return new SingleValueMessageStream<>(new SimpleEntry<>(message, contextSupplier.apply(message)));
     }
 
@@ -321,18 +255,6 @@ public interface MessageStream<M extends Message> {
      */
     static Empty<Message> empty() {
         return EmptyMessageStream.instance();
-    }
-
-    /**
-     * Creates a {@link Flux} that consumes the {@link Entry entries} from this stream.
-     * <p>
-     * The returned {@code Flux} will complete successfully if the stream does so, and exceptionally if the stream
-     * completed with an error.
-     *
-     * @return A {@link Flux} carrying the {@link Entry entries} of this stream.
-     */
-    default Flux<Entry<M>> asFlux() {
-        return MessageStreamUtils.asFlux(this);
     }
 
     /**
@@ -645,9 +567,9 @@ public interface MessageStream<M extends Message> {
             return new CompletionCallbackMessageStream.Single<>(this, completeHandler);
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         default <R extends Message> Single<R> cast() {
-            //noinspection unchecked
             return (Single<R>) this;
         }
 
@@ -666,18 +588,6 @@ public interface MessageStream<M extends Message> {
          */
         default CompletableFuture<Entry<M>> asCompletableFuture() {
             return MessageStreamUtils.asCompletableFuture(this);
-        }
-
-        /**
-         * Creates a {@link Mono} that consumes the singular {@link Entry} from this stream.
-         * <p>
-         * The returned {@code Mono} will complete successfully if the stream does so, and exceptionally if the stream
-         * completed with an error.
-         *
-         * @return A {@link Mono} carrying the singular {@link Entry} of this stream.
-         */
-        default Mono<Entry<M>> asMono() {
-            return asFlux().singleOrEmpty();
         }
     }
 
@@ -729,9 +639,9 @@ public interface MessageStream<M extends Message> {
             return new CompletionCallbackMessageStream.Empty<>(this, completeHandler);
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         default <T extends Message> Empty<T> cast() {
-            //noinspection unchecked
             return (Empty<T>) this;
         }
     }

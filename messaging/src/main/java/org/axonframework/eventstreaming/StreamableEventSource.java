@@ -30,13 +30,12 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
  * Provides functionality to {@link #open(StreamingCondition, ProcessingContext) open} an
  * {@link MessageStream event stream}.
  *
- * @param <E> The type of {@link EventMessage} streamed by this source.
  * @author Allard Buijze
  * @author Rene de Waele
  * @author Steven van Beelen
  * @since 3.0
  */
-public interface StreamableEventSource<E extends EventMessage> extends TrackingTokenSource {
+public interface StreamableEventSource extends TrackingTokenSource {
 
     /**
      * Open an {@link MessageStream event stream} containing all {@link EventMessage events} matching the given
@@ -58,6 +57,6 @@ public interface StreamableEventSource<E extends EventMessage> extends TrackingT
      * @param context   The current {@link ProcessingContext}, if any.
      * @return An {@link MessageStream event stream} matching the given {@code condition}.
      */
-    MessageStream<E> open(@Nonnull StreamingCondition condition, @Nullable ProcessingContext context);
+    MessageStream<EventMessage> open(@Nonnull StreamingCondition condition, @Nullable ProcessingContext context);
 
 }

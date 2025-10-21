@@ -129,6 +129,7 @@ public class EventProcessorControlService {
         }
 
         // TODO #3521
+        @SuppressWarnings("unchecked")
         Map<String, EventProcessor> eventProcessors = eventProcessingConfiguration.getComponent(Map.class);
         AxonServerConnection connection = axonServerConnectionManager.getConnection(context);
 

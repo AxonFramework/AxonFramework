@@ -112,7 +112,7 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message> {
             MessageStream<Message> testSubject = DelayedMessageStream.create(testFuture)
                                                                              .whenComplete(() -> invoked.set(true));
 
-            StepVerifier.create(testSubject.asFlux())
+            StepVerifier.create(FluxUtils.of(testSubject))
                         .verifyTimeout(Duration.ofMillis(250));
             // Verify timeout cancels the Flux, so we need to create the test subject again after this.
             assertFalse(invoked.get());
@@ -121,7 +121,7 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message> {
             testSubject = DelayedMessageStream.create(testFuture)
                                               .whenComplete(() -> invoked.set(true));
 
-            StepVerifier.create(testSubject.asFlux())
+            StepVerifier.create(FluxUtils.of(testSubject))
                         .expectNextMatches(entry -> entry.message().equals(expected))
                         .verifyComplete();
             assertTrue(invoked.get());
@@ -270,7 +270,7 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message> {
             MessageStream<Message> testSubject = DelayedMessageStream.createSingle(testFuture)
                                                                              .whenComplete(() -> invoked.set(true));
 
-            StepVerifier.create(testSubject.asFlux())
+            StepVerifier.create(FluxUtils.of(testSubject))
                         .verifyTimeout(Duration.ofMillis(250));
             // Verify timeout cancels the Flux, so we need to create the test subject again after this.
             assertFalse(invoked.get());
@@ -279,7 +279,7 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message> {
             testSubject = DelayedMessageStream.createSingle(testFuture)
                                               .whenComplete(() -> invoked.set(true));
 
-            StepVerifier.create(testSubject.asFlux())
+            StepVerifier.create(FluxUtils.of(testSubject))
                         .expectNextMatches(entry -> entry.message().equals(expected))
                         .verifyComplete();
             assertTrue(invoked.get());

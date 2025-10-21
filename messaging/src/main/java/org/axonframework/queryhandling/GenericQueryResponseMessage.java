@@ -57,6 +57,7 @@ public class GenericQueryResponseMessage extends GenericResultMessage implements
      * This constructor allows the actual result to be {@code null}. The {@link Metadata} defaults to an empty
      * instance.
      *
+     * @param <R>                The generic type of the expected payload of the resulting object.
      * @param type               The {@link MessageType type} for this {@link QueryResponseMessage}.
      * @param result             The result of type {@code R} for this {@link QueryResponseMessage}. May be
      *                           {@code null}.
@@ -104,6 +105,7 @@ public class GenericQueryResponseMessage extends GenericResultMessage implements
      * <p>
      * This constructor allows the actual result to be {@code null}.
      *
+     * @param <R>                The generic type of the expected payload of the resulting object.
      * @param type               The {@link MessageType type} for this {@link QueryResponseMessage}.
      * @param result             The result of type {@code R} for this {@link QueryResponseMessage}. May be
      *                           {@code null}.
@@ -113,7 +115,7 @@ public class GenericQueryResponseMessage extends GenericResultMessage implements
     public <R> GenericQueryResponseMessage(@Nonnull MessageType type,
                                            @Nullable R result,
                                            @Nonnull Class<R> declaredResultType,
-                                           @Nonnull Map<String, ?> metadata) {
+                                           @Nonnull Map<String, String> metadata) {
         super(new GenericMessage(type, result, declaredResultType, metadata));
     }
 
@@ -130,7 +132,7 @@ public class GenericQueryResponseMessage extends GenericResultMessage implements
     public GenericQueryResponseMessage(@Nonnull MessageType type,
                                        @Nonnull Throwable exception,
                                        @Nonnull Class<?> declaredResultType,
-                                       @Nonnull Map<String, ?> metadata) {
+                                       @Nonnull Map<String, String> metadata) {
         super(new GenericMessage(type, null, declaredResultType, metadata), exception);
     }
 
@@ -188,9 +190,9 @@ public class GenericQueryResponseMessage extends GenericResultMessage implements
         }
         Message delegate = delegate();
         Message converted = new GenericMessage(delegate.identifier(),
-                                                    delegate.type(),
-                                                    convertedPayload,
-                                                    delegate.metadata());
+                                               delegate.type(),
+                                               convertedPayload,
+                                               delegate.metadata());
         return optionalExceptionResult().isPresent()
                 ? new GenericQueryResponseMessage(converted, optionalExceptionResult().get())
                 : new GenericQueryResponseMessage(converted);

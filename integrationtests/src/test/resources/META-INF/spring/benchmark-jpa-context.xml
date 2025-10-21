@@ -54,13 +54,13 @@
         </property>
     </bean>
 
-    <bean id="entityManagerProvider" class="org.axonframework.springboot.util.jpa.ContainerManagedEntityManagerProvider"/>
+    <bean id="entityManagerProvider" class="org.axonframework.extension.jpa.util.springboot.ContainerManagedEntityManagerProvider"/>
 
     <bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">
         <property name="entityManagerFactory" ref="entityManagerFactory"/>
     </bean>
 
-    <bean id="axonTransactionManager" class="org.axonframework.spring.messaging.unitofwork.SpringTransactionManager">
+    <bean id="axonTransactionManager" class="org.axonframework.extension.unitofwork.messaging.spring.SpringTransactionManager">
         <constructor-arg name="transactionManager" ref="transactionManager"/>
     </bean>
 

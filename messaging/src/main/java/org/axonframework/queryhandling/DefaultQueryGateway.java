@@ -18,6 +18,7 @@ package org.axonframework.queryhandling;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.messaging.FluxUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
@@ -137,10 +138,10 @@ public class DefaultQueryGateway implements QueryGateway {
         MessageStream<QueryResponseMessage> response = queryBus.subscriptionQuery(queryMessage,
                                                                                   context,
                                                                                   updateBufferSize);
-        return response.asFlux()
-                       .mapNotNull(m -> mapper.apply(m.message()))
-                       .doOnCancel(response::close)
-                       .doOnError((e) -> response.close());
+        return FluxUtils.of(response)
+                        .mapNotNull(m -> mapper.apply(m.message()))
+                        .doOnCancel(response::close)
+                        .doOnError((e) -> response.close());
     }
 
     private QueryMessage asQueryMessage(Object query, Class<?> responseType) {

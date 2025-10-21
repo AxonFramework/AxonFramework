@@ -25,6 +25,7 @@ import org.axonframework.deadline.jobrunr.JobRunrDeadlineManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.jobrunr.JobRunrEventScheduler;
+import org.axonframework.extension.springboot.autoconfig.AxonServerAutoConfiguration;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.serialization.Serializer;
 import org.jobrunr.scheduling.JobScheduler;

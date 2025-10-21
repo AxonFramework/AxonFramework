@@ -17,6 +17,7 @@
 package org.axonframework.queryhandling;
 
 import org.axonframework.common.TypeReference;
+import org.axonframework.messaging.FluxUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
@@ -104,10 +105,9 @@ class FutureAsResponseTypeToQueryHandlersTest {
                 RESPONSE_TYPE
         );
 
-        Flux<List<String>> response = queryBus.subscriptionQuery(testQuery, null, 50)
-                                              .asFlux()
-                                              .map(MessageStream.Entry::message)
-                                              .mapNotNull(m -> m.payloadAs(LIST_OF_STRINGS));
+        Flux<List<String>> response = FluxUtils.of(queryBus.subscriptionQuery(testQuery, null, 50))
+                                               .map(MessageStream.Entry::message)
+                                               .mapNotNull(m -> m.payloadAs(LIST_OF_STRINGS));
         queryBus.completeSubscriptions(s -> true, null);
         StepVerifier.create(response)
                     .expectNext(asList("Response1", "Response2"))
@@ -119,10 +119,9 @@ class FutureAsResponseTypeToQueryHandlersTest {
         SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
                 new MessageType("myQueryWithSingleResponse"), "criteria", RESPONSE_TYPE);
 
-        Flux<String> response = queryBus.subscriptionQuery(testQuery, null, 50)
-                                        .asFlux()
-                                        .map(MessageStream.Entry::message)
-                                        .mapNotNull(m -> m.payloadAs(String.class));
+        Flux<String> response = FluxUtils.of(queryBus.subscriptionQuery(testQuery, null, 50))
+                                         .map(MessageStream.Entry::message)
+                                         .mapNotNull(m -> m.payloadAs(String.class));
         queryBus.completeSubscriptions(s -> true, null);
 
         StepVerifier.create(response)
@@ -153,10 +152,9 @@ class FutureAsResponseTypeToQueryHandlersTest {
         SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
                 new MessageType("myQueryFutureWithMultipleResponses"), "criteria", RESPONSE_TYPE);
 
-        Flux<List<String>> response = queryBus.subscriptionQuery(testQuery, null, 50)
-                                              .asFlux()
-                                              .map(MessageStream.Entry::message)
-                                              .mapNotNull(m -> m.payloadAs(LIST_OF_STRINGS));
+        Flux<List<String>> response = FluxUtils.of(queryBus.subscriptionQuery(testQuery, null, 50))
+                                               .map(MessageStream.Entry::message)
+                                               .mapNotNull(m -> m.payloadAs(LIST_OF_STRINGS));
         queryBus.completeSubscriptions(s -> true, null);
 
         StepVerifier.create(response)

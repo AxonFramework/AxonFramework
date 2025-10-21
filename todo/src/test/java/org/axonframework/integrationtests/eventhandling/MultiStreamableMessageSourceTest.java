@@ -22,6 +22,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericTrackedEventMessage;
+import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.processors.streaming.MultiStreamableMessageSource;
 import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
@@ -66,8 +67,8 @@ class MultiStreamableMessageSourceTest {
 
     @BeforeEach
     void setUp() {
-        eventStoreA = new SimpleEventStore(new InMemoryEventStorageEngine(), new AnnotationBasedTagResolver());
-        eventStoreB = new SimpleEventStore(new InMemoryEventStorageEngine(), new AnnotationBasedTagResolver());
+        eventStoreA = new SimpleEventStore(new InMemoryEventStorageEngine(), new SimpleEventBus(), new AnnotationBasedTagResolver());
+        eventStoreB = new SimpleEventStore(new InMemoryEventStorageEngine(), new SimpleEventBus(), new AnnotationBasedTagResolver());
 
         testSubject = MultiStreamableMessageSource.builder()
 //                                                  .addMessageSource("eventStoreA", eventStoreA)
@@ -368,6 +369,7 @@ class MultiStreamableMessageSourceTest {
                           .thenComparing(e -> e.getValue().timestamp());
 
         EventStore eventStoreC = new SimpleEventStore(new InMemoryEventStorageEngine(),
+                                                      new SimpleEventBus(),
                                                       new AnnotationBasedTagResolver());
 
         MultiStreamableMessageSource prioritySourceTestSubject =

@@ -27,6 +27,7 @@ import org.axonframework.eventhandling.tracing.EventBusSpanFactory;
 import org.axonframework.eventhandling.tracing.EventProcessorSpanFactory;
 import org.axonframework.eventsourcing.snapshotting.DefaultSnapshotterSpanFactory;
 import org.axonframework.eventsourcing.snapshotting.SnapshotterSpanFactory;
+import org.axonframework.extension.springboot.autoconfig.AxonServerAutoConfiguration;
 import org.axonframework.messaging.annotations.HandlerEnhancerDefinition;
 import org.axonframework.modelling.command.DefaultRepositorySpanFactory;
 import org.axonframework.modelling.command.RepositorySpanFactory;

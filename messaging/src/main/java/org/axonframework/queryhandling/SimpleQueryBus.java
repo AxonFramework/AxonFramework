@@ -21,6 +21,7 @@ import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.Context.ResourceKey;
+import org.axonframework.messaging.FluxUtils;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.QueueMessageStream;
@@ -166,6 +167,7 @@ public class SimpleQueryBus implements QueryBus {
         return initialResult.concatWith(updates.cast());
     }
 
+    @Override
     @Nonnull
     public MessageStream<SubscriptionQueryUpdateMessage> subscribeToUpdates(@Nonnull SubscriptionQueryMessage query,
                                                                             int updateBufferSize) {

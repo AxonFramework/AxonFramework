@@ -19,10 +19,10 @@ package org.axonframework.eventhandling.processors.streaming.pooled;
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
-import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
-import org.axonframework.eventhandling.processors.streaming.token.ReplayToken;
 import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.eventhandling.processors.streaming.segmenting.TrackerStatus;
+import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.processors.streaming.token.ReplayToken;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.eventhandling.processors.streaming.token.store.inmemory.InMemoryTokenStore;
@@ -31,7 +31,6 @@ import org.axonframework.messaging.LegacyResources;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.SimpleEntry;
-import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 import org.axonframework.utils.DelegateScheduledExecutorService;
@@ -114,9 +113,6 @@ class WorkPackageTest {
     @AfterEach
     void tearDown() {
         executorService.shutdown();
-        while (CurrentUnitOfWork.isStarted()) {
-            CurrentUnitOfWork.get().rollback();
-        }
     }
 
     /**

@@ -17,6 +17,7 @@
 package org.axonframework.integrationtests.queryhandling;
 
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.FluxUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
@@ -172,11 +173,11 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         queryBus.completeSubscriptions(integerQueryFilter, testContext);
         queryBus.emitUpdate(integerQueryFilter, () -> integerUpdateTwo, testContext);
         // then
-        StepVerifier.create(resultOne.asFlux().map(MessageStream.Entry::message).mapNotNull(Message::payload))
+        StepVerifier.create(FluxUtils.of(resultOne).map(MessageStream.Entry::message).mapNotNull(Message::payload))
                     .expectNext("Message1", "Message2", "Message3", "Update11")
                     .expectComplete()
                     .verify();
-        StepVerifier.create(resultTwo.asFlux().map(MessageStream.Entry::message).mapNotNull(Message::payload))
+        StepVerifier.create(FluxUtils.of(resultTwo).map(MessageStream.Entry::message).mapNotNull(Message::payload))
                     .expectNext(0, 1)
                     .verifyComplete();
     }
@@ -198,7 +199,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         queryBus.emitUpdate(testFilter, () -> testUpdate, testContext);
         queryBus.completeSubscriptions(testFilter, testContext);
         // then
-        StepVerifier.create(result.asFlux().filter(m -> m.message() instanceof SubscriptionQueryUpdateMessage))
+        StepVerifier.create(FluxUtils.of(result).filter(m -> m.message() instanceof SubscriptionQueryUpdateMessage))
                     .expectNextMatches(e -> e.message().payload() == null)
                     .verifyComplete();
     }
@@ -221,9 +222,9 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         testUoW.onInvocation(context -> queryBus.emitUpdate(testFilter, () -> testUpdate, context));
         // then, before we commit, we don't have anything yet...
         List<String> updateList = new ArrayList<>();
-        result.asFlux()
-              .filter(e -> e.message() instanceof SubscriptionQueryUpdateMessage)
-              .mapNotNull(e -> e.message().payloadAs(String.class)).subscribe(updateList::add);
+        FluxUtils.of(result)
+                 .filter(e -> e.message() instanceof SubscriptionQueryUpdateMessage)
+                 .mapNotNull(e -> e.message().payloadAs(String.class)).subscribe(updateList::add);
         assertTrue(updateList.isEmpty());
         // when we execute the UoW, it commits...
         testUoW.execute().join();
@@ -258,7 +259,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
             }, 500, TimeUnit.MILLISECONDS);
         }
         // then
-        StepVerifier.create(result.asFlux().map(MessageStream.Entry::message).mapNotNull(Message::payload))
+        StepVerifier.create(FluxUtils.of(result).map(MessageStream.Entry::message).mapNotNull(Message::payload))
                     .expectNext("Message1", "Message2", "Message3", "Update1")
                     .expectErrorMatches(toBeThrown::equals)
                     .verify();
@@ -286,14 +287,14 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         // when
         MessageStream<QueryResponseMessage> resultOne = queryBus.subscriptionQuery(queryMessage1, null, 50);
         MessageStream<QueryResponseMessage> resultTwo = queryBus.subscriptionQuery(queryMessage2, null, 50);
-        resultOne.asFlux()
+        FluxUtils.of(resultOne)
                  .map(MessageStream.Entry::message)
                  .mapNotNull(m -> m.payloadAs(String.class))
                  .subscribe(queryOneUpdates::add, t -> {
                      queryOneUpdates.add("Error1");
                      throw (RuntimeException) t;
                  });
-        resultTwo.asFlux()
+        FluxUtils.of(resultTwo)
                  .map(MessageStream.Entry::message)
                  .mapNotNull(m -> m.payloadAs(String.class))
                  .subscribe(queryTwoUpdates::add, t -> queryTwoUpdates.add("Error2"));
@@ -359,7 +360,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
             }, 500, TimeUnit.MILLISECONDS);
         }
         // then
-        StepVerifier.create(result.asFlux().map(MessageStream.Entry::message).mapNotNull(Message::payload))
+        StepVerifier.create(FluxUtils.of(result).map(MessageStream.Entry::message).mapNotNull(Message::payload))
                     .expectNext("Message1", "Message2", "Message3", "Update1")
                     .verifyComplete();
     }
@@ -386,7 +387,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         testUoW.onInvocation(context -> queryBus.emitUpdate(testFilter, () -> testUpdate, context));
         // then before we commit we don't have anything yet...
         List<String> updateList = new ArrayList<>();
-        result.asFlux()
+        FluxUtils.of(result)
               .filter(e -> e.message() instanceof SubscriptionQueryUpdateMessage)
               .mapNotNull(e -> e.message().payloadAs(String.class)).subscribe(updateList::add);
         assertTrue(updateList.isEmpty());
@@ -408,7 +409,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         // when
         MessageStream<QueryResponseMessage> result = queryBus.subscriptionQuery(queryMessage, null, 50);
         // then
-        StepVerifier.create(result.asFlux().map(MessageStream.Entry::message).mapNotNull(Message::payload))
+        StepVerifier.create(FluxUtils.of(result).map(MessageStream.Entry::message).mapNotNull(Message::payload))
                     .expectNext("Initial", "Update1", "Update2")
                     .verifyComplete();
     }
@@ -435,7 +436,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         // when
         MessageStream<QueryResponseMessage> result = queryBus.subscriptionQuery(queryMessage, null, 50);
         // then
-        StepVerifier.create(result.asFlux().map(MessageStream.Entry::message))
+        StepVerifier.create(FluxUtils.of(result).map(MessageStream.Entry::message))
                     .expectErrorMatches(exception -> {
                         if (exception instanceof QueryExecutionException qee) {
                             return queryHandlingComponent.toBeThrown.equals(qee.getCause());
@@ -465,7 +466,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         }
         queryBus.completeSubscriptions(testFilter, testContext);
         // then...
-        StepVerifier.create(result.asFlux().map(MessageStream.Entry::message)
+        StepVerifier.create(FluxUtils.of(result).map(MessageStream.Entry::message)
                                   .filter(m -> m instanceof SubscriptionQueryUpdateMessage))
                     .recordWith(LinkedList::new)
                     .thenConsumeWhile(x -> true)
@@ -485,7 +486,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         ProcessingContext testContext = null;
         MessageStream<QueryResponseMessage> result = queryBus.subscriptionQuery(queryMessage, null, 100);
         // when...
-        Flux<QueryResponseMessage> updates = result.asFlux().map(MessageStream.Entry::message)
+        Flux<QueryResponseMessage> updates = FluxUtils.of(result).map(MessageStream.Entry::message)
                                                    .onBackpressureBuffer(100);
         // then...
         StepVerifier.create(updates, StepVerifierOptions.create().initialRequest(0))
@@ -530,7 +531,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         result.close();
         queryBus.emitUpdate(testFilter, () -> testUpdateTwo, testContext);
         // then...
-        StepVerifier.create(result.asFlux().map(MessageStream.Entry::message)
+        StepVerifier.create(FluxUtils.of(result).map(MessageStream.Entry::message)
                                   .filter(SubscriptionQueryUpdateMessage.class::isInstance)
                                   .mapNotNull(Message::payload))
                     .expectNext("Update1")

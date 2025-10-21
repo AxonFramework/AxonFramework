@@ -17,8 +17,6 @@
 package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.FluxSink;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -35,25 +33,6 @@ import java.util.function.BiFunction;
 public abstract class MessageStreamUtils {
 
     private MessageStreamUtils() {
-    }
-
-    /**
-     * Creates a Flux containing the {@link MessageStream.Entry entries} provided by the given {@code source}. Note that
-     * multiple invocations of this method on the same {@code source}, or otherwise any components consuming entries
-     * from the given {@code source} will cause entries to be consumed by only one of the fluxes or competing
-     * consumers.
-     *
-     * @param source The MessageStream providing the elements.
-     * @param <M>    The type of Message returned by the source.
-     * @return A Flux with the elements provided by the source.
-     */
-    public static <M extends Message> Flux<MessageStream.Entry<M>> asFlux(@Nonnull MessageStream<M> source) {
-        return Flux.create(emitter -> {
-            FluxStreamAdapter<M> fluxTask = new FluxStreamAdapter<>(source, emitter);
-            emitter.onRequest(i -> fluxTask.process());
-            emitter.onCancel(source::close);
-            source.onAvailable(fluxTask::process);
-        });
     }
 
     /**
@@ -82,8 +61,8 @@ public abstract class MessageStreamUtils {
      * @return A {@code CompletableFuture} that completes with the result of the reduction operation.
      */
     public static <M extends Message, R> CompletableFuture<R> reduce(@Nonnull MessageStream<M> source,
-                                                                        @Nonnull R identity,
-                                                                        @Nonnull BiFunction<R, MessageStream.Entry<M>, R> accumulator) {
+                                                                     @Nonnull R identity,
+                                                                     @Nonnull BiFunction<R, MessageStream.Entry<M>, R> accumulator) {
         Reducer<M, R> reducer = new Reducer<>(source, identity, accumulator);
         source.onAvailable(reducer::process);
         return reducer.result();
@@ -111,38 +90,6 @@ public abstract class MessageStreamUtils {
         FirstResult<M> firstResult = new FirstResult<>(source);
         source.onAvailable(firstResult::process);
         return firstResult.result();
-    }
-
-    private static class FluxStreamAdapter<M extends Message> {
-
-        private final AtomicBoolean processingGate = new AtomicBoolean(false);
-        private final MessageStream<M> source;
-        private final FluxSink<MessageStream.Entry<M>> emitter;
-
-        public FluxStreamAdapter(MessageStream<M> source, FluxSink<MessageStream.Entry<M>> emitter) {
-            this.source = source;
-            this.emitter = emitter;
-        }
-
-        public void process() {
-            boolean continueOnCurrentThread = true;
-            while (continueOnCurrentThread && !processingGate.getAndSet(true)) {
-                try {
-                    while (emitter.requestedFromDownstream() > 0 && source.hasNextAvailable()) {
-                        source.next().ifPresent(emitter::next);
-                    }
-                    if (source.isCompleted()) {
-                        source.error().ifPresentOrElse(emitter::error, emitter::complete);
-                    }
-                } catch (Exception e) {
-                    emitter.error(e);
-                    source.close();
-                } finally {
-                    processingGate.set(false);
-                }
-                continueOnCurrentThread = emitter.requestedFromDownstream() > 0 && source.hasNextAvailable();
-            }
-        }
     }
 
     private static class Reducer<M extends Message, R> {

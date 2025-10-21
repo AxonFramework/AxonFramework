@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -58,10 +59,18 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
     protected static final SpecificTestComponent SPECIFIC_TEST_COMPONENT = new SpecificTestComponent(INIT_STATE);
 
     protected C testSubject;
+    private AxonConfiguration configuration;
 
     @BeforeEach
     void setUp() {
         testSubject = createConfigurer();
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (configuration != null) {
+            configuration.shutdown();
+        }
     }
 
     /**
@@ -75,7 +84,8 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
     private AxonConfiguration buildConfiguration() {
         initialize(testSubject);
-        return testSubject.build();
+        configuration = testSubject.build();
+        return configuration;
     }
 
     /**
@@ -427,6 +437,115 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             assertEquals(defaultComponent, result);
             assertNotEquals(registeredComponent, result);
         }
+
+        @Test
+        void getComponentsReturnsEmptyMapWhenNoComponentsOfTypeExist() {
+            // given
+            testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class, c -> TEST_COMPONENT));
+
+            // when
+            Configuration config = buildConfiguration();
+            Map<String, SpecificTestComponent> result = config.getComponents(SpecificTestComponent.class);
+
+            // then
+            assertTrue(result.isEmpty());
+        }
+
+        @Test
+        void getComponentsReturnsUnnamedComponentWithNullKey() {
+            // given
+            TestComponent component = TEST_COMPONENT;
+            testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class, c -> component));
+
+            // when
+            Configuration config = buildConfiguration();
+            Map<String, TestComponent> result = config.getComponents(TestComponent.class);
+
+            // then
+            assertEquals(1, result.size());
+            assertTrue(containsNotNamedComponent(result));
+            assertSame(component, result.get(null));
+        }
+
+        @Test
+        void getComponentsReturnsNamedComponentsWithTheirNames() {
+            // given
+            TestComponent componentOne = new TestComponent("one");
+            TestComponent componentTwo = new TestComponent("two");
+            testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class, "name-one", c -> componentOne)
+                                                  .registerComponent(TestComponent.class,
+                                                                     "name-two",
+                                                                     c -> componentTwo));
+
+            // when
+            Configuration config = buildConfiguration();
+            Map<String, TestComponent> result = config.getComponents(TestComponent.class);
+
+            // then
+            assertEquals(2, result.size());
+            assertTrue(result.containsKey("name-one"));
+            assertTrue(result.containsKey("name-two"));
+            assertSame(componentOne, result.get("name-one"));
+            assertSame(componentTwo, result.get("name-two"));
+        }
+
+        @Test
+        void getComponentsReturnsMixOfNamedAndUnnamedComponents() {
+            // given
+            TestComponent unnamedComponent = new TestComponent("unnamed");
+            TestComponent namedComponent = new TestComponent("named");
+            testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class, c -> unnamedComponent)
+                                                  .registerComponent(TestComponent.class,
+                                                                     "named",
+                                                                     c -> namedComponent));
+
+            // when
+            Configuration config = buildConfiguration();
+            Map<String, TestComponent> result = config.getComponents(TestComponent.class);
+
+            // then
+            assertEquals(2, result.size());
+            assertTrue(containsNotNamedComponent(result));
+            assertTrue(result.containsKey("named"));
+            assertSame(unnamedComponent, result.get(null));
+            assertSame(namedComponent, result.get("named"));
+        }
+
+        @Test
+        void getComponentsReturnsComponentsMatchingSubtypes() {
+            // given
+            SpecificTestComponent specificComponent = SPECIFIC_TEST_COMPONENT;
+            testSubject.componentRegistry(cr -> cr.registerComponent(SpecificTestComponent.class,
+                                                                     c -> specificComponent));
+
+            // when
+            Configuration config = buildConfiguration();
+            Map<String, TestComponent> result = config.getComponents(TestComponent.class);
+            // then
+            assertEquals(1, result.size());
+            assertTrue(result.containsKey(null));
+            assertSame(specificComponent, result.get(null));
+        }
+
+        @Test
+        void getComponentsReturnsImmutableMap() {
+            // given
+            testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class, c -> TEST_COMPONENT));
+
+            // when
+            Configuration config = buildConfiguration();
+            Map<String, TestComponent> result = config.getComponents(TestComponent.class);
+
+            // then
+            assertThrows(UnsupportedOperationException.class, () -> result.put("new", TEST_COMPONENT));
+        }
+    }
+
+    /**
+     * When Axon registers a component without a name, Spring uses the FQCN as bean name.
+     */
+    private static boolean containsNotNamedComponent(Map<String, TestComponent> result) {
+        return result.containsKey(null) || result.containsKey(TestComponent.class.getName());
     }
 
     @Nested
@@ -700,6 +819,29 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             buildConfiguration().getComponent(TestComponent.class, testName);
             assertFalse(secondConstruction.get());
         }
+
+        @Test
+        void getComponentsReturnsConditionallyRegisteredComponents() {
+            // given
+            TestComponent firstComponent = new TestComponent("first");
+            TestComponent secondComponent = new TestComponent("second");
+
+            testSubject.componentRegistry(cr -> cr.registerIfNotPresent(TestComponent.class,
+                                                                        "first",
+                                                                        c -> firstComponent)
+                                                  .registerIfNotPresent(TestComponent.class,
+                                                                        "first",
+                                                                        c -> secondComponent));
+
+            // when
+            Configuration config = buildConfiguration();
+            Map<String, TestComponent> result = config.getComponents(TestComponent.class);
+
+            // then
+            assertEquals(1, result.size());
+            assertTrue(result.containsKey("first"));
+            assertSame(firstComponent, result.get("first"), "Only first component should be present");
+        }
     }
 
     @Nested
@@ -778,6 +920,31 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             assertThatThrownBy(() -> config.getComponent(TestComponent.class, testName)).hasStackTraceContaining(
                     "Make sure decorators return matching components, as component retrieval otherwise fails!"
             );
+        }
+
+        @Test
+        void getComponentsReturnsDecoratedInstances() {
+            // given
+            String expectedState = TEST_COMPONENT.state() + "123";
+            testSubject.componentRegistry(
+                    cr -> cr.registerComponent(TestComponent.class, c -> TEST_COMPONENT)
+                            .registerDecorator(TestComponent.class, 0,
+                                               (c, name, delegate) -> new TestComponent(delegate.state + "1"))
+                            .registerDecorator(TestComponent.class, 1,
+                                               (c, name, delegate) -> new TestComponent(delegate.state + "2"))
+                            .registerDecorator(TestComponent.class, 2,
+                                               (c, name, delegate) -> new TestComponent(delegate.state + "3"))
+            );
+
+            // when
+            Configuration config = buildConfiguration();
+            Map<String, TestComponent> result = config.getComponents(TestComponent.class);
+
+            // then
+            assertEquals(1, result.size());
+            TestComponent component = result.get(null);
+            assertNotNull(component);
+            assertEquals(expectedState, component.state(), "Should return decorated instance, not original");
         }
     }
 
@@ -1020,6 +1187,452 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             assertTrue(thirdRegistration.get());
         }
 
+        @Test
+        void enhancerCanRegisterAnotherEnhancer() {
+            // given...
+            AtomicBoolean firstEnhancerInvoked = new AtomicBoolean(false);
+            AtomicBoolean secondEnhancerInvoked = new AtomicBoolean(false);
+
+            ConfigurationEnhancer secondEnhancer = registry -> {
+                secondEnhancerInvoked.set(true);
+                registry.registerComponent(TestComponent.class, "second", c -> new TestComponent("second"));
+            };
+
+            ConfigurationEnhancer firstEnhancer = registry -> {
+                firstEnhancerInvoked.set(true);
+                registry.registerComponent(TestComponent.class, "first", c -> new TestComponent("first"));
+                registry.registerEnhancer(secondEnhancer);
+            };
+
+            testSubject.componentRegistry(cr -> cr.registerEnhancer(firstEnhancer));
+
+            // when...
+            Configuration config = buildConfiguration();
+
+            // then...
+            assertTrue(firstEnhancerInvoked.get());
+            assertTrue(secondEnhancerInvoked.get());
+            assertEquals(new TestComponent("first"), config.getComponent(TestComponent.class, "first"));
+            assertEquals(new TestComponent("second"), config.getComponent(TestComponent.class, "second"));
+        }
+
+        @Test
+        void dynamicallyRegisteredEnhancersAreInvokedInCorrectOrder() {
+            // given...
+            AtomicInteger executionOrder = new AtomicInteger(0);
+            AtomicInteger enhancerAOrder = new AtomicInteger(-1);
+            AtomicInteger enhancerBOrder = new AtomicInteger(-1);
+            AtomicInteger enhancerCOrder = new AtomicInteger(-1);
+
+            ConfigurationEnhancer enhancerC = new ConfigurationEnhancer() {
+                @Override
+                public void enhance(@Nonnull ComponentRegistry registry) {
+                    enhancerCOrder.set(executionOrder.getAndIncrement());
+                    registry.registerComponent(TestComponent.class, "C", c -> new TestComponent("C"));
+                }
+
+                @Override
+                public int order() {
+                    return 5;
+                }
+            };
+
+            ConfigurationEnhancer enhancerB = new ConfigurationEnhancer() {
+                @Override
+                public void enhance(@Nonnull ComponentRegistry registry) {
+                    enhancerBOrder.set(executionOrder.getAndIncrement());
+                    registry.registerComponent(TestComponent.class, "B", c -> new TestComponent("B"));
+                }
+
+                @Override
+                public int order() {
+                    return 10;
+                }
+            };
+
+            ConfigurationEnhancer enhancerA = new ConfigurationEnhancer() {
+                @Override
+                public void enhance(@Nonnull ComponentRegistry registry) {
+                    enhancerAOrder.set(executionOrder.getAndIncrement());
+                    registry.registerComponent(TestComponent.class, "A", c -> new TestComponent("A"));
+                    // Register enhancerC with order=5, which should be invoked before enhancerB (order=10)
+                    registry.registerEnhancer(enhancerC);
+                }
+
+                @Override
+                public int order() {
+                    return 0;
+                }
+            };
+
+            testSubject.componentRegistry(cr -> cr.registerEnhancer(enhancerA).registerEnhancer(enhancerB));
+
+            // when...
+            Configuration config = buildConfiguration();
+
+            // then...
+            // Verify all components were created
+            assertEquals(new TestComponent("A"), config.getComponent(TestComponent.class, "A"));
+            assertEquals(new TestComponent("B"), config.getComponent(TestComponent.class, "B"));
+            assertEquals(new TestComponent("C"), config.getComponent(TestComponent.class, "C"));
+
+            // Verify execution order: A(0) -> C(5) -> B(10)
+            assertEquals(0, enhancerAOrder.get(), "EnhancerA (order=0) should execute first");
+            assertEquals(1, enhancerCOrder.get(), "EnhancerC (order=5) should execute second");
+            assertEquals(2, enhancerBOrder.get(), "EnhancerB (order=10) should execute third");
+        }
+
+        @Test
+        void dynamicallyRegisteredEnhancerWithLowerOrderThanParentExecutesAfterParent() {
+            // given...
+            AtomicInteger executionOrder = new AtomicInteger(0);
+            AtomicInteger parentEnhancerOrder = new AtomicInteger(-1);
+            AtomicInteger childEnhancerOrder = new AtomicInteger(-1);
+
+            ConfigurationEnhancer childEnhancer = new ConfigurationEnhancer() {
+                @Override
+                public void enhance(@Nonnull ComponentRegistry registry) {
+                    childEnhancerOrder.set(executionOrder.getAndIncrement());
+                    registry.registerComponent(TestComponent.class, "child", c -> new TestComponent("child"));
+                }
+
+                @Override
+                public int order() {
+                    return 5; // Lower order than parent
+                }
+            };
+
+            ConfigurationEnhancer parentEnhancer = new ConfigurationEnhancer() {
+                @Override
+                public void enhance(@Nonnull ComponentRegistry registry) {
+                    parentEnhancerOrder.set(executionOrder.getAndIncrement());
+                    registry.registerComponent(TestComponent.class, "parent", c -> new TestComponent("parent"));
+                    // Register child with order=5, which is lower than parent's order=10
+                    // But child should still execute AFTER parent since parent already executed
+                    registry.registerEnhancer(childEnhancer);
+                }
+
+                @Override
+                public int order() {
+                    return 10; // Higher order than child
+                }
+            };
+
+            testSubject.componentRegistry(cr -> cr.registerEnhancer(parentEnhancer));
+
+            // when...
+            Configuration config = buildConfiguration();
+
+            // then...
+            // Verify both components were created
+            assertEquals(new TestComponent("parent"), config.getComponent(TestComponent.class, "parent"));
+            assertEquals(new TestComponent("child"), config.getComponent(TestComponent.class, "child"));
+
+            // Verify execution order: parent executes first, then child
+            // Even though child has lower order value (5 < 10), it executes after parent
+            // because it was registered dynamically during parent's execution
+            assertEquals(0, parentEnhancerOrder.get(), "Parent enhancer (order=10) should execute first");
+            assertEquals(1, childEnhancerOrder.get(), "Child enhancer (order=5) should execute second, after parent");
+        }
+
+        @Nested
+        class DisableEnhancer {
+
+            @Test
+            void disableEnhancerByClassCanDisableFutureEnhancers() {
+                // given...
+                AtomicBoolean firstEnhancerInvoked = new AtomicBoolean(false);
+                AtomicBoolean secondEnhancerInvoked = new AtomicBoolean(false);
+
+                class SecondEnhancer implements ConfigurationEnhancer {
+
+                    @Override
+                    public void enhance(@Nonnull ComponentRegistry registry) {
+                        secondEnhancerInvoked.set(true);
+                        registry.registerComponent(TestComponent.class, "second", c -> new TestComponent("second"));
+                    }
+
+                    @Override
+                    public int order() {
+                        return 100; // Execute after FirstEnhancer
+                    }
+                }
+
+                class FirstEnhancer implements ConfigurationEnhancer {
+
+                    @Override
+                    public void enhance(@Nonnull ComponentRegistry registry) {
+                        firstEnhancerInvoked.set(true);
+                        registry.registerComponent(TestComponent.class, "first", c -> new TestComponent("first"));
+                        // Disable SecondEnhancer which hasn't executed yet
+                        registry.disableEnhancer(SecondEnhancer.class);
+                    }
+                }
+
+                testSubject.componentRegistry(cr -> cr.registerEnhancer(new FirstEnhancer())
+                                                      .registerEnhancer(new SecondEnhancer()));
+
+                // when...
+                Configuration config = buildConfiguration();
+
+                // then...
+                // FirstEnhancer should execute, but SecondEnhancer should be disabled
+                assertTrue(firstEnhancerInvoked.get(), "FirstEnhancer should execute");
+                assertFalse(secondEnhancerInvoked.get(),
+                            "SecondEnhancer should NOT execute because it was disabled");
+                // Only first component should be registered
+                assertEquals(new TestComponent("first"), config.getComponent(TestComponent.class, "first"));
+                assertFalse(config.getOptionalComponent(TestComponent.class, "second").isPresent(),
+                            "SecondEnhancer's component should not exist");
+            }
+
+            @Test
+            void disableEnhancerByStringCanDisableFutureEnhancers() {
+                // given...
+                AtomicBoolean disablingEnhancerInvoked = new AtomicBoolean(false);
+                AtomicBoolean targetEnhancerInvoked = new AtomicBoolean(false);
+
+                class TargetEnhancer implements ConfigurationEnhancer {
+
+                    @Override
+                    public void enhance(@Nonnull ComponentRegistry registry) {
+                        targetEnhancerInvoked.set(true);
+                        registry.registerComponent(TestComponent.class, "target", c -> new TestComponent("target"));
+                    }
+
+                    @Override
+                    public int order() {
+                        return 100; // Execute after disabling enhancer
+                    }
+                }
+
+                ConfigurationEnhancer disablingEnhancer = registry -> {
+                    disablingEnhancerInvoked.set(true);
+                    registry.registerComponent(TestComponent.class, "disabler", c -> new TestComponent("disabler"));
+                    // Disable TargetEnhancer by class name
+                    registry.disableEnhancer(TargetEnhancer.class.getName());
+                };
+
+                testSubject.componentRegistry(cr -> cr.registerEnhancer(disablingEnhancer)
+                                                      .registerEnhancer(new TargetEnhancer()));
+
+                // when...
+                Configuration config = buildConfiguration();
+
+                // then...
+                // Disabling enhancer should execute, but target should be disabled
+                assertTrue(disablingEnhancerInvoked.get(), "Disabling enhancer should execute");
+                assertFalse(targetEnhancerInvoked.get(),
+                            "TargetEnhancer should NOT execute because it was disabled by name");
+                // Only disabler component should be registered
+                assertEquals(new TestComponent("disabler"), config.getComponent(TestComponent.class, "disabler"));
+                assertFalse(config.getOptionalComponent(TestComponent.class, "target").isPresent(),
+                            "TargetEnhancer's component should not exist");
+            }
+
+            @Test
+            void disableEnhancerWhenEnhancerWithLowerOrderDisablesHigherOrder() {
+                // given...
+                AtomicInteger executionOrder = new AtomicInteger(0);
+                AtomicInteger lowOrderEnhancerOrder = new AtomicInteger(-1);
+                AtomicInteger highOrderEnhancerOrder = new AtomicInteger(-1);
+
+                class HighOrderEnhancer implements ConfigurationEnhancer {
+
+                    @Override
+                    public void enhance(@Nonnull ComponentRegistry registry) {
+                        highOrderEnhancerOrder.set(executionOrder.getAndIncrement());
+                        registry.registerComponent(TestComponent.class, "high", c -> new TestComponent("high"));
+                    }
+
+                    @Override
+                    public int order() {
+                        return 100; // Higher order, executes later
+                    }
+                }
+
+                class LowOrderEnhancer implements ConfigurationEnhancer {
+
+                    @Override
+                    public void enhance(@Nonnull ComponentRegistry registry) {
+                        lowOrderEnhancerOrder.set(executionOrder.getAndIncrement());
+                        registry.registerComponent(TestComponent.class, "low", c -> new TestComponent("low"));
+                        // Disable an enhancer that hasn't executed yet
+                        registry.disableEnhancer(HighOrderEnhancer.class);
+                    }
+
+                    @Override
+                    public int order() {
+                        return 10; // Lower order, executes first
+                    }
+                }
+
+                testSubject.componentRegistry(cr -> cr.registerEnhancer(new HighOrderEnhancer())
+                                                      .registerEnhancer(new LowOrderEnhancer()));
+
+                // when...
+                Configuration config = buildConfiguration();
+
+                // then...
+                // Verify only LowOrderEnhancer executed
+                assertEquals(0, lowOrderEnhancerOrder.get(),
+                             "LowOrderEnhancer (order=10) should execute first");
+                assertEquals(-1, highOrderEnhancerOrder.get(),
+                             "HighOrderEnhancer (order=100) should NOT execute because it was disabled");
+                // Only low component should be registered
+                assertEquals(new TestComponent("low"), config.getComponent(TestComponent.class, "low"));
+                assertFalse(config.getOptionalComponent(TestComponent.class, "high").isPresent(),
+                            "HighOrderEnhancer's component should not exist");
+            }
+
+            @Test
+            void disableEnhancerCannotDisableAlreadyExecutedEnhancer() {
+                // given...
+                AtomicInteger executionOrder = new AtomicInteger(0);
+                AtomicInteger lowOrderEnhancerOrder = new AtomicInteger(-1);
+                AtomicInteger highOrderEnhancerOrder = new AtomicInteger(-1);
+
+                class LowOrderEnhancer implements ConfigurationEnhancer {
+
+                    @Override
+                    public void enhance(@Nonnull ComponentRegistry registry) {
+                        lowOrderEnhancerOrder.set(executionOrder.getAndIncrement());
+                        registry.registerComponent(TestComponent.class, "low", c -> new TestComponent("low"));
+                    }
+
+                    @Override
+                    public int order() {
+                        return 10; // Lower order, executes first
+                    }
+                }
+
+                class HighOrderEnhancer implements ConfigurationEnhancer {
+
+                    @Override
+                    public void enhance(@Nonnull ComponentRegistry registry) {
+                        highOrderEnhancerOrder.set(executionOrder.getAndIncrement());
+                        registry.registerComponent(TestComponent.class, "high", c -> new TestComponent("high"));
+                        // Try to disable an enhancer that already executed
+                        // This has no effect as it already ran
+                        registry.disableEnhancer(LowOrderEnhancer.class);
+                    }
+
+                    @Override
+                    public int order() {
+                        return 100; // Higher order, executes later
+                    }
+                }
+
+                testSubject.componentRegistry(cr -> cr.registerEnhancer(new LowOrderEnhancer())
+                                                      .registerEnhancer(new HighOrderEnhancer()));
+
+                // when...
+                Configuration config = buildConfiguration();
+
+                // then...
+                // Both enhancers should have executed (can't disable already-executed enhancer)
+                assertEquals(0, lowOrderEnhancerOrder.get(),
+                             "LowOrderEnhancer (order=10) should execute first");
+                assertEquals(1, highOrderEnhancerOrder.get(),
+                             "HighOrderEnhancer (order=100) should execute second");
+                // Both components should be registered, proving LowOrderEnhancer executed and wasn't retroactively disabled
+                assertEquals(new TestComponent("low"), config.getComponent(TestComponent.class, "low"));
+                assertEquals(new TestComponent("high"), config.getComponent(TestComponent.class, "high"));
+            }
+
+            @Test
+            void disableEnhancerMultipleTimes() {
+                // given...
+                AtomicBoolean firstEnhancerInvoked = new AtomicBoolean(false);
+                AtomicBoolean targetEnhancerInvoked = new AtomicBoolean(false);
+                AtomicInteger disablerInvocationCount = new AtomicInteger(0);
+
+                class TargetEnhancer implements ConfigurationEnhancer {
+
+                    @Override
+                    public void enhance(@Nonnull ComponentRegistry registry) {
+                        targetEnhancerInvoked.set(true);
+                        registry.registerComponent(TestComponent.class, "target", c -> new TestComponent("target"));
+                    }
+
+                    @Override
+                    public int order() {
+                        return 100; // Execute after others
+                    }
+                }
+
+                ConfigurationEnhancer firstEnhancer = registry -> {
+                    firstEnhancerInvoked.set(true);
+                    disablerInvocationCount.incrementAndGet();
+                    // Disable multiple times - should work the same
+                    registry.disableEnhancer(TargetEnhancer.class);
+                    registry.disableEnhancer(TargetEnhancer.class.getName());
+                    registry.disableEnhancer(TargetEnhancer.class);
+                    registry.registerComponent(TestComponent.class, "first", c -> new TestComponent("first"));
+                };
+
+                testSubject.componentRegistry(cr -> cr.registerEnhancer(firstEnhancer)
+                                                      .registerEnhancer(new TargetEnhancer()));
+
+                // when...
+                Configuration config = buildConfiguration();
+
+                // then...
+                // First enhancer executes, target should be disabled despite multiple disable calls
+                assertTrue(firstEnhancerInvoked.get(), "First enhancer should execute");
+                assertFalse(targetEnhancerInvoked.get(),
+                            "TargetEnhancer should NOT execute (disabled by multiple calls)");
+                assertEquals(1, disablerInvocationCount.get(), "First enhancer should execute exactly once");
+                // Only first component should be registered
+                assertEquals(new TestComponent("first"), config.getComponent(TestComponent.class, "first"));
+                assertFalse(config.getOptionalComponent(TestComponent.class, "target").isPresent(),
+                            "TargetEnhancer's component should not exist");
+            }
+
+            @Test
+            void disableEnhancerWithNonExistentClassNameCompletesNormally() {
+                // given...
+                AtomicBoolean enhancerInvoked = new AtomicBoolean(false);
+
+                ConfigurationEnhancer enhancer = registry -> {
+                    enhancerInvoked.set(true);
+                    // Try to disable a non-existent enhancer class - should not throw exception
+                    registry.disableEnhancer("com.nonexistent.FakeEnhancer");
+                    registry.disableEnhancer("another.fake.EnhancerClass");
+                    registry.registerComponent(TestComponent.class, "component", c -> new TestComponent("component"));
+                };
+
+                testSubject.componentRegistry(cr -> cr.registerEnhancer(enhancer));
+
+                // when...
+                Configuration config = buildConfiguration();
+
+                // then...
+                // Should complete normally without throwing exceptions
+                assertTrue(enhancerInvoked.get(), "Enhancer should execute normally");
+                assertEquals(new TestComponent("component"), config.getComponent(TestComponent.class, "component"));
+            }
+        }
+
+        @Test
+        void getComponentsReturnsEnhancerRegisteredComponents() {
+            // given
+            TestComponent enhancerComponent = new TestComponent("enhancer-registered");
+            testSubject.componentRegistry(cr -> cr.registerEnhancer(registry -> registry.registerComponent(
+                    TestComponent.class, "enhancer-component", c -> enhancerComponent
+            )));
+
+            // when
+            Configuration config = buildConfiguration();
+            Map<String, TestComponent> result = config.getComponents(TestComponent.class);
+
+            // then
+            assertEquals(1, result.size());
+            assertTrue(result.containsKey("enhancer-component"));
+            assertSame(enhancerComponent, result.get("enhancer-component"),
+                       "Components registered by enhancers should be findable via getComponents()");
+        }
+
         record TestConfigurationEnhancer(AtomicBoolean invoked) implements ConfigurationEnhancer {
 
             @Override
@@ -1250,6 +1863,31 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             assertNotEquals(defaultComponent, result);
             assertEquals(registeredComponent, result);
         }
+
+        @Test
+        void getComponentsReturnsComponentsFromModules() {
+            // given
+            TestComponent rootComponent = new TestComponent("root");
+            TestComponent moduleComponent = new TestComponent("module");
+
+            testSubject.componentRegistry(
+                    cr -> cr.registerComponent(TestComponent.class, "root", c -> rootComponent)
+                            .registerModule(new TestModule("test-module").componentRegistry(
+                                    mcr -> mcr.registerComponent(TestComponent.class, "module", c -> moduleComponent)
+                            ))
+            );
+
+            // when
+            Configuration config = buildConfiguration();
+            Map<String, TestComponent> result = config.getComponents(TestComponent.class);
+
+            // then
+            assertEquals(2, result.size(), "Should include components from both root and modules");
+            assertTrue(result.containsKey("root"));
+            assertTrue(result.containsKey("module"));
+            assertSame(rootComponent, result.get("root"));
+            assertSame(moduleComponent, result.get("module"));
+        }
     }
 
     @Nested
@@ -1351,6 +1989,33 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             assertEquals(expectedDefaultComponent, result);
             assertNotEquals(expectedFactoryState, result.state());
             verify(testFactory, times(2)).construct(any(), any());
+        }
+
+        @Test
+        void getComponentsDoesNotIncludeFactoryComponentsNotYetAccessed() {
+            Assumptions.assumeTrue(supportsComponentFactories(),
+                                   "Ignore test since ComponentFactories are not supported.");
+
+            // given
+            TestComponent registeredComponent = new TestComponent("registered");
+            TestComponentFactory testFactory = spy(new TestComponentFactory("factory-created"));
+
+            testSubject.componentRegistry(
+                    registry -> registry.registerComponent(TestComponent.class, "registered", c -> registeredComponent)
+                                        .registerFactory(testFactory)
+            );
+
+            // when
+            Configuration config = buildConfiguration();
+            Map<String, TestComponent> result = config.getComponents(TestComponent.class);
+
+            // then
+            assertEquals(1, result.size(), "Only registered components should be included, not factory-created ones");
+            assertTrue(result.containsKey("registered"));
+            assertSame(registeredComponent, result.get("registered"));
+            // Factory should not be consulted by getComponents()
+            verify(testFactory).registerShutdownHandlers(any());
+            verifyNoMoreInteractions(testFactory);
         }
     }
 

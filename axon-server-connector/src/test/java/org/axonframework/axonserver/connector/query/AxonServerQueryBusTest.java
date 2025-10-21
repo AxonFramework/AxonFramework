@@ -39,6 +39,7 @@ import org.axonframework.axonserver.connector.util.ProcessingInstructionHelper;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.lifecycle.ShutdownInProgressException;
+import org.axonframework.messaging.FluxUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageStream;
@@ -71,7 +72,6 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -279,9 +279,7 @@ class AxonServerQueryBusTest {
 
     @Test
     void queryReportsDispatchException() throws Exception {
-        //noinspection rawtypes
-        StubResultStream t = new StubResultStream(new RuntimeException("Faking problems"));
-        //noinspection unchecked
+        StubResultStream<QueryResponse> t = new StubResultStream<>(new RuntimeException("Faking problems"));
         when(mockQueryChannel.query(any())).thenReturn(t);
         QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType("query"), "Hello, World", new MessageType(String.class)
@@ -302,7 +300,7 @@ class AxonServerQueryBusTest {
     }
 
     @Test
-    void queryReportsCorrectException() throws ExecutionException, InterruptedException {
+    void queryReportsCorrectException() {
         when(mockQueryChannel.query(any())).thenReturn(new StubResultStream<>(
                 stubErrorResponse(ErrorCode.QUERY_EXECUTION_ERROR.errorCode(), "Faking exception result")
         ));
@@ -328,7 +326,7 @@ class AxonServerQueryBusTest {
     }
 
     @Test
-    void queryReportsCorrectNonTransientException() throws ExecutionException, InterruptedException {
+    void queryReportsCorrectNonTransientException() {
         spanFactory.reset();
         when(mockQueryChannel.query(any())).thenReturn(new StubResultStream<>(
                 stubErrorResponse(ErrorCode.QUERY_EXECUTION_NON_TRANSIENT_ERROR.errorCode(),
@@ -359,13 +357,11 @@ class AxonServerQueryBusTest {
     }
 
     @Test
-    void queryCloseConnectionOnCompletableFutureCancel() {
-        //noinspection unchecked
-        ResultStream<QueryResponse> resultStream = mock(ResultStream.class);
+    void queryCloseConnectionOnCompletableFutureCancel(@Mock ResultStream<QueryResponse> resultStream) {
         when(mockQueryChannel.query(any())).thenReturn(resultStream);
-        QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType("query"), "Hello, World", new MessageType(String.class)
-        );
+//        QueryMessage testQuery = new GenericQueryMessage(
+//                new MessageType("query"), "Hello, World", new MessageType(String.class)
+//        );
 //        testSubject.query(testQuery).cancel(true);
         verify(resultStream).close();
     }
@@ -400,11 +396,9 @@ class AxonServerQueryBusTest {
                 new MessageType("query"), "Hello, World", new MessageType(String.class)
         );
 
-        //noinspection rawtypes,unchecked
-        StubResultStream stubResultStream = new StubResultStream(stubResponse("<string>1</string>"),
-                                                                 stubResponse("<string>2</string>"),
-                                                                 stubResponse("<string>3</string>"));
-        //noinspection unchecked
+        StubResultStream<QueryResponse> stubResultStream = new StubResultStream<>(stubResponse("<string>1</string>"),
+                                                                                  stubResponse("<string>2</string>"),
+                                                                                  stubResponse("<string>3</string>"));
         when(mockQueryChannel.query(any())).thenReturn(stubResultStream);
 
         StepVerifier.create(Flux.from(testSubject.streamingQuery(testQuery, null))
@@ -505,10 +499,10 @@ class AxonServerQueryBusTest {
     @Test
     void shutdownTakesFinishedQueriesIntoAccount() {
         when(mockQueryChannel.query(any())).thenReturn(new StubResultStream<>(stubResponse("some-payload")));
-        QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType("query"), "some-query", new MessageType(String.class)
-        );
-
+//        QueryMessage testQuery = new GenericQueryMessage(
+//                new MessageType("query"), "some-query", new MessageType(String.class)
+//        );
+//
 //        CompletableFuture<QueryResponseMessage> result = testSubject.query(testQuery);
 //        result.join();
 
@@ -528,7 +522,7 @@ class AxonServerQueryBusTest {
 
         MessageStream<QueryResponseMessage> queryResult = testSubject.subscriptionQuery(testQuery, null, 50);
 
-        Flux<QueryResponseMessage> result = queryResult.asFlux().map(MessageStream.Entry::message);
+        Flux<QueryResponseMessage> result = FluxUtils.of(queryResult).map(MessageStream.Entry::message);
         queryResult.close();
 
         StepVerifier.create(result)
@@ -549,7 +543,7 @@ class AxonServerQueryBusTest {
 
         MessageStream<QueryResponseMessage> queryResult = testSubject.subscriptionQuery(testQuery, null, 50);
 
-        Flux<QueryResponseMessage> initialResult = queryResult.asFlux().map(MessageStream.Entry::message);
+        Flux<QueryResponseMessage> initialResult = FluxUtils.of(queryResult).map(MessageStream.Entry::message);
         StepVerifier.create(initialResult.mapNotNull(Message::payload))
                     .verifyError();
     }

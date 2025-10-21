@@ -60,11 +60,6 @@ class FluxMessageStream<M extends Message> implements MessageStream<M> {
     }
 
     @Override
-    public Flux<Entry<M>> asFlux() {
-        return source;
-    }
-
-    @Override
     public <RM extends Message> MessageStream<RM> map(@Nonnull Function<Entry<M>, Entry<RM>> mapper) {
         return new FluxMessageStream<>(source.map(mapper));
     }
@@ -167,7 +162,7 @@ class FluxMessageStream<M extends Message> implements MessageStream<M> {
 
     @Override
     public MessageStream<M> onErrorContinue(@Nonnull Function<Throwable, MessageStream<M>> onError) {
-        return new FluxMessageStream<>(source.onErrorResume(exception -> onError.apply(exception).asFlux()));
+        return new FluxMessageStream<>(source.onErrorResume(exception -> FluxUtils.of(onError.apply(exception))));
     }
 
 }

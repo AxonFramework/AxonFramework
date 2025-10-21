@@ -187,7 +187,7 @@ class QueryProcessingTask implements Runnable, FlowControl {
         return streamableResultRef.get() == null;
     }
 
-    private <Q, R> void streamingQuery(QueryMessage originalQueryMessage) {
+    private void streamingQuery(QueryMessage originalQueryMessage) {
         // noinspection unchecked
         QueryMessage streamingQueryMessage = new GenericQueryMessage(
                 originalQueryMessage,
@@ -198,7 +198,7 @@ class QueryProcessingTask implements Runnable, FlowControl {
         setResult(streamableFluxResult(resultPublisher));
     }
 
-    private <T> void directQuery(QueryMessage queryMessage) {
+    private void directQuery(QueryMessage queryMessage) {
         // TODO #3488 - Implement as part of Axon Server Query Bus implementation
 //        localSegment.query(queryMessage)
 //                    .whenComplete((result, e) -> {
@@ -242,6 +242,7 @@ class QueryProcessingTask implements Runnable, FlowControl {
                                           clientId);
     }
 
+    @SuppressWarnings("unused")
     private <R> StreamableMultiInstanceResponse<R> streamableMultiInstanceResult(QueryResponseMessage result,
                                                                                  Class<R> responseType) {
         return new StreamableMultiInstanceResponse<>(result,
@@ -251,6 +252,7 @@ class QueryProcessingTask implements Runnable, FlowControl {
                                                      queryRequest.getMessageIdentifier());
     }
 
+    @SuppressWarnings("unused")
     private StreamableInstanceResponse streamableInstanceResult(QueryResponseMessage result) {
         return new StreamableInstanceResponse(result, responseHandler, serializer, queryRequest.getMessageIdentifier());
     }

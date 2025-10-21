@@ -16,14 +16,14 @@
 
 package org.axonframework.messaging.annotation;
 
+import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.DefaultComponentRegistry;
 import org.axonframework.configuration.LifecycleRegistry;
-import org.axonframework.configuration.Configuration;
-import org.axonframework.eventhandling.annotations.ConcludesBatchParameterResolverFactory;
+import org.axonframework.eventhandling.annotations.SequenceNumberParameterResolverFactory;
 import org.axonframework.messaging.annotations.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotations.ParameterResolverFactory;
-import org.axonframework.messaging.configuration.reflection.ConfigurationParameterResolverFactory;
 import org.axonframework.messaging.configuration.reflection.ConfigurationParameterResolverConfigurationEnhancer;
+import org.axonframework.messaging.configuration.reflection.ConfigurationParameterResolverFactory;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -33,12 +33,11 @@ class ConfigurationParameterResolverConfigurationEnhancerTest {
 
     @Test
     void addsConfigurationParameterResolverFactory() {
-
         DefaultComponentRegistry componentRegistry = new DefaultComponentRegistry();
         componentRegistry.disableEnhancerScanning()
                          .registerEnhancer(new ConfigurationParameterResolverConfigurationEnhancer())
                          .registerComponent(ParameterResolverFactory.class,
-                                            (c) -> new ConcludesBatchParameterResolverFactory());
+                                            (c) -> new SequenceNumberParameterResolverFactory());
 
 
         Configuration build = componentRegistry.build(Mockito.mock(LifecycleRegistry.class));
@@ -46,7 +45,7 @@ class ConfigurationParameterResolverConfigurationEnhancerTest {
         ParameterResolverFactory factory = build.getComponent(ParameterResolverFactory.class);
         assertInstanceOf(MultiParameterResolverFactory.class, factory);
         assertEquals(2, ((MultiParameterResolverFactory) factory).getDelegates().size());
-        assertInstanceOf(ConcludesBatchParameterResolverFactory.class,
+        assertInstanceOf(SequenceNumberParameterResolverFactory.class,
                          ((MultiParameterResolverFactory) factory).getDelegates().get(0));
         assertInstanceOf(ConfigurationParameterResolverFactory.class,
                          ((MultiParameterResolverFactory) factory).getDelegates().get(1));

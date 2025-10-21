@@ -50,6 +50,7 @@ import org.axonframework.lifecycle.Phase;
 import org.axonframework.lifecycle.ShutdownLatch;
 import org.axonframework.messaging.DefaultMessageDispatchInterceptorChain;
 import org.axonframework.messaging.Distributed;
+import org.axonframework.messaging.FluxUtils;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
@@ -158,7 +159,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         builder.validate();
         this.axonServerConnectionManager = builder.axonServerConnectionManager;
         this.configuration = builder.configuration;
-        this.updateEmitter = builder.updateEmitter;
         this.localSegment = builder.localSegment;
         this.serializer = builder.buildQuerySerializer();
         this.subscriptionSerializer = builder.buildSubscriptionMessageSerializer();
@@ -198,29 +198,29 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                     priority,
                     TASK_SEQUENCE));
             return Mono.fromSupplier(this::registerStreamingQueryActivity)
-                       .flatMapMany(activity ->
-                                            new DefaultMessageDispatchInterceptorChain<>(dispatchInterceptors)
-                                                    .proceed(queryWithContext, null)
-                                                    .first()
-                                                    .<QueryMessage>cast()
-                                                    .asMono()
-                                                    .map(MessageStream.Entry::message)
-                                                    .flatMapMany(intercepted -> {
-                                                                     if (shouldRunQueryLocally(intercepted.type().name())) {
-                                                                         return localSegment.streamingQuery(intercepted, context);
-                                                                     }
-                                                                     return Mono.just(serializeStreaming(intercepted, priority))
-                                                                                .flatMapMany(queryRequest -> new ResultStreamPublisher<>(
-                                                                                        () -> sendRequest(intercepted,
-                                                                                                          queryRequest)))
-                                                                                .concatMap(queryResponse -> deserialize(intercepted,
-                                                                                                                        queryResponse));
-                                                                 }
-                                                    )
-                                                    .publishOn(scheduler.get())
-                                                    .doOnError(span::recordException)
-                                                    .doFinally(new ActivityFinisher(activity, span))
-                                                    .subscribeOn(scheduler.get()));
+                .flatMapMany(activity ->
+                    FluxUtils.of(
+                        new DefaultMessageDispatchInterceptorChain<>(dispatchInterceptors)
+                            .proceed(queryWithContext, null)
+                            .first()
+                            .<QueryMessage>cast()
+                    )
+                    .singleOrEmpty()
+                    .map(MessageStream.Entry::message)
+                    .flatMapMany(intercepted -> {
+                        if (shouldRunQueryLocally(intercepted.type().name())) {
+                            return localSegment.streamingQuery(intercepted, context);
+                        }
+                        return Mono.just(serializeStreaming(intercepted, priority))
+                            .flatMapMany(queryRequest -> new ResultStreamPublisher<>(() -> sendRequest(intercepted, queryRequest)))
+                            .concatMap(queryResponse -> deserialize(intercepted, queryResponse));
+                        }
+                    )
+                    .publishOn(scheduler.get())
+                    .doOnError(span::recordException)
+                    .doFinally(new ActivityFinisher(activity, span))
+                    .subscribeOn(scheduler.get())
+                );
         }
     }
 
@@ -285,13 +285,16 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
             QueryMessage queryWithContext = spanFactory.propagateContext(queryMessage);
             shutdownLatch.ifShuttingDown("Cannot dispatch new queries as this bus is being shut down");
 
-            QueryMessage interceptedQuery = new DefaultMessageDispatchInterceptorChain<>(dispatchInterceptors)
-                    .proceed(queryWithContext, null)
-                    .first()
-                    .<QueryMessage>cast()
-                    .asMono()
-                    .map(MessageStream.Entry::message)
-                    .block(); // TODO reintegrate as part of #3079
+            QueryMessage interceptedQuery = FluxUtils
+                .of(
+                    new DefaultMessageDispatchInterceptorChain<>(dispatchInterceptors)
+                        .proceed(queryWithContext, null)
+                        .first()
+                        .<QueryMessage>cast()
+                )
+                .singleOrEmpty()
+                .map(MessageStream.Entry::message)
+                .block(); // TODO reintegrate as part of #3079
             //noinspection resource
             ShutdownLatch.ActivityHandle queryInTransit = shutdownLatch.registerActivity();
             CompletableFuture<QueryResponseMessage> queryTransaction = new CompletableFuture<>();
@@ -402,19 +405,19 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                           .query(queryRequest);
     }
 
-    private <R> Publisher<QueryResponseMessage> deserialize(QueryMessage queryMessage,
-                                                            QueryResponse queryResponse) {
+    private Publisher<QueryResponseMessage> deserialize(QueryMessage queryMessage,
+                                                        QueryResponse queryResponse) {
         // TODO #3488 - Replace Serializer and ResponseType use
         //noinspection unchecked
-        Class<R> expectedResponseType = null; // (Class<R>) queryMessage.responseType().getExpectedResponseType();
+//        Class<R> expectedResponseType = (Class<R>) queryMessage.responseType().getExpectedResponseType();
         QueryResponseMessage responseMessage = serializer.deserializeResponse(queryResponse);
         if (responseMessage.isExceptional()) {
             return Flux.error(responseMessage.exceptionResult());
         }
-        if (expectedResponseType.isAssignableFrom(responseMessage.payloadType())) {
+//        if (expectedResponseType.isAssignableFrom(responseMessage.payloadType())) {
 //            InstanceResponseType<R> instanceResponseType = new InstanceResponseType<>(expectedResponseType);
 //            return Flux.just(new ConvertingResponseMessage<>(instanceResponseType, responseMessage));
-        } else {
+//        } else {
 //            MultipleInstancesResponseType<R> multiResponseType =
 //                    new MultipleInstancesResponseType<>(expectedResponseType);
 //            ConvertingResponseMessage<List<R>> convertingMessage =
@@ -424,10 +427,11 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 //                                                    .map(payload -> singleMessage(responseMessage,
 //                                                                                  payload,
 //                                                                                  expectedResponseType)));
-        }
+//        }
         return null;
     }
 
+    @SuppressWarnings("unused")
     private <R> QueryResponseMessage singleMessage(QueryResponseMessage original,
                                                       R newPayload,
                                                       Class<R> expectedPayloadType) {
@@ -453,19 +457,21 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         Span span = spanFactory.createSubscriptionQuerySpan(query, true).start();
         try (SpanScope unused = span.makeCurrent()) {
 
-            SubscriptionQueryMessage interceptedQuery = new DefaultMessageDispatchInterceptorChain<>(
-                    dispatchInterceptors)
+            SubscriptionQueryMessage interceptedQuery = FluxUtils.of(
+                new DefaultMessageDispatchInterceptorChain<>(dispatchInterceptors)
                     .proceed(spanFactory.propagateContext(spanFactory.propagateContext(query)), null)
                     .first()
                     .<SubscriptionQueryMessage>cast()
-                    .asMono()
-                    .map(MessageStream.Entry::message)
-                    .block(); // TODO reintegrate as part of #3079
+                )
+                .singleOrEmpty()
+                .map(MessageStream.Entry::message)
+                .block(); // TODO reintegrate as part of #3079
             String subscriptionId = interceptedQuery.identifier();
             String targetContext = targetContextResolver.resolveContext(interceptedQuery);
 
             logger.debug("Subscription Query requested with subscription Id [{}]", subscriptionId);
 
+            @SuppressWarnings("unused")
             io.axoniq.axonserver.connector.query.SubscriptionQueryResult result =
                     axonServerConnectionManager.getConnection(targetContext)
                                                .queryChannel()
@@ -899,6 +905,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         }
     }
 
+    @SuppressWarnings("unused")  // Check if still needed as part of TODO #3488 - Replace Serializer and ResponseType use
     private static class QueryResponseSpliterator implements Spliterator<QueryResponseMessage> {
 
         private final QueryMessage queryMessage;
@@ -964,8 +971,10 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
         private final AtomicBoolean singleExecutionCheck = new AtomicBoolean();
         private final ResultStream<QueryResponse> result;
+        @SuppressWarnings("unused")
         private final QuerySerializer serializer;
         private final CompletableFuture<QueryResponseMessage> queryTransaction;
+        @SuppressWarnings("unused")
         private final Class<R> expectedResponseType;
         private final Span span;
 
@@ -1058,21 +1067,21 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                     subscriptionSerializer.deserialize(query),
                     1024);
 
-            updates.asFlux()
-                   .map(MessageStream.Entry::message)
-                   .doOnError(e -> {
-                             ErrorMessage error = ExceptionSerializer.serialize(configuration.getClientId(), e);
-                             String errorCode = ErrorCode.getQueryExecutionErrorCode(e).errorCode();
-                             QueryUpdate queryUpdate = QueryUpdate.newBuilder()
-                                                                  .setErrorMessage(error)
-                                                                  .setErrorCode(errorCode)
-                                                                  .build();
-                             sendUpdate.sendUpdate(queryUpdate);
-                             sendUpdate.complete();
-                         })
-                   .doOnComplete(sendUpdate::complete)
-                   .map(subscriptionSerializer::serialize)
-                   .subscribe(sendUpdate::sendUpdate);
+            FluxUtils.of(updates)
+                     .map(MessageStream.Entry::message)
+                     .doOnError(e -> {
+                         ErrorMessage error = ExceptionSerializer.serialize(configuration.getClientId(), e);
+                         String errorCode = ErrorCode.getQueryExecutionErrorCode(e).errorCode();
+                         QueryUpdate queryUpdate = QueryUpdate.newBuilder()
+                                                              .setErrorMessage(error)
+                                                              .setErrorCode(errorCode)
+                                                              .build();
+                         sendUpdate.sendUpdate(queryUpdate);
+                         sendUpdate.complete();
+                     })
+                     .doOnComplete(sendUpdate::complete)
+                     .map(subscriptionSerializer::serialize)
+                     .subscribe(sendUpdate::sendUpdate);
 
             return () -> {
                 updates.close();

@@ -43,6 +43,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class AggregateBasedAxonServerEventStorageEngineIT extends
         AggregateBasedStorageEngineTestSuite<AggregateBasedAxonServerEventStorageEngine> {
 
+    @SuppressWarnings("resource")
     private static final AxonServerContainer axonServerContainer = new AxonServerContainer()
             .withAxonServerHostname("localhost")
             .withDevMode(true);

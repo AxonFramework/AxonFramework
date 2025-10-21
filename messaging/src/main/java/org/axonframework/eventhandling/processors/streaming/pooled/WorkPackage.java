@@ -583,7 +583,7 @@ class WorkPackage {
          * @param context The processing context in which the event messages are processed.
          * @return A stream of messages resulting from the processing of the event messages.
          */
-        MessageStream.Empty<Message> process(@Nonnull List<? extends EventMessage> events, ProcessingContext context);
+        MessageStream.Empty<Message> process(@Nonnull List<? extends EventMessage> events, @Nonnull ProcessingContext context);
     }
 
     /**

@@ -19,11 +19,13 @@ package org.axonframework.messaging.annotations;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.annotations.Internal;
+import org.axonframework.messaging.FluxUtils;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
+import org.axonframework.messaging.MonoUtils;
 import org.axonframework.util.ClasspathResolver;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -78,10 +80,10 @@ public class MessageStreamResolverUtils {
         // Handle Project Reactor types first with traditional if-statements
         if (ClasspathResolver.projectReactorOnClasspath()) {
             if (result instanceof Mono<?> mono) {
-                return MessageStream.fromMono(mono.map(r -> new GenericMessage(typeResolver.resolveOrThrow(r), r)));
+                return MonoUtils.asSingle(mono.map(r -> new GenericMessage(typeResolver.resolveOrThrow(r), r)));
             }
             if (result instanceof Flux<?> flux) {
-                return MessageStream.fromFlux(flux.map(r -> new GenericMessage(typeResolver.resolveOrThrow(r), r)));
+                return FluxUtils.asMessageStream(flux.map(r -> new GenericMessage(typeResolver.resolveOrThrow(r), r)));
             }
         }
 

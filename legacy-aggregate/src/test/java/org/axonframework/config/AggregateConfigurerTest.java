@@ -50,7 +50,7 @@ public class AggregateConfigurerTest {
 //    }
 //
 //    @Test
-//    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+//    @Disabled
 //    void polymorphicConfig() {
 //        AggregateConfigurer<A> aggregateConfigurer = AggregateConfigurer.defaultConfiguration(A.class)
 //                                                                        .withSubtypes(B.class);
@@ -135,7 +135,7 @@ public class AggregateConfigurerTest {
 //    }
 //
 //    @Test
-//    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+//    @Disabled
 //    void configureLockFactoryForEventSourcedAggregate() {
 //        PessimisticLockFactory lockFactory = spy(PessimisticLockFactory.usingDefaults());
 //        AggregateConfigurer<A> aggregateConfigurer = AggregateConfigurer.defaultConfiguration(A.class)
@@ -158,7 +158,7 @@ public class AggregateConfigurerTest {
 //    }
 //
 //    @Test
-//    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+//    @Disabled
 //    void configureSpanFactoryForEventSourcedAggregate() {
 //        AggregateConfigurer<A> aggregateConfigurer = AggregateConfigurer.defaultConfiguration(A.class);
 //
@@ -180,7 +180,7 @@ public class AggregateConfigurerTest {
 //    }
 //
 //    @Test
-//    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+//    @Disabled
 //    void configureLockFactoryForStateStoredAggregateWithConfiguredEntityManagerProviderComponent() {
 //        PessimisticLockFactory lockFactory = spy(PessimisticLockFactory.usingDefaults());
 //        AggregateConfigurer<A> aggregateConfigurer = AggregateConfigurer.jpaMappedConfiguration(A.class)
@@ -205,7 +205,7 @@ public class AggregateConfigurerTest {
 //    }
 //
 //    @Test
-//    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+//    @Disabled
 //    void configureSpanFactoryForStateStoredAggregateWithConfiguredEntityManagerProviderComponent() {
 //        PessimisticLockFactory lockFactory = spy(PessimisticLockFactory.usingDefaults());
 //        AggregateConfigurer<A> aggregateConfigurer = AggregateConfigurer.jpaMappedConfiguration(A.class)
@@ -233,7 +233,7 @@ public class AggregateConfigurerTest {
 //    }
 //
 //    @Test
-//    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+//    @Disabled
 //    void configureLockFactoryForStateStoredAggregate() {
 //        PessimisticLockFactory lockFactory = spy(PessimisticLockFactory.usingDefaults());
 //        AggregateConfigurer<A> aggregateConfigurer =
@@ -257,7 +257,7 @@ public class AggregateConfigurerTest {
 //    }
 //
 //    @Test
-//    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+//    @Disabled
 //    void configureSpanFactoryForStateStoredAggregate() {
 //        AggregateConfigurer<A> aggregateConfigurer =
 //                AggregateConfigurer.jpaMappedConfiguration(
@@ -326,7 +326,7 @@ public class AggregateConfigurerTest {
 //    }
 //
 //    @Test
-//    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+//    @Disabled
 //    void configuredCreationPolicyAggregateFactoryIsUsedDuringAggregateConstruction() {
 //        AtomicBoolean counter = new AtomicBoolean(false);
 //

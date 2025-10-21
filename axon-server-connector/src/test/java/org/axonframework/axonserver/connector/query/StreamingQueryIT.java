@@ -75,6 +75,7 @@ class StreamingQueryIT {
     private AxonServerQueryBus nonStreamingSenderQueryBus;
 
 
+    @SuppressWarnings("resource")
     @Container
     private static final AxonServerContainer axonServerContainer =
             new AxonServerContainer()

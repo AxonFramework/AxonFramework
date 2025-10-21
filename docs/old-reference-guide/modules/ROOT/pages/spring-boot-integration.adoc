@@ -46,7 +46,7 @@ org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
   org.axonframework.springboot.autoconfig.MetricsAutoConfiguration,\
   org.axonframework.springboot.autoconfig.MicrometerMetricsAutoConfiguration,\
   org.axonframework.springboot.autoconfig.EventProcessingAutoConfiguration,\
-  org.axonframework.springboot.autoconfig.AxonAutoConfiguration,\
+  org.axonframework.extension.autoconfig.springboot.AxonAutoConfiguration,\
   org.axonframework.springboot.autoconfig.legacy_jpa.JpaJavaxAutoConfiguration,\
   org.axonframework.springboot.autoconfig.legacy_jpa.JpaJavaxEventStoreAutoConfiguration,\
   org.axonframework.springboot.autoconfig.JpaAutoConfiguration,\
@@ -56,7 +56,7 @@ org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
   org.axonframework.springboot.autoconfig.NoOpTransactionAutoConfiguration,\
   org.axonframework.springboot.autoconfig.InfraConfiguration,\
   org.axonframework.springboot.autoconfig.ObjectMapperAutoConfiguration,\
-  org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration,\
+  org.axonframework.extension.autoconfig.springboot.AxonServerAutoConfiguration,\
   org.axonframework.springboot.autoconfig.XStreamAutoConfiguration,\
   org.axonframework.springboot.autoconfig.AxonServerActuatorAutoConfiguration,\
   org.axonframework.springboot.autoconfig.AxonServerBusAutoConfiguration, \
@@ -76,9 +76,9 @@ the `META-INF/spring` directory of `axon-spring-boot-autoconfigure` module:
 
 [source,text]
 ----
-org.axonframework.springboot.autoconfig.AxonAutoConfiguration
+org.axonframework.extension.autoconfig.springboot.AxonAutoConfiguration
 org.axonframework.springboot.autoconfig.AxonServerActuatorAutoConfiguration
-org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration
+org.axonframework.extension.autoconfig.springboot.AxonServerAutoConfiguration
 org.axonframework.springboot.autoconfig.AxonServerBusAutoConfiguration
 org.axonframework.springboot.autoconfig.AxonTracingAutoConfiguration
 org.axonframework.springboot.autoconfig.EventProcessingAutoConfiguration

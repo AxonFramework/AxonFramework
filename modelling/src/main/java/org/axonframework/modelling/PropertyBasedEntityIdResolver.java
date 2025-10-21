@@ -22,9 +22,9 @@ import org.axonframework.common.property.Property;
 import org.axonframework.common.property.PropertyAccessStrategy;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.annotations.NullEntityIdInPayloadException;
 import org.axonframework.modelling.annotations.TargetEntityIdMemberMismatchException;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -35,7 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * automatically be resolved by looking for a method with the name {@code get<Property>} or {@code <Property>}.
  * <p>
  * This field or method needs to have or return a non-null value. If a {@code null} value is found, a
- * {@link NullEntityIdInPayloadException} is thrown. If no member is found at all, a
+ * {@link EntityIdResolutionException} is thrown. If no member is found at all, a
  * {@link TargetEntityIdMemberMismatchException} is thrown.
  *
  * @author Mitchell Herrijgers
@@ -57,13 +57,13 @@ public class PropertyBasedEntityIdResolver implements EntityIdResolver<Object> {
 
     @Nonnull
     @Override
-    public Object resolve(@Nonnull Message message, @Nonnull ProcessingContext context) {
+    public Object resolve(@Nonnull Message message, @Nonnull ProcessingContext context) throws EntityIdResolutionException {
         Object payload = message.payload();
         Class<?> payloadClass = payload.getClass();
         var property = propertyCache.computeIfAbsent(payloadClass, this::getObjectProperty);
         Object value = property.getValue(payload);
         if (value == null) {
-            throw new NullEntityIdInPayloadException(payloadClass);
+            throw new EntityIdResolutionException(payloadClass, List.of());
         }
         return value;
     }

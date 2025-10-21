@@ -27,6 +27,7 @@ import org.axonframework.eventsourcing.eventstore.EventStorageEngine.AppendTrans
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.eventstreaming.Tag;
+import org.axonframework.messaging.FluxUtils;
 import org.axonframework.messaging.LegacyResources;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageStream.Entry;
@@ -150,7 +151,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
         MessageStream<EventMessage> result =
                 testSubject.stream(StreamingCondition.startingFrom(trackingTokenAt(0)), processingContext());
 
-        StepVerifier.create(result.asFlux())
+        StepVerifier.create(FluxUtils.of(result))
                     .assertNext(entry -> assertTrackedEntry(entry, expectedEventOne.event(), 1))
                     .assertNext(entry -> assertTrackedEntry(entry, expectedEventTwo.event(), 2))
                     .expectNextCount(2)
@@ -180,7 +181,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
         MessageStream<EventMessage> result =
                 testSubject.stream(StreamingCondition.startingFrom(trackingTokenAt(2)), processingContext());
 
-        StepVerifier.create(result.asFlux())
+        StepVerifier.create(FluxUtils.of(result))
                     // we've skipped the first two
                     .expectNextCount(2).assertNext(entry -> assertTrackedEntry(entry, expectedEventThree.event(), 5))
                     .expectNextCount(2).thenCancel().verify();
@@ -235,7 +236,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
             taggedEventMessage("event-0", TEST_AGGREGATE_TAGS)
         );
 
-        StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA), processingContext()).asFlux())
+        StepVerifier.create(FluxUtils.of(testSubject.source(SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA), processingContext())))
                     .expectNextMatches(entryWithAggregateEvent("event-0", 0))
                     .expectNextMatches(AggregateBasedStorageEngineTestSuite::assertMarkerEntry)
                     .verifyComplete();
@@ -256,7 +257,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
             )
         );
 
-        StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA), processingContext()).asFlux())
+        StepVerifier.create(FluxUtils.of(testSubject.source(SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA), processingContext())))
                     .expectNextMatches(entryWithAggregateEvent("event-0", 0))
                     .expectNextMatches(AggregateBasedStorageEngineTestSuite::assertMarkerEntry)
                     .verifyComplete();
@@ -281,7 +282,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
             taggedEventMessage("event-6", OTHER_AGGREGATE_TAGS)
         );
 
-        StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA), processingContext()).asFlux())
+        StepVerifier.create(FluxUtils.of(testSubject.source(SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA), processingContext())))
                     .expectNextMatches(entryWithAggregateEvent("event-0", 0))
                     .expectNextMatches(entryWithAggregateEvent("event-1", 1))
                     .expectNextMatches(entryWithAggregateEvent("event-2", 2))
@@ -300,7 +301,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
             taggedEventMessage("event-4", Set.of())
         );
 
-        StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA), processingContext()).asFlux())
+        StepVerifier.create(FluxUtils.of(testSubject.source(SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA), processingContext())))
                     .expectNextMatches(entryWithAggregateEvent("event-1", 0))
                     .expectNextMatches(entryWithAggregateEvent("event-3", 1))
                     .expectNextMatches(AggregateBasedStorageEngineTestSuite::assertMarkerEntry)
@@ -316,7 +317,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
             taggedEventMessage("event-6", TEST_AGGREGATE_TAGS)
         );
 
-        StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA), processingContext()).asFlux())
+        StepVerifier.create(FluxUtils.of(testSubject.source(SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA), processingContext())))
                     .expectNextMatches(entryWithAggregateEvent("event-4", 0))
                     .expectNextMatches(entryWithAggregateEvent("event-5", 1))
                     .expectNextMatches(entryWithAggregateEvent("event-6", 2))
@@ -339,7 +340,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
         SourcingCondition testCondition =
                 SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA.or(OTHER_AGGREGATE_CRITERIA));
 
-        StepVerifier.create(testSubject.source(testCondition, processingContext()).asFlux())
+        StepVerifier.create(FluxUtils.of(testSubject.source(testCondition, processingContext())))
                     .expectNextCount(6)
                     .assertNext(entry -> assertEquals(appendMarker, entry.getResource(ConsistencyMarker.RESOURCE_KEY)))
                     .verifyComplete();
@@ -365,7 +366,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
         SourcingCondition testCondition = SourcingCondition.conditionFor(1, TEST_AGGREGATE_CRITERIA);
         MessageStream<EventMessage> result = testSubject.source(testCondition, processingContext());
         // then...
-        StepVerifier.create(result.asFlux())
+        StepVerifier.create(FluxUtils.of(result))
                     .consumeNextWith(entry -> actual.add(entry.map(this::convertPayload).message().payloadAs(String.class)))
                     .consumeNextWith(entry -> actual.add(entry.map(this::convertPayload).message().payloadAs(String.class)))
                     .assertNext(AggregateBasedStorageEngineTestSuite::assertMarkerEntry)
@@ -400,7 +401,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
         }
 
         // then...
-        StepVerifier.create(source.asFlux())
+        StepVerifier.create(FluxUtils.of(source))
                     .consumeNextWith(entry -> actual.add(entry.map(this::convertPayload).message().payloadAs(String.class)))
                     .consumeNextWith(entry -> actual.add(entry.map(this::convertPayload).message().payloadAs(String.class)))
                     .consumeNextWith(entry -> actual.add(entry.map(this::convertPayload).message().payloadAs(String.class)))
@@ -421,7 +422,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
                 SourcingCondition.conditionFor(0, TEST_AGGREGATE_CRITERIA.or(OTHER_AGGREGATE_CRITERIA));
         MessageStream<EventMessage> result = testSubject.source(testCondition, processingContext());
         // then...
-        StepVerifier.create(result.asFlux())
+        StepVerifier.create(FluxUtils.of(result))
                     .assertNext(entry -> assertEquals(
                             expectedMarker, entry.getResource(ConsistencyMarker.RESOURCE_KEY)
                     ))
