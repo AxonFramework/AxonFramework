@@ -18,7 +18,7 @@ package org.axonframework.axonserver.connector.event.axon;
 
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.event.StubServer;
-import org.axonframework.axonserver.connector.util.TcpUtil;
+import org.axonframework.axonserver.connector.util.TcpUtils;
 import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.MessagingConfigurer;
 import org.junit.jupiter.api.*;
@@ -34,7 +34,7 @@ class EventProcessorInfoConfigurationTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        port = TcpUtil.findFreePort();
+        port = TcpUtils.findFreePort();
         stubServer = new StubServer(port);
         stubServer.start();
     }

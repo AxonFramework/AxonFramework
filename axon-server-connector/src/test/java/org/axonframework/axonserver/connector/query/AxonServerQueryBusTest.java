@@ -35,7 +35,7 @@ import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.TestTargetContextResolver;
-import org.axonframework.axonserver.connector.util.ProcessingInstructionHelper;
+import org.axonframework.axonserver.connector.util.ProcessingInstructionUtils;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.lifecycle.ShutdownInProgressException;
@@ -411,7 +411,7 @@ class AxonServerQueryBusTest {
         //noinspection resource
         verify(mockQueryChannel).query(argThat(
                 r -> r.getPayload().getData().toStringUtf8().equals("<string>Hello, World</string>")
-                        && 1 == ProcessingInstructionHelper.numberOfResults(r.getProcessingInstructionsList())));
+                        && 1 == ProcessingInstructionUtils.numberOfResults(r.getProcessingInstructionsList())));
         await().atMost(Duration.ofSeconds(3))
                .untilAsserted(() -> {
                    spanFactory.verifySpanCompleted("QueryBus.streamingQueryDistributed", testQuery);
@@ -435,7 +435,7 @@ class AxonServerQueryBusTest {
         //noinspection resource
         verify(mockQueryChannel).query(argThat(
                 r -> r.getPayload().getData().toStringUtf8().equals("<string>Hello, World</string>")
-                        && 1 == ProcessingInstructionHelper.numberOfResults(r.getProcessingInstructionsList())));
+                        && 1 == ProcessingInstructionUtils.numberOfResults(r.getProcessingInstructionsList())));
         await().atMost(Duration.ofSeconds(3))
                .untilAsserted(() -> {
                    spanFactory.verifySpanCompleted("QueryBus.streamingQueryDistributed");
@@ -458,7 +458,7 @@ class AxonServerQueryBusTest {
         //noinspection resource
         verify(mockQueryChannel).query(argThat(
                 r -> r.getPayload().getData().toStringUtf8().equals("<string>Hello, World</string>")
-                        && 1 == ProcessingInstructionHelper.numberOfResults(r.getProcessingInstructionsList())));
+                        && 1 == ProcessingInstructionUtils.numberOfResults(r.getProcessingInstructionsList())));
     }
 
     @Test

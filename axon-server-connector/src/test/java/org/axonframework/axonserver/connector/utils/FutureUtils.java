@@ -18,7 +18,7 @@ package org.axonframework.axonserver.connector.utils;
 
 import java.util.concurrent.CompletableFuture;
 
-public abstract class FutureUtils {
+public final class FutureUtils {
 
     private FutureUtils() {
     }

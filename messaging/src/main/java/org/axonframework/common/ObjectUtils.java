@@ -26,7 +26,7 @@ import java.util.function.Supplier;
  * @author Allard Buijze
  * @since 3.0
  */
-public abstract class ObjectUtils {
+public final class ObjectUtils {
 
     private ObjectUtils() {
         // Utility class

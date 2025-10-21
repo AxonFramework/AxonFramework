@@ -35,7 +35,7 @@ import java.util.Map;
  * @since 5.0.0
  */
 @Internal
-public class MetadataConverter {
+public final class MetadataConverter {
 
     private MetadataConverter() {
         // Utility class

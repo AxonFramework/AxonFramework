@@ -38,7 +38,7 @@ import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.query.subscription.SubscriptionMessageSerializer;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
 import org.axonframework.axonserver.connector.util.PriorityTaskSchedulers;
-import org.axonframework.axonserver.connector.util.ProcessingInstructionHelper;
+import org.axonframework.axonserver.connector.util.ProcessingInstructionUtils;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonException;
 import org.axonframework.common.AxonThreadFactory;
@@ -1031,7 +1031,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
             CloseAwareReplyChannel<QueryResponse> closeAwareReplyChannel =
                     new CloseAwareReplyChannel<>(responseHandler, onClose);
 
-            long priority = ProcessingInstructionHelper.priority(query.getProcessingInstructionsList());
+            long priority = ProcessingInstructionUtils.priority(query.getProcessingInstructionsList());
             QueryProcessingTask processingTask = new QueryProcessingTask(
                     localSegment, query, closeAwareReplyChannel, serializer, configuration.getClientId(), spanFactory
             );

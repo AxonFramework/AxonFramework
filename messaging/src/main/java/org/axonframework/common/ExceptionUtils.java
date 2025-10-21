@@ -24,7 +24,7 @@ import java.util.function.Predicate;
  *
  * @author Rene de Waele
  */
-public abstract class ExceptionUtils {
+public final class ExceptionUtils {
 
     private ExceptionUtils() {
     }

@@ -38,7 +38,7 @@ import static org.springframework.core.annotation.AnnotationUtils.getAnnotation;
  * @author Steven van Beelen
  * @since 3.1
  */
-public class SpringUtils {
+public final class SpringUtils {
 
     private SpringUtils() {
         // Private constructor to enforce as utility class.

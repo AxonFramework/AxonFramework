@@ -31,7 +31,7 @@ import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.utils.PlatformService;
 import org.axonframework.axonserver.connector.event.EventStoreImpl;
-import org.axonframework.axonserver.connector.util.TcpUtil;
+import org.axonframework.axonserver.connector.util.TcpUtils;
 import org.axonframework.axonserver.connector.utils.ContextInterceptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,7 +63,7 @@ public class DummyMessagePlatformServer {
     private final Set<String> unsubscribedCommands = new CopyOnWriteArraySet<>();
 
     public DummyMessagePlatformServer() {
-        this(TcpUtil.findFreePort());
+        this(TcpUtils.findFreePort());
     }
 
     public DummyMessagePlatformServer(int port) {

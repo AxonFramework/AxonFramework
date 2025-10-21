@@ -26,11 +26,11 @@ import java.util.Collections;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the {@link ProcessingInstructionHelper}.
+ * Test class validating the {@link ProcessingInstructionUtils}.
  *
  * @author Steven van Beelen
  */
-class ProcessingInstructionHelperTest {
+class ProcessingInstructionUtilsTest {
 
     private static final long EXPECTED_VALUE = 1729L;
     private static final MetaDataValue TEST_META_DATA_VALUE = MetaDataValue.newBuilder()
@@ -39,7 +39,7 @@ class ProcessingInstructionHelperTest {
 
     @Test
     void priorityDefaultsToZero() {
-        assertEquals(0L, ProcessingInstructionHelper.priority(Collections.emptyList()));
+        assertEquals(0L, ProcessingInstructionUtils.priority(Collections.emptyList()));
     }
 
     @Test
@@ -50,12 +50,12 @@ class ProcessingInstructionHelperTest {
                                      .setValue(TEST_META_DATA_VALUE)
                                      .build();
         assertEquals(EXPECTED_VALUE,
-                     ProcessingInstructionHelper.priority(Collections.singletonList(testProcessingInstruction)));
+                     ProcessingInstructionUtils.priority(Collections.singletonList(testProcessingInstruction)));
     }
 
     @Test
     void numberOfResultsDefaultsToZero() {
-        assertEquals(1L, ProcessingInstructionHelper.numberOfResults(Collections.emptyList()));
+        assertEquals(1L, ProcessingInstructionUtils.numberOfResults(Collections.emptyList()));
     }
 
     @Test
@@ -66,12 +66,12 @@ class ProcessingInstructionHelperTest {
                                      .setValue(TEST_META_DATA_VALUE)
                                      .build();
         assertEquals(EXPECTED_VALUE,
-                     ProcessingInstructionHelper.numberOfResults(Collections.singletonList(testProcessingInstruction)));
+                     ProcessingInstructionUtils.numberOfResults(Collections.singletonList(testProcessingInstruction)));
     }
 
     @Test
     void timeoutDefaultsToZero() {
-        assertEquals(0L, ProcessingInstructionHelper.timeout(Collections.emptyList()));
+        assertEquals(0L, ProcessingInstructionUtils.timeout(Collections.emptyList()));
     }
 
     @Test
@@ -82,6 +82,6 @@ class ProcessingInstructionHelperTest {
                                      .setValue(TEST_META_DATA_VALUE)
                                      .build();
         assertEquals(EXPECTED_VALUE,
-                     ProcessingInstructionHelper.timeout(Collections.singletonList(testProcessingInstruction)));
+                     ProcessingInstructionUtils.timeout(Collections.singletonList(testProcessingInstruction)));
     }
 }

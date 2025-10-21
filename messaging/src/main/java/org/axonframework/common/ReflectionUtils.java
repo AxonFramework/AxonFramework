@@ -48,7 +48,7 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * @author Allard Buijze
  * @since 0.7
  */
-public abstract class ReflectionUtils {
+public final class ReflectionUtils {
 
     /**
      * A map of Primitive types to their respective wrapper types.

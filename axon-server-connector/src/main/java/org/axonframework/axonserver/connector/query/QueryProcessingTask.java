@@ -41,7 +41,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
-import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.*;
+import static org.axonframework.axonserver.connector.util.ProcessingInstructionUtils.*;
 
 /**
  * The task that processes a single incoming query message from Axon Server. It decides which query type should be
