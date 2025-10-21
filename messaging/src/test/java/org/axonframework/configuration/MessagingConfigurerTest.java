@@ -311,21 +311,21 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
                                           .build();
         HandlerInterceptorRegistry handlerInterceptorRegistry = result.getComponent(HandlerInterceptorRegistry.class);
 
-        List<MessageHandlerInterceptor<CommandMessage>> commandInterceptors =
+        List<MessageHandlerInterceptor<? super CommandMessage>> commandInterceptors =
                 handlerInterceptorRegistry.commandInterceptors(result);
         assertThat(commandInterceptors).hasSize(1);
         //noinspection DataFlowIssue | Input is not important to validate invocation
         commandInterceptors.getFirst().interceptOnHandle(null, null, null);
         assertThat(counter).hasValue(1);
 
-        List<MessageHandlerInterceptor<EventMessage>> eventInterceptors =
+        List<MessageHandlerInterceptor<? super EventMessage>> eventInterceptors =
                 handlerInterceptorRegistry.eventInterceptors(result);
         assertThat(eventInterceptors).hasSize(1);
         //noinspection DataFlowIssue | Input is not important to validate invocation
         eventInterceptors.getFirst().interceptOnHandle(null, null, null);
         assertThat(counter).hasValue(2);
 
-        List<MessageHandlerInterceptor<QueryMessage>> queryInterceptors =
+        List<MessageHandlerInterceptor<? super QueryMessage>> queryInterceptors =
                 handlerInterceptorRegistry.queryInterceptors(result);
         assertThat(queryInterceptors).hasSize(1);
         //noinspection DataFlowIssue | Input is not important to validate invocation
@@ -341,7 +341,7 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
         Configuration result = testSubject.registerCommandHandlerInterceptor(c -> handlerInterceptor)
                                           .build();
 
-        List<MessageHandlerInterceptor<CommandMessage>> interceptors = result.getComponent(HandlerInterceptorRegistry.class)
+        List<MessageHandlerInterceptor<? super CommandMessage>> interceptors = result.getComponent(HandlerInterceptorRegistry.class)
                                                                              .commandInterceptors(result);
         assertThat(interceptors).contains(handlerInterceptor);
     }
@@ -354,7 +354,7 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
         Configuration result = testSubject.registerEventHandlerInterceptor(c -> handlerInterceptor)
                                           .build();
 
-        List<MessageHandlerInterceptor<EventMessage>> interceptors = result.getComponent(HandlerInterceptorRegistry.class)
+        List<MessageHandlerInterceptor<? super EventMessage>> interceptors = result.getComponent(HandlerInterceptorRegistry.class)
                                                                            .eventInterceptors(result);
         assertThat(interceptors).contains(handlerInterceptor);
     }
@@ -367,7 +367,7 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
         Configuration result = testSubject.registerQueryHandlerInterceptor(c -> handlerInterceptor)
                                           .build();
 
-        List<MessageHandlerInterceptor<QueryMessage>> interceptors = result.getComponent(HandlerInterceptorRegistry.class)
+        List<MessageHandlerInterceptor<? super QueryMessage>> interceptors = result.getComponent(HandlerInterceptorRegistry.class)
                                                                            .queryInterceptors(result);
         assertThat(interceptors).contains(handlerInterceptor);
     }

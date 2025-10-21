@@ -295,7 +295,7 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                 CommandBus.class,
                 InterceptingCommandBus.DECORATION_ORDER,
                 (config, name, delegate) -> {
-                    List<MessageHandlerInterceptor<CommandMessage>> handlerInterceptors =
+                    List<MessageHandlerInterceptor<? super CommandMessage>> handlerInterceptors =
                             config.getComponent(HandlerInterceptorRegistry.class).commandInterceptors(config);
                     List<MessageDispatchInterceptor<? super CommandMessage>> dispatchInterceptors =
                             config.getComponent(DispatchInterceptorRegistry.class).commandInterceptors(config);
