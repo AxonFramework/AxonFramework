@@ -25,6 +25,7 @@ import org.reactivestreams.Publisher;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
 
@@ -69,13 +70,12 @@ public class ConvertingQueryGateway implements QueryGateway {
 
     @Nonnull
     @Override
-    public <I, U> SubscriptionQueryResponse<I, U> subscriptionQuery(@Nonnull Object query,
-                                                                    @Nonnull Class<I> initialResponseType,
-                                                                    @Nonnull Class<U> updateResponseType,
-                                                                    @Nullable ProcessingContext context,
-                                                                    int updateBufferSize) {
+    public <T> Publisher<T> subscriptionQuery(@Nonnull Object query, @Nonnull Class<T> responseType,
+                                              @Nonnull Function<QueryResponseMessage, T> mapper,
+                                              @Nullable ProcessingContext context, int updateBufferSize) {
         return null;
     }
+
 
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {

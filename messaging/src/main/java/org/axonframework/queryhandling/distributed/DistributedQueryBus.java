@@ -27,9 +27,7 @@ import org.axonframework.queryhandling.QueryHandlerName;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
-import org.axonframework.queryhandling.SubscriptionQueryResponseMessages;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
-import org.axonframework.queryhandling.UpdateHandler;
 import org.axonframework.util.PriorityRunnable;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
@@ -118,17 +116,30 @@ public class DistributedQueryBus implements QueryBus {
 
     @Nonnull
     @Override
-    public SubscriptionQueryResponseMessages subscriptionQuery(@Nonnull SubscriptionQueryMessage query,
-                                                               @Nullable ProcessingContext context,
-                                                               int updateBufferSize) {
+    public MessageStream<QueryResponseMessage> subscriptionQuery(@Nonnull SubscriptionQueryMessage query,
+                                                                 @Nullable ProcessingContext context,
+                                                                 int updateBufferSize) {
         return null;
     }
 
     @Nonnull
     @Override
-    public UpdateHandler subscribeToUpdates(@Nonnull SubscriptionQueryMessage query, int updateBufferSize) {
+    public MessageStream<SubscriptionQueryUpdateMessage> subscribeToUpdates(@Nonnull SubscriptionQueryMessage query,
+                                                                            int updateBufferSize) {
         return null;
     }
+
+//   FIXME  @Nonnull
+//    public SubscriptionQueryResponseMessages subscriptionQuery(@Nonnull SubscriptionQueryMessage query,
+//                                                               @Nullable ProcessingContext context,
+//                                                               int updateBufferSize) {
+//        return null;
+//    }
+//
+//  FIXME  @Nonnull
+//    public UpdateHandler subscribeToUpdates(@Nonnull SubscriptionQueryMessage query, int updateBufferSize) {
+//        return null;
+//    }
 
     @Nonnull
     @Override
