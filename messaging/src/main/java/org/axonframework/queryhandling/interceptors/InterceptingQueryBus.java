@@ -79,7 +79,7 @@ public class InterceptingQueryBus implements QueryBus {
     private final List<MessageDispatchInterceptor<? super QueryMessage>> dispatchInterceptors;
     private final List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> updateDispatchInterceptors;
     private final InterceptingDispatcher interceptingDispatcher;
-    private final InterceptingUpdateEmitter interceptingUpdateEmitter;
+    private final InterceptingResponseUpdateDispatcher interceptingResponseUpdateDispatcher;
 
     /**
      * Constructs a {@code InterceptingQueryBus}, delegating dispatching and handling logic to the given
@@ -112,7 +112,7 @@ public class InterceptingQueryBus implements QueryBus {
                 requireNonNull(updateDispatchInterceptors, "The update dispatch interceptors must not be null.")
         );
         this.interceptingDispatcher = new InterceptingDispatcher(dispatchInterceptors, this::dispatchQuery);
-        this.interceptingUpdateEmitter = new InterceptingUpdateEmitter(updateDispatchInterceptors);
+        this.interceptingResponseUpdateDispatcher = new InterceptingResponseUpdateDispatcher(updateDispatchInterceptors);
     }
 
     @Override
@@ -159,7 +159,7 @@ public class InterceptingQueryBus implements QueryBus {
 
         try {
             SubscriptionQueryUpdateMessage update = updateSupplier.get();
-            SubscriptionQueryUpdateMessage intercepted = interceptingUpdateEmitter.intercept(update, context);
+            SubscriptionQueryUpdateMessage intercepted = interceptingResponseUpdateDispatcher.intercept(update, context);
             return delegate.emitUpdate(filter, () -> intercepted, context);
         } catch (Exception e) {
             return CompletableFuture.failedFuture(e);
@@ -238,22 +238,22 @@ public class InterceptingQueryBus implements QueryBus {
         }
     }
 
-    private static class InterceptingUpdateEmitter {
+    private static class InterceptingResponseUpdateDispatcher {
 
         private final DefaultMessageDispatchInterceptorChain<? super SubscriptionQueryUpdateMessage> interceptorChain;
 
-        private InterceptingUpdateEmitter(
+        private InterceptingResponseUpdateDispatcher(
                 List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> interceptors
         ) {
-            BiFunction<? super SubscriptionQueryUpdateMessage, ProcessingContext, MessageStream<?>> terminal =
+            BiFunction<? super SubscriptionQueryUpdateMessage, ProcessingContext, MessageStream<?>> dispatcher =
                     (message, context) -> MessageStream.just(message).cast();
-            this.interceptorChain = new DefaultMessageDispatchInterceptorChain<>(interceptors, terminal);
+            this.interceptorChain = new DefaultMessageDispatchInterceptorChain<>(interceptors, dispatcher);
         }
 
         private SubscriptionQueryUpdateMessage intercept(
                 @Nonnull SubscriptionQueryUpdateMessage update,
                 @Nullable ProcessingContext context
-        ) throws Exception {
+        ) {
             @SuppressWarnings("unchecked")
             MessageStream<SubscriptionQueryUpdateMessage> intercepted =
                     (MessageStream<SubscriptionQueryUpdateMessage>) interceptorChain.proceed(update, context);
