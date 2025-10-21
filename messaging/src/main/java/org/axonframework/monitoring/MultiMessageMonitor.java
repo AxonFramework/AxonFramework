@@ -16,14 +16,13 @@
 
 package org.axonframework.monitoring;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
 import org.axonframework.messaging.Message;
 
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
-import jakarta.annotation.Nonnull;
 
 /**
  * Delegates messages and callbacks to the given list of message monitors
@@ -52,7 +51,7 @@ public class MultiMessageMonitor<T extends Message> implements MessageMonitor<T>
      */
     public MultiMessageMonitor(List<MessageMonitor<? super T>> messageMonitors) {
         Assert.notNull(messageMonitors, () -> "MessageMonitor list may not be null");
-        this.messageMonitors = new ArrayList<>(messageMonitors);
+        this.messageMonitors = Collections.unmodifiableList(messageMonitors);
     }
 
     /**
@@ -67,7 +66,7 @@ public class MultiMessageMonitor<T extends Message> implements MessageMonitor<T>
         final List<MonitorCallback> monitorCallbacks = messageMonitors.stream()
                                                                       .map(messageMonitor -> messageMonitor.onMessageIngested(
                                                                               message))
-                                                                      .collect(Collectors.toList());
+                                                                      .toList();
 
         return new MonitorCallback() {
             @Override
@@ -85,5 +84,14 @@ public class MultiMessageMonitor<T extends Message> implements MessageMonitor<T>
                 monitorCallbacks.forEach(MonitorCallback::reportIgnored);
             }
         };
+    }
+
+    /**
+     * Inspect the contained message monitors.
+     *
+     * @return unmodifiable list of contained message monitors
+     */
+    public List<MessageMonitor<? super T>> messageMonitors() {
+        return messageMonitors;
     }
 }

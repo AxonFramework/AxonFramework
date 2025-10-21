@@ -19,14 +19,17 @@ package org.axonframework.eventhandling.processors;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.EventHandlingComponent;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
+import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
-import org.axonframework.eventhandling.monitoring.MonitoringEventHandlingComponent;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.monitoring.interceptors.MonitoringEventHandlerInterceptor;
 import org.junit.jupiter.api.*;
 
 import java.util.HashSet;
@@ -40,7 +43,7 @@ import java.util.concurrent.TimeoutException;
 import static org.axonframework.messaging.MessagingTestUtils.event;
 import static org.junit.jupiter.api.Assertions.*;
 
-class EventProcessorWithMonitoringEventHandlingComponentTest {
+class EventProcessorMonitoringTest {
 
     @Test
     void expectCallbackForAllMessages() throws Exception {
@@ -76,14 +79,11 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
                 -> interceptorChain.proceed(event(123), context);
 
         var interceptingEventHandlingComponent = new InterceptingEventHandlingComponent(
-                List.of(interceptor),
+                List.of(new MonitoringEventHandlerInterceptor(messageMonitor), interceptor),
                 eventHandlingComponent
         );
-        var decoratedEventHandlingComponent = new MonitoringEventHandlingComponent(
-                messageMonitor,
-                interceptingEventHandlingComponent
-        );
-        TestEventProcessor testSubject = new TestEventProcessor(decoratedEventHandlingComponent);
+
+        TestEventProcessor testSubject = new TestEventProcessor(interceptingEventHandlingComponent);
 
         testSubject.processInBatchingUnitOfWork(events);
 
