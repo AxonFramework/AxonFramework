@@ -60,10 +60,10 @@ public class MonitoringCommandHandlerInterceptor implements MessageHandlerInterc
             final var monitorCallback = messageMonitor.onMessageIngested(message);
 
             context.onError(
-                    (cts, phase, error) -> monitorCallback.reportFailure(error)
+                    (ctx, phase, error) -> monitorCallback.reportFailure(error)
             );
-            context.onAfterCommit(
-                    c -> CompletableFuture.runAsync(monitorCallback::reportSuccess)
+            context.runOnAfterCommit(
+                    ctx -> monitorCallback.reportSuccess()
             );
         }
         return interceptorChain.proceed(message, context);

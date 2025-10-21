@@ -24,8 +24,7 @@ import org.axonframework.monitoring.MessageMonitor;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
+import java.util.function.Consumer;
 
 import static org.mockito.Mockito.*;
 
@@ -47,10 +46,10 @@ class MonitoringCommandHandlerInterceptorTest {
         testSubject.interceptOnHandle(message, processingContext, interceptorChain);
 
         //noinspection unchecked
-        ArgumentCaptor<Function<ProcessingContext, CompletableFuture<?>>> captor = ArgumentCaptor.forClass(Function.class);
+        ArgumentCaptor<Consumer<ProcessingContext>> captor = ArgumentCaptor.forClass(Consumer.class);
 
-        verify(processingContext).onAfterCommit(captor.capture());
-        captor.getValue().apply(processingContext).join();
+        verify(processingContext).runOnAfterCommit(captor.capture());
+        captor.getValue().accept(processingContext);
 
         verify(callback).reportSuccess();
     }

@@ -21,11 +21,10 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingLifecycle;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.queryhandling.QueryMessage;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
+import org.junit.jupiter.api.*;
+import org.mockito.*;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
+import java.util.function.Consumer;
 
 import static org.mockito.Mockito.*;
 
@@ -46,10 +45,10 @@ class MonitoringQueryHandlerInterceptorTest {
         testSubject.interceptOnHandle(message, processingContext, interceptorChain);
 
         //noinspection unchecked
-        ArgumentCaptor<Function<ProcessingContext, CompletableFuture<?>>> captor = ArgumentCaptor.forClass(Function.class);
+        ArgumentCaptor<Consumer<ProcessingContext>> captor = ArgumentCaptor.forClass(Consumer.class);
 
-        verify(processingContext).onAfterCommit(captor.capture());
-        captor.getValue().apply(processingContext).join();
+        verify(processingContext).runOnAfterCommit(captor.capture());
+        captor.getValue().accept(processingContext);
 
         verify(callback).reportSuccess();
     }
