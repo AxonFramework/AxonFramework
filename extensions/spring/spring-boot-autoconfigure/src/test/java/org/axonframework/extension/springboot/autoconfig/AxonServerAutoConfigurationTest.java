@@ -151,8 +151,11 @@ class AxonServerAutoConfigurationTest {
         @Bean
         public AxonServerConnectionManager customAxonServerConnectionManager() {
             AxonServerConnectionManager mock = mock(AxonServerConnectionManager.class);
-            AxonServerConnection connectionMock = mock();
+            AxonServerConnection connectionMock = mock(AxonServerConnection.class);
+            when(connectionMock.controlChannel()).thenReturn(mock());
+            when(connectionMock.adminChannel()).thenReturn(mock());
             when(mock.getConnection()).thenReturn(connectionMock);
+            when(mock.getConnection(anyString())).thenReturn(connectionMock);
             return mock;
         }
 

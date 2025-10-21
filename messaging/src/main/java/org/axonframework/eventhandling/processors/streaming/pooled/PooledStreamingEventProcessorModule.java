@@ -33,7 +33,9 @@ import org.axonframework.eventhandling.configuration.EventProcessorCustomization
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
 import org.axonframework.eventhandling.processors.streaming.segmenting.SequenceCachingEventHandlingComponent;
+import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.lifecycle.Phase;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 
 import java.util.List;
 import java.util.Objects;
@@ -91,6 +93,8 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
     @Override
     public PooledStreamingEventProcessorModule build() {
         registerCustomizedConfiguration();
+        registerTokenStore();
+        registerUnitOfWorkFactory();
         registerEventHandlingComponents();
         registerEventProcessor();
         return this;
@@ -121,6 +125,24 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
         ));
     }
 
+    private void registerTokenStore() {
+        componentRegistry(cr -> cr.registerComponent(
+                ComponentDefinition
+                        .ofTypeAndName(TokenStore.class, "TokenStore[" + processorName + "]")
+                        .withBuilder(cfg -> cfg.getComponent(PooledStreamingEventProcessorConfiguration.class)
+                                               .tokenStore())
+        ));
+    }
+
+    private void registerUnitOfWorkFactory() {
+        componentRegistry(cr -> cr.registerComponent(
+                ComponentDefinition
+                        .ofTypeAndName(UnitOfWorkFactory.class, "UnitOfWorkFactory[" + processorName + "]")
+                        .withBuilder(cfg -> cfg.getComponent(PooledStreamingEventProcessorConfiguration.class)
+                                               .unitOfWorkFactory())
+        ));
+    }
+
     private void registerEventProcessor() {
         var processorComponentDefinition = ComponentDefinition
                 .ofTypeAndName(PooledStreamingEventProcessor.class, processorName)
@@ -147,9 +169,6 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
                 cr.registerComponent(EventHandlingComponent.class, componentName,
                                      cfg -> {
                                          var component = componentBuilder.build(cfg);
-                                         var configuration = cfg.getComponent(
-                                                 PooledStreamingEventProcessorConfiguration.class
-                                         );
                                          return new SequenceCachingEventHandlingComponent(component);
                                      });
                 cr.registerDecorator(EventHandlingComponent.class, componentName,
