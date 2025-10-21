@@ -23,7 +23,7 @@ import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import io.grpc.netty.shaded.io.netty.util.internal.OutOfDirectMemoryError;
 import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.axonserver.connector.util.ExceptionSerializer;
+import org.axonframework.axonserver.connector.util.ExceptionConverter;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryMessage;
@@ -41,7 +41,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
-import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.*;
+import static org.axonframework.axonserver.connector.util.ProcessingInstructionUtils.*;
 
 /**
  * The task that processes a single incoming query message from Axon Server. It decides which query type should be
@@ -187,8 +187,9 @@ class QueryProcessingTask implements Runnable, FlowControl {
         // noinspection unchecked
         QueryMessage streamingQueryMessage = new GenericQueryMessage(
                 originalQueryMessage,
+                null,
+//              FIXME cannot be null!  (Class<R>) originalQueryMessage.responseType().getExpectedResponseType()
                 null
-//                (Class<R>) originalQueryMessage.responseType().getExpectedResponseType()
         );
         Publisher<QueryResponseMessage> resultPublisher = localSegment.streamingQuery(streamingQueryMessage, null);
         setResult(streamableFluxResult(resultPublisher));
@@ -267,7 +268,7 @@ class QueryProcessingTask implements Runnable, FlowControl {
     }
 
     private void sendError(Throwable t) {
-        ErrorMessage ex = ExceptionSerializer.serialize(clientId, t);
+        ErrorMessage ex = ExceptionConverter.convertToErrorMessage(clientId, t);
         QueryResponse response =
                 QueryResponse.newBuilder()
                              .setErrorCode(ErrorCode.getQueryExecutionErrorCode(t).errorCode())

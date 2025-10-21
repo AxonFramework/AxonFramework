@@ -30,9 +30,9 @@ import java.util.Optional;
  * @author Marc Gathier
  * @since 4.0
  */
-public abstract class ProcessingInstructionHelper {
+public final class ProcessingInstructionUtils {
 
-    private ProcessingInstructionHelper() {
+    private ProcessingInstructionUtils() {
         // Utility class
     }
 
@@ -46,6 +46,54 @@ public abstract class ProcessingInstructionHelper {
     public static ProcessingInstruction.Builder createProcessingInstruction(@Nonnull ProcessingKey key,
                                                                             @Nonnull MetaDataValue.Builder value) {
         return ProcessingInstruction.newBuilder().setKey(key).setValue(value);
+    }
+
+    /**
+     * Creates a new {@link ProcessingInstruction.Builder} with the given {@code key} and {@code value}.
+     *
+     * @param key   The {@link ProcessingKey} to set on the {@link ProcessingInstruction.Builder}.
+     * @param value The {@link String} value to set in the {@link MetaDataValue.Builder}, which is then used to
+     *              initialize the {@link ProcessingInstruction.Builder}.
+     * @return A {@link ProcessingInstruction.Builder} initialized with the provided {@code key} and {@code value}.
+     * @see ProcessingInstructionUtils#createProcessingInstruction(ProcessingKey, MetaDataValue.Builder)
+     */
+    public static ProcessingInstruction.Builder createProcessingInstruction(@Nonnull ProcessingKey key,
+                                                                            @Nonnull String value) {
+        return ProcessingInstruction.newBuilder()
+                                    .setKey(key)
+                                    .setValue(MetaDataValue.newBuilder().setTextValue(value));
+    }
+
+    /**
+     * Creates a new {@link ProcessingInstruction.Builder} with the given {@code key} and {@code value}.
+     *
+     * @param key   The {@link ProcessingKey} to set on the {@link ProcessingInstruction.Builder}.
+     * @param value A {@code boolean} value used to initialize the {@link MetaDataValue.Builder}, which is then set on
+     *              the {@link ProcessingInstruction.Builder}.
+     * @return A {@link ProcessingInstruction.Builder} initialized with the provided {@code key} and {@code value}.
+     * @see ProcessingInstructionUtils#createProcessingInstruction(ProcessingKey, MetaDataValue.Builder)
+     */
+    public static ProcessingInstruction.Builder createProcessingInstruction(@Nonnull ProcessingKey key,
+                                                                            boolean value) {
+        return ProcessingInstruction.newBuilder()
+                                    .setKey(key)
+                                    .setValue(MetaDataValue.newBuilder().setBooleanValue(value));
+    }
+
+    /**
+     * Creates a new {@link ProcessingInstruction.Builder} with the given {@code key} and {@code value}.
+     *
+     * @param key   The {@link ProcessingKey} to set on the {@link ProcessingInstruction.Builder}.
+     * @param value The {@code long} value to set in the {@link MetaDataValue.Builder}, which is then used to initialize
+     *              the {@link ProcessingInstruction.Builder}.
+     * @return A {@link ProcessingInstruction.Builder} initialized with the provided {@code key} and {@code value}.
+     * @see ProcessingInstructionUtils#createProcessingInstruction(ProcessingKey, MetaDataValue.Builder)
+     */
+    public static ProcessingInstruction.Builder createProcessingInstruction(@Nonnull ProcessingKey key,
+                                                                            long value) {
+        return ProcessingInstruction.newBuilder()
+                                    .setKey(key)
+                                    .setValue(MetaDataValue.newBuilder().setNumberValue(value));
     }
 
     /**
@@ -69,12 +117,12 @@ public abstract class ProcessingInstructionHelper {
     }
 
     /**
-     * Retrieve the priority as a {@code long} from the given {@code instructions}, by searching for the
+     * Retrieve the priority as a {@code int} from the given {@code instructions}, by searching for the
      * {@link ProcessingInstruction} who's key equals the {@link ProcessingKey#PRIORITY}.
      *
      * @param instructions A {@link List} of {@link ProcessingInstruction}s to retrieve the
      *                     {@link ProcessingKey#PRIORITY} from.
-     * @return A {@code long} specifying the priority of a given operation.
+     * @return An {@code int} specifying the priority of a given operation.
      */
     public static int priority(@Nonnull List<ProcessingInstruction> instructions) {
         return getProcessingInstructionNumber(instructions, ProcessingKey.PRIORITY).orElse(0L).intValue();

@@ -16,7 +16,14 @@
 
 package org.axonframework.axonserver.connector.util;
 
+import com.google.protobuf.ByteString;
 import io.axoniq.axonserver.grpc.ErrorMessage;
+import io.axoniq.axonserver.grpc.SerializedObject;
+import org.axonframework.axonserver.connector.ErrorCode;
+import org.axonframework.common.AxonException;
+
+import java.util.Optional;
+import java.util.function.Predicate;
 
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
@@ -26,10 +33,25 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * @author Marc Gathier
  * @since 4.0
  */
-public abstract class ExceptionSerializer {
+public final class ExceptionConverter {
 
-    private ExceptionSerializer() {
-        // Utility class
+    /**
+     * Converts the given error information into an {@link AxonException}.
+     *
+     * @param errorCode     The error code identifying the type of exception to convert to.
+     * @param errorMessage  The {@link ErrorMessage} containing details of the error.
+     * @param payload       An optional {@link SerializedObject} representing additional error data, which may
+     *                      be used in the exception conversion.
+     * @return An instance of {@link AxonException} representing the given error information.
+     */
+    public static AxonException convertToAxonException(String errorCode, ErrorMessage errorMessage, SerializedObject payload) {
+        return ErrorCode.getFromCode(errorCode)
+                        .convert(errorMessage,
+                                 () -> Optional.ofNullable(payload).map(SerializedObject::getData)
+                                         .filter(Predicate.not(ByteString::isEmpty))
+                                         .map(ByteString::toByteArray)
+                                         .orElse(null)
+                        );
     }
 
     /**
@@ -40,7 +62,7 @@ public abstract class ExceptionSerializer {
      * @return the {@link ErrorMessage} originating from the given {@code clientLocation} and based on the
      * {@link Throwable}
      */
-    public static ErrorMessage serialize(String clientLocation, Throwable t) {
+    public static ErrorMessage convertToErrorMessage(String clientLocation, Throwable t) {
         ErrorMessage.Builder builder =
                 ErrorMessage.newBuilder()
                             .setLocation(getOrDefault(clientLocation, ""))
@@ -53,4 +75,7 @@ public abstract class ExceptionSerializer {
         return builder.build();
     }
 
+    private ExceptionConverter() {
+        // Utility class
+    }
 }

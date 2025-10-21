@@ -28,6 +28,7 @@ import org.axonframework.serialization.Converter;
 
 import java.lang.reflect.Type;
 import java.util.Map;
+import java.util.OptionalInt;
 
 /**
  * Generic implementation of the {@link QueryMessage} interface.
@@ -39,6 +40,7 @@ import java.util.Map;
 public class GenericQueryMessage extends MessageDecorator implements QueryMessage {
 
     private final MessageType responseType;
+    private final Integer priority;
 
     /**
      * Constructs a {@link GenericQueryMessage} for the given {@code type}, {@code payload}, and {@code responseType}.
@@ -53,7 +55,9 @@ public class GenericQueryMessage extends MessageDecorator implements QueryMessag
     public GenericQueryMessage(@Nonnull MessageType type,
                                @Nullable Object payload,
                                @Nonnull MessageType responseType) {
-        this(new GenericMessage(type, payload, Metadata.emptyInstance()), responseType);
+        this(new GenericMessage(type, payload, Metadata.emptyInstance()),
+             responseType,
+             null);
     }
 
     /**
@@ -70,11 +74,35 @@ public class GenericQueryMessage extends MessageDecorator implements QueryMessag
      *                     {@link Message#type() type}, {@link Message#identifier() identifier} and
      *                     {@link Message#metadata() metadata} for the {@link QueryMessage} to reconstruct.
      * @param responseType The expected {@link MessageType response type} for this {@link QueryMessage}.
+     * @see GenericQueryMessage(Message, MessageType, Integer)
      */
     public GenericQueryMessage(@Nonnull Message delegate,
                                @Nonnull MessageType responseType) {
+        this(delegate, responseType, null);
+    }
+
+    /**
+     * Constructs a {@code GenericQueryMessage} with given {@code delegate}, {@code responseType} and {@code priority}.
+     * <p>
+     * The {@code delegate} will be used supply the {@link Message#payload() payload}, {@link Message#type() type},
+     * {@link Message#metadata() metadata} and {@link Message#identifier() identifier} of the resulting
+     * {@code GenericQueryMessage}.
+     * <p>
+     * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
+     * of Work.
+     *
+     * @param delegate     The {@link Message} containing {@link Message#payload() payload},
+     *                     {@link Message#type() type}, {@link Message#identifier() identifier} and
+     *                     {@link Message#metadata() metadata} for the {@link QueryMessage} to reconstruct.
+     * @param responseType The expected {@link MessageType response type} for this {@link QueryMessage}.
+     * @param priority     The priority of this query message. May be {@code null} to indicate no priority.
+     */
+    public GenericQueryMessage(@Nonnull Message delegate,
+                               @Nonnull MessageType responseType,
+                               @Nullable Integer priority) {
         super(delegate);
         this.responseType = responseType;
+        this.priority = priority;
     }
 
     @Override
@@ -86,13 +114,13 @@ public class GenericQueryMessage extends MessageDecorator implements QueryMessag
     @Override
     @Nonnull
     public QueryMessage withMetadata(@Nonnull Map<String, String> metadata) {
-        return new GenericQueryMessage(delegate().withMetadata(metadata), responseType);
+        return new GenericQueryMessage(delegate().withMetadata(metadata), responseType, priority);
     }
 
     @Override
     @Nonnull
     public QueryMessage andMetadata(@Nonnull Map<String, String> metadata) {
-        return new GenericQueryMessage(delegate().andMetadata(metadata), responseType);
+        return new GenericQueryMessage(delegate().andMetadata(metadata), responseType, priority);
     }
 
     @Override
@@ -107,15 +135,20 @@ public class GenericQueryMessage extends MessageDecorator implements QueryMessag
                                                delegate.type(),
                                                convertedPayload,
                                                delegate.metadata());
-        return new GenericQueryMessage(converted, responseType);
+        return new GenericQueryMessage(converted, responseType, priority);
+    }
+
+    @Override
+    public OptionalInt priority() {
+        return priority != null ? OptionalInt.of(priority) : OptionalInt.empty();
     }
 
     @Override
     protected void describeTo(StringBuilder stringBuilder) {
         super.describeTo(stringBuilder);
-        stringBuilder.append(", responseType='")
-                     .append(responseType())
-                     .append('\'');
+        stringBuilder
+                .append(", responseType='").append(responseType()).append("'")
+                .append(", priority='").append(priority().orElse(0)).append("'");
     }
 
     @Override

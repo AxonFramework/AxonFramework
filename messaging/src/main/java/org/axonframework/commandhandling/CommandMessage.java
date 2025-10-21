@@ -47,7 +47,7 @@ public interface CommandMessage extends Message {
     Optional<String> routingKey();
 
     /**
-     * Returns the priority of this command message, if any is applicable.
+     * Returns the priority of this {@link CommandMessage}, if any is applicable.
      * <p>
      * Commands with a higher priority should be handled before commands with a lower priority. Commands without a
      * priority are considered to have the lowest priority.

@@ -24,19 +24,19 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Author: marc
  */
-class ExceptionSerializerTest {
+class ExceptionConverterTest {
     @Test
-    void serializeNullClient() {
-        ErrorMessage result = ExceptionSerializer.serialize(null,
-                                                            new RuntimeException(
+    void convertToErrorMessageNullClient() {
+        ErrorMessage result = ExceptionConverter.convertToErrorMessage(null,
+                                                                       new RuntimeException(
                                                                     "Something went wrong"));
         assertEquals("", result.getLocation());
     }
 
     @Test
-    void serializeNonNullClient() {
-        ErrorMessage result = ExceptionSerializer.serialize("Client",
-                                                            new RuntimeException(
+    void convertToErrorMessageNonNullClient() {
+        ErrorMessage result = ExceptionConverter.convertToErrorMessage("Client",
+                                                                       new RuntimeException(
                                                                     "Something went wrong"));
         assertEquals("Client", result.getLocation());
     }

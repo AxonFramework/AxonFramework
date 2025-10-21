@@ -26,14 +26,17 @@ import io.axoniq.axonserver.grpc.query.QueryResponse;
 import jakarta.annotation.Nonnull;
 import org.axonframework.axonserver.connector.MetadataConverter;
 import org.axonframework.common.annotations.Internal;
+import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 
-import java.util.OptionalInt;
 import java.util.concurrent.TimeUnit;
 
-import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.createProcessingInstruction;
+import static org.axonframework.axonserver.connector.util.ExceptionConverter.convertToAxonException;
+import static org.axonframework.axonserver.connector.util.ProcessingInstructionUtils.createProcessingInstruction;
 
 /**
  * Utility class to convert queries during
@@ -47,11 +50,7 @@ import static org.axonframework.axonserver.connector.util.ProcessingInstructionH
  * @since 5.0.0
  */
 @Internal
-public class QueryConverter {
-
-    private QueryConverter() {
-        // Utility class
-    }
+public final class QueryConverter {
 
     public static QueryRequest convertQueryMessage(@Nonnull QueryMessage query,
                                                    @Nonnull String clientId,
@@ -92,41 +91,46 @@ public class QueryConverter {
                       .build();
     }
 
-    private static void addPriority(QueryRequest.Builder builder, QueryMessage query) {
-        // TODO #3488 introduce priority to QueryMessage
-        OptionalInt priority = OptionalInt.of(1); //query.priority();
-        if (priority.isEmpty()) {
-            return;
-        }
-        var instruction = createProcessingInstruction(ProcessingKey.PRIORITY,
-                                                      MetaDataValue.newBuilder().setNumberValue(priority.getAsInt()));
-        builder.addProcessingInstructions(instruction).build();
-    }
-
-    private static ProcessingInstruction nrOfResults(int nrOfResults) {
-        return ProcessingInstruction.newBuilder()
-                                    .setKey(ProcessingKey.NR_OF_RESULTS)
-                                    .setValue(MetaDataValue.newBuilder()
-                                                           .setNumberValue(nrOfResults))
-                                    .build();
-    }
-
-    private static ProcessingInstruction timeout(long timeout) {
-        return ProcessingInstruction.newBuilder()
-                                    .setKey(ProcessingKey.TIMEOUT)
-                                    .setValue(MetaDataValue.newBuilder().setNumberValue(timeout))
-                                    .build();
-    }
-
-    private static ProcessingInstruction supportsStreaming(boolean supportsStreaming) {
-        return ProcessingInstruction.newBuilder()
-                                    .setKey(ProcessingKey.CLIENT_SUPPORTS_STREAMING)
-                                    .setValue(MetaDataValue.newBuilder().setBooleanValue(supportsStreaming))
-                                    .build();
-    }
-
+    // TODO(JG): should this return a future?
     public static QueryResponseMessage convertQueryResponse(QueryResponse queryResponse) {
-        // TODO implement
-        return null;
+        SerializedObject responsePayload = queryResponse.getPayload();
+        var message = new GenericMessage(
+                queryResponse.getMessageIdentifier(),
+                new MessageType(responsePayload.getType(), responsePayload.getRevision()),
+                responsePayload.getData().toByteArray(),
+                MetadataConverter.convertMetadataValuesToGrpc(queryResponse.getMetaDataMap())
+        );
+
+        return !queryResponse.hasErrorMessage()
+                ? new GenericQueryResponseMessage(message)
+                : new GenericQueryResponseMessage(message,
+                                                  convertToAxonException(queryResponse.getErrorCode(),
+                                                                         queryResponse.getErrorMessage(),
+                                                                         queryResponse.getPayload()));
+    }
+
+    private static void addPriority(QueryRequest.Builder builder, QueryMessage query) {
+        query.priority().ifPresent(priority -> {
+            var instruction = createProcessingInstruction(ProcessingKey.PRIORITY,
+                                                          MetaDataValue.newBuilder()
+                                                                       .setNumberValue(priority));
+            builder.addProcessingInstructions(instruction);
+        });
+    }
+
+    private static ProcessingInstruction.Builder nrOfResults(int nrOfResults) {
+        return createProcessingInstruction(ProcessingKey.NR_OF_RESULTS, nrOfResults);
+    }
+
+    private static ProcessingInstruction.Builder timeout(long timeout) {
+        return createProcessingInstruction(ProcessingKey.TIMEOUT, timeout);
+    }
+
+    private static ProcessingInstruction.Builder supportsStreaming(boolean supportsStreaming) {
+        return createProcessingInstruction(ProcessingKey.CLIENT_SUPPORTS_STREAMING, supportsStreaming);
+    }
+
+    private QueryConverter() {
+        // Utility class
     }
 }

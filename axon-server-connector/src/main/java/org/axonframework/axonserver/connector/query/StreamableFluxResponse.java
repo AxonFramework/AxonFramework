@@ -21,7 +21,7 @@ import io.axoniq.axonserver.grpc.ErrorMessage;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import jakarta.annotation.Nonnull;
 import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.axonserver.connector.util.ExceptionSerializer;
+import org.axonframework.axonserver.connector.util.ExceptionConverter;
 import org.axonframework.common.annotations.Internal;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.reactivestreams.Subscription;
@@ -100,7 +100,7 @@ class StreamableFluxResponse implements StreamableResponse {
 
         @Override
         protected void hookOnError(@Nonnull Throwable e) {
-            ErrorMessage ex = ExceptionSerializer.serialize(clientId, e);
+            ErrorMessage ex = ExceptionConverter.convertToErrorMessage(clientId, e);
             QueryResponse response =
                     QueryResponse.newBuilder()
                                  .setErrorCode(ErrorCode.getQueryExecutionErrorCode(e).errorCode())

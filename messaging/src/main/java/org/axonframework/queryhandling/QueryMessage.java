@@ -23,6 +23,7 @@ import org.axonframework.serialization.Converter;
 
 import java.lang.reflect.Type;
 import java.util.Map;
+import java.util.OptionalInt;
 
 /**
  * A {@link Message} type that carries a Query: a request for information.
@@ -36,8 +37,6 @@ import java.util.Map;
  * @since 3.1.0
  */
 public interface QueryMessage extends Message {
-
-    // todo #613 add priority just like CommandMessage
 
     /**
      * Returns the query {@link MessageType response type} of this {@code QueryMessage}.
@@ -70,4 +69,14 @@ public interface QueryMessage extends Message {
     @Override
     @Nonnull
     QueryMessage withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
+
+    /**
+     * Returns the priority of this {@link QueryMessage}, if any is applicable.
+     * <p>
+     * Queries with a higher priority should be handled before queries with a lower priority. Queries without a priority
+     * are considered to have the lowest priority.
+     *
+     * @return The priority of this query message, or an empty {@link OptionalInt} if no priority is set.
+     */
+    OptionalInt priority();
 }

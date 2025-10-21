@@ -34,8 +34,8 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.axonserver.connector.util.ExceptionSerializer;
-import org.axonframework.axonserver.connector.util.ProcessingInstructionHelper;
+import org.axonframework.axonserver.connector.util.ExceptionConverter;
+import org.axonframework.axonserver.connector.util.ProcessingInstructionUtils;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.lifecycle.ShutdownLatch;
@@ -71,7 +71,7 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.*;
+import static org.axonframework.axonserver.connector.util.ProcessingInstructionUtils.*;
 
 /**
  * TODO Implement methods and fine tune JavaDoc
@@ -345,7 +345,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
             Runnable onClose = () -> queriesInProgress.remove(query.getMessageIdentifier());
             CloseAwareReplyChannel<QueryResponse> replyChannel =
                     new CloseAwareReplyChannel<>(responseHandler, onClose);
-            long priority = ProcessingInstructionHelper.priority(query.getProcessingInstructionsList());
+            long priority = ProcessingInstructionUtils.priority(query.getProcessingInstructionsList());
             QueryProcessingTask processingTask = new QueryProcessingTask(query, replyChannel, clientId, null);
             queriesInProgress.put(query.getMessageIdentifier(), processingTask);
             return new FlowControl() {
@@ -571,7 +571,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
         }
 
         private void sendError(Throwable t) {
-            ErrorMessage ex = ExceptionSerializer.serialize(clientId, t);
+            ErrorMessage ex = ExceptionConverter.convertToErrorMessage(clientId, t);
             QueryResponse response =
                     QueryResponse.newBuilder()
                                  .setErrorCode(ErrorCode.getQueryExecutionErrorCode(t).errorCode())
