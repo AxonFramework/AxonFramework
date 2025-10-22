@@ -20,12 +20,16 @@ import io.grpc.ManagedChannelBuilder;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.query.AxonServerQueryBusConnector;
+import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QueueMessageStream;
 import org.axonframework.messaging.conversion.DelegatingMessageConverter;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
+import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
+import org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryBusTestUtils;
 import org.axonframework.queryhandling.QueryMessage;
@@ -80,9 +84,11 @@ class QueryThreadingIntegrationTest {
     private DistributedQueryBus queryBus;
     private AxonServerQueryBusConnector connector2;
     private DistributedQueryBus queryBus2;
+    private JacksonConverter converter;
 
     @BeforeEach
     void setUp() {
+        converter = new JacksonConverter();
 
         String server = axonServer.getHost() + ":" + axonServer.getGrpcPort();
         AxonServerConfiguration configuration = AxonServerConfiguration.builder()
@@ -104,7 +110,8 @@ class QueryThreadingIntegrationTest {
         connector = new AxonServerQueryBusConnector(connectionManager.getConnection(), configuration);
         queryBus = new DistributedQueryBus(localQueryBus,
                                            new PayloadConvertingQueryBusConnector(connector,
-                                                                                  new DelegatingMessageConverter(new JacksonConverter()),
+                                                                                  new DelegatingMessageConverter(
+                                                                                          converter),
                                                                                   byte[].class),
                                            DistributedQueryBusConfiguration.DEFAULT);
         connector.start();
@@ -114,7 +121,8 @@ class QueryThreadingIntegrationTest {
         connector2 = new AxonServerQueryBusConnector(connectionManager.getConnection(), configuration);
         queryBus2 = new DistributedQueryBus(localQueryBus2,
                                             new PayloadConvertingQueryBusConnector(connector2,
-                                                                                   new DelegatingMessageConverter(new JacksonConverter()),
+                                                                                   new DelegatingMessageConverter(
+                                                                                           converter),
                                                                                    byte[].class),
                                             DistributedQueryBusConfiguration.DEFAULT);
         connector2.start();
@@ -132,17 +140,57 @@ class QueryThreadingIntegrationTest {
     }
 
     @Test
-    void canSendSimpleQueryAndReceiveResponse() {
-        queryBus.subscribe(QUERY_TYPE_A.qualifiedName(), new QualifiedName(String.class), (query, ctx) -> {
-            return MessageStream.just(new GenericQueryResponseMessage(new MessageType(String.class), "a"));
-        });
+    void canSendQueryAndReceiveSingleResponse() {
+        queryBus.subscribe(QUERY_TYPE_A.qualifiedName(), new QualifiedName(String.class), (query, ctx) -> MessageStream.just(new GenericQueryResponseMessage(new MessageType(String.class), "a")));
 
-        var result = queryBus.query(new GenericQueryMessage(QUERY_TYPE_A, "start", new MessageType(String.class)),
-                                    null);
+        var result = queryBus2.subscriptionQuery(new GenericSubscriptionQueryMessage(QUERY_TYPE_A, "start", new MessageType(String.class)),
+                                    null, 16);
         await().untilAsserted(() -> {
             assertThat(result.hasNextAvailable()).isTrue();
         });
-        assertThat(result.next().get().message().payloadAs(String.class, new JacksonConverter())).isEqualTo("a");
+        assertThat(result.next().get().message().payloadAs(String.class, converter)).isEqualTo("a");
+
+        // this means we have the initial result. Let's send some updates
+        queryBus.emitUpdate(m -> true, () -> new GenericSubscriptionQueryUpdateMessage(new MessageType(String.class), "u1"), null);
+        queryBus.completeSubscriptions(m -> true, null);
+
+        // and check for these updates to arrive
+        await().atMost(Duration.ofSeconds(1)).until(result::hasNextAvailable);
+        assertThat(result.next().get().message().payloadAs(String.class, converter)).isEqualTo("u1");
+        await().atMost(Duration.ofSeconds(1)).until(result::isCompleted);
+    }
+
+    @Test
+    void canSendSubscriptionQuery() {
+
+    }
+
+    @Test
+    void canSendQueryAndReceiveStreamingResponse() {
+        QueueMessageStream<QueryResponseMessage> queryResponse = new QueueMessageStream<>();
+        queryBus.subscribe(QUERY_TYPE_A.qualifiedName(), new QualifiedName(String.class),
+                           (query, ctx) -> queryResponse);
+
+        var result = queryBus2.query(new GenericQueryMessage(QUERY_TYPE_A, "start", new MessageType(String.class)),
+                                    null);
+        assertThat(result.hasNextAvailable()).isFalse();
+        queryResponse.offer(new GenericQueryResponseMessage(new MessageType(String.class), "a"), Context.empty());
+        await().untilAsserted(() -> {
+            assertThat(result.hasNextAvailable()).isTrue();
+        });
+        assertThat(result.next().get().message().payloadAs(String.class, converter)).isEqualTo("a");
+
+        assertThat(result.hasNextAvailable()).isFalse();
+        assertThat(result.isCompleted()).isFalse();
+        queryResponse.offer(new GenericQueryResponseMessage(new MessageType(String.class), "c"), Context.empty());
+        queryResponse.complete();
+        await().untilAsserted(() -> {
+            assertThat(result.hasNextAvailable()).isTrue();
+        });
+        await().untilAsserted(() -> {
+            assertThat(result.next().get().message().payloadAs(String.class, converter)).isEqualTo("c");
+            assertThat(result.isCompleted()).isTrue();
+        });
     }
 
     @Test
@@ -170,11 +218,12 @@ class QueryThreadingIntegrationTest {
                                                  .thenApply(MessageStream.Entry::message)
                                                  .get();
                 return MessageStream.just(new GenericQueryResponseMessage(new MessageType(String.class),
-                                                                          "a" + b.payload()));
+                                                                          "a" + b.payload()))
+                                    .onClose(waitingQueries::decrementAndGet)
+                                    .cast();
             } catch (InterruptedException | ExecutionException e) {
-                return MessageStream.failed(e);
-            } finally {
                 waitingQueries.decrementAndGet();
+                return MessageStream.failed(e);
             }
         });
 
@@ -197,12 +246,12 @@ class QueryThreadingIntegrationTest {
                 new GenericQueryMessage(QUERY_TYPE_A, "start", new MessageType(String.class)), null
         );
 
-        // Wait until all queries are waiting on the secondary query. Note that query 6 cannot be processed
+        // Wait until all queries are waiting on the secondary query. With 5 threads, we need to wait until at least 5 are triggered.
         await().pollDelay(500, TimeUnit.MILLISECONDS)
                .atMost(10, TimeUnit.SECONDS)
                .until(() -> {
                    log.info("Waiting queries: {}", waitingQueries.get());
-                   return waitingQueries.get() == 5;
+                   return waitingQueries.get() >= 5;
                });
 
         // We should still have the queries not done, it's waiting on the secondary one.

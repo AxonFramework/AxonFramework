@@ -45,7 +45,6 @@ import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.distributed.QueryBusConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import reactor.core.publisher.SignalType;
 
 import java.lang.invoke.MethodHandles;
 import java.time.Duration;
@@ -54,7 +53,6 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.LockSupport;
-import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
 
@@ -68,8 +66,6 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private static final boolean NON_STREAMING = false;
-
     private final AxonServerConnection connection;
     private final String clientId;
     private final String componentName;
@@ -82,10 +78,10 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
     private Handler incomingHandler;
 
     /**
-     * TODO add JavaDoc
+     * Creates a QueryBusConnector implementation that connects to AxonServer for dispatching and receiving queries.
      *
-     * @param connection
-     * @param configuration
+     * @param connection The connection to AxonServer
+     * @param configuration The configuration containing local settings for this connector
      */
     public AxonServerQueryBusConnector(@Nonnull AxonServerConnection connection,
                                        @Nonnull AxonServerConfiguration configuration) {
@@ -181,102 +177,6 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
     }
 
     // endregion
-
-//    @Nonnull
-//    @Override
-//    public Publisher<QueryResponseMessage> streamingQuery(@Nonnull QueryMessage query,
-//                                                          @Nullable ProcessingContext context) {
-//        // TODO missing use of ExecutorService here. Should the DistributedQueryBus do the threading or is that an Axon Server concern?
-//        return Mono.fromSupplier(this::registerStreamingQueryActivity)
-//                   .flatMapMany(activity -> FluxUtils.of(doQuery(query))
-//                                                     .doFinally(new ActivityFinisher(activity)))
-//                   .map(MessageStream.Entry::message);
-//    }
-
-    private ShutdownLatch.ActivityHandle registerStreamingQueryActivity() {
-        shutdownLatch.ifShuttingDown("Cannot dispatch new queries as this bus is being shut down");
-        return shutdownLatch.registerActivity();
-    }
-
-    /**
-     * Ends a streaming query activity.
-     * <p>
-     * The reason for this static class to exist at all is the ability of instantiating
-     * {@link AxonServerQueryBusConnector} even without Project Reactor on the classpath.
-     * </p>
-     * <p>
-     * If we had Project Reactor on the classpath, this class would be replaced with a lambda (which would compile into
-     * inner class). But, inner classes have a reference to an outer class making a single unit together with it. If an
-     * inner or outer class had a method with a parameter that belongs to a library which is not on the classpath,
-     * instantiation would fail.
-     * </p>
-     *
-     * @author Milan Savic
-     */
-    private static class ActivityFinisher implements Consumer<SignalType> {
-
-        private final ShutdownLatch.ActivityHandle activity;
-
-        private ActivityFinisher(ShutdownLatch.ActivityHandle activity) {
-            this.activity = activity;
-        }
-
-        @Override
-        public void accept(SignalType signalType) {
-            activity.end();
-        }
-    }
-
-    /* AxonServerQueryBus subscriptionQuery implementation
-    @Nonnull
-    @Override
-    public SubscriptionQueryResponseMessages subscriptionQuery(
-            @Nonnull SubscriptionQueryMessage query,
-            @Nullable ProcessingContext context,
-            int updateBufferSize
-    ) {
-        shutdownLatch.ifShuttingDown(format(
-                "Cannot dispatch new %s as this bus is being shut down", "subscription queries"
-        ));
-
-        Span span = spanFactory.createSubscriptionQuerySpan(query, true).start();
-        try (SpanScope unused = span.makeCurrent()) {
-
-            SubscriptionQueryMessage interceptedQuery = FluxUtils.of(
-                new DefaultMessageDispatchInterceptorChain<>(dispatchInterceptors)
-                    .proceed(spanFactory.propagateContext(spanFactory.propagateContext(query)), null)
-                    .first()
-                    .<SubscriptionQueryMessage>cast()
-                )
-                .singleOrEmpty()
-                .map(MessageStream.Entry::message)
-                .block(); // TODO reintegrate as part of #3079
-            String subscriptionId = interceptedQuery.identifier();
-            String targetContext = targetContextResolver.resolveContext(interceptedQuery);
-
-            logger.debug("Subscription Query requested with subscription Id [{}]", subscriptionId);
-
-            @SuppressWarnings("unused")
-            io.axoniq.axonserver.connector.query.SubscriptionQueryResult result =
-                    axonServerConnectionManager.getConnection(targetContext)
-                                               .queryChannel()
-                                               .subscriptionQuery(
-                                                       subscriptionSerializer.serializeQuery(interceptedQuery),
-                                                       subscriptionSerializer.serializeUpdateType(interceptedQuery),
-                                                       Math.max(32, updateBufferSize),
-                                                       Math.max(4, updateBufferSize >> 3)
-                                               );
-            // TODO #3488 Pick up when picking up AxonServerQueryBus
-//            return new AxonServerSubscriptionQueryResult(
-//                    interceptedQuery,
-//                    result,
-//                    subscriptionSerializer,
-//                    spanFactory,
-//                    span);
-            return null;
-        }
-    }
-     */
 
     /**
      * Disconnect the query bus for receiving queries from Axon Server, by unsubscribing all registered query handlers.
@@ -412,8 +312,9 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
             this.updateHandler = updateHandler;
         }
 
+        @Nonnull
         @Override
-        public CompletableFuture<Void> sendUpdate(SubscriptionQueryUpdateMessage update) {
+        public CompletableFuture<Void> sendUpdate(@Nonnull SubscriptionQueryUpdateMessage update) {
             updateHandler.sendUpdate(QueryConverter.convertQueryUpdate(update));
             return FutureUtils.emptyCompletedFuture();
         }
@@ -425,7 +326,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
         }
 
         @Override
-        public CompletableFuture<Void> completeExceptionally(Throwable error) {
+        public CompletableFuture<Void> completeExceptionally(@Nonnull Throwable error) {
             updateHandler.sendUpdate(QueryConverter.convertQueryUpdate(clientId, error));
             updateHandler.complete();
             return FutureUtils.emptyCompletedFuture();

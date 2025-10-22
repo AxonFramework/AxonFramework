@@ -15,6 +15,7 @@
  */
 package org.axonframework.queryhandling;
 
+import org.assertj.core.api.Condition;
 import org.axonframework.common.infra.MockComponentDescriptor;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
@@ -29,7 +30,6 @@ import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
-import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 import reactor.util.concurrent.Queues;
@@ -43,12 +43,14 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -109,7 +111,7 @@ class SimpleQueryBusTest {
             Map<QueryHandlerName, QueryHandler> subscriptions = testDescriptor.getProperty("subscriptions");
             assertThat(subscriptions.size()).isEqualTo(1);
             assertThat(subscriptions).containsValue(SINGLE_RESPONSE_HANDLER);
-            // when second subscription with different query  name...
+            // when second subscription with different query name...
             testSubject.subscribe(new QualifiedName("test2"), RESPONSE_NAME, SINGLE_RESPONSE_HANDLER);
             // then...
             testSubject.describeTo(testDescriptor);
@@ -284,34 +286,15 @@ class SimpleQueryBusTest {
     class StreamingQuery {
 
         @Test
-        void streamingQueryIsLazy() {
-            // given...
-            AtomicBoolean invoked = new AtomicBoolean(false);
-            QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, (query, context) -> {
-                invoked.set(true);
-                QueryResponseMessage response =
-                        new GenericQueryResponseMessage(RESPONSE_TYPE, query.payload() + "1234");
-                return MessageStream.just(response);
-            });
-            // when...
-            Publisher<QueryResponseMessage> result = null; // FIXME testSubject.streamingQuery(testQuery, null);
-            // then...
-            assertThat(invoked).isFalse();
-            StepVerifier.create(result)
-                        .expectNextMatches(response -> Objects.equals(response.payload(), "query1234"))
-                        .verifyComplete();
-            assertThat(invoked).isTrue();
-        }
-
-        @Test
         void streamingQueryForUnknownQueryNameAndResponseNameReturnsFailedNoHandlerForQueryExceptionPublisherStream() {
             // given...
             QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
             // when/then...
-//            FIXME StepVerifier.create(testSubject.streamingQuery(testQuery, null))
-//                        .expectError(NoHandlerForQueryException.class)
-//                        .verify();
+            MessageStream<QueryResponseMessage> actual = testSubject.query(testQuery, null);
+
+            await().atMost(Duration.ofSeconds(1)).until(actual::isCompleted);
+            assertThat(actual.error()).isPresent();
+            assertThat(actual.error()).containsInstanceOf(NoHandlerForQueryException.class);
         }
 
         @Test
@@ -320,9 +303,11 @@ class SimpleQueryBusTest {
             QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
             testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, SINGLE_RESPONSE_HANDLER);
             // when/then...
-//            FIXME StepVerifier.create(testSubject.streamingQuery(testQuery, null))
-//                        .expectNextMatches(response -> Objects.equals(response.payload(), "query1234"))
-//                        .verifyComplete();
+            MessageStream<QueryResponseMessage> actual = testSubject.query(testQuery, null);
+
+            await().atMost(1, TimeUnit.SECONDS).until(actual::hasNextAvailable);
+            assertThat(actual.next().map(e -> e.message().payload())).contains("query1234");
+            await().atMost(1, TimeUnit.SECONDS).until(actual::isCompleted);
         }
 
         @Test
@@ -332,9 +317,12 @@ class SimpleQueryBusTest {
             QueryHandler failingHandler = (query, context) -> MessageStream.failed(new MockException("Mock"));
             testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, failingHandler);
             // when/then...
-//            FIXME StepVerifier.create(testSubject.streamingQuery(testQuery, null))
-//                        .verifyErrorMatches(throwable -> throwable instanceof MockException mockException
-//                                && mockException.getMessage().equals("Mock"));
+            MessageStream<QueryResponseMessage> actual = testSubject.query(testQuery, null);
+
+            await().atMost(1, TimeUnit.SECONDS).until(actual::isCompleted);
+            assertThat(actual.error()).isPresent();
+            assertThat(actual.error()).containsInstanceOf(MockException.class);
+            assertThat(actual.error().map(Throwable::getMessage)).contains("Mock");
         }
 
         @Test
@@ -343,8 +331,10 @@ class SimpleQueryBusTest {
             QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
             testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, (query, context) -> MessageStream.empty().cast());
             // when/then...
-//            FIXME StepVerifier.create(testSubject.streamingQuery(testQuery, null))
-//                        .verifyComplete();
+            MessageStream<QueryResponseMessage> actual = testSubject.query(testQuery, null);
+
+            await().atMost(1, TimeUnit.SECONDS).until(actual::isCompleted);
+            assertThat(actual.error()).isEmpty();
         }
     }
 

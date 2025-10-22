@@ -68,6 +68,14 @@ public class PayloadConvertingQueryBusConnector extends DelegatingQueryBusConnec
         return delegate.query(query.withConvertedPayload(targetType, converter), context);
     }
 
+    @Nonnull
+    @Override
+    public MessageStream<QueryResponseMessage> subscriptionQuery(@Nonnull SubscriptionQueryMessage query,
+                                                                 @Nullable ProcessingContext context,
+                                                                 int updateBufferSize) {
+        return delegate.subscriptionQuery(query.withConvertedPayload(targetType, converter), context, updateBufferSize);
+    }
+
     @Override
     public void onIncomingQuery(@Nonnull Handler handler) {
         delegate.onIncomingQuery(new Handler() {

@@ -29,8 +29,6 @@ import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
 
 /**
  * The {@code QueryBusConnector} interface defines the contract for connecting multiple
@@ -48,18 +46,25 @@ public interface QueryBusConnector extends DescribableComponent {
     // region [QueryBus] - methods that are delegated to the query bus
 
     /**
-     * Delegates querying to the underlying QueryBus.
+     * Sends the given {@code query} to the remote QueryBus.
      *
+     * @param query The query to send to the remote QueryBus.
+     * @param context The context, if available, in which the query is generated
      * @see org.axonframework.queryhandling.QueryBus#query(QueryMessage, ProcessingContext)
+     * @return the stream of responses for the query
      */
     @Nonnull
     MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage query,
                                               @Nullable ProcessingContext context);
 
     /**
-     * Delegates subscription querying to the underlying QueryBus.
+     * Sends the given {@code query} to the remote QueryBus.
      *
+     * @param query The query to send to the remote QueryBus.
+     * @param context The context, if available, in which the query is generated
+     * @param updateBufferSize The size of the buffer used to store updates for the subscription query.
      * @see org.axonframework.queryhandling.QueryBus#subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int)
+     * @return the stream of responses for the query
      */
     @Nonnull
     MessageStream<QueryResponseMessage> subscriptionQuery(@Nonnull SubscriptionQueryMessage query,
@@ -108,7 +113,7 @@ public interface QueryBusConnector extends DescribableComponent {
          * Handles the incoming query message.
          *
          * @param query    The query message to handle.
-         * @param callback The callback to invoke with the result of handling the query.
+         * @return a MessageStream containing the responses for the query
          */
         MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage query);
 
