@@ -17,29 +17,24 @@
 package org.axonframework.axonserver.connector.query;
 
 import io.axoniq.axonserver.connector.AxonServerConnection;
+import io.axoniq.axonserver.connector.ErrorCategory;
 import io.axoniq.axonserver.connector.FlowControl;
 import io.axoniq.axonserver.connector.Registration;
 import io.axoniq.axonserver.connector.ReplyChannel;
 import io.axoniq.axonserver.connector.ResultStream;
 import io.axoniq.axonserver.connector.impl.AsyncRegistration;
-import io.axoniq.axonserver.connector.impl.CloseAwareReplyChannel;
 import io.axoniq.axonserver.connector.query.QueryDefinition;
 import io.axoniq.axonserver.connector.query.QueryHandler;
-import io.axoniq.axonserver.grpc.ErrorMessage;
+import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
-import io.grpc.netty.shaded.io.netty.util.internal.OutOfDirectMemoryError;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
-import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.axonserver.connector.util.ExceptionConverter;
-import org.axonframework.axonserver.connector.util.ProcessingInstructionUtils;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.lifecycle.ShutdownLatch;
-import org.axonframework.messaging.FluxUtils;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.QueryHandlerName;
@@ -48,34 +43,20 @@ import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.distributed.QueryBusConnector;
-import org.axonframework.queryhandling.tracing.QueryBusSpanFactory;
-import org.axonframework.util.ClasspathResolver;
-import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 import reactor.core.publisher.SignalType;
 
 import java.lang.invoke.MethodHandles;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
-import static org.axonframework.axonserver.connector.util.ProcessingInstructionUtils.*;
 
 /**
  * TODO Implement methods and fine tune JavaDoc
@@ -133,23 +114,15 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
         Registration registration = connection.queryChannel()
                                               .registerQueryHandler(localSegmentAdapter, definition);
 
+        CompletableFuture<Void> registrationComplete = new CompletableFuture<>();
         // Make sure that when we subscribe and immediately send a command, it can be handled.
         if (registration instanceof AsyncRegistration asyncRegistration) {
-            try {
-                // Waiting synchronously for the subscription to be acknowledged, this should be improved
-                // TODO https://github.com/AxonFramework/AxonFramework/issues/3544
-                asyncRegistration.awaitAck(2000, TimeUnit.MILLISECONDS);
-            } catch (TimeoutException e) {
-                throw new RuntimeException(
-                        "Timed out waiting for subscription acknowledgment for query: " + name, e
-                );
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException("Thread interrupted while waiting for subscription acknowledgment", e);
-            }
+            asyncRegistration.onAck(() -> registrationComplete.complete(null));
+        } else {
+            registrationComplete.complete(null);
         }
         this.subscriptions.put(name, registration);
-        return FutureUtils.emptyCompletedFuture();
+        return registrationComplete;
     }
 
     @Override
@@ -177,23 +150,37 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
         shutdownLatch.ifShuttingDown("Cannot dispatch new queries as this bus is being shut down");
 
         try (ShutdownLatch.ActivityHandle queryInTransit = shutdownLatch.registerActivity()) {
-            return doQuery(query).onClose(queryInTransit::end);
+            ResultStream<QueryResponse> resultStream =
+                    connection.queryChannel()
+                              .query(QueryConverter.convertQueryMessage(query, clientId, componentName));
+            return new QueryResponseMessageStream(resultStream).onClose(queryInTransit::end);
         }
     }
 
-    private MessageStream<QueryResponseMessage> doQuery(@Nonnull QueryMessage query) {
-        ResultStream<QueryResponse> resultStream =
-                connection.queryChannel()
-                          .query(QueryConverter.convertQueryMessage(query, clientId, componentName, NON_STREAMING));
-        return new QueryResponseMessageStream(resultStream);
-    }
-    // endregion
+    @Nonnull
+    @Override
+    public MessageStream<QueryResponseMessage> subscriptionQuery(@Nonnull SubscriptionQueryMessage query,
+                                                                 @Nullable ProcessingContext context,
+                                                                 int updateBufferSize) {
+        shutdownLatch.ifShuttingDown("Cannot dispatch new queries as this bus is being shut down");
 
-    // TODO I think this switch belongs in the DistributedQueryBus i.o. the Connector implementation.
-//    private final boolean localSegmentShortCut;
-//    private boolean shouldRunQueryLocally(String queryName) {
-//        return localSegmentShortCut && queryHandlerNames.contains(queryName);
-//    }
+        try (ShutdownLatch.ActivityHandle queryInTransit = shutdownLatch.registerActivity()) {
+            var result = connection.queryChannel()
+                                   .subscriptionQuery(QueryConverter.convertQueryMessage(query,
+                                                                                         clientId,
+                                                                                         componentName),
+                                                      // TODO legacy requirement. Should be removed from connector
+                                                      SerializedObject.getDefaultInstance(),
+                                                      updateBufferSize,
+                                                      Math.min(updateBufferSize / 4, 8));
+            return MessageStream.fromFuture(result.initialResult()
+                                                  .thenApply(QueryConverter::convertQueryResponse))
+                                .concatWith(new QueryUpdateMessageStream(result.updates()))
+                                .onClose(queryInTransit::end);
+        }
+    }
+
+    // endregion
 
 //    @Nonnull
 //    @Override
@@ -341,7 +328,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
      */
     private class LocalSegmentAdapter implements QueryHandler {
 
-        private final Map<String, QueryProcessingTask> queriesInProgress = new ConcurrentHashMap<>();
+        private final Map<String, Runnable> queriesInProgress = new ConcurrentHashMap<>();
 
         @Override
         public void handle(QueryRequest query, ReplyChannel<QueryResponse> responseHandler) {
@@ -350,35 +337,48 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
 
         @Override
         public FlowControl stream(QueryRequest query, ReplyChannel<QueryResponse> responseHandler) {
-            Runnable onClose = () -> queriesInProgress.remove(query.getMessageIdentifier());
-            CloseAwareReplyChannel<QueryResponse> replyChannel =
-                    new CloseAwareReplyChannel<>(responseHandler, onClose);
-            long priority = ProcessingInstructionUtils.priority(query.getProcessingInstructionsList());
-            QueryProcessingTask processingTask = new QueryProcessingTask(query, replyChannel, clientId, null);
-            queriesInProgress.put(query.getMessageIdentifier(), processingTask);
-
+            var result = incomingHandler.query(QueryConverter.convertQueryRequest(query));
+            var previous = queriesInProgress.put(query.getMessageIdentifier(), result::close);
+            if (previous != null) {
+                previous.run();
+            }
+            result.onClose(queriesInProgress.remove(query.getMessageIdentifier()))
+                  .onAvailable(() -> {
+                      while (result.hasNextAvailable()) {
+                          var next = result.next();
+                          next.ifPresent(i -> responseHandler.send(QueryConverter.convertQueryResponseMessage(query.getMessageIdentifier(),
+                                                                                                              i.message())));
+                      }
+                      if (result.isCompleted()) {
+                          result.error()
+                                .ifPresentOrElse(error ->
+                                                         responseHandler.completeWithError(ErrorCategory.QUERY_EXECUTION_ERROR,
+                                                                                           error.getMessage()),
+                                                 responseHandler::complete);
+                      }
+                  });
             return new FlowControl() {
                 @Override
                 public void request(long requested) {
-                    // TODO guess we need a way to request and cancel on the QueryBusConnector.Handle
-//                    queryExecutor.execute(new PriorityRunnable(() -> processingTask.request(requested),
-//                                                               priority,
-//                                                               TASK_SEQUENCE.incrementAndGet()));
+                    // TODO - Implement flow control on responses
                 }
 
                 @Override
                 public void cancel() {
-//                    queryExecutor.execute(new PriorityRunnable(processingTask::cancel,
-//                                                               priority,
-//                                                               TASK_SEQUENCE.incrementAndGet()));
+                    result.close();
                 }
             };
         }
 
         @Override
         public Registration registerSubscriptionQuery(SubscriptionQuery query, UpdateHandler sendUpdate) {
-            // FIXME
-            return null;
+            var registration = incomingHandler.registerUpdateHandler(QueryConverter.convertSubscriptionQueryMessage(
+                                                                             query),
+                                                                     new AxonServerUpdateHandler(sendUpdate));
+            return () -> {
+                registration.cancel();
+                return FutureUtils.emptyCompletedFuture();
+            };
         }
 
         private boolean awaitTermination(Duration timeout) {
@@ -389,7 +389,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
                                  .stream()
                                  .findFirst()
                                  .ifPresent(queryInProgress -> {
-                                     while (Instant.now().isBefore(endAwait) && queryInProgress.resultPending()) {
+                                     while (Instant.now().isBefore(endAwait)) {
                                          LockSupport.parkNanos(10_000_000);
                                      }
                                  });
@@ -400,193 +400,35 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
         private void cancel() {
             queriesInProgress.values()
                              .iterator()
-                             .forEachRemaining(QueryProcessingTask::cancel);
+                             .forEachRemaining(Runnable::run);
         }
     }
 
-    class QueryProcessingTask implements Runnable, FlowControl {
+    class AxonServerUpdateHandler implements UpdateCallback {
 
-        private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+        private final QueryHandler.UpdateHandler updateHandler;
 
-        private static final int DIRECT_QUERY_NUMBER_OF_RESULTS = 1;
-
-        private final QueryRequest queryRequest;
-        private final ReplyChannel<QueryResponse> responseHandler;
-        private final String clientId;
-        private final AtomicReference<StreamableResponse> streamableResultRef = new AtomicReference<>();
-        private final AtomicLong requestedBeforeInit = new AtomicLong();
-        private final AtomicBoolean cancelledBeforeInit = new AtomicBoolean();
-        private final boolean supportsStreaming;
-
-        private final Supplier<Boolean> reactorOnClassPath;
-        private final QueryBusSpanFactory spanFactory;
-
-        /**
-         * Instantiates a query processing task.
-         *
-         * @param queryRequest    The request received from Axon Server.
-         * @param responseHandler The {@link ReplyChannel} used for sending items to the Axon Server.
-         * @param clientId        The identifier of the client.
-         */
-        QueryProcessingTask(QueryRequest queryRequest,
-                            ReplyChannel<QueryResponse> responseHandler,
-                            String clientId,
-                            QueryBusSpanFactory spanFactory) {
-            this(queryRequest,
-                 responseHandler,
-                 clientId,
-                 ClasspathResolver::projectReactorOnClasspath,
-                 spanFactory);
-        }
-
-        /**
-         * Instantiates a query processing task.
-         *
-         * @param queryRequest       The request received from Axon Server.
-         * @param responseHandler    The {@link ReplyChannel} used for sending items to the Axon Server.
-         * @param clientId           The identifier of the client.
-         * @param reactorOnClassPath Indicates whether Project Reactor is on the classpath.
-         * @param spanFactory        The {@link QueryBusSpanFactory} implementation to use to provide tracing
-         *                           capabilities.
-         */
-        QueryProcessingTask(QueryRequest queryRequest,
-                            ReplyChannel<QueryResponse> responseHandler,
-                            String clientId,
-                            Supplier<Boolean> reactorOnClassPath,
-                            QueryBusSpanFactory spanFactory) {
-            this.queryRequest = queryRequest;
-            this.responseHandler = responseHandler;
-            this.clientId = clientId;
-            this.supportsStreaming = supportsStreaming(queryRequest);
-            this.reactorOnClassPath = reactorOnClassPath;
-            this.spanFactory = spanFactory;
+        public AxonServerUpdateHandler(@Nonnull QueryHandler.UpdateHandler updateHandler) {
+            this.updateHandler = updateHandler;
         }
 
         @Override
-        public void run() {
-            try {
-                logger.debug("Will process query [{}]", queryRequest.getQuery());
-                QueryMessage queryMessage = QueryConverter.convertQueryRequest(queryRequest);
-                spanFactory.createQueryProcessingSpan(queryMessage).run(() -> {
-                    if (numberOfResults(queryRequest.getProcessingInstructionsList())
-                            == DIRECT_QUERY_NUMBER_OF_RESULTS) {
-                        if (supportsStreaming && reactorOnClassPath.get()) {
-                            streamingQuery(queryMessage);
-                        } else {
-                            directQuery(queryMessage);
-                        }
-                    }
-                });
-            } catch (RuntimeException | OutOfDirectMemoryError e) {
-                sendError(e);
-                logger.warn("Query Processor had an exception when processing query [{}]", queryRequest.getQuery(), e);
-            }
+        public CompletableFuture<Void> sendUpdate(SubscriptionQueryUpdateMessage update) {
+            updateHandler.sendUpdate(QueryConverter.convertQueryUpdate(update));
+            return FutureUtils.emptyCompletedFuture();
         }
 
         @Override
-        public void request(long requested) {
-            if (requested <= 0) {
-                return;
-            }
-            if (!requestIfInitialized(requested)) {
-                requestedBeforeInit.getAndUpdate(current -> {
-                    try {
-                        return Math.addExact(requested, current);
-                    } catch (ArithmeticException e) {
-                        return Long.MAX_VALUE;
-                    }
-                });
-                requestIfInitialized(requestedBeforeInit.get());
-            }
+        public CompletableFuture<Void> complete() {
+            updateHandler.complete();
+            return FutureUtils.emptyCompletedFuture();
         }
 
         @Override
-        public void cancel() {
-            StreamableResponse result = streamableResultRef.get();
-            if (result != null) {
-                result.cancel();
-            } else {
-                cancelledBeforeInit.set(true);
-            }
-        }
-
-        /**
-         * Returns {@code true} if this task is still waiting for a result, and {@code false} otherwise.
-         * <p>
-         * Note that this would this return {@code true}, even if the streamable result has not been canceled yet!
-         *
-         * @return {@code true} if this task is still waiting for a result, and {@code false} otherwise.
-         */
-        public boolean resultPending() {
-            return streamableResultRef.get() == null;
-        }
-
-        private void streamingQuery(QueryMessage queryMessage) {
-            Publisher<QueryResponseMessage> resultPublisher = null; // FIXME incomingHandler.streamingQuery(queryMessage);
-            setResponse(streamableResponseFrom(resultPublisher));
-        }
-
-        private void directQuery(@Nonnull QueryMessage queryMessage) {
-            incomingHandler.query(queryMessage, new ResultCallback() {
-                @Override
-                public void onSuccess(@Nullable QueryResponseMessage resultMessage) {
-                    setResponse(streamableResponseFrom(resultMessage));
-                }
-
-                @Override
-                public void onError(@Nonnull Throwable cause) {
-                    sendError(cause);
-                }
-            });
-        }
-
-        private void setResponse(StreamableResponse result) {
-            streamableResultRef.set(result);
-            if (cancelledBeforeInit.get()) {
-                cancel();
-            } else {
-                request(requestedBeforeInit.get());
-            }
-        }
-
-        private StreamableResponse streamableResponseFrom(Publisher<QueryResponseMessage> resultPublisher) {
-            return new StreamableFluxResponse(Flux.from(resultPublisher),
-                                              responseHandler,
-                                              queryRequest.getMessageIdentifier(),
-                                              clientId);
-        }
-
-
-        private StreamableInstanceResponse streamableResponseFrom(QueryResponseMessage response) {
-            return new StreamableInstanceResponse(response,
-                                                  responseHandler,
-                                                  queryRequest.getMessageIdentifier());
-        }
-
-        private boolean supportsStreaming(QueryRequest queryRequest) {
-            boolean axonServerSupportsStreaming = axonServerSupportsQueryStreaming(queryRequest.getProcessingInstructionsList());
-            boolean clientSupportsStreaming = clientSupportsQueryStreaming(queryRequest.getProcessingInstructionsList());
-            return axonServerSupportsStreaming && clientSupportsStreaming;
-        }
-
-        private boolean requestIfInitialized(long requested) {
-            StreamableResponse result = streamableResultRef.get();
-            if (result != null) {
-                result.request(requested);
-                return true;
-            }
-            return false;
-        }
-
-        private void sendError(Throwable t) {
-            ErrorMessage ex = ExceptionConverter.convertToErrorMessage(clientId, t);
-            QueryResponse response =
-                    QueryResponse.newBuilder()
-                                 .setErrorCode(ErrorCode.getQueryExecutionErrorCode(t).errorCode())
-                                 .setErrorMessage(ex)
-                                 .setRequestIdentifier(queryRequest.getMessageIdentifier())
-                                 .build();
-            responseHandler.sendLast(response);
+        public CompletableFuture<Void> completeExceptionally(Throwable error) {
+            updateHandler.sendUpdate(QueryConverter.convertQueryUpdate(clientId, error));
+            updateHandler.complete();
+            return FutureUtils.emptyCompletedFuture();
         }
     }
 }

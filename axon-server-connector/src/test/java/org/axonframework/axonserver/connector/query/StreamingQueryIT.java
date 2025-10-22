@@ -225,12 +225,13 @@ class StreamingQueryIT {
     }
 
     private <R> Flux<R> streamingQueryPayloads(QueryMessage query, Class<R> cls, boolean supportsStreaming) {
-        if (supportsStreaming) {
-            return Flux.from(senderQueryBus.streamingQuery(query, null))
-                       .map(m -> m.payloadAs(cls));
-        }
-        return Flux.from(nonStreamingSenderQueryBus.streamingQuery(query, null))
-                   .map(m -> m.payloadAs(cls));
+//        if (supportsStreaming) {
+//            return Flux.from(senderQueryBus.streamingQuery(query, null))
+//                       .map(m -> m.payloadAs(cls));
+//        }
+//        return Flux.from(nonStreamingSenderQueryBus.streamingQuery(query, null))
+//                   .map(m -> m.payloadAs(cls));
+        return null; // FIXME
     }
 
     private <R> R directQueryPayload(QueryMessage query,

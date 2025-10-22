@@ -91,23 +91,6 @@ public class GenericSubscriptionQueryUpdateMessage
     }
 
     /**
-     * Constructs a {@code GenericSubscriptionQueryUpdateMessage} for the given {@code type}, {@code exception}, and
-     * {@code metadata}.
-     *
-     * @param type               The {@link MessageType type} for this {@link SubscriptionQueryUpdateMessage}.
-     * @param exception          The {@link Throwable} describing the error representing the response of this
-     *                           {@link SubscriptionQueryUpdateMessage}.
-     * @param declaredUpdateType The declared update type of this  {@link SubscriptionQueryUpdateMessage}.
-     * @param metadata           The metadata for this {@link SubscriptionQueryUpdateMessage}.
-     */
-    public GenericSubscriptionQueryUpdateMessage(@Nonnull MessageType type,
-                                                 @Nonnull Throwable exception,
-                                                 @Nonnull Class<?> declaredUpdateType,
-                                                 @Nonnull Map<String, String> metadata) {
-        super(new GenericMessage(type, null, declaredUpdateType, metadata), exception);
-    }
-
-    /**
      * Initializes a new decorator with given {@code delegate} message. The decorator delegates to the delegate for the
      * message's payload, metadata and identifier.
      * <p>
@@ -118,7 +101,7 @@ public class GenericSubscriptionQueryUpdateMessage
      *                 {@link Message#identifier() identifier} and {@link Message#metadata() metadata} for the
      *                 {@link QueryResponseMessage} to reconstruct.
      */
-    protected GenericSubscriptionQueryUpdateMessage(@Nonnull Message delegate) {
+    public GenericSubscriptionQueryUpdateMessage(@Nonnull Message delegate) {
         super(delegate);
     }
 

@@ -84,6 +84,34 @@ public interface QueryGateway extends DescribableComponent {
                                              @Nonnull Class<R> responseType,
                                              @Nullable ProcessingContext context);
 
+    /**
+     * Sends given {@code query} over the {@link QueryBus}, expecting a response as a
+     * {@link org.reactivestreams.Publisher} of {@code responseType}.
+     * <p>
+     * The {@code query} is sent once the {@code Publisher} is subscribed to. The streaming query allows a client to
+     * stream large result sets. Usage of this method requires <a href="https://projectreactor.io/">Project Reactor</a>
+     * on the class path.
+     * <p>
+     * The given {@code query} is wrapped as the payload of the {@link QueryMessage} that is eventually posted on the
+     * {@code QueryBus}, unless the {@code query} already implements {@link Message}. In that case, a
+     * {@code QueryMessage} is constructed from that message's payload and
+     * {@link org.axonframework.messaging.Metadata}.
+     * <p>
+     * {@link org.reactivestreams.Publisher} is used for backwards compatibility reason, for clients that don't have
+     * Project Reactor on class path. Check <a href="https://docs.axoniq.io/reference-guide/extensions/reactor">Reactor
+     * Extension</a> for native Flux type and more. Use {@code Flux.from(publisher)} to convert to Flux stream.
+     *
+     * @param query        The {@code query} to be sent.
+     * @param responseType A {@link java.lang.Class} describing the desired response type.
+     * @param context      The processing context, if any, to dispatch the given {@code query} in.
+     * @param <R>          The generic type of the expected response(s).
+     * @return A {@link org.reactivestreams.Publisher} streaming the results as dictated by the given
+     * {@code responseType}.
+     */
+    @Nonnull
+    <R> Publisher<R> streamingQuery(@Nonnull Object query,
+                                    @Nonnull Class<R> responseType,
+                                    @Nullable ProcessingContext context);
 
     /**
      * Sends given {@code query} over the {@link QueryBus} as a subscription query, combining the initial result and

@@ -18,12 +18,17 @@ package org.axonframework.queryhandling.distributed;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.Registration;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
+import org.axonframework.queryhandling.SubscriptionQueryMessage;
+import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
+
+import java.util.concurrent.CompletableFuture;
 
 import static java.util.Objects.requireNonNull;
 
@@ -71,6 +76,29 @@ public class PayloadConvertingQueryBusConnector extends DelegatingQueryBusConnec
             public MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage query) {
                 return handler.query(query)
                               .mapMessage(rm -> rm.withConvertedPayload(targetType, converter));
+            }
+
+            @Nonnull
+            @Override
+            public Registration registerUpdateHandler(@Nonnull SubscriptionQueryMessage subscriptionQueryMessage,
+                                                      @Nonnull UpdateCallback updateCallback) {
+                return handler.registerUpdateHandler(subscriptionQueryMessage, new UpdateCallback() {
+                    @Nonnull
+                    @Override
+                    public CompletableFuture<Void> sendUpdate(@Nonnull SubscriptionQueryUpdateMessage update) {
+                        return updateCallback.sendUpdate(update.withConvertedPayload(targetType, converter));
+                    }
+
+                    @Override
+                    public CompletableFuture<Void> complete() {
+                        return updateCallback.complete();
+                    }
+
+                    @Override
+                    public CompletableFuture<Void> completeExceptionally(@Nonnull Throwable cause) {
+                        return updateCallback.completeExceptionally(cause);
+                    }
+                });
             }
         });
     }

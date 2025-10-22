@@ -17,58 +17,42 @@
 package org.axonframework.axonserver.connector.query;
 
 import io.axoniq.axonserver.connector.ResultStream;
-import io.axoniq.axonserver.grpc.query.QueryResponse;
+import io.axoniq.axonserver.grpc.query.QueryUpdate;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonException;
-import org.axonframework.common.annotations.Internal;
-import org.axonframework.messaging.Context;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.SimpleEntry;
 import org.axonframework.queryhandling.QueryResponseMessage;
 
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
-
-import static java.util.Objects.requireNonNull;
-import static org.axonframework.axonserver.connector.query.QueryConverter.convertQueryResponse;
+import static org.axonframework.axonserver.connector.query.QueryConverter.convertQueryUpdate;
 import static org.axonframework.axonserver.connector.util.ExceptionConverter.convertToAxonException;
 
-/**
- * A {@link MessageStream} implementation that wraps an {@link ResultStream} of {@link QueryResponse}s, using
- * {@link QueryConverter}.
- *
- * @author Steven van Beelen
- * @since 5.0.0
- */
-@Internal
-public class QueryResponseMessageStream extends AbstractQueryResponseMessageStream<QueryResponse> {
+public class QueryUpdateMessageStream extends AbstractQueryResponseMessageStream<QueryUpdate>{
 
-
-    /**
+        /**
      * Initializes a new instance of the {@code QueryResponseMessageStream} which wraps a {@link ResultStream} of
-     * {@link QueryResponse} objects.
+     * {@link QueryUpdate} objects.
      *
-     * @param stream the {@link ResultStream} of {@link QueryResponse} instances to be wrapped; must not be null. If
+     * @param stream the {@link ResultStream} of {@link QueryUpdate} instances to be wrapped; must not be null. If
      *               {@code null}, a {@link NullPointerException} will be thrown.
      */
-    public QueryResponseMessageStream(@Nonnull ResultStream<QueryResponse> stream) {
+    public QueryUpdateMessageStream(@Nonnull ResultStream<QueryUpdate> stream) {
         super(stream);
     }
 
     @Override
-    protected QueryResponseMessage buildResponseMessage(QueryResponse queryResponse) {
-        return convertQueryResponse(queryResponse);
+    protected QueryResponseMessage buildResponseMessage(QueryUpdate queryResponse) {
+        return convertQueryUpdate(queryResponse);
     }
 
+
     @Override
-    protected AxonException createAxonException(QueryResponse queryResponse) {
+    protected AxonException createAxonException(QueryUpdate queryResponse) {
         return convertToAxonException(queryResponse.getErrorCode(),
                                       queryResponse.getErrorMessage(),
                                       queryResponse.getPayload());
     }
 
     @Override
-    protected boolean isError(QueryResponse queryResponse) {
+    protected boolean isError(QueryUpdate queryResponse) {
         return queryResponse.hasErrorMessage();
     }
 }

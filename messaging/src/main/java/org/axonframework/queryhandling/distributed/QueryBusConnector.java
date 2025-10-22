@@ -18,6 +18,7 @@ package org.axonframework.queryhandling.distributed;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.Registration;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -61,65 +62,10 @@ public interface QueryBusConnector extends DescribableComponent {
      * @see org.axonframework.queryhandling.QueryBus#subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int)
      */
     @Nonnull
-    default MessageStream<QueryResponseMessage> subscriptionQuery(@Nonnull SubscriptionQueryMessage query,
+    MessageStream<QueryResponseMessage> subscriptionQuery(@Nonnull SubscriptionQueryMessage query,
                                                           @Nullable ProcessingContext context,
-                                                          int updateBufferSize) {
-        // FIXME
-        // convert to a grpc message and send to axon server. Map all responses to the returned MessageStream
-        throw new UnsupportedOperationException("Not implemented yet.");
-    }
+                                                          int updateBufferSize);
 
-    /**
-     * Delegates update subscription registration to the underlying QueryBus.
-     *
-     * @see org.axonframework.queryhandling.QueryBus#subscribeToUpdates(SubscriptionQueryMessage, int)
-     */
-    @Nonnull
-    default MessageStream<SubscriptionQueryUpdateMessage> subscribeToUpdates(@Nonnull SubscriptionQueryMessage query,
-                                                                     int updateBufferSize) {
-        // FIXME
-        // convert to a grpc message and send to axon server. Map all responses to the returned MessageStream
-        throw new UnsupportedOperationException("Not implemented yet.");
-    }
-
-    /**
-     * Delegates emitting an update to the underlying QueryBus.
-     *
-     * @see org.axonframework.queryhandling.QueryBus#emitUpdate(Predicate, Supplier, ProcessingContext)
-     */
-    @Nonnull
-    default CompletableFuture<Void> emitUpdate(@Nonnull Predicate<SubscriptionQueryMessage> filter,
-                                       @Nonnull Supplier<SubscriptionQueryUpdateMessage> updateSupplier,
-                                       @Nullable ProcessingContext context) {
-        // FIXME
-        throw new UnsupportedOperationException("Not implemented yet.");
-    }
-
-    /**
-     * Delegates completing subscription queries to the underlying QueryBus.
-     *
-     * @see org.axonframework.queryhandling.QueryBus#completeSubscriptions(Predicate, ProcessingContext)
-     */
-    @Nonnull
-    default CompletableFuture<Void> completeSubscriptions(@Nonnull Predicate<SubscriptionQueryMessage> filter,
-                                                  @Nullable ProcessingContext context) {
-        // FIXME
-        // just send message to connector to complete subscription queries.
-         throw new UnsupportedOperationException("Not implemented yet.");
-    }
-
-    /**
-     * Delegates exceptional completion of subscription queries to the underlying QueryBus.
-     *
-     * @see org.axonframework.queryhandling.QueryBus#completeSubscriptionsExceptionally(Predicate, Throwable, ProcessingContext)
-     */
-    @Nonnull
-    default CompletableFuture<Void> completeSubscriptionsExceptionally(@Nonnull Predicate<SubscriptionQueryMessage> filter,
-                                                               @Nonnull Throwable cause,
-                                                               @Nullable ProcessingContext context) {
-        // FIXME
-        throw new UnsupportedOperationException("Not implemented yet.");
-    }
     // endregion
 
     // region [Connector] - methods for subscription and handlers
@@ -145,13 +91,16 @@ public interface QueryBusConnector extends DescribableComponent {
 
 
     /**
-     * TODO
-     * @param handler
+     * Registers a handler to process incoming query messages.
+     *
+     * @param handler The handler responsible for managing incoming queries.
      */
     void onIncomingQuery(@Nonnull Handler handler);
 
     /**
-     * TODO
+     * Defines a handler for processing query messages and managing subscription queries.
+     * Implementations of this interface are responsible for handling incoming query messages
+     * and optionally registering handlers for subscription queries to send updates.
      */
     interface Handler {
 
@@ -162,6 +111,64 @@ public interface QueryBusConnector extends DescribableComponent {
          * @param callback The callback to invoke with the result of handling the query.
          */
         MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage query);
+
+        /**
+         * Registers an update handler for a given subscription query message and its associated update sender.
+         *
+         * @param subscriptionQueryMessage The subscription query message for which updates are handled.
+         * @param updateCallback The callback responsible for sending updates back to the subscription.
+         * @return A {@link Registration} instance that can be used to deregister the update handler.
+         */
+        @Nonnull
+        Registration registerUpdateHandler(@Nonnull SubscriptionQueryMessage subscriptionQueryMessage,
+                                           @Nonnull UpdateCallback updateCallback);
+
+    }
+
+    /**
+     * Defines a callback mechanism to handle update messages for subscription queries
+     * in a reactive and asynchronous manner.
+     * <p/>
+     * The {@code UpdateCallback} interface is used to send updates, complete the processing,
+     * or handle exceptional completion during subscription queries.
+     */
+    interface UpdateCallback {
+
+        /**
+         * Sends a subscription query update message asynchronously.
+         * This method handles the delivery of incremental updates to listeners
+         * in the context of a subscription query.
+         *
+         * @param update The {@link SubscriptionQueryUpdateMessage} containing the update data
+         *               to be sent as part of the subscription query.
+         * @return A {@link CompletableFuture} that completes when the update has been successfully
+         *         handled. If the update cannot be processed, the returned future will complete
+         *         exceptionally.
+         */
+        @Nonnull
+        CompletableFuture<Void> sendUpdate(@Nonnull SubscriptionQueryUpdateMessage update);
+
+        /**
+         * Completes the processing of a subscription query gracefully.
+         * This method signals that no further updates will be sent as part of the
+         * subscription query and completes any associated operations.
+         *
+         * @return A {@link CompletableFuture} that completes when the process has been
+         *         finalized successfully. If the completion encounters an issue, the
+         *         returned future will complete exceptionally.
+         */
+        CompletableFuture<Void> complete();
+
+        /**
+         * Completes the processing of a subscription query exceptionally.
+         * This method signals that an error has occurred during the processing of the subscription query
+         * and terminates the operation with the provided exception.
+         *
+         * @param cause The {@link Throwable} representing the exceptional condition that caused the
+         *              subscription query to terminate.
+         * @return A {@link CompletableFuture} that completes exceptionally with the provided cause.
+         */
+        CompletableFuture<Void> completeExceptionally(@Nonnull Throwable cause);
     }
 
     // endregion [Connector]

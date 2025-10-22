@@ -22,14 +22,18 @@ import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.query.AxonServerQueryBusConnector;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.conversion.DelegatingMessageConverter;
 import org.axonframework.queryhandling.GenericQueryMessage;
+import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryBusTestUtils;
+import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.distributed.DistributedQueryBus;
 import org.axonframework.queryhandling.distributed.DistributedQueryBusConfiguration;
-import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.json.JacksonSerializer;
+import org.axonframework.queryhandling.distributed.PayloadConvertingQueryBusConnector;
+import org.axonframework.serialization.json.JacksonConverter;
 import org.axonframework.test.server.AxonServerContainer;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
@@ -39,14 +43,16 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.Duration;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 
-@Disabled("TODO #3488 - Axon Server Query Bus replacement")
+//@Disabled("TODO #3488 - Axon Server Query Bus replacement")
 @Testcontainers
 class QueryThreadingIntegrationTest {
 
@@ -77,7 +83,6 @@ class QueryThreadingIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        Serializer serializer = JacksonSerializer.defaultSerializer();
 
         String server = axonServer.getHost() + ":" + axonServer.getGrpcPort();
         AxonServerConfiguration configuration = AxonServerConfiguration.builder()
@@ -97,13 +102,21 @@ class QueryThreadingIntegrationTest {
         // The application having a query that depends on another one
         QueryBus localQueryBus = QueryBusTestUtils.aQueryBus();
         connector = new AxonServerQueryBusConnector(connectionManager.getConnection(), configuration);
-        queryBus = new DistributedQueryBus(localQueryBus, connector, DistributedQueryBusConfiguration.DEFAULT);
+        queryBus = new DistributedQueryBus(localQueryBus,
+                                           new PayloadConvertingQueryBusConnector(connector,
+                                                                                  new DelegatingMessageConverter(new JacksonConverter()),
+                                                                                  byte[].class),
+                                           DistributedQueryBusConfiguration.DEFAULT);
         connector.start();
 
         // The secondary application
         QueryBus localQueryBus2 = QueryBusTestUtils.aQueryBus();
         connector2 = new AxonServerQueryBusConnector(connectionManager.getConnection(), configuration);
-        queryBus2 = new DistributedQueryBus(localQueryBus2, connector, DistributedQueryBusConfiguration.DEFAULT);
+        queryBus2 = new DistributedQueryBus(localQueryBus2,
+                                            new PayloadConvertingQueryBusConnector(connector2,
+                                                                                   new DelegatingMessageConverter(new JacksonConverter()),
+                                                                                   byte[].class),
+                                            DistributedQueryBusConfiguration.DEFAULT);
         connector2.start();
         waitingQueries.set(0);
     }
@@ -119,31 +132,51 @@ class QueryThreadingIntegrationTest {
     }
 
     @Test
-    void canStillHandleQueryResponsesWhileManyQueriesHandling() {
-//        queryBus2.subscribe(QUERY_TYPE_B.name(), String.class, (query, ctx) -> {
-//            while (secondaryQueryBlock.get()) {
-//                try {
-//                    Thread.sleep(10);
-//                } catch (InterruptedException e) {
-//                    Thread.currentThread().interrupt();
-//                }
-//            }
-//            return "b";
-//        });
+    void canSendSimpleQueryAndReceiveResponse() {
+        queryBus.subscribe(QUERY_TYPE_A.qualifiedName(), new QualifiedName(String.class), (query, ctx) -> {
+            return MessageStream.just(new GenericQueryResponseMessage(new MessageType(String.class), "a"));
+        });
 
-//        queryBus.subscribe(QUERY_TYPE_A.name(), String.class, (query, ctx) -> {
-//            waitingQueries.incrementAndGet();
-//            QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE_B,
-//                                                             "start",
-//                                                             new MessageType(String.class));
-//            QueryResponseMessage b = queryBus.query(testQuery, null)
-//                                             .first()
-//                                             .asCompletableFuture()
-//                                             .thenApply(MessageStream.Entry::message)
-//                                             .get();
-//            waitingQueries.decrementAndGet();
-//            return "a" + b.payload();
-//        });
+        var result = queryBus.query(new GenericQueryMessage(QUERY_TYPE_A, "start", new MessageType(String.class)),
+                                    null);
+        await().untilAsserted(() -> {
+            assertThat(result.hasNextAvailable()).isTrue();
+        });
+        assertThat(result.next().get().message().payloadAs(String.class, new JacksonConverter())).isEqualTo("a");
+    }
+
+    @Test
+    void canStillHandleQueryResponsesWhileManyQueriesHandling() {
+        queryBus2.subscribe(QUERY_TYPE_B.qualifiedName(), new QualifiedName(String.class), (query, ctx) -> {
+            while (secondaryQueryBlock.get()) {
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+            return MessageStream.just(new GenericQueryResponseMessage(new MessageType(String.class), "b"));
+        });
+
+        queryBus.subscribe(QUERY_TYPE_A.qualifiedName(), new QualifiedName(String.class), (query, ctx) -> {
+            waitingQueries.incrementAndGet();
+            QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE_B,
+                                                             "start",
+                                                             new MessageType(String.class));
+            try {
+                QueryResponseMessage b = queryBus.query(testQuery, null)
+                                                 .first()
+                                                 .asCompletableFuture()
+                                                 .thenApply(MessageStream.Entry::message)
+                                                 .get();
+                return MessageStream.just(new GenericQueryResponseMessage(new MessageType(String.class),
+                                                                          "a" + b.payload()));
+            } catch (InterruptedException | ExecutionException e) {
+                return MessageStream.failed(e);
+            } finally {
+                waitingQueries.decrementAndGet();
+            }
+        });
 
         MessageStream<QueryResponseMessage> query1 = queryBus.query(
                 new GenericQueryMessage(QUERY_TYPE_A, "start", new MessageType(String.class)), null

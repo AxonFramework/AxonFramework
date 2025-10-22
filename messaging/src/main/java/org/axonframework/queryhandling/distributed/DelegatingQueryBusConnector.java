@@ -17,8 +17,14 @@
 package org.axonframework.queryhandling.distributed;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.QueryHandlerName;
+import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.queryhandling.QueryResponseMessage;
+import org.axonframework.queryhandling.SubscriptionQueryMessage;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -49,7 +55,19 @@ public abstract class DelegatingQueryBusConnector implements QueryBusConnector {
 
     // region [QueryBus]
 
-    // - implement query methods here!
+    @Nonnull
+    @Override
+    public MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage query, @Nullable ProcessingContext context) {
+        return delegate.query(query, context);
+    }
+
+    @Nonnull
+    @Override
+    public MessageStream<QueryResponseMessage> subscriptionQuery(@Nonnull SubscriptionQueryMessage query,
+                                                                 @Nullable ProcessingContext context,
+                                                                 int updateBufferSize) {
+        return delegate.subscriptionQuery(query, context, updateBufferSize);
+    }
 
     // endregion
 
