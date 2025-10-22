@@ -36,11 +36,10 @@ import org.junit.jupiter.api.*;
 
 import java.time.Duration;
 import java.time.temporal.TemporalAmount;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -107,24 +106,24 @@ class JpaTokenStoreTest {
 
     @Test
     void identifierInitializedOnDemand() {
-        Optional<String> id1 = joinAndUnwrap(jpaTokenStore.retrieveStorageIdentifier(mock()));
-        assertTrue(id1.isPresent());
-        Optional<String> id2 = joinAndUnwrap(jpaTokenStore.retrieveStorageIdentifier(mock()));
-        assertTrue(id2.isPresent());
-        assertEquals(id1.get(), id2.get());
+        String id1 = joinAndUnwrap(jpaTokenStore.retrieveStorageIdentifier(mock()));
+        assertNotNull(id1);
+        String id2 = joinAndUnwrap(jpaTokenStore.retrieveStorageIdentifier(mock()));
+        assertNotNull(id2);
+        assertEquals(id1, id2);
     }
 
     @Test
     void identifierReadIfAvailable() {
         entityManager.persist(new TokenEntry("__config", 0, new ConfigToken(Collections.singletonMap("id", "test")),
                                              jpaTokenStore.converter()));
-        Optional<String> id1 = joinAndUnwrap(jpaTokenStore.retrieveStorageIdentifier(mock()));
-        assertTrue(id1.isPresent());
-        Optional<String> id2 = joinAndUnwrap(jpaTokenStore.retrieveStorageIdentifier(mock()));
-        assertTrue(id2.isPresent());
-        assertEquals(id1.get(), id2.get());
+        String id1 = joinAndUnwrap(jpaTokenStore.retrieveStorageIdentifier(mock()));
+        assertNotNull(id1);
+        String id2 = joinAndUnwrap(jpaTokenStore.retrieveStorageIdentifier(mock()));
+        assertNotNull(id2);
+        assertEquals(id1, id2);
 
-        assertEquals("test", id1.get());
+        assertEquals("test", id1);
     }
 
     @Test
@@ -146,25 +145,29 @@ class JpaTokenStoreTest {
 
     @Test
     void initializeTokens() {
-        joinAndUnwrap(jpaTokenStore.initializeTokenSegments("test1", 7, null, createProcessingContext()));
+        List<Segment> createdSegments = joinAndUnwrap(jpaTokenStore.initializeTokenSegments("test1", 7, null, createProcessingContext()));
+        List<Segment> actual = joinAndUnwrap(jpaTokenStore.fetchSegments("test1", null));
 
-        int[] actual = joinAndUnwrap(jpaTokenStore.fetchSegments("test1", null));
-        Arrays.sort(actual);
-        assertArrayEquals(new int[]{0, 1, 2, 3, 4, 5, 6}, actual);
+        // TODO #3465 - Assert entire segment here, not just id
+        assertThat(actual.stream().map(Segment::getSegmentId).toList())
+            .containsExactlyInAnyOrderElementsOf(createdSegments.stream().map(Segment::getSegmentId).toList());
     }
 
     @SuppressWarnings("Duplicates")
     @Test
     void initializeTokensAtGivenPosition() {
-        joinAndUnwrap(jpaTokenStore.initializeTokenSegments(
+        List<Segment> createdSegments = joinAndUnwrap(jpaTokenStore.initializeTokenSegments(
                 "test1", 7, new GlobalSequenceTrackingToken(10), createProcessingContext()
         ));
 
-        int[] actual = joinAndUnwrap(jpaTokenStore.fetchSegments("test1", null));
-        Arrays.sort(actual);
-        assertArrayEquals(new int[]{0, 1, 2, 3, 4, 5, 6}, actual);
+        List<Segment> actual = joinAndUnwrap(jpaTokenStore.fetchSegments("test1", null));
 
-        for (int segment : actual) {
+        // TODO #3465 - Assert entire segment here, not just id
+        assertThat(actual.stream().map(Segment::getSegmentId).toList())
+            .containsExactlyInAnyOrderElementsOf(createdSegments.stream().map(Segment::getSegmentId).toList());
+
+        // TODO #3465 - Assert the actual segments here, not the created ones (but must for now because fetchSegments returns "partial" segments where only id is correct)
+        for (Segment segment : createdSegments /* actual */) {
             assertEquals(new GlobalSequenceTrackingToken(10),
                          joinAndUnwrap(jpaTokenStore.fetchToken("test1", segment, null)));
         }
@@ -197,7 +200,7 @@ class JpaTokenStoreTest {
 
     @Test
     void deleteToken() {
-        joinAndUnwrap(jpaTokenStore.initializeSegment(null, "delete", 0, null));
+        joinAndUnwrap(jpaTokenStore.initializeSegment(null, "delete", Segment.ROOT_SEGMENT, null));
         joinAndUnwrap(jpaTokenStore.fetchToken("delete", 0, null));
 
         entityManager.flush();
@@ -296,16 +299,16 @@ class JpaTokenStoreTest {
         prepareTokenStore(createProcessingContext());
 
         {
-            final int[] segments = joinAndUnwrap(jpaTokenStore.fetchSegments("proc1", null));
-            assertThat(segments.length, is(2));
+            List<Segment> segments = joinAndUnwrap(jpaTokenStore.fetchSegments("proc1", null));
+            assertThat(segments.size(), is(2));
         }
         {
-            final int[] segments = joinAndUnwrap(jpaTokenStore.fetchSegments("proc2", null));
-            assertThat(segments.length, is(1));
+            List<Segment> segments = joinAndUnwrap(jpaTokenStore.fetchSegments("proc2", null));
+            assertThat(segments.size(), is(1));
         }
         {
-            final int[] segments = joinAndUnwrap(jpaTokenStore.fetchSegments("proc3", null));
-            assertThat(segments.length, is(0));
+            List<Segment> segments = joinAndUnwrap(jpaTokenStore.fetchSegments("proc3", null));
+            assertThat(segments.size(), is(0));
         }
 
         entityManager.flush();

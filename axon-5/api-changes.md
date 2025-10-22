@@ -2021,6 +2021,11 @@ This section contains five tables:
 | org.axonframework.messaging.SubscribableMessageSource                                                  | org.axonframework.messaging.SubscribableEventSource                                                   | No                             |
 | org.axonframework.configuration.SubscribableMessageSourceDefinition                                    | org.axonframework.eventhandling.configuration.SubscribableEventSourceDefinition                       | No                             |
 | org.axonframework.axonserver.connector.event.axon.PersistentStreamMessageSourceDefinition              | org.axonframework.axonserver.connector.event.axon.PersistentStreamEventSourceDefinition               | No                             |
+| org.axonframework.eventhandling.tokenstore.TokenStore                                                  | org.axonframework.eventhandling.processors.streaming.token.store.TokenStore                           | No                             |
+| org.axonframework.eventhandling.tokenstore.ConfigToken                                                 | org.axonframework.eventhandling.processors.streaming.token.store.ConfigToken                          | No                             |
+| org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException                                 | org.axonframework.eventhandling.processors.streaming.token.store.UnableToClaimTokenException          | No                             |
+| org.axonframework.eventhandling.tokenstore.UnableToInitializeTokenException                            | org.axonframework.eventhandling.processors.streaming.token.store.UnableToInitializeTokenException     | No                             |
+| org.axonframework.eventhandling.tokenstore.UnableToRetrieveIdentifierException                         | org.axonframework.eventhandling.processors.streaming.token.store.UnableToRetrieveIdentifierException  | No                             |
 
 ### Removed Classes
 
@@ -2272,6 +2277,16 @@ This section contains four subsections, called:
 | `QueryUpdateEmitter#complete(Predicate<SubscriptionQueryMessage<?, ?, ?>>)`                                                     | `QueryBus#completeSubscriptions(Predicate<SubscriptionQueryMessage>, ProcessingContext)`                               | 
 | `QueryUpdateEmitter#completeExceptionally(Predicate<SubscriptionQueryMessage<?, ?, ?>>, Throwable)`                             | `QueryBus#completeSubscriptionsExceptionally(Predicate<SubscriptionQueryMessage>, Throwable, ProcessingContext)`       | 
 | `QueryUpdateEmitter#registerUpdateHandler(SubscriptionQueryMessage<?, ?, ?>, int)`                                              | `QueryBus#subscribeToUpdates(SubscriptionQueryMessage, int)`                                                           |
+| `TokenStore#initializeTokenSegments(String, int, TrackingToken)`                                                                | `TokenStore#initializeTokenSegments(String, int, TrackingToken, ProcessingContext)`                                    |
+| `TokenStore#storeToken(TrackingToken, String, int)`                                                                             | `TokenStore#storeToken(String, int, TrackingToken, ProcessingContext)`                                                 |
+| `TokenStore#fetchToken(String, Segment)`                                                                                        | `TokenStore#fetchToken(String, Segment, ProcessingContext)`                                                            |
+| `TokenStore#extendClaim(String, int)`                                                                                           | `TokenStore#extendClaim(String, int, ProcessingContext)`                                                               |
+| `TokenStore#releaseClaim(String, int)`                                                                                          | `TokenStore#releaseClaim(String, int, ProcessingContext)`                                                              |
+| `TokenStore#initializeSegment(TrackingToken, String, int)`                                                                      | `TokenStore#initializeSegment(TrackingToken, String, Segment, ProcessingContext)`                                      |
+| `TokenStore#deleteToken(String, int)`                                                                                           | `TokenStore#deleteToken(String, int, ProcessingContext)`                                                               |
+| `TokenStore#fetchSegments(String)`                                                                                              | `TokenStore#fetchSegments(String, ProcessingContext)`                                                                  |
+| `TokenStore#fetchAvailableSegments(String)`                                                                                     | `TokenStore#fetchAvailableSegments(String, ProcessingContext)`                                                         |
+| `TokenStore#retrieveStorageIdentifier()`                                                                                        | `TokenStore#retrieveStorageIdentifier(ProcessingContext)`                                                              |
 
 ### Removed Methods and Constructors
 
@@ -2337,6 +2352,8 @@ This section contains four subsections, called:
 | `UpdateHandlerRegistration#getRegistration()`                                                                     | Replaced for `UpdateHandler#cancel()`                                                                                       |
 | `QueryUpdateEmitter#activeSubscriptions()`                                                                        | Removed due to limited use (see [Query Dispatching and Handling](#query-dispatching-and-handling)                           |
 | `SubscribingEventProcessor#getMessageSource()`                                                                    | Removed due to no usages.                                                                                                   |
+| `org.axonframework.eventhandling.tokenstore.TokenStore#initializeTokenSegments(String, int)`                      | Removed due to limited usage                                                                                                |
+| `org.axonframework.eventhandling.tokenstore.TokenStore#requiresExplicitSegmentInitialization()`                   | Removed due to explicit initialization now being a requirement                                                              |
 
 ### Changed Method return types
 
@@ -2363,3 +2380,13 @@ This section contains four subsections, called:
 | `SubscriptionQueryResult#initialResult()`                                      | `Mono<I>`                                    | `Flux<I>`                                    |`
 | `QueryMessage#responseType()`                                                  | `ResponseType<?>`                            | `MessageType`                                |`
 | `SubscriptionQueryMessage#updatesResponseType()`                               | `ResponseType<?>`                            | `MessageType`                                |`
+| `TokenStore#initializeTokenSegments`                                           | `void`                                       | `CompletableFuture<List<Segment>>`           |
+| `TokenStore#storeToken`                                                        | `void`                                       | `CompletableFuture<Void>`                    |
+| `TokenStore#fetchToken`                                                        | `TrackingToken`                              | `CompletableFuture<TrackingToken>`           |
+| `TokenStore#extendClaim`                                                       | `void`                                       | `CompletableFuture<Void>`                    |
+| `TokenStore#releaseClaim`                                                      | `void`                                       | `CompletableFuture<Void>`                    |
+| `TokenStore#initializeSegment`                                                 | `void`                                       | `CompletableFuture<Void>`                    |
+| `TokenStore#deleteToken`                                                       | `void`                                       | `CompletableFuture<Void>`                    |
+| `TokenStore#fetchSegments`                                                     | `void`                                       | `CompletableFuture<List<Segment>>`           |
+| `TokenStore#fetchAvailableSegments`                                            | `void`                                       | `CompletableFuture<List<Segment>>`           |
+| `TokenStore#retrieveStorageIdentifier`                                         | `Optional<String>`                           | `CompletableFuture<String>`                  |

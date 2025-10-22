@@ -25,17 +25,30 @@ import org.axonframework.eventhandling.processors.streaming.token.store.TokenSto
 import org.axonframework.eventhandling.processors.streaming.token.store.UnableToClaimTokenException;
 import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
-import org.junit.jupiter.api.*;
-import org.mockito.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Test class validating the {@link MergeTask}.
@@ -47,9 +60,9 @@ class MergeTaskTest {
     private static final String PROCESSOR_NAME = "test";
     private static final int SEGMENT_TO_MERGE = 0;
     private static final int SEGMENT_TO_BE_MERGED = 1;
-    private static final int[] SEGMENT_IDS = {0, 1};
-    private static final Segment SEGMENT_ZERO = Segment.computeSegment(SEGMENT_TO_MERGE, SEGMENT_IDS);
-    private static final Segment SEGMENT_ONE = Segment.computeSegment(SEGMENT_TO_BE_MERGED, SEGMENT_IDS);
+    private static final Segment SEGMENT_ZERO = Segment.splitBalanced(Segment.ROOT_SEGMENT, 1).get(SEGMENT_TO_MERGE);
+    private static final Segment SEGMENT_ONE = Segment.splitBalanced(Segment.ROOT_SEGMENT, 1).get(SEGMENT_TO_BE_MERGED);
+    private static final List<Segment> SEGMENTS = List.of(SEGMENT_ZERO, SEGMENT_ONE);
     private final Map<Integer, WorkPackage> workPackages = new HashMap<>();
     private final TokenStore tokenStore = mock(TokenStore.class);
     private final WorkPackage workPackageOne = mock(WorkPackage.class);
@@ -60,7 +73,7 @@ class MergeTaskTest {
     @BeforeEach
     void setUp() {
         result = new CompletableFuture<>();
-        when(tokenStore.fetchSegments(eq(PROCESSOR_NAME), any())).thenReturn(completedFuture(SEGMENT_IDS));
+        when(tokenStore.fetchSegments(eq(PROCESSOR_NAME), any())).thenReturn(completedFuture(SEGMENTS));
 
         testSubject = new MergeTask(
                 result, PROCESSOR_NAME, SEGMENT_TO_MERGE, workPackages, tokenStore,
@@ -71,7 +84,7 @@ class MergeTaskTest {
     @Test
     void runReturnsFalseThroughSegmentIdsWhichCannotMerge() throws ExecutionException, InterruptedException {
         when(tokenStore.fetchSegments(eq(PROCESSOR_NAME), any()))
-                .thenReturn(completedFuture(new int[]{SEGMENT_TO_MERGE}));
+                .thenReturn(completedFuture(List.of(SEGMENT_ZERO)));
 
         testSubject.run();
 
@@ -189,7 +202,7 @@ class MergeTaskTest {
 
     @Test
     void runCompletesExceptionallyThroughUnableToClaimTokenExceptionOnFetch() {
-        when(tokenStore.fetchSegments(eq(PROCESSOR_NAME), any())).thenReturn(completedFuture(SEGMENT_IDS));
+        when(tokenStore.fetchSegments(eq(PROCESSOR_NAME), any())).thenReturn(completedFuture(SEGMENTS));
         when(tokenStore.fetchToken(eq(PROCESSOR_NAME), eq(SEGMENT_TO_MERGE), any()))
                 .thenThrow(new UnableToClaimTokenException("some exception"));
 

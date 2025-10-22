@@ -23,9 +23,9 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
-import java.util.Arrays;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -48,14 +48,13 @@ class InMemoryTokenStoreTest {
 
     @Test
     void initializeTokens() {
-        joinAndUnwrap(testSubject.initializeTokenSegments("test1",
-                                                          7,
-                                                          null,
-                                                          createProcessingContext()));
+        List<Segment> createdSegments = joinAndUnwrap(
+            testSubject.initializeTokenSegments("test1", 7, null, createProcessingContext())
+        );
 
-        int[] actual = joinAndUnwrap(testSubject.fetchSegments("test1", null));
-        Arrays.sort(actual);
-        assertArrayEquals(new int[]{0, 1, 2, 3, 4, 5, 6}, actual);
+        List<Segment> actual = joinAndUnwrap(testSubject.fetchSegments("test1", null));
+
+        assertThat(actual).containsExactlyInAnyOrderElementsOf(createdSegments);
     }
 
     @Test
@@ -75,23 +74,23 @@ class InMemoryTokenStoreTest {
 
     @Test
     void identifierIsPresent() {
-        assertTrue(joinAndUnwrap(testSubject.retrieveStorageIdentifier(mock())).isPresent());
+        assertNotNull(joinAndUnwrap(testSubject.retrieveStorageIdentifier(mock())));
     }
 
     @Test
     void initializeTokensAtGivenPosition() {
-        joinAndUnwrap(testSubject.initializeTokenSegments(
+        List<Segment> createdSegments = joinAndUnwrap(testSubject.initializeTokenSegments(
                 "test1",
                 7,
                 new GlobalSequenceTrackingToken(10),
                 createProcessingContext()
         ));
 
-        int[] actual = joinAndUnwrap(testSubject.fetchSegments("test1", null));
-        Arrays.sort(actual);
-        assertArrayEquals(new int[]{0, 1, 2, 3, 4, 5, 6}, actual);
+        List<Segment> actual = joinAndUnwrap(testSubject.fetchSegments("test1", null));
 
-        for (int segment : actual) {
+        assertThat(actual).containsExactlyInAnyOrderElementsOf(createdSegments);
+
+        for (Segment segment : actual) {
             assertEquals(new GlobalSequenceTrackingToken(10),
                          joinAndUnwrap(testSubject.fetchToken("test1", segment, null)));
         }
@@ -132,47 +131,25 @@ class InMemoryTokenStoreTest {
 
     @Test
     void querySegments() {
-        var ctx = createProcessingContext();
-        joinAndUnwrap(testSubject.initializeTokenSegments("test", 1, null, ctx));
-
-        assertNull(joinAndUnwrap(testSubject.fetchToken("test", 0, null)));
-
-        joinAndUnwrap(
-                testSubject.storeToken(new GlobalSequenceTrackingToken(1L), "proc1", 0, ctx)
-        );
-        joinAndUnwrap(
-                testSubject.storeToken(new GlobalSequenceTrackingToken(2L), "proc1", 1, ctx)
-        );
-        joinAndUnwrap(
-                testSubject.storeToken(new GlobalSequenceTrackingToken(2L), "proc2", 1, ctx)
-        );
+        prepareTokenStore(createProcessingContext());
 
         {
-            final int[] segments = joinAndUnwrap(testSubject.fetchSegments("proc1", null));
-            assertThat(segments.length, is(2));
+            List<Segment> segments = joinAndUnwrap(testSubject.fetchSegments("proc1", null));
+            assertThat(segments.size(), is(2));
         }
         {
-            final int[] segments = joinAndUnwrap(testSubject.fetchSegments("proc2", null));
-            assertThat(segments.length, is(1));
+            List<Segment> segments = joinAndUnwrap(testSubject.fetchSegments("proc2", null));
+            assertThat(segments.size(), is(1));
         }
         {
-            final int[] segments = joinAndUnwrap(testSubject.fetchSegments("proc3", null));
-            assertThat(segments.length, is(0));
+            List<Segment> segments = joinAndUnwrap(testSubject.fetchSegments("proc3", null));
+            assertThat(segments.size(), is(0));
         }
     }
 
     @Test
     void queryAvailableSegments() {
-        var ctx = createProcessingContext();
-        joinAndUnwrap(
-                testSubject.storeToken(new GlobalSequenceTrackingToken(1L), "proc1", 0, ctx)
-        );
-        joinAndUnwrap(
-                testSubject.storeToken(new GlobalSequenceTrackingToken(2L), "proc1", 1, ctx)
-        );
-        joinAndUnwrap(
-                testSubject.storeToken(new GlobalSequenceTrackingToken(2L), "proc2", 1, ctx)
-        );
+        prepareTokenStore(createProcessingContext());
 
         {
             final List<Segment> segments =
@@ -185,7 +162,7 @@ class InMemoryTokenStoreTest {
             final List<Segment> segments =
                     joinAndUnwrap(testSubject.fetchAvailableSegments("proc2", null));
             assertThat(segments.size(), is(1));
-            assertThat(segments.getFirst().getSegmentId(), is(1));
+            assertThat(segments.getFirst().getSegmentId(), is(0));
         }
         {
             final List<Segment> segments =
@@ -196,5 +173,16 @@ class InMemoryTokenStoreTest {
 
     private ProcessingContext createProcessingContext() {
         return new StubProcessingContext();
+    }
+
+    private void prepareTokenStore(ProcessingContext ctx) {
+        joinAndUnwrap(testSubject.initializeTokenSegments("test", 1, null, ctx));
+        joinAndUnwrap(testSubject.initializeTokenSegments("proc1", 2, null, ctx));
+        joinAndUnwrap(testSubject.initializeTokenSegments("proc2", 1, null, ctx));
+
+        assertNull(joinAndUnwrap(testSubject.fetchToken("test", 0, null)));
+        joinAndUnwrap(testSubject.storeToken(new GlobalSequenceTrackingToken(1L), "proc1", 0, ctx));
+        joinAndUnwrap(testSubject.storeToken(new GlobalSequenceTrackingToken(2L), "proc1", 1, ctx));
+        joinAndUnwrap(testSubject.storeToken(new GlobalSequenceTrackingToken(2L), "proc2", 0, ctx));
     }
 }

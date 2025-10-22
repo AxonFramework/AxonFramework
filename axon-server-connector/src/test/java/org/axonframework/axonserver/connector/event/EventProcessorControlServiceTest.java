@@ -196,7 +196,7 @@ class EventProcessorControlServiceTest {
     private void setupModuleConfigurationFor(String processorName) {
         TokenStore tokenStore = mock(TokenStore.class);
         when(tokenStore.retrieveStorageIdentifier(any()))
-                .thenReturn(completedFuture(Optional.of(TOKEN_STORE_IDENTIFIER)));
+                .thenReturn(completedFuture(TOKEN_STORE_IDENTIFIER));
 
         UnitOfWork unitOfWork = mock(UnitOfWork.class);
         when(unitOfWork.executeWithResult(any()))

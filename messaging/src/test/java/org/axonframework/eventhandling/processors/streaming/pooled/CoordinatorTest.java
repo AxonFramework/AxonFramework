@@ -49,7 +49,6 @@ import java.util.concurrent.TimeUnit;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.axonframework.common.FutureUtils.emptyCompletedFuture;
-import static org.axonframework.eventhandling.processors.streaming.segmenting.Segment.computeSegment;
 import static org.axonframework.utils.AssertUtils.assertWithin;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -65,11 +64,10 @@ import static org.mockito.Mockito.anyLong;
 class CoordinatorTest {
 
     private static final String PROCESSOR_NAME = "test";
-    private final Segment SEGMENT_ZERO = computeSegment(0);
+    private final Segment SEGMENT_ZERO = Segment.ROOT_SEGMENT;
     private final int SEGMENT_ID = 0;
-    private final int[] SEGMENT_IDS = {SEGMENT_ID};
-    private final Segment SEGMENT_ONE = Segment.computeSegment(SEGMENT_ID, SEGMENT_IDS);
-    private final int[] EMPTY_SEGMENT_IDS = {};
+    private final List<Segment> SEGMENTS = List.of(Segment.ROOT_SEGMENT);
+    private final Segment SEGMENT_ONE = new Segment(1, 1);
     private final TokenStore tokenStore = mock(TokenStore.class);
     private final ScheduledThreadPoolExecutor executorService = mock(ScheduledThreadPoolExecutor.class);
     @SuppressWarnings("unchecked")
@@ -99,7 +97,7 @@ class CoordinatorTest {
                                  .executorService(executorService)
                                  .workPackageFactory((segment, trackingToken) -> workPackage)
                                  .initialToken(es -> es.firstToken(null).thenApply(ReplayToken::createReplayToken))
-                                 .maxSegmentProvider(e -> SEGMENT_IDS.length)
+                                 .maxSegmentProvider(e -> SEGMENTS.size())
                                  .build();
     }
 
@@ -110,7 +108,7 @@ class CoordinatorTest {
         final RuntimeException releaseClaimException = new RuntimeException("Some exception during release claim");
         final GlobalSequenceTrackingToken token = new GlobalSequenceTrackingToken(0);
 
-        doReturn(completedFuture(SEGMENT_IDS)).when(tokenStore).fetchSegments(eq(PROCESSOR_NAME), any());
+        doReturn(completedFuture(SEGMENTS)).when(tokenStore).fetchSegments(eq(PROCESSOR_NAME), any());
         doReturn(completedFuture(token)).when(tokenStore).fetchToken(eq(PROCESSOR_NAME), anyInt(), any());
         doThrow(releaseClaimException).when(tokenStore).releaseClaim(eq(PROCESSOR_NAME), anyInt(), any());
         doThrow(streamOpenException).when(messageSource).open(any(), isNull());
@@ -135,7 +133,7 @@ class CoordinatorTest {
         //arrange
         final GlobalSequenceTrackingToken token = new GlobalSequenceTrackingToken(0);
 
-        doReturn(completedFuture(EMPTY_SEGMENT_IDS))
+        doReturn(completedFuture(List.of()))
                 .when(tokenStore)
                 .fetchSegments(eq(PROCESSOR_NAME), any());
         doReturn(emptyCompletedFuture())
@@ -179,7 +177,7 @@ class CoordinatorTest {
         );
 
         when(executorService.submit(any(Runnable.class))).thenAnswer(runTaskAsync());
-        when(tokenStore.fetchSegments(eq(PROCESSOR_NAME), any())).thenReturn(completedFuture(SEGMENT_IDS));
+        when(tokenStore.fetchSegments(eq(PROCESSOR_NAME), any())).thenReturn(completedFuture(SEGMENTS));
         when(tokenStore.fetchAvailableSegments(eq(PROCESSOR_NAME), any()))
                 .thenReturn(completedFuture(Collections.singletonList(SEGMENT_ONE)));
         when(tokenStore.fetchToken(eq(PROCESSOR_NAME), eq(SEGMENT_ONE), any()))
@@ -212,7 +210,7 @@ class CoordinatorTest {
         //arrange
         final GlobalSequenceTrackingToken token = new GlobalSequenceTrackingToken(0);
 
-        doReturn(completedFuture(SEGMENT_IDS)).when(tokenStore).fetchSegments(eq(PROCESSOR_NAME), any());
+        doReturn(completedFuture(SEGMENTS)).when(tokenStore).fetchSegments(eq(PROCESSOR_NAME), any());
         doReturn(completedFuture(token)).when(tokenStore).fetchToken(eq(PROCESSOR_NAME), anyInt(), any());
         doReturn(SEGMENT_ZERO).when(workPackage).segment();
         doAnswer(runTaskSync()).when(executorService).submit(any(Runnable.class));

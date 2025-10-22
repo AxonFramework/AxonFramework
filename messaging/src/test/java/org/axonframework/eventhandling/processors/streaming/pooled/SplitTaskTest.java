@@ -26,6 +26,7 @@ import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 import org.junit.jupiter.api.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -72,7 +73,7 @@ class SplitTaskTest {
         when(workPackage.abort(null)).thenReturn(emptyCompletedFuture());
         when(tokenStore.fetchToken(eq(PROCESSOR_NAME), eq(SEGMENT_ID), any()))
                 .thenReturn(completedFuture(testTokenToSplit));
-        when(tokenStore.initializeSegment(any(), anyString(), anyInt(), any())).thenReturn(emptyCompletedFuture());
+        when(tokenStore.initializeSegment(any(), anyString(), any(Segment.class), any())).thenReturn(emptyCompletedFuture());
         when(tokenStore.releaseClaim(any(), anyInt(), any())).thenReturn(emptyCompletedFuture());
         workPackages.put(SEGMENT_ID, workPackage);
 
@@ -80,7 +81,7 @@ class SplitTaskTest {
 
         verify(tokenStore).initializeSegment(eq(expectedSplit.getTrackingToken()),
                                              eq(PROCESSOR_NAME),
-                                             eq(expectedSplit.getSegment().getSegmentId()),
+                                             eq(expectedSplit.getSegment()),
                                              any());
         verify(tokenStore).releaseClaim(eq(PROCESSOR_NAME),
                                         eq(expectedOriginal.getSegment().getSegmentId()),
@@ -91,8 +92,7 @@ class SplitTaskTest {
 
     @Test
     void runSplitsSegmentAfterClaiming() throws ExecutionException, InterruptedException {
-        int[] testSegmentIds = {SEGMENT_ID};
-        Segment testSegmentToSplit = Segment.computeSegment(SEGMENT_ID, testSegmentIds);
+        Segment testSegmentToSplit = Segment.ROOT_SEGMENT;
         TrackingToken testTokenToSplit = new GlobalSequenceTrackingToken(0);
 
         TrackerStatus[] expectedTokens = TrackerStatus.split(testSegmentToSplit, testTokenToSplit);
@@ -100,17 +100,17 @@ class SplitTaskTest {
         TrackerStatus expectedSplit = expectedTokens[1];
 
         when(tokenStore.fetchSegments(eq(PROCESSOR_NAME), any()))
-                .thenReturn(completedFuture(testSegmentIds));
+                .thenReturn(completedFuture(List.of(Segment.ROOT_SEGMENT)));
         when(tokenStore.fetchToken(eq(PROCESSOR_NAME), eq(SEGMENT_ID), any()))
                 .thenReturn(completedFuture(testTokenToSplit));
-        when(tokenStore.initializeSegment(any(), anyString(), anyInt(), any())).thenReturn(emptyCompletedFuture());
+        when(tokenStore.initializeSegment(any(), anyString(), any(Segment.class), any())).thenReturn(emptyCompletedFuture());
         when(tokenStore.releaseClaim(any(), anyInt(), any())).thenReturn(emptyCompletedFuture());
 
         testSubject.run();
 
         verify(tokenStore).initializeSegment(eq(expectedSplit.getTrackingToken()),
                                              eq(PROCESSOR_NAME),
-                                             eq(expectedSplit.getSegment().getSegmentId()),
+                                             eq(expectedSplit.getSegment()),
                                              any());
         verify(tokenStore).releaseClaim(eq(PROCESSOR_NAME),
                                         eq(expectedOriginal.getSegment().getSegmentId()),
@@ -122,7 +122,7 @@ class SplitTaskTest {
     @Test
     void runCompletesExceptionallyThroughUnableToClaimTokenException() {
         when(tokenStore.fetchSegments(eq(PROCESSOR_NAME), any()))
-                .thenReturn(completedFuture(new int[]{SEGMENT_ID}));
+                .thenReturn(completedFuture(List.of(Segment.ROOT_SEGMENT)));
         when(tokenStore.fetchToken(eq(PROCESSOR_NAME), eq(SEGMENT_ID), any()))
                 .thenThrow(new UnableToClaimTokenException("some exception"));
 

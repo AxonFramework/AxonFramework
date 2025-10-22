@@ -202,8 +202,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
 
     private String calculateIdentifier() {
         var unitOfWork = unitOfWorkFactory.create();
-        return joinAndUnwrap(unitOfWork.executeWithResult(tokenStore::retrieveStorageIdentifier))
-                .orElse("--unknown--");
+        return joinAndUnwrap(unitOfWork.executeWithResult(tokenStore::retrieveStorageIdentifier));
     }
 
     @Override

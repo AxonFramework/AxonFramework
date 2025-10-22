@@ -19,6 +19,7 @@ package org.axonframework.eventhandling.processors.streaming.token.store.inmemor
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.FutureUtils;
+import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
@@ -29,9 +30,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -51,7 +52,7 @@ public class InMemoryTokenStore implements TokenStore {
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
     private static final GlobalSequenceTrackingToken NULL_TOKEN = new GlobalSequenceTrackingToken(-1);
 
-    private final Map<ProcessAndSegment, TrackingToken> tokens = new ConcurrentHashMap<>();
+    private final Map<ProcessAndSegmentId, SegmentAndToken> tokens = new ConcurrentHashMap<>();
     private final String identifier = UUID.randomUUID().toString();
 
     /**
@@ -70,22 +71,27 @@ public class InMemoryTokenStore implements TokenStore {
 
     @Nonnull
     @Override
-    public CompletableFuture<Void> initializeTokenSegments(
+    public CompletableFuture<List<Segment>> initializeTokenSegments(
             @Nonnull String processorName,
             int segmentCount,
             @Nullable TrackingToken initialToken,
             @Nullable ProcessingContext context
     ) throws UnableToClaimTokenException {
         return fetchSegments(processorName, context)
-                .thenAccept(segments -> {
-                    if (segments.length > 0) {
+                .thenApply(segments -> {
+                    if (segments.size() > 0) {
                         throw new UnableToClaimTokenException(
                                 "Could not initialize segments. Some segments were already present.");
                     }
-                    for (int segment = 0; segment < segmentCount; segment++) {
-                        tokens.put(new ProcessAndSegment(processorName, segment),
-                                   getOrDefault(initialToken, NULL_TOKEN));
+
+                    List<Segment> newSegments = Segment.splitBalanced(Segment.ROOT_SEGMENT, segmentCount - 1);
+
+                    for (Segment segment : newSegments) {
+                        tokens.put(new ProcessAndSegmentId(processorName, segment.getSegmentId()),
+                                   new SegmentAndToken(segment, getOrDefault(initialToken, NULL_TOKEN)));
                     }
+
+                    return newSegments;
                 });
     }
 
@@ -93,31 +99,39 @@ public class InMemoryTokenStore implements TokenStore {
     @Override
     public CompletableFuture<Void> storeToken(@Nullable TrackingToken token,
                                               @Nonnull String processorName,
-                                              int segment,
+                                              int segmentId,
                                               @Nullable ProcessingContext context) {
         Objects.requireNonNull(context, "processingContext may not be null for an InMemoryTokenStore");
         if (context.isStarted()) {
-            context.runOnAfterCommit(c -> tokens.put(new ProcessAndSegment(processorName, segment),
-                                                     getOrDefault(token, NULL_TOKEN)));
+            context.runOnAfterCommit(c -> updateToken(token, processorName, segmentId));
         } else {
-            tokens.put(new ProcessAndSegment(processorName, segment), getOrDefault(token, NULL_TOKEN));
+            updateToken(token, processorName, segmentId);
         }
         return FutureUtils.emptyCompletedFuture();
+    }
+
+    private void updateToken(@Nullable TrackingToken token, @Nonnull String processorName, int segmentId) {
+        ProcessAndSegmentId key = new ProcessAndSegmentId(processorName, segmentId);
+        SegmentAndToken old = tokens.computeIfPresent(key, (ps, st) -> new SegmentAndToken(st.segment, token));
+
+        if (old == null) {
+            throw new UnableToClaimTokenException("No such token for processor '%s' and segment %d".formatted(processorName, segmentId));
+        }
     }
 
     @Nonnull
     @Override
     public CompletableFuture<TrackingToken> fetchToken(@Nonnull String processorName,
-                                                       int segment,
+                                                       int segmentId,
                                                        @Nullable ProcessingContext context) {
-        TrackingToken trackingToken = tokens.get(new ProcessAndSegment(processorName, segment));
-        if (trackingToken == null) {
+        SegmentAndToken st = tokens.get(new ProcessAndSegmentId(processorName, segmentId));
+        if (st == null) {
             throw new UnableToClaimTokenException(
-                    "No token was initialized for segment " + segment + " for processor " + processorName);
-        } else if (NULL_TOKEN == trackingToken) {
+                    "No token was initialized for segment " + segmentId + " for processor " + processorName);
+        } else if (NULL_TOKEN == st.trackingToken) {
             return FutureUtils.emptyCompletedFuture();
         }
-        return completedFuture(trackingToken);
+        return completedFuture(st.trackingToken);
     }
 
     @Nonnull
@@ -136,7 +150,7 @@ public class InMemoryTokenStore implements TokenStore {
             int segment,
             @Nullable ProcessingContext context
     ) throws UnableToClaimTokenException {
-        tokens.remove(new ProcessAndSegment(processorName, segment));
+        tokens.remove(new ProcessAndSegmentId(processorName, segment));
         return FutureUtils.emptyCompletedFuture();
     }
 
@@ -145,11 +159,11 @@ public class InMemoryTokenStore implements TokenStore {
     public CompletableFuture<Void> initializeSegment(
             @Nullable TrackingToken token,
             @Nonnull String processorName,
-            int segment,
+            @Nonnull Segment segment,
             @Nullable ProcessingContext context
     ) throws UnableToInitializeTokenException {
-        TrackingToken previous = tokens.putIfAbsent(new ProcessAndSegment(processorName, segment),
-                                                    token == null ? NULL_TOKEN : token);
+        SegmentAndToken previous = tokens.putIfAbsent(new ProcessAndSegmentId(processorName, segment.getSegmentId()),
+                                                      new SegmentAndToken(segment, token == null ? NULL_TOKEN : token));
         if (previous != null) {
             throw new UnableToInitializeTokenException("Token was already present");
         }
@@ -158,52 +172,35 @@ public class InMemoryTokenStore implements TokenStore {
 
     @Nonnull
     @Override
-    public CompletableFuture<int[]> fetchSegments(@Nonnull String processorName,
-                                                  @Nullable ProcessingContext context) {
-        return completedFuture(tokens.keySet().stream()
-                                     .filter(ps -> ps.processorName.equals(processorName))
-                                     .map(ProcessAndSegment::getSegment)
-                                     .distinct()
-                                     .mapToInt(Number::intValue)
-                                     .sorted().toArray());
+    public CompletableFuture<Segment> fetchSegment(@Nonnull String processorName, int segmentId, @Nullable ProcessingContext context) {
+        SegmentAndToken st = tokens.get(new ProcessAndSegmentId(processorName, segmentId));
+
+        return completedFuture(st == null ? null : st.segment);
     }
 
     @Nonnull
     @Override
-    public CompletableFuture<Optional<String>> retrieveStorageIdentifier(@Nullable ProcessingContext context) {
-        return completedFuture(Optional.of(identifier));
+    public CompletableFuture<List<Segment>> fetchSegments(@Nonnull String processorName,
+                                                          @Nullable ProcessingContext context) {
+        return completedFuture(tokens.entrySet().stream()
+                                     .filter(e -> e.getKey().processorName.equals(processorName))
+                                     .map(e -> e.getValue().segment)
+                                     .distinct()
+                                     .toList()
+        );
     }
 
-    private static class ProcessAndSegment {
-
-        private final String processorName;
-
-        private final int segment;
-
-        public ProcessAndSegment(String processorName, int segment) {
-            this.processorName = processorName;
-            this.segment = segment;
-        }
-
-        public int getSegment() {
-            return segment;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            ProcessAndSegment that = (ProcessAndSegment) o;
-            return segment == that.segment && Objects.equals(processorName, that.processorName);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(processorName, segment);
-        }
+    @Override
+    public CompletableFuture<List<Segment>> fetchAvailableSegments(String processorName, ProcessingContext context) {
+        return fetchSegments(processorName, context);
     }
+
+    @Nonnull
+    @Override
+    public CompletableFuture<String> retrieveStorageIdentifier(@Nullable ProcessingContext context) {
+        return completedFuture(identifier);
+    }
+
+    private record SegmentAndToken(Segment segment, TrackingToken trackingToken) {}
+    private record ProcessAndSegmentId(String processorName, int segmentId) {}
 }
