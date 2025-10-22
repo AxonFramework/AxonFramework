@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Test class validating the {@link AnnotationRoutingStrategy}.
  *
  * @author Allard Buijze
+ * @author Simon Zambrovski
  */
 class AnnotationRoutingStrategyTest {
 
@@ -65,45 +66,86 @@ class AnnotationRoutingStrategyTest {
     }
 
     @Test
-    void resolvesRoutingKeyFromAnnotationDoesNotInvokeFallbackStrategy() {
-        AnnotationRoutingStrategy testSubjectWithMockedFallbackStrategy =
-                new AnnotationRoutingStrategy();
-
-        CommandMessage testCommand = new GenericCommandMessage(
-                new MessageType(SomeFieldAnnotatedCommand.class), new SomeFieldAnnotatedCommand()
-        );
-
-        assertEquals("Target", testSubjectWithMockedFallbackStrategy.getRoutingKey(testCommand));
-    }
-
-    @Test
     void resolvesRoutingKeyFromFallbackStrategy() {
-        AnnotationRoutingStrategy testSubjectWithMockedFallbackStrategy =
-                new AnnotationRoutingStrategy();
-
         CommandMessage testCommand = new GenericCommandMessage(
                 new MessageType(SomeCommandWithoutTheRoutingAnnotation.class),
                 new SomeCommandWithoutTheRoutingAnnotation("target")
         );
 
-        assertNull(testSubjectWithMockedFallbackStrategy.getRoutingKey(testCommand));
+        assertNull(testSubject.getRoutingKey(testCommand));
     }
 
+
+    @Test
+    void getRoutingKeyFromFieldLegacy() {
+        CommandMessage testCommand = new GenericCommandMessage(
+                new MessageType(SomeFieldAnnotatedCommandLegacy.class), new SomeFieldAnnotatedCommandLegacy()
+        );
+        assertEquals("Target", testSubject.getRoutingKey(testCommand));
+
+        CommandMessage otherTestCommand = new GenericCommandMessage(
+                new MessageType(SomeOtherFieldAnnotatedCommandLegacy.class), new SomeOtherFieldAnnotatedCommandLegacy()
+        );
+        assertEquals("Target", testSubject.getRoutingKey(otherTestCommand));
+    }
+
+    @Test
+    void getRoutingKeyFromMethodLegacy() {
+        CommandMessage testCommand = new GenericCommandMessage(
+                new MessageType(SomeMethodAnnotatedCommandLegacy.class), new SomeMethodAnnotatedCommandLegacy()
+        );
+        assertEquals("Target", testSubject.getRoutingKey(testCommand));
+
+        CommandMessage otherTestCommand = new GenericCommandMessage(
+                new MessageType(SomeOtherMethodAnnotatedCommandLegacy.class), new SomeOtherMethodAnnotatedCommandLegacy()
+        );
+
+        assertEquals("Target", testSubject.getRoutingKey(otherTestCommand));
+    }
+
+
+    @Command(routingKey = "target")
     public static class SomeFieldAnnotatedCommand {
 
         @SuppressWarnings("unused")
-        @RoutingKey
         private final String target = "Target";
     }
 
+    @Command
+    public static class SomeFieldAnnotatedCommandLegacy {
+
+        @RoutingKey
+        @SuppressWarnings("unused")
+        private final String target = "Target";
+    }
+
+    @Command(routingKey = "target")
     public static class SomeOtherFieldAnnotatedCommand {
 
         @SuppressWarnings("unused")
-        @RoutingKey
         private final SomeObject target = new SomeObject("Target");
     }
 
+    public static class SomeOtherFieldAnnotatedCommandLegacy {
+
+        @RoutingKey
+        @SuppressWarnings("unused")
+        private final SomeObject target = new SomeObject("Target");
+    }
+
+    @Command(routingKey = "getTarget")
     public static class SomeMethodAnnotatedCommand {
+
+        @SuppressWarnings("FieldCanBeLocal")
+        private final String target = "Target";
+
+        public String getTarget() {
+            return target;
+        }
+    }
+
+    @Command
+    public static class SomeMethodAnnotatedCommandLegacy {
 
         @SuppressWarnings("FieldCanBeLocal")
         private final String target = "Target";
@@ -114,7 +156,17 @@ class AnnotationRoutingStrategyTest {
         }
     }
 
+    @Command(routingKey = "getTarget")
     public static class SomeOtherMethodAnnotatedCommand {
+
+        private final SomeObject target = new SomeObject("Target");
+
+        public SomeObject getTarget() {
+            return target;
+        }
+    }
+
+    public static class SomeOtherMethodAnnotatedCommandLegacy {
 
         private final SomeObject target = new SomeObject("Target");
 
@@ -132,11 +184,11 @@ class AnnotationRoutingStrategyTest {
         }
     }
 
+    @Command(routingKey = "getTarget")
     public static class SomeNullMethodAnnotatedCommand {
 
         private final String target = null;
 
-        @RoutingKey
         public String getTarget() {
             //noinspection ConstantConditions
             return target;
