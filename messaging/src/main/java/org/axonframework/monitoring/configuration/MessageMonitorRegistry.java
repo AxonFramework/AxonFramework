@@ -28,6 +28,7 @@ import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.monitoring.MultiMessageMonitor;
 import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 
 /**
  * A registry of {@link MessageMonitor MessageMonitors}, acting as a collection of
@@ -94,6 +95,18 @@ public interface MessageMonitorRegistry extends DescribableComponent {
     MessageMonitorRegistry registerQueryMonitor(final @Nonnull ComponentBuilder<MessageMonitor<? super QueryMessage>> monitorBuilder);
 
     /**
+     * Registers a {@link MessageMonitor} specifically for {@link SubscriptionQueryUpdateMessage} types using the
+     * provided {@link ComponentBuilder}. The registered monitor will be utilized for monitoring subscription query
+     * update message processing and is added to the registry.
+     *
+     * @param monitorBuilder the {@link ComponentBuilder} responsible for creating the {@link MessageMonitor}
+     *                       for {@link SubscriptionQueryUpdateMessage} types
+     * @return the updated MessageMonitorRegistry instance, allowing for fluent configuration
+     */
+    @Nonnull
+    MessageMonitorRegistry registerSubscriptionQueryUpdateMonitor(final @Nonnull ComponentBuilder<MessageMonitor<? super SubscriptionQueryUpdateMessage>> monitorBuilder);
+
+    /**
      * Retrieves a {@link MessageMonitor} dedicated for monitoring {@link CommandMessage} processing.
      *
      * @param config the {@link Configuration} instance used to create the {@link MessageMonitor} instances
@@ -116,4 +129,13 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      * @return {@link MultiMessageMonitor} composed of all registered {@link MessageMonitor}s, or {@link NoOpMessageMonitor}.
      */
     MessageMonitor<? super QueryMessage> queryMonitor(@Nonnull Configuration config);
+
+    /**
+     * Retrieves a {@link MessageMonitor} for monitoring the processing of {@link SubscriptionQueryUpdateMessage} instances.
+     *
+     * @param config the {@link Configuration} used to create or retrieve the {@link MessageMonitor} for
+     *               {@link SubscriptionQueryUpdateMessage} types
+     * @return {@link MultiMessageMonitor} composed of all registered {@link MessageMonitor}s, or {@link NoOpMessageMonitor}.
+     */
+    MessageMonitor<? super SubscriptionQueryUpdateMessage> subscriptionQueryUpdateMonitor(@Nonnull Configuration config);
 }

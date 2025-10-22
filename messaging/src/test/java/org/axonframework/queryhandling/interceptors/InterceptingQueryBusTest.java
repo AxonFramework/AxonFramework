@@ -445,7 +445,7 @@ class InterceptingQueryBusTest {
             );
 
             // then
-            assertDoesNotThrow(() -> result.join());
+            assertDoesNotThrow(result::join);
             assertThat(interceptor1Invocations.get()).isEqualTo(1);
             assertThat(interceptor2Invocations.get()).isEqualTo(1);
         }
@@ -571,6 +571,7 @@ class InterceptingQueryBusTest {
                                                     @Nonnull MessageDispatchInterceptorChain<M> interceptorChain) {
             // STEP 1: Modify the REQUEST message before passing to next interceptor/handler
             // This proves interceptors can add context (correlation IDs, auth tokens, etc.) to requests
+            @SuppressWarnings("unchecked")
             var intercepted = (M) message.andMetadata(Map.of(key, buildValue(message)));
 
             return interceptorChain
@@ -586,6 +587,7 @@ class InterceptingQueryBusTest {
                                                   @Nonnull ProcessingContext context,
                                                   @Nonnull MessageHandlerInterceptorChain<M> interceptorChain) {
             // STEP 1: Modify the REQUEST message before passing to handler
+            @SuppressWarnings("unchecked")
             var intercepted = (M) message.andMetadata(Map.of(key, buildValue(message)));
 
             return interceptorChain

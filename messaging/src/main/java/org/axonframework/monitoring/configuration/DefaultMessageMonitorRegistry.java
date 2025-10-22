@@ -32,6 +32,7 @@ import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.MultiMessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -62,10 +63,13 @@ public class DefaultMessageMonitorRegistry implements MessageMonitorRegistry {
     };
     private static final TypeReference<MessageMonitor<? super QueryMessage>> QUERY_MONITOR_TYPE_REF = new TypeReference<>() {
     };
+    private static final TypeReference<MessageMonitor<? super SubscriptionQueryUpdateMessage>> SUBSCRIPTION_QUERY_UPDATE_MONITOR_TYPE_REF = new TypeReference<>() {
+    };
 
     private final List<ComponentDefinition<MessageMonitor<? super CommandMessage>>> commandMonitorDefinitions = new ArrayList<>();
     private final List<ComponentDefinition<MessageMonitor<? super EventMessage>>> eventMonitorDefinitions = new ArrayList<>();
     private final List<ComponentDefinition<MessageMonitor<? super QueryMessage>>> queryMonitorDefinitions = new ArrayList<>();
+    private final List<ComponentDefinition<MessageMonitor<? super SubscriptionQueryUpdateMessage>>> subscriptionQueryUpdateMonitorDefinitions = new ArrayList<>();
 
     @Nonnull
     @Override
@@ -75,6 +79,7 @@ public class DefaultMessageMonitorRegistry implements MessageMonitorRegistry {
         registerCommandMonitor(genericMonitorDef::doResolve);
         registerEventMonitor(genericMonitorDef::doResolve);
         registerQueryMonitor(genericMonitorDef::doResolve);
+        registerSubscriptionQueryUpdateMonitor(genericMonitorDef::doResolve);
 
         return this;
     }
@@ -109,6 +114,16 @@ public class DefaultMessageMonitorRegistry implements MessageMonitorRegistry {
         return this;
     }
 
+    @Nonnull
+    @Override
+    public MessageMonitorRegistry registerSubscriptionQueryUpdateMonitor(
+            @Nonnull ComponentBuilder<MessageMonitor<? super SubscriptionQueryUpdateMessage>> monitorBuilder) {
+        this.subscriptionQueryUpdateMonitorDefinitions.add(ComponentDefinition.ofType(SUBSCRIPTION_QUERY_UPDATE_MONITOR_TYPE_REF)
+                                                                               .withBuilder(monitorBuilder)
+        );
+        return this;
+    }
+
     @Override
     public MessageMonitor<? super CommandMessage> commandMonitor(final @Nonnull Configuration config) {
         return resolveMonitor(commandMonitorDefinitions, config);
@@ -125,10 +140,16 @@ public class DefaultMessageMonitorRegistry implements MessageMonitorRegistry {
     }
 
     @Override
+    public MessageMonitor<? super SubscriptionQueryUpdateMessage> subscriptionQueryUpdateMonitor(@Nonnull Configuration config) {
+        return resolveMonitor(subscriptionQueryUpdateMonitorDefinitions, config);
+    }
+
+    @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("commandMonitors", commandMonitorDefinitions);
         descriptor.describeProperty("eventMonitors", eventMonitorDefinitions);
         descriptor.describeProperty("queryMonitors", queryMonitorDefinitions);
+        descriptor.describeProperty("subscriptionQueryUpdateMonitors", subscriptionQueryUpdateMonitorDefinitions);
     }
 
     // Private class used to lazily resolve the generic Message monitor once and reuse it across registrations.

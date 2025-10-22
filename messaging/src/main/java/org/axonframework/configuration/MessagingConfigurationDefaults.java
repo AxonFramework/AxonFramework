@@ -62,6 +62,7 @@ import org.axonframework.monitoring.interceptors.MonitoringCommandHandlerInterce
 import org.axonframework.monitoring.interceptors.MonitoringEventDispatchInterceptor;
 import org.axonframework.monitoring.interceptors.MonitoringEventHandlerInterceptor;
 import org.axonframework.monitoring.interceptors.MonitoringQueryHandlerInterceptor;
+import org.axonframework.monitoring.interceptors.MonitoringSubscriptionQueryUpdateDispatchInterceptor;
 import org.axonframework.queryhandling.DefaultQueryGateway;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryGateway;
@@ -337,8 +338,14 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                                       .map(it -> (UnaryOperator<DispatchInterceptorRegistry>) r -> r.registerEventInterceptor(
                                               c -> it))
                                       .orElse(UnaryOperator.identity());
+        var subscriptionQueryUpdateDispatcher = Optional.of(messageMonitorRegistry.subscriptionQueryUpdateMonitor(config))
+                                                        .filter(it -> NoOpMessageMonitor.INSTANCE != it)
+                                                        .map(MonitoringSubscriptionQueryUpdateDispatchInterceptor::new)
+                                                        .map(it -> (UnaryOperator<DispatchInterceptorRegistry>) r -> r.registerSubscriptionQueryUpdateInterceptor(
+                                                                c -> it))
+                                                        .orElse(UnaryOperator.identity());
 
-        return eventDispatcher.apply(dispatchInterceptorRegistry);
+        return eventDispatcher.andThen(subscriptionQueryUpdateDispatcher).apply(dispatchInterceptorRegistry);
     }
 
     private static HandlerInterceptorRegistry registerMonitoringHandlerInterceptors(
