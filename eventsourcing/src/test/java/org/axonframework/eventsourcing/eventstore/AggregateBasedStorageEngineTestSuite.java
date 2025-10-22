@@ -363,7 +363,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
         );
 
         // when...
-        SourcingCondition testCondition = SourcingCondition.conditionFor(1, TEST_AGGREGATE_CRITERIA);
+        SourcingCondition testCondition = SourcingCondition.conditionFor(new AggregateSequenceNumberPosition(1), TEST_AGGREGATE_CRITERIA);
         MessageStream<EventMessage> result = testSubject.source(testCondition, processingContext());
         // then...
         StepVerifier.create(FluxUtils.of(result))
@@ -393,7 +393,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
         // when...
         MessageStream<EventMessage> source;
         SourcingCondition testCondition =
-                SourcingCondition.conditionFor(1, TEST_AGGREGATE_CRITERIA.or(OTHER_AGGREGATE_CRITERIA));
+                SourcingCondition.conditionFor(new AggregateSequenceNumberPosition(1), TEST_AGGREGATE_CRITERIA.or(OTHER_AGGREGATE_CRITERIA));
         try {
             source = testSubject.source(testCondition, processingContext());
         } catch (IllegalArgumentException e) {
@@ -419,7 +419,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
         ConsistencyMarker expectedMarker = testAggregateMarker.upperBound(otherAggregateMarker);
         // when...
         SourcingCondition testCondition =
-                SourcingCondition.conditionFor(0, TEST_AGGREGATE_CRITERIA.or(OTHER_AGGREGATE_CRITERIA));
+                SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA.or(OTHER_AGGREGATE_CRITERIA));
         MessageStream<EventMessage> result = testSubject.source(testCondition, processingContext());
         // then...
         StepVerifier.create(FluxUtils.of(result))

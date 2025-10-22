@@ -109,6 +109,7 @@
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
         <javassist.version>3.30.2-GA</javassist.version>
         <eaio-uuid.version>3.2</eaio-uuid.version>
+        <equalsverifier.version>4.2</equalsverifier.version>
         <!-- Reactive -->
         <projectreactor.version>3.7.11</projectreactor.version>
         <reactive.streams.spec.version>1.0.4</reactive.streams.spec.version>
@@ -356,6 +357,11 @@
                 <groupId>com.eaio.uuid</groupId>
                 <artifactId>uuid</artifactId>
                 <version>${eaio-uuid.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>nl.jqno.equalsverifier</groupId>
+                <artifactId>equalsverifier</artifactId>
+                <version>${equalsverifier.version}</version>
             </dependency>
             <!-- Reactive -->
             <dependency>
