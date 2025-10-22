@@ -19,6 +19,7 @@ package org.axonframework.queryhandling.distributed;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.messaging.DelayedMessageStream;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.QueryBus;
@@ -29,7 +30,6 @@ import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.util.PriorityRunnable;
-import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,7 +43,7 @@ import java.util.function.Supplier;
 
 /**
  * Implementation of a {@code QueryBus} that is aware of multiple instances of a {@code QueryBus} working together to
- * spread load.
+ * spread the load.
  * <p>
  * Each "physical" {@code QueryBus} instance is considered a "segment" of a conceptual distributed {@code QueryBus}.
  * <p>
@@ -51,7 +51,7 @@ import java.util.function.Supplier;
  * different segments of the {@code QueryBus}. Depending on the implementation used, each segment may run in a different
  * JVM.
  *
- * @author Steven van Beelen
+ * @author Steven van Beelen, Jan Galinski
  * @since 5.0.0
  */
 public class DistributedQueryBus implements QueryBus {
@@ -63,6 +63,7 @@ public class DistributedQueryBus implements QueryBus {
 
     private final QueryBus localSegment;
     private final QueryBusConnector connector;
+    // TODO: still needed when everything is a MessageStream
     private final ExecutorService queryingExecutor;
     private final ExecutorService responseHandlingExecutor;
 
@@ -109,51 +110,32 @@ public class DistributedQueryBus implements QueryBus {
 
     @Nonnull
     @Override
-    public Publisher<QueryResponseMessage> streamingQuery(@Nonnull QueryMessage query,
-                                                          @Nullable ProcessingContext context) {
-        return connector.streamingQuery(query, context);
-    }
-
-    @Nonnull
-    @Override
     public MessageStream<QueryResponseMessage> subscriptionQuery(@Nonnull SubscriptionQueryMessage query,
                                                                  @Nullable ProcessingContext context,
                                                                  int updateBufferSize) {
-        return null;
+        return connector.subscriptionQuery(query, context, updateBufferSize);
     }
 
     @Nonnull
     @Override
     public MessageStream<SubscriptionQueryUpdateMessage> subscribeToUpdates(@Nonnull SubscriptionQueryMessage query,
                                                                             int updateBufferSize) {
-        return null;
+        return connector.subscribeToUpdates(query, updateBufferSize);
     }
-
-//   FIXME  @Nonnull
-//    public SubscriptionQueryResponseMessages subscriptionQuery(@Nonnull SubscriptionQueryMessage query,
-//                                                               @Nullable ProcessingContext context,
-//                                                               int updateBufferSize) {
-//        return null;
-//    }
-//
-//  FIXME  @Nonnull
-//    public UpdateHandler subscribeToUpdates(@Nonnull SubscriptionQueryMessage query, int updateBufferSize) {
-//        return null;
-//    }
 
     @Nonnull
     @Override
     public CompletableFuture<Void> emitUpdate(@Nonnull Predicate<SubscriptionQueryMessage> filter,
                                               @Nonnull Supplier<SubscriptionQueryUpdateMessage> updateSupplier,
                                               @Nullable ProcessingContext context) {
-        return null;
+        return connector.emitUpdate(filter, updateSupplier, context);
     }
 
     @Nonnull
     @Override
     public CompletableFuture<Void> completeSubscriptions(@Nonnull Predicate<SubscriptionQueryMessage> filter,
                                                          @Nullable ProcessingContext context) {
-        return null;
+        return connector.completeSubscriptions(filter, context);
     }
 
     @Nonnull
@@ -163,7 +145,7 @@ public class DistributedQueryBus implements QueryBus {
             @Nonnull Throwable cause,
             @Nullable ProcessingContext context
     ) {
-        return null;
+        return connector.completeSubscriptionsExceptionally(filter, cause, context);
     }
 
     @Override
@@ -177,58 +159,24 @@ public class DistributedQueryBus implements QueryBus {
         private static final AtomicLong TASK_SEQUENCE = new AtomicLong(Long.MIN_VALUE);
 
         @Override
-        public void query(@Nonnull QueryMessage query,
-                          @Nonnull QueryBusConnector.ResultCallback callback) {
-            int priority = 0; //query.priority().orElse(0);
+        public MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage query) {
+            int priority = query.priority().orElse(0);
             if (logger.isDebugEnabled()) {
                 logger.debug("Received query [{}] with response [{}] for processing with priority [{}].",
                              query.type(), query.responseType(), priority);
             }
             long sequence = TASK_SEQUENCE.incrementAndGet();
+            CompletableFuture<MessageStream<QueryResponseMessage>> localResult = new CompletableFuture<>();
             responseHandlingExecutor.execute(
-                    new PriorityRunnable(() -> doHandleQuery(query, callback), priority, sequence)
-            );
-        }
+                    new PriorityRunnable(() -> {
+                        try {
+                            localResult.complete(localSegment.query(query, null));
+                        } catch (Exception e) {
+                            localResult.completeExceptionally(e);
+                        }
+                    }, priority, sequence));
 
-        @Override
-        public Publisher<QueryResponseMessage> streamingQuery(@Nonnull QueryMessage query) {
-            return null;
-        }
-
-        private void doHandleQuery(QueryMessage query,
-                                   QueryBusConnector.ResultCallback callback) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Processing incoming query [{}] with response [{}] with priority [{}]",
-                             query.type(), query.responseType(), 0);
-            }
-
-            localSegment.query(query, null);
-//            localSegment.query(query, null).whenComplete((resultMessage, e) -> {
-//                try {
-//                    if (e == null) {
-//                        handleSuccess(query, callback, resultMessage);
-//                    } else {
-//                        handleError(query, callback, e);
-//                    }
-//                } catch (Throwable ex) {
-//                    logger.error("Error handling response of command [{}]", query.type(), ex);
-//                    handleError(query, callback, ex);
-//                }
-//            });
-        }
-
-        private void handleError(QueryMessage query,
-                                 QueryBusConnector.ResultCallback callback,
-                                 Throwable e) {
-            logger.error("Error processing incoming command [{}]", query.type(), e);
-            callback.onError(e);
-        }
-
-        private void handleSuccess(QueryMessage query,
-                                   QueryBusConnector.ResultCallback callback,
-                                   QueryResponseMessage resultMessage) {
-            logger.debug("Successfully processed command [{}] with result [{}]", query.type(), resultMessage);
-            callback.onSuccess(resultMessage);
+            return DelayedMessageStream.create(localResult);
         }
     }
 }

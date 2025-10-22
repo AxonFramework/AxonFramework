@@ -28,6 +28,7 @@ import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.QueryBus;
@@ -37,9 +38,7 @@ import org.axonframework.queryhandling.annotations.AnnotatedQueryHandlingCompone
 import org.axonframework.queryhandling.annotations.QueryHandler;
 import org.axonframework.queryhandling.tracing.DefaultQueryBusSpanFactory;
 import org.axonframework.queryhandling.tracing.QueryBusSpanFactory;
-import org.axonframework.serialization.PassThroughConverter;
-import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.json.JacksonSerializer;
+import org.axonframework.serialization.json.JacksonConverter;
 import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import reactor.core.publisher.Flux;
@@ -62,18 +61,24 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Integration tests of {@link QueryProcessingTask}.
  */
-@Disabled("TODO #3488 - Axon Server Query Bus replacement")
+//@Disabled("TODO #3488 - Axon Server Query Bus replacement")
 class QueryProcessingTaskIntegrationTest {
+
+    // FIXME: remove - legacy behavior
+    //                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
+//                               .toBuilder()
+//                               .addProcessingInstructions(asSupportsStreaming())
+//                               .build();
+
 
     private static final String CLIENT_ID = "clientId";
     private static final String COMPONENT_NAME = "componentName";
     private static final int DIRECT_QUERY_NUMBER_OF_RESULTS = 1;
     private QueryBus localSegment;
     private CachingReplyChannel<QueryResponse> responseHandler;
-    // TODO #3488 - Use QueryConverter (that is styled after CommandConverter) to convert the QueryRequest to a QueryMessage
-//    private QuerySerializer querySerializer;
     private TestSpanFactory spanFactory;
     private QueryBusSpanFactory queryBusSpanFactory;
+    private final JacksonConverter jacksonConverter = new JacksonConverter();
 
     private QueryHandlingComponent1 queryHandlingComponent1;
 
@@ -85,15 +90,14 @@ class QueryProcessingTaskIntegrationTest {
                                                         .build();
         localSegment = QueryBusTestUtils.aQueryBus();
         responseHandler = new CachingReplyChannel<>();
-        Serializer serializer = JacksonSerializer.defaultSerializer();
         AxonServerConfiguration config = AxonServerConfiguration.builder()
                                                                 .clientId(CLIENT_ID)
                                                                 .componentName(COMPONENT_NAME)
                                                                 .build();
         queryHandlingComponent1 = new QueryHandlingComponent1();
-        MessageConverter converter = PassThroughConverter.MESSAGE_INSTANCE;
+        MessageConverter converter = new DelegatingMessageConverter(jacksonConverter);
         localSegment.subscribe(new AnnotatedQueryHandlingComponent<>(queryHandlingComponent1, converter));
-        localSegment.subscribe(new AnnotatedQueryHandlingComponent<>(new QueryHandlingComponent2(), converter));
+        //localSegment.subscribe(new AnnotatedQueryHandlingComponent<>(new QueryHandlingComponent2(), converter));
     }
 
     @Test
@@ -102,8 +106,7 @@ class QueryProcessingTaskIntegrationTest {
                 new GenericQueryMessage(new MessageType(FluxQuery.class),
                                         new FluxQuery(1000),
                                         new MessageType(String.class));
-        QueryRequest request = null;
-//                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1);
+        QueryRequest request = QueryConverter.convertQueryMessage(queryMessage, CLIENT_ID, COMPONENT_NAME, false);
 
         QueryProcessingTask task = new QueryProcessingTask(localSegment,
                                                            request,
@@ -124,8 +127,7 @@ class QueryProcessingTaskIntegrationTest {
                 new GenericQueryMessage(new MessageType(FluxQuery.class),
                                         new FluxQuery(1000),
                                         new MessageType(String.class));
-        QueryRequest request = null;
-//                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1);
+        QueryRequest request = QueryConverter.convertQueryMessage(queryMessage, CLIENT_ID, COMPONENT_NAME, false);
 
         QueryProcessingTask task = new QueryProcessingTask(localSegment,
                                                            request,
@@ -143,8 +145,7 @@ class QueryProcessingTaskIntegrationTest {
                 new GenericQueryMessage(new MessageType(FluxQuery.class),
                                         new FluxQuery(1000),
                                         new MessageType(String.class));
-        QueryRequest request = null;
-//                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1);
+        QueryRequest request = QueryConverter.convertQueryMessage(queryMessage, CLIENT_ID, COMPONENT_NAME, false);
 
         QueryProcessingTask task = new QueryProcessingTask(localSegment,
                                                            request,
@@ -165,8 +166,7 @@ class QueryProcessingTaskIntegrationTest {
                 new GenericQueryMessage(new MessageType(FluxQuery.class),
                                         new FluxQuery(1000),
                                         new MessageType(String.class));
-        QueryRequest request = null;
-//                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1);
+        QueryRequest request = QueryConverter.convertQueryMessage(queryMessage, CLIENT_ID, COMPONENT_NAME, false);
 
         QueryProcessingTask task = new QueryProcessingTask(localSegment,
                                                            request,
@@ -186,11 +186,7 @@ class QueryProcessingTaskIntegrationTest {
                 new GenericQueryMessage(new MessageType(FluxQuery.class),
                                         new FluxQuery(1000),
                                         new MessageType(String.class));
-        QueryRequest request = null;
-//                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
-//                               .toBuilder()
-//                               .addProcessingInstructions(asSupportsStreaming())
-//                               .build();
+        QueryRequest request = QueryConverter.convertQueryMessage(queryMessage, CLIENT_ID, COMPONENT_NAME, true);
 
         QueryProcessingTask task = new QueryProcessingTask(localSegment,
                                                            request,
@@ -467,10 +463,12 @@ class QueryProcessingTaskIntegrationTest {
 
     @Test
     void streamingFluxQueryWhenCancelMessageComesFirst() {
-        QueryMessage queryMessage =
-                new GenericQueryMessage(new MessageType(FluxQuery.class),
-                                        new FluxQuery(1000),
-                                        new MessageType(String.class));
+        QueryMessage queryMessage = new GenericQueryMessage(
+                new MessageType(FluxQuery.class),
+                new FluxQuery(1000),
+                new MessageType(String.class)
+        ).withConvertedPayload(byte[].class, jacksonConverter);
+
         QueryRequest request = null;
 //                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
 //                               .toBuilder()
@@ -701,8 +699,8 @@ class QueryProcessingTaskIntegrationTest {
     void responsePendingReturnsTrueForUncompletedTask() {
         QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType(FluxQuery.class), new FluxQuery(1000), new MessageType(String.class)
-        );
-        QueryRequest testRequest = null;
+        ).withConvertedPayload(byte[].class, jacksonConverter);
+        QueryRequest testRequest = QueryConverter.convertQueryMessage(testQuery, CLIENT_ID, COMPONENT_NAME, false);
 //                querySerializer.serializeRequest(testQuery, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1);
         QueryProcessingTask testSubject = new QueryProcessingTask(localSegment,
                                                                   testRequest,

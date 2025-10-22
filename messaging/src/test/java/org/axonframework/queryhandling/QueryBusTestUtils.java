@@ -23,7 +23,7 @@ import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
  *
  * @author Steven van Beelen
  */
-public class QueryBusTestUtils {
+public final class QueryBusTestUtils {
 
     /**
      * Creates a new instance of {@link SimpleQueryBus} configured with a simple

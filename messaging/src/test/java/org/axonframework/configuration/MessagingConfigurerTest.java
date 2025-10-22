@@ -395,7 +395,7 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
                                    .queryHandlers(handlerPhase -> handlerPhase.queryHandler(
                                            new QualifiedName(String.class),
                                            new QualifiedName(String.class),
-                                           (command, context) -> MessageStream.empty().cast()
+                                           (query, context) -> MessageStream.empty().cast()
                                    ));
 
         Configuration configuration =

@@ -17,16 +17,12 @@
 package org.axonframework.queryhandling.distributed;
 
 import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.QueryHandlerName;
-import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.queryhandling.QueryResponseMessage;
-import org.reactivestreams.Publisher;
 
 import java.util.concurrent.CompletableFuture;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * A {@link QueryBusConnector} implementation that wraps another {@link QueryBusConnector} and delegates all calls to
@@ -40,17 +36,25 @@ import java.util.concurrent.CompletableFuture;
  */
 public abstract class DelegatingQueryBusConnector implements QueryBusConnector {
 
-    private final QueryBusConnector delegate;
+    protected final QueryBusConnector delegate;
 
     /**
      * Initialize the delegating {@link QueryBusConnector} to delegate all calls to the given {@code delegate}.
      *
      * @param delegate The {@link QueryBusConnector} to delegate all calls to.
      */
-    public DelegatingQueryBusConnector(QueryBusConnector delegate) {
-        this.delegate = delegate;
+    protected DelegatingQueryBusConnector(@Nonnull QueryBusConnector delegate) {
+        this.delegate = requireNonNull(delegate, "The delegate must not be null.");
     }
 
+    // region [QueryBus]
+
+    // - implement query methods here!
+
+    // endregion
+
+
+    // region [Connector]
     @Override
     public CompletableFuture<Void> subscribe(@Nonnull QueryHandlerName name) {
         return delegate.subscribe(name);
@@ -61,26 +65,14 @@ public abstract class DelegatingQueryBusConnector implements QueryBusConnector {
         return delegate.unsubscribe(name);
     }
 
-    @Nonnull
-    @Override
-    public MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage query, @Nullable ProcessingContext context) {
-        return delegate.query(query, context);
-    }
-
-    @Nonnull
-    @Override
-    public Publisher<QueryResponseMessage> streamingQuery(@Nonnull QueryMessage query,
-                                                          @Nullable ProcessingContext context) {
-        return delegate.streamingQuery(query, context);
-    }
-
     @Override
     public void onIncomingQuery(@Nonnull Handler handler) {
         delegate.onIncomingQuery(handler);
     }
+    // endregion
 
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
-        delegate.describeTo(descriptor);
+        descriptor.describeWrapperOf(delegate);
     }
 }

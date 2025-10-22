@@ -24,6 +24,7 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -36,7 +37,7 @@ import java.util.concurrent.CompletableFuture;
  */
 public abstract class DelegatingCommandBusConnector implements CommandBusConnector {
 
-    private final CommandBusConnector delegate;
+    protected final CommandBusConnector delegate;
 
     /**
      * Initialize the WrappedConnector to delegate all calls to the given {@code delegate}.
@@ -44,7 +45,7 @@ public abstract class DelegatingCommandBusConnector implements CommandBusConnect
      * @param delegate The {@link CommandBusConnector} to delegate all calls to.
      */
     protected DelegatingCommandBusConnector(@Nonnull CommandBusConnector delegate) {
-        this.delegate = delegate;
+        this.delegate = Objects.requireNonNull(delegate, "The delegate must not be null.");
     }
 
     @Nonnull
@@ -54,6 +55,7 @@ public abstract class DelegatingCommandBusConnector implements CommandBusConnect
         return delegate.dispatch(command, processingContext);
     }
 
+    // region [Connector]
     @Override
     public CompletableFuture<Void> subscribe(@Nonnull QualifiedName commandName, int loadFactor) {
         return delegate.subscribe(commandName, loadFactor);
@@ -68,6 +70,8 @@ public abstract class DelegatingCommandBusConnector implements CommandBusConnect
     public void onIncomingCommand(@Nonnull Handler handler) {
         delegate.onIncomingCommand(handler);
     }
+
+    // endregion
 
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {

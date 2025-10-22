@@ -45,6 +45,8 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.QueryHandlerName;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
+import org.axonframework.queryhandling.SubscriptionQueryMessage;
+import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.distributed.QueryBusConnector;
 import org.axonframework.queryhandling.tracing.QueryBusSpanFactory;
 import org.axonframework.util.ClasspathResolver;
@@ -69,8 +71,10 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
+import static java.util.Objects.requireNonNull;
 import static org.axonframework.axonserver.connector.util.ProcessingInstructionUtils.*;
 
 /**
@@ -104,8 +108,9 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
      */
     public AxonServerQueryBusConnector(@Nonnull AxonServerConnection connection,
                                        @Nonnull AxonServerConfiguration configuration) {
-        this.connection = Objects.requireNonNull(connection, "The AxonServerConnection must not be null.");
-        Objects.requireNonNull(configuration, "The AxonServerConfiguration must not be null.");
+        this.connection = requireNonNull(connection, "The AxonServerConnection must not be null.");
+        requireNonNull(configuration, "The AxonServerConfiguration must not be null.");
+
         this.clientId = configuration.getClientId();
         this.componentName = configuration.getComponentName();
         this.localSegmentAdapter = new LocalSegmentAdapter();
@@ -119,6 +124,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
         logger.trace("The AxonServerQueryBusConnector started.");
     }
 
+    // region [Connector]
     @Override
     public CompletableFuture<Void> subscribe(@Nonnull QueryHandlerName name) {
         logger.debug("Subscribing to query handler [{}] with response type [{}]",
@@ -156,15 +162,22 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
         return false;
     }
 
+    @Override
+    public void onIncomingQuery(@Nonnull Handler handler) {
+        this.incomingHandler = requireNonNull(handler, "The incoming query handler must not be null.");
+    }
+
+    // endregion
+
+    // region [QueryBus]
     @Nonnull
     @Override
     public MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage query,
                                                      @Nullable ProcessingContext context) {
         shutdownLatch.ifShuttingDown("Cannot dispatch new queries as this bus is being shut down");
+
         try (ShutdownLatch.ActivityHandle queryInTransit = shutdownLatch.registerActivity()) {
-            return doQuery(query).whenComplete(queryInTransit::end);
-            // TODO old approach used an executor on onAvailable -
-            //  I don't see why we would need that with the current MessageStream, as that's async by nature.
+            return doQuery(query).onClose(queryInTransit::end);
         }
     }
 
@@ -174,6 +187,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
                           .query(QueryConverter.convertQueryMessage(query, clientId, componentName, NON_STREAMING));
         return new QueryResponseMessageStream(resultStream);
     }
+    // endregion
 
     // TODO I think this switch belongs in the DistributedQueryBus i.o. the Connector implementation.
 //    private final boolean localSegmentShortCut;
@@ -181,16 +195,16 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
 //        return localSegmentShortCut && queryHandlerNames.contains(queryName);
 //    }
 
-    @Nonnull
-    @Override
-    public Publisher<QueryResponseMessage> streamingQuery(@Nonnull QueryMessage query,
-                                                          @Nullable ProcessingContext context) {
-        // TODO missing use of ExecutorService here. Should the DistributedQueryBus do the threading or is that an Axon Server concern?
-        return Mono.fromSupplier(this::registerStreamingQueryActivity)
-                   .flatMapMany(activity -> FluxUtils.of(doQuery(query))
-                                                     .doFinally(new ActivityFinisher(activity)))
-                   .map(MessageStream.Entry::message);
-    }
+//    @Nonnull
+//    @Override
+//    public Publisher<QueryResponseMessage> streamingQuery(@Nonnull QueryMessage query,
+//                                                          @Nullable ProcessingContext context) {
+//        // TODO missing use of ExecutorService here. Should the DistributedQueryBus do the threading or is that an Axon Server concern?
+//        return Mono.fromSupplier(this::registerStreamingQueryActivity)
+//                   .flatMapMany(activity -> FluxUtils.of(doQuery(query))
+//                                                     .doFinally(new ActivityFinisher(activity)))
+//                   .map(MessageStream.Entry::message);
+//    }
 
     private ShutdownLatch.ActivityHandle registerStreamingQueryActivity() {
         shutdownLatch.ifShuttingDown("Cannot dispatch new queries as this bus is being shut down");
@@ -276,12 +290,6 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
         }
     }
      */
-    @Nonnull
-    @Override
-    public void onIncomingQuery(@Nonnull Handler handler) {
-        this.incomingHandler = Objects.requireNonNull(handler, "The incoming query handler must not be null.");
-    }
-
 
     /**
      * Disconnect the query bus for receiving queries from Axon Server, by unsubscribing all registered query handlers.
@@ -348,6 +356,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
             long priority = ProcessingInstructionUtils.priority(query.getProcessingInstructionsList());
             QueryProcessingTask processingTask = new QueryProcessingTask(query, replyChannel, clientId, null);
             queriesInProgress.put(query.getMessageIdentifier(), processingTask);
+
             return new FlowControl() {
                 @Override
                 public void request(long requested) {
@@ -367,8 +376,8 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
         }
 
         @Override
-        public io.axoniq.axonserver.connector.Registration registerSubscriptionQuery(SubscriptionQuery query,
-                                                                                     UpdateHandler sendUpdate) {
+        public Registration registerSubscriptionQuery(SubscriptionQuery query, UpdateHandler sendUpdate) {
+            // FIXME
             return null;
         }
 
@@ -403,7 +412,6 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
 
         private final QueryRequest queryRequest;
         private final ReplyChannel<QueryResponse> responseHandler;
-        //        private final QuerySerializer serializer;
         private final String clientId;
         private final AtomicReference<StreamableResponse> streamableResultRef = new AtomicReference<>();
         private final AtomicLong requestedBeforeInit = new AtomicLong();
@@ -458,7 +466,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
         public void run() {
             try {
                 logger.debug("Will process query [{}]", queryRequest.getQuery());
-                QueryMessage queryMessage = null; // serializer.deserializeRequest(queryRequest);
+                QueryMessage queryMessage = QueryConverter.convertQueryRequest(queryRequest);
                 spanFactory.createQueryProcessingSpan(queryMessage).run(() -> {
                     if (numberOfResults(queryRequest.getProcessingInstructionsList())
                             == DIRECT_QUERY_NUMBER_OF_RESULTS) {
@@ -514,7 +522,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
         }
 
         private void streamingQuery(QueryMessage queryMessage) {
-            Publisher<QueryResponseMessage> resultPublisher = incomingHandler.streamingQuery(queryMessage);
+            Publisher<QueryResponseMessage> resultPublisher = null; // FIXME incomingHandler.streamingQuery(queryMessage);
             setResponse(streamableResponseFrom(resultPublisher));
         }
 

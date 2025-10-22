@@ -118,16 +118,6 @@ public class DefaultQueryGateway implements QueryGateway {
 
     @Nonnull
     @Override
-    public <R> Publisher<R> streamingQuery(@Nonnull Object query,
-                                           @Nonnull Class<R> responseType,
-                                           @Nullable ProcessingContext context) {
-        return Mono.fromSupplier(() -> asQueryMessage(query, responseType))
-                   .flatMapMany(queryMessage -> queryBus.streamingQuery(queryMessage, context))
-                   .mapNotNull(m -> m.payloadAs(responseType));
-    }
-
-    @Nonnull
-    @Override
     public <T> Publisher<T> subscriptionQuery(@Nonnull Object query,
                                               @Nonnull Class<T> responseType,
                                               @Nonnull Function<QueryResponseMessage, T> mapper,

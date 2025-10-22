@@ -14,18 +14,16 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.distributed;
+package org.axonframework.queryhandling.distributed;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-
-import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
+import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.queryhandling.QueryResponseMessage;
 
 import static java.util.Objects.requireNonNull;
 
@@ -33,10 +31,10 @@ import static java.util.Objects.requireNonNull;
  * Connector implementation that converts the payload of outgoing messages into the expected format. This is generally a
  * {@code byte[]} or another serialized form.
  *
- * @author Allard Buijze
+ * @author Jan Galinski
  * @since 5.0.0
  */
-public class PayloadConvertingCommandBusConnector extends DelegatingCommandBusConnector {
+public class PayloadConvertingQueryBusConnector extends DelegatingQueryBusConnector {
 
     private final MessageConverter converter;
     private final Class<?> targetType;
@@ -49,27 +47,32 @@ public class PayloadConvertingCommandBusConnector extends DelegatingCommandBusCo
      * @param converter  The converter to use to convert each Message's payload.
      * @param targetType The desired representation of forwarded Message's payload.
      */
-    public PayloadConvertingCommandBusConnector(@Nonnull CommandBusConnector delegate,
-                                                @Nonnull MessageConverter converter,
-                                                @Nonnull Class<?> targetType) {
+    public PayloadConvertingQueryBusConnector(@Nonnull QueryBusConnector delegate,
+                                              @Nonnull MessageConverter converter,
+                                              @Nonnull Class<?> targetType) {
         super(delegate);
+
         this.converter = requireNonNull(converter, "The converter must not be null.");
         this.targetType = requireNonNull(targetType, "The targetType must not be null.");
     }
 
+
     @Nonnull
     @Override
-    public CompletableFuture<CommandResultMessage> dispatch(@Nonnull CommandMessage command,
-                                                            @Nullable ProcessingContext processingContext) {
-        return delegate.dispatch(command.withConvertedPayload(targetType, converter), processingContext);
+    public MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage query, @Nullable ProcessingContext context) {
+        return delegate.query(query.withConvertedPayload(targetType, converter), context);
     }
 
     @Override
-    public void onIncomingCommand(@Nonnull Handler handler) {
-        delegate.onIncomingCommand((commandMessage, callback) -> handler.handle(
-                commandMessage,
-                new ConvertingResultMessageCallback(callback)
-        ));
+    public void onIncomingQuery(@Nonnull Handler handler) {
+        delegate.onIncomingQuery(new Handler() {
+
+            @Override
+            public MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage query) {
+                return handler.query(query)
+                              .mapMessage(rm -> rm.withConvertedPayload(targetType, converter));
+            }
+        });
     }
 
     @Override
@@ -77,32 +80,5 @@ public class PayloadConvertingCommandBusConnector extends DelegatingCommandBusCo
         descriptor.describeWrapperOf(delegate);
         descriptor.describeProperty("converter", converter);
         descriptor.describeProperty("targetType", targetType);
-    }
-
-    /**
-     * Callback that converts the payload of the result message to the expected representation before passing it to the
-     * original callback.
-     */
-    private class ConvertingResultMessageCallback implements ResultCallback {
-
-        private final ResultCallback callback;
-
-        private ConvertingResultMessageCallback(ResultCallback callback) {
-            this.callback = callback;
-        }
-
-        @Override
-        public void onSuccess(CommandResultMessage resultMessage) {
-            if (resultMessage == null || resultMessage.payload() == null) {
-                callback.onSuccess(resultMessage);
-                return;
-            }
-            callback.onSuccess(resultMessage.withConvertedPayload(targetType, converter));
-        }
-
-        @Override
-        public void onError(@Nonnull Throwable cause) {
-            callback.onError(cause);
-        }
     }
 }

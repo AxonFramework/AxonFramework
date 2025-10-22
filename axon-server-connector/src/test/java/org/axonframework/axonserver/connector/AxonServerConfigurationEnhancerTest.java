@@ -24,6 +24,8 @@ import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.queryhandling.distributed.PayloadConvertingQueryBusConnector;
+import org.axonframework.queryhandling.distributed.QueryBusConnector;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -70,6 +72,7 @@ class AxonServerConfigurationEnhancerTest {
         assertInstanceOf(ManagedChannelCustomizer.class, result.getComponent(ManagedChannelCustomizer.class));
         assertInstanceOf(AxonServerEventStorageEngine.class, result.getComponent(EventStorageEngine.class));
         assertInstanceOf(PayloadConvertingCommandBusConnector.class, result.getComponent(CommandBusConnector.class));
+        assertInstanceOf(PayloadConvertingQueryBusConnector.class, result.getComponent(QueryBusConnector.class));
     }
 
     @Test

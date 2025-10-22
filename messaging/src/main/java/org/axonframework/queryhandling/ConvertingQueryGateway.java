@@ -36,6 +36,7 @@ import static java.util.Objects.requireNonNull;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */ // TODO #613 implement
+    // FIXME remove
 public class ConvertingQueryGateway implements QueryGateway {
 
     private final QueryGateway delegate;
@@ -61,12 +62,6 @@ public class ConvertingQueryGateway implements QueryGateway {
         return null;
     }
 
-    @Nonnull
-    @Override
-    public <R> Publisher<R> streamingQuery(@Nonnull Object query, @Nonnull Class<R> responseType,
-                                           @Nullable ProcessingContext context) {
-        return null;
-    }
 
     @Nonnull
     @Override

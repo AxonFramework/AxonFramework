@@ -24,9 +24,12 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.QueryHandlerName;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
-import org.reactivestreams.Publisher;
+import org.axonframework.queryhandling.SubscriptionQueryMessage;
+import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 /**
  * The {@code QueryBusConnector} interface defines the contract for connecting multiple
@@ -40,6 +43,86 @@ import java.util.concurrent.CompletableFuture;
  * @since 5.0.0
  */
 public interface QueryBusConnector extends DescribableComponent {
+
+    // region [QueryBus] - methods that are delegated to the query bus
+
+    /**
+     * Delegates querying to the underlying QueryBus.
+     *
+     * @see org.axonframework.queryhandling.QueryBus#query(QueryMessage, ProcessingContext)
+     */
+    @Nonnull
+    MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage query,
+                                              @Nullable ProcessingContext context);
+
+    /**
+     * Delegates subscription querying to the underlying QueryBus.
+     *
+     * @see org.axonframework.queryhandling.QueryBus#subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int)
+     */
+    @Nonnull
+    default MessageStream<QueryResponseMessage> subscriptionQuery(@Nonnull SubscriptionQueryMessage query,
+                                                          @Nullable ProcessingContext context,
+                                                          int updateBufferSize) {
+        // FIXME
+        // convert to a grpc message and send to axon server. Map all responses to the returned MessageStream
+        throw new UnsupportedOperationException("Not implemented yet.");
+    }
+
+    /**
+     * Delegates update subscription registration to the underlying QueryBus.
+     *
+     * @see org.axonframework.queryhandling.QueryBus#subscribeToUpdates(SubscriptionQueryMessage, int)
+     */
+    @Nonnull
+    default MessageStream<SubscriptionQueryUpdateMessage> subscribeToUpdates(@Nonnull SubscriptionQueryMessage query,
+                                                                     int updateBufferSize) {
+        // FIXME
+        // convert to a grpc message and send to axon server. Map all responses to the returned MessageStream
+        throw new UnsupportedOperationException("Not implemented yet.");
+    }
+
+    /**
+     * Delegates emitting an update to the underlying QueryBus.
+     *
+     * @see org.axonframework.queryhandling.QueryBus#emitUpdate(Predicate, Supplier, ProcessingContext)
+     */
+    @Nonnull
+    default CompletableFuture<Void> emitUpdate(@Nonnull Predicate<SubscriptionQueryMessage> filter,
+                                       @Nonnull Supplier<SubscriptionQueryUpdateMessage> updateSupplier,
+                                       @Nullable ProcessingContext context) {
+        // FIXME
+        throw new UnsupportedOperationException("Not implemented yet.");
+    }
+
+    /**
+     * Delegates completing subscription queries to the underlying QueryBus.
+     *
+     * @see org.axonframework.queryhandling.QueryBus#completeSubscriptions(Predicate, ProcessingContext)
+     */
+    @Nonnull
+    default CompletableFuture<Void> completeSubscriptions(@Nonnull Predicate<SubscriptionQueryMessage> filter,
+                                                  @Nullable ProcessingContext context) {
+        // FIXME
+        // just send message to connector to complete subscription queries.
+         throw new UnsupportedOperationException("Not implemented yet.");
+    }
+
+    /**
+     * Delegates exceptional completion of subscription queries to the underlying QueryBus.
+     *
+     * @see org.axonframework.queryhandling.QueryBus#completeSubscriptionsExceptionally(Predicate, Throwable, ProcessingContext)
+     */
+    @Nonnull
+    default CompletableFuture<Void> completeSubscriptionsExceptionally(@Nonnull Predicate<SubscriptionQueryMessage> filter,
+                                                               @Nonnull Throwable cause,
+                                                               @Nullable ProcessingContext context) {
+        // FIXME
+        throw new UnsupportedOperationException("Not implemented yet.");
+    }
+    // endregion
+
+    // region [Connector] - methods for subscription and handlers
 
     /**
      * Subscribes this connector to queries matching the given {@code name}.
@@ -60,42 +143,16 @@ public interface QueryBusConnector extends DescribableComponent {
      */
     boolean unsubscribe(@Nonnull QueryHandlerName name);
 
-    /**
-     * Dispatches the given {@code query} to the appropriate query bus, which may be local or remote.
-     *
-     * @param query   The query message to dispatch.
-     * @param context The processing context for the query, if any.
-     * @return A {@link MessageStream} containing the {@link QueryResponseMessage responses} from handling the
-     * dispatched {@code query}.
-     */
-    @Nonnull
-    MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage query,
-                                              @Nullable ProcessingContext context);
 
     /**
-     * Dispatches the given {@code query} to the appropriate query bus, which may be local or remote, returning a
-     * {@link Publisher} of {@link QueryResponseMessage responses}.
-     *
-     * @param query   The query message to dispatch.
-     * @param context The processing context for the query.
-     * @return A {@link CompletableFuture} that will complete with the result of the query handling.
-     */
-    @Nonnull
-    Publisher<QueryResponseMessage> streamingQuery(@Nonnull QueryMessage query,
-                                                   @Nullable ProcessingContext context);
-
-    /**
-     * Registers a handler that will be called when an incoming query is received. The handler should process the query
-     * and call the provided {@code ResultCallback} to indicate success or failure.
-     *
-     * @param handler A lambda that takes a {@link QueryMessage} and a {@link ResultCallback}.
+     * TODO
+     * @param handler
      */
     void onIncomingQuery(@Nonnull Handler handler);
 
     /**
-     * A functional interface representing a handler for incoming query messages. The handler processes the query and
-     * uses the provided {@link ResultCallback} to report the result.
-     */// TODO unsure whether this is the style we should follow here.
+     * TODO
+     */
     interface Handler {
 
         /**
@@ -104,31 +161,8 @@ public interface QueryBusConnector extends DescribableComponent {
          * @param query    The query message to handle.
          * @param callback The callback to invoke with the result of handling the query.
          */
-        void query(@Nonnull QueryMessage query, @Nonnull ResultCallback callback);
-
-        Publisher<QueryResponseMessage> streamingQuery(@Nonnull QueryMessage query);
+        MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage query);
     }
 
-    /**
-     * A callback interface for handling the result of query processing.
-     * <p>
-     * It provides methods to indicate success or failure of query handling.
-     */// TODO unsure whether this is the style we should follow here.
-    interface ResultCallback {
-
-        /**
-         * Called when the query processing is successful.
-         *
-         * @param resultMessage The result message containing the outcome of the query processing. If the message
-         *                      handling yielded no result message, a {@code null} should be passed.
-         */
-        void onSuccess(@Nullable QueryResponseMessage resultMessage);
-
-        /**
-         * Called when an error occurs during query processing.
-         *
-         * @param cause The exception that caused the error.
-         */
-        void onError(@Nonnull Throwable cause);
-    }
+    // endregion [Connector]
 }

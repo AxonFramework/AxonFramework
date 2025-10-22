@@ -77,7 +77,6 @@ public record DistributedQueryBusConfiguration(
      * Compact constructor validating that the given {@code queryThreads} and {@code queryResponseThreads} are strictly
      * positive.
      */
-    @SuppressWarnings("MissingJavadoc")
     public DistributedQueryBusConfiguration {
         assertStrictPositive(queryThreads, "Number of query threads must be greater than 0.");
         assertStrictPositive(queryResponseThreads, "Number of query response handling threads must be greater than 0.");

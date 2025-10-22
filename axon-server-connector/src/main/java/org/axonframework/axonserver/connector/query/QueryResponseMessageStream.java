@@ -25,10 +25,17 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.SimpleEntry;
 import org.axonframework.queryhandling.QueryResponseMessage;
 
-import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static java.util.Objects.requireNonNull;
+import static org.axonframework.axonserver.connector.query.QueryConverter.convertQueryResponse;
+import static org.axonframework.axonserver.connector.util.ExceptionConverter.convertToAxonException;
 
 /**
+ * A {@link MessageStream} implementation that wraps an {@link ResultStream} of {@link QueryResponse}s, using
+ * {@link QueryConverter}.
+ *
  * @author Steven van Beelen
  * @since 5.0.0
  */
@@ -36,53 +43,70 @@ import java.util.Optional;
 public class QueryResponseMessageStream implements MessageStream<QueryResponseMessage> {
 
     private final ResultStream<QueryResponse> stream;
+    private final AtomicReference<Throwable> error = new AtomicReference<>();
+    private final AtomicReference<Runnable> callback = new AtomicReference<>(() ->{});
 
     /**
+     * Initializes a new instance of the {@code QueryResponseMessageStream} which wraps a {@link ResultStream} of
+     * {@link QueryResponse} objects.
      *
-     * @param stream
+     * @param stream the {@link ResultStream} of {@link QueryResponse} instances to be wrapped; must not be null. If
+     *               {@code null}, a {@link NullPointerException} will be thrown.
      */
     public QueryResponseMessageStream(@Nonnull ResultStream<QueryResponse> stream) {
-        this.stream = Objects.requireNonNull(stream, "The query result stream cannot be null.");
+        this.stream = requireNonNull(stream, "The query result stream cannot be null.");
     }
 
     @Override
     public Optional<Entry<QueryResponseMessage>> next() {
-        QueryResponse queryResponse = stream.nextIfAvailable();
-        return queryResponse == null
-                ? Optional.empty()
-                : Optional.of(new SimpleEntry<>(QueryConverter.convertQueryResponse(queryResponse), Context.empty()));
+        return Optional.ofNullable(stream.nextIfAvailable()).flatMap(this::toEntry);
     }
 
     @Override
     public Optional<Entry<QueryResponseMessage>> peek() {
-        QueryResponse queryResponse = stream.peek();
-        return queryResponse == null
-                ? Optional.empty()
-                : Optional.of(new SimpleEntry<>(QueryConverter.convertQueryResponse(queryResponse), Context.empty()));
+        return Optional.ofNullable(stream.peek()).flatMap(this::toEntry);
     }
 
     @Override
     public void onAvailable(@Nonnull Runnable callback) {
+        this.callback.set(callback);
         stream.onAvailable(callback);
     }
 
     @Override
     public Optional<Throwable> error() {
-        return stream.getError();
+        return Optional.ofNullable(error.get()).or(stream::getError);
     }
 
     @Override
     public boolean isCompleted() {
-        return stream.isClosed();
+        return error.get() != null || stream.isClosed();
     }
 
     @Override
     public boolean hasNextAvailable() {
-        return stream.peek() != null;
+        return error.get() == null && stream.peek() != null;
     }
 
     @Override
     public void close() {
         stream.close();
+    }
+
+    // TODO: clever name
+    private Optional<MessageStream.Entry<QueryResponseMessage>> toEntry(QueryResponse queryResponse) {
+        if (queryResponse.hasErrorMessage()) {
+            error.set(convertToAxonException(queryResponse.getErrorCode(),
+                                             queryResponse.getErrorMessage(),
+                                             queryResponse.getPayload()));
+            close();
+            callback.get().run();
+            return Optional.empty();
+        }
+
+        return Optional.of(new SimpleEntry<>(
+                convertQueryResponse(queryResponse),
+                Context.empty()
+        ));
     }
 }
