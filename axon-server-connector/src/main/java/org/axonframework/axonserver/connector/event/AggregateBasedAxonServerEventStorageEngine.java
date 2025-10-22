@@ -37,6 +37,7 @@ import org.axonframework.eventhandling.processors.streaming.token.GlobalSequence
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedEventStorageEngineUtils;
+import org.axonframework.eventsourcing.eventstore.AggregateSequenceNumberPosition;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedEventStorageEngineUtils.AggregateSequencer;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
@@ -197,7 +198,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
         String aggregateIdentifier = resolveAggregateIdentifier(criterion.tags());
         AggregateEventStream aggregateStream =
                 connection.eventChannel()
-                          .openAggregateStream(aggregateIdentifier, condition.start());
+                          .openAggregateStream(aggregateIdentifier, AggregateSequenceNumberPosition.toSequenceNumber(condition.start()));
 
         MessageStream<EventMessage> source =
                 MessageStream.fromStream(aggregateStream.asStream(),

@@ -28,6 +28,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 
 import java.util.List;
 
@@ -37,9 +38,10 @@ import java.util.List;
  * MessageDispatchInterceptors components}.
  * <p>
  * Provides operations to register generic {@link Message}, {@link CommandMessage}-specific,
- * {@link EventMessage}-specific, or {@link QueryMessage}-specific {@code MessageDispatchInterceptor}. Registered type
- * specific {@code MessageDispatchInterceptor} can be retrieved through {@link #commandInterceptors(Configuration)},
- * {@link #eventInterceptors(Configuration)}, and {@link #queryInterceptors(Configuration)}.
+ * {@link EventMessage}-specific, {@link QueryMessage}-specific, or {@link SubscriptionQueryUpdateMessage}-specific
+ * {@code MessageDispatchInterceptor}. Registered type specific {@code MessageDispatchInterceptor} can be retrieved
+ * through {@link #commandInterceptors(Configuration)}, {@link #eventInterceptors(Configuration)},
+ * {@link #queryInterceptors(Configuration)}, and {@link #subscriptionQueryUpdateInterceptors(Configuration)}.
  * <p>
  * These operations are expected to be invoked within a {@link org.axonframework.configuration.DecoratorDefinition}. As
  * such, <b>any</b> registered interceptors are <b>only</b> applied when the infrastructure component requiring them is
@@ -104,6 +106,19 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
     );
 
     /**
+     * Registers the given {@code interceptorBuilder} for a {@link SubscriptionQueryUpdateMessage}-specific
+     * {@link MessageDispatchInterceptor}.
+     *
+     * @param interceptorBuilder The {@link SubscriptionQueryUpdateMessage}-specific {@link MessageDispatchInterceptor}
+     *                           builder to register.
+     * @return This {@code InterceptorRegistry}, for fluent interfacing.
+     */
+    @Nonnull
+    DispatchInterceptorRegistry registerSubscriptionQueryUpdateInterceptor(
+            @Nonnull ComponentBuilder<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> interceptorBuilder
+    );
+
+    /**
      * Returns the list of {@link MessageDispatchInterceptor MessageDispatchInterceptors} registered in this registry.
      *
      * @param config The configuration to build all {@link MessageDispatchInterceptor MessageDispatchInterceptors}
@@ -140,4 +155,19 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
      */
     @Nonnull
     List<MessageDispatchInterceptor<? super QueryMessage>> queryInterceptors(@Nonnull Configuration config);
+
+    /**
+     * Returns the list of {@link SubscriptionQueryUpdateMessage}-specific
+     * {@link MessageDispatchInterceptor MessageDispatchInterceptors} registered in this registry.
+     * <p>
+     * This collection contains <b>all</b> generic {@link Message} {@code MessageDispatchInterceptors} that have been
+     * {@link #registerInterceptor(ComponentBuilder) registered} as well.
+     *
+     * @param config The configuration to build all {@link SubscriptionQueryUpdateMessage}-specific
+     *               {@link MessageDispatchInterceptor MessageDispatchInterceptors} with.
+     * @return The list of {@link SubscriptionQueryUpdateMessage}-specific
+     *         {@link MessageDispatchInterceptor MessageDispatchInterceptors}.
+     */
+    @Nonnull
+    List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> subscriptionQueryUpdateInterceptors(@Nonnull Configuration config);
 }

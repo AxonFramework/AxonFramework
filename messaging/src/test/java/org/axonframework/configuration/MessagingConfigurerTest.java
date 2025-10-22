@@ -52,8 +52,8 @@ import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryBusTestUtils;
 import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.configuration.QueryHandlingModule;
+import org.axonframework.queryhandling.interceptors.InterceptingQueryBus;
 import org.junit.jupiter.api.*;
 
 import java.util.List;
@@ -113,7 +113,8 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
 
         Optional<QueryBus> queryBus = result.getOptionalComponent(QueryBus.class);
         assertTrue(queryBus.isPresent());
-        assertInstanceOf(SimpleQueryBus.class, queryBus.get());
+        // Intercepting at all times, since we have a MessageOriginProvider that leads to the CorrelationDataInterceptor
+        assertInstanceOf(InterceptingQueryBus.class, queryBus.get());
     }
 
     @Test
@@ -192,7 +193,13 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
     void registerQueryBusOverridesDefault() {
         QueryBus expected = QueryBusTestUtils.aQueryBus();
 
-        Configuration result = testSubject.registerQueryBus(c -> expected)
+        // Overriding CorrelationDataProviderRegistry ensures CorrelationDataInterceptor is not built.
+        // This otherwise leads to the InterceptingQueryBus
+        Configuration result = testSubject.componentRegistry(cr -> cr.registerComponent(
+                                                  CorrelationDataProviderRegistry.class,
+                                                  c -> new DefaultCorrelationDataProviderRegistry()
+                                          ))
+                                          .registerQueryBus(c -> expected)
                                           .build();
 
         assertEquals(expected, result.getComponent(QueryBus.class));

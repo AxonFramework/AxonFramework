@@ -62,14 +62,18 @@ import org.axonframework.monitoring.interceptors.MonitoringCommandHandlerInterce
 import org.axonframework.monitoring.interceptors.MonitoringEventDispatchInterceptor;
 import org.axonframework.monitoring.interceptors.MonitoringEventHandlerInterceptor;
 import org.axonframework.monitoring.interceptors.MonitoringQueryHandlerInterceptor;
+import org.axonframework.monitoring.interceptors.MonitoringSubscriptionQueryUpdateDispatchInterceptor;
 import org.axonframework.queryhandling.DefaultQueryGateway;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryGateway;
+import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryPriorityCalculator;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.QueryUpdateEmitterParameterResolverFactory;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
+import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
+import org.axonframework.queryhandling.interceptors.InterceptingQueryBus;
 import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.json.JacksonConverter;
 
@@ -107,6 +111,9 @@ import java.util.function.UnaryOperator;
  * <ul>
  *     <li>The {@link CommandGateway} in a {@link ConvertingCommandGateway} with the present {@link MessageConverter}.</li>
  *     <li>The {@link CommandBus} in a {@link InterceptingCommandBus} <b>if</b> there are any
+ *     {@link MessageDispatchInterceptor MessageDispatchInterceptors} present in the {@link DispatchInterceptorRegistry} or
+ *     {@link MessageHandlerInterceptor MessageHandlerInterceptors} present in the {@link HandlerInterceptorRegistry}.</li>
+ *     <li>The {@link QueryBus} in a {@link InterceptingQueryBus} <b>if</b> there are any
  *     {@link MessageDispatchInterceptor MessageDispatchInterceptors} present in the {@link DispatchInterceptorRegistry} or
  *     {@link MessageHandlerInterceptor MessageHandlerInterceptors} present in the {@link HandlerInterceptorRegistry}.</li>
  * </ul>
@@ -304,6 +311,21 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                             : new InterceptingCommandBus(delegate, handlerInterceptors, dispatchInterceptors);
                 }
         );
+        registry.registerDecorator(
+                QueryBus.class,
+                InterceptingQueryBus.DECORATION_ORDER,
+                (config, name, delegate) -> {
+                    List<MessageHandlerInterceptor<? super QueryMessage>> handlerInterceptors =
+                            config.getComponent(HandlerInterceptorRegistry.class).queryInterceptors(config);
+                    List<MessageDispatchInterceptor<? super QueryMessage>> dispatchInterceptors =
+                            config.getComponent(DispatchInterceptorRegistry.class).queryInterceptors(config);
+                    List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> updateDispatchInterceptors =
+                            config.getComponent(DispatchInterceptorRegistry.class).subscriptionQueryUpdateInterceptors(config);
+                    return handlerInterceptors.isEmpty() && dispatchInterceptors.isEmpty() && updateDispatchInterceptors.isEmpty()
+                            ? delegate
+                            : new InterceptingQueryBus(delegate, handlerInterceptors, dispatchInterceptors, updateDispatchInterceptors);
+                }
+        );
     }
 
     private static DispatchInterceptorRegistry registerMonitoringDispatchInterceptors(
@@ -316,8 +338,14 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                                       .map(it -> (UnaryOperator<DispatchInterceptorRegistry>) r -> r.registerEventInterceptor(
                                               c -> it))
                                       .orElse(UnaryOperator.identity());
+        var subscriptionQueryUpdateDispatcher = Optional.of(messageMonitorRegistry.subscriptionQueryUpdateMonitor(config))
+                                                        .filter(it -> NoOpMessageMonitor.INSTANCE != it)
+                                                        .map(MonitoringSubscriptionQueryUpdateDispatchInterceptor::new)
+                                                        .map(it -> (UnaryOperator<DispatchInterceptorRegistry>) r -> r.registerSubscriptionQueryUpdateInterceptor(
+                                                                c -> it))
+                                                        .orElse(UnaryOperator.identity());
 
-        return eventDispatcher.apply(dispatchInterceptorRegistry);
+        return eventDispatcher.andThen(subscriptionQueryUpdateDispatcher).apply(dispatchInterceptorRegistry);
     }
 
     private static HandlerInterceptorRegistry registerMonitoringHandlerInterceptors(

@@ -27,6 +27,7 @@ import org.axonframework.messaging.MessageDispatchInterceptorChain;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.junit.jupiter.api.*;
 
 import java.util.List;
@@ -63,6 +64,8 @@ class DefaultDispatchInterceptorRegistryTest {
         assertThat(eventInterceptors).size().isEqualTo(1);
         List<MessageDispatchInterceptor<? super QueryMessage>> queryInterceptors = result.queryInterceptors(config);
         assertThat(queryInterceptors).size().isEqualTo(1);
+        List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> subscriptionQueryUpdateInterceptors = result.subscriptionQueryUpdateInterceptors(config);
+        assertThat(subscriptionQueryUpdateInterceptors).size().isEqualTo(1);
     }
 
     @Test
@@ -79,6 +82,8 @@ class DefaultDispatchInterceptorRegistryTest {
         result.eventInterceptors(config);
         result.queryInterceptors(config);
         result.queryInterceptors(config);
+        result.subscriptionQueryUpdateInterceptors(config);
+        result.subscriptionQueryUpdateInterceptors(config);
 
         assertThat(builderInvocationCount.get()).isEqualTo(1);
     }
@@ -93,6 +98,8 @@ class DefaultDispatchInterceptorRegistryTest {
         assertThat(eventInterceptors).size().isEqualTo(0);
         List<MessageDispatchInterceptor<? super QueryMessage>> queryInterceptors = result.queryInterceptors(config);
         assertThat(queryInterceptors).size().isEqualTo(0);
+        List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> subscriptionQueryUpdateInterceptors = result.subscriptionQueryUpdateInterceptors(config);
+        assertThat(subscriptionQueryUpdateInterceptors).size().isEqualTo(0);
     }
 
     @Test
@@ -123,6 +130,8 @@ class DefaultDispatchInterceptorRegistryTest {
         assertThat(eventInterceptors).size().isEqualTo(0);
         List<MessageDispatchInterceptor<? super QueryMessage>> queryInterceptors = result.queryInterceptors(config);
         assertThat(queryInterceptors).size().isEqualTo(0);
+        List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> subscriptionQueryUpdateInterceptors = result.subscriptionQueryUpdateInterceptors(config);
+        assertThat(subscriptionQueryUpdateInterceptors).size().isEqualTo(0);
     }
 
     @Test
@@ -135,6 +144,8 @@ class DefaultDispatchInterceptorRegistryTest {
         assertThat(eventInterceptors).size().isEqualTo(1);
         List<MessageDispatchInterceptor<? super QueryMessage>> queryInterceptors = result.queryInterceptors(config);
         assertThat(queryInterceptors).size().isEqualTo(0);
+        List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> subscriptionQueryUpdateInterceptors = result.subscriptionQueryUpdateInterceptors(config);
+        assertThat(subscriptionQueryUpdateInterceptors).size().isEqualTo(0);
     }
 
     @Test
@@ -165,6 +176,8 @@ class DefaultDispatchInterceptorRegistryTest {
         assertThat(eventInterceptors).size().isEqualTo(1);
         List<MessageDispatchInterceptor<? super QueryMessage>> queryInterceptors = result.queryInterceptors(config);
         assertThat(queryInterceptors).size().isEqualTo(0);
+        List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> subscriptionQueryUpdateInterceptors = result.subscriptionQueryUpdateInterceptors(config);
+        assertThat(subscriptionQueryUpdateInterceptors).size().isEqualTo(0);
     }
 
     @Test
@@ -177,6 +190,8 @@ class DefaultDispatchInterceptorRegistryTest {
         assertThat(eventInterceptors).size().isEqualTo(0);
         List<MessageDispatchInterceptor<? super QueryMessage>> queryInterceptors = result.queryInterceptors(config);
         assertThat(queryInterceptors).size().isEqualTo(1);
+        List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> subscriptionQueryUpdateInterceptors = result.subscriptionQueryUpdateInterceptors(config);
+        assertThat(subscriptionQueryUpdateInterceptors).size().isEqualTo(0);
     }
 
     @Test
@@ -207,6 +222,54 @@ class DefaultDispatchInterceptorRegistryTest {
         assertThat(eventInterceptors).size().isEqualTo(0);
         List<MessageDispatchInterceptor<? super QueryMessage>> queryInterceptors = result.queryInterceptors(config);
         assertThat(queryInterceptors).size().isEqualTo(1);
+        List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> subscriptionQueryUpdateInterceptors = result.subscriptionQueryUpdateInterceptors(config);
+        assertThat(subscriptionQueryUpdateInterceptors).size().isEqualTo(0);
+    }
+
+    @Test
+    void registeredSubscriptionQueryUpdateInterceptorsIsReturnedFromSubscriptionQueryUpdateInterceptorsOnly() {
+        DispatchInterceptorRegistry result = testSubject.registerSubscriptionQueryUpdateInterceptor(c -> new SubscriptionQueryUpdateDispatchInterceptor());
+
+        List<MessageDispatchInterceptor<? super CommandMessage>> commandInterceptors = result.commandInterceptors(config);
+        assertThat(commandInterceptors).size().isEqualTo(0);
+        List<MessageDispatchInterceptor<? super EventMessage>> eventInterceptors = result.eventInterceptors(config);
+        assertThat(eventInterceptors).size().isEqualTo(0);
+        List<MessageDispatchInterceptor<? super QueryMessage>> queryInterceptors = result.queryInterceptors(config);
+        assertThat(queryInterceptors).size().isEqualTo(0);
+        List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> subscriptionQueryUpdateInterceptors = result.subscriptionQueryUpdateInterceptors(config);
+        assertThat(subscriptionQueryUpdateInterceptors).size().isEqualTo(1);
+    }
+
+    @Test
+    void registeredSubscriptionQueryUpdateInterceptorsAreOnlyCreatedOnce() {
+        AtomicInteger builderInvocationCount = new AtomicInteger(0);
+        DispatchInterceptorRegistry result = testSubject.registerSubscriptionQueryUpdateInterceptor(c -> {
+            builderInvocationCount.incrementAndGet();
+            return new SubscriptionQueryUpdateDispatchInterceptor();
+        });
+
+        //noinspection UnusedAssignment | Additional invocations are on purpose to validate the builder is invoked once.
+        List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> subscriptionQueryUpdateInterceptors = result.subscriptionQueryUpdateInterceptors(config);
+        //noinspection UnusedAssignment | Additional invocations are on purpose to validate the builder is invoked once.
+        subscriptionQueryUpdateInterceptors = result.subscriptionQueryUpdateInterceptors(config);
+        subscriptionQueryUpdateInterceptors = result.subscriptionQueryUpdateInterceptors(config);
+        assertThat(subscriptionQueryUpdateInterceptors).size().isEqualTo(1);
+        assertThat(builderInvocationCount.get()).isEqualTo(1);
+    }
+
+    @Test
+    void canRegisterGenericInterceptorForSubscriptionQueryUpdatesOnly() {
+        DispatchInterceptorRegistry result =
+                testSubject.registerSubscriptionQueryUpdateInterceptor(c -> new GenericMessageDispatchInterceptor());
+
+        List<MessageDispatchInterceptor<? super CommandMessage>> commandInterceptors = result.commandInterceptors(config);
+        assertThat(commandInterceptors).size().isEqualTo(0);
+        List<MessageDispatchInterceptor<? super EventMessage>> eventInterceptors = result.eventInterceptors(config);
+        assertThat(eventInterceptors).size().isEqualTo(0);
+        List<MessageDispatchInterceptor<? super QueryMessage>> queryInterceptors = result.queryInterceptors(config);
+        assertThat(queryInterceptors).size().isEqualTo(0);
+        List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> subscriptionQueryUpdateInterceptors = result.subscriptionQueryUpdateInterceptors(config);
+        assertThat(subscriptionQueryUpdateInterceptors).size().isEqualTo(1);
     }
 
     static class GenericMessageDispatchInterceptor implements MessageDispatchInterceptor<Message> {
@@ -249,6 +312,17 @@ class DefaultDispatchInterceptorRegistryTest {
         public MessageStream<?> interceptOnDispatch(@Nonnull QueryMessage message,
                                                     @Nullable ProcessingContext context,
                                                     @Nonnull MessageDispatchInterceptorChain<QueryMessage> chain) {
+            return chain.proceed(message, context);
+        }
+    }
+
+    static class SubscriptionQueryUpdateDispatchInterceptor implements MessageDispatchInterceptor<SubscriptionQueryUpdateMessage> {
+
+        @Nonnull
+        @Override
+        public MessageStream<?> interceptOnDispatch(@Nonnull SubscriptionQueryUpdateMessage message,
+                                                    @Nullable ProcessingContext context,
+                                                    @Nonnull MessageDispatchInterceptorChain<SubscriptionQueryUpdateMessage> chain) {
             return chain.proceed(message, context);
         }
     }

@@ -27,6 +27,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotations.Internal;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.GlobalIndexConsistencyMarker;
+import org.axonframework.eventsourcing.eventstore.GlobalIndexPosition;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.EventCriterion;
@@ -80,7 +81,7 @@ public final class ConditionConverter {
      */
     public static SourceEventsRequest convertSourcingCondition(@Nonnull SourcingCondition condition) {
         return SourceEventsRequest.newBuilder()
-                                  .setFromSequence(condition.start())
+                                  .setFromSequence(GlobalIndexPosition.toIndex(condition.start()))
                                   .addAllCriterion(convertEventCriterion(condition.criteria().flatten()))
                                   .build();
     }
