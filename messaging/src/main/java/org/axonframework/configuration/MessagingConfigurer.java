@@ -39,6 +39,7 @@ import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.configuration.MessageMonitorRegistry;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.configuration.QueryHandlingModule;
 
 import java.util.Objects;
@@ -543,6 +544,24 @@ public class MessagingConfigurer implements ApplicationConfigurer {
                 MessageMonitorRegistry.class,
                 0,
                 (config, name, delegate) -> delegate.registerQueryMonitor(messageMonitorBuilder)
+        ));
+        return this;
+    }
+
+    /**
+     * Registers a subscription query update monitor using the specified {@code messageMonitorBuilder}.
+     *
+     * @param messageMonitorBuilder The builder for a {@link MessageMonitor}
+     *                              specifically designed to monitor {@link SubscriptionQueryUpdateMessage} messages.
+     * @return The current instance of the {@code Configurer} for a fluent API
+     */
+    public MessagingConfigurer registerSubscriptionQueryUpdateMonitor(
+            @Nonnull ComponentBuilder<MessageMonitor<? super SubscriptionQueryUpdateMessage>> messageMonitorBuilder) {
+
+        delegate.componentRegistry(cr -> cr.registerDecorator(
+                MessageMonitorRegistry.class,
+                0,
+                (config, name, delegate) -> delegate.registerSubscriptionQueryUpdateMonitor(messageMonitorBuilder)
         ));
         return this;
     }

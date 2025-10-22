@@ -52,9 +52,9 @@ public class QueryMessageHandlerInterceptorChain implements MessageHandlerInterc
      * @param interceptors The list of handler interceptors that are part of this chain.
      * @param queryHandler The query handler to be invoked at the end of the interceptor chain.
      */
-    public QueryMessageHandlerInterceptorChain(@Nonnull List<MessageHandlerInterceptor<QueryMessage>> interceptors,
+    public QueryMessageHandlerInterceptorChain(@Nonnull List<MessageHandlerInterceptor<? super QueryMessage>> interceptors,
                                                @Nonnull QueryHandler queryHandler) {
-        Iterator<MessageHandlerInterceptor<QueryMessage>> interceptorIterator =
+        Iterator<MessageHandlerInterceptor<? super QueryMessage>> interceptorIterator =
                 new LinkedList<>(interceptors).descendingIterator();
         QueryHandler handler = Objects.requireNonNull(queryHandler, "The Query Handler may not be null.");
         while (interceptorIterator.hasNext()) {
