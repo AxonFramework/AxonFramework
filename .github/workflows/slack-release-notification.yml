@@ -14,10 +14,10 @@ jobs:
         id: slack
         uses: slackapi/slack-github-action@v2.1.1
         with:
+          webhook-type: webhook-trigger
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           payload: |
             {
               "release-name": "${{ github.event.release.name }}",
               "release-url" : "${{ github.event.release.html_url }}"
             }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
