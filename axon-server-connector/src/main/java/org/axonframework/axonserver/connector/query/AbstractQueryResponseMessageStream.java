@@ -30,6 +30,14 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Objects.requireNonNull;
 
+/**
+ * An abstract implementation of the {@link MessageStream} interface that wraps a {@link ResultStream}. This class
+ * provides functionality for transforming the data in the {@link ResultStream} into {@link QueryResponseMessage}s,
+ * handling any encountered errors, and managing stream lifecycle events.
+ *
+ * @param <T> The type of the objects in the underlying {@link ResultStream} to be transformed into
+ *            {@link QueryResponseMessage}s.
+ */
 @Internal
 public abstract class AbstractQueryResponseMessageStream<T> implements MessageStream<QueryResponseMessage> {
 
@@ -38,7 +46,13 @@ public abstract class AbstractQueryResponseMessageStream<T> implements MessageSt
     private final AtomicReference<Runnable> callback = new AtomicReference<>(() -> {
     });
 
-    public AbstractQueryResponseMessageStream(ResultStream<T> stream) {
+    /**
+     * Constructs an instance of the AbstractQueryResponseMessageStream class with the provided result stream.
+     *
+     * @param stream The {@link ResultStream} instance from which query response data will be fetched. Must not be
+     *               null.
+     */
+    public AbstractQueryResponseMessageStream(@Nonnull ResultStream<T> stream) {
         this.stream = requireNonNull(stream, "The query result stream cannot be null.");
     }
 
@@ -58,6 +72,7 @@ public abstract class AbstractQueryResponseMessageStream<T> implements MessageSt
         stream.onAvailable(callback);
     }
 
+    @Nonnull
     @Override
     public Optional<Throwable> error() {
         return Optional.ofNullable(error.get()).or(stream::getError);
@@ -75,27 +90,31 @@ public abstract class AbstractQueryResponseMessageStream<T> implements MessageSt
 
     @Override
     public void close() {
-        stream.close();
+        if (!stream.isClosed()) {
+            stream.close();
+        }
     }
 
-    private Optional<MessageStream.Entry<QueryResponseMessage>> toEntry(T queryResponse) {
-        if (isError(queryResponse)) {
-            error.set(createAxonException(queryResponse));
+    @Nonnull
+    private Optional<MessageStream.Entry<QueryResponseMessage>> toEntry(@Nonnull T t) {
+        if (isError(t)) {
+            error.set(createAxonException(t));
             close();
             callback.get().run();
             return Optional.empty();
         }
 
         return Optional.of(new SimpleEntry<>(
-                buildResponseMessage(queryResponse),
+                buildResponseMessage(t),
                 Context.empty()
         ));
     }
 
-    protected abstract QueryResponseMessage buildResponseMessage(T queryResponse);
+    @Nonnull
+    protected abstract QueryResponseMessage buildResponseMessage(@Nonnull T t);
 
-    protected abstract AxonException createAxonException(T queryResponse);
+    @Nonnull
+    protected abstract AxonException createAxonException(@Nonnull T t);
 
-    protected abstract boolean isError(T queryResponse);
-
+    protected abstract boolean isError(@Nonnull T t);
 }

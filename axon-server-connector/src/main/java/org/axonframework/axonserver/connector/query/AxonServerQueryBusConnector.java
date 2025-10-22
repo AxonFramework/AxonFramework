@@ -146,9 +146,12 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
         shutdownLatch.ifShuttingDown("Cannot dispatch new queries as this bus is being shut down");
 
         try (ShutdownLatch.ActivityHandle queryInTransit = shutdownLatch.registerActivity()) {
-            ResultStream<QueryResponse> resultStream =
-                    connection.queryChannel()
-                              .query(QueryConverter.convertQueryMessage(query, clientId, componentName));
+            ResultStream<QueryResponse> resultStream = connection.queryChannel()
+                              .query(QueryConverter.convertQueryMessage(
+                                      query,
+                                      clientId,
+                                      componentName)
+                              );
             return new QueryResponseMessageStream(resultStream).onClose(queryInTransit::end);
         }
     }
@@ -223,8 +226,6 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
     /**
      * A {@link QueryHandler} implementation serving as a wrapper around the local {@code QueryBus} to push through the
      * message handling and subscription query registration.
-     * <p>
-     * TODO This should be used on AxonServerQueryBusConnector#subscribe, and the implementation should use the QueryBusConnector.Handler that is TBD.
      */
     private class LocalSegmentAdapter implements QueryHandler {
 
@@ -273,8 +274,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
         @Override
         public Registration registerSubscriptionQuery(SubscriptionQuery query, UpdateHandler sendUpdate) {
             var registration = incomingHandler.registerUpdateHandler(QueryConverter.convertSubscriptionQueryMessage(
-                                                                             query),
-                                                                     new AxonServerUpdateHandler(sendUpdate));
+                                                                             query), new AxonServerUpdateCallback(sendUpdate));
             return () -> {
                 registration.cancel();
                 return FutureUtils.emptyCompletedFuture();
@@ -304,11 +304,11 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
         }
     }
 
-    class AxonServerUpdateHandler implements UpdateCallback {
+    class AxonServerUpdateCallback implements UpdateCallback {
 
         private final QueryHandler.UpdateHandler updateHandler;
 
-        public AxonServerUpdateHandler(@Nonnull QueryHandler.UpdateHandler updateHandler) {
+        public AxonServerUpdateCallback(@Nonnull QueryHandler.UpdateHandler updateHandler) {
             this.updateHandler = updateHandler;
         }
 

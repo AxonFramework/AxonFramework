@@ -25,9 +25,18 @@ import org.axonframework.queryhandling.QueryResponseMessage;
 import static org.axonframework.axonserver.connector.query.QueryConverter.convertQueryUpdate;
 import static org.axonframework.axonserver.connector.util.ExceptionConverter.convertToAxonException;
 
-public class QueryUpdateMessageStream extends AbstractQueryResponseMessageStream<QueryUpdate>{
+/**
+ * A specialized implementation of {@link AbstractQueryResponseMessageStream} that processes a stream of
+ * {@link QueryUpdate} objects and transforms them into {@link QueryResponseMessage} instances. This class is used to
+ * handle query updates, including error handling and response message creation.
+ * <p/>
+ * This class relies on its abstract superclass to manage the underlying {@link ResultStream}, implementing
+ * functionality specific to {@link QueryUpdate} to determine whether a message represents an error and to transform
+ * such updates into structured responses or exceptions.
+ */
+public class QueryUpdateMessageStream extends AbstractQueryResponseMessageStream<QueryUpdate> {
 
-        /**
+    /**
      * Initializes a new instance of the {@code QueryResponseMessageStream} which wraps a {@link ResultStream} of
      * {@link QueryUpdate} objects.
      *
@@ -38,21 +47,23 @@ public class QueryUpdateMessageStream extends AbstractQueryResponseMessageStream
         super(stream);
     }
 
+    @Nonnull
     @Override
-    protected QueryResponseMessage buildResponseMessage(QueryUpdate queryResponse) {
-        return convertQueryUpdate(queryResponse);
+    protected QueryResponseMessage buildResponseMessage(@Nonnull QueryUpdate queryUpdate) {
+        return convertQueryUpdate(queryUpdate);
     }
 
 
+    @Nonnull
     @Override
-    protected AxonException createAxonException(QueryUpdate queryResponse) {
-        return convertToAxonException(queryResponse.getErrorCode(),
-                                      queryResponse.getErrorMessage(),
-                                      queryResponse.getPayload());
+    protected AxonException createAxonException(@Nonnull QueryUpdate queryUpdate) {
+        return convertToAxonException(queryUpdate.getErrorCode(),
+                                      queryUpdate.getErrorMessage(),
+                                      queryUpdate.getPayload());
     }
 
     @Override
-    protected boolean isError(QueryUpdate queryResponse) {
-        return queryResponse.hasErrorMessage();
+    protected boolean isError(@Nonnull QueryUpdate queryUpdate) {
+        return queryUpdate.hasErrorMessage();
     }
 }

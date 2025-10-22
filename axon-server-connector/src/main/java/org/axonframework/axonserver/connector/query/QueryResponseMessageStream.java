@@ -43,7 +43,6 @@ import static org.axonframework.axonserver.connector.util.ExceptionConverter.con
 @Internal
 public class QueryResponseMessageStream extends AbstractQueryResponseMessageStream<QueryResponse> {
 
-
     /**
      * Initializes a new instance of the {@code QueryResponseMessageStream} which wraps a {@link ResultStream} of
      * {@link QueryResponse} objects.
@@ -55,20 +54,22 @@ public class QueryResponseMessageStream extends AbstractQueryResponseMessageStre
         super(stream);
     }
 
+    @Nonnull
     @Override
-    protected QueryResponseMessage buildResponseMessage(QueryResponse queryResponse) {
+    protected QueryResponseMessage buildResponseMessage(@Nonnull QueryResponse queryResponse) {
         return convertQueryResponse(queryResponse);
     }
 
+    @Nonnull
     @Override
-    protected AxonException createAxonException(QueryResponse queryResponse) {
+    protected AxonException createAxonException(@Nonnull QueryResponse queryResponse) {
         return convertToAxonException(queryResponse.getErrorCode(),
                                       queryResponse.getErrorMessage(),
                                       queryResponse.getPayload());
     }
 
     @Override
-    protected boolean isError(QueryResponse queryResponse) {
+    protected boolean isError(@Nonnull QueryResponse queryResponse) {
         return queryResponse.hasErrorMessage();
     }
 }
