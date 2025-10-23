@@ -234,7 +234,6 @@ class QueryThreadingIntegrationTest {
                                                              "start",
                                                              new MessageType(String.class));
             try {
-                System.out.println("THREADING: " + Thread.currentThread().getName());
                 QueryResponseMessage b = queryBus.query(testQuery, null)
                                                  .first()
                                                  .asCompletableFuture()
