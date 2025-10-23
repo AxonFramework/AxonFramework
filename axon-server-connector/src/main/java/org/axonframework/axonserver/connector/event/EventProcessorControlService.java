@@ -211,7 +211,7 @@ public class EventProcessorControlService {
         }
 
         var unitOfWork = unitOfWorkFactory.get().create();
-        return FutureUtils.joinAndUnwrap(unitOfWork.executeWithResult(ctx -> tokenStore.get().retrieveStorageIdentifier(ctx)));
+        return Optional.of(FutureUtils.joinAndUnwrap(unitOfWork.executeWithResult(ctx -> tokenStore.get().retrieveStorageIdentifier(ctx))));
     }
 
     protected record AxonProcessorInstructionHandler(

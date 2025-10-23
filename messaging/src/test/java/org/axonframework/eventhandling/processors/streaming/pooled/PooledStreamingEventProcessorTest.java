@@ -53,7 +53,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -156,21 +155,21 @@ class PooledStreamingEventProcessorTest {
     @Test
     void processorOnlyTriesToClaimAvailableSegments() {
         var ctx = createProcessingContext();
-        joinAndUnwrap(
-                tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 0, ctx)
-        );
+
+        List<Segment> createdSegments = joinAndUnwrap(tokenStore.initializeTokenSegments(
+            "test",
+            4,
+            new GlobalSequenceTrackingToken(1),
+            createProcessingContext()
+        ));
+
         joinAndUnwrap(
                 tokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "test", 1, ctx)
         );
-        joinAndUnwrap(
-                tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 2, ctx)
-        );
-        joinAndUnwrap(
-                tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 3, ctx)
-        );
+
         when(tokenStore.fetchAvailableSegments(eq(testSubject.name()), any()))
                 .thenReturn(completedFuture(
-                        Collections.singletonList(Segment.computeSegment(2, 0, 1, 2, 3))
+                        Collections.singletonList(createdSegments.get(2))
                 ));
 
         startEventProcessor();
@@ -603,7 +602,7 @@ class PooledStreamingEventProcessorTest {
             String expectedIdentifier = "some-identifier";
 
             when(tokenStore.retrieveStorageIdentifier(any()))
-                    .thenReturn(completedFuture(Optional.of(expectedIdentifier)));
+                    .thenReturn(completedFuture(expectedIdentifier));
 
             assertEquals(expectedIdentifier, testSubject.getTokenStoreIdentifier());
         }
@@ -790,7 +789,7 @@ class PooledStreamingEventProcessorTest {
             await().pollDelay(Duration.ofMillis(50))
                    .atMost(Duration.ofSeconds(1))
                    .untilAsserted(() -> {
-                       int segmentCount = joinAndUnwrap(tokenStore.fetchSegments(PROCESSOR_NAME, null)).length;
+                       int segmentCount = joinAndUnwrap(tokenStore.fetchSegments(PROCESSOR_NAME, null)).size();
                        assertThat(segmentCount).isEqualTo(8);
                    });
 

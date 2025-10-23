@@ -99,7 +99,7 @@ class MergeTask extends CoordinatorTask {
         logger.debug("Processor [{}] will perform merge instruction for segment {}.", name, segmentId);
 
         int[] segments = joinAndUnwrap(unitOfWorkFactory.create().executeWithResult(
-                context -> tokenStore.fetchSegments(name, context)
+                context -> tokenStore.fetchSegments(name, context).thenApply(s -> s.stream().mapToInt(Segment::getSegmentId).toArray())
         ));
         Segment thisSegment = Segment.computeSegment(segmentId, segments);
         int thatSegmentId = thisSegment.mergeableSegmentId();

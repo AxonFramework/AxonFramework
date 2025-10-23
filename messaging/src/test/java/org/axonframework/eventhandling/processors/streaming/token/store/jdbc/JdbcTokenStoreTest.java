@@ -46,12 +46,11 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.Clock;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import javax.sql.DataSource;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -241,32 +240,37 @@ class JdbcTokenStoreTest {
     @Transactional
     @Test
     void initializeTokenSegmentsResultsToExpectedSegments() {
-        joinAndUnwrap(tokenStore.initializeTokenSegments(
+        List<Segment> createdSegments = joinAndUnwrap(tokenStore.initializeTokenSegments(
                 "test1",
                 7,
                 null,
                 createProcessingContext()));
 
-        int[] actual = joinAndUnwrap(tokenStore.fetchSegments("test1", null));
-        Arrays.sort(actual);
-        assertArrayEquals(new int[]{0, 1, 2, 3, 4, 5, 6}, actual);
+        List<Segment> actual = joinAndUnwrap(tokenStore.fetchSegments("test1", null));
+
+        // TODO #3465 - Assert entire segment here, not just id
+        assertThat(actual.stream().map(Segment::getSegmentId).toList())
+            .containsExactlyInAnyOrderElementsOf(createdSegments.stream().map(Segment::getSegmentId).toList());
     }
 
     @SuppressWarnings("Duplicates")
     @Transactional
     @Test
     void initializeTokenSegmentsResultsToExpectedTokenAtGivenPositions() {
-        joinAndUnwrap(tokenStore.initializeTokenSegments(
+        List<Segment> createdSegments = joinAndUnwrap(tokenStore.initializeTokenSegments(
                 "test1",
                 7,
                 new GlobalSequenceTrackingToken(10),
                 createProcessingContext()));
 
-        int[] actual = joinAndUnwrap(tokenStore.fetchSegments("test1", null));
-        Arrays.sort(actual);
-        assertArrayEquals(new int[]{0, 1, 2, 3, 4, 5, 6}, actual);
+        List<Segment> actual = joinAndUnwrap(tokenStore.fetchSegments("test1", null));
 
-        for (int segment : actual) {
+        // TODO #3465 - Assert entire segment here, not just id
+        assertThat(actual.stream().map(Segment::getSegmentId).toList())
+            .containsExactlyInAnyOrderElementsOf(createdSegments.stream().map(Segment::getSegmentId).toList());
+
+        // TODO #3465 - Assert the actual segments here, not the created ones (but must for now because fetchSegments returns "partial" segments where only id is correct)
+        for (Segment segment : createdSegments /* actual */) {
             assertEquals(new GlobalSequenceTrackingToken(10),
                          joinAndUnwrap(tokenStore.fetchToken("test1", segment, null)));
         }
@@ -285,16 +289,16 @@ class JdbcTokenStoreTest {
         prepareTokenStore();
 
         transactionManager.executeInTransaction(() -> {
-            final int[] segments = joinAndUnwrap(tokenStore.fetchSegments("proc1", null));
-            assertThat(segments.length, is(2));
+            List<Segment> segments = joinAndUnwrap(tokenStore.fetchSegments("proc1", null));
+            assertThat(segments.size(), is(2));
         });
         transactionManager.executeInTransaction(() -> {
-            final int[] segments = joinAndUnwrap(tokenStore.fetchSegments("proc2", null));
-            assertThat(segments.length, is(2));
+            List<Segment> segments = joinAndUnwrap(tokenStore.fetchSegments("proc2", null));
+            assertThat(segments.size(), is(2));
         });
         transactionManager.executeInTransaction(() -> {
-            final int[] segments = joinAndUnwrap(tokenStore.fetchSegments("proc3", null));
-            assertThat(segments.length, is(0));
+            List<Segment> segments = joinAndUnwrap(tokenStore.fetchSegments("proc3", null));
+            assertThat(segments.size(), is(0));
         });
     }
 
@@ -515,7 +519,7 @@ class JdbcTokenStoreTest {
 
     @Test
     void claimAndDeleteToken() {
-        transactionManager.executeInTransaction(
+        List<Segment> createdSegments = transactionManager.fetchInTransaction(
                 () -> joinAndUnwrap(tokenStore.initializeTokenSegments(
                         "test1",
                         2,
@@ -528,8 +532,11 @@ class JdbcTokenStoreTest {
 
         joinAndUnwrap(tokenStore.deleteToken("test1", 1, null));
 
-        assertArrayEquals(new int[]{0}, joinAndUnwrap(tokenStore.fetchSegments("test1",
-                                                                               null)));
+        List<Segment> segments = joinAndUnwrap(tokenStore.fetchSegments("test1", null));
+
+        // TODO #3465 - Assert entire segment here, not just id
+        assertThat(segments.stream().map(Segment::getSegmentId).toList())
+            .containsExactlyInAnyOrder(createdSegments.get(0).getSegmentId());
     }
 
     @Test
@@ -550,11 +557,11 @@ class JdbcTokenStoreTest {
     @Transactional
     @Test
     void identifierInitializedOnDemand() {
-        Optional<String> id1 = joinAndUnwrap(tokenStore.retrieveStorageIdentifier(mock()));
-        assertTrue(id1.isPresent());
-        Optional<String> id2 = joinAndUnwrap(tokenStore.retrieveStorageIdentifier(mock()));
-        assertTrue(id2.isPresent());
-        assertEquals(id1.get(), id2.get());
+        String id1 = joinAndUnwrap(tokenStore.retrieveStorageIdentifier(mock()));
+        assertNotNull(id1);
+        String id2 = joinAndUnwrap(tokenStore.retrieveStorageIdentifier(mock()));
+        assertNotNull(id2);
+        assertEquals(id1, id2);
     }
 
     @Transactional
@@ -570,13 +577,13 @@ class JdbcTokenStoreTest {
         ps.setBytes(4, tokenStore.converter().convert(token, byte[].class));
         ps.executeUpdate();
 
-        Optional<String> id1 = joinAndUnwrap(tokenStore.retrieveStorageIdentifier(mock()));
-        assertTrue(id1.isPresent());
-        Optional<String> id2 = joinAndUnwrap(tokenStore.retrieveStorageIdentifier(mock()));
-        assertTrue(id2.isPresent());
-        assertEquals(id1.get(), id2.get());
+        String id1 = joinAndUnwrap(tokenStore.retrieveStorageIdentifier(mock()));
+        assertNotNull(id1);
+        String id2 = joinAndUnwrap(tokenStore.retrieveStorageIdentifier(mock()));
+        assertNotNull(id2);
+        assertEquals(id1, id2);
 
-        assertEquals("test123", id1.get());
+        assertEquals("test123", id1);
     }
 
     private ProcessingContext createProcessingContext() {

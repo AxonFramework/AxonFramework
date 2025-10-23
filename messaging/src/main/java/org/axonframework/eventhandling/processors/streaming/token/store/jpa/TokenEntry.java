@@ -53,6 +53,15 @@ public class TokenEntry {
      */
     public static Clock clock = Clock.systemUTC();
 
+    /**
+     * Computes a token timestamp.
+     *
+     * @return A token timestamp.
+     */
+    public static String computeTokenTimestamp() {
+        return formatInstant(clock.instant());
+    }
+
     @Lob
     @Column(length = 10000)
     private byte[] token;

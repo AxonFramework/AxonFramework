@@ -41,7 +41,6 @@ import java.sql.SQLException;
 import java.time.temporal.TemporalAmount;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -67,7 +66,7 @@ public class JdbcTokenStore implements TokenStore {
     private static final Logger logger = LoggerFactory.getLogger(JdbcTokenStore.class);
 
     private static final String CONFIG_TOKEN_ID = "__config";
-    private static final int CONFIG_SEGMENT = 0;
+    private static final Segment CONFIG_SEGMENT = new Segment(0, 0);
     private static final String COUNT_COLUMN_NAME = "segmentCount";
     private final ConnectionProvider connectionProvider;
     private final Converter converter;
@@ -118,29 +117,30 @@ public class JdbcTokenStore implements TokenStore {
 
     @Nonnull
     @Override
-    public CompletableFuture<Void> initializeTokenSegments(
+    public CompletableFuture<List<Segment>> initializeTokenSegments(
             @Nonnull String processorName,
             int segmentCount,
             @Nullable TrackingToken initialToken,
             @Nullable ProcessingContext context
-    ) throws UnableToClaimTokenException {
-        Connection connection = getConnection();
-        try {
-            executeQuery(connection,
-                         c -> selectForUpdate(c, processorName, 0),
-                         resultSet -> {
-                             for (int segment = 0; segment < segmentCount; segment++) {
-                                 insertTokenEntry(connection, initialToken, processorName, segment);
-                             }
-                             return null;
-                         },
-                         e -> new UnableToClaimTokenException(
-                                 "Could not initialize segments. Some segments were already present.", e
-                         ));
-        } finally {
-            closeQuietly(connection);
+    ) {
+        try (Connection connection = getConnection()) {
+            return completedFuture(executeQuery(connection,
+                c -> selectForUpdate(c, processorName, 0),
+                resultSet -> {
+                    List<Segment> segments = Segment.splitBalanced(Segment.ROOT_SEGMENT, segmentCount - 1);
+
+                    for (Segment segment : segments) {
+                        insertTokenEntry(connection, initialToken, processorName, segment);
+                    }
+
+                    return segments;
+                },
+                e -> new UnableToClaimTokenException("Could not initialize segments. Some segments were already present.", e)
+            ));
         }
-        return completedFuture(null);
+        catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
+        }
     }
 
     @Nonnull
@@ -148,11 +148,10 @@ public class JdbcTokenStore implements TokenStore {
     public CompletableFuture<Void> initializeSegment(
             @Nullable TrackingToken token,
             @Nonnull String processorName,
-            int segment,
+            @Nonnull Segment segment,
             @Nullable ProcessingContext context
-    ) throws UnableToInitializeTokenException {
-        Connection connection = getConnection();
-        try {
+    ) {
+        try (Connection connection = getConnection()) {
             executeQuery(connection,
                          c -> selectForUpdate(c, processorName, 0),
                          resultSet -> {
@@ -162,37 +161,35 @@ public class JdbcTokenStore implements TokenStore {
                          e -> new UnableToInitializeTokenException(
                                  "Could not initialize segments. Some segments were already present.", e
                          ));
-        } finally {
-            closeQuietly(connection);
+            return completedFuture(null);
         }
-        return completedFuture(null);
+        catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
+        }
     }
 
     @Nonnull
     @Override
-    public CompletableFuture<Optional<String>> retrieveStorageIdentifier(
-            @Nullable ProcessingContext context
-    ) throws UnableToRetrieveIdentifierException {
-        return completedFuture(Optional.of(loadConfigurationToken()).map(configToken -> configToken.get("id")));
+    public CompletableFuture<String> retrieveStorageIdentifier(@Nullable ProcessingContext context) {
+        try {
+            return completedFuture(loadConfigurationToken().get("id"));
+        }
+        catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
+        }
     }
 
     private ConfigToken loadConfigurationToken() throws UnableToRetrieveIdentifierException {
         Connection connection = getConnection();
-        TrackingToken token;
         try {
-            token = executeQuery(connection,
-                                 c -> select(connection, CONFIG_TOKEN_ID, CONFIG_SEGMENT, false),
-                                 resultSet -> {
-                                     if (resultSet.next()) {
-                                         return readTokenEntry(resultSet).getToken(converter);
-                                     } else {
-                                         return null;
-                                     }
-                                 },
-                                 e -> new UnableToRetrieveIdentifierException(
-                                         "Exception while attempting to retrieve the config token",
-                                         e),
-                                 false);
+            TrackingToken token = executeQuery(
+                connection,
+                c -> select(connection, CONFIG_TOKEN_ID, CONFIG_SEGMENT.getSegmentId(), false),
+                resultSet -> resultSet.next() ? readTokenEntry(resultSet).getToken(converter) : null,
+                e -> new UnableToRetrieveIdentifierException("Exception while attempting to retrieve the config token", e),
+                false
+            );
+
             try {
                 if (token == null) {
                     token = insertTokenEntry(connection,
@@ -207,10 +204,11 @@ public class JdbcTokenStore implements TokenStore {
                         "Exception while attempting to initialize the config token. It may have been concurrently initialized.",
                         e);
             }
+
+            return (ConfigToken) token;
         } finally {
             closeQuietly(connection);
         }
-        return (ConfigToken) token;
     }
 
     /**
@@ -230,9 +228,8 @@ public class JdbcTokenStore implements TokenStore {
             @Nonnull String processorName,
             int segment,
             @Nullable ProcessingContext context
-    ) throws UnableToClaimTokenException {
-        Connection connection = getConnection();
-        try {
+    ) {
+        try (Connection connection = getConnection()) {
             int updatedToken = executeUpdate(
                     connection,
                     c -> storeUpdate(connection, token, processorName, segment),
@@ -259,10 +256,12 @@ public class JdbcTokenStore implements TokenStore {
                         ), e)
                 );
             }
-        } finally {
-            closeQuietly(connection);
+
+            return completedFuture(null);
         }
-        return completedFuture(null);
+        catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
+        }
     }
 
     @Nonnull
@@ -272,16 +271,16 @@ public class JdbcTokenStore implements TokenStore {
             int segment,
             @Nullable ProcessingContext context
     ) throws UnableToClaimTokenException {
-        Connection connection = getConnection();
-        try {
+        try (Connection connection = getConnection()) {
             return completedFuture(executeQuery(connection, c -> selectForUpdate(c, processorName, segment),
                                                 resultSet -> loadToken(connection, resultSet, processorName, segment),
                                                 e -> new JdbcException(
                                                         format("Could not load token for processor [%s] and segment [%d]",
                                                                processorName, segment), e))
             );
-        } finally {
-            closeQuietly(connection);
+        }
+        catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
         }
     }
 
@@ -292,8 +291,7 @@ public class JdbcTokenStore implements TokenStore {
             @Nonnull Segment segment,
             @Nullable ProcessingContext context
     ) throws UnableToClaimTokenException {
-        Connection connection = getConnection();
-        try {
+        try (Connection connection = getConnection()) {
             return completedFuture(executeQuery(connection,
                                                 c -> selectForUpdate(c, processorName, segment.getSegmentId()),
                                                 resultSet -> loadToken(connection, resultSet, processorName, segment),
@@ -301,8 +299,9 @@ public class JdbcTokenStore implements TokenStore {
                                                         format("Could not load token for processor [%s] and segment [%d]",
                                                                processorName, segment.getSegmentId()), e))
             );
-        } finally {
-            closeQuietly(connection);
+        }
+        catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
         }
     }
 
@@ -311,18 +310,18 @@ public class JdbcTokenStore implements TokenStore {
     public CompletableFuture<Void> releaseClaim(@Nonnull String processorName,
                                                 int segment,
                                                 @Nullable ProcessingContext context) {
-        Connection connection = getConnection();
-        try {
+        try (Connection connection = getConnection()) {
             executeUpdates(connection, e -> {
                                throw new JdbcException(
                                        format("Could not load token for processor [%s] and segment " + "[%d]",
                                               processorName, segment), e);
                            },
                            c -> releaseClaim(c, processorName, segment));
-        } finally {
-            closeQuietly(connection);
+            return completedFuture(null);
         }
-        return completedFuture(null);
+        catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
+        }
     }
 
     @Nonnull
@@ -330,8 +329,7 @@ public class JdbcTokenStore implements TokenStore {
     public CompletableFuture<Void> deleteToken(@Nonnull String processorName,
                                                int segment,
                                                @Nullable ProcessingContext context) {
-        Connection connection = getConnection();
-        try {
+        try (Connection connection = getConnection()) {
             int[] result = executeUpdates(connection, e -> {
                                               throw new JdbcException(
                                                       format("Could not remove token for processor [%s] and segment " + "[%d]",
@@ -341,28 +339,50 @@ public class JdbcTokenStore implements TokenStore {
             if (result[0] < 1) {
                 throw new UnableToClaimTokenException("Unable to claim token. It wasn't owned by " + nodeId);
             }
-        } finally {
-            closeQuietly(connection);
+
+            return completedFuture(null);
         }
-        return completedFuture(null);
+        catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
+        }
     }
 
     @Nonnull
     @Override
-    public CompletableFuture<int[]> fetchSegments(@Nonnull String processorName,
-                                                  @Nullable ProcessingContext context) {
-        Connection connection = getConnection();
-        try {
-            return completedFuture(executeQuery(connection,
-                                                c -> selectForSegments(c, processorName),
-                                                listResults(rs -> rs.getInt(schema.segmentColumn())),
-                                                e -> new JdbcException(format(
-                                                        "Could not load segments for processor [%s]",
-                                                        processorName
-                                                ), e)
-            ).stream().mapToInt(i -> i).toArray());
-        } finally {
-            closeQuietly(connection);
+    public CompletableFuture<Segment> fetchSegment(
+        @Nonnull String processorName,
+        int segmentId,
+        @Nullable ProcessingContext context
+    ) {
+        try (Connection connection = getConnection()) {
+            return completedFuture(executeQuery(
+                connection,
+                c -> select(c, processorName, segmentId, false),
+                // TODO #3465 - Don't manually create segment here
+                resultSet -> resultSet.next() ? new Segment(readTokenEntry(resultSet).getSegment(), 0) : null,
+                e -> new JdbcException("Could not load segments for processor [%s]".formatted(processorName), e)
+            ));
+        }
+        catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
+        }
+    }
+
+    @Nonnull
+    @Override
+    public CompletableFuture<List<Segment>> fetchSegments(@Nonnull String processorName,
+                                                          @Nullable ProcessingContext context) {
+        try (Connection connection = getConnection()) {
+            return completedFuture(executeQuery(
+                connection,
+                c -> selectForSegments(c, processorName),
+                // TODO #3465 - Create segment here with new mask column once available: rs.getInt(schema.maskColumn())
+                listResults(rs -> new Segment(rs.getInt(schema.segmentColumn()), 0)),
+                e -> new JdbcException("Could not load segments for processor [%s]".formatted(processorName), e)
+            ));
+        }
+        catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
         }
     }
 
@@ -370,8 +390,7 @@ public class JdbcTokenStore implements TokenStore {
     @Override
     public CompletableFuture<List<Segment>> fetchAvailableSegments(@Nonnull String processorName,
                                                                    @Nullable ProcessingContext context) {
-        Connection connection = getConnection();
-        try {
+        try (Connection connection = getConnection()) {
             List<JdbcTokenEntry> tokenEntries = executeQuery(connection,
                                                                  c -> selectTokenEntries(c, processorName),
                                                              listResults(this::readTokenEntry),
@@ -380,16 +399,16 @@ public class JdbcTokenStore implements TokenStore {
                                                                          processorName
                                                                  ), e)
             );
-            int[] allSegments = tokenEntries.stream()
-                                            .mapToInt(JdbcTokenEntry::getSegment)
-                                            .toArray();
+
+
             return completedFuture(tokenEntries.stream()
                                                .filter(tokenEntry -> tokenEntry.mayClaim(nodeId, claimTimeout))
-                                               .map(tokenEntry -> Segment.computeSegment(tokenEntry.getSegment(),
-                                                                                         allSegments))
+                                               .map(JdbcTokenEntry::getSegment)
+                                               .map(id -> new Segment(id, 0))  // TODO #3465 - Don't manually create segment here
                                                .collect(Collectors.toList()));
-        } finally {
-            closeQuietly(connection);
+        }
+        catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
         }
     }
 
@@ -474,14 +493,14 @@ public class JdbcTokenStore implements TokenStore {
      *
      * @param connection    The connection to the underlying database.
      * @param processorName The name of the processor to fetch the entry for.
-     * @param segment       The segment of the processor to fetch the entry for.
+     * @param segmentId     The segment id of the processor to fetch the entry for.
      * @return A {@link PreparedStatement} that will fetch an updatable token entry when executed.
      * @throws SQLException When an exception occurs while creating the prepared statement.
      */
     protected PreparedStatement selectForUpdate(Connection connection,
                                                 String processorName,
-                                                int segment) throws SQLException {
-        return select(connection, processorName, segment, true);
+                                                int segmentId) throws SQLException {
+        return select(connection, processorName, segmentId, true);
     }
 
     /**
@@ -490,13 +509,13 @@ public class JdbcTokenStore implements TokenStore {
      *
      * @param connection    The connection to the underlying database.
      * @param processorName The name of the processor to fetch the entry for.
-     * @param segment       The segment of the processor to fetch the entry for.
+     * @param segmentId     The segment id of the processor to fetch the entry for.
      * @param forUpdate     Whether the returned token should be updatable.
      * @return A {@link PreparedStatement} that will fetch an updatable token entry when executed.
      * @throws SQLException When an exception occurs while creating the prepared statement.
      */
     protected PreparedStatement select(Connection connection, String processorName,
-                                       int segment, boolean forUpdate) throws SQLException {
+                                       int segmentId, boolean forUpdate) throws SQLException {
         final String sql = "SELECT " +
                 String.join(", ", schema.processorNameColumn(), schema.segmentColumn(), schema.tokenColumn(),
                             schema.tokenTypeColumn(), schema.timestampColumn(), schema.ownerColumn()) + " FROM " +
@@ -504,7 +523,7 @@ public class JdbcTokenStore implements TokenStore {
                 " = ? " + (forUpdate ? "FOR UPDATE" : "");
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
         preparedStatement.setString(1, processorName);
-        preparedStatement.setInt(2, segment);
+        preparedStatement.setInt(2, segmentId);
         return preparedStatement;
     }
 
@@ -751,16 +770,17 @@ public class JdbcTokenStore implements TokenStore {
     protected TrackingToken insertTokenEntry(Connection connection,
                                              @Nonnull TrackingToken token,
                                              String processorName,
-                                             int segment) throws SQLException {
+                                             @Nonnull Segment segment) throws SQLException {
         JdbcTokenEntry entry = new JdbcTokenEntry(token, converter);
 
         final String sql = "INSERT INTO " + schema.tokenTable() + " (" + schema.processorNameColumn() + "," +
-                schema.segmentColumn() + "," + schema.timestampColumn() + "," + schema.tokenColumn() + "," +
-                schema.tokenTypeColumn() + "," + schema.ownerColumn() + ") VALUES (?,?,?,?,?,?)";
+                schema.segmentColumn() + "," + schema.timestampColumn() + "," +
+                schema.tokenColumn() + "," + schema.tokenTypeColumn() + "," + schema.ownerColumn() + ") " +
+                "VALUES (?,?,?,?,?,?)";
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatement.setString(1, processorName);
-            preparedStatement.setInt(2, segment);
+            preparedStatement.setInt(2, segment.getSegmentId());
             preparedStatement.setString(3, entry.timestampAsString());
             preparedStatement.setBytes(4, entry.getTokenData());
             preparedStatement.setString(5, entry.getTokenType());
