@@ -6,6 +6,8 @@ import io.axoniq.demo.university.shared.ids.CourseId;
 import org.axonframework.test.fixture.AxonTestFixture;
 import org.junit.jupiter.api.*;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 class CreateCourseAxonFixtureTest {
 
     private AxonTestFixture fixture;
@@ -47,5 +49,23 @@ class CreateCourseAxonFixtureTest {
                 .then()
                 .success()
                 .noEvents();
+    }
+
+    @Test
+    void givenCourseWithSameName_WhenCreateCourse_ThenFail() {
+        var existingCourseId = CourseId.random();
+        var newCourseId = CourseId.random();
+        var courseName = "Event Sourcing in Practice";
+        var capacity = 3;
+
+        fixture.given()
+                .event(new CourseCreated(existingCourseId, courseName, capacity))
+                .when()
+                .command(new CreateCourse(newCourseId, courseName, capacity))
+                .then()
+                .exceptionSatisfies(
+                        exception -> assertThat(exception)
+                                .hasMessageContaining("Course with name 'Event Sourcing in Practice' already exists")
+                );
     }
 }
