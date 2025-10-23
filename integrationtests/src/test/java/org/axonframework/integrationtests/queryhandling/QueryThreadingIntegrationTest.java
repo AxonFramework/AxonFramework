@@ -143,12 +143,25 @@ class QueryThreadingIntegrationTest {
     void canSendQueryAndReceiveSingleResponse() {
         queryBus.subscribe(QUERY_TYPE_A.qualifiedName(), new QualifiedName(String.class), (query, ctx) -> MessageStream.just(new GenericQueryResponseMessage(new MessageType(String.class), "a")));
 
-        var result = queryBus2.subscriptionQuery(new GenericSubscriptionQueryMessage(QUERY_TYPE_A, "start", new MessageType(String.class)),
-                                    null, 16);
+        var result = queryBus2.query(new GenericSubscriptionQueryMessage(QUERY_TYPE_A, "start", new MessageType(String.class)),
+                                    null);
         await().untilAsserted(() -> {
             assertThat(result.hasNextAvailable()).isTrue();
         });
-        assertThat(result.next().get().message().payloadAs(String.class, converter)).isEqualTo("a");
+        assertThat(result.next().map(e -> e.message().payloadAs(String.class, converter))).contains("a");
+        await().atMost(Duration.ofSeconds(1)).until(result::isCompleted);
+    }
+
+    @Test
+    void canSendSubscriptionQuery() {
+        queryBus.subscribe(QUERY_TYPE_A.qualifiedName(), new QualifiedName(String.class), (query, ctx) -> MessageStream.just(new GenericQueryResponseMessage(new MessageType(String.class), "a")));
+
+        var result = queryBus2.subscriptionQuery(new GenericSubscriptionQueryMessage(QUERY_TYPE_A, "start", new MessageType(String.class)),
+                                                 null, 16);
+        await().untilAsserted(() -> {
+            assertThat(result.hasNextAvailable()).isTrue();
+        });
+        assertThat(result.next().map(e -> e.message().payloadAs(String.class, converter))).contains("a");
 
         // this means we have the initial result. Let's send some updates
         queryBus.emitUpdate(m -> true, () -> new GenericSubscriptionQueryUpdateMessage(new MessageType(String.class), "u1"), null);
@@ -158,11 +171,6 @@ class QueryThreadingIntegrationTest {
         await().atMost(Duration.ofSeconds(1)).until(result::hasNextAvailable);
         assertThat(result.next().get().message().payloadAs(String.class, converter)).isEqualTo("u1");
         await().atMost(Duration.ofSeconds(1)).until(result::isCompleted);
-    }
-
-    @Test
-    void canSendSubscriptionQuery() {
-
     }
 
     @Test
