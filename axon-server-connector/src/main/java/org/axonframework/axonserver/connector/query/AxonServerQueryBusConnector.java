@@ -245,7 +245,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
             }
             result.onClose(queriesInProgress.remove(query.getMessageIdentifier()))
                   .onAvailable(() -> {
-                      // TODO 3488 - Check if sufficient permits from flow control
+                      // TODO #3808 - Check if sufficient permits from flow control
                       // This logic should be executed by tasks with scheduling gates on the response thread pool
                       while (result.hasNextAvailable()) {
                           var next = result.next();
@@ -263,7 +263,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
             return new FlowControl() {
                 @Override
                 public void request(long requested) {
-                    // TODO 3488 - Implement flow control on responses
+                    // TODO #3808 - Implement flow control on responses
                 }
 
                 @Override
