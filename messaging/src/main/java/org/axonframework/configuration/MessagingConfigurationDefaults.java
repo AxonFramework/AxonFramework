@@ -278,7 +278,8 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
         return new DefaultQueryGateway(
                 config.getComponent(QueryBus.class),
                 config.getComponent(MessageTypeResolver.class),
-                config.getComponent(QueryPriorityCalculator.class)
+                config.getComponent(QueryPriorityCalculator.class),
+                config.getComponent(MessageConverter.class)
         );
     }
 

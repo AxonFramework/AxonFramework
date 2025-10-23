@@ -72,7 +72,8 @@ class AsyncMessageHandlerTest {
     private final QueryBus queryBus = QueryBusTestUtils.aQueryBus();
     private final QueryGateway queryGateway = new DefaultQueryGateway(queryBus,
                                                                       new ClassBasedMessageTypeResolver(),
-                                                                      QueryPriorityCalculator.defaultCalculator());
+                                                                      QueryPriorityCalculator.defaultCalculator(),
+                                                                      PassThroughConverter.MESSAGE_INSTANCE);
     private final EventBus eventBus = new SimpleEventBus();
     private final AtomicBoolean eventHandlerCalled = new AtomicBoolean();
 

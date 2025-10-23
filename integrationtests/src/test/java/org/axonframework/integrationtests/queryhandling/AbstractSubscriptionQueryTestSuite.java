@@ -103,7 +103,8 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         queryBus = queryBus();
         queryGateway = new DefaultQueryGateway(queryBus,
                                                new ClassBasedMessageTypeResolver(),
-                                               QueryPriorityCalculator.defaultCalculator());
+                                               QueryPriorityCalculator.defaultCalculator(),
+                                               PassThroughConverter.MESSAGE_INSTANCE);
         queryHandlingComponent = new ChatQueryHandler();
         ParameterResolverFactory parameterResolverFactory = MultiParameterResolverFactory.ordered(
                 ClasspathParameterResolverFactory.forClass(ChatQueryHandler.class),
