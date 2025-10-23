@@ -26,6 +26,7 @@ import jakarta.persistence.IdClass;
 import jakarta.persistence.Lob;
 import org.axonframework.common.ClassUtils;
 import org.axonframework.common.DateTimeUtils;
+import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.serialization.Converter;
 
@@ -53,6 +54,15 @@ public class TokenEntry {
      */
     public static Clock clock = Clock.systemUTC();
 
+    /**
+     * Computes a token timestamp.
+     *
+     * @return A token timestamp.
+     */
+    public static String computeTokenTimestamp() {
+        return formatInstant(clock.instant());
+    }
+
     @Lob
     @Column(length = 10000)
     private byte[] token;
@@ -69,18 +79,20 @@ public class TokenEntry {
     private String processorName;
     @Id
     private int segment;
+    @Basic(optional = false)
+    private int mask;
 
     /**
      * Initializes a new token entry for given {@code token}, {@code processorName} and {@code segment}. The given
      * {@code converter} is used to serialize the token before it is stored.
      *
-     * @param token         The tracking token to store.
      * @param processorName The name of the processor to store this token for.
-     * @param segment       The segment index of the processor.
+     * @param segment       The segment of the processor.
+     * @param token         The tracking token to store.
      * @param converter     The converter to use when storing a serialized token.
      */
     public TokenEntry(@Nonnull String processorName,
-                      int segment,
+                      @Nonnull Segment segment,
                       @Nullable TrackingToken token,
                       @Nonnull Converter converter) {
         this.timestamp = formatInstant(clock.instant());
@@ -89,7 +101,8 @@ public class TokenEntry {
             this.tokenType = token.getClass().getName();
         }
         this.processorName = processorName;
-        this.segment = segment;
+        this.segment = segment.getSegmentId();
+        this.mask = segment.getMask();
     }
 
     /**
@@ -221,12 +234,12 @@ public class TokenEntry {
     }
 
     /**
-     * Returns the segment identifier of this token.
+     * Returns the segment of this token.
      *
-     * @return The segment identifier of this token.
+     * @return The segment of this token.
      */
-    public int getSegment() {
-        return segment;
+    public Segment getSegment() {
+        return new Segment(segment, mask);
     }
 
     /**

@@ -1,8 +1,10 @@
 # Project Modularity
+
 Below is a list of the current project modularity and the desired modularity.
 The intent with adjusting the modularity is to be able to serve more users with Axon Framework then we currently do.
 
 ## Current structure
+
 > Extensions are left out for simplicity.
 
 1. Messaging -> JPA, JDBC, InMemory
@@ -24,41 +26,52 @@ The intent with adjusting the modularity is to be able to serve more users with 
 ## Desired structure
 
 ### Core
-1. Messaging-Core -> InMemory, InProcess, Configuration, Metrics, Tracing
-2. Event-Messaging -> Configuration (archetypes), Metrics, Tracing
-3. Command-Messaging -> Configuration (archetypes), Metrics, Tracing
-4. Query-Messaging -> Configuration (archetypes), Metrics, Tracing
-5. Messaging -> Configuration (archetypes), Metrics, Tracing
-6. EventSourcing -> InMemory, InProcess, Configuration, Metrics, Tracing
-7. Annotations
-8. Testing
-9. Integration Tests -> unpublished
+
+1. Messaging -> Configuration (archetypes), Metrics, Tracing
+     - Messaging-Core -> InMemory, InProcess, Configuration, Metrics, Tracing
+     - Event-Messaging -> Configuration (archetypes), Metrics, Tracing
+     - Command-Messaging -> Configuration (archetypes), Metrics, Tracing
+     - Query-Messaging -> Configuration (archetypes), Metrics, Tracing
+2. EventSourcing -> InMemory, InProcess, Configuration, Metrics, Tracing
+3. Modelling
+4. Testing
+5. Integration Tests -> unpublished
 
 ### Extensions
-> Each extension belong to its corresponding repository.
 
-1. Spring
-   i. Core
-   ii. Starter
-   iii. Auto-Configuration
-   iv. SpringCloud
-2. Legacy
-   i. AF4
-3. Axon Server Connector Java
-4. Disruptor
-5. JPA
-6. JDBC
-7. R2DBC
-8. Mongo
-9. Kafka
-10. OpenTelemetry
-11. MicroMeter
-12. JobRnr
-13. quartz
-14. AMQP
-15. Kotlin
-16. Reactor
-17. RXJava
+> Extensions are in the future separated into internal and external.
+
+#### Internal Extensions
+
+> Internal extension are located in the repository underneath the `extensions` folder.
+
+1. Spring Support (`spring`)
+    - Core
+    - Starter
+    - Auto-Configuration
+2. Metrics (`metrics`)
+    - Dropwizard
+    - Micrometer
+3. Tracing (`tracing`)
+    - OpenTelemetry
+
+#### External or still open / discussable
+
+- Legacy (AF4)
+- Axon Server Connector Java
+- Disruptor
+- JPA
+- JDBC
+- R2DBC
+- Mongo
+- Kafka
+- JobRnr
+- quartz
+- AMQP
+- Kotlin
+- Reactor
+- RXJava
+- SpringCloud
 
 ### BOM
 

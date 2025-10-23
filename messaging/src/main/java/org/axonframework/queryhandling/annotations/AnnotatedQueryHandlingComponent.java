@@ -23,6 +23,7 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotations.AnnotatedHandlerInspector;
+import org.axonframework.messaging.annotations.AnnotationMessageTypeResolver;
 import org.axonframework.messaging.annotations.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotations.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotations.HandlerDefinition;
@@ -94,7 +95,7 @@ public class AnnotatedQueryHandlingComponent<T> implements QueryHandlingComponen
         this(annotatedQueryHandler,
              parameterResolverFactory,
              ClasspathHandlerDefinition.forClass(annotatedQueryHandler.getClass()),
-             new ClassBasedMessageTypeResolver(),
+             new AnnotationMessageTypeResolver(),
              converter);
     }
 

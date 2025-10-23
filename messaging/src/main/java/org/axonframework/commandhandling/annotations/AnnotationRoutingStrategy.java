@@ -30,15 +30,19 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.StreamSupport;
 
-import static org.axonframework.common.ReflectionUtils.*;
+import static org.axonframework.common.ReflectionUtils.fieldsOf;
+import static org.axonframework.common.ReflectionUtils.ensureAccessible;
+import static org.axonframework.common.ReflectionUtils.methodsOf;
 
 /**
- * RoutingStrategy that expects an {@link RoutingKey} (meta-)annotation on the command message's payload. Commands are
- * routed based on an identifier annotated with the {@code RoutingKey}. This approach ensures that commands with the
- * same identifier, thus dealt with by the same target, are dispatched to the same node in a distributed Command Bus
- * (e.g. {@code AxonServerCommandBus} or {@link DistributedCommandBus}).
+ * RoutingStrategy that expects an {@link Command} (meta-)annotation on the command message's payload. Commands are
+ * routed based on an identifier annotated with the {@code Command}. This approach ensures that commands with the same
+ * identifier, thus dealt with by the same target, are dispatched to the same node in a distributed Command Bus (e.g.
+ * {@code AxonServerCommandBus} or {@link DistributedCommandBus}).
  * <p>
  * An example would be the {@code TargetAggregateIdentifier} annotation, which is meta-annotated with
  * {@code RoutingKey}. See the AnnotationCommandTargetResolver for more details on this approach.
@@ -52,25 +56,24 @@ import static org.axonframework.common.ReflectionUtils.*;
  */
 public class AnnotationRoutingStrategy implements RoutingStrategy {
 
-    private static final RoutingKeyResolver NO_RESOLVE = new RoutingKeyResolver((Method) null);
+    private static final RoutingKeyResolver NO_RESOLVE = new RoutingKeyResolver(null, null);
     private static final String NULL_DEFAULT = null;
 
     private final Class<? extends Annotation> annotationType;
     private final Map<Class<?>, RoutingKeyResolver> resolverMap = new ConcurrentHashMap<>();
 
     /**
-     * Instantiate an annotation {@link RoutingStrategy}. The {@code annotationType} is defaulted to
-     * {@link RoutingKey}.
+     * Instantiate an annotation {@link RoutingStrategy}. The {@code annotationType} is defaulted to {@link Command}.
      */
     public AnnotationRoutingStrategy() {
-        this(RoutingKey.class);
+        this(Command.class);
     }
 
     /**
-     * Instantiate an annotation {@link RoutingStrategy}. The {@code annotationType} is used to indicate which field to
-     * use as routing key.
+     * Instantiate an annotation {@link RoutingStrategy}. The {@code annotationType} attribute routingKey is used to
+     * indicate which field to use as routing key.
      *
-     * @param annotationType The annotation to check the fields of the payload for.
+     * @param annotationType The annotation specifying the field to check the payload for.
      */
     public AnnotationRoutingStrategy(@Nonnull Class<? extends Annotation> annotationType) {
         this.annotationType = Objects.requireNonNull(annotationType, "The annotationType can not be null.");
@@ -83,50 +86,61 @@ public class AnnotationRoutingStrategy implements RoutingStrategy {
             return payload == null ? null : findIdentifier(payload);
         } catch (InvocationTargetException e) {
             throw new AxonConfigurationException(
-                    "An exception occurred while extracting routing information form a command", e
+                    "An exception occurred while extracting routing information form a command",
+                    e
             );
         } catch (IllegalAccessException e) {
             throw new AxonConfigurationException(
-                    "The current security context does not allow extraction of routing information from the given command.",
+                    "The current security context does not allow "
+                            + "extraction of routing information from the given command.",
                     e
             );
         }
     }
 
+
     private String findIdentifier(Object payload) throws InvocationTargetException, IllegalAccessException {
-        return resolverMap.computeIfAbsent(payload.getClass(), this::createResolver)
-                          .identify(payload);
+        return resolverMap
+                .computeIfAbsent(payload.getClass(), this::createResolver)
+                .identify(payload);
     }
 
     private RoutingKeyResolver createResolver(Class<?> type) {
+        Optional<String> routingKey = AnnotationUtils.findAnnotationAttribute(type, annotationType, "routingKey");
+        return routingKey.flatMap(name -> {
+            Optional<RoutingKeyResolver> matchedField = StreamSupport
+                    .stream(fieldsOf(type).spliterator(), false)
+                    .filter(f -> ReflectionUtils.fieldNameFromMember(f).equals(name))
+                    .findFirst()
+                    .map(f -> new RoutingKeyResolver(f, null));
+            return matchedField.or(
+                    () ->
+                            StreamSupport
+                                    .stream(methodsOf(type).spliterator(), false)
+                                    .filter(m -> ReflectionUtils.fieldNameFromMember(m).equals(name))
+                                    .findFirst()
+                                    .map(ReflectionUtils::ensureAccessible)
+                                    .map(m -> new RoutingKeyResolver(null, m)));
+        }).orElseGet(() -> createLegacyResolver(type));
+    }
+
+    private RoutingKeyResolver createLegacyResolver(Class<?> type) {
+        var legacyAnnotationType = RoutingKey.class;
         for (Field f : fieldsOf(type)) {
-            if (AnnotationUtils.findAnnotationAttributes(f, annotationType).isPresent()) {
-                return new RoutingKeyResolver(f);
+            if (AnnotationUtils.findAnnotationAttributes(f, legacyAnnotationType).isPresent()) {
+                return new RoutingKeyResolver(f, null);
             }
         }
         for (Method m : methodsOf(type)) {
-            if (AnnotationUtils.findAnnotationAttributes(m, annotationType).isPresent()) {
+            if (AnnotationUtils.findAnnotationAttributes(m, legacyAnnotationType).isPresent()) {
                 ensureAccessible(m);
-                return new RoutingKeyResolver(m);
+                return new RoutingKeyResolver(null, m);
             }
         }
         return NO_RESOLVE;
     }
 
-    private static final class RoutingKeyResolver {
-
-        private final Method method;
-        private final Field field;
-
-        public RoutingKeyResolver(Method method) {
-            this.method = method;
-            this.field = null;
-        }
-
-        public RoutingKeyResolver(Field field) {
-            this.method = null;
-            this.field = field;
-        }
+    private record RoutingKeyResolver(Field field, Method method) {
 
         public String identify(Object command) throws InvocationTargetException, IllegalAccessException {
             if (method != null) {

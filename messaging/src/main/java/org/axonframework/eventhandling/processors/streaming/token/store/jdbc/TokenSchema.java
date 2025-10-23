@@ -27,6 +27,7 @@ public class TokenSchema {
     private final String tokenTable;
     private final String processorNameColumn;
     private final String segmentColumn;
+    private final String maskColumn;
     private final String tokenColumn;
     private final String tokenTypeColumn;
     private final String timestampColumn;
@@ -43,6 +44,7 @@ public class TokenSchema {
         this.tokenTable = builder.tokenTable;
         this.processorNameColumn = builder.processorNameColumn;
         this.segmentColumn = builder.segmentColumn;
+        this.maskColumn = builder.maskColumn;
         this.tokenColumn = builder.tokenColumn;
         this.tokenTypeColumn = builder.tokenTypeColumn;
         this.timestampColumn = builder.timestampColumn;
@@ -83,6 +85,15 @@ public class TokenSchema {
      */
     public String segmentColumn() {
         return segmentColumn;
+    }
+
+    /**
+     * Returns the name of the column containing the segment mask of the processor to which the token belongs.
+     *
+     * @return the name of the column containing the segment mask of the processor owning the token
+     */
+    public String maskColumn() {
+        return maskColumn;
     }
 
     /**
@@ -129,6 +140,7 @@ public class TokenSchema {
         private String tokenTable = "TokenEntry";
         private String processorNameColumn = "processorName";
         private String segmentColumn = "segment";
+        private String maskColumn = "mask";
         private String tokenColumn = "token";
         private String tokenTypeColumn = "tokenType";
         private String timestampColumn = "timestamp";
@@ -164,6 +176,17 @@ public class TokenSchema {
          */
         public Builder setSegmentColumn(String columnName) {
             this.segmentColumn = columnName;
+            return this;
+        }
+
+        /**
+         * Sets the name of the processor segment mask column. Defaults to 'mask'.
+         *
+         * @param columnName the name of the column
+         * @return the modified Builder instance
+         */
+        public Builder setMaskColumn(String columnName) {
+            this.maskColumn = columnName;
             return this;
         }
 

@@ -154,6 +154,40 @@ class AnnotationMessageTypeResolverTest {
     }
 
     @Nested
+    class QueryResponseMessageResolution {
+
+        @Test
+        void classAnnotatedWithQueryResponseReturnsExpectedMessageType() {
+            MessageType expectedType = new MessageType("non-of-your-business-query-response-name", "9002");
+
+            Optional<MessageType> result = testSubject.resolve(TestQueryResponse.class);
+
+            assertThat(result).isPresent();
+            assertThat(result.get()).isEqualTo(expectedType);
+        }
+
+        @Test
+        void classAnnotatedWithQueryResponseIncludingNamespaceReturnsExpectedMessageType() {
+            MessageType expectedType = new MessageType("context", "non-of-your-business-query-response-name", "9002");
+
+            Optional<MessageType> result = testSubject.resolve(TestQueryResponseWithNamespace.class);
+
+            assertThat(result).isPresent();
+            assertThat(result.get()).isEqualTo(expectedType);
+
+        }
+
+        @Query(name = "non-of-your-business-query-response-name", version = "9002")
+        private record TestQueryResponse(String id) {
+
+        }
+        @Query(name = "non-of-your-business-query-response-name", version = "9002", namespace = "context")
+        private record TestQueryResponseWithNamespace(String id) {
+
+        }
+    }
+
+    @Nested
     class MetaAnnotatedResolution {
 
         @Test

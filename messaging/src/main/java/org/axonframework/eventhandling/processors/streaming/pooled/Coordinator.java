@@ -301,8 +301,8 @@ class Coordinator {
         try {
             joinAndUnwrap(unitOfWorkFactory.create().executeWithResult(
                     context -> {
-                        int[] segments = joinAndUnwrap(tokenStore.fetchSegments(name, context));
-                        if (segments == null || segments.length == 0) {
+                        List<Segment> segments = joinAndUnwrap(tokenStore.fetchSegments(name, context));
+                        if (segments.isEmpty()) {
                             logger.info("Initializing segments for processor [{}] ({} segments)",
                                         name, initialSegmentCount);
                             joinAndUnwrap(tokenStore.initializeTokenSegments(
