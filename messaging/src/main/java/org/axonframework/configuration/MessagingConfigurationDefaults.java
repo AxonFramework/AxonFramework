@@ -39,6 +39,7 @@ import org.axonframework.messaging.ConfigurationApplicationContext;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageTypeResolver;
+import org.axonframework.messaging.annotations.AnnotationMessageTypeResolver;
 import org.axonframework.messaging.configuration.reflection.ParameterResolverFactoryUtils;
 import org.axonframework.messaging.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.conversion.MessageConverter;
@@ -183,7 +184,7 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
     }
 
     private static MessageTypeResolver defaultMessageTypeResolver(Configuration config) {
-        return new ClassBasedMessageTypeResolver();
+        return new AnnotationMessageTypeResolver();
     }
 
     private static DelegatingMessageConverter defaultMessageConverter(Configuration c) {

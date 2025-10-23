@@ -95,7 +95,7 @@ public class AxonTestFixtureMonitoringTest {
 
         static class CourseCreatedCommandHandler {
 
-            @CommandHandler
+            @CommandHandler(commandName = "CreateCourse")
             void handle(CreateCourse cmd, @InjectEntity(idProperty = COURSE_ID) CourseCreatedCommandHandler.State state,
                         EventAppender eventAppender) {
                 eventAppender.append(state.decide(cmd));

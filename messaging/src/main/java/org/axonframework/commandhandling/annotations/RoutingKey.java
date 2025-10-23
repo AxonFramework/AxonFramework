@@ -31,9 +31,11 @@ import java.lang.annotation.Target;
  *
  * @author Steven van Beelen
  * @since 4.0
+ * @deprecated Use attributes of {@link @CommandHandler} annotation to specify the routing key instead.
  */
 @Target({ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
+@Deprecated(since = "5.0.0")
 public @interface RoutingKey {
 
 }

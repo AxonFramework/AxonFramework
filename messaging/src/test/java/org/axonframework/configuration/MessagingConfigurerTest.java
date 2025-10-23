@@ -41,6 +41,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.NamespaceMessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.annotations.AnnotationMessageTypeResolver;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.CorrelationDataProviderRegistry;
 import org.axonframework.messaging.correlation.DefaultCorrelationDataProviderRegistry;
@@ -84,7 +85,7 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
 
         Optional<MessageTypeResolver> messageTypeResolver = result.getOptionalComponent(MessageTypeResolver.class);
         assertTrue(messageTypeResolver.isPresent());
-        assertInstanceOf(ClassBasedMessageTypeResolver.class, messageTypeResolver.get());
+        assertInstanceOf(AnnotationMessageTypeResolver.class, messageTypeResolver.get());
 
         Optional<CommandGateway> commandGateway = result.getOptionalComponent(CommandGateway.class);
         assertTrue(commandGateway.isPresent());

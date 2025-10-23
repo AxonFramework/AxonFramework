@@ -42,6 +42,7 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.SubscribableEventSource;
+import org.axonframework.messaging.annotations.AnnotationMessageTypeResolver;
 import org.axonframework.messaging.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
@@ -89,7 +90,7 @@ class MessagingConfigurationDefaultsTest {
         ApplicationConfigurer configurer = MessagingConfigurer.enhance(new DefaultAxonApplication());
         Configuration resultConfig = configurer.build();
 
-        assertInstanceOf(ClassBasedMessageTypeResolver.class, resultConfig.getComponent(MessageTypeResolver.class));
+        assertInstanceOf(AnnotationMessageTypeResolver.class, resultConfig.getComponent(MessageTypeResolver.class));
         Converter generalConverter = resultConfig.getComponent(Converter.class);
         assertInstanceOf(JacksonConverter.class, generalConverter);
         MessageConverter messageConverter = resultConfig.getComponent(MessageConverter.class);

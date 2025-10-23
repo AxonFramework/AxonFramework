@@ -39,9 +39,9 @@ import java.lang.annotation.Target;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-@RoutingKey
 @Target({ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
+@RoutingKey
 public @interface TargetEntityId {
 
 }
