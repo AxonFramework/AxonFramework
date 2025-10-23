@@ -23,6 +23,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
+import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.serialization.Converter;
 import org.reactivestreams.Publisher;
@@ -47,7 +48,7 @@ public class DefaultQueryGateway implements QueryGateway {
     private final QueryBus queryBus;
     private final MessageTypeResolver messageTypeResolver;
     private final QueryPriorityCalculator priorityCalculator;
-    private final Converter converter;
+    private final MessageConverter converter;
 
     /**
      * Initialize the {@code DefaultQueryGateway} to send queries through the given {@code queryBus}.
@@ -65,13 +66,13 @@ public class DefaultQueryGateway implements QueryGateway {
     public DefaultQueryGateway(@Nonnull QueryBus queryBus,
                                @Nonnull MessageTypeResolver messageTypeResolver,
                                @Nonnull QueryPriorityCalculator priorityCalculator,
-                               @Nonnull Converter converter) {
+                               @Nonnull MessageConverter converter) {
         this.queryBus = Objects.requireNonNull(queryBus, "The QueryBus must not be null.");
         this.messageTypeResolver = Objects.requireNonNull(messageTypeResolver,
                                                           "The MessageTypeResolver must not be null.");
         this.priorityCalculator = Objects.requireNonNull(priorityCalculator,
                                                          "The QueryPriorityCalculator must not be null.");
-        this.converter = Objects.requireNonNull(converter, "The Converter must not be null.");
+        this.converter = Objects.requireNonNull(converter, "The MessageConverter must not be null.");
     }
 
     @Nonnull
