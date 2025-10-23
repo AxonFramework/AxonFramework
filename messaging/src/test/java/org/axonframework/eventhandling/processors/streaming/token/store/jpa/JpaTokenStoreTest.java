@@ -115,7 +115,7 @@ class JpaTokenStoreTest {
 
     @Test
     void identifierReadIfAvailable() {
-        entityManager.persist(new TokenEntry("__config", 0, new ConfigToken(Collections.singletonMap("id", "test")),
+        entityManager.persist(new TokenEntry("__config", Segment.ROOT_SEGMENT, new ConfigToken(Collections.singletonMap("id", "test")),
                                              jpaTokenStore.converter()));
         String id1 = joinAndUnwrap(jpaTokenStore.retrieveStorageIdentifier(mock()));
         assertNotNull(id1);
@@ -148,9 +148,7 @@ class JpaTokenStoreTest {
         List<Segment> createdSegments = joinAndUnwrap(jpaTokenStore.initializeTokenSegments("test1", 7, null, createProcessingContext()));
         List<Segment> actual = joinAndUnwrap(jpaTokenStore.fetchSegments("test1", null));
 
-        // TODO #3465 - Assert entire segment here, not just id
-        assertThat(actual.stream().map(Segment::getSegmentId).toList())
-            .containsExactlyInAnyOrderElementsOf(createdSegments.stream().map(Segment::getSegmentId).toList());
+        assertThat(actual).containsExactlyInAnyOrderElementsOf(createdSegments);
     }
 
     @SuppressWarnings("Duplicates")
@@ -159,15 +157,11 @@ class JpaTokenStoreTest {
         List<Segment> createdSegments = joinAndUnwrap(jpaTokenStore.initializeTokenSegments(
                 "test1", 7, new GlobalSequenceTrackingToken(10), createProcessingContext()
         ));
-
         List<Segment> actual = joinAndUnwrap(jpaTokenStore.fetchSegments("test1", null));
 
-        // TODO #3465 - Assert entire segment here, not just id
-        assertThat(actual.stream().map(Segment::getSegmentId).toList())
-            .containsExactlyInAnyOrderElementsOf(createdSegments.stream().map(Segment::getSegmentId).toList());
+        assertThat(actual).containsExactlyInAnyOrderElementsOf(createdSegments);
 
-        // TODO #3465 - Assert the actual segments here, not the created ones (but must for now because fetchSegments returns "partial" segments where only id is correct)
-        for (Segment segment : createdSegments /* actual */) {
+        for (Segment segment : actual) {
             assertEquals(new GlobalSequenceTrackingToken(10),
                          joinAndUnwrap(jpaTokenStore.fetchToken("test1", segment, null)));
         }
@@ -238,16 +232,16 @@ class JpaTokenStoreTest {
 
     @Test
     void fetchTokenBySegment() {
-        joinAndUnwrap(jpaTokenStore.initializeTokenSegments("test", 2, null, createProcessingContext()));
-        Segment segmentToFetch = Segment.computeSegment(1, 0, 1);
+        List<Segment> segments = joinAndUnwrap(jpaTokenStore.initializeTokenSegments("test", 2, null, createProcessingContext()));
+        Segment segmentToFetch = segments.get(1);
 
         assertNull(joinAndUnwrap(jpaTokenStore.fetchToken("test", segmentToFetch, null)));
     }
 
     @Test
     void fetchTokenBySegmentSegment0() {
-        joinAndUnwrap(jpaTokenStore.initializeTokenSegments("test", 1, null, createProcessingContext()));
-        Segment segmentToFetch = Segment.computeSegment(0, 0);
+        List<Segment> segments = joinAndUnwrap(jpaTokenStore.initializeTokenSegments("test", 1, null, createProcessingContext()));
+        Segment segmentToFetch = segments.get(0);
 
         assertNull(joinAndUnwrap(jpaTokenStore.fetchToken("test", segmentToFetch, null)));
     }
@@ -257,7 +251,7 @@ class JpaTokenStoreTest {
         joinAndUnwrap(jpaTokenStore.initializeTokenSegments("test", 1, null, createProcessingContext()));
 
         // Create a segment as if there would be two segments in total. This simulates that these two segments have been merged into one.
-        Segment segmentToFetch = Segment.computeSegment(1, 0, 1);
+        Segment segmentToFetch = new Segment(1, 1);
 
         assertThrows(UnableToClaimTokenException.class,
                      () -> joinAndUnwrap(jpaTokenStore.fetchToken("test", segmentToFetch, null)));
@@ -267,7 +261,7 @@ class JpaTokenStoreTest {
     void fetchTokenBySegmentFailsDuringMergeSegment0() {
         joinAndUnwrap(jpaTokenStore.initializeTokenSegments("test", 1, null, createProcessingContext()));
 
-        Segment segmentToFetch = Segment.computeSegment(0, 0, 1);
+        Segment segmentToFetch = new Segment(0, 1);
 
         assertThrows(UnableToClaimTokenException.class,
                      () -> joinAndUnwrap(jpaTokenStore.fetchToken("test", segmentToFetch, null)));
@@ -278,7 +272,7 @@ class JpaTokenStoreTest {
         joinAndUnwrap(jpaTokenStore.initializeTokenSegments("test", 4, null, createProcessingContext()));
 
         //Create a segment as if there would be only two segments in total. This simulates that the segments have been split into 4 segments.
-        Segment segmentToFetch = Segment.computeSegment(1, 0, 1);
+        Segment segmentToFetch = new Segment(1, 1);
 
         assertThrows(UnableToClaimTokenException.class,
                      () -> joinAndUnwrap(jpaTokenStore.fetchToken("test", segmentToFetch, null)));
@@ -288,7 +282,7 @@ class JpaTokenStoreTest {
     void fetchTokenBySegmentFailsDuringSplitSegment0() {
         joinAndUnwrap(jpaTokenStore.initializeTokenSegments("test", 2, null, createProcessingContext()));
 
-        Segment segmentToFetch = Segment.computeSegment(0, 0);
+        Segment segmentToFetch = new Segment(0, 0);
 
         assertThrows(UnableToClaimTokenException.class,
                      () -> joinAndUnwrap(jpaTokenStore.fetchToken("test", segmentToFetch, null)));

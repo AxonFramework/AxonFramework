@@ -1889,6 +1889,11 @@ consuming events through the `EventStorageEngine#stream(StreamingCondition)` met
 4. The dbscheduler `org.axonframework.deadline.dbscheduler.DbSchedulerHumanReadableDeadlineDetails` expects the
    `QualifiedName` to be present under the field `type`.
 
+## TokenStore
+
+1. A `mask` column containing the mask associated with each segment was added to avoid 
+   having to query all segments in order to calculate it.
+
 Class and Method Changes
 ========================
 

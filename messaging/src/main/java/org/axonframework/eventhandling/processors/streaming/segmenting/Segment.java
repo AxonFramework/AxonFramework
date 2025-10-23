@@ -16,7 +16,6 @@
 
 package org.axonframework.eventhandling.processors.streaming.segmenting;
 
-
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
 import org.axonframework.common.annotations.Internal;
@@ -25,16 +24,11 @@ import org.axonframework.messaging.Context;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-
-import static java.util.Arrays.stream;
-import static java.util.stream.Collectors.toList;
 
 /**
  * A representation of a segment and corresponding mask with various capabilities. <br/><br/>
@@ -51,7 +45,6 @@ public class Segment implements Comparable<Segment> {
      */
     public static final Context.ResourceKey<Segment> RESOURCE_KEY = Context.ResourceKey.withLabel("segment");
 
-    private static final Segment[] EMPTY_SEGMENTS = new Segment[0];
     private static final int ZERO_MASK = 0x0;
 
     /**
@@ -82,63 +75,6 @@ public class Segment implements Comparable<Segment> {
      */
     public static Optional<Segment> fromContext(@Nonnull Context context) {
         return Optional.ofNullable(context.getResource(RESOURCE_KEY));
-    }
-
-    private static boolean computeSegments(Segment segment, List<Integer> segments, Set<Segment> applicableSegments) {
-
-        final Segment[] splitSegment = segment.split();
-
-        // As the first segmentId mask, keeps the original segmentId, we only check the 2nd segmentId mask being a know.
-        if (segments.contains(splitSegment[1].getSegmentId())) {
-            for (Segment segmentSplit : splitSegment) {
-                if (!computeSegments(segmentSplit, segments, applicableSegments)) {
-                    applicableSegments.add(segmentSplit);
-                }
-            }
-        } else {
-            applicableSegments.add(segment);
-        }
-        return true;
-    }
-
-    /**
-     * Compute the {@link Segment}'s from a given list of segmentId's.
-     *
-     * @param segments The segment id's for which to compute Segments.
-     * @return an array of computed {@link Segment}
-     */
-    public static Segment[] computeSegments(int... segments) {
-        if (segments == null || segments.length == 0) {
-            return EMPTY_SEGMENTS;
-        }
-        final Set<Segment> resolvedSegments = new HashSet<>();
-        computeSegments(ROOT_SEGMENT, stream(segments).boxed().collect(toList()), resolvedSegments);
-
-        // As we split and compute segment masks branching by first entry, the resolved segment mask is not guaranteed
-        // to be added to the collection in natural order.
-        return resolvedSegments.stream().sorted().collect(toList()).toArray(new Segment[resolvedSegments.size()]);
-    }
-
-    /**
-     * Creates a Segment instance for the given {@code segmentId} based on the given {@code availableSegmentsIds}.
-     *
-     * @param segmentId           The Id of the segment to return
-     * @param availableSegmentIds The available segment Ids, to base the mask of the segment on
-     * @return the Segment instance representing for the given id
-     */
-    public static Segment computeSegment(int segmentId, int... availableSegmentIds) {
-        Arrays.sort(availableSegmentIds);
-
-        // as a 1 can only happen within the mask, the smallest possible mask is the lowest power of 2 (minus one)
-        // higher than that value
-        int splitCandidate = segmentId == 0 ? 1 : (Integer.highestOneBit(segmentId) << 1);
-        while (Arrays.binarySearch(availableSegmentIds, splitCandidate | segmentId) >= 0) {
-            // We have found the split value for the smallest mask. We need to increase the mask
-            splitCandidate = splitCandidate << 1;
-        }
-
-        int mask = splitCandidate - 1;
-        return new Segment(segmentId, mask);
     }
 
     /**

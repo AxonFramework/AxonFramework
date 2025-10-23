@@ -137,13 +137,13 @@ class JdbcTokenStoreTest {
     @Transactional
     @Test
     void fetchTokenBySegment() {
-        transactionManager.executeInTransaction(() -> joinAndUnwrap(tokenStore.initializeTokenSegments(
+        List<Segment> createdSegments = transactionManager.fetchInTransaction(() -> joinAndUnwrap(tokenStore.initializeTokenSegments(
                 "test",
                 2,
                 null,
                 createProcessingContext())
         ));
-        Segment segmentToFetch = Segment.computeSegment(1, 0, 1);
+        Segment segmentToFetch = createdSegments.get(1);
 
         transactionManager.executeInTransaction(() -> assertNull(
                 joinAndUnwrap(tokenStore.fetchToken("test", segmentToFetch, null))));
@@ -152,14 +152,14 @@ class JdbcTokenStoreTest {
     @Transactional
     @Test
     void fetchInitializedNullTokenBySegmentResultsToNull() {
-        transactionManager.executeInTransaction(
+        List<Segment> createdSegments = transactionManager.fetchInTransaction(
                 () -> joinAndUnwrap(tokenStore.initializeTokenSegments(
                         "test",
                         1,
                         null,
                         createProcessingContext())
                 ));
-        Segment segmentToFetch = Segment.computeSegment(0, 0);
+        Segment segmentToFetch = createdSegments.get(0);
 
         transactionManager.executeInTransaction(() -> assertNull(
                 joinAndUnwrap(tokenStore.fetchToken("test", segmentToFetch, null))));
@@ -176,7 +176,7 @@ class JdbcTokenStoreTest {
                         createProcessingContext())
                 ));
         // Create a segment as if there would be two segments in total. This simulates that these two segments have been merged into one.
-        Segment segmentToFetch = Segment.computeSegment(1, 0, 1);
+        Segment segmentToFetch = new Segment(1, 1);
         assertThrows(UnableToClaimTokenException.class,
                      () -> transactionManager.executeInTransaction(() -> joinAndUnwrap(
                              tokenStore.fetchToken("test", segmentToFetch, null)))
@@ -193,7 +193,7 @@ class JdbcTokenStoreTest {
                         null,
                         createProcessingContext())
                 ));
-        Segment segmentToFetch = Segment.computeSegment(0, 0, 1);
+        Segment segmentToFetch = new Segment(0, 1);
 
         assertThrows(UnableToClaimTokenException.class,
                      () -> transactionManager.executeInTransaction(() -> joinAndUnwrap
@@ -212,7 +212,7 @@ class JdbcTokenStoreTest {
                         createProcessingContext())
                 ));
         // Create a segment as if there would be only two segments in total. This simulates that the segments have been split into 4 segments.
-        Segment segmentToFetch = Segment.computeSegment(1, 0, 1);
+        Segment segmentToFetch = new Segment(1, 1);
 
         assertThrows(UnableToClaimTokenException.class, () -> transactionManager.executeInTransaction(
                 () -> joinAndUnwrap(tokenStore.fetchToken("test", segmentToFetch, null)))
@@ -229,7 +229,7 @@ class JdbcTokenStoreTest {
                         null,
                         createProcessingContext())
                 ));
-        Segment segmentToFetch = Segment.computeSegment(0, 0);
+        Segment segmentToFetch = new Segment(0, 0);
 
         assertThrows(UnableToClaimTokenException.class,
                      () -> transactionManager.executeInTransaction(() -> joinAndUnwrap(
@@ -248,9 +248,7 @@ class JdbcTokenStoreTest {
 
         List<Segment> actual = joinAndUnwrap(tokenStore.fetchSegments("test1", null));
 
-        // TODO #3465 - Assert entire segment here, not just id
-        assertThat(actual.stream().map(Segment::getSegmentId).toList())
-            .containsExactlyInAnyOrderElementsOf(createdSegments.stream().map(Segment::getSegmentId).toList());
+        assertThat(actual).containsExactlyInAnyOrderElementsOf(createdSegments);
     }
 
     @SuppressWarnings("Duplicates")
@@ -265,12 +263,9 @@ class JdbcTokenStoreTest {
 
         List<Segment> actual = joinAndUnwrap(tokenStore.fetchSegments("test1", null));
 
-        // TODO #3465 - Assert entire segment here, not just id
-        assertThat(actual.stream().map(Segment::getSegmentId).toList())
-            .containsExactlyInAnyOrderElementsOf(createdSegments.stream().map(Segment::getSegmentId).toList());
+        assertThat(actual).containsExactlyInAnyOrderElementsOf(createdSegments);
 
-        // TODO #3465 - Assert the actual segments here, not the created ones (but must for now because fetchSegments returns "partial" segments where only id is correct)
-        for (Segment segment : createdSegments /* actual */) {
+        for (Segment segment : actual) {
             assertEquals(new GlobalSequenceTrackingToken(10),
                          joinAndUnwrap(tokenStore.fetchToken("test1", segment, null)));
         }
@@ -527,6 +522,7 @@ class JdbcTokenStoreTest {
                         createProcessingContext())
                 ));
 
+        // These claim the tokens, despite the method name
         joinAndUnwrap(tokenStore.fetchToken("test1", 0, null));
         joinAndUnwrap(tokenStore.fetchToken("test1", 1, null));
 
@@ -534,9 +530,7 @@ class JdbcTokenStoreTest {
 
         List<Segment> segments = joinAndUnwrap(tokenStore.fetchSegments("test1", null));
 
-        // TODO #3465 - Assert entire segment here, not just id
-        assertThat(segments.stream().map(Segment::getSegmentId).toList())
-            .containsExactlyInAnyOrder(createdSegments.get(0).getSegmentId());
+        assertThat(segments).containsExactlyInAnyOrder(createdSegments.get(0));
     }
 
     @Test
@@ -570,11 +564,12 @@ class JdbcTokenStoreTest {
         ConfigToken token = new ConfigToken(Collections.singletonMap("id", "test123"));
         PreparedStatement ps = dataSource.getConnection()
                                          .prepareStatement(
-                                                 "INSERT INTO TokenEntry(processorName, segment, tokenType, token) VALUES(?, ?, ?, ?)");
+                                                 "INSERT INTO TokenEntry(processorName, segment, mask, tokenType, token) VALUES(?, ?, ?, ?, ?)");
         ps.setString(1, "__config");
         ps.setInt(2, 0);
-        ps.setString(3, ConfigToken.class.getName());
-        ps.setBytes(4, tokenStore.converter().convert(token, byte[].class));
+        ps.setInt(3, 0);
+        ps.setString(4, ConfigToken.class.getName());
+        ps.setBytes(5, tokenStore.converter().convert(token, byte[].class));
         ps.executeUpdate();
 
         String id1 = joinAndUnwrap(tokenStore.retrieveStorageIdentifier(mock()));

@@ -98,19 +98,20 @@ class MergeTask extends CoordinatorTask {
     protected CompletableFuture<Boolean> task() {
         logger.debug("Processor [{}] will perform merge instruction for segment {}.", name, segmentId);
 
-        int[] segments = joinAndUnwrap(unitOfWorkFactory.create().executeWithResult(
-                context -> tokenStore.fetchSegments(name, context).thenApply(s -> s.stream().mapToInt(Segment::getSegmentId).toArray())
+        Segment thisSegment = joinAndUnwrap(unitOfWorkFactory.create().executeWithResult(
+            context -> tokenStore.fetchSegment(name, segmentId, context)
         ));
-        Segment thisSegment = Segment.computeSegment(segmentId, segments);
-        int thatSegmentId = thisSegment.mergeableSegmentId();
-        Segment thatSegment = Segment.computeSegment(thatSegmentId, segments);
 
-        if (segmentId == thatSegmentId) {
+        if (segmentId == thisSegment.mergeableSegmentId()) {
             logger.debug("Processor [{}] cannot merge segment {}. "
                                  + "A merge request can only be fulfilled if there is more than one segment.",
                          name, segmentId);
             return CompletableFuture.completedFuture(false);
         }
+
+        Segment thatSegment = joinAndUnwrap(unitOfWorkFactory.create().executeWithResult(
+            context -> tokenStore.fetchSegment(name, thisSegment.mergeableSegmentId(), context)
+        ));
 
         CompletableFuture<TrackingToken> thisTokenFuture = tokenFor(thisSegment.getSegmentId());
         CompletableFuture<TrackingToken> thatTokenFuture = tokenFor(thatSegment.getSegmentId());

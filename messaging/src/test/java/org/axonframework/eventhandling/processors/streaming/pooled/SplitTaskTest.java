@@ -26,12 +26,12 @@ import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 import org.junit.jupiter.api.*;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.axonframework.common.FutureUtils.emptyCompletedFuture;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -99,8 +99,8 @@ class SplitTaskTest {
         TrackerStatus expectedOriginal = expectedTokens[0];
         TrackerStatus expectedSplit = expectedTokens[1];
 
-        when(tokenStore.fetchSegments(eq(PROCESSOR_NAME), any()))
-                .thenReturn(completedFuture(List.of(Segment.ROOT_SEGMENT)));
+        when(tokenStore.fetchSegment(eq(PROCESSOR_NAME), eq(Segment.ROOT_SEGMENT.getSegmentId()), any()))
+                .thenReturn(completedFuture(Segment.ROOT_SEGMENT));
         when(tokenStore.fetchToken(eq(PROCESSOR_NAME), eq(SEGMENT_ID), any()))
                 .thenReturn(completedFuture(testTokenToSplit));
         when(tokenStore.initializeSegment(any(), anyString(), any(Segment.class), any())).thenReturn(emptyCompletedFuture());
@@ -121,8 +121,8 @@ class SplitTaskTest {
 
     @Test
     void runCompletesExceptionallyThroughUnableToClaimTokenException() {
-        when(tokenStore.fetchSegments(eq(PROCESSOR_NAME), any()))
-                .thenReturn(completedFuture(List.of(Segment.ROOT_SEGMENT)));
+        when(tokenStore.fetchSegment(eq(PROCESSOR_NAME), eq(Segment.ROOT_SEGMENT.getSegmentId()), any()))
+                .thenReturn(completedFuture(Segment.ROOT_SEGMENT));
         when(tokenStore.fetchToken(eq(PROCESSOR_NAME), eq(SEGMENT_ID), any()))
                 .thenThrow(new UnableToClaimTokenException("some exception"));
 
@@ -130,19 +130,25 @@ class SplitTaskTest {
 
         assertTrue(result.isDone());
         assertTrue(result.isCompletedExceptionally());
-        assertThrows(ExecutionException.class, () -> result.get());
+        assertThatThrownBy(() -> result.get())
+            .isInstanceOf(ExecutionException.class)
+            .cause()
+            .isInstanceOf(UnableToClaimTokenException.class);
     }
 
     @Test
     void runCompletesExceptionallyThroughOtherException() {
-        when(tokenStore.fetchSegments(eq(PROCESSOR_NAME), any()))
+        when(tokenStore.fetchSegment(eq(PROCESSOR_NAME), eq(Segment.ROOT_SEGMENT.getSegmentId()), any()))
                 .thenThrow(new IllegalStateException("some exception"));
 
         testSubject.run();
 
         assertTrue(result.isDone());
         assertTrue(result.isCompletedExceptionally());
-        assertThrows(ExecutionException.class, () -> result.get());
+        assertThatThrownBy(() -> result.get())
+            .isInstanceOf(ExecutionException.class)
+            .cause()
+            .isInstanceOf(IllegalStateException.class);
     }
 
     @Test
