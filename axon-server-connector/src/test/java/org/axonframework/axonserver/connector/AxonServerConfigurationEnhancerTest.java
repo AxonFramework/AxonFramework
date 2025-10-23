@@ -97,7 +97,7 @@ class AxonServerConfigurationEnhancerTest {
         assertNotNull(connectionManager);
         await().pollDelay(Duration.ofMillis(50))
                .atMost(Duration.ofMillis(500))
-               .untilAsserted(() -> verify(connectionManager, atLeastOnce()).getConnection()); // TODO(JG): changed to atLeastOnce - correct?
+               .untilAsserted(() -> verify(connectionManager, atLeastOnce()).getConnection());
     }
 
     /**
@@ -135,7 +135,7 @@ class AxonServerConfigurationEnhancerTest {
         assertNotNull(connectionManager);
         await().pollDelay(Duration.ofMillis(50))
                .atMost(Duration.ofMillis(500))
-               .untilAsserted(() -> verify(connectionManager, atLeastOnce()).getConnection()); // TODO(JG): changed to atLeastOnce - correct?
+               .untilAsserted(() -> verify(connectionManager, atLeastOnce()).getConnection());
     }
 
     @Nested

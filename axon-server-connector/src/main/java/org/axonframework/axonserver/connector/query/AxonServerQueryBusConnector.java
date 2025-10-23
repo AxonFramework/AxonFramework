@@ -57,10 +57,15 @@ import java.util.concurrent.locks.LockSupport;
 import static java.util.Objects.requireNonNull;
 
 /**
- * TODO Implement methods and fine tune JavaDoc
+ * AxonServerQueryBusConnector is an implementation of {@link QueryBusConnector} that connects to AxonServer
+ * to enable the dispatching and receiving of queries. It manages the registration of handlers, query subscriptions,
+ * and disconnection from the AxonServer query bus.
+ * <p/>
+ * This class facilitates interaction with AxonServer, handles incoming query requests, manages active subscriptions,
+ * and oversees lifecycle phases related to query dispatching and receiving.
  *
- * @author Steven van Beelen
- * @since 5.0.0
+ *  @author Steven van Beelen, Allard Buijze, Jan Galinski
+ *  @since 5.0.0
  */
 public class AxonServerQueryBusConnector implements QueryBusConnector {
 
