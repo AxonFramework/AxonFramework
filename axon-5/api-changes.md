@@ -1892,6 +1892,20 @@ consuming events through the `EventStorageEngine#stream(StreamingCondition)` met
 Class and Method Changes
 ========================
 
+## Package Changes
+
+We introduced a new project module structure and moved code for Spring Support, Monitoring and Tracing into Extensions 
+module. By doing so we aligned the top level packages for those Maven Modules in the following matter:
+
+| Axon 4 package name                     | Axon 5 package name                               |
+|-----------------------------------------|---------------------------------------------------|
+| org.axonframework.spring                | org.axonframework.extension.spring                | 
+| org.axonframework.actuator              | org.axonframework.extension.springboot.actuator   | 
+| org.axonframework.springboot            | org.axonframework.extension.springboot            | 
+| org.axonframework.metrics               | org.axonframework.extension.metrics.dropwizard    | 
+| org.axonframework.micrometer            | org.axonframework.extension.metrics.micrometer    | 
+| org.axonframework.tracing.opentelemetry | org.axonframework.extension.tracing.opentelemetry | 
+
 ## Class Changes
 
 This section contains five tables:
