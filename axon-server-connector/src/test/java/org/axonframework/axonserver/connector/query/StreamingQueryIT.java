@@ -23,6 +23,7 @@ import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.conversion.DelegatingMessageConverter;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryBusTestUtils;
@@ -34,7 +35,9 @@ import org.axonframework.queryhandling.annotations.AnnotatedQueryHandlingCompone
 import org.axonframework.queryhandling.annotations.QueryHandler;
 import org.axonframework.queryhandling.distributed.DistributedQueryBus;
 import org.axonframework.queryhandling.distributed.DistributedQueryBusConfiguration;
+import org.axonframework.queryhandling.distributed.PayloadConvertingQueryBusConnector;
 import org.axonframework.serialization.PassThroughConverter;
+import org.axonframework.serialization.json.JacksonConverter;
 import org.axonframework.test.server.AxonServerContainer;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
@@ -51,15 +54,17 @@ import reactor.test.StepVerifier;
 import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 
 import static java.util.Arrays.asList;
+import static org.axonframework.messaging.FluxUtils.streamToPublisher;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * End-to-end tests for Streaming Query functionality. They include backwards compatibility end-to-end tests as well.
  */
-@Disabled("TODO #3488 - Axon Server Query Bus replacement")
 @Testcontainers
+@Disabled("#3488 - This test is failing, but possibly just because of setup.")
 class StreamingQueryIT {
 
     private static final TypeReference<List<String>> LIST_OF_STRINGS = new TypeReference<>() {
@@ -74,7 +79,6 @@ class StreamingQueryIT {
     private DistributedQueryBus senderQueryBus;
     private DistributedQueryBus nonStreamingSenderQueryBus;
 
-    @SuppressWarnings("resource")
     @Container
     private static final AxonServerContainer axonServerContainer =
             new AxonServerContainer()
@@ -123,13 +127,20 @@ class StreamingQueryIT {
         nonStreamingHandlerQueryBus.subscribe(queryHandlingComponent);
     }
 
+
     private DistributedQueryBus axonServerQueryBus(QueryBus localSegment, String axonServerAddress) {
+        var axonServerQueryBusConnector = new AxonServerQueryBusConnector(
+                connectionManager(axonServerAddress).getConnection(),
+                configuration(axonServerAddress)
+        );
+        var payloadConvertingQueryBusConnector = new PayloadConvertingQueryBusConnector(
+                axonServerQueryBusConnector,
+                new DelegatingMessageConverter(new JacksonConverter()),
+                byte[].class
+        );
         return new DistributedQueryBus(
                 localSegment,
-                new AxonServerQueryBusConnector(
-                        connectionManager(axonServerAddress).getConnection(),
-                        configuration(axonServerAddress)
-                ),
+                payloadConvertingQueryBusConnector,
                 DistributedQueryBusConfiguration.DEFAULT
         );
     }
@@ -224,19 +235,19 @@ class StreamingQueryIT {
         assertEquals(asList("a", "b", "c", "d"), directQueryPayload(testQuery, LIST_OF_STRINGS, supportsStreaming));
     }
 
+
     private <R> Flux<R> streamingQueryPayloads(QueryMessage query, Class<R> cls, boolean supportsStreaming) {
-//        if (supportsStreaming) {
-//            return Flux.from(senderQueryBus.streamingQuery(query, null))
-//                       .map(m -> m.payloadAs(cls));
-//        }
-//        return Flux.from(nonStreamingSenderQueryBus.streamingQuery(query, null))
-//                   .map(m -> m.payloadAs(cls));
-        return null; // FIXME
+        Function<QueryBus, Flux<R>> streamingQuery = queryBus -> Flux.from(streamToPublisher(
+                () -> queryBus.query(query, null))
+        ).mapNotNull(m -> m.payloadAs(cls));
+
+        return supportsStreaming
+                ? streamingQuery.apply(senderQueryBus)
+                : streamingQuery.apply(nonStreamingSenderQueryBus);
     }
 
-    private <R> R directQueryPayload(QueryMessage query,
-                                     TypeReference<R> type,
-                                     boolean supportsStreaming) throws Throwable {
+    private <R> R directQueryPayload(QueryMessage query, TypeReference<R> type, boolean supportsStreaming)
+            throws Throwable {
         MessageStream<QueryResponseMessage> response = null;
         try {
             response = supportsStreaming
@@ -261,8 +272,7 @@ class StreamingQueryIT {
 
         @QueryHandler
         public Flux<String> handle(FluxQuery query) {
-            return Flux.range(0, 1000)
-                       .map(Objects::toString);
+            return Flux.range(0, 1000).map(Objects::toString);
         }
 
         @QueryHandler
