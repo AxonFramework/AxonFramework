@@ -133,7 +133,7 @@ class AnnotationRoutingStrategyTest {
         private final SomeObject target = new SomeObject("Target");
     }
 
-    @Command(routingKey = "getTarget")
+    @Command(routingKey = "target")
     public static class SomeMethodAnnotatedCommand {
 
         @SuppressWarnings("FieldCanBeLocal")
@@ -156,7 +156,7 @@ class AnnotationRoutingStrategyTest {
         }
     }
 
-    @Command(routingKey = "getTarget")
+    @Command(routingKey = "target")
     public static class SomeOtherMethodAnnotatedCommand {
 
         private final SomeObject target = new SomeObject("Target");
@@ -184,7 +184,7 @@ class AnnotationRoutingStrategyTest {
         }
     }
 
-    @Command(routingKey = "getTarget")
+    @Command(routingKey = "target")
     public static class SomeNullMethodAnnotatedCommand {
 
         private final String target = null;
