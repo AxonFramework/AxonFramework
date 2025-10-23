@@ -35,7 +35,7 @@ import static java.util.stream.Collectors.toList;
  * @author Allard Buijze
  * @since 0.7
  */
-public abstract class CollectionUtils {
+public final class CollectionUtils {
 
     private CollectionUtils() {
         // prevent instantiation

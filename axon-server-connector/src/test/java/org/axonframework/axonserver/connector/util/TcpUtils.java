@@ -24,9 +24,9 @@ import java.net.ServerSocket;
 /**
  * Class for networking related utility methods
  */
-public abstract class TcpUtil {
+public final class TcpUtils {
 
-    private TcpUtil() {
+    private TcpUtils() {
     }
 
     /**

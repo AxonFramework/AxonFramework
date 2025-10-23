@@ -41,7 +41,7 @@ import java.util.stream.IntStream;
  * @author Steven van Beelen
  * @since 3.2
  */
-public abstract class TypeReflectionUtils {
+public final class TypeReflectionUtils {
 
     private static final Logger logger = LoggerFactory.getLogger(TypeReflectionUtils.class);
 

@@ -27,7 +27,7 @@ import java.util.function.Predicate;
  * @author Marc Gathier
  * @since 4.2
  */
-public abstract class ProcessUtils {
+public final class ProcessUtils {
 
     private ProcessUtils() {
     }

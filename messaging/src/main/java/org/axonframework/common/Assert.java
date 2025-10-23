@@ -28,7 +28,7 @@ import java.util.function.Supplier;
  * @author Allard Buijze
  * @since 0.3
  */
-public abstract class Assert {
+public final class Assert {
 
     private Assert() {
         // Utility class

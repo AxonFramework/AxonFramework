@@ -34,7 +34,7 @@ import java.util.function.Supplier;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public class ConstructorUtils {
+public final class ConstructorUtils {
 
     /**
      * Returns a function that constructs an instance of the given type using the zero-argument constructor. If the type

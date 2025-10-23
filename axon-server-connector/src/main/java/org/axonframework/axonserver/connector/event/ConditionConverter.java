@@ -47,7 +47,7 @@ import java.util.Set;
  * @since 5.0.0
  */
 @Internal
-public abstract class ConditionConverter {
+public final class ConditionConverter {
 
     /**
      * Converts the given {@code condition} into a {@link ConsistencyCondition}.

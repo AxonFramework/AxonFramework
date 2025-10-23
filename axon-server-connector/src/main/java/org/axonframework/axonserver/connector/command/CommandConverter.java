@@ -26,7 +26,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.MetadataConverter;
-import org.axonframework.axonserver.connector.util.ProcessingInstructionHelper;
+import org.axonframework.axonserver.connector.util.ProcessingInstructionUtils;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
@@ -47,8 +47,8 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 import static org.axonframework.axonserver.connector.MetadataConverter.convertMetadataValuesToGrpc;
-import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.createProcessingInstruction;
-import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.priority;
+import static org.axonframework.axonserver.connector.util.ProcessingInstructionUtils.createProcessingInstruction;
+import static org.axonframework.axonserver.connector.util.ProcessingInstructionUtils.priority;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
@@ -70,7 +70,7 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * @since 5.0.0
  */
 @Internal
-public class CommandConverter {
+public final class CommandConverter {
 
     private CommandConverter() {
         // Utility class
@@ -192,7 +192,7 @@ public class CommandConverter {
     public static CommandMessage convertCommand(@Nonnull Command command) {
         SerializedObject commandPayload = command.getPayload();
         int priority = priority(command.getProcessingInstructionsList());
-        String routingKey = ProcessingInstructionHelper.routingKey(command.getProcessingInstructionsList());
+        String routingKey = ProcessingInstructionUtils.routingKey(command.getProcessingInstructionsList());
         return new GenericCommandMessage(
                 new GenericMessage(
                         command.getMessageIdentifier(),

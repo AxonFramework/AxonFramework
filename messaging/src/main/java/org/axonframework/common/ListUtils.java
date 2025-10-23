@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
  * @author Stefan Andjelkovic
  * @since 4.4
  */
-public abstract class ListUtils {
+public final class ListUtils {
 
     private ListUtils() {
         // prevent instantiation

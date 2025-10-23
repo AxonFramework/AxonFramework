@@ -31,7 +31,7 @@ import static java.time.temporal.ChronoField.*;
  * @author Allard Buijze
  * @since 3.1
  */
-public abstract class DateTimeUtils {
+public final class DateTimeUtils {
 
     private static final DateTimeFormatter ISO_UTC_DATE_TIME = new DateTimeFormatterBuilder()
             .parseCaseInsensitive()

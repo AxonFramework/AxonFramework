@@ -26,7 +26,7 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * @author Marc Gathier
  * @since 4.0
  */
-public abstract class ExceptionSerializer {
+public final class ExceptionSerializer {
 
     private ExceptionSerializer() {
         // Utility class

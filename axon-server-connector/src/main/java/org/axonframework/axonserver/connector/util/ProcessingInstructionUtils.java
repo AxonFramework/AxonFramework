@@ -30,9 +30,9 @@ import java.util.Optional;
  * @author Marc Gathier
  * @since 4.0
  */
-public abstract class ProcessingInstructionHelper {
+public final class ProcessingInstructionUtils {
 
-    private ProcessingInstructionHelper() {
+    private ProcessingInstructionUtils() {
         // Utility class
     }
 
