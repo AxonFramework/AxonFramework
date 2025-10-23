@@ -33,7 +33,7 @@ The intent with adjusting the modularity is to be able to serve more users with 
      - Command-Messaging -> Configuration (archetypes), Metrics, Tracing
      - Query-Messaging -> Configuration (archetypes), Metrics, Tracing
 2. EventSourcing -> InMemory, InProcess, Configuration, Metrics, Tracing
-3. Modeling
+3. Modelling
 4. Testing
 5. Integration Tests -> unpublished
 
