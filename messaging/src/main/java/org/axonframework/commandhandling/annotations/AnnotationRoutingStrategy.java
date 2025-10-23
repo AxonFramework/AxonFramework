@@ -110,14 +110,14 @@ public class AnnotationRoutingStrategy implements RoutingStrategy {
         return routingKey.flatMap(name -> {
             Optional<RoutingKeyResolver> matchedField = StreamSupport
                     .stream(fieldsOf(type).spliterator(), false)
-                    .filter(f -> f.getName().equals(name))
+                    .filter(f -> ReflectionUtils.fieldNameFromMember(f).equals(name))
                     .findFirst()
                     .map(f -> new RoutingKeyResolver(f, null));
             return matchedField.or(
                     () ->
                             StreamSupport
                                     .stream(methodsOf(type).spliterator(), false)
-                                    .filter(m -> m.getName().equals(name))
+                                    .filter(m -> ReflectionUtils.fieldNameFromMember(m).equals(name))
                                     .findFirst()
                                     .map(ReflectionUtils::ensureAccessible)
                                     .map(m -> new RoutingKeyResolver(null, m)));

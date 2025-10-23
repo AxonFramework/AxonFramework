@@ -137,10 +137,10 @@ class AnnotationRoutingStrategyTest {
     public static class SomeMethodAnnotatedCommand {
 
         @SuppressWarnings("FieldCanBeLocal")
-        private final String target = "Target";
+        private final String someObject = "Target";
 
         public String getTarget() {
-            return target;
+            return someObject;
         }
     }
 
@@ -159,20 +159,20 @@ class AnnotationRoutingStrategyTest {
     @Command(routingKey = "target")
     public static class SomeOtherMethodAnnotatedCommand {
 
-        private final SomeObject target = new SomeObject("Target");
+        private final SomeObject someObject = new SomeObject("Target");
 
         public SomeObject getTarget() {
-            return target;
+            return someObject;
         }
     }
 
     public static class SomeOtherMethodAnnotatedCommandLegacy {
 
-        private final SomeObject target = new SomeObject("Target");
+        private final SomeObject someObject = new SomeObject("Target");
 
         @RoutingKey
         public SomeObject getTarget() {
-            return target;
+            return someObject;
         }
     }
 
@@ -187,11 +187,11 @@ class AnnotationRoutingStrategyTest {
     @Command(routingKey = "target")
     public static class SomeNullMethodAnnotatedCommand {
 
-        private final String target = null;
+        private final String someObject = null;
 
         public String getTarget() {
             //noinspection ConstantConditions
-            return target;
+            return someObject;
         }
     }
 
