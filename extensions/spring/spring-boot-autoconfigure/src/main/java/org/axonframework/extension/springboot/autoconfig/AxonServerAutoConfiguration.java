@@ -30,6 +30,7 @@ import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.configuration.DecoratorDefinition;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.extension.springboot.service.connection.AxonServerConnectionDetails;
+import org.axonframework.queryhandling.distributed.DistributedQueryBusConfiguration;
 import org.springframework.beans.BeansException;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
@@ -125,6 +126,16 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
                                                        config.getComponent(AxonServerConfiguration.class);
                                                int commandThreads = serverConfig.getCommandThreads();
                                                return distributedCommandBusConfig.commandThreads(commandThreads);
+                                           }
+                                   )
+                                   .registerDecorator(
+                                           DistributedQueryBusConfiguration.class,
+                                           AXON_SERVER_CONFIGURATION_ENHANCEMENT_ORDER,
+                                           (config, name, distributedQueryBusConfig) -> {
+                                               AxonServerConfiguration serverConfig =
+                                                       config.getComponent(AxonServerConfiguration.class);
+                                               int queryThreads = serverConfig.getQueryThreads();
+                                               return distributedQueryBusConfig.queryThreads(queryThreads);
                                            }
                                    );
     }

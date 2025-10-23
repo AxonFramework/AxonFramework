@@ -29,6 +29,7 @@ import org.axonframework.commandhandling.distributed.PayloadConvertingCommandBus
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.extension.springboot.utils.GrpcServerStub;
 import org.axonframework.extension.springboot.utils.TcpUtils;
+import org.axonframework.queryhandling.distributed.DistributedQueryBusConfiguration;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -98,6 +99,18 @@ class AxonServerAutoConfigurationTest {
             int numberOfThreads = context.getBean(DistributedCommandBusConfiguration.class).commandThreads();
             int commandThreads = context.getBean(AxonServerConfiguration.class).getCommandThreads();
             assertThat(numberOfThreads).isEqualTo(commandThreads);
+        });
+    }
+
+    @Test
+    void distributedQueryBusThreadCountIsAdjustableThroughAxonServerConfiguration() {
+        testContext.withPropertyValues("axon.server.query-threads=42").run(context -> {
+            assertThat(context).hasSingleBean(AxonServerConfiguration.class);
+            assertThat(context).hasSingleBean(DistributedQueryBusConfiguration.class);
+
+            int numberOfThreads = context.getBean(DistributedQueryBusConfiguration.class).queryThreads();
+            int queryThreads = context.getBean(AxonServerConfiguration.class).getQueryThreads();
+            assertThat(numberOfThreads).isEqualTo(queryThreads);
         });
     }
 

@@ -23,7 +23,9 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
+import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.serialization.Converter;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
@@ -46,6 +48,7 @@ public class DefaultQueryGateway implements QueryGateway {
     private final QueryBus queryBus;
     private final MessageTypeResolver messageTypeResolver;
     private final QueryPriorityCalculator priorityCalculator;
+    private final MessageConverter converter;
 
     /**
      * Initialize the {@code DefaultQueryGateway} to send queries through the given {@code queryBus}.
@@ -58,15 +61,18 @@ public class DefaultQueryGateway implements QueryGateway {
      *                            {@link org.axonframework.messaging.QualifiedName names} for
      *                            {@link QueryMessage QueryMessages} being dispatched on the {@code queryBus}.
      * @param priorityCalculator  The {@link QueryPriorityCalculator} determining the priority of queries.
+     * @param converter           The converter to use for converting the result of query handling.
      */
     public DefaultQueryGateway(@Nonnull QueryBus queryBus,
                                @Nonnull MessageTypeResolver messageTypeResolver,
-                               @Nonnull QueryPriorityCalculator priorityCalculator) {
+                               @Nonnull QueryPriorityCalculator priorityCalculator,
+                               @Nonnull MessageConverter converter) {
         this.queryBus = Objects.requireNonNull(queryBus, "The QueryBus must not be null.");
         this.messageTypeResolver = Objects.requireNonNull(messageTypeResolver,
                                                           "The MessageTypeResolver must not be null.");
         this.priorityCalculator = Objects.requireNonNull(priorityCalculator,
                                                          "The QueryPriorityCalculator must not be null.");
+        this.converter = Objects.requireNonNull(converter, "The MessageConverter must not be null.");
     }
 
     @Nonnull
@@ -84,7 +90,7 @@ public class DefaultQueryGateway implements QueryGateway {
                                 if (queryResponseMessage == null) { // in the case of MessageStream.Empty
                                     return null;
                                 }
-                                return queryResponseMessage.payloadAs(responseType);
+                                return queryResponseMessage.payloadAs(responseType, converter);
                             });
         // We cannot chain the whenComplete call, as otherwise CompletableFuture#cancel is not propagated to the lambda.
         resultFuture.whenComplete((r, e) -> {
@@ -104,7 +110,7 @@ public class DefaultQueryGateway implements QueryGateway {
         MessageStream<QueryResponseMessage> resultStream = queryBus.query(queryMessage, context);
         CompletableFuture<List<R>> resultFuture =
                 resultStream.reduce(new ArrayList<>(), (list, entry) -> {
-                    list.add(entry.message().payloadAs(responseType));
+                    list.add(entry.message().payloadAs(responseType, converter));
                     return list;
                 });
         // We cannot chain the whenComplete call, as otherwise CompletableFuture#cancel is not propagated to the lambda.
@@ -124,7 +130,20 @@ public class DefaultQueryGateway implements QueryGateway {
         return Mono.fromSupplier(() -> asQueryMessage(query, responseType))
                    .flatMapMany(queryMessage -> FluxUtils.of(queryBus.query(queryMessage, context)))
                    .map(MessageStream.Entry::message)
-                   .mapNotNull(m -> m.payloadAs(responseType));
+                   .mapNotNull(m -> m.payloadAs(responseType, converter));
+    }
+
+    @Nonnull
+    @Override
+    public <R> Publisher<R> subscriptionQuery(@Nonnull Object query,
+                                              @Nonnull Class<R> responseType,
+                                              @Nullable ProcessingContext context,
+                                              int updateBufferSize) {
+        return subscriptionQuery(query,
+                                 responseType,
+                                 m -> m.payloadAs(responseType, converter),
+                                 context,
+                                 updateBufferSize);
     }
 
     @Nonnull
