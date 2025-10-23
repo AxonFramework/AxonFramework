@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.ClassUtils;
 import org.axonframework.common.DateTimeUtils;
+import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.store.jpa.TokenEntry;
 import org.axonframework.serialization.Converter;
@@ -51,7 +52,7 @@ public class JdbcTokenEntry {
     private String timestamp;
     private String owner;
     private String processorName;
-    private int segment;
+    private Segment segment;
 
     /**
      * Initializes a new token entry for given {@code token}, {@code process} and {@code segment}. The given
@@ -79,7 +80,7 @@ public class JdbcTokenEntry {
                           String timestamp,
                           String owner,
                           @Nonnull String processorName,
-                          int segment) {
+                          @Nonnull Segment segment) {
         this.token = token;
         this.tokenType = tokenType;
         this.timestamp = timestamp;
@@ -139,11 +140,11 @@ public class JdbcTokenEntry {
     }
 
     /**
-     * Returns the segment identifier of this token.
+     * Returns the segment of this token.
      *
-     * @return The segment identifier of this token.
+     * @return The segment of this token.
      */
-    public int getSegment() {
+    public Segment getSegment() {
         return segment;
     }
 

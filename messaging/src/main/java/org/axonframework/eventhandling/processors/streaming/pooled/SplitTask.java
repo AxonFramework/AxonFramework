@@ -108,9 +108,7 @@ class SplitTask extends CoordinatorTask {
 
     private CompletableFuture<Boolean> fetchSegmentAndSplit(int segmentId) {
         return unitOfWorkFactory.create().executeWithResult(
-                context -> tokenStore.fetchSegments(name, context)
-                                     .thenApply(s -> s.stream().mapToInt(Segment::getSegmentId).toArray())
-                                     .thenApply(segments -> Segment.computeSegment(segmentId, segments))
+                context -> tokenStore.fetchSegment(name, segmentId, context)
                                      .thenApply(this::splitAndRelease)
         );
     }

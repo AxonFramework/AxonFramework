@@ -358,8 +358,7 @@ public class JdbcTokenStore implements TokenStore {
             return completedFuture(executeQuery(
                 connection,
                 c -> select(c, processorName, segmentId, false),
-                // TODO #3465 - Don't manually create segment here
-                resultSet -> resultSet.next() ? new Segment(readTokenEntry(resultSet).getSegment(), 0) : null,
+                resultSet -> resultSet.next() ? readTokenEntry(resultSet).getSegment() : null,
                 e -> new JdbcException("Could not load segments for processor [%s]".formatted(processorName), e)
             ));
         }
@@ -376,8 +375,7 @@ public class JdbcTokenStore implements TokenStore {
             return completedFuture(executeQuery(
                 connection,
                 c -> selectForSegments(c, processorName),
-                // TODO #3465 - Create segment here with new mask column once available: rs.getInt(schema.maskColumn())
-                listResults(rs -> new Segment(rs.getInt(schema.segmentColumn()), 0)),
+                listResults(rs -> new Segment(rs.getInt(schema.segmentColumn()), rs.getInt(schema.maskColumn()))),
                 e -> new JdbcException("Could not load segments for processor [%s]".formatted(processorName), e)
             ));
         }
@@ -400,11 +398,9 @@ public class JdbcTokenStore implements TokenStore {
                                                                  ), e)
             );
 
-
             return completedFuture(tokenEntries.stream()
                                                .filter(tokenEntry -> tokenEntry.mayClaim(nodeId, claimTimeout))
                                                .map(JdbcTokenEntry::getSegment)
-                                               .map(id -> new Segment(id, 0))  // TODO #3465 - Don't manually create segment here
                                                .collect(Collectors.toList()));
         }
         catch (Exception e) {
@@ -422,7 +418,7 @@ public class JdbcTokenStore implements TokenStore {
      * @throws SQLException When an exception occurs while creating the prepared statement.
      */
     protected PreparedStatement selectForSegments(Connection connection, String processorName) throws SQLException {
-        final String sql = "SELECT " + schema.segmentColumn() +
+        final String sql = "SELECT " + schema.segmentColumn() + "," + schema.maskColumn() +
                 " FROM " + schema.tokenTable() +
                 " WHERE " + schema.processorNameColumn() + " = ?" +
                 " ORDER BY " + schema.segmentColumn() + " ASC";
@@ -517,7 +513,7 @@ public class JdbcTokenStore implements TokenStore {
     protected PreparedStatement select(Connection connection, String processorName,
                                        int segmentId, boolean forUpdate) throws SQLException {
         final String sql = "SELECT " +
-                String.join(", ", schema.processorNameColumn(), schema.segmentColumn(), schema.tokenColumn(),
+                String.join(", ", schema.processorNameColumn(), schema.segmentColumn(), schema.maskColumn(), schema.tokenColumn(),
                             schema.tokenTypeColumn(), schema.timestampColumn(), schema.ownerColumn()) + " FROM " +
                 schema.tokenTable() + " WHERE " + schema.processorNameColumn() + " = ? AND " + schema.segmentColumn() +
                 " = ? " + (forUpdate ? "FOR UPDATE" : "");
@@ -604,7 +600,7 @@ public class JdbcTokenStore implements TokenStore {
             preparedStatement.setString(1, entry.getOwner());
             preparedStatement.setString(2, entry.timestampAsString());
             preparedStatement.setString(3, entry.getProcessorName());
-            preparedStatement.setInt(4, entry.getSegment());
+            preparedStatement.setInt(4, entry.getSegment().getSegmentId());
             if (preparedStatement.executeUpdate() != 1) {
                 throw new UnableToClaimTokenException(
                         format("Unable to claim token '%s[%s]'. It has been removed", entry.getProcessorName(),
@@ -774,17 +770,18 @@ public class JdbcTokenStore implements TokenStore {
         JdbcTokenEntry entry = new JdbcTokenEntry(token, converter);
 
         final String sql = "INSERT INTO " + schema.tokenTable() + " (" + schema.processorNameColumn() + "," +
-                schema.segmentColumn() + "," + schema.timestampColumn() + "," +
+                schema.segmentColumn() + "," + schema.maskColumn() + "," + schema.timestampColumn() + "," +
                 schema.tokenColumn() + "," + schema.tokenTypeColumn() + "," + schema.ownerColumn() + ") " +
-                "VALUES (?,?,?,?,?,?)";
+                "VALUES (?,?,?,?,?,?,?)";
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatement.setString(1, processorName);
             preparedStatement.setInt(2, segment.getSegmentId());
-            preparedStatement.setString(3, entry.timestampAsString());
-            preparedStatement.setBytes(4, entry.getTokenData());
-            preparedStatement.setString(5, entry.getTokenType());
-            preparedStatement.setString(6, entry.getOwner());
+            preparedStatement.setInt(3, segment.getMask());
+            preparedStatement.setString(4, entry.timestampAsString());
+            preparedStatement.setBytes(5, entry.getTokenData());
+            preparedStatement.setString(6, entry.getTokenType());
+            preparedStatement.setString(7, entry.getOwner());
             preparedStatement.executeUpdate();
         }
 
@@ -804,7 +801,7 @@ public class JdbcTokenStore implements TokenStore {
                                   resultSet.getString(schema.timestampColumn()),
                                   resultSet.getString(schema.ownerColumn()),
                                   resultSet.getString(schema.processorNameColumn()),
-                                  resultSet.getInt(schema.segmentColumn())
+                                  new Segment(resultSet.getInt(schema.segmentColumn()), resultSet.getInt(schema.maskColumn()))
         );
     }
 

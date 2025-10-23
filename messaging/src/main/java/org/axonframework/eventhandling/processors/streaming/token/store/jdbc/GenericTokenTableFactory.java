@@ -40,6 +40,7 @@ public class GenericTokenTableFactory implements TokenTableFactory {
         String sql = "CREATE TABLE IF NOT EXISTS " + schema.tokenTable() + " (\n" +
                 schema.processorNameColumn() + " VARCHAR(255) NOT NULL,\n" +
                 schema.segmentColumn() + " INTEGER NOT NULL,\n" +
+                schema.maskColumn() + " INTEGER NOT NULL,\n" +
                 schema.tokenColumn() + " " + tokenType() + " NULL,\n" +
                 schema.tokenTypeColumn() + " VARCHAR(255) NULL,\n" +
                 schema.timestampColumn() + " VARCHAR(255) NULL,\n" +

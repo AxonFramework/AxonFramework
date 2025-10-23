@@ -116,7 +116,7 @@ public class JpaTokenStore implements TokenStore {
             List<Segment> segments = Segment.splitBalanced(Segment.ROOT_SEGMENT, segmentCount - 1);
 
             for (Segment segment : segments) {
-                entityManager.persist(new TokenEntry(processorName, segment.getSegmentId(), initialToken, converter));
+                entityManager.persist(new TokenEntry(processorName, segment, initialToken, converter));
             }
 
             entityManager.flush();
@@ -209,8 +209,8 @@ public class JpaTokenStore implements TokenStore {
         try {
             // Note: the caller thread is important for the entity manager, so not using CF supplyAsync to automatically handle exceptions
             EntityManager entityManager = entityManagerProvider.getEntityManager();
+            TokenEntry entry = new TokenEntry(processorName, segment, token, converter);
 
-            TokenEntry entry = new TokenEntry(processorName, segment.getSegmentId(), token, converter);
             entityManager.persist(entry);
             entityManager.flush();
             return FutureUtils.emptyCompletedFuture();
@@ -334,7 +334,7 @@ public class JpaTokenStore implements TokenStore {
             .setParameter(PROCESSOR_NAME_PARAM, processorName)
             .getSingleResultOrNull();
 
-            return completedFuture(te == null ? null : new Segment(te.getSegment(), 0));  // TODO #3465 - Don't manually create segment here
+            return completedFuture(te == null ? null : te.getSegment());
         }
         catch (Exception e) {
             return CompletableFuture.failedFuture(e);
@@ -355,7 +355,7 @@ public class JpaTokenStore implements TokenStore {
                     TokenEntry.class
             ).setParameter(PROCESSOR_NAME_PARAM, processorName).getResultList();
 
-            return completedFuture(resultList.stream().map(TokenEntry::getSegment).map(id -> new Segment(id, 0)).toList());  // TODO #3465 - Don't manually create segment here
+            return completedFuture(resultList.stream().map(TokenEntry::getSegment).toList());
         }
         catch (Exception e) {
             return CompletableFuture.failedFuture(e);
@@ -379,7 +379,6 @@ public class JpaTokenStore implements TokenStore {
             return completedFuture(resultList.stream()
                                              .filter(tokenEntry -> tokenEntry.mayClaim(nodeId, claimTimeout))
                                              .map(TokenEntry::getSegment)
-                                             .map(id -> new Segment(id, 0))    // TODO #3465 - Don't manually create segment here
                                              .collect(Collectors.toList())
             );
         }
@@ -499,7 +498,7 @@ public class JpaTokenStore implements TokenStore {
                                    LockModeType.NONE);
         if (token == null) {
             token = new TokenEntry(CONFIG_TOKEN_ID,
-                                   CONFIG_SEGMENT.getSegmentId(),
+                                   CONFIG_SEGMENT,
                                    new ConfigToken(Collections.singletonMap("id", UUID.randomUUID().toString())),
                                    converter);
             em.persist(token);

@@ -21,6 +21,7 @@ import org.axonframework.eventhandling.EventTestUtils;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
@@ -191,99 +192,6 @@ class SegmentTest {
     }
 
     @Test
-    void segmentResolve() {
-        {
-            final int[] segments = {};
-            final Segment[] segmentMasks = Segment.computeSegments(segments);
-            assertThat(segmentMasks.length, is(0));
-        }
-
-        {
-            final int[] segments = {0};
-            final Segment[] segmentMasks = Segment.computeSegments(segments);
-            assertThat(segmentMasks.length, is(1));
-            assertThat(segmentMasks[0].getMask(), is(Segment.ROOT_SEGMENT.getMask()));
-        }
-
-        {
-            // balanced distribution
-            final int[] segments = {0, 1};
-            final Segment[] segmentMasks = Segment.computeSegments(segments);
-            assertThat(segmentMasks.length, is(2));
-            assertThat(segmentMasks[0].getMask(), is(0x1));
-            assertThat(segmentMasks[1].getMask(), is(0x1));
-        }
-
-        {
-            // un-balanced distribution segment 0 is split.
-            final int[] segments = {0, 1, 2};
-            final Segment[] segmentMasks = Segment.computeSegments(segments);
-
-            assertThat(segmentMasks.length, is(3));
-            assertThat(segmentMasks[0].getMask(), is(0x3));
-            assertThat(segmentMasks[1].getMask(), is(0x1));
-            assertThat(segmentMasks[2].getMask(), is(0x3));
-        }
-
-        {
-            // un-balanced distribution segment 1 is split.
-            final int[] segments = {0, 1, 3};
-            final Segment[] segmentMasks = Segment.computeSegments(segments);
-            assertThat(segmentMasks.length, is(3));
-            assertThat(segmentMasks[0].getMask(), is(0x1));
-            assertThat(segmentMasks[1].getMask(), is(0x3));
-            assertThat(segmentMasks[2].getMask(), is(0x3));
-        }
-
-        {
-            // balanced distribution segment 0 and 1 are split.
-            final int[] segments = {0, 1, 2, 3};
-            final Segment[] segmentMasks = Segment.computeSegments(segments);
-            assertThat(segmentMasks.length, is(4));
-            assertThat(segmentMasks[0].getMask(), is(0x3));
-            assertThat(segmentMasks[1].getMask(), is(0x3));
-            assertThat(segmentMasks[2].getMask(), is(0x3));
-            assertThat(segmentMasks[3].getMask(), is(0x3));
-        }
-
-        {
-            // un-balanced distribution segment 1 is split and segment 3 is split.
-            final int[] segments = {0, 1, 3, 7};
-            final Segment[] segmentMasks = Segment.computeSegments(segments);
-            assertThat(segmentMasks.length, is(4));
-            assertThat(segmentMasks[0].getMask(), is(0x1));
-            assertThat(segmentMasks[1].getMask(), is(0x3));
-            assertThat(segmentMasks[2].getMask(), is(0x7));
-            assertThat(segmentMasks[3].getMask(), is(0x7));
-        }
-
-        {
-            // un-balanced distribution segment 0 is split, segment 3 is split.
-            final int[] segments = {0, 1, 2, 3, 7};
-            final Segment[] segmentMasks = Segment.computeSegments(segments);
-            assertThat(segmentMasks.length, is(5));
-            assertThat(segmentMasks[0].getMask(), is(0x3));
-            assertThat(segmentMasks[1].getMask(), is(0x3));
-            assertThat(segmentMasks[2].getMask(), is(0x3));
-            assertThat(segmentMasks[3].getMask(), is(0x7));
-            assertThat(segmentMasks[4].getMask(), is(0x7));
-        }
-
-        {
-            //
-            final int[] segments = {0, 1, 2, 3, 4, 5};
-            final Segment[] segmentMasks = Segment.computeSegments(segments);
-            assertThat(segmentMasks.length, is(6));
-            assertThat(segmentMasks[0], equalTo(new Segment(0, 0x7)));
-            assertThat(segmentMasks[1], equalTo(new Segment(1, 0x7)));
-            assertThat(segmentMasks[2], equalTo(new Segment(2, 0x3)));
-            assertThat(segmentMasks[3], equalTo(new Segment(3, 0x3)));
-            assertThat(segmentMasks[4], equalTo(new Segment(4, 0x7)));
-            assertThat(segmentMasks[5], equalTo(new Segment(5, 0x7)));
-        }
-    }
-
-    @Test
     void computeSegment() {
         for (int segmentCount = 0; segmentCount < 256; segmentCount++) {
             List<Segment> segments = Segment.splitBalanced(Segment.ROOT_SEGMENT, segmentCount);
@@ -293,7 +201,7 @@ class SegmentTest {
             }
 
             for (Segment segment : segments) {
-                assertEquals(segment, Segment.computeSegment(segment.getSegmentId(), segmentIds),
+                assertEquals(computeSegment(segment.getSegmentId(), segmentIds), segment,
                              "Got wrong segment for " + segmentCount + " number of segments");
             }
         }
@@ -316,7 +224,7 @@ class SegmentTest {
         }
 
         for (Segment segment : segments) {
-            assertEquals(segment, Segment.computeSegment(segment.getSegmentId(), segmentIds));
+            assertEquals(segment, computeSegment(segment.getSegmentId(), segmentIds));
         }
     }
 
@@ -349,6 +257,21 @@ class SegmentTest {
                 assertEquals(1, segments.stream().filter(s -> s.matches(value)).count());
             }
         }
+    }
+
+    private static Segment computeSegment(int segmentId, int... availableSegmentIds) {
+        Arrays.sort(availableSegmentIds);
+
+        // as a 1 can only happen within the mask, the smallest possible mask is the lowest power of 2 (minus one)
+        // higher than that value
+        int splitCandidate = segmentId == 0 ? 1 : (Integer.highestOneBit(segmentId) << 1);
+        while (Arrays.binarySearch(availableSegmentIds, splitCandidate | segmentId) >= 0) {
+            // We have found the split value for the smallest mask. We need to increase the mask
+            splitCandidate = splitCandidate << 1;
+        }
+
+        int mask = splitCandidate - 1;
+        return new Segment(segmentId, mask);
     }
 
     private List<EventMessage> produceEvents() {
