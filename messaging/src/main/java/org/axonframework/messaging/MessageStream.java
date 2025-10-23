@@ -32,6 +32,19 @@ import java.util.stream.StreamSupport;
 /**
  * Represents a stream of {@link Entry entries} containing {@link Message Messages} of type {@code M} that can be
  * consumed as they become available.
+ * <p>
+ * A Message Stream is asynchronous by nature. All operations are non-blocking by design, although some implementations
+ * may choose to block for certain conditions. In that case, the streams must document so explicitly.
+ * <p>
+ * To get notified of anything potentially available for consumption, one must register a {@link #onAvailable(Runnable)}
+ * callback. This callback is invoked each time information is *potentially* available for consumption. There is no
+ * guarantee that entries are available for consumption when this callback is invoked. When consuming the stream, one
+ * must also ensure to check the {@link #isCompleted()} status and potentially the presence of errors using
+ * {@link #error()}.
+ * <p>
+ * When clients choose not to consume a stream until completion (when {@link #isCompleted()} returns {@code true}), it
+ * must be closed by calling {@link #close()}. This ensures that the producing side is notified of the closure and can
+ * clean up resources.
  *
  * @param <M> The type of {@link Message} contained in the {@link Entry entries} of this stream.
  * @author Allard Buijze
@@ -47,7 +60,8 @@ public interface MessageStream<M extends Message> {
      * Create a stream that provides the {@link Message Messages} returned by the given {@code iterable}, automatically
      * wrapped in an {@link Entry}.
      * <p>
-     * Note that each separate consumer of the stream will receive each message if the iterable does so.
+     * The returned stream will provide the messages as provided by the {@link Iterable#iterator()} call on the
+     * given {@code iterable}.
      *
      * @param iterable The {@link Iterable} providing the {@link Message Messages} to stream.
      * @param <M>      The type of {@link Message} contained in the {@link Entry entries} of this stream.
@@ -59,8 +73,7 @@ public interface MessageStream<M extends Message> {
     }
 
     /**
-     * Creates a MessageStream that provides the given {@code items} and then completes. Each item can only be consumed
-     * once.
+     * Creates a MessageStream that provides the given {@code items} and then completes.
      *
      * @param items The items to return in the stream.
      * @param <M>   The type of message the stream contains
@@ -75,7 +88,8 @@ public interface MessageStream<M extends Message> {
      * Create a stream that provides the {@link Message Messages} returned by the given {@code iterable}, automatically
      * wrapped in an {@link Entry} with the resulting {@link Context} from the {@code contextSupplier}.
      * <p>
-     * Note that each separate consumer of the stream will receive each message if the iterable does so.
+     * The returned stream will provide the messages as provided by the {@link Iterable#iterator()} call on the
+     * given {@code iterable}.
      *
      * @param iterable        The {@link Iterable} providing the {@link Message Messages} to stream.
      * @param contextSupplier A {@link Function} ingesting each {@link Message} from the given {@code iterable}
@@ -97,9 +111,6 @@ public interface MessageStream<M extends Message> {
     /**
      * Create a stream that provides the {@link Message Messages} returned by the given {@code stream}, automatically
      * wrapped in an {@link Entry}.
-     * <p>
-     * Note that each separate consumer of the stream will receive each message of the given {@code stream}, if the
-     * stream does so.
      *
      * @param stream The {@link Stream} providing the {@link Message Messages} to stream.
      * @param <M>    The type of {@link Message} contained in the {@link Entry entries} of this stream.
@@ -113,9 +124,6 @@ public interface MessageStream<M extends Message> {
     /**
      * Create a stream that provides the {@link Message Messages} returned by the given {@code stream}, automatically
      * wrapped in an {@link Entry} with the resulting {@link Context} from the {@code contextSupplier}.
-     * <p>
-     * Note that each separate consumer of the stream will receive each message of the given {@code stream}, if the
-     * stream does so.
      *
      * @param stream          The {@link Stream} providing the {@link Message Messages} to stream.
      * @param contextSupplier A {@link Function} ingesting each {@link Message} from the given {@code stream} returning
@@ -134,9 +142,6 @@ public interface MessageStream<M extends Message> {
      * Create a stream that provides the items of type {@code T} returned by the given {@code stream}, automatically
      * wrapped in an {@link Entry} with the resulting {@link Message} and {@link Context} from the
      * {@code messageSupplier} and the {@code contextSupplier} respectively.
-     * <p>
-     * Note that each separate consumer of the stream will receive each message of the given {@code stream}, if the
-     * stream does so.
      *
      * @param stream          The {@link Stream} providing the items of type {@code T} to map to a {@link Message} and
      *                        {@link Context}.
@@ -243,10 +248,7 @@ public interface MessageStream<M extends Message> {
     }
 
     /**
-     * Create a stream that carries no {@link Entry} and is considered to be successfully completed. The type of the
-     * empty stream is forced to a {@link Message} containing a {@link Void}.
-     * <p>
-     * To declare empty streams of another type, call {@link #cast()} on the returned {@code Empty} stream.
+     * Create a stream that carries no {@link Entry} and is considered to be successfully completed.
      * <p>
      * Any attempt to convert this stream to a component that requires an entry to be returned (such as
      * {@link CompletableFuture}), will have it return {@code null}.
@@ -259,7 +261,7 @@ public interface MessageStream<M extends Message> {
 
     /**
      * Returns a {@link Single stream} that includes only the first message of {@code this} stream, unless it completes
-     * without delivering any messages, in which case is completes the same way.
+     * without delivering any messages, in which case it completes the same way.
      * <p>
      * When the first message is delivered, the returned stream completes normally, independently of how this stream
      * completes. Upon consuming the first message, this stream is {@link #close()} immediately.
@@ -271,7 +273,11 @@ public interface MessageStream<M extends Message> {
     }
 
     /**
-     * Returns a stream that process all messages, but ignores the results and returns an empty stream.
+     * Returns a stream that consumes all messages from this stream, but ignores the results and completes when
+     * this stream completes.
+     * <p>
+     * Unlike simply closing the stream, the returned stream will still cause upstream entries to be consumed and any
+     * registered callbacks to be invoked.
      *
      * @return An Empty stream that ignores all results.
      */
@@ -290,8 +296,8 @@ public interface MessageStream<M extends Message> {
     Optional<Entry<M>> next();
 
     /**
-     * Returns an Optional carrying the next {@link Entry entry} from the stream (without moving the stream pointer), if such entry was available. If no
-     * entry was available for reading, this method returns an empty Optional.
+     * Returns an Optional carrying the next {@link Entry entry} from the stream (without moving the stream pointer),
+     * if such entry was available. If no entry was available for reading, this method returns an empty Optional.
      * <p>
      * This method will never block for elements becoming available.
      *
@@ -304,6 +310,8 @@ public interface MessageStream<M extends Message> {
      * completes (either normally or with an error). An invocation of this method does not in any way guarantee that
      * entries are indeed available, or that the stream has indeed been completed. Implementations may choose to
      * suppress repeated invocations of the callback if no entries have been read in the meantime.
+     * <p>
+     * Any previously registered callback is replaced with the given {@code callback}.
      *
      * @param callback The callback to invoke when {@link Entry entries} are available for reading, or the stream
      *                 completes.
@@ -320,7 +328,7 @@ public interface MessageStream<M extends Message> {
     Optional<Throwable> error();
 
     /**
-     * Indicates whether this stream has been completed. A completed stream will never return any more
+     * Indicates whether this stream has been completed. A completed stream will never return
      * {@link Entry entries} from {@link #next()}, and {@link #hasNextAvailable()} will always return {@code false}. If
      * the stream completed with an error, {@link #error()} will report so.
      *
