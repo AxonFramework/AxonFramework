@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.CommandHandlerRegistry;
 import org.axonframework.commandhandling.CommandHandlingComponent;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventHandlingComponent;
+import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.queryhandling.QueryHandlerName;

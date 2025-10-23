@@ -16,7 +16,7 @@
 
 package org.axonframework.queryhandling.tracing;
 
-// TODO 3488 - Introduce tracing test logic here.
+// TODO #3594 - Introduce tracing test logic here.
 class TracingQueryBusTest {
     //private TestSpanFactory spanFactory;
     //private QueryBusSpanFactory queryBusSpanFactory;

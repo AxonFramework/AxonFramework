@@ -17,21 +17,20 @@
 package org.axonframework.axonserver.connector.command;
 
 import com.google.protobuf.ByteString;
-import io.axoniq.axonserver.grpc.MetaDataValue;
 import io.axoniq.axonserver.grpc.ProcessingKey;
 import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.command.Command;
 import io.axoniq.axonserver.grpc.command.CommandResponse;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.MetadataConverter;
+import org.axonframework.axonserver.connector.util.ExceptionConverter;
+import org.axonframework.axonserver.connector.util.ProcessingInstructionUtils;
 import org.axonframework.axonserver.connector.util.ProcessingInstructionUtils;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
-import org.axonframework.common.AxonException;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.annotations.Internal;
 import org.axonframework.messaging.GenericMessage;
@@ -41,8 +40,6 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.OptionalInt;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -71,10 +68,6 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  */
 @Internal
 public final class CommandConverter {
-
-    private CommandConverter() {
-        // Utility class
-    }
 
     /**
      * Converts the given {@code command} into a {@link Command} for
@@ -118,26 +111,6 @@ public final class CommandConverter {
                       .build();
     }
 
-    private static void addRoutingKey(Command.Builder builder, CommandMessage command) {
-        Optional<String> routingKey = command.routingKey();
-        if (routingKey.isEmpty()) {
-            return;
-        }
-        var instruction = createProcessingInstruction(ProcessingKey.ROUTING_KEY,
-                                                      MetaDataValue.newBuilder().setTextValue(routingKey.get()));
-        builder.addProcessingInstructions(instruction).build();
-    }
-
-    private static void addPriority(Command.Builder builder, CommandMessage command) {
-        OptionalInt priority = command.priority();
-        if (priority.isEmpty()) {
-            return;
-        }
-        var instruction = createProcessingInstruction(ProcessingKey.PRIORITY,
-                                                      MetaDataValue.newBuilder().setNumberValue(priority.getAsInt()));
-        builder.addProcessingInstructions(instruction).build();
-    }
-
     /**
      * Converts the given {@code commandResponse} to a {@link CommandResultMessage}, wrapped in a
      * {@link CompletableFuture} for convenience when dealing with {@link CommandResponse CommandResponses} during
@@ -151,7 +124,11 @@ public final class CommandConverter {
             @Nonnull CommandResponse commandResponse
     ) {
         if (commandResponse.hasErrorMessage()) {
-            return CompletableFuture.failedFuture(exceptionFromErrorResponse(commandResponse));
+            return CompletableFuture.failedFuture(ExceptionConverter.convertToAxonException(
+                    commandResponse.getErrorCode(),
+                    commandResponse.getErrorMessage(),
+                    commandResponse.getPayload()
+            ));
         }
 
         if (commandResponse.getPayload().getType().isEmpty()) {
@@ -169,18 +146,6 @@ public final class CommandConverter {
         )));
     }
 
-    private static AxonException exceptionFromErrorResponse(CommandResponse commandResponse) {
-        return ErrorCode.getFromCode(commandResponse.getErrorCode())
-                        .convert(commandResponse.getErrorMessage(),
-                                 () -> getErrorMessageFromCommandResponse(commandResponse));
-    }
-
-    private static Object getErrorMessageFromCommandResponse(CommandResponse commandResponse) {
-        if (commandResponse.getPayload().getData().isEmpty()) {
-            return null;
-        }
-        return commandResponse.getPayload().getData().toByteArray();
-    }
 
     /**
      * Converts the given {@code command} into a {@link CommandMessage} for handling in
@@ -246,5 +211,23 @@ public final class CommandConverter {
                                                           .setRevision(resultMessage.type().version())
                                                           .setData(ByteString.copyFrom(payloadAsBytes)))
                               .build();
+    }
+
+    private static void addRoutingKey(Command.Builder builder, CommandMessage command) {
+        command.routingKey().ifPresent(routingKey -> {
+            var instruction = createProcessingInstruction(ProcessingKey.ROUTING_KEY, routingKey);
+            builder.addProcessingInstructions(instruction);
+        });
+    }
+
+    private static void addPriority(Command.Builder builder, CommandMessage command) {
+        command.priority().ifPresent(priority -> {
+            var instruction = createProcessingInstruction(ProcessingKey.PRIORITY, priority);
+            builder.addProcessingInstructions(instruction);
+        });
+    }
+
+    private CommandConverter() {
+        // Utility class
     }
 }

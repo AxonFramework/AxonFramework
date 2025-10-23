@@ -25,7 +25,6 @@ import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.eventhandling.processors.streaming.token.store.inmemory.InMemoryTokenStore;
-import org.axonframework.extension.springboot.autoconfig.InfrastructureConfiguration;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageDispatchInterceptorChain;
@@ -55,7 +54,6 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-
 /**
  * Test class validating the behavior of the {@link InfrastructureConfiguration}.
  *
@@ -67,8 +65,9 @@ class InterceptorAutoConfigurationTest {
 
     @BeforeEach
     void setUp() {
-        testApplicationContext = new ApplicationContextRunner().withUserConfiguration(DefaultContext.class)
-                                                               .withPropertyValues("axon.axonserver.enabled:false");
+        testApplicationContext = new ApplicationContextRunner()
+                .withUserConfiguration(DefaultContext.class)
+                .withPropertyValues("axon.axonserver.enabled:false");
     }
 
     @Test
@@ -96,7 +95,7 @@ class InterceptorAutoConfigurationTest {
     }
 
     @Test
-    @Disabled("TODO #3488 - QueryHandler annotated methods are not yet found")
+    @Disabled("TODO # #3485 - Ordering of interceptors is not supported")
     public void queryHandlerInterceptorsAreRegisteredInCorrectOrder() {
         testApplicationContext.withUserConfiguration(MessageInterceptorContext.class).run(context -> {
             context.getBean(QueryGateway.class).query("foo", String.class, null);
@@ -113,6 +112,7 @@ class InterceptorAutoConfigurationTest {
             assertThat(commandHandlingInterceptingOutcome).isEmpty();
             assertThat(eventHandlingInterceptingOutcome).isEmpty();
             assertThat(queryHandlingInterceptingOutcome).hasSize(3);
+
             assertThat(queryHandlingInterceptingOutcome.poll()).startsWith("Order-0");
             assertThat(queryHandlingInterceptingOutcome.poll()).startsWith("Order-100");
             assertThat(queryHandlingInterceptingOutcome.poll()).startsWith("Unordered");
@@ -120,7 +120,7 @@ class InterceptorAutoConfigurationTest {
     }
 
     @Test
-    @Disabled("TODO #3485 - Ordering is not supported")
+    @Disabled("TODO # #3485 - Ordering of interceptors is not supported")
     public void eventHandlerInterceptorsAreRegisteredInCorrectOrder() {
         testApplicationContext.withUserConfiguration(MessageInterceptorContext.class).run(context -> {
             context.getBean(EventGateway.class).publish(null, "foo");
@@ -196,7 +196,6 @@ class InterceptorAutoConfigurationTest {
     }
 
     @Test
-    @Disabled("TODO #3488 - QueryHandler annotated methods are not yet found")
     public void queryDispatchInterceptorsAreRegisteredInCorrectOrder() {
         testApplicationContext.withUserConfiguration(MessageInterceptorContext.class).run(context -> {
             context.getBean(QueryGateway.class).query("foo", String.class, null);

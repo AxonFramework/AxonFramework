@@ -77,34 +77,6 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
     MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage query, @Nullable ProcessingContext context);
 
     /**
-     * Dispatch the given {@code query} to a {@link QueryHandler}
-     * {@link #subscribe(QueryHandlerName, QueryHandler) subscribed} to the given {@code query}'s
-     * {@link MessageType#qualifiedName() query name} and {@link QueryMessage#responseType()}, returning a
-     * {@link Publisher} of {@link QueryResponseMessage responses} to the given {@code query}.
-     * <p>
-     * The actual query is not dispatched until there is a subscription to the result. The query is dispatched to a
-     * single query handler. Implementations may opt for invoking several query handlers and then choosing a response
-     * from single one for performance or resilience reasons.
-     * <p>
-     * When no handlers are available that can answer the given {@code query}, the return Publisher will be completed
-     * with a {@link NoHandlerForQueryException}.
-     *
-     * @param query   The query to dispatch.
-     * @param context The processing context under which the query is being published (can be {@code null}).
-     * @return A {@code Publisher} of {@link QueryResponseMessage responses}.
-     * @throws NoHandlerForQueryException When no {@link QueryHandler} is registered for the given {@code query}'s
-     *                                    {@link MessageType#qualifiedName() query name} and
-     *                                    {@link QueryMessage#responseType()}.
-     */
-    @Nonnull
-    default Publisher<QueryResponseMessage> streamingQuery(@Nonnull QueryMessage query,
-                                                           @Nullable ProcessingContext context) {
-        return Mono.fromSupplier(() -> query(query, context))
-                   .flatMapMany(FluxUtils::of)
-                   .map(MessageStream.Entry::message);
-    }
-
-    /**
      * Dispatch the given {@code query} to a single QueryHandler subscribed to the given {@code query}'s
      * queryName/initialResponseType/updateResponseType. The result is lazily created and there will be no execution of
      * the query handler before there is a subscription to the initial result. In order not to miss updates, the query
@@ -119,8 +91,7 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      *
      * @param query            The subscription query to dispatch.
      * @param context          The processing context under which the query is being published (can be {@code null}).
-     * @param updateBufferSize the size of buffer which accumulates updates before subscription to the {@code flux} is
-     *                         made.
+     * @param updateBufferSize The size of the buffer which accumulates updates.
      * @return query result containing initial result and incremental updates
      */
     @Nonnull

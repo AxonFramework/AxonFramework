@@ -27,7 +27,7 @@ import org.axonframework.axonserver.connector.ErrorCode;
  * @author Marc Gathier
  * @since 4.0
  */
-public class GrpcExceptionParser {
+public final class GrpcExceptionParser {
 
     private static final Metadata.Key<String> ERROR_CODE_KEY =
             Metadata.Key.of("AxonIQ-ErrorCode", Metadata.ASCII_STRING_MARSHALLER);
@@ -51,5 +51,9 @@ public class GrpcExceptionParser {
             }
         }
         return ErrorCode.getFromCode(code).convert(exception);
+    }
+
+    private GrpcExceptionParser() {
+        // Utility class, prevent instantiation.
     }
 }

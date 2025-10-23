@@ -16,14 +16,21 @@
 
 package org.axonframework.queryhandling;
 
+import org.axonframework.messaging.FluxUtils;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
+import org.reactivestreams.Publisher;
+import reactor.core.publisher.Mono;
+
+import java.util.function.Supplier;
 
 /**
  * Test utilities when dealing with the {@link QueryBus}.
  *
  * @author Steven van Beelen
  */
-public class QueryBusTestUtils {
+public final class QueryBusTestUtils {
 
     /**
      * Creates a new instance of {@link SimpleQueryBus} configured with a simple
@@ -34,6 +41,7 @@ public class QueryBusTestUtils {
     public static QueryBus aQueryBus() {
         return new SimpleQueryBus(UnitOfWorkTestUtils.SIMPLE_FACTORY);
     }
+
 
     private QueryBusTestUtils() {
         // Utility class

@@ -22,6 +22,7 @@ import org.axonframework.common.annotations.Internal;
 import org.axonframework.messaging.FluxUtils;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
@@ -37,7 +38,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 /**
- * Utility class that can resolve the result of any {@link org.axonframework.messaging.configuration.MessageHandler}
+ * Utility class that can resolve the result of any {@link MessageHandler}
  * into the expected corresponding {@link MessageStream}.
  * <p>
  * This utility class currently has a major drawback, which is that it only takes the "top level" type into account.

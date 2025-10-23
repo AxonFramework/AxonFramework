@@ -140,10 +140,7 @@ public class GenericCommandMessage extends MessageDecorator implements CommandMe
 
     @Override
     public OptionalInt priority() {
-        if (priority == null) {
-            return OptionalInt.empty();
-        }
-        return OptionalInt.of(priority);
+        return priority != null ? OptionalInt.of(priority) : OptionalInt.empty();
     }
 
     @Override

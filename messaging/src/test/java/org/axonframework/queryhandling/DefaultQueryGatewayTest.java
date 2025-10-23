@@ -26,8 +26,6 @@ import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 import org.reactivestreams.Publisher;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import reactor.util.concurrent.Queues;
 
@@ -291,13 +289,13 @@ class DefaultQueryGatewayTest {
         void streamingQueryInvokesQueryBusAsExpected() {
             // given...
             QueryResponseMessage testResponse = new GenericQueryResponseMessage(RESPONSE_TYPE, RESPONSE_PAYLOAD);
-            when(queryBus.streamingQuery(any(), eq(null))).thenReturn(Mono.just(testResponse));
+            when(queryBus.query(any(), eq(null))).thenReturn(MessageStream.just(testResponse));
             // when...
             StepVerifier.create(testSubject.streamingQuery(QUERY_PAYLOAD, String.class, null))
                         .expectNext(RESPONSE_PAYLOAD)
                         .verifyComplete();
             // then...
-            verify(queryBus).streamingQuery(streamingQueryCaptor.capture(), eq(null));
+            verify(queryBus).query(streamingQueryCaptor.capture(), eq(null));
 
             QueryMessage resultMessage = streamingQueryCaptor.getValue();
             assertThat(resultMessage.payload()).isEqualTo(QUERY_PAYLOAD);
@@ -310,7 +308,7 @@ class DefaultQueryGatewayTest {
         void streamingQueryWithMetadataInvokesQueryBusWithMetadata() {
             // given...
             QueryResponseMessage testResponse = new GenericQueryResponseMessage(RESPONSE_TYPE, RESPONSE_PAYLOAD);
-            when(queryBus.streamingQuery(any(), eq(null))).thenReturn(Mono.just(testResponse));
+            when(queryBus.query(any(), eq(null))).thenReturn(MessageStream.just(testResponse));
             String expectedKey = "key";
             String expectedValue = "value";
             Metadata testMetadata = Metadata.with(expectedKey, expectedValue);
@@ -321,7 +319,7 @@ class DefaultQueryGatewayTest {
                         .expectNext(RESPONSE_PAYLOAD)
                         .verifyComplete();
             // then...
-            verify(queryBus).streamingQuery(streamingQueryCaptor.capture(), eq(null));
+            verify(queryBus).query(streamingQueryCaptor.capture(), eq(null));
 
             QueryMessage resultMessage = streamingQueryCaptor.getValue();
             assertThat(resultMessage.payload()).isEqualTo(QUERY_PAYLOAD);
@@ -335,30 +333,30 @@ class DefaultQueryGatewayTest {
         @Test
         void streamingQueryIsLazy() {
             // given...
-            Publisher<QueryResponseMessage> response = Flux.just(
+            MessageStream<QueryResponseMessage> response = MessageStream.fromItems(
                     new GenericQueryResponseMessage(QUERY_TYPE, "a"),
                     new GenericQueryResponseMessage(QUERY_TYPE, "b"),
                     new GenericQueryResponseMessage(QUERY_TYPE, "c")
             );
-            when(queryBus.streamingQuery(any(), any())).thenReturn(response);
+            when(queryBus.query(any(), any())).thenReturn(response);
             // when first try without subscribing...
             //noinspection ReactiveStreamsUnusedPublisher
             testSubject.streamingQuery(QUERY_PAYLOAD, String.class, null);
             // then expect query never sent...
-            verify(queryBus, never()).streamingQuery(any(), eq(null));
+            verify(queryBus, never()).query(any(), eq(null));
 
             // when second try with subscribing...
             StepVerifier.create(testSubject.streamingQuery(QUERY_PAYLOAD, String.class, null))
                         .expectNext("a", "b", "c")
                         .verifyComplete();
             // then expect query sent...
-            verify(queryBus, times(1)).streamingQuery(any(QueryMessage.class), eq(null));
+            verify(queryBus).query(any(QueryMessage.class), eq(null));
         }
 
         @Test
         void streamingQueryPropagateErrors() {
             // given...
-            when(queryBus.streamingQuery(any(), any())).thenReturn(Flux.error(new IllegalStateException("test")));
+            when(queryBus.query(any(), any())).thenReturn(MessageStream.failed(new IllegalStateException("test")));
             // when and then...
             StepVerifier.create(testSubject.streamingQuery(QUERY_PAYLOAD, String.class, null))
                         .expectErrorMatches(t -> t instanceof IllegalStateException && t.getMessage().equals("test"))

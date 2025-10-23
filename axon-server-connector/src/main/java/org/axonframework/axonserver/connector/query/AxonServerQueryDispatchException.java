@@ -20,6 +20,7 @@ import io.axoniq.axonserver.grpc.ErrorMessage;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.common.AxonException;
 
+import java.io.Serial;
 import java.util.Collections;
 import java.util.List;
 
@@ -31,6 +32,7 @@ import java.util.List;
  */
 public class AxonServerQueryDispatchException extends AxonException {
 
+    @Serial
     private static final long serialVersionUID = 4810265327922717359L;
 
     private final String code;

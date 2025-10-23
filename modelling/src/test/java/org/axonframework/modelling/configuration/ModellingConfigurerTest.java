@@ -100,7 +100,7 @@ class ModellingConfigurerTest extends ApplicationConfigurerTestSuite<ModellingCo
                                    .queryHandlers(handlerPhase -> handlerPhase.queryHandler(
                                            new QualifiedName(String.class),
                                            new QualifiedName(String.class),
-                                           (command, context) -> MessageStream.empty().cast()
+                                           (query, context) -> MessageStream.empty().cast()
                                    ));
 
         Configuration configuration =

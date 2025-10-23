@@ -36,6 +36,7 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
+import static org.axonframework.messaging.FluxUtils.streamToPublisher;
 
 /**
  * Tests Streaming Query functionality using a {@link SimpleQueryBus}. Query Handlers are subscribed using
@@ -46,7 +47,7 @@ import static java.util.Arrays.asList;
  */
 class StreamingQueryTest {
 
-    private QueryBus queryBus = QueryBusTestUtils.aQueryBus();
+    private final QueryBus queryBus = QueryBusTestUtils.aQueryBus();
 
     private MyQueryHandler myQueryHandler;
 
@@ -54,7 +55,6 @@ class StreamingQueryTest {
 
     @BeforeEach
     void setUp() {
-        queryBus = QueryBusTestUtils.aQueryBus();
 
         myQueryHandler = new MyQueryHandler();
         QueryHandlingComponent queryHandlingComponent =
@@ -72,7 +72,9 @@ class StreamingQueryTest {
     }
 
     private Flux<QueryResponseMessage> streamingQuery(QueryMessage testQuery) {
-        return Flux.from(queryBus.streamingQuery(testQuery, null));
+        return Flux.from(streamToPublisher(
+                () -> queryBus.query(testQuery, null))
+        );
     }
 
     @Test

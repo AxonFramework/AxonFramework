@@ -43,11 +43,10 @@ public class GenericSubscriptionQueryMessage extends GenericQueryMessage impleme
      * <p>
      * The {@link Metadata} defaults to an empty instance.
      *
-     * @param type               The {@link MessageType type} for this {@link SubscriptionQueryMessage}.
-     * @param payload            The payload of type {@code P} expressing the query for this
-     *                           {@link SubscriptionQueryMessage}.
-     * @param responseType       The expected {@link MessageType response type} for this
-     *                           {@link SubscriptionQueryMessage}.
+     * @param type         The {@link MessageType type} for this {@link SubscriptionQueryMessage}.
+     * @param payload      The payload of type {@code P} expressing the query for this
+     *                     {@link SubscriptionQueryMessage}.
+     * @param responseType The expected {@link MessageType response type} for this {@link SubscriptionQueryMessage}.
      */
     public GenericSubscriptionQueryMessage(@Nonnull MessageType type,
                                            @Nullable Object payload,
@@ -56,8 +55,8 @@ public class GenericSubscriptionQueryMessage extends GenericQueryMessage impleme
     }
 
     /**
-     * Constructs a {@code GenericSubscriptionQueryMessage} with given {@code delegate}, {@code responseType}, and
-     * {@code updateResponseType}.
+     * Constructs a {@code GenericSubscriptionQueryMessage} with given {@code delegate}, {@code responseType},
+     * {@code priority}.
      * <p>
      * The {@code delegate} will be used supply the {@link Message#payload() payload}, {@link Message#type() type},
      * {@link Message#metadata() metadata} and {@link Message#identifier() identifier} of the resulting
@@ -66,30 +65,55 @@ public class GenericSubscriptionQueryMessage extends GenericQueryMessage impleme
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
      * of Work.
      *
-     * @param delegate           The {@link Message} containing {@link Message#payload() payload},
-     *                           {@link Message#type() type}, {@link Message#identifier() identifier} and
-     *                           {@link Message#metadata() metadata} for the {@link SubscriptionQueryMessage} to
-     *                           reconstruct.
-     * @param responseType       The expected {@link MessageType response type} for this
-     *                           {@link SubscriptionQueryMessage}.
+     * @param delegate     The {@link Message} containing {@link Message#payload() payload},
+     *                     {@link Message#type() type}, {@link Message#identifier() identifier} and
+     *                     {@link Message#metadata() metadata} for the {@link SubscriptionQueryMessage} to reconstruct.
+     * @param responseType The expected {@link MessageType response type} for this {@link SubscriptionQueryMessage}.
+     * @param priority     The priority of this subscription query message.
+     */
+    public GenericSubscriptionQueryMessage(@Nonnull Message delegate,
+                                           @Nonnull MessageType responseType,
+                                           @Nullable Integer priority) {
+        super(delegate, responseType, priority);
+    }
+
+    /**
+     * Constructs a {@code GenericSubscriptionQueryMessage} with given {@code delegate} and {@code responseType}.
+     * <p>
+     * The {@code delegate} will be used supply the {@link Message#payload() payload}, {@link Message#type() type},
+     * {@link Message#metadata() metadata} and {@link Message#identifier() identifier} of the resulting
+     * {@code GenericQueryMessage}.
+     * <p>
+     * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
+     * of Work.
+     *
+     * @param delegate     The {@link Message} containing {@link Message#payload() payload},
+     *                     {@link Message#type() type}, {@link Message#identifier() identifier} and
+     *                     {@link Message#metadata() metadata} for the {@link SubscriptionQueryMessage} to reconstruct.
+     * @param responseType The expected {@link MessageType response type} for this {@link SubscriptionQueryMessage}.
+     * @see GenericSubscriptionQueryMessage(Message, MessageType, Integer)
      */
     public GenericSubscriptionQueryMessage(@Nonnull Message delegate,
                                            @Nonnull MessageType responseType) {
-        super(delegate, responseType);
+        this(delegate, responseType, null);
     }
 
     @Override
     @Nonnull
     public SubscriptionQueryMessage withMetadata(@Nonnull Map<String, String> metadata) {
         return new GenericSubscriptionQueryMessage(delegate().withMetadata(metadata),
-                                                   responseType());
+                                                   responseType(),
+                                                   priorityOrNull()
+        );
     }
 
     @Override
     @Nonnull
     public SubscriptionQueryMessage andMetadata(@Nonnull Map<String, String> metadata) {
         return new GenericSubscriptionQueryMessage(delegate().andMetadata(metadata),
-                                                   responseType());
+                                                   responseType(),
+                                                   priorityOrNull()
+        );
     }
 
     @Override
@@ -105,11 +129,19 @@ public class GenericSubscriptionQueryMessage extends GenericQueryMessage impleme
                                                delegate.type(),
                                                convertedPayload,
                                                delegate.metadata());
-        return new GenericSubscriptionQueryMessage(converted, responseType());
+        return new GenericSubscriptionQueryMessage(converted,
+                                                   responseType(),
+                                                   priorityOrNull()
+        );
     }
 
     @Override
     protected String describeType() {
         return "GenericSubscriptionQueryMessage";
+    }
+
+    @Nullable
+    private final Integer priorityOrNull() {
+        return priority().isPresent() ? priority().getAsInt() : null;
     }
 }

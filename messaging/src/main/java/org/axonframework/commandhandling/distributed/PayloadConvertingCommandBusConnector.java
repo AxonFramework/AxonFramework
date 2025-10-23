@@ -27,6 +27,8 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * Connector implementation that converts the payload of outgoing messages into the expected format. This is generally a
  * {@code byte[]} or another serialized form.
@@ -36,7 +38,6 @@ import java.util.concurrent.CompletableFuture;
  */
 public class PayloadConvertingCommandBusConnector extends DelegatingCommandBusConnector {
 
-    private final CommandBusConnector delegate;
     private final MessageConverter converter;
     private final Class<?> targetType;
 
@@ -52,9 +53,8 @@ public class PayloadConvertingCommandBusConnector extends DelegatingCommandBusCo
                                                 @Nonnull MessageConverter converter,
                                                 @Nonnull Class<?> targetType) {
         super(delegate);
-        this.delegate = Objects.requireNonNull(delegate, "The delegate must not be null.");
-        this.converter = Objects.requireNonNull(converter, "The converter must not be null.");
-        this.targetType = Objects.requireNonNull(targetType, "The targetType must not be null.");
+        this.converter = requireNonNull(converter, "The converter must not be null.");
+        this.targetType = requireNonNull(targetType, "The targetType must not be null.");
     }
 
     @Nonnull

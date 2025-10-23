@@ -23,7 +23,7 @@ import org.axonframework.axonserver.connector.command.AxonServerRemoteCommandHan
 import org.axonframework.axonserver.connector.query.AxonServerNonTransientRemoteQueryHandlingException;
 import org.axonframework.axonserver.connector.query.AxonServerQueryDispatchException;
 import org.axonframework.axonserver.connector.query.AxonServerRemoteQueryHandlingException;
-import org.axonframework.axonserver.connector.util.ExceptionSerializer;
+import org.axonframework.axonserver.connector.util.ExceptionConverter;
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.common.AxonException;
@@ -229,7 +229,7 @@ public enum ErrorCode {
      * @return the Axon Framework exception
      */
     public AxonException convert(String source, Throwable throwable) {
-        return convert(ExceptionSerializer.serialize(source, throwable),
+        return convert(ExceptionConverter.convertToErrorMessage(source, throwable),
                        () -> HandlerExecutionException.resolveDetails(throwable).orElse(null));
     }
 

@@ -60,6 +60,7 @@ public class GenericCommandResultMessage extends GenericResultMessage implements
      * @param exception The {@link Throwable} describing the error representing the response of this
      *                  {@link CommandResultMessage}.
      */
+    @Deprecated
     public GenericCommandResultMessage(@Nonnull MessageType type,
                                        @Nonnull Throwable exception) {
         super(type, exception);
@@ -88,6 +89,7 @@ public class GenericCommandResultMessage extends GenericResultMessage implements
      *                  {@link CommandResultMessage}.
      * @param metadata  The metadata for this {@link CommandResultMessage}.
      */
+    @Deprecated
     public GenericCommandResultMessage(@Nonnull MessageType type,
                                        @Nonnull Throwable exception,
                                        @Nonnull Map<String, String> metadata) {
@@ -122,6 +124,7 @@ public class GenericCommandResultMessage extends GenericResultMessage implements
      * @param exception The {@link Throwable} describing the error representing the response of this
      *                  {@link CommandResultMessage}.
      */
+    @Deprecated
     public GenericCommandResultMessage(@Nonnull Message delegate,
                                        @Nullable Throwable exception) {
         super(delegate, exception);

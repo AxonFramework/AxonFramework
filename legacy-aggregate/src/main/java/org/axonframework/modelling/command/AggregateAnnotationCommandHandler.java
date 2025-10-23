@@ -31,8 +31,8 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.LegacyMessageHandler;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
@@ -80,9 +80,9 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
 
     private final Repository<T> repository;
     private final CommandTargetResolver commandTargetResolver;
-    private final List<MessageHandler<CommandMessage, CommandResultMessage>> handlers;
+    private final List<LegacyMessageHandler<CommandMessage, CommandResultMessage>> handlers;
     private final Set<QualifiedName> supportedCommands;
-    private final Map<String, Set<MessageHandler<CommandMessage, CommandResultMessage>>> supportedCommandsByName;
+    private final Map<String, Set<LegacyMessageHandler<CommandMessage, CommandResultMessage>>> supportedCommandsByName;
     private final Map<Class<? extends T>, CreationPolicyAggregateFactory<T>> factoryPerType;
     private final MessageTypeResolver messageTypeResolver;
 
@@ -154,10 +154,10 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
      * Initializes all the handlers. Handlers are deduplicated based on their signature. The signature includes the name
      * of the method and all parameter types. This is an effective override in the hierarchy.
      */
-    private List<MessageHandler<CommandMessage, CommandResultMessage>> initializeHandlers(
+    private List<LegacyMessageHandler<CommandMessage, CommandResultMessage>> initializeHandlers(
             AggregateModel<T> aggregateModel
     ) {
-        List<MessageHandler<CommandMessage, CommandResultMessage>> handlersFound = new ArrayList<>();
+        List<LegacyMessageHandler<CommandMessage, CommandResultMessage>> handlersFound = new ArrayList<>();
 
         aggregateModel.allCommandHandlers()
                       .values()
@@ -182,13 +182,13 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
 
     private void initializeHandler(AggregateModel<T> aggregateModel,
                                    MessageHandlingMember<? super T> handler,
-                                   List<MessageHandler<CommandMessage, CommandResultMessage>> handlersFound) {
+                                   List<LegacyMessageHandler<CommandMessage, CommandResultMessage>> handlersFound) {
 
         handler.unwrap(CommandHandlingMember.class).ifPresent(cmh -> {
             Optional<AggregateCreationPolicy> policy = handler.unwrap(CreationPolicyMember.class)
                                                               .map(CreationPolicyMember::creationPolicy);
 
-            MessageHandler<CommandMessage, CommandResultMessage> messageHandler;
+            LegacyMessageHandler<CommandMessage, CommandResultMessage> messageHandler;
             if (cmh.isFactoryHandler()) {
                 assertThat(
                         policy,
@@ -468,7 +468,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
     }
 
     private class AggregateConstructorCommandHandler
-            implements MessageHandler<CommandMessage, CommandResultMessage> {
+            implements LegacyMessageHandler<CommandMessage, CommandResultMessage> {
 
         private final MessageHandlingMember<?> handler;
 
@@ -491,7 +491,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
     }
 
     private class AlwaysCreateAggregateCommandHandler
-            implements MessageHandler<CommandMessage, CommandResultMessage> {
+            implements LegacyMessageHandler<CommandMessage, CommandResultMessage> {
 
         private final MessageHandlingMember<? super T> handler;
         private final CreationPolicyAggregateFactory<T> factoryMethod;
@@ -519,7 +519,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
     }
 
     private class AggregateCreateOrUpdateCommandHandler
-            implements MessageHandler<CommandMessage, CommandResultMessage> {
+            implements LegacyMessageHandler<CommandMessage, CommandResultMessage> {
 
         private final MessageHandlingMember<? super T> handler;
         private final CreationPolicyAggregateFactory<T> factoryMethod;
@@ -605,7 +605,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
                       .isPresent();
     }
 
-    private class AggregateCommandHandler implements MessageHandler<CommandMessage, CommandResultMessage> {
+    private class AggregateCommandHandler implements LegacyMessageHandler<CommandMessage, CommandResultMessage> {
 
         private final MessageHandlingMember<? super T> handler;
 
