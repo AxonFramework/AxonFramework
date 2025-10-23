@@ -48,6 +48,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.Duration;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -56,7 +57,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 
-//@Disabled("TODO #3488 - Axon Server Query Bus replacement")
 @Testcontainers
 class QueryThreadingIntegrationTest {
 
@@ -108,12 +108,26 @@ class QueryThreadingIntegrationTest {
         // The application having a query that depends on another one
         QueryBus localQueryBus = QueryBusTestUtils.aQueryBus();
         connector = new AxonServerQueryBusConnector(connectionManager.getConnection(), configuration);
+        DistributedQueryBusConfiguration queryBusConfig = new DistributedQueryBusConfiguration(5,
+                                                                                               (configuration1, queue) -> new ThreadPoolExecutor(
+                                                                                                       5,
+                                                                                                       5,
+                                                                                                       10,
+                                                                                                       TimeUnit.SECONDS,
+                                                                                                       queue),
+                                                                                               5,
+                                                                                               (configuration1, queue) -> new ThreadPoolExecutor(
+                                                                                                       5,
+                                                                                                       5,
+                                                                                                       10,
+                                                                                                       TimeUnit.SECONDS,
+                                                                                                       queue));
         queryBus = new DistributedQueryBus(localQueryBus,
                                            new PayloadConvertingQueryBusConnector(connector,
                                                                                   new DelegatingMessageConverter(
                                                                                           converter),
                                                                                   byte[].class),
-                                           DistributedQueryBusConfiguration.DEFAULT);
+                                           queryBusConfig);
         connector.start();
 
         // The secondary application
@@ -124,7 +138,7 @@ class QueryThreadingIntegrationTest {
                                                                                    new DelegatingMessageConverter(
                                                                                            converter),
                                                                                    byte[].class),
-                                            DistributedQueryBusConfiguration.DEFAULT);
+                                            queryBusConfig);
         connector2.start();
         waitingQueries.set(0);
     }
@@ -220,6 +234,7 @@ class QueryThreadingIntegrationTest {
                                                              "start",
                                                              new MessageType(String.class));
             try {
+                System.out.println("THREADING: " + Thread.currentThread().getName());
                 QueryResponseMessage b = queryBus.query(testQuery, null)
                                                  .first()
                                                  .asCompletableFuture()
@@ -254,12 +269,13 @@ class QueryThreadingIntegrationTest {
                 new GenericQueryMessage(QUERY_TYPE_A, "start", new MessageType(String.class)), null
         );
 
-        // Wait until all queries are waiting on the secondary query. With 5 threads, we need to wait until at least 5 are triggered.
+        // Wait until all queries are waiting on the secondary query. With 5 threads, we expect exactly 5 to be
+        // triggered while the 6th is waiting for an available thread.
         await().pollDelay(500, TimeUnit.MILLISECONDS)
                .atMost(10, TimeUnit.SECONDS)
                .until(() -> {
                    log.info("Waiting queries: {}", waitingQueries.get());
-                   return waitingQueries.get() >= 5;
+                   return waitingQueries.get() == 5;
                });
 
         // We should still have the queries not done, it's waiting on the secondary one.
