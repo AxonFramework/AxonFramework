@@ -20,7 +20,6 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.common.TypeReference;
-import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.conversion.DelegatingMessageConverter;
@@ -235,7 +234,6 @@ class StreamingQueryIT {
         assertEquals(asList("a", "b", "c", "d"), directQueryPayload(testQuery, LIST_OF_STRINGS, supportsStreaming));
     }
 
-
     private <R> Flux<R> streamingQueryPayloads(QueryMessage query, Class<R> cls, boolean supportsStreaming) {
         Function<QueryBus, Flux<R>> streamingQuery = queryBus -> Flux.from(streamToPublisher(
                 () -> queryBus.query(query, null))
@@ -248,24 +246,14 @@ class StreamingQueryIT {
 
     private <R> R directQueryPayload(QueryMessage query, TypeReference<R> type, boolean supportsStreaming)
             throws Throwable {
-        MessageStream<QueryResponseMessage> response = null;
-        try {
-            response = supportsStreaming
-                    ? senderQueryBus.query(query, null)
-                    : nonStreamingSenderQueryBus.query(query, null);
-            return response.first()
-                           .asCompletableFuture()
-                           .thenApply(MessageStream.Entry::message)
-                           .thenApply(responseMessage -> responseMessage.payloadAs(type))
-                           .get();
-        } catch (IllegalPayloadAccessException e) {
-            // TODO #3488 - Axon Server Query Bus replacement
-//            if (response != null && response.optionalExceptionResult().isPresent()) {
-//                throw response.optionalExceptionResult().get();
-//            } else {
-            throw e;
-//            }
-        }
+        MessageStream<QueryResponseMessage> response = supportsStreaming
+                ? senderQueryBus.query(query, null)
+                : nonStreamingSenderQueryBus.query(query, null);
+        return response.first()
+                       .asCompletableFuture()
+                       .thenApply(MessageStream.Entry::message)
+                       .thenApply(responseMessage -> responseMessage.payloadAs(type))
+                       .get();
     }
 
     private static class MyQueryHandler {
