@@ -26,7 +26,7 @@ import java.util.Objects;
  * @author Steven van Beelen
  * @since 4.5
  */
-public abstract class StringUtils {
+public final class StringUtils {
 
     private static final String EMPTY_STRING = "";
 

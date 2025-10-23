@@ -37,7 +37,7 @@ import static java.util.stream.Collectors.toList;
  * @since 4.0.0
  */
 @Internal
-class EventProcessorInfoUtils {
+final class EventProcessorInfoUtils {
 
     private static final String POOLED_STREAMING = "Pooled Streaming";
     private static final String SUBSCRIBING = "Subscribing";

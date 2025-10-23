@@ -25,7 +25,7 @@ import java.util.function.Predicate;
  * @author Steven van Beelen
  * @since 4.0
  */
-public abstract class BuilderUtils {
+public final class BuilderUtils {
 
     private BuilderUtils() {
         // Utility class

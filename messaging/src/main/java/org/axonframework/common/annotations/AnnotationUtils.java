@@ -35,7 +35,7 @@ import java.util.Set;
  * @author Allard Buijze
  * @since 3.0
  */
-public abstract class AnnotationUtils {
+public final class AnnotationUtils {
 
     /**
      * Boolean specifying that a {@link #findAnnotationAttributes(AnnotatedElement, String, boolean)} invocation should

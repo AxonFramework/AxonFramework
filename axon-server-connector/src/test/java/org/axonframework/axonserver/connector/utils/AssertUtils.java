@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
  * @author Sara Pellegrini
  * @author Steven van Beelen
  */
-public abstract class AssertUtils {
+public final class AssertUtils {
 
     private AssertUtils() {
         // Utility class

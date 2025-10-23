@@ -26,6 +26,7 @@ import jakarta.annotation.Nullable;
 import org.axonframework.axonserver.connector.MetadataConverter;
 import org.axonframework.axonserver.connector.util.ExceptionConverter;
 import org.axonframework.axonserver.connector.util.ProcessingInstructionUtils;
+import org.axonframework.axonserver.connector.util.ProcessingInstructionUtils;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
@@ -225,7 +226,6 @@ public final class CommandConverter {
             builder.addProcessingInstructions(instruction);
         });
     }
-
 
     private CommandConverter() {
         // Utility class

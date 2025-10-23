@@ -35,7 +35,7 @@ import static org.axonframework.eventsourcing.eventstore.AppendEventsTransaction
  * @author Allard Buijze
  * @since 5.0.0
  */
-public class AggregateBasedEventStorageEngineUtils {
+public final class AggregateBasedEventStorageEngineUtils {
 
     /**
      * Validates the tags associated with a list of event messages. Ensures that no event has more than one tag, as the

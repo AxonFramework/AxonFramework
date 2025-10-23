@@ -30,7 +30,7 @@ import java.util.function.BiConsumer;
  * @author Allard Buijze
  * @since 5.0.0
  */
-public abstract class FutureUtils {
+public final class FutureUtils {
 
     private FutureUtils() {
         // Utility class

@@ -29,7 +29,7 @@ import java.util.function.Consumer;
  * @see org.axonframework.configuration.ComponentDefinition#onShutdown(int, Consumer)
  * @since 4.3.0
  */
-public abstract class Phase {
+public final class Phase {
 
     private Phase() {
         // Utility class

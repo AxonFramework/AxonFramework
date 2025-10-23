@@ -28,7 +28,7 @@ import io.grpc.ClientInterceptor;
 import io.grpc.MethodDescriptor;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.event.StubServer;
-import org.axonframework.axonserver.connector.util.TcpUtil;
+import org.axonframework.axonserver.connector.util.TcpUtils;
 import org.axonframework.axonserver.connector.utils.PlatformService;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
@@ -59,8 +59,8 @@ class AxonServerConnectionManagerTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        int port1 = TcpUtil.findFreePort();
-        int port2 = TcpUtil.findFreePort();
+        int port1 = TcpUtils.findFreePort();
+        int port2 = TcpUtils.findFreePort();
         stubServer = new StubServer(port1, port2);
         secondNode = new StubServer(port2, port2);
         stubServer.start();
@@ -111,7 +111,7 @@ class AxonServerConnectionManagerTest {
     @Test
     void connectionTimeout() throws IOException, InterruptedException {
         stubServer.shutdown();
-        stubServer = new StubServer(TcpUtil.findFreePort(), new PlatformService(TcpUtil.findFreePort()) {
+        stubServer = new StubServer(TcpUtils.findFreePort(), new PlatformService(TcpUtils.findFreePort()) {
             @Override
             public void getPlatformServer(ClientIdentification request, StreamObserver<PlatformInfo> responseObserver) {
                 // ignore calls

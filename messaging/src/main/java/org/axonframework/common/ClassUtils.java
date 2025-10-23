@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Utility for creating classes by name containing a class cache.
  */
-public class ClassUtils {
+public final class ClassUtils {
 
     private static ClassLoader classLoader = ClassUtils.class.getClassLoader();
     private static ConcurrentHashMap<String, Class<?>> cache = new ConcurrentHashMap<>();
