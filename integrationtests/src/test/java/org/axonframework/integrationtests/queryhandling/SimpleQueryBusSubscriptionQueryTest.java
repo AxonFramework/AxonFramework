@@ -19,6 +19,7 @@ package org.axonframework.integrationtests.queryhandling;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryBusTestUtils;
 import org.axonframework.queryhandling.SimpleQueryBus;
 
 /**
@@ -29,10 +30,8 @@ import org.axonframework.queryhandling.SimpleQueryBus;
  */
 public class SimpleQueryBusSubscriptionQueryTest extends AbstractSubscriptionQueryTestSuite {
 
-    private final Configuration config = MessagingConfigurer.create().build();
-
     @Override
     public QueryBus queryBus() {
-        return config.getComponent(QueryBus.class);
+        return QueryBusTestUtils.aQueryBus();
     }
 }
