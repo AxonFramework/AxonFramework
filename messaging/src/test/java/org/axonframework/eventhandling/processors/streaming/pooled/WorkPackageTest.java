@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling.processors.streaming.pooled;
 
 import jakarta.annotation.Nonnull;
+import org.assertj.core.api.Assertions;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
@@ -49,6 +50,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.axonframework.utils.AssertUtils.assertWithin;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -244,7 +246,8 @@ class WorkPackageTest {
                     any(ProcessingContext.class)
             );
             assertEquals(expectedToken, tokenCaptor.getValue());
-            assertEquals(1, trackerStatusUpdates.size());
+            // status updates are sent temporarily, so we can't guarantee when they are sent. But at least one must have been sent.
+            assertThat(trackerStatusUpdates.size()).isGreaterThanOrEqualTo(1);
         });
         OptionalLong resultPosition = trackerStatusUpdates.getFirst().getCurrentPosition();
         assertTrue(resultPosition.isPresent());
