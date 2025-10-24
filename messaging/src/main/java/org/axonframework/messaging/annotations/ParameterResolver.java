@@ -20,6 +20,8 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
  * Interface for a mechanism that resolves handler method parameter values from a given {@link ProcessingContext}.
  *
@@ -38,6 +40,36 @@ public interface ParameterResolver<T> {
      */
     @Nullable
     T resolveParameterValue(@Nonnull ProcessingContext context);
+
+    /**
+     * Asynchronously resolves the parameter value from the {@code context}.
+     * <p>
+     * The default implementation wraps the synchronous {@link #resolveParameterValue(ProcessingContext)}
+     * in a completed {@link CompletableFuture}. If the synchronous method throws an exception, it is caught
+     * and returned as a failed {@link CompletableFuture}. Implementations that perform I/O or other async
+     * operations (such as loading entities from a repository) should override this method to provide true
+     * asynchronous resolution without blocking.
+     * <p>
+     * Example of true async implementation:
+     * <pre>{@code
+     * @Override
+     * public CompletableFuture<T> resolveParameterValueAsync(@Nonnull ProcessingContext context) {
+     *     return stateManager.loadEntity(entityType, id, context);
+     * }
+     * }</pre>
+     *
+     * @param context The current processing context.
+     * @return A {@link CompletableFuture} that will complete with the parameter value, or {@code null}.
+     * @since 5.0.0
+     */
+    @Nonnull
+    default CompletableFuture<T> resolveParameterValueAsync(@Nonnull ProcessingContext context) {
+        try {
+            return CompletableFuture.completedFuture(resolveParameterValue(context));
+        } catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
+        }
+    }
 
     /**
      * Indicates whether this resolver is capable of providing a value for the given {@code context}.

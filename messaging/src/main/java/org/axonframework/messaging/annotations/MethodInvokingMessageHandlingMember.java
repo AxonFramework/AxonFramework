@@ -19,6 +19,7 @@ package org.axonframework.messaging.annotations;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.ReflectionUtils;
+import org.axonframework.messaging.DelayedMessageStream;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -31,6 +32,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 
@@ -169,20 +171,34 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
                                    @Nonnull ProcessingContext context,
                                    @Nullable T target) {
         ProcessingContext contextWithMessage = Message.addToContext(context, message);
-        Object invocationResult;
-        try {
-            invocationResult = method.invoke(target, resolveParameterValues(contextWithMessage));
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            if (e.getCause() instanceof Exception) {
-                return MessageStream.failed(e.getCause());
-            } else if (e.getCause() instanceof Error) {
-                return MessageStream.failed(e.getCause());
+
+        // Resolve all parameters asynchronously
+        CompletableFuture<Object[]> parametersFuture = resolveParameterValuesAsync(contextWithMessage);
+
+        // Invoke method when parameters are ready
+        CompletableFuture<MessageStream<?>> invocationFuture = parametersFuture.handle((params, throwable) -> {
+            if (throwable != null) {
+                return MessageStream.failed(throwable);
             }
-            return MessageStream.failed(new MessageHandlerInvocationException(String.format(
-                    "Error handling an object of type [%s]",
-                    messageType), e));
-        }
-        return returnTypeConverter.apply(invocationResult);
+            try {
+                Object result = method.invoke(target, params);
+                return returnTypeConverter.apply(result);
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                if (e.getCause() instanceof Exception) {
+                    return MessageStream.failed(e.getCause());
+                } else if (e.getCause() instanceof Error) {
+                    return MessageStream.failed(e.getCause());
+                }
+                return MessageStream.failed(new MessageHandlerInvocationException(
+                        String.format("Error handling an object of type [%s]", messageType), e));
+            }
+        });
+
+        // Return a delayed MessageStream that will delegate to the result when available
+        @SuppressWarnings("unchecked")
+        CompletableFuture<MessageStream<Message>> castedFuture =
+                (CompletableFuture<MessageStream<Message>>) (CompletableFuture<?>) invocationFuture;
+        return DelayedMessageStream.create(castedFuture);
     }
 
     private Object[] resolveParameterValues(ProcessingContext context) {
@@ -191,6 +207,35 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
             params[i] = parameterResolvers[i].resolveParameterValue(context);
         }
         return params;
+    }
+
+    /**
+     * Resolves all parameter values asynchronously by calling {@link ParameterResolver#resolveParameterValueAsync(ProcessingContext)}
+     * on each resolver. All futures are composed using {@link CompletableFuture#allOf(CompletableFuture[])}.
+     * <p>
+     * This method is non-blocking. The returned {@link CompletableFuture} completes when all parameter resolvers
+     * have completed their async resolution.
+     *
+     * @param context The processing context to resolve parameters from.
+     * @return A {@link CompletableFuture} that completes with an array of resolved parameter values.
+     */
+    private CompletableFuture<Object[]> resolveParameterValuesAsync(ProcessingContext context) {
+        @SuppressWarnings("unchecked")
+        CompletableFuture<?>[] futures = new CompletableFuture[parameterCount];
+
+        for (int i = 0; i < parameterCount; i++) {
+            futures[i] = parameterResolvers[i].resolveParameterValueAsync(context);
+        }
+
+        return CompletableFuture.allOf(futures)
+                               .thenApply(v -> {
+                                   Object[] params = new Object[parameterCount];
+                                   for (int i = 0; i < parameterCount; i++) {
+                                       // Safe to use join() here - allOf() guarantees all futures are complete
+                                       params[i] = futures[i].join();
+                                   }
+                                   return params;
+                               });
     }
 
     @Override
