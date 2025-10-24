@@ -18,7 +18,7 @@ package org.axonframework.extension.springboot;
 
 import org.axonframework.commandhandling.annotations.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.queryhandling.QueryGateway;
+import org.axonframework.queryhandling.gateway.QueryGateway;
 import org.axonframework.queryhandling.annotations.QueryHandler;
 import org.axonframework.extension.springboot.autoconfig.AxonServerActuatorAutoConfiguration;
 import org.axonframework.extension.springboot.autoconfig.AxonServerAutoConfiguration;

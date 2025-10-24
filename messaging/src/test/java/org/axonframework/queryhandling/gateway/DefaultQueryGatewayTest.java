@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.queryhandling;
+package org.axonframework.queryhandling.gateway;
 
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.GenericMessage;
@@ -22,6 +22,14 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.Metadata;
+import org.axonframework.queryhandling.GenericQueryMessage;
+import org.axonframework.queryhandling.GenericQueryResponseMessage;
+import org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage;
+import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.queryhandling.QueryPriorityCalculator;
+import org.axonframework.queryhandling.QueryResponseMessage;
+import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.serialization.PassThroughConverter;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
@@ -380,7 +388,7 @@ class DefaultQueryGatewayTest {
                                                         new GenericSubscriptionQueryUpdateMessage(UPDATE_TYPE, "2"),
                                                         new GenericSubscriptionQueryUpdateMessage(UPDATE_TYPE, "3")));
             // when/then ...
-            StepVerifier.create(testSubject.subscriptionQuery(QUERY_PAYLOAD, String.class, null))
+            StepVerifier.create(testSubject.subscriptionQuery(QUERY_PAYLOAD, String.class))
                         .expectNext("a", "b", "c", "1", "2", "3")
                         .verifyComplete();
             verify(queryBus).subscriptionQuery(
@@ -408,7 +416,7 @@ class DefaultQueryGatewayTest {
             Metadata testMetadata = Metadata.with(expectedKey, expectedValue);
             Message testQuery = new GenericMessage(QUERY_TYPE, QUERY_PAYLOAD, testMetadata);
             // when/then ...
-            StepVerifier.create(testSubject.subscriptionQuery(testQuery, String.class, null))
+            StepVerifier.create(testSubject.subscriptionQuery(testQuery, String.class))
                         .expectNext("a", "b", "c", "1", "2", "3")
                         .verifyComplete();
             verify(queryBus).subscriptionQuery(
@@ -429,7 +437,7 @@ class DefaultQueryGatewayTest {
             when(queryBus.subscriptionQuery(any(), eq(null), eq(Queues.SMALL_BUFFER_SIZE)))
                     .thenReturn(MessageStream.failed(new MockException()));
             // when/then...
-            StepVerifier.create(testSubject.subscriptionQuery(QUERY_PAYLOAD, String.class, null))
+            StepVerifier.create(testSubject.subscriptionQuery(QUERY_PAYLOAD, String.class))
                         .verifyError(MockException.class);
         }
 
@@ -445,7 +453,7 @@ class DefaultQueryGatewayTest {
                                                         new GenericSubscriptionQueryUpdateMessage(QUERY_TYPE, null),
                                                         new GenericSubscriptionQueryUpdateMessage(QUERY_TYPE, "2")));
             // when/then...
-            StepVerifier.create(testSubject.subscriptionQuery(QUERY_PAYLOAD, String.class, null))
+            StepVerifier.create(testSubject.subscriptionQuery(QUERY_PAYLOAD, String.class))
                         .expectNext("a", "b", "1", "2")
                         .verifyComplete();
         }
@@ -466,7 +474,7 @@ class DefaultQueryGatewayTest {
                                                         new GenericSubscriptionQueryUpdateMessage(UPDATE_TYPE, "3")
                     ));
             // when...
-            Publisher<String> result = testSubject.subscriptionQuery(QUERY_PAYLOAD, String.class, null);
+            Publisher<String> result = testSubject.subscriptionQuery(QUERY_PAYLOAD, String.class);
             // /then...
             StepVerifier.create(result)
                         .expectNext("a", "b", "c")
@@ -498,7 +506,7 @@ class DefaultQueryGatewayTest {
             Metadata testMetadata = Metadata.with(expectedKey, expectedValue);
             Message testQuery = new GenericMessage(QUERY_TYPE, QUERY_PAYLOAD, testMetadata);
             // when...
-            Publisher<String> result = testSubject.subscriptionQuery(testQuery, String.class, null);
+            Publisher<String> result = testSubject.subscriptionQuery(testQuery, String.class);
             // then ...
             StepVerifier.create(result)
                         .expectNext("a", "b", "c")
@@ -522,7 +530,7 @@ class DefaultQueryGatewayTest {
             when(queryBus.subscriptionQuery(any(), eq(null), eq(Queues.SMALL_BUFFER_SIZE)))
                     .thenReturn(MessageStream.failed(new MockException()));
             // when...
-            Publisher<String> result = testSubject.subscriptionQuery(QUERY_PAYLOAD, String.class, null);
+            Publisher<String> result = testSubject.subscriptionQuery(QUERY_PAYLOAD, String.class);
             // then...
             StepVerifier.create(result)
                         .verifyError(MockException.class);
@@ -537,7 +545,7 @@ class DefaultQueryGatewayTest {
                                                         new GenericQueryResponseMessage(QUERY_TYPE, "b")
                     ));
             // when...
-            Publisher<String> result = testSubject.subscriptionQuery(QUERY_PAYLOAD, String.class, null);
+            Publisher<String> result = testSubject.subscriptionQuery(QUERY_PAYLOAD, String.class);
             // then...
             StepVerifier.create(result)
                         .expectNext("a", "b")
@@ -553,7 +561,7 @@ class DefaultQueryGatewayTest {
                                                         new GenericSubscriptionQueryUpdateMessage(QUERY_TYPE, "b")
                     ));
             // when...
-            Publisher<String> result = testSubject.subscriptionQuery(QUERY_PAYLOAD, String.class, null);
+            Publisher<String> result = testSubject.subscriptionQuery(QUERY_PAYLOAD, String.class);
             // then...
             StepVerifier.create(result)
                         .expectNext("a", "b")

@@ -28,12 +28,12 @@ import org.axonframework.messaging.annotations.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
-import org.axonframework.queryhandling.DefaultQueryGateway;
+import org.axonframework.queryhandling.gateway.DefaultQueryGateway;
 import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
 import org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryExecutionException;
-import org.axonframework.queryhandling.QueryGateway;
+import org.axonframework.queryhandling.gateway.QueryGateway;
 import org.axonframework.queryhandling.QueryHandlingComponent;
 import org.axonframework.queryhandling.QueryPriorityCalculator;
 import org.axonframework.queryhandling.QueryResponseMessage;
@@ -548,7 +548,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         // when...
         List<String> results = new ArrayList<>();
         CountDownLatch latch = new CountDownLatch(3);
-        Flux.from(queryGateway.subscriptionQuery(queryMessage, String.class, null, 50))
+        Flux.from(queryGateway.subscriptionQuery(queryMessage, String.class, 50))
             .subscribe(element -> {
                 results.add(element);
                 latch.countDown();
@@ -574,7 +574,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         ProcessingContext testContext = null;
         // when
         List<String> initialResult = new ArrayList<>();
-        Flux.from(queryGateway.subscriptionQuery(queryMessage, String.class, null, 50))
+        Flux.from(queryGateway.subscriptionQuery(queryMessage, String.class, 50))
             .subscribe(initialResult::add);
         queryBus.emitUpdate(testFilter, () -> testUpdateOne, testContext);
         queryBus.emitUpdate(testFilter, () -> testUpdateTwo, testContext);
@@ -597,7 +597,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         ProcessingContext testContext = null;
         // when
         List<String> initialResult = new ArrayList<>();
-        Flux.from(queryGateway.subscriptionQuery(queryMessage, String.class, null, 50))
+        Flux.from(queryGateway.subscriptionQuery(queryMessage, String.class, 50))
             .subscribe(initialResult::add);
 
         queryBus.completeSubscriptionsExceptionally(testFilter, new RuntimeException(), testContext);
@@ -610,8 +610,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     void queryGatewayCorrectlyReturnsNullOnSubscriptionQueryWithNullInitialResult()
             throws ExecutionException, InterruptedException {
         CompletableFuture<String> future = Mono.from(queryGateway.subscriptionQuery(new SomeQuery("not " + FOUND),
-                                                                                    String.class,
-                                                                                    null))
+                                                                                    String.class))
                                                .toFuture();
         queryBus.completeSubscriptions(message -> true, null);
         assertNull(future.get());
@@ -620,8 +619,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     @Test
     void queryGatewayCorrectlyReturnsOnSubscriptionQuery() throws ExecutionException, InterruptedException {
         CompletableFuture<String> future = Mono.from(queryGateway.subscriptionQuery(new SomeQuery(FOUND),
-                                                                                    String.class,
-                                                                                    null))
+                                                                                    String.class))
                                                .toFuture();
         String result = future.get();
         assertEquals(FOUND, result);

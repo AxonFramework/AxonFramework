@@ -70,7 +70,7 @@ class DefaultCommandGatewayTest {
                 new GenericCommandResultMessage(new MessageType("result"), "OK")
         ));
         TestPayload payload = new TestPayload();
-        CommandResult result = testSubject.send(payload, null);
+        CommandResult result = testSubject.send(payload);
         verify(mockCommandBus).dispatch(
                 argThat(m -> {
                     Object resultPayload = m.payload();
@@ -86,7 +86,7 @@ class DefaultCommandGatewayTest {
         when(mockCommandBus.dispatch(any(),
                                      any())).thenAnswer(i -> CompletableFuture.failedFuture(new MockException()));
         TestPayload payload = new TestPayload();
-        CommandResult result = testSubject.send(payload, null);
+        CommandResult result = testSubject.send(payload);
         verify(mockCommandBus).dispatch(
                 argThat(m -> {
                     Object resultPayload = m.payload();
@@ -102,7 +102,7 @@ class DefaultCommandGatewayTest {
         when(mockCommandBus.dispatch(any(), any()))
                 .thenAnswer(i -> CompletableFuture.failedFuture(new MockException()));
         TestPayload payload = new TestPayload();
-        CommandResult result = testSubject.send(payload, null);
+        CommandResult result = testSubject.send(payload);
         verify(mockCommandBus).dispatch(
                 argThat(m -> {
                     Object resultPayload = m.payload();
@@ -122,7 +122,7 @@ class DefaultCommandGatewayTest {
 
         // when
         TestPayload payload = new TestPayload();
-        CommandResult result = testSubject.send(payload, null);
+        CommandResult result = testSubject.send(payload);
 
         // then
         var expectedMessageType = new MessageType("TestPayload");
@@ -143,7 +143,7 @@ class DefaultCommandGatewayTest {
                 new MessageType("command"), payload, Metadata.emptyInstance(), "routingKey", 42
         );
 
-        CommandResult result = testSubject.send(testCommand, null);
+        CommandResult result = testSubject.send(testCommand);
 
         // then
         ArgumentCaptor<CommandMessage> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
