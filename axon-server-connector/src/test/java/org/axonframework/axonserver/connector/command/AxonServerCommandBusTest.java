@@ -460,4 +460,105 @@ class AxonServerCommandBusTest {
         assertTrue(commandHandled.get());
         assertTrue(dispatchingHasShutdown.isDone());
     }
+
+    @Test
+    void disconnectCancelsCommandHandlersInProgressIfAwaitDurationIsSurpassed() throws Exception {
+        testSubject.disconnect().get(5, TimeUnit.SECONDS);
+
+        AxonServerCommandBus commandInProgressTestSubject =
+                AxonServerCommandBus.builder()
+                                    .axonServerConnectionManager(axonServerConnectionManager)
+                                    .configuration(configuration)
+                                    .localSegment(localSegment)
+                                    .serializer(serializer)
+                                    .routingStrategy(command -> "RoutingKey")
+                                    .targetContextResolver(targetContextResolver)
+                                    .executorServiceBuilder((c, q) -> new ThreadPoolExecutor(
+                                            1, 1, 5, TimeUnit.SECONDS, q
+                                    ))
+                                    .commandInProgressAwait(Duration.ofSeconds(1))
+                                    .build();
+
+        CountDownLatch handlerLatch = new CountDownLatch(1);
+        AtomicReference<CommandResponse> responseReference = new AtomicReference<>();
+        commandHandlersInProgressTestSetup(commandInProgressTestSubject, handlerLatch, responseReference);
+
+        // Start disconnecting right away. As a blocking operation, this ensures we surpass the await duration.
+        commandInProgressTestSubject.disconnect();
+        // Release the latch, to let go of the blocking command handler.
+        handlerLatch.countDown();
+
+        await().atMost(Duration.ofSeconds(1))
+               .pollDelay(Duration.ofMillis(250))
+               .untilAsserted(() -> assertNull(responseReference.get()));
+    }
+
+    @Test
+    void disconnectReturnsResponseFromCommandHandlersInProgressIfAwaitDurationIsNotExceeded() throws Exception {
+        testSubject.disconnect().get(5, TimeUnit.SECONDS);
+
+        AxonServerCommandBus commandInProgressTestSubject =
+                AxonServerCommandBus.builder()
+                                    .axonServerConnectionManager(axonServerConnectionManager)
+                                    .configuration(configuration)
+                                    .localSegment(localSegment)
+                                    .serializer(serializer)
+                                    .routingStrategy(command -> "RoutingKey")
+                                    .targetContextResolver(targetContextResolver)
+                                    .executorServiceBuilder((c, q) -> new ThreadPoolExecutor(
+                                            1, 1, 5, TimeUnit.SECONDS, q
+                                    ))
+                                    .commandInProgressAwait(Duration.ofSeconds(1))
+                                    .build();
+
+        CountDownLatch handlerLatch = new CountDownLatch(1);
+        AtomicReference<CommandResponse> responseReference = new AtomicReference<>();
+        commandHandlersInProgressTestSetup(commandInProgressTestSubject, handlerLatch, responseReference);
+
+        // Start disconnecting in a separate thread to ensure the response latch is released
+        new Thread(commandInProgressTestSubject::disconnect).start();
+        // Sleep a little, to ensure there is some space between disconnecting and releasing the command handler latch
+        Thread.sleep(250);
+        // Release the latch, to let go of the blocking command handler.
+        handlerLatch.countDown();
+
+        await().atMost(Duration.ofSeconds(1))
+               .pollDelay(Duration.ofMillis(250))
+               .untilAsserted(() -> assertNotNull(responseReference.get()));
+        assertEquals("<string>Hello</string>", responseReference.get().getPayload().getData().toStringUtf8());
+    }
+
+    private void commandHandlersInProgressTestSetup(AxonServerCommandBus commandInProgressTestSubject,
+                                                    CountDownLatch handlerLatch,
+                                                    AtomicReference<CommandResponse> responseReference) {
+        AtomicReference<Function<Command, CompletableFuture<CommandResponse>>> handlerReference = new AtomicReference<>();
+
+        when(axonServerConnectionManager.getConnection(anyString())).thenReturn(mockConnection);
+        doAnswer(i -> {
+            handlerReference.set(i.getArgument(0));
+            return (io.axoniq.axonserver.connector.Registration) () -> CompletableFuture.completedFuture(null);
+        }).when(mockCommandChannel)
+          .registerCommandHandler(any(), anyInt(), eq("testCommand"));
+
+        commandInProgressTestSubject.subscribe("testCommand", message -> {
+            handlerLatch.await();
+            return message.getPayload();
+        });
+
+        await().atMost(Duration.ofSeconds(1))
+               .pollDelay(Duration.ofMillis(250))
+               .untilAsserted(() -> assertNotNull(handlerReference.get()));
+
+        Function<Command, CompletableFuture<CommandResponse>> commandHandler = handlerReference.get();
+        Command testCommand = Command.newBuilder()
+                                     .setName("testCommand")
+                                     .setMessageIdentifier(UUID.randomUUID().toString())
+                                     .setPayload(SerializedObject.newBuilder()
+                                                                 .setType("java.lang.String")
+                                                                 .setData(ByteString.copyFromUtf8("<string>Hello</string>"))
+                                     )
+                                     .build();
+
+        commandHandler.apply(testCommand).thenAccept(responseReference::set);
+    }
 }
