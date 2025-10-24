@@ -18,6 +18,7 @@ package org.axonframework.modelling.annotations;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotations.ParameterResolver;
@@ -76,8 +77,7 @@ class InjectEntityParameterResolver implements ParameterResolver<Object> {
     @Nullable
     @Override
     public Object resolveParameterValue(@Nonnull ProcessingContext context) {
-        // Delegate to async method and block for backward compatibility
-        return resolveParameterValueAsync(context).join();
+        return FutureUtils.joinAndUnwrap(resolveParameterValueAsync(context));
     }
 
     @Nonnull
@@ -91,10 +91,10 @@ class InjectEntityParameterResolver implements ParameterResolver<Object> {
 
             if (managedEntity) {
                 return stateManager.loadManagedEntity(type, resolvedId, context)
-                                  .thenApply(entity -> (Object) entity);
+                                  .thenApply(entity -> entity);
             }
             return stateManager.loadEntity(type, resolvedId, context)
-                              .thenApply(entity -> (Object) entity);
+                              .thenApply(entity -> entity);
         } catch (EntityIdResolutionException e) {
             return CompletableFuture.failedFuture(
                     new IllegalStateException(
