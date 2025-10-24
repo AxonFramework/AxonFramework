@@ -155,7 +155,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
                               .query(QueryConverter.convertQueryMessage(
                                       query,
                                       clientId,
-                                      componentName)
+                                      componentName, true)
                               );
             return new QueryResponseMessageStream(resultStream).onClose(queryInTransit::end);
         }
@@ -172,7 +172,8 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
             var result = connection.queryChannel()
                                    .subscriptionQuery(QueryConverter.convertQueryMessage(query,
                                                                                          clientId,
-                                                                                         componentName),
+                                                                                         componentName,
+                                                                                         false),
                                                       // TODO legacy requirement. Should be removed from connector
                                                       SerializedObject.getDefaultInstance(),
                                                       updateBufferSize,

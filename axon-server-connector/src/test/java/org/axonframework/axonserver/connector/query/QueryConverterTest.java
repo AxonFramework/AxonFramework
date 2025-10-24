@@ -84,7 +84,7 @@ class QueryConverterTest {
                 7
         );
 
-        var queryRequest = QueryConverter.convertQueryMessage(qm, clientId, componentName);
+        var queryRequest = QueryConverter.convertQueryMessage(qm, clientId, componentName, true);
 
         assertThat(queryRequest).isNotNull();
         assertThat(queryRequest.getClientId()).isEqualTo(clientId);
@@ -219,7 +219,7 @@ class QueryConverterTest {
                 responseType
         );
 
-        assertThatThrownBy(() -> QueryConverter.convertQueryMessage(qm, clientId, componentName))
+        assertThatThrownBy(() -> QueryConverter.convertQueryMessage(qm, clientId, componentName, true))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Payload must be of type byte[]");
     }
