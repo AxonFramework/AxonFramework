@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.axonframework.queryhandling;
+package org.axonframework.queryhandling.gateway;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
@@ -25,6 +25,8 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.queryhandling.*;
+import org.axonframework.queryhandling.gateway.QueryGateway;
 import org.axonframework.serialization.Converter;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;

@@ -19,8 +19,9 @@ package org.axonframework.commandhandling.gateway;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.Metadata;
+import org.axonframework.messaging.conversion.MessageConverter;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Type;
@@ -57,11 +58,11 @@ class ConvertingCommandGatewayTest {
         CommandResult stubResult = new FutureCommandResult(
                 CompletableFuture.completedFuture(new GenericMessage(TEST_TYPE, HELLO_MESSAGE))
         );
-        when(mockDelegate.send(any(), any())).thenReturn(stubResult);
+        when(mockDelegate.send(any(), any(Metadata.class), any())).thenReturn(stubResult);
 
         when(mockConverter.convert(any(), eq((Type) byte[].class))).thenReturn(HELLO_BYTES);
 
-        CompletableFuture<byte[]> actual = testSubject.send("Test", null).resultAs(byte[].class);
+        CompletableFuture<byte[]> actual = testSubject.send("Test").resultAs(byte[].class);
         assertTrue(actual.isDone());
         assertArrayEquals(HELLO_BYTES, actual.get());
     }
@@ -71,11 +72,11 @@ class ConvertingCommandGatewayTest {
         CommandResult stubResult = new FutureCommandResult(
                 CompletableFuture.completedFuture(new GenericMessage(TEST_TYPE, HELLO_MESSAGE))
         );
-        when(mockDelegate.send(any(), any())).thenReturn(stubResult);
+        when(mockDelegate.send(any(), any(Metadata.class), any())).thenReturn(stubResult);
 
         when(mockConverter.convert(any(), eq((Type) byte[].class))).thenReturn(HELLO_BYTES);
 
-        CompletableFuture<byte[]> actual = testSubject.send("Test", byte[].class, null);
+        CompletableFuture<byte[]> actual = testSubject.send("Test", byte[].class);
         assertTrue(actual.isDone());
         assertArrayEquals(HELLO_BYTES, actual.get());
     }
@@ -85,11 +86,11 @@ class ConvertingCommandGatewayTest {
         CommandResult stubResult = new FutureCommandResult(
                 CompletableFuture.completedFuture(new GenericMessage(TEST_TYPE, HELLO_MESSAGE))
         );
-        when(mockDelegate.send(any(), any())).thenReturn(stubResult);
+        when(mockDelegate.send(any(), any(Metadata.class), any())).thenReturn(stubResult);
 
         when(mockConverter.convert(any(), eq((Type) byte[].class))).thenReturn(HELLO_BYTES);
 
-        var commandResult = testSubject.send("Test", null);
+        var commandResult = testSubject.send("Test");
         CompletableFuture<byte[]> actual = commandResult.resultAs(byte[].class);
         assertTrue(actual.isDone());
         assertArrayEquals(HELLO_BYTES, actual.get());
@@ -100,11 +101,11 @@ class ConvertingCommandGatewayTest {
     void onSuccessCallbackIsInvokedWhenFutureCompletes() {
         CompletableFuture<Message> completableFuture = new CompletableFuture<>();
         CommandResult stubResult = new FutureCommandResult(completableFuture);
-        when(mockDelegate.send(any(), any())).thenReturn(stubResult);
+        when(mockDelegate.send(any(), any(Metadata.class), any())).thenReturn(stubResult);
 
         when(mockConverter.convert(any(), eq((Type) byte[].class))).thenReturn(HELLO_BYTES);
 
-        var commandResult = testSubject.send("Test", null);
+        var commandResult = testSubject.send("Test");
         CompletableFuture<byte[]> actual = commandResult.resultAs(byte[].class);
         assertFalse(actual.isDone());
 
@@ -125,11 +126,11 @@ class ConvertingCommandGatewayTest {
     @Test
     void resultAsReturnsNullWhenMessageIsNull() {
         CommandResult stubResult = new FutureCommandResult(FutureUtils.emptyCompletedFuture());
-        when(mockDelegate.send(any(), any())).thenReturn(stubResult);
+        when(mockDelegate.send(any(), any(Metadata.class), any())).thenReturn(stubResult);
 
         when(mockConverter.convert(any(), eq((Type) byte[].class))).thenReturn(HELLO_BYTES);
 
-        CompletableFuture<byte[]> actual = testSubject.send("Test", null).resultAs(byte[].class);
+        CompletableFuture<byte[]> actual = testSubject.send("Test").resultAs(byte[].class);
         assertTrue(actual.isDone());
         assertNull(actual.join());
     }

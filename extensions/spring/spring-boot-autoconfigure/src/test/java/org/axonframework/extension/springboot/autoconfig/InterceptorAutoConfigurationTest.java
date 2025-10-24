@@ -32,7 +32,7 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.queryhandling.QueryGateway;
+import org.axonframework.queryhandling.gateway.QueryGateway;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.annotations.QueryHandler;
 import org.jetbrains.annotations.NotNull;

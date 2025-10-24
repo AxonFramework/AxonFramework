@@ -64,9 +64,7 @@ import org.axonframework.monitoring.interceptors.MonitoringEventDispatchIntercep
 import org.axonframework.monitoring.interceptors.MonitoringEventHandlerInterceptor;
 import org.axonframework.monitoring.interceptors.MonitoringQueryHandlerInterceptor;
 import org.axonframework.monitoring.interceptors.MonitoringSubscriptionQueryUpdateDispatchInterceptor;
-import org.axonframework.queryhandling.DefaultQueryGateway;
 import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryPriorityCalculator;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
@@ -74,6 +72,8 @@ import org.axonframework.queryhandling.QueryUpdateEmitterParameterResolverFactor
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
+import org.axonframework.queryhandling.gateway.DefaultQueryGateway;
+import org.axonframework.queryhandling.gateway.QueryGateway;
 import org.axonframework.queryhandling.interceptors.InterceptingQueryBus;
 import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.json.JacksonConverter;
@@ -322,10 +322,15 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                     List<MessageDispatchInterceptor<? super QueryMessage>> dispatchInterceptors =
                             config.getComponent(DispatchInterceptorRegistry.class).queryInterceptors(config);
                     List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> updateDispatchInterceptors =
-                            config.getComponent(DispatchInterceptorRegistry.class).subscriptionQueryUpdateInterceptors(config);
-                    return handlerInterceptors.isEmpty() && dispatchInterceptors.isEmpty() && updateDispatchInterceptors.isEmpty()
+                            config.getComponent(DispatchInterceptorRegistry.class).subscriptionQueryUpdateInterceptors(
+                                    config);
+                    return handlerInterceptors.isEmpty() && dispatchInterceptors.isEmpty()
+                            && updateDispatchInterceptors.isEmpty()
                             ? delegate
-                            : new InterceptingQueryBus(delegate, handlerInterceptors, dispatchInterceptors, updateDispatchInterceptors);
+                            : new InterceptingQueryBus(delegate,
+                                                       handlerInterceptors,
+                                                       dispatchInterceptors,
+                                                       updateDispatchInterceptors);
                 }
         );
     }

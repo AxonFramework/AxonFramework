@@ -166,7 +166,7 @@ class MessagePriorityIntegrationTest {
 
         logger.info("About to start dispatcher.");
         Thread dispatcher = new Thread(() -> {
-            commandGateway.send(new StartMessage("start"), null);
+            commandGateway.send(new StartMessage("start"));
 
             for (int i = 0; i < numberOfCommands; i++) {
                 Object command;
@@ -175,7 +175,7 @@ class MessagePriorityIntegrationTest {
                 } else {
                     command = new RegularMessage(Integer.toString(i));
                 }
-                commandGateway.send(command, null).onSuccess((resultMessage) -> {
+                commandGateway.send(command).onSuccess((resultMessage) -> {
                     //noinspection DataFlowIssue
                     if (resultMessage.payload().toString().equals("regular")) {
                         handlingOrder.add(Handled.regular());
