@@ -171,11 +171,8 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
                                    @Nonnull ProcessingContext context,
                                    @Nullable T target) {
         ProcessingContext contextWithMessage = Message.addToContext(context, message);
-
-        // Resolve all parameters asynchronously
         CompletableFuture<Object[]> parametersFuture = resolveParameterValuesAsync(contextWithMessage);
 
-        // Invoke method when parameters are ready
         CompletableFuture<MessageStream<?>> invocationFuture = parametersFuture.handle((params, throwable) -> {
             if (throwable != null) {
                 return MessageStream.failed(throwable);
@@ -201,14 +198,6 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
         return DelayedMessageStream.create(castedFuture);
     }
 
-    private Object[] resolveParameterValues(ProcessingContext context) {
-        Object[] params = new Object[parameterCount];
-        for (int i = 0; i < parameterCount; i++) {
-            params[i] = parameterResolvers[i].resolveParameterValue(context);
-        }
-        return params;
-    }
-
     /**
      * Resolves all parameter values asynchronously by calling {@link ParameterResolver#resolveParameterValueAsync(ProcessingContext)}
      * on each resolver. All futures are composed using {@link CompletableFuture#allOf(CompletableFuture[])}.
@@ -231,7 +220,7 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
                                .thenApply(v -> {
                                    Object[] params = new Object[parameterCount];
                                    for (int i = 0; i < parameterCount; i++) {
-                                       // Safe to use join() here - allOf() guarantees all futures are complete
+                                       // Safe to use join() here - allOf() guarantees all futures are complete, so it doesn't block
                                        params[i] = futures[i].join();
                                    }
                                    return params;
