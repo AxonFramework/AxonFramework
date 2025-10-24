@@ -18,6 +18,7 @@ package org.axonframework.modelling.annotations;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotations.ParameterResolver;
@@ -25,6 +26,8 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.EntityIdResolutionException;
 import org.axonframework.modelling.EntityIdResolver;
 import org.axonframework.modelling.StateManager;
+
+import java.util.concurrent.CompletableFuture;
 
 import static java.util.Objects.requireNonNull;
 
@@ -74,24 +77,31 @@ class InjectEntityParameterResolver implements ParameterResolver<Object> {
     @Nullable
     @Override
     public Object resolveParameterValue(@Nonnull ProcessingContext context) {
+        return FutureUtils.joinAndUnwrap(resolveParameterValueAsync(context));
+    }
+
+    @Nonnull
+    @Override
+    public CompletableFuture<Object> resolveParameterValueAsync(@Nonnull ProcessingContext context) {
         Message message = Message.fromContext(context);
 
         try {
             Object resolvedId = identifierResolver.resolve(message, context);
             StateManager stateManager = configuration.getComponent(StateManager.class);
+
             if (managedEntity) {
-                return stateManager.loadManagedEntity(type, resolvedId, context).join();
+                return stateManager.loadManagedEntity(type, resolvedId, context)
+                                  .thenApply(entity -> entity);
             }
-            return stateManager.loadEntity(type, resolvedId, context).join();
-        }
-        catch (EntityIdResolutionException e) {
-            throw new IllegalStateException(
-                "Unable to inject entity parameter of type [%s] because [%s] was unable to resolve an entity id from [%s]".formatted(
-                    type,
-                    identifierResolver,
-                    message
-                ),
-                e
+            return stateManager.loadEntity(type, resolvedId, context)
+                              .thenApply(entity -> entity);
+        } catch (EntityIdResolutionException e) {
+            return CompletableFuture.failedFuture(
+                    new IllegalStateException(
+                            "Unable to inject entity parameter of type [%s] because [%s] was unable to resolve an entity id from [%s]"
+                                    .formatted(type, identifierResolver, message),
+                            e
+                    )
             );
         }
     }
