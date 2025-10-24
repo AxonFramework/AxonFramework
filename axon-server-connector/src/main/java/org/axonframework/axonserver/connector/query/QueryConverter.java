@@ -103,13 +103,15 @@ public final class QueryConverter {
      *                      {@code byte[]}, otherwise an {@link IllegalArgumentException} is thrown.
      * @param clientId      The identifier of the client making the query. Must not be null.
      * @param componentName The name of the component handling the query. Must not be null.
+     * @param allowStreaming Whether the sender supports streaming of responses
      * @return a {@link QueryRequest} That represents the provided {@link QueryMessage}. Contains the extracted
      * metadata, payload, and other specific configurations from the original message.
      * @throws IllegalArgumentException if the payload of the {@link QueryMessage} is not of type {@code byte[]}.
      */
     public static QueryRequest convertQueryMessage(@Nonnull QueryMessage query,
                                                    @Nonnull String clientId,
-                                                   @Nonnull String componentName) {
+                                                   @Nonnull String componentName,
+                                                   boolean allowStreaming) {
         Object payload = query.payload();
         if (!(payload instanceof byte[] payloadAsBytes)) {
             throw new IllegalArgumentException(
@@ -141,7 +143,7 @@ public final class QueryConverter {
                       .addProcessingInstructions(nrOfResults(1))
                       // TODO Defaulted to 1H. Do we need this?
                       .addProcessingInstructions(timeout(TimeUnit.HOURS.toMillis(1)))
-                      .addProcessingInstructions(supportsStreaming())
+                      .addProcessingInstructions(supportsStreaming(allowStreaming))
                       .build();
     }
 
@@ -312,8 +314,8 @@ public final class QueryConverter {
         return createProcessingInstruction(ProcessingKey.TIMEOUT, timeout);
     }
 
-    private static ProcessingInstruction.Builder supportsStreaming() {
-        return createProcessingInstruction(ProcessingKey.CLIENT_SUPPORTS_STREAMING, true);
+    private static ProcessingInstruction.Builder supportsStreaming(boolean value) {
+        return createProcessingInstruction(ProcessingKey.CLIENT_SUPPORTS_STREAMING, value);
     }
 
     private QueryConverter() {
