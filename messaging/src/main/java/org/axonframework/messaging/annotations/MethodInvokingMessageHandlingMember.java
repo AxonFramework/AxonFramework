@@ -221,7 +221,7 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
                                    Object[] params = new Object[parameterCount];
                                    for (int i = 0; i < parameterCount; i++) {
                                        // Safe to use join() here - allOf() guarantees all futures are complete, so it doesn't block
-                                       params[i] = futures[i].join();
+                                       params[i] = futures[i].resultNow();
                                    }
                                    return params;
                                });
