@@ -46,8 +46,8 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * A {@code QueryBus} wrapper that supports both {@link MessageHandlerInterceptor MessageHandlerInterceptors} and
- * {@link MessageDispatchInterceptor MessageDispatchInterceptors}. Actual dispatching and handling of queries is done
- * by a delegate.
+ * {@link MessageDispatchInterceptor MessageDispatchInterceptors}. Actual dispatching and handling of queries is done by
+ * a delegate.
  * <p>
  * This {@code InterceptingQueryBus} is typically registered as a
  * {@link ComponentRegistry#registerDecorator(DecoratorDefinition) decorator} and automatically kicks in whenever
@@ -66,8 +66,8 @@ public class InterceptingQueryBus implements QueryBus {
      * {@link ComponentRegistry#registerDecorator(DecoratorDefinition) decorator} to the {@link QueryBus}.
      * <p>
      * As such, any decorator with a lower value will be applied to the delegate, and any higher value will be applied
-     * to the {@code InterceptingQueryBus} itself. Using the same value can either lead to application of the
-     * decorator to the delegate or the {@code InterceptingQueryBus}, depending on the order of registration.
+     * to the {@code InterceptingQueryBus} itself. Using the same value can either lead to application of the decorator
+     * to the delegate or the {@code InterceptingQueryBus}, depending on the order of registration.
      * <p>
      * The order of the {@code InterceptingQueryBus} is set to {@code Integer.MIN_VALUE + 100} to ensure it is applied
      * very early in the configuration process, but not the earliest to allow for other decorators to be applied.
@@ -86,9 +86,9 @@ public class InterceptingQueryBus implements QueryBus {
     /**
      * Constructs a {@code InterceptingQueryBus}, delegating dispatching and handling logic to the given
      * {@code delegate}. The given {@code handlerInterceptors} are wrapped around the
-     * {@link QueryHandler query handlers} when subscribing. The given {@code dispatchInterceptors} are invoked
-     * before dispatching is provided to the given {@code delegate}. The given {@code updateDispatchInterceptors}
-     * are invoked before emitting subscription query updates.
+     * {@link QueryHandler query handlers} when subscribing. The given {@code dispatchInterceptors} are invoked before
+     * dispatching is provided to the given {@code delegate}. The given {@code updateDispatchInterceptors} are invoked
+     * before emitting subscription query updates.
      *
      * @param delegate                   The delegate {@code QueryBus} that will handle all dispatching and handling
      *                                   logic.
@@ -114,7 +114,8 @@ public class InterceptingQueryBus implements QueryBus {
                 requireNonNull(updateDispatchInterceptors, "The update dispatch interceptors must not be null.")
         );
         this.queryInterceptingDispatcher = new QueryInterceptingDispatcher(dispatchInterceptors, this::dispatchQuery);
-        this.subscriptionQueryInterceptingDispatcher = new SubscriptionQueryInterceptingDispatcher(dispatchInterceptors, delegate);
+        this.subscriptionQueryInterceptingDispatcher = new SubscriptionQueryInterceptingDispatcher(dispatchInterceptors,
+                                                                                                   delegate);
         this.interceptingResponseUpdateDispatcher = new InterceptingResponseUpdateDispatcher(updateDispatchInterceptors);
     }
 
@@ -158,7 +159,8 @@ public class InterceptingQueryBus implements QueryBus {
 
         try {
             SubscriptionQueryUpdateMessage update = updateSupplier.get();
-            SubscriptionQueryUpdateMessage intercepted = interceptingResponseUpdateDispatcher.intercept(update, context);
+            SubscriptionQueryUpdateMessage intercepted = interceptingResponseUpdateDispatcher.intercept(update,
+                                                                                                        context);
             return delegate.emitUpdate(filter, () -> intercepted, context);
         } catch (Exception e) {
             return CompletableFuture.failedFuture(e);
@@ -261,9 +263,12 @@ public class InterceptingQueryBus implements QueryBus {
             BiFunction<? super QueryMessage, ProcessingContext, MessageStream<?>> subscriptionDispatcher =
                     (interceptedQuery, interceptedContext) -> {
                         if (!(interceptedQuery instanceof SubscriptionQueryMessage)) {
-                            throw new IllegalArgumentException("Expected SubscriptionQueryMessage but got: " + interceptedQuery.getClass());
+                            throw new IllegalArgumentException(
+                                    "Expected SubscriptionQueryMessage but got: " + interceptedQuery.getClass());
                         }
-                        return delegate.subscriptionQuery((SubscriptionQueryMessage) interceptedQuery, interceptedContext, updateBufferSize);
+                        return delegate.subscriptionQuery((SubscriptionQueryMessage) interceptedQuery,
+                                                          interceptedContext,
+                                                          updateBufferSize);
                     };
 
             return new DefaultMessageDispatchInterceptorChain<>(
