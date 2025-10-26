@@ -46,7 +46,9 @@ import static java.util.Objects.requireNonNull;
  * dispatch interception. All query handling methods delegate to the wrapped {@code delegate} bus, except for
  * {@link #subscribe(QueryHandlerName, QueryHandler)} which wraps the handler with interceptors before delegating.
  *
+ * @author Allard Buijze
  * @author Mateusz Nowak
+ * @author Steven van Beelen
  * @since 5.0.0
  */
 @Internal

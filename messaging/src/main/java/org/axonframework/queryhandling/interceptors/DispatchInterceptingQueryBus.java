@@ -49,7 +49,9 @@ import static java.util.Objects.requireNonNull;
  * handler interception. The interceptors are applied to regular queries, subscription queries, and subscription query
  * updates.
  *
+ * @author Allard Buijze
  * @author Mateusz Nowak
+ * @author Steven van Beelen
  * @since 5.0.0
  */
 @Internal
