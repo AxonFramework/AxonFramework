@@ -122,6 +122,9 @@ public class InterceptingQueryBus implements QueryBus {
     @Override
     public InterceptingQueryBus subscribe(@Nonnull QueryHandlerName handlerName,
                                           @Nonnull QueryHandler queryHandler) {
+        if (handlerInterceptors.isEmpty()) {
+            delegate.subscribe(handlerName, queryHandler);
+        }
         delegate.subscribe(handlerName, new InterceptingHandler(queryHandler, handlerInterceptors));
         return this;
     }
