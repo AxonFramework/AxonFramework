@@ -134,11 +134,22 @@ public class InterceptingQueryBus implements QueryBus {
     public MessageStream<QueryResponseMessage> subscriptionQuery(@Nonnull SubscriptionQueryMessage query,
                                                                  @Nullable ProcessingContext context,
                                                                  int updateBufferSize) {
-        // For subscription queries, delegate directly to the underlying bus
-        // The initial query and updates will be handled by the delegate bus
-        // Handler interceptors are already applied via subscribe(), so they will be invoked
-        // when the query is handled
-        return delegate.subscriptionQuery(query, context, updateBufferSize);
+        if (dispatchInterceptors.isEmpty()) {
+            return delegate.subscriptionQuery(query, context, updateBufferSize);
+        }
+
+        BiFunction<? super QueryMessage, ProcessingContext, MessageStream<?>> dispatcher =
+                (message, ctx) -> {
+                    if (!(message instanceof SubscriptionQueryMessage subQuery)) {
+                        throw new IllegalArgumentException("Expected SubscriptionQueryMessage but got: " + message.getClass());
+                    }
+                    return delegate.subscriptionQuery(subQuery, ctx, updateBufferSize);
+                };
+
+        DefaultMessageDispatchInterceptorChain<? super QueryMessage> chain =
+                new DefaultMessageDispatchInterceptorChain<>(dispatchInterceptors, dispatcher);
+
+        return chain.proceed(query, context).cast();
     }
 
     @Nonnull
