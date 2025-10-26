@@ -50,7 +50,7 @@ import static java.util.Objects.requireNonNull;
  * @since 5.0.0
  */
 @Internal
-class HandlerInterceptingQueryBus implements QueryBus {
+public class HandlerInterceptingQueryBus implements QueryBus {
 
     private final QueryBus delegate;
     private final List<MessageHandlerInterceptor<? super QueryMessage>> handlerInterceptors;
@@ -63,7 +63,7 @@ class HandlerInterceptingQueryBus implements QueryBus {
      * @param handlerInterceptors The list of {@link MessageHandlerInterceptor interceptors} to apply to query
      *                            handlers.
      */
-    HandlerInterceptingQueryBus(@Nonnull QueryBus delegate,
+    public HandlerInterceptingQueryBus(@Nonnull QueryBus delegate,
                                 @Nonnull List<MessageHandlerInterceptor<? super QueryMessage>> handlerInterceptors) {
         this.delegate = requireNonNull(delegate, "The delegate query bus must not be null.");
         this.handlerInterceptors = requireNonNull(handlerInterceptors, "The handler interceptors must not be null.");

@@ -53,7 +53,7 @@ import static java.util.Objects.requireNonNull;
  * @since 5.0.0
  */
 @Internal
-class DispatchInterceptingQueryBus implements QueryBus {
+public class DispatchInterceptingQueryBus implements QueryBus {
 
     private final QueryBus delegate;
     private final List<MessageDispatchInterceptor<? super QueryMessage>> dispatchInterceptors;
@@ -73,7 +73,7 @@ class DispatchInterceptingQueryBus implements QueryBus {
      * @param updateDispatchInterceptors The list of {@link MessageDispatchInterceptor interceptors} to apply to
      *                                   subscription query update dispatching.
      */
-    DispatchInterceptingQueryBus(
+    public DispatchInterceptingQueryBus(
             @Nonnull QueryBus delegate,
             @Nonnull List<MessageDispatchInterceptor<? super QueryMessage>> dispatchInterceptors,
             @Nonnull List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> updateDispatchInterceptors

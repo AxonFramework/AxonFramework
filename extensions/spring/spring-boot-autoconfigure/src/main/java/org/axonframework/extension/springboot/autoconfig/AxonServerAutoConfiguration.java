@@ -135,7 +135,10 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
                                                AxonServerConfiguration serverConfig =
                                                        config.getComponent(AxonServerConfiguration.class);
                                                int queryThreads = serverConfig.getQueryThreads();
-                                               return distributedQueryBusConfig.queryThreads(queryThreads);
+                                               int queryResponseThreads = serverConfig.getQueryResponseThreads();
+                                               return distributedQueryBusConfig
+                                                       .queryThreads(queryThreads)
+                                                       .queryResponseThreads(queryResponseThreads);
                                            }
                                    );
     }
