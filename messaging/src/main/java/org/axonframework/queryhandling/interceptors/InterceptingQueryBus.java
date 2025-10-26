@@ -111,7 +111,7 @@ public class InterceptingQueryBus implements QueryBus {
         this.updateDispatchInterceptors = new ArrayList<>(
                 requireNonNull(updateDispatchInterceptors, "The update dispatch interceptors must not be null.")
         );
-        this.interceptingDispatcher = new InterceptingDispatcher(dispatchInterceptors, this::dispatchQuery);
+        this.interceptingDispatcher = new InterceptingDispatcher(dispatchInterceptors, this::dispatchQuery, delegate);
         this.interceptingResponseUpdateDispatcher = new InterceptingResponseUpdateDispatcher(updateDispatchInterceptors);
     }
 
@@ -134,21 +134,7 @@ public class InterceptingQueryBus implements QueryBus {
     public MessageStream<QueryResponseMessage> subscriptionQuery(@Nonnull SubscriptionQueryMessage query,
                                                                  @Nullable ProcessingContext context,
                                                                  int updateBufferSize) {
-        // Apply dispatch interceptors before delegating to the underlying bus
-        // This is similar to how query() applies interceptors via interceptingDispatcher
-        if (dispatchInterceptors.isEmpty()) {
-            return delegate.subscriptionQuery(query, context, updateBufferSize);
-        }
-
-        return new DefaultMessageDispatchInterceptorChain<>(
-                dispatchInterceptors,
-                (interceptedQuery, interceptedContext) -> {
-                    if (!(interceptedQuery instanceof SubscriptionQueryMessage)) {
-                        throw new IllegalArgumentException("Expected SubscriptionQueryMessage but got: " + interceptedQuery.getClass());
-                    }
-                    return delegate.subscriptionQuery((SubscriptionQueryMessage) interceptedQuery, interceptedContext, updateBufferSize);
-                }
-        ).proceed(query, context).cast();
+        return interceptingDispatcher.interceptAndDispatch(query, context, updateBufferSize);
     }
 
     @Nonnull
@@ -231,12 +217,17 @@ public class InterceptingQueryBus implements QueryBus {
     private static class InterceptingDispatcher {
 
         private final DefaultMessageDispatchInterceptorChain<? super QueryMessage> interceptorChain;
+        private final List<MessageDispatchInterceptor<? super QueryMessage>> interceptors;
+        private final QueryBus delegate;
 
         private InterceptingDispatcher(
                 List<MessageDispatchInterceptor<? super QueryMessage>> interceptors,
-                BiFunction<? super QueryMessage, ProcessingContext, MessageStream<?>> dispatcher
+                BiFunction<? super QueryMessage, ProcessingContext, MessageStream<?>> dispatcher,
+                QueryBus delegate
         ) {
+            this.interceptors = interceptors;
             this.interceptorChain = new DefaultMessageDispatchInterceptorChain<>(interceptors, dispatcher);
+            this.delegate = delegate;
         }
 
         private MessageStream<QueryResponseMessage> interceptAndDispatch(
@@ -245,6 +236,27 @@ public class InterceptingQueryBus implements QueryBus {
         ) {
             return interceptorChain.proceed(query, context)
                                   .cast();
+        }
+
+        private MessageStream<QueryResponseMessage> interceptAndDispatch(
+                @Nonnull SubscriptionQueryMessage query,
+                @Nullable ProcessingContext context,
+                int updateBufferSize
+        ) {
+            // Create a dispatcher that calls subscriptionQuery on the delegate
+            BiFunction<? super QueryMessage, ProcessingContext, MessageStream<?>> subscriptionDispatcher =
+                    (interceptedQuery, interceptedContext) -> {
+                        if (!(interceptedQuery instanceof SubscriptionQueryMessage)) {
+                            throw new IllegalArgumentException("Expected SubscriptionQueryMessage but got: " + interceptedQuery.getClass());
+                        }
+                        return delegate.subscriptionQuery((SubscriptionQueryMessage) interceptedQuery, interceptedContext, updateBufferSize);
+                    };
+
+            // Apply interceptors to the subscription query
+            return new DefaultMessageDispatchInterceptorChain<>(
+                    interceptors,
+                    subscriptionDispatcher
+            ).proceed(query, context).cast();
         }
     }
 
