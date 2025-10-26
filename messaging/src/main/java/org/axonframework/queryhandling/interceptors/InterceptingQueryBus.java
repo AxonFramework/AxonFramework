@@ -78,7 +78,9 @@ public class InterceptingQueryBus implements QueryBus {
     private final List<MessageHandlerInterceptor<? super QueryMessage>> handlerInterceptors;
     private final List<MessageDispatchInterceptor<? super QueryMessage>> dispatchInterceptors;
     private final List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> updateDispatchInterceptors;
-    private final InterceptingDispatcher interceptingDispatcher;
+
+    private final QueryInterceptingDispatcher queryInterceptingDispatcher;
+    private final SubscriptionQueryInterceptingDispatcher subscriptionQueryInterceptingDispatcher;
     private final InterceptingResponseUpdateDispatcher interceptingResponseUpdateDispatcher;
 
     /**
@@ -111,7 +113,8 @@ public class InterceptingQueryBus implements QueryBus {
         this.updateDispatchInterceptors = new ArrayList<>(
                 requireNonNull(updateDispatchInterceptors, "The update dispatch interceptors must not be null.")
         );
-        this.interceptingDispatcher = new InterceptingDispatcher(dispatchInterceptors, this::dispatchQuery);
+        this.queryInterceptingDispatcher = new QueryInterceptingDispatcher(dispatchInterceptors, this::dispatchQuery);
+        this.subscriptionQueryInterceptingDispatcher = new SubscriptionQueryInterceptingDispatcher(dispatchInterceptors, delegate);
         this.interceptingResponseUpdateDispatcher = new InterceptingResponseUpdateDispatcher(updateDispatchInterceptors);
     }
 
@@ -126,7 +129,7 @@ public class InterceptingQueryBus implements QueryBus {
     @Override
     public MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage query,
                                                      @Nullable ProcessingContext context) {
-        return interceptingDispatcher.interceptAndDispatch(query, context);
+        return queryInterceptingDispatcher.dispatch(query, context);
     }
 
     @Nonnull
@@ -134,22 +137,7 @@ public class InterceptingQueryBus implements QueryBus {
     public MessageStream<QueryResponseMessage> subscriptionQuery(@Nonnull SubscriptionQueryMessage query,
                                                                  @Nullable ProcessingContext context,
                                                                  int updateBufferSize) {
-        if (dispatchInterceptors.isEmpty()) {
-            return delegate.subscriptionQuery(query, context, updateBufferSize);
-        }
-
-        BiFunction<? super QueryMessage, ProcessingContext, MessageStream<?>> dispatcher =
-                (message, ctx) -> {
-                    if (!(message instanceof SubscriptionQueryMessage subQuery)) {
-                        throw new IllegalArgumentException("Expected SubscriptionQueryMessage but got: " + message.getClass());
-                    }
-                    return delegate.subscriptionQuery(subQuery, ctx, updateBufferSize);
-                };
-
-        DefaultMessageDispatchInterceptorChain<? super QueryMessage> chain =
-                new DefaultMessageDispatchInterceptorChain<>(dispatchInterceptors, dispatcher);
-
-        return chain.proceed(query, context).cast();
+        return subscriptionQueryInterceptingDispatcher.dispatch(query, context, updateBufferSize);
     }
 
     @Nonnull
@@ -195,7 +183,7 @@ public class InterceptingQueryBus implements QueryBus {
     }
 
     private MessageStream<?> dispatchQuery(@Nonnull Message message,
-                                          @Nullable ProcessingContext processingContext) {
+                                           @Nullable ProcessingContext processingContext) {
         if (!(message instanceof QueryMessage query)) {
             // The compiler should avoid this from happening.
             throw new IllegalArgumentException("Unsupported message implementation: " + message);
@@ -216,7 +204,7 @@ public class InterceptingQueryBus implements QueryBus {
         private final QueryMessageHandlerInterceptorChain interceptorChain;
 
         private InterceptingHandler(QueryHandler handler,
-                                   List<MessageHandlerInterceptor<? super QueryMessage>> interceptors) {
+                                    List<MessageHandlerInterceptor<? super QueryMessage>> interceptors) {
             this.interceptorChain = new QueryMessageHandlerInterceptorChain(interceptors, handler);
         }
 
@@ -225,27 +213,63 @@ public class InterceptingQueryBus implements QueryBus {
         public MessageStream<QueryResponseMessage> handle(@Nonnull QueryMessage query,
                                                           @Nonnull ProcessingContext context) {
             return interceptorChain.proceed(query, context)
-                                  .cast();
+                                   .cast();
         }
     }
 
-    private static class InterceptingDispatcher {
+    private static class QueryInterceptingDispatcher {
 
         private final DefaultMessageDispatchInterceptorChain<? super QueryMessage> interceptorChain;
 
-        private InterceptingDispatcher(
+        private QueryInterceptingDispatcher(
                 List<MessageDispatchInterceptor<? super QueryMessage>> interceptors,
                 BiFunction<? super QueryMessage, ProcessingContext, MessageStream<?>> dispatcher
         ) {
             this.interceptorChain = new DefaultMessageDispatchInterceptorChain<>(interceptors, dispatcher);
         }
 
-        private MessageStream<QueryResponseMessage> interceptAndDispatch(
+        private MessageStream<QueryResponseMessage> dispatch(
                 @Nonnull QueryMessage query,
                 @Nullable ProcessingContext context
         ) {
             return interceptorChain.proceed(query, context)
-                                  .cast();
+                                   .cast();
+        }
+    }
+
+    private static class SubscriptionQueryInterceptingDispatcher {
+
+        private final List<MessageDispatchInterceptor<? super QueryMessage>> interceptors;
+        private final QueryBus delegate;
+
+        private SubscriptionQueryInterceptingDispatcher(
+                List<MessageDispatchInterceptor<? super QueryMessage>> interceptors,
+                QueryBus delegate
+        ) {
+            this.interceptors = interceptors;
+            this.delegate = delegate;
+        }
+
+        private MessageStream<QueryResponseMessage> dispatch(
+                @Nonnull SubscriptionQueryMessage query,
+                @Nullable ProcessingContext context,
+                int updateBufferSize
+        ) {
+            // Create a new chain per call because the dispatcher needs the updateBufferSize parameter
+            // which varies per invocation and is not part of the BiFunction signature.
+            // We cannot use Processing Context to pass this value, because Processing Context can be null.
+            BiFunction<? super QueryMessage, ProcessingContext, MessageStream<?>> subscriptionDispatcher =
+                    (interceptedQuery, interceptedContext) -> {
+                        if (!(interceptedQuery instanceof SubscriptionQueryMessage)) {
+                            throw new IllegalArgumentException("Expected SubscriptionQueryMessage but got: " + interceptedQuery.getClass());
+                        }
+                        return delegate.subscriptionQuery((SubscriptionQueryMessage) interceptedQuery, interceptedContext, updateBufferSize);
+                    };
+
+            return new DefaultMessageDispatchInterceptorChain<>(
+                    interceptors,
+                    subscriptionDispatcher
+            ).proceed(query, context).cast();
         }
     }
 
@@ -269,9 +293,9 @@ public class InterceptingQueryBus implements QueryBus {
             MessageStream<SubscriptionQueryUpdateMessage> intercepted =
                     (MessageStream<SubscriptionQueryUpdateMessage>) interceptorChain.proceed(update, context);
             return intercepted.first()
-                             .asCompletableFuture()
-                             .join()
-                             .message();
+                              .asCompletableFuture()
+                              .join()
+                              .message();
         }
     }
 }
