@@ -200,12 +200,15 @@ public class DistributedQueryBus implements QueryBus {
                     new PriorityRunnable(() -> {
                         try {
                             var result = localSegment.query(query, null);
-                            var isError = result.error().isPresent();
-                            if (isError) {
-                                localResult.completeExceptionally(result.error().get());
-                            } else {
-                                localResult.complete(result);
-                            }
+                            result.first()
+                                  .asCompletableFuture()
+                                  .whenComplete((firstMessage, error) -> {
+                                      if (error != null) {
+                                          localResult.completeExceptionally(error);
+                                      } else {
+                                          localResult.complete(result);
+                                      }
+                                  });
                         } catch (Exception e) {
                             localResult.completeExceptionally(e);
                         }

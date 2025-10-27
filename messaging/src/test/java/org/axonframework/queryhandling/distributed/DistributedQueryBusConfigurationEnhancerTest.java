@@ -19,6 +19,7 @@ package org.axonframework.queryhandling.distributed;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.interceptors.DispatchInterceptingQueryBus;
 import org.axonframework.queryhandling.interceptors.InterceptingQueryBus;
 import org.junit.jupiter.api.*;
 
@@ -47,7 +48,7 @@ class DistributedQueryBusConfigurationEnhancerTest {
                         .build();
 
         // then
-        assertInstanceOf(DistributedQueryBus.class, config.getComponent(QueryBus.class));
+        assertInstanceOf(DispatchInterceptingQueryBus.class, config.getComponent(QueryBus.class));
         assertTrue(config.hasComponent(DistributedQueryBusConfiguration.class));
     }
 
