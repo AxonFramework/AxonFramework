@@ -34,6 +34,7 @@ import org.axonframework.queryhandling.QueryResponseMessage;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Abstract base test suite for {@link QueryBus} integration tests. Provides common test infrastructure including helper
@@ -72,7 +73,7 @@ public abstract class AbstractQueryTestSuite {
      */
     protected static class RecordingQueryHandler implements org.axonframework.queryhandling.QueryHandler {
 
-        private final List<QueryMessage> recordedQueries = new ArrayList<>();
+        private final List<QueryMessage> recordedQueries = new CopyOnWriteArrayList<>();
 
         @Nonnull
         @Override

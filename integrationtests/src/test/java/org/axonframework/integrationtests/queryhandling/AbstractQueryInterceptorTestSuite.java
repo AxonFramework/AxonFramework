@@ -74,6 +74,30 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
     class DispatchInterceptorTests {
 
         @Test
+        void dispatchModifyRequestMessage() {
+            // given
+            AxonConfiguration interceptingConfig = createMessagingConfigurer()
+                    .build();
+            QueryBus interceptingQueryBus = interceptingConfig.getComponent(QueryBus.class);
+
+            RecordingQueryHandler handler = new RecordingQueryHandler();
+            interceptingQueryBus.subscribe(QUERY_NAME, RESPONSE_NAME, handler);
+
+            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test", TEST_RESPONSE_TYPE);
+
+            // when
+            StepVerifier.create(FluxUtils.of(interceptingQueryBus.query(testQuery,
+                                                                        StubProcessingContext.forMessage(testQuery))))
+                        .expectNextCount(1)
+                        .verifyComplete();
+
+            // then - Verify REQUEST interception: interceptors added metadata to the query BEFORE handler saw it
+            assertThat(handler.getRecordedQueries()).hasSize(1);
+
+            interceptingConfig.shutdown();
+        }
+
+        @Test
         void dispatchInterceptorsModifyRequestMessage() {
             // given
             MessageDispatchInterceptor<Message> dispatchInterceptor1 = new AddMetadataCountInterceptor<>("dispatch1",
@@ -364,8 +388,8 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
             var result = interceptingQueryBus.query(testQuery, context);
 
             // then
-            assertTrue(result.first().asCompletableFuture().isCompletedExceptionally());
-            assertInstanceOf(MockException.class, result.first().asCompletableFuture().exceptionNow());
+            assertTrue(result.error().isPresent());
+            assertInstanceOf(MockException.class, result.error().get());
 
             interceptingConfig.shutdown();
         }
