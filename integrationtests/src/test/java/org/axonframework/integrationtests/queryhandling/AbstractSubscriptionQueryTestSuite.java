@@ -423,7 +423,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         );
 
         // when
-        MessageStream<QueryResponseMessage> firstSubscription = queryBus.subscriptionQuery(queryMessage, null, 50);
+        queryBus.subscriptionQuery(queryMessage, null, 50);
         MessageStream<QueryResponseMessage> secondSubscription = queryBus.subscriptionQuery(queryMessage, null, 50);
 
         // then
