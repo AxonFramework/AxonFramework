@@ -17,10 +17,11 @@
 package org.axonframework.integrationtests.queryhandling;
 
 import org.axonframework.axonserver.connector.AxonServerConfigurationEnhancer;
-import org.axonframework.configuration.Configuration;
+import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.SimpleQueryBus;
+import org.junit.jupiter.api.AfterEach;
 
 /**
  * An {@link AbstractQueryInterceptorTestSuite} implementation validating query interceptor functionality with the
@@ -31,7 +32,7 @@ import org.axonframework.queryhandling.SimpleQueryBus;
  */
 public class SimpleQueryBusInterceptorTest extends AbstractQueryInterceptorTestSuite {
 
-    private final Configuration config = createMessagingConfigurer().build();
+    private final AxonConfiguration config = createMessagingConfigurer().build();
 
     @Override
     public QueryBus queryBus() {
@@ -43,5 +44,10 @@ public class SimpleQueryBusInterceptorTest extends AbstractQueryInterceptorTestS
         return MessagingConfigurer.create()
                 .componentRegistry(cr -> cr.disableEnhancer(
                         AxonServerConfigurationEnhancer.class));
+    }
+
+    @AfterEach
+    void tearDown() {
+        config.shutdown();
     }
 }

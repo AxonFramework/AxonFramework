@@ -17,7 +17,7 @@
 package org.axonframework.integrationtests.queryhandling;
 
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
-import org.axonframework.configuration.Configuration;
+import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.test.server.AxonServerContainer;
@@ -66,7 +66,7 @@ public class DistributedQueryBusInterceptorTest extends AbstractQueryInterceptor
         return axonServerConfiguration;
     }
 
-    private final Configuration config = createMessagingConfigurer().build();
+    private final AxonConfiguration config = createMessagingConfigurer().build();
 
     @Override
     public QueryBus queryBus() {
@@ -80,5 +80,10 @@ public class DistributedQueryBusInterceptorTest extends AbstractQueryInterceptor
                         AxonServerConfiguration.class,
                         c -> testContainerAxonServerConfiguration()
                 ));
+    }
+
+    @AfterEach
+    void tearDown() {
+        config.shutdown();
     }
 }
