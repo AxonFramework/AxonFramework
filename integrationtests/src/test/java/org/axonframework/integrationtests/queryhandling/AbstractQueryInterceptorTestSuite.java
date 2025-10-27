@@ -393,6 +393,36 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
 
             interceptingConfig.shutdown();
         }
+
+        @Test
+        void exceptionsInDispatchInterceptorReturnFailedStream() {
+            // given
+            MessageDispatchInterceptor<Message> failingInterceptor = (message, context, chain) -> {
+                throw new MockException("Simulating failure in interceptor");
+            };
+
+            AxonConfiguration interceptingConfig = createMessagingConfigurer()
+                    .registerDispatchInterceptor(config -> failingInterceptor)
+                    .build();
+            QueryBus interceptingQueryBus = interceptingConfig.getComponent(QueryBus.class);
+
+            QueryHandler handler = (query, context) -> MessageStream.just(new GenericQueryResponseMessage(
+                    TEST_RESPONSE_TYPE,
+                    "ok"));
+            interceptingQueryBus.subscribe(QUERY_NAME, RESPONSE_NAME, handler);
+
+            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "Request", TEST_RESPONSE_TYPE);
+            ProcessingContext context = StubProcessingContext.forMessage(testQuery);
+
+            // when
+            var result = interceptingQueryBus.query(testQuery, context);
+
+            // then
+            assertTrue(result.error().isPresent());
+            assertInstanceOf(MockException.class, result.error().get());
+
+            interceptingConfig.shutdown();
+        }
     }
 
     @Nested
