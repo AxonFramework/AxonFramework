@@ -66,7 +66,7 @@ public class DistributedQueryBusInterceptorTest extends AbstractQueryInterceptor
         return axonServerConfiguration;
     }
 
-    private final AxonConfiguration config = createMessagingConfigurer().build();
+    private AxonConfiguration config;
 
     @Override
     public QueryBus queryBus() {
@@ -82,8 +82,16 @@ public class DistributedQueryBusInterceptorTest extends AbstractQueryInterceptor
                 ));
     }
 
+    @BeforeEach
+    void setUp() {
+        // Create fresh configuration for each test to ensure isolation
+        config = createMessagingConfigurer().build();
+    }
+
     @AfterEach
     void tearDown() {
-        config.shutdown();
+        if (config != null) {
+            config.shutdown();
+        }
     }
 }

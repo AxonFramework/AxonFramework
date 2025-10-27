@@ -42,6 +42,7 @@ import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
@@ -61,10 +62,10 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTestSuite {
 
-    private static final MessageType TEST_QUERY_TYPE = new MessageType("testQuery");
-    private static final QualifiedName QUERY_NAME = new QualifiedName("testQuery");
-    private static final QualifiedName RESPONSE_NAME = new QualifiedName(String.class);
-    private static final MessageConverter CONVERTER = new DelegatingMessageConverter(new JacksonConverter());
+    private final QualifiedName QUERY_NAME = new QualifiedName(UUID.randomUUID() + "testQuery");
+    private final MessageType TEST_QUERY_TYPE = new MessageType(QUERY_NAME.name());
+    private final QualifiedName RESPONSE_NAME = new QualifiedName(String.class);
+    private final MessageConverter CONVERTER = new DelegatingMessageConverter(new JacksonConverter());
 
     @Nested
     @DisplayName("Dispatch interceptor tests")
@@ -90,7 +91,7 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
             QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test", TEST_RESPONSE_TYPE);
 
             // when
-            interceptingQueryBus.query(testQuery, StubProcessingContext.forMessage(testQuery));
+            interceptingQueryBus.query(testQuery, StubProcessingContext.forMessage(testQuery)).first().asCompletableFuture().join();
 
             // then - Verify REQUEST interception: interceptors added metadata to the query BEFORE handler saw it
             assertThat(handler.getRecordedQueries()).hasSize(1);
@@ -254,7 +255,7 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
             ProcessingContext context = StubProcessingContext.forMessage(testQuery);
 
             // when
-            interceptingQueryBus.query(testQuery, context);
+            interceptingQueryBus.query(testQuery, context).first().asCompletableFuture().join();
 
             // then - Verify REQUEST interception: handler interceptors added metadata to the query BEFORE handler saw it
             assertThat(handler.getRecordedQueries()).hasSize(1);
@@ -323,8 +324,8 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
             QueryMessage secondQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "second", TEST_RESPONSE_TYPE);
 
             // when
-            interceptingQueryBus.query(firstQuery, StubProcessingContext.forMessage(firstQuery)).first();
-            interceptingQueryBus.query(secondQuery, StubProcessingContext.forMessage(secondQuery)).first();
+            interceptingQueryBus.query(firstQuery, StubProcessingContext.forMessage(firstQuery)).first().asCompletableFuture().join();
+            interceptingQueryBus.query(secondQuery, StubProcessingContext.forMessage(secondQuery)).first().asCompletableFuture().join();
 
             // then
             assertThat(counter.get()).isEqualTo(2);
