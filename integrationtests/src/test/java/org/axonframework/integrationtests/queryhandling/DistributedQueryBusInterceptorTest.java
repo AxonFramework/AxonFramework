@@ -84,7 +84,6 @@ public class DistributedQueryBusInterceptorTest extends AbstractQueryInterceptor
 
     @BeforeEach
     void setUp() {
-        // Create fresh configuration for each test to ensure isolation
         config = createMessagingConfigurer().build();
     }
 

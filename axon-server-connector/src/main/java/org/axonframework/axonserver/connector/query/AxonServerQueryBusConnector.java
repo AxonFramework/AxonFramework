@@ -55,6 +55,8 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.LockSupport;
 
 import static java.util.Objects.requireNonNull;
@@ -118,15 +120,24 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
         Registration registration = connection.queryChannel()
                                               .registerQueryHandler(localSegmentAdapter, definition);
 
-        CompletableFuture<Void> registrationComplete = new CompletableFuture<>();
         // Make sure that when we subscribe and immediately send a command, it can be handled.
         if (registration instanceof AsyncRegistration asyncRegistration) {
-            asyncRegistration.onAck(() -> registrationComplete.complete(null));
-        } else {
-            registrationComplete.complete(null);
+            try {
+                // Waiting synchronously for the subscription to be acknowledged, this should be improved
+                // TODO https://github.com/AxonFramework/AxonFramework/issues/3544
+                asyncRegistration.awaitAck(2000, TimeUnit.MILLISECONDS);
+            } catch (TimeoutException e) {
+                throw new RuntimeException(
+                        "Timed out waiting for subscription acknowledgment for query: " + name.queryName(), e
+                );
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("Thread interrupted while waiting for subscription acknowledgment", e);
+            }
         }
+
         this.subscriptions.put(name, registration);
-        return registrationComplete;
+        return FutureUtils.emptyCompletedFuture();
     }
 
     @Override
