@@ -16,9 +16,16 @@
 
 package org.axonframework.integrationtests.queryhandling;
 
+import jakarta.annotation.Nonnull;
+import org.axonframework.configuration.Configuration;
+import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.FluxUtils;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageDispatchInterceptorChain;
+import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
@@ -31,11 +38,13 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 import org.axonframework.queryhandling.DefaultQueryGateway;
+import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
 import org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryExecutionException;
 import org.axonframework.queryhandling.QueryGateway;
+import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryHandlingComponent;
 import org.axonframework.queryhandling.QueryPriorityCalculator;
 import org.axonframework.queryhandling.QueryResponseMessage;
@@ -135,6 +144,14 @@ public abstract class AbstractSubscriptionQueryTestSuite {
      * {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int)} functionality with.
      */
     public abstract QueryBus queryBus();
+
+    /**
+     * Creates a {@link MessagingConfigurer} with the test-specific configuration (e.g., AxonServer enabled/disabled).
+     * This configurer is not yet built, allowing tests to register additional components like interceptors.
+     *
+     * @return A {@link MessagingConfigurer} instance ready for additional configuration.
+     */
+    protected abstract MessagingConfigurer createMessagingConfigurer();
 
     private static boolean assertRecorded(Collection<QueryResponseMessage> elements) {
         LinkedList<QueryResponseMessage> recordedMessages = new LinkedList<>(elements);
@@ -338,7 +355,8 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         // when we execute the UoW, it commits...
         testUoW.execute().join();
         // then...
-        assertEquals(TEST_QUERY_PAYLOAD, result.next().map(e -> e.message().payloadAs(String.class, CONVERTER)).orElse(null));
+        assertEquals(TEST_QUERY_PAYLOAD,
+                     result.next().map(e -> e.message().payloadAs(String.class, CONVERTER)).orElse(null));
         assertTrue(result.isCompleted() && result.error().isPresent());
     }
 
@@ -634,6 +652,171 @@ public abstract class AbstractSubscriptionQueryTestSuite {
                                                .toFuture();
         String result = future.get();
         assertEquals(FOUND, result);
+    }
+
+    @Nested
+    @DisplayName("Subscription query interceptor tests")
+    class SubscriptionQueryInterceptorTests {
+
+        @Test
+        void handlerInterceptorsAppliedToSubscriptionQueryResponse() {
+            // given
+            MessageHandlerInterceptor<QueryMessage> handlerInterceptor1 = new AddMetadataCountInterceptor<>("handler1",
+                                                                                                            "value");
+            MessageHandlerInterceptor<QueryMessage> handlerInterceptor2 = new AddMetadataCountInterceptor<>("handler2",
+                                                                                                            "value");
+
+            Configuration interceptingConfig = createMessagingConfigurer()
+                                                                  .registerQueryHandlerInterceptor(config -> handlerInterceptor1)
+                                                                  .registerQueryHandlerInterceptor(config -> handlerInterceptor2)
+                                                                  .build();
+            QueryBus interceptingQueryBus = interceptingConfig.getComponent(QueryBus.class);
+
+            RecordingQueryHandler handler = new RecordingQueryHandler();
+            QualifiedName queryName = new QualifiedName("chatMessages");
+            QualifiedName responseName = new QualifiedName(String.class);
+            interceptingQueryBus.subscribe(queryName, responseName, handler);
+
+            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
+                    TEST_QUERY_TYPE, TEST_QUERY_PAYLOAD, TEST_RESPONSE_TYPE
+            );
+
+            // when
+            MessageStream<QueryResponseMessage> result = interceptingQueryBus.subscriptionQuery(testQuery, null, 10);
+
+            // then
+            QueryResponseMessage response = result.first().asCompletableFuture().join().message();
+            assertTrue(response.metadata().containsKey("handler1"),
+                       "Expected handler1 interceptor to be applied to response");
+            assertTrue(response.metadata().containsKey("handler2"),
+                       "Expected handler2 interceptor to be applied to response");
+
+            // Verify handler interceptors added metadata to the query received by handler
+            assertThat(handler.getRecordedQueries()).asList().hasSize(1);
+            QueryMessage recordedQuery = handler.getRecordedQueries().get(0);
+            assertTrue(recordedQuery.metadata().containsKey("handler1"),
+                       "Expected handler1 interceptor to add metadata to query");
+            assertTrue(recordedQuery.metadata().containsKey("handler2"),
+                       "Expected handler2 interceptor to add metadata to query");
+        }
+
+        @Test
+        void dispatchInterceptorsAppliedToSubscriptionQueryResponse() {
+            // given
+            MessageDispatchInterceptor<Message> dispatchInterceptor1 = new AddMetadataCountInterceptor<>("dispatch1",
+                                                                                                         "value");
+            MessageDispatchInterceptor<Message> dispatchInterceptor2 = new AddMetadataCountInterceptor<>("dispatch2",
+                                                                                                         "value");
+
+            Configuration interceptingConfig = createMessagingConfigurer()
+                                                                  .registerQueryDispatchInterceptor(config -> dispatchInterceptor1)
+                                                                  .registerQueryDispatchInterceptor(config -> dispatchInterceptor2)
+                                                                  .build();
+            QueryBus interceptingQueryBus = interceptingConfig.getComponent(QueryBus.class);
+
+            RecordingQueryHandler handler = new RecordingQueryHandler();
+            QualifiedName queryName = new QualifiedName("chatMessages");
+            QualifiedName responseName = new QualifiedName(String.class);
+            interceptingQueryBus.subscribe(queryName, responseName, handler);
+
+            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
+                    TEST_QUERY_TYPE, TEST_QUERY_PAYLOAD, TEST_RESPONSE_TYPE
+            );
+
+            // when
+            MessageStream<QueryResponseMessage> result = interceptingQueryBus.subscriptionQuery(testQuery, null, 10);
+
+            // then
+            QueryResponseMessage response = result.first().asCompletableFuture().join().message();
+            assertTrue(response.metadata().containsKey("dispatch1"),
+                       "Expected dispatch1 interceptor to be applied to response");
+            assertTrue(response.metadata().containsKey("dispatch2"),
+                       "Expected dispatch2 interceptor to be applied to response");
+
+            // Verify dispatch interceptors added metadata to the query received by handler
+            assertThat(handler.getRecordedQueries()).asList().hasSize(1);
+            QueryMessage recordedQuery = handler.getRecordedQueries().getFirst();
+            assertTrue(recordedQuery.metadata().containsKey("dispatch1"),
+                       "Expected dispatch1 interceptor to add metadata to query");
+            assertTrue(recordedQuery.metadata().containsKey("dispatch2"),
+                       "Expected dispatch2 interceptor to add metadata to query");
+        }
+    }
+
+    /**
+     * A recording query handler that stores all received queries for later assertion.
+     */
+    private static class RecordingQueryHandler implements org.axonframework.queryhandling.QueryHandler {
+
+        private final List<QueryMessage> recordedQueries = new ArrayList<>();
+
+        @Nonnull
+        @Override
+        public MessageStream<QueryResponseMessage> handle(@Nonnull QueryMessage message,
+                                                          @Nonnull ProcessingContext context) {
+            recordedQueries.add(message);
+            return MessageStream.just(
+                    new GenericQueryResponseMessage(TEST_RESPONSE_TYPE,
+                                                    Arrays.asList("Message1", "Message2", "Message3"))
+            );
+        }
+
+        public List<QueryMessage> getRecordedQueries() {
+            return recordedQueries;
+        }
+    }
+
+    /**
+     * Test interceptor that adds metadata to BOTH request and response messages with an incrementing counter.
+     * <p>
+     * This dual modification pattern allows tests to verify:
+     * <ul>
+     *   <li><b>Request interception:</b> Metadata added before handler sees the message</li>
+     *   <li><b>Response interception:</b> Metadata added to the response after handler execution</li>
+     *   <li><b>Chaining behavior:</b> Counter increments show interceptor order and layering</li>
+     * </ul>
+     */
+    private record AddMetadataCountInterceptor<M extends Message>(String key, String value)
+            implements MessageHandlerInterceptor<M>, MessageDispatchInterceptor<M> {
+
+        @Override
+        public MessageStream<?> interceptOnDispatch(M message,
+                                                    ProcessingContext context,
+                                                    MessageDispatchInterceptorChain<M> interceptorChain) {
+            // STEP 1: Modify the REQUEST message before passing to next interceptor/handler
+            @SuppressWarnings("unchecked")
+            var intercepted = (M) message.andMetadata(java.util.Map.of(key, buildValue(message)));
+
+            return interceptorChain
+                    .proceed(intercepted, context)
+                    // STEP 2: Modify the RESPONSE message after handler execution
+                    .mapMessage(m -> m.andMetadata(java.util.Map.of(key, buildValue(m))));
+        }
+
+        @Override
+        public MessageStream<?> interceptOnHandle(M message,
+                                                  ProcessingContext context,
+                                                  MessageHandlerInterceptorChain<M> interceptorChain) {
+            // STEP 1: Modify the REQUEST message before passing to handler
+            @SuppressWarnings("unchecked")
+            var intercepted = (M) message.andMetadata(java.util.Map.of(key, buildValue(message)));
+
+            return interceptorChain
+                    .proceed(intercepted, context)
+                    // STEP 2: Modify the RESPONSE message after handler execution
+                    .mapMessage(m -> m.andMetadata(java.util.Map.of(key, buildValue(m))));
+        }
+
+        /**
+         * Builds a value with an incrementing counter based on existing metadata. Counter starts at 0 and increments
+         * with each modification.
+         */
+        private String buildValue(Message message) {
+            int count = message.metadata().containsKey(key)
+                    ? Integer.parseInt(message.metadata().get(key).split("-")[1])
+                    : -1;
+            return value + "-" + (count + 1);
+        }
     }
 
     private record SomeQuery(String filter) {

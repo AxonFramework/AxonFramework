@@ -49,13 +49,6 @@ public class DistributedQueryBusSubscriptionQueryTest extends AbstractSubscripti
             .withDevMode(true)
             .withReuse(true);
 
-    private final Configuration config = MessagingConfigurer
-            .create()
-            .componentRegistry(cr -> cr.registerComponent(
-                    AxonServerConfiguration.class,
-                    c -> testContainerAxonServerConfiguration()
-            )).build();
-
     @BeforeAll
     static void beforeAll() throws IOException {
         container.start();
@@ -75,8 +68,19 @@ public class DistributedQueryBusSubscriptionQueryTest extends AbstractSubscripti
         return axonServerConfiguration;
     }
 
+    private final Configuration config = createMessagingConfigurer().build();
+
     @Override
     public QueryBus queryBus() {
         return config.getComponent(QueryBus.class);
+    }
+
+    @Override
+    protected MessagingConfigurer createMessagingConfigurer() {
+        return MessagingConfigurer.create()
+                                  .componentRegistry(cr -> cr.registerComponent(
+                                          AxonServerConfiguration.class,
+                                          c -> testContainerAxonServerConfiguration()
+                                  ));
     }
 }

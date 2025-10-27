@@ -30,13 +30,17 @@ import org.axonframework.queryhandling.SimpleQueryBus;
  */
 public class SimpleQueryBusSubscriptionQueryTest extends AbstractSubscriptionQueryTestSuite {
 
-    private final Configuration config = MessagingConfigurer.create()
-                                                            .componentRegistry(cr -> cr.disableEnhancer(
-                                                                    AxonServerConfigurationEnhancer.class))
-                                                            .build();
+    private final Configuration config = createMessagingConfigurer().build();
 
     @Override
     public QueryBus queryBus() {
         return config.getComponent(QueryBus.class);
+    }
+
+    @Override
+    protected MessagingConfigurer createMessagingConfigurer() {
+        return MessagingConfigurer.create()
+                                  .componentRegistry(cr -> cr.disableEnhancer(
+                                          AxonServerConfigurationEnhancer.class));
     }
 }
