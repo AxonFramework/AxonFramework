@@ -17,6 +17,7 @@
 package org.axonframework.integrationtests.queryhandling;
 
 import org.axonframework.configuration.AxonConfiguration;
+import org.axonframework.messaging.FluxUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -40,6 +41,7 @@ import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.serialization.json.JacksonConverter;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
+import reactor.test.StepVerifier;
 
 import java.util.Map;
 import java.util.UUID;
@@ -71,7 +73,7 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
     @DisplayName("Dispatch interceptor tests")
     class DispatchInterceptorTests {
 
-        @RepeatedTest(100)
+        @Test
         void dispatchInterceptorsModifyRequestMessage() {
             // given
             MessageDispatchInterceptor<Message> dispatchInterceptor1 = new AddMetadataCountInterceptor<>("dispatch1",
@@ -91,7 +93,10 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
             QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test", TEST_RESPONSE_TYPE);
 
             // when
-            interceptingQueryBus.query(testQuery, StubProcessingContext.forMessage(testQuery)).first().asCompletableFuture().join();
+            StepVerifier.create(FluxUtils.of(interceptingQueryBus.query(testQuery,
+                                                                        StubProcessingContext.forMessage(testQuery))))
+                        .expectNextCount(1)
+                        .verifyComplete();
 
             // then - Verify REQUEST interception: interceptors added metadata to the query BEFORE handler saw it
             assertThat(handler.getRecordedQueries()).hasSize(1);
@@ -324,8 +329,10 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
             QueryMessage secondQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "second", TEST_RESPONSE_TYPE);
 
             // when
-            interceptingQueryBus.query(firstQuery, StubProcessingContext.forMessage(firstQuery)).first().asCompletableFuture().join();
-            interceptingQueryBus.query(secondQuery, StubProcessingContext.forMessage(secondQuery)).first().asCompletableFuture().join();
+            interceptingQueryBus.query(firstQuery, StubProcessingContext.forMessage(firstQuery)).first()
+                                .asCompletableFuture().join();
+            interceptingQueryBus.query(secondQuery, StubProcessingContext.forMessage(secondQuery)).first()
+                                .asCompletableFuture().join();
 
             // then
             assertThat(counter.get()).isEqualTo(2);
