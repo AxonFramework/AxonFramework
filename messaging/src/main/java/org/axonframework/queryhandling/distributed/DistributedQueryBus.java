@@ -18,6 +18,7 @@ package org.axonframework.queryhandling.distributed;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.DelayedMessageStream;
@@ -104,7 +105,7 @@ public class DistributedQueryBus implements QueryBus {
     public QueryBus subscribe(@Nonnull QueryHandlerName handlerName,
                               @Nonnull QueryHandler queryHandler) {
         localSegment.subscribe(handlerName, queryHandler);
-        connector.subscribe(handlerName);
+        FutureUtils.joinAndUnwrap(connector.subscribe(handlerName));
         return this;
     }
 

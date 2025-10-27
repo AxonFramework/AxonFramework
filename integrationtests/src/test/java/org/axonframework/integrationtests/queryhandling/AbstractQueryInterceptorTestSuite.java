@@ -71,7 +71,7 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
     @DisplayName("Dispatch interceptor tests")
     class DispatchInterceptorTests {
 
-        @Test
+        @RepeatedTest(100)
         void dispatchInterceptorsModifyRequestMessage() {
             // given
             MessageDispatchInterceptor<Message> dispatchInterceptor1 = new AddMetadataCountInterceptor<>("dispatch1",
