@@ -93,7 +93,6 @@ class SingleValueMessageStreamTest extends MessageStreamTest<Message> {
     void shouldReturnCompletedIfConstructedFromCompletedFutureWithNoValue() {
         CompletableFuture<Message> future = CompletableFuture.completedFuture(null);
         MessageStream<Message> testSubject = MessageStream.fromFuture(future);
-        ;
         assertTrue(testSubject.isCompleted());
         assertFalse(testSubject.hasNextAvailable());
     }
