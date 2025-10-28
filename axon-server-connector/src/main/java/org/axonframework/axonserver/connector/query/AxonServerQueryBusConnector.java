@@ -17,7 +17,6 @@
 package org.axonframework.axonserver.connector.query;
 
 import io.axoniq.axonserver.connector.AxonServerConnection;
-import io.axoniq.axonserver.connector.ErrorCategory;
 import io.axoniq.axonserver.connector.FlowControl;
 import io.axoniq.axonserver.connector.Registration;
 import io.axoniq.axonserver.connector.ReplyChannel;
@@ -277,8 +276,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
                                                      ErrorMessage ex = ExceptionConverter.convertToErrorMessage(clientId, error);
                                                      QueryResponse errorResponse =
                                                              QueryResponse.newBuilder()
-                                                                          .setErrorCode(ErrorCode.getQueryExecutionErrorCode(error)
-                                                                                                 .errorCode())
+                                                                          .setErrorCode(ErrorCode.getQueryExecutionErrorCode(error).errorCode())
                                                                           .setErrorMessage(ex)
                                                                           .setRequestIdentifier(query.getMessageIdentifier())
                                                                           .build();

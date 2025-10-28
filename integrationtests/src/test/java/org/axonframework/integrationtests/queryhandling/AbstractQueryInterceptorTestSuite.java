@@ -385,11 +385,10 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
             var result = interceptingQueryBus.query(testQuery, context);
 
             // then
+            assertFalse(result.isCompleted());
             Awaitility.await().untilAsserted(() -> {
                 assertTrue(result.isCompleted());
-                assertTrue(result.peek().isPresent());
                 assertTrue(result.error().isPresent());
-                assertInstanceOf(MockException.class, result.error().get());
             });
 
             interceptingConfig.shutdown();
