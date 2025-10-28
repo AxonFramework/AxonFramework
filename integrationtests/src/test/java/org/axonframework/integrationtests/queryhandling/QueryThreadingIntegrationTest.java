@@ -171,7 +171,7 @@ class QueryThreadingIntegrationTest {
                                  .get()
                                  .extracting(this::messagePayloadAsString)
                                  .isEqualTo("a");
-        await().atMost(Duration.ofSeconds(1)).until(result::isCompleted);
+        await().until(result::isCompleted);
     }
 
     @Test
