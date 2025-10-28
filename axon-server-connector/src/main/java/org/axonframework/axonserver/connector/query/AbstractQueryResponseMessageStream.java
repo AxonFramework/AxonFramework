@@ -75,21 +75,7 @@ public abstract class AbstractQueryResponseMessageStream<T> implements MessageSt
     @Nonnull
     @Override
     public Optional<Throwable> error() {
-        // Check if we've already processed and stored an error
-        if (error.get() != null) {
-            return Optional.of(error.get());
-        }
-        // Check if the underlying stream has an error
-        Optional<Throwable> streamError = stream.getError();
-        if (streamError.isPresent()) {
-            return streamError;
-        }
-        // Check if the first peeked message is an error
-        T peeked = stream.peek();
-        if (peeked != null && isError(peeked)) {
-            return Optional.of(createAxonException(peeked));
-        }
-        return Optional.empty();
+        return errorIfPresent();
     }
 
     @Override
@@ -114,17 +100,36 @@ public abstract class AbstractQueryResponseMessageStream<T> implements MessageSt
      * @return {@code true} if an error is detected from any source, {@code false} otherwise.
      */
     private boolean hasError() {
-        // Check if we've already processed an error
+        return errorIfPresent().isPresent();
+    }
+
+    /**
+     * Returns the error if present from any of three sources:
+     * <ol>
+     *     <li>The error that has already been processed and stored</li>
+     *     <li>The underlying stream's error state</li>
+     *     <li>The next peeked message in the stream (if it's an error message)</li>
+     * </ol>
+     *
+     * @return An {@link Optional} containing the error if present, or {@link Optional#empty()} if no error is detected.
+     */
+    @Nonnull
+    private Optional<Throwable> errorIfPresent() {
+        // Check if we've already processed and stored an error
         if (error.get() != null) {
-            return true;
+            return Optional.of(error.get());
         }
         // Check if the underlying stream has an error
-        if (stream.getError().isPresent()) {
-            return true;
+        Optional<Throwable> streamError = stream.getError();
+        if (streamError.isPresent()) {
+            return streamError;
         }
-        // Check if the next peeked message is an error
+        // Check if the first peeked message is an error
         T peeked = stream.peek();
-        return peeked != null && isError(peeked);
+        if (peeked != null && isError(peeked)) {
+            return Optional.of(createAxonException(peeked));
+        }
+        return Optional.empty();
     }
 
     @Override

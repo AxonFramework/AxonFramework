@@ -135,6 +135,7 @@ class AxonServerQueryBusConnectorTest {
             assertThat(stream.error()).isPresent();
             assertThat(stream.error().get()).hasMessageContaining("Query execution failed");
             assertThat(stream.isCompleted()).isTrue();
+            assertThat(stream.hasNextAvailable()).isFalse();
         }
 
         @Test
