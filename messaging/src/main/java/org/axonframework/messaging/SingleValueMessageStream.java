@@ -99,8 +99,6 @@ class SingleValueMessageStream<M extends Message> implements MessageStream.Singl
     @Override
     public boolean hasNextAvailable() {
         return source.isDone() && !source.isCompletedExceptionally() && !read.get();
-
-//         return source.isDone() && !source.isCompletedExceptionally() && !read.get() && source.getNow(null) != null;
     }
 
     @Override
