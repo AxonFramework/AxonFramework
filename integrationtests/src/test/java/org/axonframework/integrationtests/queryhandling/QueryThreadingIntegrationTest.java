@@ -32,6 +32,7 @@ import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
 import org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryBusTestUtils;
+import org.axonframework.queryhandling.QueryExecutionException;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.distributed.DistributedQueryBus;
@@ -39,6 +40,7 @@ import org.axonframework.queryhandling.distributed.DistributedQueryBusConfigurat
 import org.axonframework.queryhandling.distributed.PayloadConvertingQueryBusConnector;
 import org.axonframework.serialization.json.JacksonConverter;
 import org.axonframework.test.server.AxonServerContainer;
+import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -164,9 +166,7 @@ class QueryThreadingIntegrationTest {
                                                                          "start",
                                                                          MESSAGE_TYPE_STRING),
                                      null);
-        await().untilAsserted(() -> {
-            assertThat(result.hasNextAvailable()).isTrue();
-        });
+        await().until(result::hasNextAvailable);
         assertThat(result.next()).isPresent()
                                  .get()
                                  .extracting(this::messagePayloadAsString)
@@ -186,9 +186,7 @@ class QueryThreadingIntegrationTest {
                                                                                      "start",
                                                                                      MESSAGE_TYPE_STRING),
                                                  null, 16);
-        await().untilAsserted(() -> {
-            assertThat(result.hasNextAvailable()).isTrue();
-        });
+        await().until(result::hasNextAvailable);
         assertThat(result.next()).isPresent()
                                  .get()
                                  .extracting(this::messagePayloadAsString)
@@ -210,6 +208,69 @@ class QueryThreadingIntegrationTest {
     }
 
     @Test
+    void canSendSubscriptionQueryWithFailingInitialResponses() {
+        queryBus1.subscribe(QUERY_TYPE_A.qualifiedName(),
+                            new QualifiedName(String.class),
+                            (query, ctx) -> MessageStream.failed(new MockException("Simulating failure")));
+
+        var result = queryBus2.subscriptionQuery(new GenericSubscriptionQueryMessage(QUERY_TYPE_A,
+                                                                                     "start",
+                                                                                     MESSAGE_TYPE_STRING),
+                                                 null, 16);
+        await().atMost(3, TimeUnit.SECONDS).until(result::isCompleted);
+        assertThat(result.error()).isPresent().get().isInstanceOf(QueryExecutionException.class).matches(
+                e -> e.getMessage().contains("Simulating failure")
+        );
+    }
+
+    @Test
+    void canSendSubscriptionQueryWithMultipleInitialResponses() {
+        queryBus1.subscribe(QUERY_TYPE_A.qualifiedName(),
+                            new QualifiedName(String.class),
+                            (query, ctx) -> MessageStream.fromItems(new GenericQueryResponseMessage(
+                                    MESSAGE_TYPE_STRING,
+                                    "a1"), new GenericQueryResponseMessage(
+                                    MESSAGE_TYPE_STRING,
+                                    "a2")));
+
+        var result = queryBus2.subscriptionQuery(new GenericSubscriptionQueryMessage(QUERY_TYPE_A,
+                                                                                     "start",
+                                                                                     MESSAGE_TYPE_STRING),
+                                                 null, 16);
+        await().until(result::hasNextAvailable);
+        assertThat(result.next()).isPresent()
+                                 .get()
+                                 .extracting(this::messagePayloadAsString)
+                                 .isEqualTo("a1");
+        // this means we have the first initial result. Let's send some updates
+        queryBus1.emitUpdate(m -> true,
+                             () -> new GenericSubscriptionQueryUpdateMessage(MESSAGE_TYPE_STRING, "u1"),
+                             null);
+        await().until(result::hasNextAvailable);
+        assertThat(result.next()).isPresent()
+                                 .get()
+                                 .extracting(this::messagePayloadAsString)
+                                 .isEqualTo("a2");
+        // this means we have all the initial results. Let's send some more updates
+        queryBus1.emitUpdate(m -> true,
+                             () -> new GenericSubscriptionQueryUpdateMessage(MESSAGE_TYPE_STRING, "u2"),
+                             null);
+        queryBus1.completeSubscriptions(m -> true, null);
+
+        // and check for these updates to arrive
+        await().atMost(Duration.ofSeconds(1)).until(result::hasNextAvailable);
+        assertThat(result.next()).isPresent()
+                                 .get()
+                                 .extracting(this::messagePayloadAsString)
+                                 .isEqualTo("u1");
+        assertThat(result.next()).isPresent()
+                                 .get()
+                                 .extracting(this::messagePayloadAsString)
+                                 .isEqualTo("u2");
+        await().atMost(Duration.ofSeconds(1)).until(result::isCompleted);
+    }
+
+    @Test
     void canSendQueryAndReceiveStreamingResponse() {
         QueueMessageStream<QueryResponseMessage> queryResponse = new QueueMessageStream<>();
         queryBus1.subscribe(QUERY_TYPE_A.qualifiedName(),
@@ -221,9 +282,8 @@ class QueryThreadingIntegrationTest {
                                      null);
         assertThat(result.hasNextAvailable()).isFalse();
         queryResponse.offer(new GenericQueryResponseMessage(MESSAGE_TYPE_STRING, "a"), Context.empty());
-        await().untilAsserted(() -> {
-            assertThat(result.hasNextAvailable()).isTrue();
-        });
+
+        await().until(result::hasNextAvailable);
         assertThat(result.next()).isPresent()
                                  .get()
                                  .extracting(this::messagePayloadAsString)
@@ -233,9 +293,7 @@ class QueryThreadingIntegrationTest {
         assertThat(result.isCompleted()).isFalse();
         queryResponse.offer(new GenericQueryResponseMessage(MESSAGE_TYPE_STRING, "c"), Context.empty());
         queryResponse.complete();
-        await().untilAsserted(() -> {
-            assertThat(result.hasNextAvailable()).isTrue();
-        });
+        await().until(result::hasNextAvailable);
         await().untilAsserted(() -> {
             assertThat(result.next()).isPresent()
                                      .get()

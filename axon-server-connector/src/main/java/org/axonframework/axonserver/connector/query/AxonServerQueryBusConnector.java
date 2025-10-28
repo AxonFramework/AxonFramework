@@ -17,7 +17,6 @@
 package org.axonframework.axonserver.connector.query;
 
 import io.axoniq.axonserver.connector.AxonServerConnection;
-import io.axoniq.axonserver.connector.ErrorCategory;
 import io.axoniq.axonserver.connector.FlowControl;
 import io.axoniq.axonserver.connector.Registration;
 import io.axoniq.axonserver.connector.ReplyChannel;
@@ -25,7 +24,6 @@ import io.axoniq.axonserver.connector.ResultStream;
 import io.axoniq.axonserver.connector.impl.AsyncRegistration;
 import io.axoniq.axonserver.connector.query.QueryDefinition;
 import io.axoniq.axonserver.connector.query.QueryHandler;
-import io.axoniq.axonserver.grpc.ErrorMessage;
 import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
@@ -33,8 +31,6 @@ import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
-import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.axonserver.connector.util.ExceptionConverter;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.lifecycle.ShutdownLatch;
@@ -180,8 +176,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
                                                       SerializedObject.getDefaultInstance(),
                                                       updateBufferSize,
                                                       Math.min(updateBufferSize / 4, 8));
-            return MessageStream.fromFuture(result.initialResult()
-                                                  .thenApply(QueryConverter::convertQueryResponse))
+            return new QueryResponseMessageStream(result.initialResult())
                                 .concatWith(new QueryUpdateMessageStream(result.updates()))
                                 .onClose(queryInTransit::end);
         }
@@ -251,42 +246,9 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
             if (previous != null) {
                 previous.run();
             }
-            result.onClose(queriesInProgress.remove(query.getMessageIdentifier()))
-                  .onAvailable(() -> {
-                      // TODO #3808 - Check if sufficient permits from flow control
-                      // This logic should be executed by tasks with scheduling gates on the response thread pool
-                      while (result.hasNextAvailable()) {
-                          var next = result.next();
-                          next.ifPresent(i -> responseHandler.send(QueryConverter.convertQueryResponseMessage(query.getMessageIdentifier(),
-                                                                                                              i.message())));
-                      }
-                      if (result.isCompleted()) {
-                          result.error()
-                                .ifPresentOrElse(error -> {
-                                                     ErrorMessage ex = ExceptionConverter.convertToErrorMessage(clientId, error);
-                                                     QueryResponse errorResponse =
-                                                             QueryResponse.newBuilder()
-                                                                          .setErrorCode(ErrorCode.getQueryExecutionErrorCode(error)
-                                                                                                 .errorCode())
-                                                                          .setErrorMessage(ex)
-                                                                          .setRequestIdentifier(query.getMessageIdentifier())
-                                                                          .build();
-                                                     responseHandler.sendLast(errorResponse);
-                                                 },
-                                                 responseHandler::complete);
-                      }
-                  });
-            return new FlowControl() {
-                @Override
-                public void request(long requested) {
-                    // TODO #3808 - Implement flow control on responses
-                }
-
-                @Override
-                public void cancel() {
-                    result.close();
-                }
-            };
+            return new FlowControlledResponseSender(clientId, query.getMessageIdentifier(),
+                                                    result.onClose(queriesInProgress.remove(query.getMessageIdentifier())),
+                                                    responseHandler);
         }
 
         @Override
