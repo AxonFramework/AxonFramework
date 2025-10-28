@@ -94,8 +94,6 @@ class SingleValueMessageStream<M extends Message> implements MessageStream.Singl
     @Override
     public boolean isCompleted() {
         return source.isCompletedExceptionally() || read.get();
-
-        //return source.isCompletedExceptionally() || read.get() || (source.isDone() && source.getNow(null) == null);
     }
 
     @Override
