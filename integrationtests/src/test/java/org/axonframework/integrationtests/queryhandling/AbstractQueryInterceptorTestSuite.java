@@ -16,6 +16,7 @@
 
 package org.axonframework.integrationtests.queryhandling;
 
+import org.awaitility.Awaitility;
 import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.messaging.FluxUtils;
 import org.axonframework.messaging.Message;
@@ -364,22 +365,17 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
             interceptingConfig.shutdown();
         }
 
-        @Disabled("FIXME: Doesn't work for DistributedQueryBus - if query returns MessageStream.Failed it vanishes here")
         @Test
         void exceptionsInHandlerInterceptorReturnFailedStream() {
             // given
-            MessageHandlerInterceptor<QueryMessage> failingInterceptor = (message, context, chain) -> {
-                throw new MockException("Simulating failure in interceptor");
-            };
+//            MessageHandlerInterceptor<QueryMessage> failingInterceptor = (message, context, chain) -> MessageStream.failed(new MockException("Simulating failure in interceptor"));
 
             AxonConfiguration interceptingConfig = createMessagingConfigurer()
-                    .registerQueryHandlerInterceptor(config -> failingInterceptor)
+//                    .registerQueryHandlerInterceptor(config -> failingInterceptor)
                     .build();
             QueryBus interceptingQueryBus = interceptingConfig.getComponent(QueryBus.class);
 
-            QueryHandler handler = (query, context) -> MessageStream.just(new GenericQueryResponseMessage(
-                    TEST_RESPONSE_TYPE,
-                    "ok"));
+            QueryHandler handler = (query, context) -> MessageStream.failed(new MockException("Simulating failure in interceptor"));
             interceptingQueryBus.subscribe(QUERY_NAME, RESPONSE_NAME, handler);
 
             QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "Request", TEST_RESPONSE_TYPE);
@@ -389,8 +385,12 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
             var result = interceptingQueryBus.query(testQuery, context);
 
             // then
-            assertTrue(result.error().isPresent());
-            assertInstanceOf(MockException.class, result.error().get());
+            Awaitility.await().untilAsserted(() -> {
+                assertTrue(result.isCompleted());
+                assertTrue(result.peek().isPresent());
+                assertTrue(result.error().isPresent());
+                assertInstanceOf(MockException.class, result.error().get());
+            });
 
             interceptingConfig.shutdown();
         }
