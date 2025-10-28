@@ -59,7 +59,7 @@ class EmptyMessageStream implements MessageStream.Empty<Message> {
     }
 
     @Override
-    public void onAvailable(@Nonnull Runnable callback) {
+    public void setCallback(@Nonnull Runnable callback) {
         callback.run();
     }
 
@@ -94,7 +94,7 @@ class EmptyMessageStream implements MessageStream.Empty<Message> {
     }
 
     @Override
-    public Empty<Message> whenComplete(@Nonnull Runnable completeHandler) {
+    public Empty<Message> onComplete(@Nonnull Runnable completeHandler) {
         try {
             completeHandler.run();
             return this;

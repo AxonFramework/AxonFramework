@@ -222,7 +222,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
         SourcingCondition testCondition = SourcingCondition.conditionFor(TEST_CRITERIA);
 
         MessageStream<EventMessage> sourcingStream = testSubject.source(testCondition, processingContext())
-                                                                .whenComplete(() -> completed.set(true));
+                                                                .onComplete(() -> completed.set(true));
         await("Await first entry availability")
                 .pollDelay(Duration.ofMillis(50))
                 .atMost(Duration.ofMillis(500))

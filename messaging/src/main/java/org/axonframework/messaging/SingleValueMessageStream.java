@@ -78,7 +78,7 @@ class SingleValueMessageStream<M extends Message> implements MessageStream.Singl
     }
 
     @Override
-    public void onAvailable(@Nonnull Runnable callback) {
+    public void setCallback(@Nonnull Runnable callback) {
         if (source.isDone()) {
             callback.run();
         } else {
@@ -94,11 +94,15 @@ class SingleValueMessageStream<M extends Message> implements MessageStream.Singl
     @Override
     public boolean isCompleted() {
         return source.isCompletedExceptionally() || read.get();
+
+        //return source.isCompletedExceptionally() || read.get() || (source.isDone() && source.getNow(null) == null);
     }
 
     @Override
     public boolean hasNextAvailable() {
         return source.isDone() && !source.isCompletedExceptionally() && !read.get();
+
+//         return source.isDone() && !source.isCompletedExceptionally() && !read.get() && source.getNow(null) != null;
     }
 
     @Override

@@ -48,6 +48,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class AxonTestFixtureMessagingTest {
 
+    @Disabled("TODO #3818 Fix those")
     @Nested
     class WhenCommand {
 

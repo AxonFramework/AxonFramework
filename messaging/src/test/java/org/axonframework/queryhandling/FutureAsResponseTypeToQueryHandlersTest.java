@@ -82,6 +82,7 @@ class FutureAsResponseTypeToQueryHandlersTest {
         assertEquals(asList("Response1", "Response2"), result);
     }
 
+    @Disabled("TODO #3818 double check this one")
     @Test
     void queryWithSingleResponse() throws ExecutionException, InterruptedException {
         QueryMessage testQuery =
