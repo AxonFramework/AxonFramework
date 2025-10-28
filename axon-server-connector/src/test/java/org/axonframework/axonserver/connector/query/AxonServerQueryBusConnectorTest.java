@@ -109,6 +109,36 @@ class AxonServerQueryBusConnectorTest {
     class QueryDispatching {
 
         @Test
+        void queryWithErrorAsFirstMessageReturnsNoAvailableMessageAndSetsError() {
+            // given
+            QueryResponse errorResponse = QueryResponse.newBuilder()
+                                                       .setMessageIdentifier(UUID.randomUUID().toString())
+                                                       .setErrorCode("AXONIQ-1000")
+                                                       .setErrorMessage(io.axoniq.axonserver.grpc.ErrorMessage.newBuilder()
+                                                                                                              .setMessage("Query execution failed")
+                                                                                                              .build())
+                                                       .build();
+            ResultStream<QueryResponse> resultStream = new StubResultStream<>(errorResponse);
+            when(mockQueryChannel.query(any())).thenReturn(resultStream);
+
+            QueryMessage query = new GenericQueryMessage(
+                    new GenericMessage(new MessageType("QueryType", "1"),
+                                       "payload".getBytes(),
+                                       Metadata.emptyInstance()),
+                    new MessageType("java.lang.String", "1")
+            );
+
+            // when
+            MessageStream<QueryResponseMessage> stream = testSubject.query(query, null);
+
+            // then
+            assertThat(stream.error()).isPresent();
+            assertThat(stream.error().get()).hasMessageContaining("Query execution failed");
+            assertThat(stream.isCompleted()).isTrue();
+            assertThat(stream.hasNextAvailable()).isFalse();
+        }
+
+        @Test
         void queryDelegatesToQueryChannelAndConvertsResponseAndClosesOnClose() {
             // Prepare a simple response stream with one response
             QueryResponse response = QueryResponse.newBuilder()

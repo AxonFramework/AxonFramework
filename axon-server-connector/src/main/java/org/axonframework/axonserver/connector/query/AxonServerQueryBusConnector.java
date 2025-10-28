@@ -25,6 +25,7 @@ import io.axoniq.axonserver.connector.ResultStream;
 import io.axoniq.axonserver.connector.impl.AsyncRegistration;
 import io.axoniq.axonserver.connector.query.QueryDefinition;
 import io.axoniq.axonserver.connector.query.QueryHandler;
+import io.axoniq.axonserver.grpc.ErrorMessage;
 import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
@@ -32,6 +33,8 @@ import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
+import org.axonframework.axonserver.connector.ErrorCode;
+import org.axonframework.axonserver.connector.util.ExceptionConverter;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.lifecycle.ShutdownLatch;
@@ -57,15 +60,15 @@ import java.util.concurrent.locks.LockSupport;
 import static java.util.Objects.requireNonNull;
 
 /**
- * AxonServerQueryBusConnector is an implementation of {@link QueryBusConnector} that connects to AxonServer
- * to enable the dispatching and receiving of queries. It manages the registration of handlers, query subscriptions,
- * and disconnection from the AxonServer query bus.
+ * AxonServerQueryBusConnector is an implementation of {@link QueryBusConnector} that connects to AxonServer to enable
+ * the dispatching and receiving of queries. It manages the registration of handlers, query subscriptions, and
+ * disconnection from the AxonServer query bus.
  * <p/>
  * This class facilitates interaction with AxonServer, handles incoming query requests, manages active subscriptions,
  * and oversees lifecycle phases related to query dispatching and receiving.
  *
- *  @author Steven van Beelen, Allard Buijze, Jan Galinski
- *  @since 5.0.0
+ * @author Steven van Beelen, Allard Buijze, Jan Galinski
+ * @since 5.0.0
  */
 public class AxonServerQueryBusConnector implements QueryBusConnector {
 
@@ -85,7 +88,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
     /**
      * Creates a QueryBusConnector implementation that connects to AxonServer for dispatching and receiving queries.
      *
-     * @param connection The connection to AxonServer
+     * @param connection    The connection to AxonServer
      * @param configuration The configuration containing local settings for this connector
      */
     public AxonServerQueryBusConnector(@Nonnull AxonServerConnection connection,
@@ -152,11 +155,11 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
 
         try (ShutdownLatch.ActivityHandle queryInTransit = shutdownLatch.registerActivity()) {
             ResultStream<QueryResponse> resultStream = connection.queryChannel()
-                              .query(QueryConverter.convertQueryMessage(
-                                      query,
-                                      clientId,
-                                      componentName)
-                              );
+                                                                 .query(QueryConverter.convertQueryMessage(
+                                                                         query,
+                                                                         clientId,
+                                                                         componentName)
+                                                                 );
             return new QueryResponseMessageStream(resultStream).onClose(queryInTransit::end);
         }
     }
@@ -259,9 +262,17 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
                       }
                       if (result.isCompleted()) {
                           result.error()
-                                .ifPresentOrElse(error ->
-                                                         responseHandler.completeWithError(ErrorCategory.QUERY_EXECUTION_ERROR,
-                                                                                           error.getMessage()),
+                                .ifPresentOrElse(error -> {
+                                                     ErrorMessage ex = ExceptionConverter.convertToErrorMessage(clientId, error);
+                                                     QueryResponse errorResponse =
+                                                             QueryResponse.newBuilder()
+                                                                          .setErrorCode(ErrorCode.getQueryExecutionErrorCode(error)
+                                                                                                 .errorCode())
+                                                                          .setErrorMessage(ex)
+                                                                          .setRequestIdentifier(query.getMessageIdentifier())
+                                                                          .build();
+                                                     responseHandler.sendLast(errorResponse);
+                                                 },
                                                  responseHandler::complete);
                       }
                   });
@@ -281,7 +292,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
         @Override
         public Registration registerSubscriptionQuery(SubscriptionQuery query, UpdateHandler sendUpdate) {
             var registration = incomingHandler.registerUpdateHandler(QueryConverter.convertSubscriptionQueryMessage(
-                                                                             query), new AxonServerUpdateCallback(sendUpdate));
+                    query), new AxonServerUpdateCallback(sendUpdate));
             return () -> {
                 registration.cancel();
                 return FutureUtils.emptyCompletedFuture();
