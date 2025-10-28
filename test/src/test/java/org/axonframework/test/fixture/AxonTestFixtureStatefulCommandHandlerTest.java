@@ -47,7 +47,6 @@ import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@Disabled("TODO #3818 Check thi")
 class AxonTestFixtureStatefulCommandHandlerTest {
 
     @Test

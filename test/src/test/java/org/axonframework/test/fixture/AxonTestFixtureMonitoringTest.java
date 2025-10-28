@@ -128,7 +128,6 @@ public class AxonTestFixtureMonitoringTest {
         }
     }
 
-    @Disabled("TODO #3818 Fix implementation")
     @Test
     void registeredCommandMessageMonitor() {
         var report = new MessageMonitorReport();

@@ -167,7 +167,6 @@ class DefaultQueryGatewayTest {
             assertThat(result.exceptionNow().getMessage()).isEqualTo("Faking conversion problem");
         }
 
-        @Disabled("TODO #3818 doublecheck if this test makes sense")
         @Test
         void queryWithNullMessageInEntryReturnsNull() throws Exception {
             // given...

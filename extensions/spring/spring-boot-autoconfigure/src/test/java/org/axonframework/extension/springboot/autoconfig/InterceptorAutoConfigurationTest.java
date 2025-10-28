@@ -149,7 +149,6 @@ class InterceptorAutoConfigurationTest {
         });
     }
 
-    @Disabled("TODO #3818 Fix implementation of the interceptor")
     @Test
     public void commandDispatchInterceptorsAreRegisteredInCorrectOrder() {
         testApplicationContext.withUserConfiguration(MessageInterceptorContext.class).run(context -> {
