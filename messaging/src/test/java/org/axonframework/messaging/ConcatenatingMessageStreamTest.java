@@ -77,7 +77,7 @@ class ConcatenatingMessageStreamTest extends MessageStreamTest<Message> {
     @Nested
     class ConcatenatingOnAvailableFromFutureTest {
 
-        private final AtomicBoolean onAvailable = new AtomicBoolean();
+        private final AtomicBoolean callbackCalled = new AtomicBoolean();
 
         private CompletableFuture<Message> future1;
         private CompletableFuture<Message> future2;
@@ -89,55 +89,52 @@ class ConcatenatingMessageStreamTest extends MessageStreamTest<Message> {
             MessageStream<Message> stream1 = MessageStream.fromFuture(future1);
             MessageStream<Message> stream2 = MessageStream.fromFuture(future2);
             MessageStream<Message> testSubject = stream1.concatWith(stream2);
-            testSubject.setCallback(() -> onAvailable.set(true));
-            assertFalse(onAvailable.getAndSet(false));
+            testSubject.setCallback(() -> callbackCalled.set(true));
+            assertFalse(callbackCalled.getAndSet(false));
         }
 
         @Test
-        void shouldNotCallOnAvailableIfFirstIsNotCompleted() {
+        void shouldNotDoCallbackIfFirstIsNotCompleted() {
             future2.complete(createRandomMessage());
-            assertFalse(onAvailable.getAndSet(false));
+            assertFalse(callbackCalled.getAndSet(false));
         }
 
         @Test
-        void shouldCallOnAvailableIfFirstIsCompletedWithMessage() {
-
+        void shouldDoCallbackIfFirstIsCompletedWithMessage() {
             future1.complete(createRandomMessage());
-            assertTrue(onAvailable.getAndSet(false));
+            assertTrue(callbackCalled.getAndSet(false));
         }
 
         @Test
-        void shouldCallOnAvailableIfFirstIsCompletedWithNull() {
+        void shouldDoCallbackIfFirstIsCompletedWithNull() {
             future1.complete(null);
-            assertFalse(onAvailable.getAndSet(false));
+            assertFalse(callbackCalled.getAndSet(false));
         }
 
         @Test
-        void shouldCallOnAvailableIfFirstIsCompletedWithException() {
-
+        void shouldDoCallbackIfFirstIsCompletedWithException() {
             future1.completeExceptionally(new IllegalArgumentException("Error"));
-            assertTrue(onAvailable.getAndSet(false));
+            assertTrue(callbackCalled.getAndSet(false));
         }
 
         @Test
-        void bla() {
+        void shouldDoCallbackAfterFirstStreamCompletedWithoutMessages() {
             future1 = CompletableFuture.completedFuture(null);
             future2 = new CompletableFuture<>();
             MessageStream<Message> stream1 = MessageStream.fromFuture(future1);
             MessageStream<Message> stream2 = MessageStream.fromFuture(future2);
             MessageStream<Message> testSubject = stream1.concatWith(stream2);
-            testSubject.setCallback(() -> onAvailable.set(true));
-
+            testSubject.setCallback(() -> callbackCalled.set(true));
 
             assertTrue(stream1.isCompleted());
             assertFalse(stream1.hasNextAvailable());
 
-            assertFalse(onAvailable.getAndSet(false));
+            assertFalse(callbackCalled.getAndSet(false));
 
-            // action
+            // Only after stream 2 has messages should the callback be called
             future2.complete(createRandomMessage());
 
-            assertTrue(onAvailable.getAndSet(false));
+            assertTrue(callbackCalled.getAndSet(false));
         }
     }
 
@@ -148,61 +145,57 @@ class ConcatenatingMessageStreamTest extends MessageStreamTest<Message> {
         private final QueueMessageStream<?> stream2 = Mockito.spy(new QueueMessageStream<>());
         private final MessageStream<?> testSubject = stream1.concatWith(stream2.cast());
 
-        private final AtomicBoolean onAvailable = new AtomicBoolean();
-
+        private final AtomicBoolean callbackCalled = new AtomicBoolean();
 
         @BeforeEach
         void reset() {
-            testSubject.setCallback(() -> onAvailable.set(true));
+            testSubject.setCallback(() -> callbackCalled.set(true));
         }
 
         @Test
-        void shouldInvokeSetCallbackIfFirstIsCompletedAfterSecond() {
+        void shouldDoCallbackIfFirstIsCompletedAfterSecond() {
             stream2.complete();
-            assertFalse(onAvailable.getAndSet(false));
+            assertFalse(callbackCalled.getAndSet(false));
             stream1.complete();
-            assertTrue(onAvailable.getAndSet(false));
+            assertTrue(callbackCalled.getAndSet(false));
         }
 
         @Test
         void shouldCloseSecondIfFirstCompletesWithError() {
-
             stream1.completeExceptionally(new IllegalArgumentException("Error"));
-            assertTrue(onAvailable.getAndSet(false));
+            assertTrue(callbackCalled.getAndSet(false));
             assertTrue(testSubject.error().isPresent());
             verify(stream2).close();
         }
 
         @Test
-        void shouldInvokeSetHandler() {
-            var future = new CompletableFuture<Message>();
+        void shouldDoCallbackWhenFirstStreamHasMessageAndSecondStreamHasMessage() {
+            var future1 = new CompletableFuture<Message>();
             var future2 = new CompletableFuture<Message>();
-            var stream1 = MessageStream.fromFuture(future);
-            var stream = stream1.concatWith(MessageStream.fromFuture(future2));
+            var stream = MessageStream.fromFuture(future1).concatWith(MessageStream.fromFuture(future2));
 
-            stream.setCallback(() -> onAvailable.set(true));
+            stream.setCallback(() -> callbackCalled.set(true));
 
-            future.complete(createRandomMessage());
+            future1.complete(createRandomMessage());
 
-            assertTrue(onAvailable.getAndSet(false));
-            var message1 = stream.next();
-            assertTrue(message1.isPresent());
+            assertTrue(callbackCalled.getAndSet(false));
+            assertTrue(stream.next().isPresent());
 
             future2.complete(createRandomMessage());
-            assertTrue(onAvailable.getAndSet(false));
-            var message2 = stream.next();
-            assertTrue(message2.isPresent());
+
+            assertTrue(callbackCalled.getAndSet(false));
+            assertTrue(stream.next().isPresent());
         }
 
         @Test
-        void shouldInvokeSetHandlerWith() {
+        void shouldDoCallbackWhenFirstStreamCompletesExceptionally() {
             var future = new CompletableFuture<Message>();
             var stream = MessageStream.fromFuture(future).concatWith(MessageStream.empty());
-
-            stream.setCallback(() -> onAvailable.set(true));
+            stream.setCallback(() -> callbackCalled.set(true));
 
             future.completeExceptionally(new IllegalArgumentException("Error"));
-            assertTrue(onAvailable.getAndSet(false));
+
+            assertTrue(callbackCalled.getAndSet(false));
         }
     }
 }
