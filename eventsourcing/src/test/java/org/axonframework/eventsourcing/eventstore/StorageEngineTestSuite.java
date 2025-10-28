@@ -241,6 +241,79 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
                 .untilTrue(completed);
     }
 
+    @Test
+    void sourcingEventsShouldReturnLatestConsistencyMarker() throws Exception {
+        appendEvents(
+            AppendCondition.none(),
+            taggedEventMessage("event-0", TEST_CRITERIA_TAGS),
+            taggedEventMessage("event-1", OTHER_CRITERIA_TAGS)
+        );
+
+        ConsistencyMarker marker1 = FluxUtils.of(testSubject.source(SourcingCondition.conditionFor(TEST_CRITERIA), processingContext()))
+            .collectList()
+            .map(List::getLast)
+            .map(entry -> entry.getResource(ConsistencyMarker.RESOURCE_KEY))
+            .block();
+
+        ConsistencyMarker marker2 = FluxUtils.of(testSubject.source(SourcingCondition.conditionFor(OTHER_CRITERIA), processingContext()))
+            .collectList()
+            .map(List::getLast)
+            .map(entry -> entry.getResource(ConsistencyMarker.RESOURCE_KEY))
+            .block();
+
+        assertThat(marker1).isEqualTo(marker2);
+    }
+
+    @Test
+    void sourcingEventsShouldReturnLatestConsistencyMarkerEvenWhenStoreIsEmpty() throws Exception {
+        ConsistencyMarker marker1 = FluxUtils.of(testSubject.source(SourcingCondition.conditionFor(TEST_CRITERIA), processingContext()))
+            .collectList()
+            .map(List::getLast)
+            .map(entry -> entry.getResource(ConsistencyMarker.RESOURCE_KEY))
+            .block();
+
+        ConsistencyMarker marker2 = FluxUtils.of(testSubject.source(SourcingCondition.conditionFor(OTHER_CRITERIA), processingContext()))
+            .collectList()
+            .map(List::getLast)
+            .map(entry -> entry.getResource(ConsistencyMarker.RESOURCE_KEY))
+            .block();
+
+        assertThat(marker1).isEqualTo(marker2);
+    }
+
+    @Test
+    void sourcingEventsWithOffsetReturnsMatchingAggregateEvents() throws Exception {
+        int expectedNumberOfEvents = 2;  // first match is skipped
+        int expectedCount = expectedNumberOfEvents + 1; // events and 1 consistency marker message
+
+        appendEvents(
+                AppendCondition.none(),
+                taggedEventMessage("event-0", TEST_CRITERIA_TAGS),
+                taggedEventMessage("event-1", TEST_CRITERIA_TAGS),
+                taggedEventMessage("event-2", OTHER_CRITERIA_TAGS),
+                taggedEventMessage("event-3", OTHER_CRITERIA_TAGS),
+                taggedEventMessage("event-4", OTHER_CRITERIA_TAGS),
+                taggedEventMessage("event-5", TEST_CRITERIA_TAGS)
+        );
+
+        SourcingCondition testCondition = SourcingCondition.conditionFor(TEST_CRITERIA);
+
+        TrackingToken tokenOfFirstMessage = testSubject.source(testCondition, processingContext())
+            .first()
+            .asCompletableFuture()
+            .thenApply(r -> r.getResource(TrackingToken.RESOURCE_KEY))
+            .get(5, TimeUnit.SECONDS);
+
+        // Dirty hack, having to convert a token to a position, hoping the tested engine accepts this...
+        Position position = new GlobalIndexPosition(tokenOfFirstMessage.position().getAsLong());
+
+        SourcingCondition offsetTestCondition = SourcingCondition.conditionFor(position, TEST_CRITERIA);
+
+        StepVerifier.create(FluxUtils.of(testSubject.source(offsetTestCondition, processingContext())))
+                    .expectNextCount(expectedCount)
+                    .verifyComplete();
+    }
+
     private static void assertMarkerEntry(Entry<EventMessage> entry) {
         assertNotNull(entry.getResource(ConsistencyMarker.RESOURCE_KEY));
         assertEquals(TerminalEventMessage.INSTANCE, entry.message());
@@ -402,7 +475,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
         TaggedEventMessage<EventMessage> expectedEventTwo = taggedEventMessage("event-4", TEST_CRITERIA_TAGS);
         TrackingToken startToken = testSubject.latestToken(processingContext()).join();
 
-        // Ensure there are "gaps" in the global stream based on events not matching the sourcing condition
+        // Ensure there are "gaps" in the global stream based on events not matching the streaming condition
         appendEvents(
                 AppendCondition.none(),
                 taggedEventMessage("event-0", TEST_CRITERIA_TAGS),
