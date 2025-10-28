@@ -49,10 +49,10 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.Duration;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -68,7 +68,7 @@ class QueryThreadingIntegrationTest {
     private static final Logger log = LoggerFactory.getLogger(QueryThreadingIntegrationTest.class);
 
     private static final String HOSTNAME = "localhost";
-    private static final AtomicBoolean secondaryQueryBlock = new AtomicBoolean(true);
+    private static final CountDownLatch secondaryQueryBlock = new CountDownLatch(1);
     private static final AtomicInteger waitingQueries = new AtomicInteger(0);
 
     @Container
@@ -306,12 +306,10 @@ class QueryThreadingIntegrationTest {
     @Test
     void canStillHandleQueryResponsesWhileManyQueriesHandling() {
         queryBus2.subscribe(QUERY_TYPE_B.qualifiedName(), new QualifiedName(String.class), (query, ctx) -> {
-            while (secondaryQueryBlock.get()) {
-                try {
-                    Thread.sleep(10);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
+            try {
+                secondaryQueryBlock.await();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
             return MessageStream.just(new GenericQueryResponseMessage(MESSAGE_TYPE_STRING, "b"));
         });
@@ -374,7 +372,7 @@ class QueryThreadingIntegrationTest {
         assertFalse(query6.hasNextAvailable());
 
         // unblock the query, it should now process all queries
-        secondaryQueryBlock.set(false);
+        secondaryQueryBlock.countDown();
 
         await().atMost(5, TimeUnit.SECONDS)
                .untilAsserted(() -> {
