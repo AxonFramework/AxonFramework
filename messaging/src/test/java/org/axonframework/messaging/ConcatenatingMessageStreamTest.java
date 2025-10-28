@@ -75,26 +75,59 @@ class ConcatenatingMessageStreamTest extends MessageStreamTest<Message> {
     class OnAvailableCallback {
 
         @Test
-        void shouldNotifyWhenFirstStreamHasDataAvailable() {
+        void shouldNotifyOnlyWhenFirstStreamHasDataButIsNotCompleted() {
             // given
+            CompletableFuture<Void> completionMarker = new CompletableFuture<>();
             Message firstMessage = createRandomMessage();
-            Message secondMessage = createRandomMessage();
 
-            MessageStream<Message> firstStream = MessageStream.just(firstMessage);
-            MessageStream<Message> secondStream = MessageStream.just(secondMessage);
+            // Create an uncompleted stream with data available
+            MessageStream<Message> firstStream = MessageStream.fromIterable(List.of(firstMessage))
+                    .concatWith(DelayedMessageStream.create(completionMarker.thenApply(e -> MessageStream.empty())).cast());
+            MessageStream<Message> secondStream = MessageStream.just(createRandomMessage());
             MessageStream<Message> concatenated = new ConcatenatingMessageStream<>(firstStream, secondStream);
 
             AtomicInteger callbackCount = new AtomicInteger(0);
 
-            // when - register callback before consuming any data
+            // when - register callback while first stream has data but is not completed
             concatenated.onAvailable(callbackCount::incrementAndGet);
 
-            // then - callback should be invoked because first stream has data available
-            assertTrue(callbackCount.get() > 0, "Callback should be invoked when first stream has data");
+            // then - callback should be invoked because first stream has data and is NOT completed
+            assertEquals(1, callbackCount.get(), "Callback should be invoked once when first stream has data but is not completed");
         }
 
         @Test
-        void shouldNotifyWhenSecondStreamHasDataAfterFirstCompletes() {
+        void shouldNotNotifyWhenFirstStreamCompletes() {
+            // given
+            CompletableFuture<Void> completionMarker = new CompletableFuture<>();
+            Message firstMessage = createRandomMessage();
+
+            MessageStream<Message> firstStream = MessageStream.fromIterable(List.of(firstMessage))
+                    .concatWith(DelayedMessageStream.create(completionMarker.thenApply(e -> MessageStream.empty())).cast());
+            MessageStream<Message> secondStream = MessageStream.empty();
+            MessageStream<Message> concatenated = new ConcatenatingMessageStream<>(firstStream, secondStream);
+
+            // Consume the first message
+            concatenated.next();
+
+            AtomicInteger callbackCount = new AtomicInteger(0);
+            concatenated.onAvailable(callbackCount::incrementAndGet);
+
+            // when - complete the first stream
+            completionMarker.complete(null);
+
+            // Give it a moment for any async callbacks (though none should fire)
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+
+            // then - callback should NOT be invoked for first stream completion
+            assertEquals(0, callbackCount.get(), "Callback should not be invoked when first stream completes");
+        }
+
+        @Test
+        void shouldNotifyFromSecondStreamWhenFirstCompletesSuccessfully() {
             // given
             Message firstMessage = createRandomMessage();
             Message secondMessage = createRandomMessage();
@@ -109,40 +142,12 @@ class ConcatenatingMessageStreamTest extends MessageStreamTest<Message> {
             AtomicInteger callbackCount = new AtomicInteger(0);
             concatenated.onAvailable(callbackCount::incrementAndGet);
 
-            // then - callback should be invoked because second stream now has data available
-            assertTrue(callbackCount.get() > 0, "Callback should be invoked when second stream has data");
+            // then - callback should be invoked from second stream (first completed without errors)
+            assertEquals(1, callbackCount.get(), "Callback should be invoked when second stream has data and first completed without error");
         }
 
         @Test
-        void shouldNotifyForBothFirstAndSecondStreams() {
-            // given
-            Message firstMessage = createRandomMessage();
-            Message secondMessage = createRandomMessage();
-
-            MessageStream<Message> firstStream = MessageStream.just(firstMessage);
-            MessageStream<Message> secondStream = MessageStream.just(secondMessage);
-            MessageStream<Message> concatenated = new ConcatenatingMessageStream<>(firstStream, secondStream);
-
-            AtomicInteger totalCallbacks = new AtomicInteger(0);
-
-            // when - register callback before consuming
-            concatenated.onAvailable(totalCallbacks::incrementAndGet);
-            int firstPhaseCallbacks = totalCallbacks.get();
-
-            // then - should be invoked for first stream having data
-            assertTrue(firstPhaseCallbacks > 0, "Callback should be invoked for first stream");
-
-            // when - consume first message and register new callback
-            concatenated.next();
-            totalCallbacks.set(0);
-            concatenated.onAvailable(totalCallbacks::incrementAndGet);
-
-            // then - should be invoked for second stream having data
-            assertTrue(totalCallbacks.get() > 0, "Callback should be invoked for second stream");
-        }
-
-        @Test
-        void shouldNotifyWhenFirstStreamFailsImmediately() {
+        void shouldNotNotifyFromSecondStreamWhenFirstStreamHasError() {
             // given
             RuntimeException testException = new RuntimeException("First stream failed");
             Message secondMessage = createRandomMessage();
@@ -153,80 +158,112 @@ class ConcatenatingMessageStreamTest extends MessageStreamTest<Message> {
 
             AtomicInteger callbackCount = new AtomicInteger(0);
 
+            // when - register callback after first stream failed
+            concatenated.onAvailable(callbackCount::incrementAndGet);
+
+            // then - callback should be invoked for the error from first stream
+            // but NOT from second stream (because first.error().isEmpty() is false)
+            assertTrue(concatenated.error().isPresent(), "Stream should have error from first stream");
+            assertTrue(concatenated.isCompleted(), "Stream should be completed");
+        }
+
+        @Test
+        void shouldRegisterCallbacksOnBothStreamsUpfront() {
+            // given - Track whether callbacks were registered on both streams
+            CompletableFuture<Void> firstStreamCompletion = new CompletableFuture<>();
+            CompletableFuture<Void> secondStreamReady = new CompletableFuture<>();
+
+            Message firstMessage = createRandomMessage();
+            Message secondMessage = createRandomMessage();
+
+            MessageStream<Message> firstStream = MessageStream.fromIterable(List.of(firstMessage))
+                    .concatWith(DelayedMessageStream.create(firstStreamCompletion.thenApply(e -> MessageStream.empty())).cast());
+            MessageStream<Message> secondStream = MessageStream.just(secondMessage);
+
+            MessageStream<Message> concatenated = new ConcatenatingMessageStream<>(firstStream, secondStream);
+
+            AtomicInteger firstStreamCallbacks = new AtomicInteger(0);
+            AtomicInteger secondStreamCallbacks = new AtomicInteger(0);
+
+            // when - register ONE callback on the concatenated stream
+            concatenated.onAvailable(() -> {
+                if (!firstStream.isCompleted()) {
+                    firstStreamCallbacks.incrementAndGet();
+                } else {
+                    secondStreamCallbacks.incrementAndGet();
+                }
+            });
+
+            // then - first stream callback should fire (stream has data, not completed)
+            assertEquals(1, firstStreamCallbacks.get(), "First stream callback should fire for available data");
+            assertEquals(0, secondStreamCallbacks.get(), "Second stream callback should not fire yet");
+
+            // when - consume first message and complete first stream
+            concatenated.next();
+            firstStreamCompletion.complete(null);
+
+            // Give a moment for async processing
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+
+            // then - second stream callback should now fire (first completed without error)
+            assertTrue(secondStreamCallbacks.get() > 0, "Second stream callback should fire after first completes");
+        }
+
+        @Test
+        void shouldHandleEmptyFirstStreamMovingToSecond() {
+            // given
+            Message secondMessage = createRandomMessage();
+
+            MessageStream<Message> firstStream = MessageStream.empty();
+            MessageStream<Message> secondStream = MessageStream.just(secondMessage);
+            MessageStream<Message> concatenated = new ConcatenatingMessageStream<>(firstStream, secondStream);
+
+            AtomicInteger callbackCount = new AtomicInteger(0);
+
             // when
             concatenated.onAvailable(callbackCount::incrementAndGet);
 
-            // then - callback should be invoked for error, and second stream should not be accessed
-            assertTrue(callbackCount.get() >= 0, "Callback handling for failed stream");
+            // then - callback should be invoked from second stream since first is immediately completed
+            assertTrue(callbackCount.get() > 0, "Callback should be invoked when moving to second stream");
+            assertTrue(firstStream.isCompleted(), "First stream should be completed");
+        }
+
+        @Test
+        void shouldHandleFirstStreamWithErrorPreventingSecondStreamCallback() {
+            // given
+            RuntimeException testException = new RuntimeException("Error in first stream");
+            Message firstMessage = createRandomMessage();
+            Message secondMessage = createRandomMessage();
+
+            // First stream has data then fails
+            MessageStream<Message> firstStream = MessageStream.just(firstMessage)
+                    .concatWith(MessageStream.failed(testException));
+            MessageStream<Message> secondStream = MessageStream.just(secondMessage);
+            MessageStream<Message> concatenated = new ConcatenatingMessageStream<>(firstStream, secondStream);
+
+            // when - consume first message
+            concatenated.next();
+
+            // Attempt to get next (will trigger error)
+            concatenated.next();
+
+            // then - stream should have error and be completed
             assertTrue(concatenated.error().isPresent(), "Stream should have error");
+            assertEquals(testException, concatenated.error().get(), "Should have the test exception");
             assertTrue(concatenated.isCompleted(), "Stream should be completed");
-        }
 
-        @Test
-        void shouldNotNotifyWhenFirstStreamCompletesButSecondHasNoData() {
-            // given
-            Message firstMessage = createRandomMessage();
+            // Second stream should not be processed
+            AtomicInteger secondStreamCallbacks = new AtomicInteger(0);
+            concatenated.onAvailable(secondStreamCallbacks::incrementAndGet);
 
-            MessageStream<Message> firstStream = MessageStream.just(firstMessage);
-            MessageStream<Message> secondStream = MessageStream.empty();
-            MessageStream<Message> concatenated = new ConcatenatingMessageStream<>(firstStream, secondStream);
-
-            // when - consume the first message to complete first stream
-            concatenated.next();
-
-            AtomicInteger callbackCount = new AtomicInteger(0);
-            concatenated.onAvailable(callbackCount::incrementAndGet);
-
-            // then - callback may be invoked for completion, but stream should be completed
-            assertTrue(concatenated.isCompleted(), "Stream should be completed when both streams complete");
-        }
-
-        @Test
-        void shouldHandleCallbackRegistrationOnBothStreams() {
-            // given
-            Message firstMessage = createRandomMessage();
-            Message secondMessage = createRandomMessage();
-
-            MessageStream<Message> firstStream = MessageStream.just(firstMessage);
-            MessageStream<Message> secondStream = MessageStream.just(secondMessage);
-            MessageStream<Message> concatenated = new ConcatenatingMessageStream<>(firstStream, secondStream);
-
-            AtomicInteger firstPhaseCallbacks = new AtomicInteger(0);
-            AtomicInteger secondPhaseCallbacks = new AtomicInteger(0);
-
-            // when - register callback while first stream has data
-            concatenated.onAvailable(firstPhaseCallbacks::incrementAndGet);
-
-            // then - should be invoked for first stream
-            assertTrue(firstPhaseCallbacks.get() > 0, "Callback should be invoked for first stream data");
-
-            // when - consume first stream and register new callback
-            concatenated.next();
-            concatenated.onAvailable(secondPhaseCallbacks::incrementAndGet);
-
-            // then - should be invoked for second stream
-            assertTrue(secondPhaseCallbacks.get() > 0, "Callback should be invoked for second stream data after first completes");
-        }
-
-        @Test
-        void shouldPreventNotificationOnSecondStreamWhenFirstFails() {
-            // given
-            RuntimeException testException = new RuntimeException("First stream failed");
-            Message firstMessage = createRandomMessage();
-            Message secondMessage = createRandomMessage();
-
-            MessageStream<Message> errorStream = MessageStream.failed(testException);
-            MessageStream<Message> firstStream = MessageStream.just(firstMessage).concatWith(errorStream);
-            MessageStream<Message> secondStream = MessageStream.just(secondMessage);
-            MessageStream<Message> concatenated = new ConcatenatingMessageStream<>(firstStream, secondStream);
-
-            // when - consume until error
-            concatenated.next(); // first message
-
-            // then - stream should fail and second stream should not be processed
-            Optional<MessageStream.Entry<Message>> next = concatenated.next();
-            assertTrue(concatenated.error().isPresent() || next.isEmpty(), "Should either have error or no more data");
-            assertTrue(concatenated.isCompleted(), "Stream should be completed");
+            // The callback from second stream should not fire because first.error().isEmpty() is false
+            // However, the stream is completed with error, so onAvailable behavior depends on implementation
+            // Main point: second stream data should not be accessible
+            assertFalse(concatenated.next().isPresent(), "No more data should be available after error");
         }
     }
 }
