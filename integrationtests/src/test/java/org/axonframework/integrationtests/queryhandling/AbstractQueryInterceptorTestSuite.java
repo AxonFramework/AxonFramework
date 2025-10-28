@@ -366,16 +366,47 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
         }
 
         @Test
-        void exceptionsInHandlerInterceptorReturnFailedStream() {
+        void exceptionsInHandlerReturnFailedStream() {
             // given
-//            MessageHandlerInterceptor<QueryMessage> failingInterceptor = (message, context, chain) -> MessageStream.failed(new MockException("Simulating failure in interceptor"));
 
             AxonConfiguration interceptingConfig = createMessagingConfigurer()
-//                    .registerQueryHandlerInterceptor(config -> failingInterceptor)
                     .build();
             QueryBus interceptingQueryBus = interceptingConfig.getComponent(QueryBus.class);
 
-            QueryHandler handler = (query, context) -> MessageStream.failed(new MockException("Simulating failure in interceptor"));
+            QueryHandler handler = (query, context) -> MessageStream.failed(new MockException(
+                    "Simulating failure in interceptor"));
+            interceptingQueryBus.subscribe(QUERY_NAME, RESPONSE_NAME, handler);
+
+            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "Request", TEST_RESPONSE_TYPE);
+            ProcessingContext context = StubProcessingContext.forMessage(testQuery);
+
+            // when
+            var result = interceptingQueryBus.query(testQuery, context);
+
+            // then
+            assertFalse(result.isCompleted());
+            Awaitility.await().untilAsserted(() -> {
+                assertTrue(result.isCompleted());
+                assertTrue(result.error().isPresent());
+            });
+
+            interceptingConfig.shutdown();
+        }
+
+        @Test
+        void exceptionsInHandlerInterceptorReturnFailedStream() {
+            // given
+            MessageHandlerInterceptor<QueryMessage> failingInterceptor = (message, context, chain) -> MessageStream.failed(
+                    new MockException("Simulating failure in interceptor"));
+
+            AxonConfiguration interceptingConfig = createMessagingConfigurer()
+                    .registerQueryHandlerInterceptor(config -> failingInterceptor)
+                    .build();
+            QueryBus interceptingQueryBus = interceptingConfig.getComponent(QueryBus.class);
+
+            QueryHandler handler = (query, context) -> MessageStream.just(new GenericQueryResponseMessage(
+                    TEST_RESPONSE_TYPE,
+                    "ok"));
             interceptingQueryBus.subscribe(QUERY_NAME, RESPONSE_NAME, handler);
 
             QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "Request", TEST_RESPONSE_TYPE);
@@ -427,7 +458,6 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
 
     @Nested
     @DisplayName("Subscription query interceptor tests")
-    @Disabled("TODO #3809 - enable this test after fix")
     class SubscriptionQueryInterceptorTests {
 
         @Test
