@@ -24,7 +24,6 @@ import io.axoniq.axonserver.connector.ResultStream;
 import io.axoniq.axonserver.connector.impl.AsyncRegistration;
 import io.axoniq.axonserver.connector.query.QueryDefinition;
 import io.axoniq.axonserver.connector.query.QueryHandler;
-import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
@@ -172,11 +171,9 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
                                    .subscriptionQuery(QueryConverter.convertQueryMessage(query,
                                                                                          clientId,
                                                                                          componentName),
-                                                      // TODO legacy requirement. Should be removed from connector
-                                                      SerializedObject.getDefaultInstance(),
                                                       updateBufferSize,
                                                       Math.min(updateBufferSize / 4, 8));
-            return new QueryResponseMessageStream(result.initialResult())
+            return new QueryResponseMessageStream(result.initialResults())
                                 .concatWith(new QueryUpdateMessageStream(result.updates()))
                                 .onClose(queryInTransit::end);
         }

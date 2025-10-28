@@ -203,7 +203,7 @@ class AxonServerQueryBusConnectorTest {
                                                            .build()).build()
             );
             SimpleSubscriptionQueryResult sqr = new SimpleSubscriptionQueryResult(initial, updates);
-            when(mockQueryChannel.subscriptionQuery(any(), any(), anyInt(), anyInt())).thenReturn(sqr);
+            when(mockQueryChannel.subscriptionQuery(any(), anyInt(), anyInt())).thenReturn(sqr);
 
             // Build a subscription query message
             QueryMessage query = new GenericQueryMessage(
@@ -213,7 +213,7 @@ class AxonServerQueryBusConnectorTest {
                     new MessageType("java.lang.String", "1")
             );
             SubscriptionQueryMessage sqm = new org.axonframework.queryhandling.GenericSubscriptionQueryMessage(
-                    (org.axonframework.messaging.Message) query,
+                    query,
                     new MessageType("java.lang.String", "1"),
                     1
             );
@@ -223,7 +223,6 @@ class AxonServerQueryBusConnectorTest {
 
             // Verify buffer segment calculation: min(updateBufferSize/4, 8) -> min(10, 8) = 8
             verify(mockQueryChannel).subscriptionQuery(any(),
-                                                       eq(SerializedObject.getDefaultInstance()),
                                                        eq(updateBufferSize),
                                                        eq(8));
 
@@ -250,17 +249,24 @@ class AxonServerQueryBusConnectorTest {
 
     private static class SimpleSubscriptionQueryResult implements SubscriptionQueryResult {
 
-        private final CompletableFuture<QueryResponse> initial;
+        private final CompletableFuture<QueryResponse> initialFuture;
         private final StubResultStream<QueryUpdate> updates;
+        private final StubResultStream<QueryResponse> initialStream;
 
         SimpleSubscriptionQueryResult(QueryResponse initial, StubResultStream<QueryUpdate> updates) {
-            this.initial = CompletableFuture.completedFuture(initial);
+            this.initialFuture = CompletableFuture.completedFuture(initial);
+            this.initialStream = new StubResultStream<>(initial);
             this.updates = updates;
         }
 
         @Override
         public CompletableFuture<QueryResponse> initialResult() {
-            return initial;
+            return initialFuture;
+        }
+
+        @Override
+        public ResultStream<QueryResponse> initialResults() {
+            return initialStream;
         }
 
         @Override
