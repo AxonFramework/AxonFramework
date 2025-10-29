@@ -18,6 +18,7 @@ package org.axonframework.commandhandling.distributed;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.interceptors.InterceptingCommandBus;
 import org.axonframework.common.annotations.Internal;
 import org.axonframework.configuration.ComponentDecorator;
 import org.axonframework.configuration.ComponentRegistry;
@@ -44,7 +45,7 @@ public class DistributedCommandBusConfigurationEnhancer implements Configuration
      * application of the decorator to the delegate or the distributed command bus, depending on the order of
      * registration.
      */
-    public static final int DISTRIBUTED_COMMAND_BUS_ORDER = -1;
+    public static final int DISTRIBUTED_COMMAND_BUS_ORDER = InterceptingCommandBus.DECORATION_ORDER -1;
 
     @Override
     public void enhance(@Nonnull ComponentRegistry componentRegistry) {
