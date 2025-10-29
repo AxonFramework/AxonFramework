@@ -33,29 +33,26 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class GenericQueryMessageTest extends MessageTestSuite<QueryMessage> {
 
-    private static final MessageType TEST_RESPONSE_TYPE = new MessageType(String.class);
-
     @Override
     protected QueryMessage buildDefaultMessage() {
         Message delegate =
                 new GenericMessage(TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_METADATA);
-        return new GenericQueryMessage(delegate, TEST_RESPONSE_TYPE);
+        return new GenericQueryMessage(delegate);
     }
 
     @Override
     protected <P> QueryMessage buildMessage(@Nullable P payload) {
-        return new GenericQueryMessage(new MessageType(ObjectUtils.nullSafeTypeOf(payload)),
-                                       payload,
-                                       TEST_RESPONSE_TYPE);
+        return new GenericQueryMessage(new GenericMessage(new MessageType(ObjectUtils.nullSafeTypeOf(payload)),
+                                       payload), 42);
     }
 
     @Override
     protected void validateDefaultMessage(@Nonnull QueryMessage result) {
-        assertThat(TEST_RESPONSE_TYPE).isEqualTo(result.responseType());
+        assertThat(result.priority()).isNotPresent();
     }
 
     @Override
     protected void validateMessageSpecifics(@Nonnull QueryMessage actual, @Nonnull QueryMessage result) {
-        assertThat(actual.responseType()).isEqualTo(result.responseType());
+        assertThat(result.priority()).hasValue(42);
     }
 }

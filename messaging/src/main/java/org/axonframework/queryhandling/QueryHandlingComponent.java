@@ -36,5 +36,5 @@ public interface QueryHandlingComponent extends QueryHandler {
      *
      * @return All supported {@link QueryMessage queries}, referenced through a {@link QualifiedName}.
      */
-    Set<QueryHandlerName> supportedQueries();
+    Set<QualifiedName> supportedQueries();
 }

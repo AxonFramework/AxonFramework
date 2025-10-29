@@ -29,7 +29,6 @@ import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryPriorityCalculator;
 import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.serialization.PassThroughConverter;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
@@ -64,7 +63,6 @@ class DefaultQueryGatewayTest {
 
     private ArgumentCaptor<QueryMessage> queryCaptor;
     private ArgumentCaptor<QueryMessage> streamingQueryCaptor;
-    private ArgumentCaptor<SubscriptionQueryMessage> subscriptionQueryCaptor;
 
     @BeforeEach
     void setUp() {
@@ -77,7 +75,6 @@ class DefaultQueryGatewayTest {
 
         queryCaptor = ArgumentCaptor.forClass(QueryMessage.class);
         streamingQueryCaptor = ArgumentCaptor.forClass(QueryMessage.class);
-        subscriptionQueryCaptor = ArgumentCaptor.forClass(SubscriptionQueryMessage.class);
     }
 
     @Nested
@@ -99,7 +96,6 @@ class DefaultQueryGatewayTest {
             QueryMessage resultMessage = queryCaptor.getValue();
             assertThat(resultMessage.payload()).isEqualTo(QUERY_PAYLOAD);
             assertThat(resultMessage.payloadType()).isEqualTo(String.class);
-            assertThat(resultMessage.responseType()).isEqualTo(RESPONSE_TYPE);
             assertThat(resultMessage.metadata()).isEqualTo(Metadata.emptyInstance());
         }
 
@@ -123,7 +119,6 @@ class DefaultQueryGatewayTest {
             QueryMessage resultMessage = queryCaptor.getValue();
             assertThat(resultMessage.payload()).isEqualTo(QUERY_PAYLOAD);
             assertThat(resultMessage.payloadType()).isEqualTo(String.class);
-            assertThat(resultMessage.responseType()).isEqualTo(RESPONSE_TYPE);
             Metadata resultMetadata = resultMessage.metadata();
             assertThat(resultMetadata).containsKey(expectedKey);
             assertThat(resultMetadata).containsValue(expectedValue);
@@ -211,7 +206,6 @@ class DefaultQueryGatewayTest {
             QueryMessage resultMessage = queryCaptor.getValue();
             assertThat(resultMessage.payload()).isEqualTo(QUERY_PAYLOAD);
             assertThat(resultMessage.payloadType()).isEqualTo(String.class);
-            assertThat(resultMessage.responseType()).isEqualTo(RESPONSE_TYPE);
             assertThat(resultMessage.metadata()).isEqualTo(Metadata.emptyInstance());
         }
 
@@ -237,7 +231,6 @@ class DefaultQueryGatewayTest {
             QueryMessage resultMessage = queryCaptor.getValue();
             assertThat(resultMessage.payload()).isEqualTo(QUERY_PAYLOAD);
             assertThat(resultMessage.payloadType()).isEqualTo(String.class);
-            assertThat(resultMessage.responseType()).isEqualTo(RESPONSE_TYPE);
             Metadata resultMetadata = resultMessage.metadata();
             assertThat(resultMetadata).containsKey(expectedKey);
             assertThat(resultMetadata).containsValue(expectedValue);
@@ -310,7 +303,6 @@ class DefaultQueryGatewayTest {
             QueryMessage resultMessage = streamingQueryCaptor.getValue();
             assertThat(resultMessage.payload()).isEqualTo(QUERY_PAYLOAD);
             assertThat(resultMessage.payloadType()).isEqualTo(String.class);
-            assertThat(resultMessage.responseType()).isEqualTo(RESPONSE_TYPE);
             assertThat(resultMessage.metadata()).isEqualTo(Metadata.emptyInstance());
         }
 
@@ -322,7 +314,7 @@ class DefaultQueryGatewayTest {
             String expectedKey = "key";
             String expectedValue = "value";
             Metadata testMetadata = Metadata.with(expectedKey, expectedValue);
-            Message testQuery = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE)
+            Message testQuery = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD)
                     .andMetadata(testMetadata);
             // when...
             StepVerifier.create(testSubject.streamingQuery(testQuery, String.class, null))
@@ -334,7 +326,6 @@ class DefaultQueryGatewayTest {
             QueryMessage resultMessage = streamingQueryCaptor.getValue();
             assertThat(resultMessage.payload()).isEqualTo(QUERY_PAYLOAD);
             assertThat(resultMessage.payloadType()).isEqualTo(String.class);
-            assertThat(resultMessage.responseType()).isEqualTo(RESPONSE_TYPE);
             Metadata resultMetadata = resultMessage.metadata();
             assertThat(resultMetadata).containsKey(expectedKey);
             assertThat(resultMetadata).containsValue(expectedValue);
@@ -392,12 +383,11 @@ class DefaultQueryGatewayTest {
                         .expectNext("a", "b", "c", "1", "2", "3")
                         .verifyComplete();
             verify(queryBus).subscriptionQuery(
-                    subscriptionQueryCaptor.capture(), eq(null), eq(Queues.SMALL_BUFFER_SIZE)
+                    queryCaptor.capture(), eq(null), eq(Queues.SMALL_BUFFER_SIZE)
             );
-            SubscriptionQueryMessage resultMessage = subscriptionQueryCaptor.getValue();
+            QueryMessage resultMessage = queryCaptor.getValue();
             assertThat(resultMessage.payload()).isEqualTo(QUERY_PAYLOAD);
             assertThat(resultMessage.payloadType()).isEqualTo(String.class);
-            assertThat(resultMessage.responseType()).isEqualTo(RESPONSE_TYPE);
             assertThat(resultMessage.metadata()).isEqualTo(Metadata.emptyInstance());
         }
 
@@ -420,12 +410,11 @@ class DefaultQueryGatewayTest {
                         .expectNext("a", "b", "c", "1", "2", "3")
                         .verifyComplete();
             verify(queryBus).subscriptionQuery(
-                    subscriptionQueryCaptor.capture(), eq(null), eq(Queues.SMALL_BUFFER_SIZE)
+                    queryCaptor.capture(), eq(null), eq(Queues.SMALL_BUFFER_SIZE)
             );
-            SubscriptionQueryMessage resultMessage = subscriptionQueryCaptor.getValue();
+            QueryMessage resultMessage = queryCaptor.getValue();
             assertThat(resultMessage.payload()).isEqualTo(QUERY_PAYLOAD);
             assertThat(resultMessage.payloadType()).isEqualTo(String.class);
-            assertThat(resultMessage.responseType()).isEqualTo(RESPONSE_TYPE);
             Metadata resultMetadata = resultMessage.metadata();
             assertThat(resultMetadata).containsKey(expectedKey);
             assertThat(resultMetadata).containsValue(expectedValue);
@@ -481,12 +470,11 @@ class DefaultQueryGatewayTest {
                         .expectNext("1", "2", "3")
                         .verifyComplete();
             verify(queryBus).subscriptionQuery(
-                    subscriptionQueryCaptor.capture(), eq(null), eq(Queues.SMALL_BUFFER_SIZE)
+                    queryCaptor.capture(), eq(null), eq(Queues.SMALL_BUFFER_SIZE)
             );
-            SubscriptionQueryMessage queryMessage = subscriptionQueryCaptor.getValue();
+            QueryMessage queryMessage = queryCaptor.getValue();
             assertThat(queryMessage.payload()).isEqualTo(QUERY_PAYLOAD);
             assertThat(queryMessage.payloadType()).isEqualTo(String.class);
-            assertThat(queryMessage.responseType()).isEqualTo(RESPONSE_TYPE);
             assertThat(queryMessage.metadata()).isEqualTo(Metadata.emptyInstance());
         }
 
@@ -513,12 +501,11 @@ class DefaultQueryGatewayTest {
                         .expectNext("1", "2", "3")
                         .verifyComplete();
             verify(queryBus).subscriptionQuery(
-                    subscriptionQueryCaptor.capture(), eq(null), eq(Queues.SMALL_BUFFER_SIZE)
+                    queryCaptor.capture(), eq(null), eq(Queues.SMALL_BUFFER_SIZE)
             );
-            SubscriptionQueryMessage resultMessage = subscriptionQueryCaptor.getValue();
+            QueryMessage resultMessage = queryCaptor.getValue();
             assertThat(resultMessage.payload()).isEqualTo(QUERY_PAYLOAD);
             assertThat(resultMessage.payloadType()).isEqualTo(String.class);
-            assertThat(resultMessage.responseType()).isEqualTo(RESPONSE_TYPE);
             Metadata resultMetadata = resultMessage.metadata();
             assertThat(resultMetadata).containsKey(expectedKey);
             assertThat(resultMetadata).containsValue(expectedValue);

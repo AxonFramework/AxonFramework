@@ -28,22 +28,22 @@ import org.axonframework.messaging.annotations.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
-import org.axonframework.queryhandling.gateway.DefaultQueryGateway;
-import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
+import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryExecutionException;
-import org.axonframework.queryhandling.gateway.QueryGateway;
 import org.axonframework.queryhandling.QueryHandlingComponent;
+import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryPriorityCalculator;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.QueryUpdateEmitterParameterResolverFactory;
 import org.axonframework.queryhandling.SubscriptionQueryAlreadyRegisteredException;
-import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.annotations.AnnotatedQueryHandlingComponent;
 import org.axonframework.queryhandling.annotations.QueryHandler;
+import org.axonframework.queryhandling.gateway.DefaultQueryGateway;
+import org.axonframework.queryhandling.gateway.QueryGateway;
 import org.axonframework.serialization.PassThroughConverter;
 import org.junit.jupiter.api.*;
 import reactor.core.Exceptions;
@@ -78,8 +78,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Abstract test suite for the
- * {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage, org.axonframework.messaging.unitofwork.ProcessingContext,
- * int)} functionality.
+ * {@link QueryBus#subscriptionQuery(QueryMessage, org.axonframework.messaging.unitofwork.ProcessingContext, int)}
+ * functionality.
  *
  * @author Milan Savic
  * @author Steven van Beelen
@@ -87,7 +87,6 @@ import static org.junit.jupiter.api.Assertions.*;
 public abstract class AbstractSubscriptionQueryTestSuite {
 
     private static final MessageType TEST_QUERY_TYPE = new MessageType("chatMessages");
-    private static final MessageType TEST_RESPONSE_TYPE = new MessageType(String.class);
     private static final MessageType TEST_UPDATE_PAYLOAD_TYPE = new MessageType("update");
     private static final String TEST_QUERY_PAYLOAD = "axonFrameworkCR";
     private static final String TEST_UPDATE_PAYLOAD = "some-update";
@@ -124,10 +123,10 @@ public abstract class AbstractSubscriptionQueryTestSuite {
 
     /**
      * Return the {@link QueryBus} used to test the
-     * {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int)} functionality with.
+     * {@link QueryBus#subscriptionQuery(QueryMessage, ProcessingContext, int)} functionality with.
      *
      * @return The {@link QueryBus} used to test the
-     * {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int)} functionality with.
+     * {@link QueryBus#subscriptionQuery(QueryMessage, ProcessingContext, int)} functionality with.
      */
     public abstract QueryBus queryBus();
 
@@ -144,21 +143,20 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     @Test
     void emittingAnUpdate() {
         // given
-        SubscriptionQueryMessage queryMessage1 = new GenericSubscriptionQueryMessage(
-                TEST_QUERY_TYPE, TEST_QUERY_PAYLOAD, TEST_RESPONSE_TYPE
+        QueryMessage queryMessage1 = new GenericQueryMessage(
+                TEST_QUERY_TYPE, TEST_QUERY_PAYLOAD
         );
-        MessageType integerResponseType = new MessageType(Integer.class);
-        SubscriptionQueryMessage queryMessage2 = new GenericSubscriptionQueryMessage(
-                new MessageType("numberOfMessages"), 5, integerResponseType
+        QueryMessage queryMessage2 = new GenericQueryMessage(
+                new MessageType("numberOfMessages"), 5
         );
         ProcessingContext testContext = null;
-        Predicate<SubscriptionQueryMessage> stringQueryFilter =
+        Predicate<QueryMessage> stringQueryFilter =
                 message -> TEST_QUERY_PAYLOAD.equals(message.payloadAs(String.class));
         SubscriptionQueryUpdateMessage stringUpdateOne =
                 new GenericSubscriptionQueryUpdateMessage(new MessageType("query-string"), "Update11");
         SubscriptionQueryUpdateMessage stringUpdateTwo =
                 new GenericSubscriptionQueryUpdateMessage(new MessageType("query-string"), "Update12");
-        Predicate<SubscriptionQueryMessage> integerQueryFilter =
+        Predicate<QueryMessage> integerQueryFilter =
                 message -> Objects.requireNonNull(message.payloadAs(Integer.class)).equals(5);
         SubscriptionQueryUpdateMessage integerUpdateOne =
                 new GenericSubscriptionQueryUpdateMessage(new MessageType("query-integer"), 1);
@@ -187,11 +185,11 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     @Test
     void emittingNullUpdate() {
         // given
-        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
-                TEST_QUERY_TYPE, TEST_QUERY_PAYLOAD, TEST_RESPONSE_TYPE
+        QueryMessage queryMessage = new GenericQueryMessage(
+                TEST_QUERY_TYPE, TEST_QUERY_PAYLOAD
         );
         ProcessingContext testContext = null;
-        Predicate<SubscriptionQueryMessage> testFilter =
+        Predicate<QueryMessage> testFilter =
                 message -> TEST_QUERY_PAYLOAD.equals(message.payloadAs(String.class));
         SubscriptionQueryUpdateMessage testUpdate =
                 new GenericSubscriptionQueryUpdateMessage(TEST_UPDATE_PAYLOAD_TYPE, null, String.class);
@@ -211,12 +209,12 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         String testQueryName = "chatMessages";
         List<String> expectedUpdates = Collections.singletonList(TEST_UPDATE_PAYLOAD);
         UnitOfWork testUoW = UnitOfWorkTestUtils.aUnitOfWork();
-        Predicate<SubscriptionQueryMessage> testFilter =
+        Predicate<QueryMessage> testFilter =
                 message -> TEST_QUERY_PAYLOAD.equals(message.payloadAs(String.class));
         SubscriptionQueryUpdateMessage testUpdate =
                 new GenericSubscriptionQueryUpdateMessage(TEST_UPDATE_PAYLOAD_TYPE, TEST_UPDATE_PAYLOAD, String.class);
-        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
-                new MessageType(testQueryName), TEST_QUERY_PAYLOAD, TEST_RESPONSE_TYPE
+        QueryMessage queryMessage = new GenericQueryMessage(
+                new MessageType(testQueryName), TEST_QUERY_PAYLOAD
         );
         MessageStream<QueryResponseMessage> result = queryBus.subscriptionQuery(queryMessage, null, 50);
         // when...
@@ -237,11 +235,11 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     @Test
     void completingSubscriptionQueryExceptionally() {
         // given
-        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
-                TEST_QUERY_TYPE, TEST_QUERY_PAYLOAD, TEST_RESPONSE_TYPE
+        QueryMessage queryMessage = new GenericQueryMessage(
+                TEST_QUERY_TYPE, TEST_QUERY_PAYLOAD
         );
         RuntimeException toBeThrown = new RuntimeException();
-        Predicate<SubscriptionQueryMessage> testFilter =
+        Predicate<QueryMessage> testFilter =
                 message -> TEST_QUERY_PAYLOAD.equals(message.payloadAs(String.class));
         SubscriptionQueryUpdateMessage testUpdateOne =
                 new GenericSubscriptionQueryUpdateMessage(TEST_UPDATE_PAYLOAD_TYPE, "Update1", String.class);
@@ -270,15 +268,15 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     @Test
     void completingSubscriptionQueryExceptionallyWhenOneOfSubscriptionFails() {
         // given
-        SubscriptionQueryMessage queryMessage1 = new GenericSubscriptionQueryMessage(
-                TEST_QUERY_TYPE, TEST_QUERY_PAYLOAD, TEST_RESPONSE_TYPE
+        QueryMessage queryMessage1 = new GenericQueryMessage(
+                TEST_QUERY_TYPE, TEST_QUERY_PAYLOAD
         );
-        SubscriptionQueryMessage queryMessage2 = new GenericSubscriptionQueryMessage(
-                TEST_QUERY_TYPE, TEST_QUERY_PAYLOAD, TEST_RESPONSE_TYPE
+        QueryMessage queryMessage2 = new GenericQueryMessage(
+                TEST_QUERY_TYPE, TEST_QUERY_PAYLOAD
         );
         List<String> queryOneUpdates = new ArrayList<>();
         List<String> queryTwoUpdates = new ArrayList<>();
-        Predicate<SubscriptionQueryMessage> testFilter =
+        Predicate<QueryMessage> testFilter =
                 message -> TEST_QUERY_PAYLOAD.equals(message.payloadAs(String.class));
         SubscriptionQueryUpdateMessage testUpdateOne =
                 new GenericSubscriptionQueryUpdateMessage(TEST_UPDATE_PAYLOAD_TYPE, "Update1", String.class);
@@ -312,12 +310,12 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         // given...
         String testQueryName = "chatMessages";
         UnitOfWork testUoW = UnitOfWorkTestUtils.aUnitOfWork();
-        Predicate<SubscriptionQueryMessage> testFilter =
+        Predicate<QueryMessage> testFilter =
                 message -> TEST_QUERY_PAYLOAD.equals(message.payloadAs(String.class));
         SubscriptionQueryUpdateMessage testUpdate =
                 new GenericSubscriptionQueryUpdateMessage(TEST_UPDATE_PAYLOAD_TYPE, TEST_QUERY_PAYLOAD, String.class);
-        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
-                new MessageType(testQueryName), TEST_QUERY_PAYLOAD, TEST_RESPONSE_TYPE
+        QueryMessage queryMessage = new GenericQueryMessage(
+                new MessageType(testQueryName), TEST_QUERY_PAYLOAD
         );
         // when staging the subscription query and updates...
         MessageStream<QueryResponseMessage> result = queryBus.subscriptionQuery(queryMessage, null, 50);
@@ -341,10 +339,10 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     @Test
     void completingSubscriptionQuery() {
         // given
-        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
-                TEST_QUERY_TYPE, TEST_QUERY_PAYLOAD, TEST_RESPONSE_TYPE
+        QueryMessage queryMessage = new GenericQueryMessage(
+                TEST_QUERY_TYPE, TEST_QUERY_PAYLOAD
         );
-        Predicate<SubscriptionQueryMessage> testFilter =
+        Predicate<QueryMessage> testFilter =
                 message -> TEST_QUERY_PAYLOAD.equals(message.payloadAs(String.class));
         SubscriptionQueryUpdateMessage testUpdateOne =
                 new GenericSubscriptionQueryUpdateMessage(TEST_UPDATE_PAYLOAD_TYPE, "Update1", String.class);
@@ -370,12 +368,12 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     void completingSubscriptionInUnitOfWorkLifecycleRunsUpdatesOnAfterCommit() {
         // given...
         List<String> expectedUpdates = Collections.singletonList(TEST_UPDATE_PAYLOAD);
-        Predicate<SubscriptionQueryMessage> testFilter =
+        Predicate<QueryMessage> testFilter =
                 message -> TEST_QUERY_PAYLOAD.equals(message.payloadAs(String.class));
         SubscriptionQueryUpdateMessage testUpdate =
                 new GenericSubscriptionQueryUpdateMessage(TEST_UPDATE_PAYLOAD_TYPE, TEST_UPDATE_PAYLOAD, String.class);
-        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
-                TEST_QUERY_TYPE, TEST_QUERY_PAYLOAD, TEST_RESPONSE_TYPE
+        QueryMessage queryMessage = new GenericQueryMessage(
+                TEST_QUERY_TYPE, TEST_QUERY_PAYLOAD
         );
         UnitOfWork testUoW = UnitOfWorkTestUtils.aUnitOfWork();
         // when...
@@ -389,8 +387,8 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         // then before we commit we don't have anything yet...
         List<String> updateList = new ArrayList<>();
         FluxUtils.of(result)
-              .filter(e -> e.message() instanceof SubscriptionQueryUpdateMessage)
-              .mapNotNull(e -> e.message().payloadAs(String.class)).subscribe(updateList::add);
+                 .filter(e -> e.message() instanceof SubscriptionQueryUpdateMessage)
+                 .mapNotNull(e -> e.message().payloadAs(String.class)).subscribe(updateList::add);
         assertTrue(updateList.isEmpty());
         // when we execute the UoW, it commits...
         testUoW.execute().join();
@@ -404,8 +402,8 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     @Test
     void orderingOfOperationOnUpdateHandler() {
         // given
-        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
-                new MessageType("emitFirstThenReturnInitial"), TEST_QUERY_PAYLOAD, TEST_RESPONSE_TYPE
+        QueryMessage queryMessage = new GenericQueryMessage(
+                new MessageType("emitFirstThenReturnInitial"), TEST_QUERY_PAYLOAD
         );
         // when
         MessageStream<QueryResponseMessage> result = queryBus.subscriptionQuery(queryMessage, null, 50);
@@ -418,8 +416,8 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     @Test
     void doubleSubscriptionMessage() {
         // given
-        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
-                TEST_QUERY_TYPE, TEST_QUERY_PAYLOAD, TEST_RESPONSE_TYPE
+        QueryMessage queryMessage = new GenericQueryMessage(
+                TEST_QUERY_TYPE, TEST_QUERY_PAYLOAD
         );
 
         // when
@@ -434,8 +432,8 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     @Test
     void subscribingQueryHandlerFailing() {
         // given
-        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
-                new MessageType("failingQuery"), TEST_QUERY_PAYLOAD, TEST_RESPONSE_TYPE
+        QueryMessage queryMessage = new GenericQueryMessage(
+                new MessageType("failingQuery"), TEST_QUERY_PAYLOAD
         );
         // when
         MessageStream<QueryResponseMessage> result = queryBus.subscriptionQuery(queryMessage, null, 50);
@@ -454,10 +452,10 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     @Test
     void replayBufferOverflow() {
         // given...
-        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
-                TEST_QUERY_TYPE, TEST_QUERY_PAYLOAD, TEST_RESPONSE_TYPE
+        QueryMessage queryMessage = new GenericQueryMessage(
+                TEST_QUERY_TYPE, TEST_QUERY_PAYLOAD
         );
-        Predicate<SubscriptionQueryMessage> testFilter =
+        Predicate<QueryMessage> testFilter =
                 message -> TEST_QUERY_PAYLOAD.equals(message.payloadAs(String.class));
         ProcessingContext testContext = null;
         // when...
@@ -465,13 +463,14 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         for (int i = 0; i <= 200; i++) {
             int number = i;
             queryBus.emitUpdate(testFilter,
-                                () -> new GenericSubscriptionQueryUpdateMessage(TEST_UPDATE_PAYLOAD_TYPE, "Update" + number),
+                                () -> new GenericSubscriptionQueryUpdateMessage(TEST_UPDATE_PAYLOAD_TYPE,
+                                                                                "Update" + number),
                                 testContext);
         }
         queryBus.completeSubscriptions(testFilter, testContext);
         // then...
         StepVerifier.create(FluxUtils.of(result).map(MessageStream.Entry::message)
-                                  .filter(m -> m instanceof SubscriptionQueryUpdateMessage))
+                                     .filter(m -> m instanceof SubscriptionQueryUpdateMessage))
                     .recordWith(LinkedList::new)
                     .thenConsumeWhile(x -> true)
                     .expectRecordedMatches(AbstractSubscriptionQueryTestSuite::assertRecorded)
@@ -482,16 +481,16 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     @Test
     void onBackpressureError() {
         // given...
-        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
-                TEST_QUERY_TYPE, TEST_QUERY_PAYLOAD, TEST_RESPONSE_TYPE
+        QueryMessage queryMessage = new GenericQueryMessage(
+                TEST_QUERY_TYPE, TEST_QUERY_PAYLOAD
         );
-        Predicate<SubscriptionQueryMessage> testFilter =
+        Predicate<QueryMessage> testFilter =
                 message -> TEST_QUERY_PAYLOAD.equals(message.payloadAs(String.class));
         ProcessingContext testContext = null;
         MessageStream<QueryResponseMessage> result = queryBus.subscriptionQuery(queryMessage, null, 100);
         // when...
         Flux<QueryResponseMessage> updates = FluxUtils.of(result).map(MessageStream.Entry::message)
-                                                   .onBackpressureBuffer(100);
+                                                      .onBackpressureBuffer(100);
         // then...
         StepVerifier.create(updates, StepVerifierOptions.create().initialRequest(0))
                     .expectSubscription()
@@ -519,10 +518,10 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     @Test
     void subscriptionDisposal() {
         // given...
-        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
-                TEST_QUERY_TYPE, TEST_QUERY_PAYLOAD, TEST_RESPONSE_TYPE
+        QueryMessage queryMessage = new GenericQueryMessage(
+                TEST_QUERY_TYPE, TEST_QUERY_PAYLOAD
         );
-        Predicate<SubscriptionQueryMessage> testFilter =
+        Predicate<QueryMessage> testFilter =
                 message -> TEST_QUERY_PAYLOAD.equals(message.payloadAs(String.class));
         SubscriptionQueryUpdateMessage testUpdateOne =
                 new GenericSubscriptionQueryUpdateMessage(TEST_UPDATE_PAYLOAD_TYPE, "Update1", String.class);
@@ -536,8 +535,8 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         queryBus.emitUpdate(testFilter, () -> testUpdateTwo, testContext);
         // then...
         StepVerifier.create(FluxUtils.of(result).map(MessageStream.Entry::message)
-                                  .filter(SubscriptionQueryUpdateMessage.class::isInstance)
-                                  .mapNotNull(Message::payload))
+                                     .filter(SubscriptionQueryUpdateMessage.class::isInstance)
+                                     .mapNotNull(Message::payload))
                     .expectNext("Update1")
                     .verifyComplete();
     }
@@ -545,8 +544,8 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     @Test
     void subscriptionQueryResultHandle() throws InterruptedException {
         // given...
-        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
-                new MessageType("emitFirstThenReturnInitial"), TEST_QUERY_PAYLOAD, TEST_RESPONSE_TYPE
+        QueryMessage queryMessage = new GenericQueryMessage(
+                new MessageType("emitFirstThenReturnInitial"), TEST_QUERY_PAYLOAD
         );
         // when...
         List<String> results = new ArrayList<>();
@@ -565,10 +564,10 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     @Test
     void subscriptionQueryResultHandleWhenThereIsAnErrorOnInitialResult() {
         // given
-        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
-                new MessageType("failingQuery"), TEST_QUERY_PAYLOAD, TEST_RESPONSE_TYPE
+        QueryMessage queryMessage = new GenericQueryMessage(
+                new MessageType("failingQuery"), TEST_QUERY_PAYLOAD
         );
-        Predicate<SubscriptionQueryMessage> testFilter =
+        Predicate<QueryMessage> testFilter =
                 message -> TEST_QUERY_PAYLOAD.equals(message.payloadAs(String.class));
         SubscriptionQueryUpdateMessage testUpdateOne =
                 new GenericSubscriptionQueryUpdateMessage(TEST_UPDATE_PAYLOAD_TYPE, "Update1", String.class);
@@ -590,10 +589,10 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     @Test
     void subscriptionQueryResultHandleWhenThereIsAnErrorOnUpdate() {
         // given
-        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
-                new MessageType("failingQuery"), TEST_QUERY_PAYLOAD, TEST_RESPONSE_TYPE
+        QueryMessage queryMessage = new GenericQueryMessage(
+                new MessageType("failingQuery"), TEST_QUERY_PAYLOAD
         );
-        Predicate<SubscriptionQueryMessage> testFilter =
+        Predicate<QueryMessage> testFilter =
                 message -> TEST_QUERY_PAYLOAD.equals(message.payloadAs(String.class));
         SubscriptionQueryUpdateMessage testUpdate =
                 new GenericSubscriptionQueryUpdateMessage(TEST_UPDATE_PAYLOAD_TYPE, "Update1", String.class);

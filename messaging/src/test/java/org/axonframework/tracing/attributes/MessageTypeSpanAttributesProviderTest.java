@@ -34,7 +34,7 @@ class MessageTypeSpanAttributesProviderTest {
     @Test
     void correctTypeForQueryMessage() {
         Message genericQueryMessage = new GenericQueryMessage(
-                new MessageType("myQueryName"), "MyQuery", new MessageType(String.class)
+                new MessageType("myQueryName"), "MyQuery"
         );
         Map<String, String> map = provider.provideForMessage(genericQueryMessage);
         assertEquals(1, map.size());

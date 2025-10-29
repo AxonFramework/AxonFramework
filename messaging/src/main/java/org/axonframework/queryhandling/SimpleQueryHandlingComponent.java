@@ -21,6 +21,7 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.HashMap;
@@ -44,7 +45,7 @@ public class SimpleQueryHandlingComponent implements
         DescribableComponent {
 
     private final String name;
-    private final Map<QueryHandlerName, QueryHandler> queryHandlers = new HashMap<>();
+    private final Map<QualifiedName, QueryHandler> queryHandlers = new HashMap<>();
     private final Set<QueryHandlingComponent> subComponents = new HashSet<>();
 
     /**
@@ -63,7 +64,7 @@ public class SimpleQueryHandlingComponent implements
     }
 
     @Override
-    public SimpleQueryHandlingComponent subscribe(@Nonnull QueryHandlerName queryName,
+    public SimpleQueryHandlingComponent subscribe(@Nonnull QualifiedName queryName,
                                                   @Nonnull QueryHandler handler) {
         if (handler instanceof QueryHandlingComponent component) {
             return subscribe(component);
@@ -82,7 +83,7 @@ public class SimpleQueryHandlingComponent implements
     @Override
     public MessageStream<QueryResponseMessage> handle(@Nonnull QueryMessage query,
                                                       @Nonnull ProcessingContext context) {
-        QueryHandlerName handlerName = new QueryHandlerName(query.type(), query.responseType());
+        QualifiedName handlerName = query.type().qualifiedName();
         Optional<QueryHandlingComponent> optionalSubHandler =
                 subComponents.stream()
                              .filter(subComponent -> subComponent.supportedQueries().contains(handlerName))
@@ -105,8 +106,8 @@ public class SimpleQueryHandlingComponent implements
     }
 
     @Override
-    public Set<QueryHandlerName> supportedQueries() {
-        Set<QueryHandlerName> combinedNames = new HashSet<>(queryHandlers.keySet());
+    public Set<QualifiedName> supportedQueries() {
+        Set<QualifiedName> combinedNames = new HashSet<>(queryHandlers.keySet());
         subComponents.forEach(subComponent -> combinedNames.addAll(subComponent.supportedQueries()));
         return combinedNames;
     }

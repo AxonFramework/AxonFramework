@@ -21,7 +21,6 @@ import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.Context.ResourceKey;
-import org.axonframework.messaging.FluxUtils;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.QueueMessageStream;
@@ -46,18 +45,18 @@ import java.util.stream.Collectors;
 /**
  * Implementation of the {@code QueryBus} that dispatches queries (through
  * {@link #query(QueryMessage, ProcessingContext)} or
- * {@link #subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int)}) to the
+ * {@link #subscriptionQuery(QueryMessage, ProcessingContext, int)}) to the
  * {@link QueryHandler QueryHandlers} subscribed to that specific query's {@link QualifiedName name} and
  * {@link QualifiedName response type} combination.
  * <p>
  * Allows fine-grained control over
- * {@link #subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int) subscription queries} through
- * {@link #subscribeToUpdates(SubscriptionQueryMessage, int)},
+ * {@link #subscriptionQuery(QueryMessage, ProcessingContext, int) subscription queries} through
+ * {@link #subscribeToUpdates(QueryMessage, int)},
  * {@link #emitUpdate(Predicate, Supplier, ProcessingContext)},
  * {@link #completeSubscriptions(Predicate, ProcessingContext)}, and
  * {@link #completeSubscriptionsExceptionally(Predicate, Throwable, ProcessingContext)}.
  * <p>
- * Furthermore, it is in charge of invoking the {@link #subscribe(QueryHandlerName, QueryHandler) subscribed}
+ * Furthermore, it is in charge of invoking the {@link #subscribe(QualifiedName, QueryHandler)}  subscribed}
  * {@link QueryHandler query handlers} when a query is being dispatched.
  *
  * @author Marc Gathier
@@ -73,8 +72,8 @@ public class SimpleQueryBus implements QueryBus {
     private static final ResourceKey<List<Runnable>> UPDATE_TASKS_KEY = ResourceKey.withLabel("update-tasks");
 
     private final UnitOfWorkFactory unitOfWorkFactory;
-    private final ConcurrentMap<QueryHandlerName, QueryHandler> subscriptions = new ConcurrentHashMap<>();
-    private final ConcurrentMap<SubscriptionQueryMessage, QueueMessageStream<SubscriptionQueryUpdateMessage>> updateHandlers =
+    private final ConcurrentMap<QualifiedName, QueryHandler> subscriptions = new ConcurrentHashMap<>();
+    private final ConcurrentMap<QueryMessage, QueueMessageStream<SubscriptionQueryUpdateMessage>> updateHandlers =
             new ConcurrentHashMap<>();
 
     /**
@@ -89,11 +88,11 @@ public class SimpleQueryBus implements QueryBus {
     }
 
     @Override
-    public QueryBus subscribe(@Nonnull QueryHandlerName handlerName, @Nonnull QueryHandler queryHandler) {
-        logger.debug("Subscribing query handler for name [{}].", handlerName);
-        QueryHandler existingHandler = subscriptions.putIfAbsent(handlerName, queryHandler);
+    public QueryBus subscribe(@Nonnull QualifiedName queryName, @Nonnull QueryHandler queryHandler) {
+        logger.debug("Subscribing query handler for name [{}].", queryName);
+        QueryHandler existingHandler = subscriptions.putIfAbsent(queryName, queryHandler);
         if (existingHandler != null && existingHandler != queryHandler) {
-            throw new DuplicateQueryHandlerSubscriptionException(handlerName, existingHandler, queryHandler);
+            throw new DuplicateQueryHandlerSubscriptionException(queryName, existingHandler, queryHandler);
         }
         return this;
     }
@@ -102,8 +101,8 @@ public class SimpleQueryBus implements QueryBus {
     @Override
     public MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage query, @Nullable ProcessingContext context) {
         if (logger.isDebugEnabled()) {
-            logger.debug("Dispatching direct-query for query name [{}] and response [{}].",
-                         query.type().name(), query.responseType());
+            logger.debug("Dispatching direct-query for query name [{}].",
+                         query.type().name());
         }
         try {
             MessageStream<QueryResponseMessage> responseStream = handle(query, handlerFor(query)).get();
@@ -119,8 +118,8 @@ public class SimpleQueryBus implements QueryBus {
     private CompletableFuture<MessageStream<QueryResponseMessage>> handle(@Nonnull QueryMessage query,
                                                                           @Nonnull QueryHandler handler) {
         if (logger.isDebugEnabled()) {
-            logger.debug("Handling query [{} {name={},response={}}]",
-                         query.identifier(), query.type(), query.responseType());
+            logger.debug("Handling query [{} {name={}]",
+                         query.identifier(), query.type());
         }
 
         UnitOfWork unitOfWork = unitOfWorkFactory.create();
@@ -158,7 +157,7 @@ public class SimpleQueryBus implements QueryBus {
 
     @Nonnull
     @Override
-    public MessageStream<QueryResponseMessage> subscriptionQuery(@Nonnull SubscriptionQueryMessage query,
+    public MessageStream<QueryResponseMessage> subscriptionQuery(@Nonnull QueryMessage query,
                                                                  @Nullable ProcessingContext context,
                                                                  int updateBufferSize) {
         MessageStream<SubscriptionQueryUpdateMessage> updates = subscribeToUpdates(query, updateBufferSize);
@@ -169,7 +168,7 @@ public class SimpleQueryBus implements QueryBus {
 
     @Override
     @Nonnull
-    public MessageStream<SubscriptionQueryUpdateMessage> subscribeToUpdates(@Nonnull SubscriptionQueryMessage query,
+    public MessageStream<SubscriptionQueryUpdateMessage> subscribeToUpdates(@Nonnull QueryMessage query,
                                                                             int updateBufferSize) {
         if (hasHandlerFor(query.identifier())) {
             throw new SubscriptionQueryAlreadyRegisteredException(query.identifier());
@@ -190,7 +189,7 @@ public class SimpleQueryBus implements QueryBus {
 
     @Nonnull
     private QueryHandler handlerFor(@Nonnull QueryMessage query) {
-        QueryHandlerName handlerName = new QueryHandlerName(query.type(), query.responseType());
+        QualifiedName handlerName = query.type().qualifiedName();
         if (!subscriptions.containsKey(handlerName)) {
             throw NoHandlerForQueryException.forBus(query);
         }
@@ -199,15 +198,15 @@ public class SimpleQueryBus implements QueryBus {
 
     @Nonnull
     @Override
-    public CompletableFuture<Void> emitUpdate(@Nonnull Predicate<SubscriptionQueryMessage> filter,
+    public CompletableFuture<Void> emitUpdate(@Nonnull Predicate<QueryMessage> filter,
                                               @Nonnull Supplier<SubscriptionQueryUpdateMessage> updateSupplier,
                                               @Nullable ProcessingContext context) {
         return runAfterCommitOrImmediately(context, () -> emitUpdate(filter, updateSupplier));
     }
 
-    private void emitUpdate(Predicate<SubscriptionQueryMessage> filter,
+    private void emitUpdate(Predicate<QueryMessage> filter,
                             Supplier<SubscriptionQueryUpdateMessage> updateSupplier) {
-        Map<SubscriptionQueryMessage, QueueMessageStream<SubscriptionQueryUpdateMessage>> matchingHandlers =
+        Map<QueryMessage, QueueMessageStream<SubscriptionQueryUpdateMessage>> matchingHandlers =
                 updateHandlers.entrySet()
                               .stream()
                               .filter(entry -> filter.test(entry.getKey()))
@@ -235,12 +234,12 @@ public class SimpleQueryBus implements QueryBus {
 
     @Nonnull
     @Override
-    public CompletableFuture<Void> completeSubscriptions(@Nonnull Predicate<SubscriptionQueryMessage> filter,
+    public CompletableFuture<Void> completeSubscriptions(@Nonnull Predicate<QueryMessage> filter,
                                                          @Nullable ProcessingContext context) {
         return runAfterCommitOrImmediately(context, () -> completeSubscriptions(filter));
     }
 
-    private void completeSubscriptions(Predicate<SubscriptionQueryMessage> filter) {
+    private void completeSubscriptions(Predicate<QueryMessage> filter) {
         updateHandlers.entrySet()
                       .stream()
                       .filter(entry -> filter.test(entry.getKey()))
@@ -258,14 +257,14 @@ public class SimpleQueryBus implements QueryBus {
     @Nonnull
     @Override
     public CompletableFuture<Void> completeSubscriptionsExceptionally(
-            @Nonnull Predicate<SubscriptionQueryMessage> filter,
+            @Nonnull Predicate<QueryMessage> filter,
             @Nonnull Throwable cause,
             @Nullable ProcessingContext context
     ) {
         return runAfterCommitOrImmediately(context, () -> completeSubscriptionsExceptionally(filter, cause));
     }
 
-    private void completeSubscriptionsExceptionally(Predicate<SubscriptionQueryMessage> filter, Throwable cause) {
+    private void completeSubscriptionsExceptionally(Predicate<QueryMessage> filter, Throwable cause) {
         updateHandlers.entrySet()
                       .stream()
                       .filter(entry -> filter.test(entry.getKey()))
@@ -293,7 +292,7 @@ public class SimpleQueryBus implements QueryBus {
 
     private void emitError(QueueMessageStream<SubscriptionQueryUpdateMessage> updateHandler,
                            Throwable cause,
-                           SubscriptionQueryMessage query) {
+                           QueryMessage query) {
         try {
             updateHandler.completeExceptionally(cause);
         } catch (Exception e) {

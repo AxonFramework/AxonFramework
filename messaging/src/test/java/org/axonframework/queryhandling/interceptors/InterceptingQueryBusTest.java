@@ -28,18 +28,16 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
-import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
 import org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.SimpleQueryBus;
-import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
-import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 
@@ -64,7 +62,6 @@ class InterceptingQueryBusTest {
     private static final MessageType TEST_QUERY_TYPE = new MessageType("testQuery");
     private static final MessageType TEST_RESPONSE_TYPE = new MessageType(String.class);
     private static final QualifiedName QUERY_NAME = new QualifiedName("testQuery");
-    private static final QualifiedName RESPONSE_NAME = new QualifiedName(String.class);
 
     private InterceptingQueryBus testSubject;
     private QueryBus delegateQueryBus;
@@ -95,9 +92,9 @@ class InterceptingQueryBusTest {
         void dispatchInterceptorsModifyRequestMessage() {
             // given
             RecordingQueryHandler handler = new RecordingQueryHandler();
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, handler);
+            testSubject.subscribe(QUERY_NAME, handler);
 
-            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test", TEST_RESPONSE_TYPE);
+            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test");
 
             // when
             testSubject.query(testQuery, StubProcessingContext.forMessage(testQuery));
@@ -117,9 +114,9 @@ class InterceptingQueryBusTest {
         void dispatchInterceptorsModifyResponseMessage() {
             // given
             RecordingQueryHandler handler = new RecordingQueryHandler();
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, handler);
+            testSubject.subscribe(QUERY_NAME, handler);
 
-            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test", TEST_RESPONSE_TYPE);
+            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test");
 
             // when
             MessageStream<QueryResponseMessage> result = testSubject.query(testQuery,
@@ -149,10 +146,10 @@ class InterceptingQueryBusTest {
             QueryHandler handler = (query, context) -> MessageStream.just(new GenericQueryResponseMessage(
                     TEST_RESPONSE_TYPE,
                     "ok"));
-            countingTestSubject.subscribe(QUERY_NAME, RESPONSE_NAME, handler);
+            countingTestSubject.subscribe(QUERY_NAME, handler);
 
-            QueryMessage firstQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "first", TEST_RESPONSE_TYPE);
-            QueryMessage secondQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "second", TEST_RESPONSE_TYPE);
+            QueryMessage firstQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "first");
+            QueryMessage secondQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "second");
 
             // when
             countingTestSubject.query(firstQuery, StubProcessingContext.forMessage(firstQuery));
@@ -176,9 +173,9 @@ class InterceptingQueryBusTest {
                                              List.of());
 
             RecordingQueryHandler handler = new RecordingQueryHandler();
-            throwingTestSubject.subscribe(QUERY_NAME, RESPONSE_NAME, handler);
+            throwingTestSubject.subscribe(QUERY_NAME, handler);
 
-            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test", TEST_RESPONSE_TYPE);
+            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test");
 
             // when
             MessageStream<QueryResponseMessage> result = throwingTestSubject.query(testQuery,
@@ -204,9 +201,9 @@ class InterceptingQueryBusTest {
                                              List.of());
 
             RecordingQueryHandler handler = new RecordingQueryHandler();
-            failingTestSubject.subscribe(QUERY_NAME, RESPONSE_NAME, handler);
+            failingTestSubject.subscribe(QUERY_NAME, handler);
 
-            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test", TEST_RESPONSE_TYPE);
+            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test");
 
             // when
             MessageStream<QueryResponseMessage> result = failingTestSubject.query(testQuery,
@@ -228,9 +225,9 @@ class InterceptingQueryBusTest {
         void handlerInterceptorsModifyRequestMessage() {
             // given
             RecordingQueryHandler handler = new RecordingQueryHandler();
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, handler);
+            testSubject.subscribe(QUERY_NAME, handler);
 
-            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test", TEST_RESPONSE_TYPE);
+            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test");
             ProcessingContext context = StubProcessingContext.forMessage(testQuery);
 
             // when
@@ -250,9 +247,9 @@ class InterceptingQueryBusTest {
         void handlerInterceptorsModifyResponseMessage() {
             // given
             RecordingQueryHandler handler = new RecordingQueryHandler();
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, handler);
+            testSubject.subscribe(QUERY_NAME, handler);
 
-            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test", TEST_RESPONSE_TYPE);
+            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test");
             ProcessingContext context = StubProcessingContext.forMessage(testQuery);
 
             // when
@@ -281,10 +278,10 @@ class InterceptingQueryBusTest {
             QueryHandler handler = (query, context) -> MessageStream.just(new GenericQueryResponseMessage(
                     TEST_RESPONSE_TYPE,
                     "ok"));
-            countingTestSubject.subscribe(QUERY_NAME, RESPONSE_NAME, handler);
+            countingTestSubject.subscribe(QUERY_NAME, handler);
 
-            QueryMessage firstQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "first", TEST_RESPONSE_TYPE);
-            QueryMessage secondQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "second", TEST_RESPONSE_TYPE);
+            QueryMessage firstQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "first");
+            QueryMessage secondQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "second");
 
             // when
             countingTestSubject.query(firstQuery, StubProcessingContext.forMessage(firstQuery)).first();
@@ -310,9 +307,9 @@ class InterceptingQueryBusTest {
             QueryHandler handler = (query, context) -> MessageStream.just(new GenericQueryResponseMessage(
                     TEST_RESPONSE_TYPE,
                     "ok"));
-            failingTestSubject.subscribe(QUERY_NAME, RESPONSE_NAME, handler);
+            failingTestSubject.subscribe(QUERY_NAME, handler);
 
-            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "Request", TEST_RESPONSE_TYPE);
+            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "Request");
             ProcessingContext context = StubProcessingContext.forMessage(testQuery);
 
             // when
@@ -336,9 +333,9 @@ class InterceptingQueryBusTest {
                     "subscribed-ok"));
 
             // when
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, handler);
+            testSubject.subscribe(QUERY_NAME, handler);
 
-            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test", TEST_RESPONSE_TYPE);
+            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test");
             MessageStream<QueryResponseMessage> result = testSubject.query(testQuery,
                                                                            StubProcessingContext.forMessage(testQuery));
 
@@ -358,10 +355,10 @@ class InterceptingQueryBusTest {
             QueryHandler handler = (query, context) -> MessageStream.just(new GenericQueryResponseMessage(
                     TEST_RESPONSE_TYPE,
                     "initial"));
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, handler);
+            testSubject.subscribe(QUERY_NAME, handler);
 
-            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
-                    TEST_QUERY_TYPE, "test", TEST_RESPONSE_TYPE
+            QueryMessage testQuery = new GenericQueryMessage(
+                    TEST_QUERY_TYPE, "test"
             );
             ProcessingContext context = StubProcessingContext.forMessage(testQuery);
 
@@ -377,10 +374,10 @@ class InterceptingQueryBusTest {
         void subscriptionQueryHandlerInterceptorsApplied() {
             // given
             RecordingQueryHandler handler = new RecordingQueryHandler();
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, handler);
+            testSubject.subscribe(QUERY_NAME, handler);
 
-            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
-                    TEST_QUERY_TYPE, "test", TEST_RESPONSE_TYPE
+            QueryMessage testQuery = new GenericQueryMessage(
+                    TEST_QUERY_TYPE, "test"
             );
             ProcessingContext context = StubProcessingContext.forMessage(testQuery);
 
@@ -407,11 +404,9 @@ class InterceptingQueryBusTest {
         void subscriptionQueryDispatchInterceptorsApplied() {
             // given
             RecordingQueryHandler handler = new RecordingQueryHandler();
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, handler);
+            testSubject.subscribe(QUERY_NAME, handler);
 
-            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
-                    TEST_QUERY_TYPE, "test", TEST_RESPONSE_TYPE
-            );
+            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test");
             ProcessingContext context = StubProcessingContext.forMessage(testQuery);
 
             // when
@@ -465,7 +460,7 @@ class InterceptingQueryBusTest {
             GenericSubscriptionQueryUpdateMessage updateMessage =
                     new GenericSubscriptionQueryUpdateMessage(TEST_RESPONSE_TYPE, "update");
 
-            Predicate<SubscriptionQueryMessage> matchAll = query -> true;
+            Predicate<QueryMessage> matchAll = query -> true;
 
             // when
             CompletableFuture<Void> result = testSubjectWithUpdateInterceptors.emitUpdate(
@@ -486,7 +481,7 @@ class InterceptingQueryBusTest {
             GenericSubscriptionQueryUpdateMessage updateMessage =
                     new GenericSubscriptionQueryUpdateMessage(TEST_RESPONSE_TYPE, "update");
 
-            Predicate<SubscriptionQueryMessage> matchAll = query -> true;
+            Predicate<QueryMessage> matchAll = query -> true;
 
             // when
             CompletableFuture<Void> result = testSubject.emitUpdate(
@@ -515,8 +510,8 @@ class InterceptingQueryBusTest {
                     List.of(failingInterceptor)
             );
 
-            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
-                    TEST_QUERY_TYPE, "test", TEST_RESPONSE_TYPE
+            QueryMessage testQuery = new GenericQueryMessage(
+                    TEST_QUERY_TYPE, "test"
             );
             GenericSubscriptionQueryUpdateMessage updateMessage =
                     new GenericSubscriptionQueryUpdateMessage(TEST_RESPONSE_TYPE, "update");
