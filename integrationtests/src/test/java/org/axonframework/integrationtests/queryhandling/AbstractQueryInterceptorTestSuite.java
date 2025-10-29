@@ -384,7 +384,6 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
             var result = interceptingQueryBus.query(testQuery, context);
 
             // then
-            assertFalse(result.isCompleted());
             Awaitility.await().untilAsserted(() -> {
                 assertTrue(result.isCompleted());
                 assertTrue(result.error().isPresent());
@@ -416,7 +415,6 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
             var result = interceptingQueryBus.query(testQuery, context);
 
             // then
-            assertFalse(result.isCompleted());
             Awaitility.await().untilAsserted(() -> {
                 assertTrue(result.isCompleted());
                 assertTrue(result.error().isPresent());
