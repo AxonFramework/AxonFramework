@@ -545,6 +545,7 @@ class InterceptingQueryBusTest {
         assertThat((Object) mockComponentDescriptor.getProperty("delegate")).isEqualTo(delegateQueryBus);
         assertThat(properties).containsKey("dispatchInterceptors");
         assertThat(properties).containsKey("handlerInterceptors");
+        assertThat(properties).containsKey("updateDispatchInterceptors");
     }
 
     /**

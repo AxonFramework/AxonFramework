@@ -17,20 +17,22 @@
 package org.axonframework.integrationtests.queryhandling;
 
 import org.axonframework.axonserver.connector.AxonServerConfigurationEnhancer;
-import org.axonframework.configuration.Configuration;
+import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.SimpleQueryBus;
+import org.junit.jupiter.api.AfterEach;
 
 /**
- * An {@link AbstractSubscriptionQueryTestSuite} implementation validating the {@link SimpleQueryBus}.
+ * An {@link AbstractQueryInterceptorTestSuite} implementation validating query interceptor functionality with the
+ * {@link SimpleQueryBus}.
  *
- * @author Milan Savic
- * @author Steven van Beelen
+ * @author Mateusz Nowak
+ * @since 5.0.0
  */
-public class SimpleQueryBusSubscriptionQueryTest extends AbstractSubscriptionQueryTestSuite {
+public class SimpleQueryBusInterceptorTest extends AbstractQueryInterceptorTestSuite {
 
-    private final Configuration config = createMessagingConfigurer().build();
+    private final AxonConfiguration config = createMessagingConfigurer().build();
 
     @Override
     public QueryBus queryBus() {
@@ -40,7 +42,12 @@ public class SimpleQueryBusSubscriptionQueryTest extends AbstractSubscriptionQue
     @Override
     protected MessagingConfigurer createMessagingConfigurer() {
         return MessagingConfigurer.create()
-                                  .componentRegistry(cr -> cr.disableEnhancer(
-                                          AxonServerConfigurationEnhancer.class));
+                .componentRegistry(cr -> cr.disableEnhancer(
+                        AxonServerConfigurationEnhancer.class));
+    }
+
+    @AfterEach
+    void tearDown() {
+        config.shutdown();
     }
 }

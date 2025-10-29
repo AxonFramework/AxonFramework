@@ -18,6 +18,7 @@ package org.axonframework.queryhandling.distributed;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.DelayedMessageStream;
@@ -102,7 +103,7 @@ public class DistributedQueryBus implements QueryBus {
     public QueryBus subscribe(@Nonnull QualifiedName queryName,
                               @Nonnull QueryHandler queryHandler) {
         localSegment.subscribe(queryName, queryHandler);
-        connector.subscribe(queryName);
+        FutureUtils.joinAndUnwrap(connector.subscribe(queryName));
         return this;
     }
 
@@ -196,7 +197,16 @@ public class DistributedQueryBus implements QueryBus {
             queryingExecutor.execute(
                     new PriorityRunnable(() -> {
                         try {
-                            localResult.complete(localSegment.query(query, null));
+                            var result = localSegment.query(query, null);
+                            result.first()
+                                  .asCompletableFuture()
+                                  .whenComplete((firstMessage, error) -> {
+                                      if (error != null) {
+                                          localResult.completeExceptionally(error);
+                                      } else {
+                                          localResult.complete(result);
+                                      }
+                                  });
                         } catch (Exception e) {
                             localResult.completeExceptionally(e);
                         }

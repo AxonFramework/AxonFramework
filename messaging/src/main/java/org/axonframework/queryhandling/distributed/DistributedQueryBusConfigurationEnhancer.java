@@ -23,12 +23,13 @@ import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.configuration.SearchScope;
 import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.interceptors.InterceptingQueryBus;
 
 import static org.axonframework.configuration.DecoratorDefinition.forType;
 
 /**
- * Configuration enhancer for the {@link DistributedQueryBus}, which upon detection of a {@link QueryBusConnector}
- * in the configuration will decorate the regular {@link org.axonframework.queryhandling.QueryBus} with the provided
+ * Configuration enhancer for the {@link DistributedQueryBus}, which upon detection of a {@link QueryBusConnector} in
+ * the configuration will decorate the regular {@link org.axonframework.queryhandling.QueryBus} with the provided
  * connector.
  *
  * @author Mateusz Nowak
@@ -44,7 +45,7 @@ public class DistributedQueryBusConfigurationEnhancer implements ConfigurationEn
      * application of the decorator to the delegate or the distributed query bus, depending on the order of
      * registration.
      */
-    public static final int DISTRIBUTED_QUERY_BUS_ORDER = -1;
+    public static final int DISTRIBUTED_QUERY_BUS_ORDER = InterceptingQueryBus.DECORATION_ORDER - 50;
 
     @Override
     public void enhance(@Nonnull ComponentRegistry componentRegistry) {
@@ -56,7 +57,7 @@ public class DistributedQueryBusConfigurationEnhancer implements ConfigurationEn
                             SearchScope.ALL
                     )
                     .registerDecorator(forType(QueryBus.class).with(queryBusDecoratorDefinition())
-                            .order(DISTRIBUTED_QUERY_BUS_ORDER));
+                                                              .order(DISTRIBUTED_QUERY_BUS_ORDER));
         }
     }
 
@@ -67,10 +68,15 @@ public class DistributedQueryBusConfigurationEnhancer implements ConfigurationEn
             }
             var queryBusConfiguration = config.getComponent(DistributedQueryBusConfiguration.class);
             return config.getOptionalComponent(QueryBusConnector.class)
-                    .map(connector -> (QueryBus) new DistributedQueryBus(
-                            delegate, connector, queryBusConfiguration
-                    ))
-                    .orElse(delegate);
+                         .map(connector -> distributedQueryBus(delegate, connector, queryBusConfiguration)
+                         )
+                         .orElse(delegate);
         };
+    }
+
+    @Nonnull
+    private static QueryBus distributedQueryBus(QueryBus delegate, QueryBusConnector connector,
+                                                DistributedQueryBusConfiguration queryBusConfiguration) {
+        return new DistributedQueryBus(delegate, connector, queryBusConfiguration);
     }
 }

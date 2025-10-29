@@ -80,6 +80,7 @@ public class InterceptingQueryBus implements QueryBus {
 
     private final QueryInterceptingDispatcher queryInterceptingDispatcher;
     private final SubscriptionQueryInterceptingDispatcher subscriptionQueryInterceptingDispatcher;
+    private final SubscribeToUpdatesInterceptingDispatcher subscribeToUpdatesInterceptingDispatcher;
     private final InterceptingResponseUpdateDispatcher interceptingResponseUpdateDispatcher;
 
     /**
@@ -115,13 +116,19 @@ public class InterceptingQueryBus implements QueryBus {
         this.queryInterceptingDispatcher = new QueryInterceptingDispatcher(dispatchInterceptors, this::dispatchQuery);
         this.subscriptionQueryInterceptingDispatcher = new SubscriptionQueryInterceptingDispatcher(dispatchInterceptors,
                                                                                                    delegate);
+        this.subscribeToUpdatesInterceptingDispatcher = new SubscribeToUpdatesInterceptingDispatcher(dispatchInterceptors,
+                                                                                                      delegate);
         this.interceptingResponseUpdateDispatcher = new InterceptingResponseUpdateDispatcher(updateDispatchInterceptors);
     }
 
     @Override
     public InterceptingQueryBus subscribe(@Nonnull QualifiedName queryName,
                                           @Nonnull QueryHandler queryHandler) {
-        delegate.subscribe(queryName, new InterceptingHandler(queryHandler, handlerInterceptors));
+        if (handlerInterceptors.isEmpty()) {
+            delegate.subscribe(queryName, queryHandler);
+        } else {
+            delegate.subscribe(queryName, new InterceptingHandler(queryHandler, handlerInterceptors));
+        }
         return this;
     }
 
@@ -144,7 +151,7 @@ public class InterceptingQueryBus implements QueryBus {
     @Override
     public MessageStream<SubscriptionQueryUpdateMessage> subscribeToUpdates(@Nonnull QueryMessage query,
                                                                             int updateBufferSize) {
-        return delegate.subscribeToUpdates(query, updateBufferSize);
+        return subscribeToUpdatesInterceptingDispatcher.dispatch(query, updateBufferSize);
     }
 
     @Nonnull
@@ -268,6 +275,36 @@ public class InterceptingQueryBus implements QueryBus {
                     interceptors,
                     subscriptionDispatcher
             ).proceed(query, context).cast();
+        }
+    }
+
+    private static class SubscribeToUpdatesInterceptingDispatcher {
+
+        private final List<MessageDispatchInterceptor<? super QueryMessage>> interceptors;
+        private final QueryBus delegate;
+
+        private SubscribeToUpdatesInterceptingDispatcher(
+                List<MessageDispatchInterceptor<? super QueryMessage>> interceptors,
+                QueryBus delegate
+        ) {
+            this.interceptors = interceptors;
+            this.delegate = delegate;
+        }
+
+        private MessageStream<SubscriptionQueryUpdateMessage> dispatch(
+                @Nonnull QueryMessage query,
+                int updateBufferSize
+        ) {
+            // Create a new chain per call because the dispatcher needs the updateBufferSize parameter
+            // which varies per invocation and is not part of the BiFunction signature.
+            // We cannot use Processing Context to pass this value, because Processing Context can be null.
+            BiFunction<? super QueryMessage, ProcessingContext, MessageStream<?>> subscribeToUpdatesDispatcher =
+                    (interceptedQuery, interceptedContext) -> delegate.subscribeToUpdates(interceptedQuery, updateBufferSize);
+
+            return new DefaultMessageDispatchInterceptorChain<>(
+                    interceptors,
+                    subscribeToUpdatesDispatcher
+            ).proceed(query, null).cast();
         }
     }
 

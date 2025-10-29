@@ -22,6 +22,8 @@ import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.interceptors.InterceptingQueryBus;
 import org.junit.jupiter.api.*;
 
+import java.lang.reflect.Field;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -47,8 +49,12 @@ class DistributedQueryBusConfigurationEnhancerTest {
                         .build();
 
         // then
-        assertInstanceOf(DistributedQueryBus.class, config.getComponent(QueryBus.class));
+        QueryBus queryBus = config.getComponent(QueryBus.class);
+        assertInstanceOf(InterceptingQueryBus.class, queryBus);
         assertTrue(config.hasComponent(DistributedQueryBusConfiguration.class));
+
+        // Verify that the delegate of InterceptingQueryBus is a DistributedQueryBus
+        assertInstanceOf(DistributedQueryBus.class, extractDelegate(queryBus));
     }
 
     @Test
@@ -66,5 +72,15 @@ class DistributedQueryBusConfigurationEnhancerTest {
         // Intercepting at all times, since we have a default CorrelationDataInterceptor.
         assertInstanceOf(InterceptingQueryBus.class, queryBus);
         assertFalse(config.hasComponent(DistributedQueryBusConfiguration.class));
+    }
+
+    private static QueryBus extractDelegate(QueryBus queryBus) {
+        try {
+            Field delegateField = InterceptingQueryBus.class.getDeclaredField("delegate");
+            delegateField.setAccessible(true);
+            return (QueryBus) delegateField.get(queryBus);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException("Failed to extract delegate from InterceptingQueryBus", e);
+        }
     }
 }
