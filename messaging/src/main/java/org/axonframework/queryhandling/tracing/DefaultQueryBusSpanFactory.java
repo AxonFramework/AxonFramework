@@ -18,7 +18,6 @@ package org.axonframework.queryhandling.tracing;
 
 import org.axonframework.common.BuilderUtils;
 import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.tracing.Span;
 import org.axonframework.tracing.SpanFactory;
@@ -56,7 +55,7 @@ public class DefaultQueryBusSpanFactory implements QueryBusSpanFactory {
     }
 
     @Override
-    public Span createSubscriptionQuerySpan(SubscriptionQueryMessage queryMessage, boolean distributed) {
+    public Span createSubscriptionQuerySpan(QueryMessage queryMessage, boolean distributed) {
         if (distributed) {
             return spanFactory.createDispatchSpan(() -> "QueryBus.subscriptionQueryDistributed", queryMessage);
         }
@@ -65,7 +64,7 @@ public class DefaultQueryBusSpanFactory implements QueryBusSpanFactory {
 
     @Override
     public Span createSubscriptionQueryProcessUpdateSpan(SubscriptionQueryUpdateMessage updateMessage,
-                                                         SubscriptionQueryMessage queryMessage) {
+                                                         QueryMessage queryMessage) {
         return spanFactory.createChildHandlerSpan(() -> "QueryBus.queryUpdate", updateMessage, queryMessage);
     }
 

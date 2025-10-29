@@ -160,7 +160,7 @@ class StreamingQueryIT {
     @ValueSource(booleans = {true, false})
     void streamingFluxQuery(boolean supportsStreaming) {
         QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType(FluxQuery.class), new FluxQuery(), new MessageType(String.class)
+                new MessageType(FluxQuery.class), new FluxQuery()
         );
 
         StepVerifier.create(streamingQueryPayloads(testQuery, String.class, supportsStreaming))
@@ -177,8 +177,7 @@ class StreamingQueryIT {
         StepVerifier.create(Flux.range(0, count)
                                 .flatMap(i -> streamingQueryPayloads(
                                         new GenericQueryMessage(new MessageType(FluxQuery.class),
-                                                                new FluxQuery(),
-                                                                new MessageType(String.class)),
+                                                                new FluxQuery()),
                                         String.class,
                                         supportsStreaming
                                 ))
@@ -191,7 +190,7 @@ class StreamingQueryIT {
     @ValueSource(booleans = {true, false})
     void streamingErrorFluxQuery(boolean supportsStreaming) {
         QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType(ErrorFluxQuery.class), new ErrorFluxQuery(), new MessageType(String.class)
+                new MessageType(ErrorFluxQuery.class), new ErrorFluxQuery()
         );
 
         StepVerifier.create(streamingQueryPayloads(testQuery, String.class, supportsStreaming))
@@ -203,7 +202,7 @@ class StreamingQueryIT {
     @Test
     void streamingHandlerErrorFluxQuery() {
         QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType(HandlerErrorFluxQuery.class), new HandlerErrorFluxQuery(), new MessageType(String.class)
+                new MessageType(HandlerErrorFluxQuery.class), new HandlerErrorFluxQuery()
         );
 
         StepVerifier.create(streamingQueryPayloads(testQuery, String.class, true))
@@ -216,7 +215,7 @@ class StreamingQueryIT {
     @ValueSource(booleans = {true, false})
     void streamingListQuery(boolean supportsStreaming) {
         QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType(ListQuery.class), new ListQuery(), new MessageType(String.class)
+                new MessageType(ListQuery.class), new ListQuery()
         );
 
         StepVerifier.create(streamingQueryPayloads(testQuery, String.class, supportsStreaming))
@@ -228,7 +227,7 @@ class StreamingQueryIT {
     @ValueSource(booleans = {true, false})
     void listQuery(boolean supportsStreaming) throws Throwable {
         QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType(ListQuery.class), new ListQuery(), new MessageType(String.class)
+                new MessageType(ListQuery.class), new ListQuery()
         );
 
         assertEquals(asList("a", "b", "c", "d"), directQueryPayload(testQuery, LIST_OF_STRINGS, supportsStreaming));

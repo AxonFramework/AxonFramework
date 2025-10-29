@@ -333,7 +333,6 @@ class AsyncMessageHandlerTest {
             void declarativeQueryHandlerShouldUseFluxReturnType() throws Exception {
                 queryBus.subscribe(
                         new QualifiedName(GetKnownPrimes.class),
-                        new QualifiedName(Integer.class),
                         (query, context) -> FluxUtils.asMessageStream(
                                 Flux.just(2, 3, 5, 7)
                                     .map(i -> new GenericQueryResponseMessage(new MessageType(Integer.class), i))
@@ -347,7 +346,6 @@ class AsyncMessageHandlerTest {
             void declarativeQueryHandlerShouldUseIterableReturnType() throws Exception {
                 queryBus.subscribe(
                         new QualifiedName(GetKnownPrimes.class),
-                        new QualifiedName(Integer.class),
                         (query, context) -> MessageStream.fromIterable(List.of(
                                 new GenericQueryResponseMessage(new MessageType(Integer.class), 2),
                                 new GenericQueryResponseMessage(new MessageType(Integer.class), 3),
