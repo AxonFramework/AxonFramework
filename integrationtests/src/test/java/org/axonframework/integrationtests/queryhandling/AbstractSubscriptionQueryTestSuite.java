@@ -417,15 +417,18 @@ public abstract class AbstractSubscriptionQueryTestSuite {
 
     @Test
     void doubleSubscriptionMessage() {
-        // given...
+        // given
         SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
                 TEST_QUERY_TYPE, TEST_QUERY_PAYLOAD, TEST_RESPONSE_TYPE
         );
-        // when...
+
+        // when
         queryBus.subscriptionQuery(queryMessage, null, 50);
-        // then...
-        assertThrows(SubscriptionQueryAlreadyRegisteredException.class,
-                     () -> queryBus.subscriptionQuery(queryMessage, null, 50));
+        MessageStream<QueryResponseMessage> secondSubscription = queryBus.subscriptionQuery(queryMessage, null, 50);
+
+        // then
+        assertTrue(secondSubscription.error().isPresent());
+        assertInstanceOf(SubscriptionQueryAlreadyRegisteredException.class, secondSubscription.error().get());
     }
 
     @Test

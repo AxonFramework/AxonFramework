@@ -52,7 +52,7 @@ class SingleValueMessageStreamTest extends MessageStreamTest<Message> {
 
     @Override
     MessageStream<Message> failingTestSubject(List<Message> messages,
-                                                      Exception failure) {
+                                              Exception failure) {
         Assumptions.assumeTrue(messages.isEmpty(),
                                "SingleValueMessageStream only supports failures without regular values");
         return MessageStream.fromFuture(CompletableFuture.failedFuture(failure));
@@ -61,7 +61,7 @@ class SingleValueMessageStreamTest extends MessageStreamTest<Message> {
     @Override
     Message createRandomMessage() {
         return new GenericMessage(new MessageType("message"),
-                                    "test-" + ThreadLocalRandom.current().nextInt(10000));
+                                  "test-" + ThreadLocalRandom.current().nextInt(10000));
     }
 
     @Test
@@ -79,6 +79,24 @@ class SingleValueMessageStreamTest extends MessageStreamTest<Message> {
         assertFalse(testSubject.hasNextAvailable());
         assertFalse(testSubject.next().isPresent());
     }
+
+    @Test
+    void shouldReturnBeNotCompletedIfConstructedFromCompletedFuture() {
+        CompletableFuture<MessageStream.Entry<Message>> future = CompletableFuture.completedFuture(new SimpleEntry<>(
+                createRandomMessage()));
+        SingleValueMessageStream<Message> testSubject = new SingleValueMessageStream<>(future);
+        assertFalse(testSubject.isCompleted());
+        assertTrue(testSubject.hasNextAvailable());
+    }
+
+    @Test
+    void shouldReturnCompletedIfConstructedFromCompletedFutureWithNoValue() {
+        CompletableFuture<Message> future = CompletableFuture.completedFuture(null);
+        MessageStream<Message> testSubject = MessageStream.fromFuture(future);
+        assertTrue(testSubject.isCompleted());
+        assertFalse(testSubject.hasNextAvailable());
+    }
+
 
     @Test
     void shouldPropagateErrorWhenFutureFailed() {
@@ -99,12 +117,12 @@ class SingleValueMessageStreamTest extends MessageStreamTest<Message> {
     }
 
     @Test
-    void shouldInvokeOnAvailableWhenFutureCompletes() {
+    void shouldInvokeSetCallbackWhenFutureCompletes() {
         CompletableFuture<MessageStream.Entry<Message>> future = new CompletableFuture<>();
         SingleValueMessageStream<Message> testSubject = new SingleValueMessageStream<>(future);
 
         AtomicBoolean invoked = new AtomicBoolean(false);
-        testSubject.onAvailable(() -> invoked.set(true));
+        testSubject.setCallback(() -> invoked.set(true));
 
         assertFalse(invoked.get());
         future.complete(new SimpleEntry<>(createRandomMessage()));

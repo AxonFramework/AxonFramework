@@ -36,7 +36,7 @@ import java.util.stream.StreamSupport;
  * A Message Stream is asynchronous by nature. All operations are non-blocking by design, although some implementations
  * may choose to block for certain conditions. In that case, the streams must document so explicitly.
  * <p>
- * To get notified of anything potentially available for consumption, one must register a {@link #onAvailable(Runnable)}
+ * To get notified of anything potentially available for consumption, one must register a {@link #setCallback(Runnable)}
  * callback. This callback is invoked each time information is *potentially* available for consumption. There is no
  * guarantee that entries are available for consumption when this callback is invoked. When consuming the stream, one
  * must also ensure to check the {@link #isCompleted()} status and potentially the presence of errors using
@@ -60,8 +60,8 @@ public interface MessageStream<M extends Message> {
      * Create a stream that provides the {@link Message Messages} returned by the given {@code iterable}, automatically
      * wrapped in an {@link Entry}.
      * <p>
-     * The returned stream will provide the messages as provided by the {@link Iterable#iterator()} call on the
-     * given {@code iterable}.
+     * The returned stream will provide the messages as provided by the {@link Iterable#iterator()} call on the given
+     * {@code iterable}.
      *
      * @param iterable The {@link Iterable} providing the {@link Message Messages} to stream.
      * @param <M>      The type of {@link Message} contained in the {@link Entry entries} of this stream.
@@ -88,8 +88,8 @@ public interface MessageStream<M extends Message> {
      * Create a stream that provides the {@link Message Messages} returned by the given {@code iterable}, automatically
      * wrapped in an {@link Entry} with the resulting {@link Context} from the {@code contextSupplier}.
      * <p>
-     * The returned stream will provide the messages as provided by the {@link Iterable#iterator()} call on the
-     * given {@code iterable}.
+     * The returned stream will provide the messages as provided by the {@link Iterable#iterator()} call on the given
+     * {@code iterable}.
      *
      * @param iterable        The {@link Iterable} providing the {@link Message Messages} to stream.
      * @param contextSupplier A {@link Function} ingesting each {@link Message} from the given {@code iterable}
@@ -199,8 +199,8 @@ public interface MessageStream<M extends Message> {
      */
     static <M extends Message> Single<M> fromFuture(@Nonnull CompletableFuture<M> future,
                                                     @Nonnull Function<M, Context> contextSupplier) {
-        return new SingleValueMessageStream<>(
-                future.thenApply(message -> new SimpleEntry<>(message, contextSupplier.apply(message)))
+        return new DelayedMessageStream.Single<>(
+                future.thenApply(message -> MessageStream.just(message, contextSupplier))
         );
     }
 
@@ -231,6 +231,9 @@ public interface MessageStream<M extends Message> {
      */
     static <M extends Message> Single<M> just(@Nullable M message,
                                               @Nonnull Function<M, Context> contextSupplier) {
+        if (message == null) {
+            return empty().cast();
+        }
         return new SingleValueMessageStream<>(new SimpleEntry<>(message, contextSupplier.apply(message)));
     }
 
@@ -273,8 +276,8 @@ public interface MessageStream<M extends Message> {
     }
 
     /**
-     * Returns a stream that consumes all messages from this stream, but ignores the results and completes when
-     * this stream completes.
+     * Returns a stream that consumes all messages from this stream, but ignores the results and completes when this
+     * stream completes.
      * <p>
      * Unlike simply closing the stream, the returned stream will still cause upstream entries to be consumed and any
      * registered callbacks to be invoked.
@@ -296,8 +299,8 @@ public interface MessageStream<M extends Message> {
     Optional<Entry<M>> next();
 
     /**
-     * Returns an Optional carrying the next {@link Entry entry} from the stream (without moving the stream pointer),
-     * if such entry was available. If no entry was available for reading, this method returns an empty Optional.
+     * Returns an Optional carrying the next {@link Entry entry} from the stream (without moving the stream pointer), if
+     * such entry was available. If no entry was available for reading, this method returns an empty Optional.
      * <p>
      * This method will never block for elements becoming available.
      *
@@ -316,7 +319,7 @@ public interface MessageStream<M extends Message> {
      * @param callback The callback to invoke when {@link Entry entries} are available for reading, or the stream
      *                 completes.
      */
-    void onAvailable(@Nonnull Runnable callback);
+    void setCallback(@Nonnull Runnable callback);
 
     /**
      * Indicates whether any error has been reported in this stream. Implementations may choose to not return any error
@@ -328,9 +331,9 @@ public interface MessageStream<M extends Message> {
     Optional<Throwable> error();
 
     /**
-     * Indicates whether this stream has been completed. A completed stream will never return
-     * {@link Entry entries} from {@link #next()}, and {@link #hasNextAvailable()} will always return {@code false}. If
-     * the stream completed with an error, {@link #error()} will report so.
+     * Indicates whether this stream has been completed. A completed stream will never return {@link Entry entries} from
+     * {@link #next()}, and {@link #hasNextAvailable()} will always return {@code false}. If the stream completed with
+     * an error, {@link #error()} will report so.
      *
      * @return {@code true} if the stream completed, otherwise {@code false}.
      */
@@ -464,7 +467,7 @@ public interface MessageStream<M extends Message> {
      * @param completeHandler The {@link Runnable} to invoke when the stream completes normally.
      * @return A stream that invokes the {@code completeHandler} upon normal completion.
      */
-    default MessageStream<M> whenComplete(@Nonnull Runnable completeHandler) {
+    default MessageStream<M> onComplete(@Nonnull Runnable completeHandler) {
         return new CompletionCallbackMessageStream<>(this, completeHandler);
     }
 
@@ -571,7 +574,7 @@ public interface MessageStream<M extends Message> {
         }
 
         @Override
-        default Single<M> whenComplete(@Nonnull Runnable completeHandler) {
+        default Single<M> onComplete(@Nonnull Runnable completeHandler) {
             return new CompletionCallbackMessageStream.Single<>(this, completeHandler);
         }
 
@@ -643,7 +646,7 @@ public interface MessageStream<M extends Message> {
         }
 
         @Override
-        default Empty<M> whenComplete(@Nonnull Runnable completeHandler) {
+        default Empty<M> onComplete(@Nonnull Runnable completeHandler) {
             return new CompletionCallbackMessageStream.Empty<>(this, completeHandler);
         }
 

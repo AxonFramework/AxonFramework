@@ -92,8 +92,8 @@ public class CloseCallbackMessageStream<M extends Message> extends DelegatingMes
     }
 
     @Override
-    public void onAvailable(@Nonnull Runnable callback) {
-        super.onAvailable(() -> {
+    public void setCallback(@Nonnull Runnable callback) {
+        super.setCallback(() -> {
             callback.run();
             invokeCloseHandlerIfClosed();
         });

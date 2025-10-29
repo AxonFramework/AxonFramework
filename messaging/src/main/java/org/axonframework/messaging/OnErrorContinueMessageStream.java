@@ -60,8 +60,8 @@ class OnErrorContinueMessageStream<M extends Message> implements MessageStream<M
     }
 
     @Override
-    public void onAvailable(@Nonnull Runnable callback) {
-        resolveCurrentDelegate().onAvailable(callback);
+    public void setCallback(@Nonnull Runnable callback) {
+        resolveCurrentDelegate().setCallback(callback);
         this.callback.set(callback);
     }
 
@@ -83,7 +83,7 @@ class OnErrorContinueMessageStream<M extends Message> implements MessageStream<M
                     }
                     return c;
                 });
-                newMessageStream.onAvailable(callback.get());
+                newMessageStream.setCallback(callback.get());
                 return newMessageStream;
             }
         }

@@ -88,11 +88,18 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      * <p>
      * If there is an error during emitting an update, subscription is cancelled causing further emits not reaching the
      * destination.
+     * <p>
+     * If a subscription query with the same {@code query} identifier is already registered, the returned
+     * {@link MessageStream} will be {@link MessageStream#failed(Throwable) failed} with a
+     * {@link SubscriptionQueryAlreadyRegisteredException} instead of throwing the exception. This allows callers to
+     * handle double subscription scenarios gracefully through the stream API.
      *
      * @param query            The subscription query to dispatch.
      * @param context          The processing context under which the query is being published (can be {@code null}).
      * @param updateBufferSize The size of the buffer which accumulates updates.
-     * @return query result containing initial result and incremental updates
+     * @return query result containing initial result and incremental updates, or a failed {@link MessageStream} with
+     * {@link SubscriptionQueryAlreadyRegisteredException} if a subscription with the same query identifier already
+     * exists.
      */
     @Nonnull
     MessageStream<QueryResponseMessage> subscriptionQuery(@Nonnull SubscriptionQueryMessage query,
@@ -109,12 +116,16 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      * <p>
      * Note that the returned MessageStream must be consumed from before the buffer fills up. Once the buffer is full,
      * any attempt to add an update will complete the stream with an exception.
+     * <p>
+     * If a subscription query with the same {@code query} identifier is already registered, the returned
+     * {@link MessageStream} will be {@link MessageStream#failed(Throwable) failed} with a
+     * {@link SubscriptionQueryAlreadyRegisteredException} instead of throwing the exception.
      *
      * @param query            The subscription query for which we register an update handler.
      * @param updateBufferSize The size of the buffer that accumulates updates.
-     * @return a MessageStream of updates for the given subscription query.
-     * @throws SubscriptionQueryAlreadyRegisteredException Whenever an update handler was already registered for the
-     *                                                     given {@code query}.
+     * @return a MessageStream of updates for the given subscription query, or a failed {@link MessageStream} with
+     * {@link SubscriptionQueryAlreadyRegisteredException} if a subscription with the same query identifier already
+     * exists.
      */
     @Nonnull
     MessageStream<SubscriptionQueryUpdateMessage> subscribeToUpdates(@Nonnull SubscriptionQueryMessage query,
