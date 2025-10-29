@@ -63,9 +63,8 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTestSuite {
 
-    private final QualifiedName QUERY_NAME = new QualifiedName(UUID.randomUUID() + "testQuery");
-    private final MessageType TEST_QUERY_TYPE = new MessageType(QUERY_NAME.name());
-    private final QualifiedName RESPONSE_NAME = new QualifiedName(String.class);
+    private final QualifiedName QUERY_NAME = new QualifiedName("test." + UUID.randomUUID() + "query");
+    private final MessageType TEST_QUERY_TYPE = new MessageType(QUERY_NAME.fullName());
     private final MessageConverter CONVERTER = new DelegatingMessageConverter(new JacksonConverter());
 
     @Nested
