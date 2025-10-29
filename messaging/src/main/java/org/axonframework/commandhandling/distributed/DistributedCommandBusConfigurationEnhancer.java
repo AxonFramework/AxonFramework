@@ -45,7 +45,7 @@ public class DistributedCommandBusConfigurationEnhancer implements Configuration
      * application of the decorator to the delegate or the distributed command bus, depending on the order of
      * registration.
      */
-    public static final int DISTRIBUTED_COMMAND_BUS_ORDER = InterceptingCommandBus.DECORATION_ORDER -1;
+    public static final int DISTRIBUTED_COMMAND_BUS_ORDER = InterceptingCommandBus.DECORATION_ORDER - 50;
 
     @Override
     public void enhance(@Nonnull ComponentRegistry componentRegistry) {
