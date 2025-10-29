@@ -262,7 +262,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
                 previous.run();
             }
             result.onClose(queriesInProgress.remove(query.getMessageIdentifier()))
-                  .onAvailable(() -> {
+                  .setCallback(() -> {
                       // TODO #3808 - Check if sufficient permits from flow control
                       // This logic should be executed by tasks with scheduling gates on the response thread pool
                       while (result.hasNextAvailable()) {

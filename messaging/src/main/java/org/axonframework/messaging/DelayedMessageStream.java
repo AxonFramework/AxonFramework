@@ -113,10 +113,10 @@ public class DelayedMessageStream<M extends Message> implements MessageStream<M>
     }
 
     @Override
-    public void onAvailable(@Nonnull Runnable callback) {
+    public void setCallback(@Nonnull Runnable callback) {
         delegate.whenComplete((r, e) -> {
             if (r != null) {
-                r.onAvailable(callback);
+                r.setCallback(callback);
             } else {
                 callback.run();
             }

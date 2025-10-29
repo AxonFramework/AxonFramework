@@ -64,7 +64,7 @@ public abstract class MessageStreamUtils {
                                                                      @Nonnull R identity,
                                                                      @Nonnull BiFunction<R, MessageStream.Entry<M>, R> accumulator) {
         Reducer<M, R> reducer = new Reducer<>(source, identity, accumulator);
-        source.onAvailable(reducer::process);
+        source.setCallback(reducer::process);
         return reducer.result();
     }
 
@@ -88,7 +88,7 @@ public abstract class MessageStreamUtils {
             @Nonnull MessageStream<M> source
     ) {
         FirstResult<M> firstResult = new FirstResult<>(source);
-        source.onAvailable(firstResult::process);
+        source.setCallback(firstResult::process);
         return firstResult.result();
     }
 

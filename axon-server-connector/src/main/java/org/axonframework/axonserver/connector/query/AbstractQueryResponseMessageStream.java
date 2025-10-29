@@ -67,7 +67,7 @@ public abstract class AbstractQueryResponseMessageStream<T> implements MessageSt
     }
 
     @Override
-    public void onAvailable(@Nonnull Runnable callback) {
+    public void setCallback(@Nonnull Runnable callback) {
         this.callback.set(callback);
         stream.onAvailable(callback);
     }

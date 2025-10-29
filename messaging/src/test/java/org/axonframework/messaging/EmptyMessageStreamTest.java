@@ -84,7 +84,7 @@ class EmptyMessageStreamTest extends MessageStreamTest<Message> {
         RuntimeException expected = new RuntimeException("oops");
 
         CompletableFuture<Object> result = MessageStream.empty()
-                                                        .whenComplete(() -> {
+                                                        .onComplete(() -> {
                                                             throw expected;
                                                         })
                                                         .first()

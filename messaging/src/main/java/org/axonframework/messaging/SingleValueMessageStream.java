@@ -78,7 +78,7 @@ class SingleValueMessageStream<M extends Message> implements MessageStream.Singl
     }
 
     @Override
-    public void onAvailable(@Nonnull Runnable callback) {
+    public void setCallback(@Nonnull Runnable callback) {
         if (source.isDone()) {
             callback.run();
         } else {
