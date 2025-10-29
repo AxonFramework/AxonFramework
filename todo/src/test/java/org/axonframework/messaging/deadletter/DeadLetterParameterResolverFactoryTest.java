@@ -92,7 +92,7 @@ class DeadLetterParameterResolverFactoryTest {
                 new GenericCommandMessage(new MessageType("command"), "some-command");
         EventMessage testEvent = EventTestUtils.asEventMessage("some-command");
         QueryMessage testQuery =
-                new GenericQueryMessage(new MessageType("query"), "some-query", new MessageType(String.class));
+                new GenericQueryMessage(new MessageType("query"), "some-query");
 
         ParameterResolver<DeadLetter<?>> resolver =
                 testSubject.createInstance(deadLetterMethod, deadLetterMethod.getParameters(), 0);

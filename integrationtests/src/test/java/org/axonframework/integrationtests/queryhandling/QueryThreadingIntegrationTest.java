@@ -23,12 +23,10 @@ import org.axonframework.axonserver.connector.query.AxonServerQueryBusConnector;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.QueueMessageStream;
 import org.axonframework.messaging.conversion.DelegatingMessageConverter;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
-import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
 import org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryBusTestUtils;
@@ -157,14 +155,11 @@ class QueryThreadingIntegrationTest {
     @Test
     void canSendQueryAndReceiveSingleResponse() {
         queryBus1.subscribe(QUERY_TYPE_A.qualifiedName(),
-                            new QualifiedName(String.class),
                             (query, ctx) -> MessageStream.just(new GenericQueryResponseMessage(
                                     MESSAGE_TYPE_STRING,
                                     "a")));
 
-        var result = queryBus2.query(new GenericSubscriptionQueryMessage(QUERY_TYPE_A,
-                                                                         "start",
-                                                                         MESSAGE_TYPE_STRING),
+        var result = queryBus2.query(new GenericQueryMessage(QUERY_TYPE_A, "start"),
                                      null);
         await().until(result::hasNextAvailable);
         assertThat(result.next()).isPresent()
@@ -177,14 +172,12 @@ class QueryThreadingIntegrationTest {
     @Test
     void canSendSubscriptionQuery() {
         queryBus1.subscribe(QUERY_TYPE_A.qualifiedName(),
-                            new QualifiedName(String.class),
                             (query, ctx) -> MessageStream.just(new GenericQueryResponseMessage(
                                     MESSAGE_TYPE_STRING,
                                     "a")));
 
-        var result = queryBus2.subscriptionQuery(new GenericSubscriptionQueryMessage(QUERY_TYPE_A,
-                                                                                     "start",
-                                                                                     MESSAGE_TYPE_STRING),
+        var result = queryBus2.subscriptionQuery(new GenericQueryMessage(QUERY_TYPE_A,
+                                                                         "start"),
                                                  null, 16);
         await().until(result::hasNextAvailable);
         assertThat(result.next()).isPresent()
@@ -210,12 +203,10 @@ class QueryThreadingIntegrationTest {
     @Test
     void canSendSubscriptionQueryWithFailingInitialResponses() {
         queryBus1.subscribe(QUERY_TYPE_A.qualifiedName(),
-                            new QualifiedName(String.class),
                             (query, ctx) -> MessageStream.failed(new MockException("Simulating failure")));
 
-        var result = queryBus2.subscriptionQuery(new GenericSubscriptionQueryMessage(QUERY_TYPE_A,
-                                                                                     "start",
-                                                                                     MESSAGE_TYPE_STRING),
+        var result = queryBus2.subscriptionQuery(new GenericQueryMessage(QUERY_TYPE_A,
+                                                                         "start"),
                                                  null, 16);
         await().atMost(3, TimeUnit.SECONDS).until(result::isCompleted);
         assertThat(result.error()).isPresent().get().isInstanceOf(QueryExecutionException.class).matches(
@@ -226,16 +217,14 @@ class QueryThreadingIntegrationTest {
     @Test
     void canSendSubscriptionQueryWithMultipleInitialResponses() {
         queryBus1.subscribe(QUERY_TYPE_A.qualifiedName(),
-                            new QualifiedName(String.class),
                             (query, ctx) -> MessageStream.fromItems(new GenericQueryResponseMessage(
                                     MESSAGE_TYPE_STRING,
                                     "a1"), new GenericQueryResponseMessage(
                                     MESSAGE_TYPE_STRING,
                                     "a2")));
 
-        var result = queryBus2.subscriptionQuery(new GenericSubscriptionQueryMessage(QUERY_TYPE_A,
-                                                                                     "start",
-                                                                                     MESSAGE_TYPE_STRING),
+        var result = queryBus2.subscriptionQuery(new GenericQueryMessage(QUERY_TYPE_A,
+                                                                         "start"),
                                                  null, 16);
         await().until(result::hasNextAvailable);
         assertThat(result.next()).isPresent()
@@ -274,12 +263,9 @@ class QueryThreadingIntegrationTest {
     void canSendQueryAndReceiveStreamingResponse() {
         QueueMessageStream<QueryResponseMessage> queryResponse = new QueueMessageStream<>();
         queryBus1.subscribe(QUERY_TYPE_A.qualifiedName(),
-                            new QualifiedName(String.class),
                             (query, ctx) -> queryResponse
         );
-        var result = queryBus2.query(new GenericQueryMessage(QUERY_TYPE_A, "start",
-                                                             MESSAGE_TYPE_STRING),
-                                     null);
+        var result = queryBus2.query(new GenericQueryMessage(QUERY_TYPE_A, "start"), null);
         assertThat(result.hasNextAvailable()).isFalse();
         queryResponse.offer(new GenericQueryResponseMessage(MESSAGE_TYPE_STRING, "a"), Context.empty());
 
@@ -305,7 +291,7 @@ class QueryThreadingIntegrationTest {
 
     @Test
     void canStillHandleQueryResponsesWhileManyQueriesHandling() {
-        queryBus2.subscribe(QUERY_TYPE_B.qualifiedName(), new QualifiedName(String.class), (query, ctx) -> {
+        queryBus2.subscribe(QUERY_TYPE_B.qualifiedName(), (query, ctx) -> {
             try {
                 secondaryQueryBlock.await();
             } catch (InterruptedException e) {
@@ -314,11 +300,10 @@ class QueryThreadingIntegrationTest {
             return MessageStream.just(new GenericQueryResponseMessage(MESSAGE_TYPE_STRING, "b"));
         });
 
-        queryBus1.subscribe(QUERY_TYPE_A.qualifiedName(), new QualifiedName(String.class), (query, ctx) -> {
+        queryBus1.subscribe(QUERY_TYPE_A.qualifiedName(), (query, ctx) -> {
             waitingQueries.incrementAndGet();
             QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE_B,
-                                                             "start",
-                                                             MESSAGE_TYPE_STRING);
+                                                             "start");
             try {
                 QueryResponseMessage b = queryBus1.query(testQuery, null)
                                                   .first()
@@ -336,22 +321,22 @@ class QueryThreadingIntegrationTest {
         });
 
         MessageStream<QueryResponseMessage> query1 = queryBus1.query(
-                new GenericQueryMessage(QUERY_TYPE_A, "start", MESSAGE_TYPE_STRING), null
+                new GenericQueryMessage(QUERY_TYPE_A, "start"), null
         );
         MessageStream<QueryResponseMessage> query2 = queryBus1.query(
-                new GenericQueryMessage(QUERY_TYPE_A, "start", MESSAGE_TYPE_STRING), null
+                new GenericQueryMessage(QUERY_TYPE_A, "start"), null
         );
         MessageStream<QueryResponseMessage> query3 = queryBus1.query(
-                new GenericQueryMessage(QUERY_TYPE_A, "start", MESSAGE_TYPE_STRING), null
+                new GenericQueryMessage(QUERY_TYPE_A, "start"), null
         );
         MessageStream<QueryResponseMessage> query4 = queryBus1.query(
-                new GenericQueryMessage(QUERY_TYPE_A, "start", MESSAGE_TYPE_STRING), null
+                new GenericQueryMessage(QUERY_TYPE_A, "start"), null
         );
         MessageStream<QueryResponseMessage> query5 = queryBus1.query(
-                new GenericQueryMessage(QUERY_TYPE_A, "start", MESSAGE_TYPE_STRING), null
+                new GenericQueryMessage(QUERY_TYPE_A, "start"), null
         );
         MessageStream<QueryResponseMessage> query6 = queryBus1.query(
-                new GenericQueryMessage(QUERY_TYPE_A, "start", MESSAGE_TYPE_STRING), null
+                new GenericQueryMessage(QUERY_TYPE_A, "start"), null
         );
 
         // Wait until all queries are waiting on the secondary query. With 5 threads, we expect exactly 5 to be

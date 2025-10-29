@@ -20,11 +20,10 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.queryhandling.QueryHandlerName;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.queryhandling.SubscriptionQueryMessage;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -63,7 +62,7 @@ public abstract class DelegatingQueryBusConnector implements QueryBusConnector {
 
     @Nonnull
     @Override
-    public MessageStream<QueryResponseMessage> subscriptionQuery(@Nonnull SubscriptionQueryMessage query,
+    public MessageStream<QueryResponseMessage> subscriptionQuery(@Nonnull QueryMessage query,
                                                                  @Nullable ProcessingContext context,
                                                                  int updateBufferSize) {
         return delegate.subscriptionQuery(query, context, updateBufferSize);
@@ -73,13 +72,14 @@ public abstract class DelegatingQueryBusConnector implements QueryBusConnector {
 
 
     // region [Connector]
+
     @Override
-    public CompletableFuture<Void> subscribe(@Nonnull QueryHandlerName name) {
+    public CompletableFuture<Void> subscribe(@Nonnull QualifiedName name) {
         return delegate.subscribe(name);
     }
 
     @Override
-    public boolean unsubscribe(@Nonnull QueryHandlerName name) {
+    public boolean unsubscribe(@Nonnull QualifiedName name) {
         return delegate.unsubscribe(name);
     }
 
