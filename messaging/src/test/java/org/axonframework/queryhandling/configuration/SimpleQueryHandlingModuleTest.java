@@ -27,7 +27,6 @@ import org.axonframework.messaging.correlation.CorrelationDataProviderRegistry;
 import org.axonframework.messaging.correlation.DefaultCorrelationDataProviderRegistry;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryHandler;
-import org.axonframework.queryhandling.QueryHandlerName;
 import org.axonframework.queryhandling.QueryHandlingComponent;
 import org.axonframework.utils.StubLifecycleRegistry;
 import org.junit.jupiter.api.*;
@@ -45,8 +44,6 @@ import static org.junit.jupiter.api.Assertions.*;
 class SimpleQueryHandlingModuleTest {
 
     private static final QualifiedName QUERY_NAME = new QualifiedName(String.class);
-    private static final QualifiedName RESPONSE_NAME = new QualifiedName(String.class);
-    private static final QueryHandlerName QUERY_HANDLER_NAME = new QueryHandlerName(QUERY_NAME, RESPONSE_NAME);
 
     private QueryHandlingModule.SetupPhase setupPhase;
     private QueryHandlingModule.QueryHandlerPhase queryHandlerPhase;
@@ -75,7 +72,6 @@ class SimpleQueryHandlingModuleTest {
                         setupPhase.queryHandlers()
                                   .queryHandler(
                                           QUERY_NAME,
-                                          RESPONSE_NAME,
                                           (query, context) -> MessageStream.just(null)
                                   )
                                   .build()
@@ -87,8 +83,8 @@ class SimpleQueryHandlingModuleTest {
         MockComponentDescriptor descriptor = new MockComponentDescriptor();
         resultConfig.getComponent(QueryBus.class).describeTo(descriptor);
 
-        Map<QueryHandlerName, QueryHandlingComponent> subscriptions = descriptor.getProperty("subscriptions");
-        assertTrue(subscriptions.containsKey(QUERY_HANDLER_NAME));
+        Map<QualifiedName, QueryHandlingComponent> subscriptions = descriptor.getProperty("subscriptions");
+        assertTrue(subscriptions.containsKey(QUERY_NAME));
     }
 
     @Test
@@ -111,7 +107,7 @@ class SimpleQueryHandlingModuleTest {
                 QueryHandlingComponent.class, "QueryHandlingComponent[test-subject]");
         assertTrue(optionalHandlingComponent.isPresent());
         assertTrue(optionalHandlingComponent.get().supportedQueries()
-                                            .contains(QUERY_HANDLER_NAME));
+                                            .contains(QUERY_NAME));
     }
 
     @Test
@@ -139,7 +135,7 @@ class SimpleQueryHandlingModuleTest {
                         QueryHandlingComponent.class, "QueryHandlingComponent[test-subject]"
                 ));
         assertTrue(optionalHandlingComponent.isPresent());
-        assertTrue(optionalHandlingComponent.get().supportedQueries().contains(QUERY_HANDLER_NAME));
+        assertTrue(optionalHandlingComponent.get().supportedQueries().contains(QUERY_NAME));
     }
 
     @Test
@@ -158,16 +154,7 @@ class SimpleQueryHandlingModuleTest {
         //noinspection DataFlowIssue
         assertThrows(
                 NullPointerException.class,
-                () -> queryHandlerPhase.queryHandler(null, RESPONSE_NAME, (query, context) -> MessageStream.just(null))
-        );
-    }
-
-    @Test
-    void queryHandlerThrowsNullPointerExceptionForNullResponseName() {
-        //noinspection DataFlowIssue
-        assertThrows(
-                NullPointerException.class,
-                () -> queryHandlerPhase.queryHandler(QUERY_NAME, null, (query, context) -> MessageStream.just(null))
+                () -> queryHandlerPhase.queryHandler(null, (query, context) -> MessageStream.just(null))
         );
     }
 
@@ -175,7 +162,7 @@ class SimpleQueryHandlingModuleTest {
     void queryHandlerThrowsNullPointerExceptionForNullQueryHandler() {
         //noinspection DataFlowIssue
         assertThrows(NullPointerException.class,
-                     () -> queryHandlerPhase.queryHandler(QUERY_NAME, RESPONSE_NAME, (QueryHandler) null));
+                     () -> queryHandlerPhase.queryHandler(QUERY_NAME, (QueryHandler) null));
     }
 
     @Test
@@ -183,16 +170,7 @@ class SimpleQueryHandlingModuleTest {
         //noinspection DataFlowIssue
         assertThrows(
                 NullPointerException.class,
-                () -> queryHandlerPhase.queryHandler(null, RESPONSE_NAME, (query, context) -> MessageStream.just(null))
-        );
-    }
-
-    @Test
-    void queryHandlerThrowsNullPointerExceptionForNullQueryResponseWithQueryHandler() {
-        //noinspection DataFlowIssue
-        assertThrows(
-                NullPointerException.class,
-                () -> queryHandlerPhase.queryHandler(QUERY_NAME, null, (query, context) -> MessageStream.just(null))
+                () -> queryHandlerPhase.queryHandler(null, (query, context) -> MessageStream.just(null))
         );
     }
 
@@ -200,15 +178,7 @@ class SimpleQueryHandlingModuleTest {
     void queryHandlerThrowsNullPointerExceptionForNullQueryNameWithQueryHandlerBuilder() {
         //noinspection DataFlowIssue
         assertThrows(NullPointerException.class, () -> queryHandlerPhase.queryHandler(
-                null, RESPONSE_NAME, c -> (query, context) -> null
-        ));
-    }
-
-    @Test
-    void queryHandlerThrowsNullPointerExceptionForNullResponseNameWithQueryHandlerBuilder() {
-        //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> queryHandlerPhase.queryHandler(
-                QUERY_NAME, null, c -> (query, context) -> null
+                null, c -> (query, context) -> null
         ));
     }
 
@@ -216,7 +186,7 @@ class SimpleQueryHandlingModuleTest {
     void queryHandlerThrowsNullPointerExceptionForNullQueryHandlerBuilder() {
         //noinspection DataFlowIssue
         assertThrows(NullPointerException.class, () -> queryHandlerPhase.queryHandler(
-                QUERY_NAME, RESPONSE_NAME, (ComponentBuilder<QueryHandler>) null
+                QUERY_NAME, (ComponentBuilder<QueryHandler>) null
         ));
     }
 

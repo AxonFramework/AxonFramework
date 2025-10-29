@@ -124,17 +124,13 @@ public class MessagingTestUtils {
     }
 
     /**
-     * Creates a {@link QueryMessage} with a message type derived from the payload's class and specifies the expected
-     * single response type.
+     * Creates a {@link QueryMessage} with a message type derived from the payload's class.
      *
      * @param payload      The payload object to include in the query message.
-     * @param responseType The class type expected as a single response to this query.
      * @return A new {@link QueryMessage} instance configured for a single response type.
      */
-    public static QueryMessage query(@Nonnull Object payload, @Nonnull Class<?> responseType) {
-        return new GenericQueryMessage(new MessageType(payload.getClass()),
-                                       payload,
-                                       new MessageType(responseType));
+    public static QueryMessage query(@Nonnull Object payload) {
+        return new GenericQueryMessage(new MessageType(payload.getClass()), payload);
     }
 
     /**

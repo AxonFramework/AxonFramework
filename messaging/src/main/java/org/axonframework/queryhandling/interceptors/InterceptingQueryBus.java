@@ -26,13 +26,12 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryHandler;
-import org.axonframework.queryhandling.QueryHandlerName;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 
 import java.util.ArrayList;
@@ -123,12 +122,12 @@ public class InterceptingQueryBus implements QueryBus {
     }
 
     @Override
-    public InterceptingQueryBus subscribe(@Nonnull QueryHandlerName handlerName,
+    public InterceptingQueryBus subscribe(@Nonnull QualifiedName queryName,
                                           @Nonnull QueryHandler queryHandler) {
         if (handlerInterceptors.isEmpty()) {
-            delegate.subscribe(handlerName, queryHandler);
+            delegate.subscribe(queryName, queryHandler);
         } else {
-            delegate.subscribe(handlerName, new InterceptingHandler(queryHandler, handlerInterceptors));
+            delegate.subscribe(queryName, new InterceptingHandler(queryHandler, handlerInterceptors));
         }
         return this;
     }
@@ -142,7 +141,7 @@ public class InterceptingQueryBus implements QueryBus {
 
     @Nonnull
     @Override
-    public MessageStream<QueryResponseMessage> subscriptionQuery(@Nonnull SubscriptionQueryMessage query,
+    public MessageStream<QueryResponseMessage> subscriptionQuery(@Nonnull QueryMessage query,
                                                                  @Nullable ProcessingContext context,
                                                                  int updateBufferSize) {
         return subscriptionQueryInterceptingDispatcher.dispatch(query, context, updateBufferSize);
@@ -150,14 +149,14 @@ public class InterceptingQueryBus implements QueryBus {
 
     @Nonnull
     @Override
-    public MessageStream<SubscriptionQueryUpdateMessage> subscribeToUpdates(@Nonnull SubscriptionQueryMessage query,
+    public MessageStream<SubscriptionQueryUpdateMessage> subscribeToUpdates(@Nonnull QueryMessage query,
                                                                             int updateBufferSize) {
         return subscribeToUpdatesInterceptingDispatcher.dispatch(query, updateBufferSize);
     }
 
     @Nonnull
     @Override
-    public CompletableFuture<Void> emitUpdate(@Nonnull Predicate<SubscriptionQueryMessage> filter,
+    public CompletableFuture<Void> emitUpdate(@Nonnull Predicate<QueryMessage> filter,
                                               @Nonnull Supplier<SubscriptionQueryUpdateMessage> updateSupplier,
                                               @Nullable ProcessingContext context) {
         if (updateDispatchInterceptors.isEmpty()) {
@@ -176,7 +175,7 @@ public class InterceptingQueryBus implements QueryBus {
 
     @Nonnull
     @Override
-    public CompletableFuture<Void> completeSubscriptions(@Nonnull Predicate<SubscriptionQueryMessage> filter,
+    public CompletableFuture<Void> completeSubscriptions(@Nonnull Predicate<QueryMessage> filter,
                                                          @Nullable ProcessingContext context) {
         return delegate.completeSubscriptions(filter, context);
     }
@@ -184,7 +183,7 @@ public class InterceptingQueryBus implements QueryBus {
     @Nonnull
     @Override
     public CompletableFuture<Void> completeSubscriptionsExceptionally(
-            @Nonnull Predicate<SubscriptionQueryMessage> filter,
+            @Nonnull Predicate<QueryMessage> filter,
             @Nonnull Throwable cause,
             @Nullable ProcessingContext context
     ) {
@@ -260,7 +259,7 @@ public class InterceptingQueryBus implements QueryBus {
         }
 
         private MessageStream<QueryResponseMessage> dispatch(
-                @Nonnull SubscriptionQueryMessage query,
+                @Nonnull QueryMessage query,
                 @Nullable ProcessingContext context,
                 int updateBufferSize
         ) {
@@ -268,15 +267,9 @@ public class InterceptingQueryBus implements QueryBus {
             // which varies per invocation and is not part of the BiFunction signature.
             // We cannot use Processing Context to pass this value, because Processing Context can be null.
             BiFunction<? super QueryMessage, ProcessingContext, MessageStream<?>> subscriptionDispatcher =
-                    (interceptedQuery, interceptedContext) -> {
-                        if (!(interceptedQuery instanceof SubscriptionQueryMessage)) {
-                            throw new IllegalArgumentException(
-                                    "Expected SubscriptionQueryMessage but got: " + interceptedQuery.getClass());
-                        }
-                        return delegate.subscriptionQuery((SubscriptionQueryMessage) interceptedQuery,
-                                                          interceptedContext,
-                                                          updateBufferSize);
-                    };
+                    (interceptedQuery, interceptedContext) -> delegate.subscriptionQuery(interceptedQuery,
+                                                                                         interceptedContext,
+                                                                                         updateBufferSize);
 
             return new DefaultMessageDispatchInterceptorChain<>(
                     interceptors,
@@ -299,21 +292,14 @@ public class InterceptingQueryBus implements QueryBus {
         }
 
         private MessageStream<SubscriptionQueryUpdateMessage> dispatch(
-                @Nonnull SubscriptionQueryMessage query,
+                @Nonnull QueryMessage query,
                 int updateBufferSize
         ) {
             // Create a new chain per call because the dispatcher needs the updateBufferSize parameter
             // which varies per invocation and is not part of the BiFunction signature.
             // We cannot use Processing Context to pass this value, because Processing Context can be null.
             BiFunction<? super QueryMessage, ProcessingContext, MessageStream<?>> subscribeToUpdatesDispatcher =
-                    (interceptedQuery, interceptedContext) -> {
-                        if (!(interceptedQuery instanceof SubscriptionQueryMessage)) {
-                            throw new IllegalArgumentException(
-                                    "Expected SubscriptionQueryMessage but got: " + interceptedQuery.getClass());
-                        }
-                        return delegate.subscribeToUpdates((SubscriptionQueryMessage) interceptedQuery,
-                                                           updateBufferSize);
-                    };
+                    (interceptedQuery, interceptedContext) -> delegate.subscribeToUpdates(interceptedQuery, updateBufferSize);
 
             return new DefaultMessageDispatchInterceptorChain<>(
                     interceptors,

@@ -18,7 +18,6 @@ package org.axonframework.queryhandling;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageType;
 import org.axonframework.serialization.Converter;
 
 import java.lang.reflect.Type;
@@ -27,24 +26,11 @@ import java.util.OptionalInt;
 
 /**
  * A {@link Message} type that carries a Query: a request for information.
- * <p>
- * Besides a {@link #payload() payload}, {@link QueryMessage QueryMessages} also carry the expected
- * {@link #responseType() response type}. This is the type of result expected by the caller.
- * <p>
- * Handlers should only answer a query if they can respond with the appropriate response type.
  *
  * @author Marc Gathier
  * @since 3.1.0
  */
 public interface QueryMessage extends Message {
-
-    /**
-     * Returns the query {@link MessageType response type} of this {@code QueryMessage}.
-     *
-     * @return The query {@link MessageType response type} of this {@code QueryMessage}.
-     */
-    @Nonnull
-    MessageType responseType();
 
     @Override
     @Nonnull

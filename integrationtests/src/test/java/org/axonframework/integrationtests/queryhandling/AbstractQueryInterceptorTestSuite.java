@@ -31,13 +31,11 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
-import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
 import org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.serialization.json.JacksonConverter;
 import org.axonframework.utils.MockException;
@@ -82,9 +80,9 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
             QueryBus interceptingQueryBus = interceptingConfig.getComponent(QueryBus.class);
 
             RecordingQueryHandler handler = new RecordingQueryHandler();
-            interceptingQueryBus.subscribe(QUERY_NAME, RESPONSE_NAME, handler);
+            interceptingQueryBus.subscribe(QUERY_NAME, handler);
 
-            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test", TEST_RESPONSE_TYPE);
+            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test");
 
             // when
             StepVerifier.create(FluxUtils.of(interceptingQueryBus.query(testQuery,
@@ -113,9 +111,9 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
             QueryBus interceptingQueryBus = interceptingConfig.getComponent(QueryBus.class);
 
             RecordingQueryHandler handler = new RecordingQueryHandler();
-            interceptingQueryBus.subscribe(QUERY_NAME, RESPONSE_NAME, handler);
+            interceptingQueryBus.subscribe(QUERY_NAME, handler);
 
-            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test", TEST_RESPONSE_TYPE);
+            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test");
 
             // when
             StepVerifier.create(FluxUtils.of(interceptingQueryBus.query(testQuery,
@@ -149,9 +147,9 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
             QueryBus interceptingQueryBus = interceptingConfig.getComponent(QueryBus.class);
 
             RecordingQueryHandler handler = new RecordingQueryHandler();
-            interceptingQueryBus.subscribe(QUERY_NAME, RESPONSE_NAME, handler);
+            interceptingQueryBus.subscribe(QUERY_NAME, handler);
 
-            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test", TEST_RESPONSE_TYPE);
+            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test");
 
             // when
             MessageStream<QueryResponseMessage> result = interceptingQueryBus.query(testQuery,
@@ -185,10 +183,10 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
             QueryHandler handler = (query, context) -> MessageStream.just(new GenericQueryResponseMessage(
                     TEST_RESPONSE_TYPE,
                     "ok"));
-            interceptingQueryBus.subscribe(QUERY_NAME, RESPONSE_NAME, handler);
+            interceptingQueryBus.subscribe(QUERY_NAME, handler);
 
-            QueryMessage firstQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "first", TEST_RESPONSE_TYPE);
-            QueryMessage secondQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "second", TEST_RESPONSE_TYPE);
+            QueryMessage firstQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "first");
+            QueryMessage secondQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "second");
 
             // when
             interceptingQueryBus.query(firstQuery, StubProcessingContext.forMessage(firstQuery));
@@ -213,9 +211,9 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
             QueryBus interceptingQueryBus = interceptingConfig.getComponent(QueryBus.class);
 
             RecordingQueryHandler handler = new RecordingQueryHandler();
-            interceptingQueryBus.subscribe(QUERY_NAME, RESPONSE_NAME, handler);
+            interceptingQueryBus.subscribe(QUERY_NAME, handler);
 
-            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test", TEST_RESPONSE_TYPE);
+            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test");
 
             // when
             MessageStream<QueryResponseMessage> result = interceptingQueryBus.query(testQuery,
@@ -242,9 +240,9 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
             QueryBus interceptingQueryBus = interceptingConfig.getComponent(QueryBus.class);
 
             RecordingQueryHandler handler = new RecordingQueryHandler();
-            interceptingQueryBus.subscribe(QUERY_NAME, RESPONSE_NAME, handler);
+            interceptingQueryBus.subscribe(QUERY_NAME, handler);
 
-            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test", TEST_RESPONSE_TYPE);
+            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test");
 
             // when
             MessageStream<QueryResponseMessage> result = interceptingQueryBus.query(testQuery,
@@ -279,9 +277,9 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
             QueryBus interceptingQueryBus = interceptingConfig.getComponent(QueryBus.class);
 
             RecordingQueryHandler handler = new RecordingQueryHandler();
-            interceptingQueryBus.subscribe(QUERY_NAME, RESPONSE_NAME, handler);
+            interceptingQueryBus.subscribe(QUERY_NAME, handler);
 
-            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test", TEST_RESPONSE_TYPE);
+            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test");
             ProcessingContext context = StubProcessingContext.forMessage(testQuery);
 
             // when
@@ -313,9 +311,9 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
             QueryBus interceptingQueryBus = interceptingConfig.getComponent(QueryBus.class);
 
             RecordingQueryHandler handler = new RecordingQueryHandler();
-            interceptingQueryBus.subscribe(QUERY_NAME, RESPONSE_NAME, handler);
+            interceptingQueryBus.subscribe(QUERY_NAME, handler);
 
-            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test", TEST_RESPONSE_TYPE);
+            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test");
             ProcessingContext context = StubProcessingContext.forMessage(testQuery);
 
             // when
@@ -348,10 +346,10 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
             QueryHandler handler = (query, context) -> MessageStream.just(new GenericQueryResponseMessage(
                     TEST_RESPONSE_TYPE,
                     "ok"));
-            interceptingQueryBus.subscribe(QUERY_NAME, RESPONSE_NAME, handler);
+            interceptingQueryBus.subscribe(QUERY_NAME, handler);
 
-            QueryMessage firstQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "first", TEST_RESPONSE_TYPE);
-            QueryMessage secondQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "second", TEST_RESPONSE_TYPE);
+            QueryMessage firstQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "first");
+            QueryMessage secondQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "second");
 
             // when
             interceptingQueryBus.query(firstQuery, StubProcessingContext.forMessage(firstQuery)).first()
@@ -375,9 +373,9 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
 
             QueryHandler handler = (query, context) -> MessageStream.failed(new MockException(
                     "Simulating failure in interceptor"));
-            interceptingQueryBus.subscribe(QUERY_NAME, RESPONSE_NAME, handler);
+            interceptingQueryBus.subscribe(QUERY_NAME, handler);
 
-            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "Request", TEST_RESPONSE_TYPE);
+            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "Request");
             ProcessingContext context = StubProcessingContext.forMessage(testQuery);
 
             // when
@@ -406,9 +404,9 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
             QueryHandler handler = (query, context) -> MessageStream.just(new GenericQueryResponseMessage(
                     TEST_RESPONSE_TYPE,
                     "ok"));
-            interceptingQueryBus.subscribe(QUERY_NAME, RESPONSE_NAME, handler);
+            interceptingQueryBus.subscribe(QUERY_NAME, handler);
 
-            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "Request", TEST_RESPONSE_TYPE);
+            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "Request");
             ProcessingContext context = StubProcessingContext.forMessage(testQuery);
 
             // when
@@ -438,9 +436,9 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
             QueryHandler handler = (query, context) -> MessageStream.just(new GenericQueryResponseMessage(
                     TEST_RESPONSE_TYPE,
                     "ok"));
-            interceptingQueryBus.subscribe(QUERY_NAME, RESPONSE_NAME, handler);
+            interceptingQueryBus.subscribe(QUERY_NAME, handler);
 
-            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "Request", TEST_RESPONSE_TYPE);
+            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "Request");
             ProcessingContext context = StubProcessingContext.forMessage(testQuery);
 
             // when
@@ -466,10 +464,10 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
                     "initial"));
 
             QueryBus testQueryBus = queryBus();
-            testQueryBus.subscribe(QUERY_NAME, RESPONSE_NAME, handler);
+            testQueryBus.subscribe(QUERY_NAME, handler);
 
-            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
-                    TEST_QUERY_TYPE, "test", TEST_RESPONSE_TYPE
+            QueryMessage testQuery = new GenericQueryMessage(
+                    TEST_QUERY_TYPE, "test"
             );
             ProcessingContext context = StubProcessingContext.forMessage(testQuery);
 
@@ -496,11 +494,9 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
             QueryBus interceptingQueryBus = interceptingConfig.getComponent(QueryBus.class);
 
             RecordingQueryHandler handler = new RecordingQueryHandler();
-            interceptingQueryBus.subscribe(QUERY_NAME, RESPONSE_NAME, handler);
+            interceptingQueryBus.subscribe(QUERY_NAME, handler);
 
-            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
-                    TEST_QUERY_TYPE, "test", TEST_RESPONSE_TYPE
-            );
+            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test");
             ProcessingContext context = StubProcessingContext.forMessage(testQuery);
 
             // when
@@ -539,10 +535,10 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
             QueryBus interceptingQueryBus = interceptingConfig.getComponent(QueryBus.class);
 
             RecordingQueryHandler handler = new RecordingQueryHandler();
-            interceptingQueryBus.subscribe(QUERY_NAME, RESPONSE_NAME, handler);
+            interceptingQueryBus.subscribe(QUERY_NAME, handler);
 
-            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
-                    TEST_QUERY_TYPE, "test", TEST_RESPONSE_TYPE
+            QueryMessage testQuery = new GenericQueryMessage(
+                    TEST_QUERY_TYPE, "test"
             );
             ProcessingContext context = StubProcessingContext.forMessage(testQuery);
 
@@ -588,8 +584,8 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
                     .build();
             QueryBus interceptingQueryBus = interceptingConfig.getComponent(QueryBus.class);
 
-            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
-                    TEST_QUERY_TYPE, "test", TEST_RESPONSE_TYPE
+            QueryMessage testQuery = new GenericQueryMessage(
+                    TEST_QUERY_TYPE, "test"
             );
 
             // when
@@ -644,7 +640,7 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
             GenericSubscriptionQueryUpdateMessage updateMessage =
                     new GenericSubscriptionQueryUpdateMessage(TEST_RESPONSE_TYPE, "update");
 
-            Predicate<SubscriptionQueryMessage> matchAll = query -> true;
+            Predicate<QueryMessage> matchAll = query -> true;
 
             // when
             CompletableFuture<Void> result = interceptingQueryBus.emitUpdate(
@@ -669,7 +665,7 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
             GenericSubscriptionQueryUpdateMessage updateMessage =
                     new GenericSubscriptionQueryUpdateMessage(TEST_RESPONSE_TYPE, "update");
 
-            Predicate<SubscriptionQueryMessage> matchAll = query -> true;
+            Predicate<QueryMessage> matchAll = query -> true;
 
             // when
             CompletableFuture<Void> result = testQueryBus.emitUpdate(
@@ -700,8 +696,8 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
                     .build();
             QueryBus interceptingQueryBus = interceptingConfig.getComponent(QueryBus.class);
 
-            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
-                    TEST_QUERY_TYPE, "test", TEST_RESPONSE_TYPE
+            QueryMessage testQuery = new GenericQueryMessage(
+                    TEST_QUERY_TYPE, "test"
             );
             GenericSubscriptionQueryUpdateMessage updateMessage =
                     new GenericSubscriptionQueryUpdateMessage(TEST_RESPONSE_TYPE, "update");
@@ -732,9 +728,9 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
         QueryBus testQueryBus = queryBus();
 
         // when
-        testQueryBus.subscribe(QUERY_NAME, RESPONSE_NAME, handler);
+        testQueryBus.subscribe(QUERY_NAME, handler);
 
-        QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test", TEST_RESPONSE_TYPE);
+        QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test");
         MessageStream<QueryResponseMessage> result = testQueryBus.query(testQuery,
                                                                         StubProcessingContext.forMessage(testQuery));
 

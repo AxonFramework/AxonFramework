@@ -23,13 +23,12 @@ import org.axonframework.common.Registration;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.DelayedMessageStream;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryHandler;
-import org.axonframework.queryhandling.QueryHandlerName;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.util.PriorityRunnable;
 import org.slf4j.Logger;
@@ -65,16 +64,15 @@ public class DistributedQueryBus implements QueryBus {
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private static final int QUERY_AND_RESPONSE_QUEUE_CAPACITY = 1000;
-    private static final AtomicLong TASK_SEQUENCE = new AtomicLong(Long.MIN_VALUE);
 
     private final QueryBus localSegment;
     private final QueryBusConnector connector;
     private final ExecutorService queryingExecutor;
-    private final Map<SubscriptionQueryMessage, QueryBusConnector.UpdateCallback> updateRegistry = new ConcurrentHashMap<>();
+    private final Map<QueryMessage, QueryBusConnector.UpdateCallback> updateRegistry = new ConcurrentHashMap<>();
 
     /**
      * Constructs a {@code DistributedQueryBus} using the given {@code localSegment} for
-     * {@link #subscribe(QueryHandlerName, QueryHandler) subscribing} handlers and the given {@code connector} to
+     * {@link #subscribe(QualifiedName, QueryHandler) subscribing} handlers and the given {@code connector} to
      * dispatch and receive queries and query responses with, to and from different segments of the {@code QueryBus}.
      *
      * @param localSegment  The local {@code QueryBus} used to subscribe handlers to.
@@ -102,10 +100,10 @@ public class DistributedQueryBus implements QueryBus {
     }
 
     @Override
-    public QueryBus subscribe(@Nonnull QueryHandlerName handlerName,
+    public QueryBus subscribe(@Nonnull QualifiedName queryName,
                               @Nonnull QueryHandler queryHandler) {
-        localSegment.subscribe(handlerName, queryHandler);
-        FutureUtils.joinAndUnwrap(connector.subscribe(handlerName));
+        localSegment.subscribe(queryName, queryHandler);
+        FutureUtils.joinAndUnwrap(connector.subscribe(queryName));
         return this;
     }
 
@@ -118,7 +116,7 @@ public class DistributedQueryBus implements QueryBus {
 
     @Nonnull
     @Override
-    public MessageStream<QueryResponseMessage> subscriptionQuery(@Nonnull SubscriptionQueryMessage query,
+    public MessageStream<QueryResponseMessage> subscriptionQuery(@Nonnull QueryMessage query,
                                                                  @Nullable ProcessingContext context,
                                                                  int updateBufferSize) {
         return connector.subscriptionQuery(query, context, updateBufferSize);
@@ -126,7 +124,7 @@ public class DistributedQueryBus implements QueryBus {
 
     @Nonnull
     @Override
-    public MessageStream<SubscriptionQueryUpdateMessage> subscribeToUpdates(@Nonnull SubscriptionQueryMessage query,
+    public MessageStream<SubscriptionQueryUpdateMessage> subscribeToUpdates(@Nonnull QueryMessage query,
                                                                             int updateBufferSize) {
         // not ideal, but the AxonServer Connector doesn't support just subscribing to updates yet
         return subscriptionQuery(query, null, updateBufferSize)
@@ -136,7 +134,7 @@ public class DistributedQueryBus implements QueryBus {
 
     @Nonnull
     @Override
-    public CompletableFuture<Void> emitUpdate(@Nonnull Predicate<SubscriptionQueryMessage> filter,
+    public CompletableFuture<Void> emitUpdate(@Nonnull Predicate<QueryMessage> filter,
                                               @Nonnull Supplier<SubscriptionQueryUpdateMessage> updateSupplier,
                                               @Nullable ProcessingContext context) {
         List<CompletableFuture<Void>> tasks = new ArrayList<>();
@@ -150,7 +148,7 @@ public class DistributedQueryBus implements QueryBus {
 
     @Nonnull
     @Override
-    public CompletableFuture<Void> completeSubscriptions(@Nonnull Predicate<SubscriptionQueryMessage> filter,
+    public CompletableFuture<Void> completeSubscriptions(@Nonnull Predicate<QueryMessage> filter,
                                                          @Nullable ProcessingContext context) {
         List<CompletableFuture<Void>> tasks = new ArrayList<>();
         updateRegistry.forEach((message, sender) -> {
@@ -164,7 +162,7 @@ public class DistributedQueryBus implements QueryBus {
     @Nonnull
     @Override
     public CompletableFuture<Void> completeSubscriptionsExceptionally(
-            @Nonnull Predicate<SubscriptionQueryMessage> filter,
+            @Nonnull Predicate<QueryMessage> filter,
             @Nonnull Throwable cause,
             @Nullable ProcessingContext context
     ) {
@@ -191,8 +189,8 @@ public class DistributedQueryBus implements QueryBus {
         public MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage query) {
             int priority = query.priority().orElse(0);
             if (logger.isDebugEnabled()) {
-                logger.debug("Received query [{}] with response [{}] for processing with priority [{}].",
-                             query.type(), query.responseType(), priority);
+                logger.debug("Received query [{}] for processing with priority [{}].",
+                             query.type(), priority);
             }
             long sequence = TASK_SEQUENCE.incrementAndGet();
             CompletableFuture<MessageStream<QueryResponseMessage>> localResult = new CompletableFuture<>();
@@ -220,7 +218,7 @@ public class DistributedQueryBus implements QueryBus {
 
         @Nonnull
         @Override
-        public Registration registerUpdateHandler(@Nonnull SubscriptionQueryMessage subscriptionQueryMessage,
+        public Registration registerUpdateHandler(@Nonnull QueryMessage subscriptionQueryMessage,
                                                   @Nonnull QueryBusConnector.UpdateCallback updateCallback) {
             updateRegistry.put(subscriptionQueryMessage, updateCallback);
             return () -> updateRegistry.remove(subscriptionQueryMessage, updateCallback);

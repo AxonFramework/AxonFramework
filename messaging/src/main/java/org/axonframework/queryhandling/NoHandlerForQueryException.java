@@ -38,11 +38,9 @@ public class NoHandlerForQueryException extends AxonException {
      */
     public static NoHandlerForQueryException forBus(@Nonnull QueryMessage query) {
         return new NoHandlerForQueryException(format(
-                "No matching handler is available to handle query of type [%s] with expected response type [%s]. "
-                        + "To find a matching handler, note that the query handler's name should match the query's name "
-                        + "and the response should match the handler's response.",
-                query.type(),
-                query.responseType()
+                "No matching handler is available to handle query of type [%s]. "
+                        + "To find a matching handler, note that the query handler's name should match the query's name.",
+                query.type()
         ));
     }
 
@@ -59,12 +57,11 @@ public class NoHandlerForQueryException extends AxonException {
      */
     public static NoHandlerForQueryException forHandlingComponent(@Nonnull QueryMessage query) {
         return new NoHandlerForQueryException(format(
-                "No matching handler is available to handle query of type [%s] with expected response type [%s]. "
+                "No matching handler is available to handle query of type [%s]. "
                         + "To find a matching handler, note that the query handler's name should match the query's name, "
-                        + "the response, and all the parameters on the query handling method should be resolvable. "
-                        + "It is thus recommended to validate the name, response type, and parameters.",
-                query.type(),
-                query.responseType()
+                        + "and all the parameters on the query handling method should be resolvable. "
+                        + "It is thus recommended to validate the name, and parameters.",
+                query.type()
         ));
     }
 

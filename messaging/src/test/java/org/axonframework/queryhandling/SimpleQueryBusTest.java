@@ -15,7 +15,6 @@
  */
 package org.axonframework.queryhandling;
 
-import org.assertj.core.api.Condition;
 import org.axonframework.common.infra.MockComponentDescriptor;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
@@ -105,42 +104,43 @@ class SimpleQueryBusTest {
             // given...
             MockComponentDescriptor testDescriptor = new MockComponentDescriptor();
             // when first subscription...
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, SINGLE_RESPONSE_HANDLER);
+            testSubject.subscribe(QUERY_NAME, SINGLE_RESPONSE_HANDLER);
             // then...
             testSubject.describeTo(testDescriptor);
-            Map<QueryHandlerName, QueryHandler> subscriptions = testDescriptor.getProperty("subscriptions");
+            Map<QualifiedName, QueryHandler> subscriptions = testDescriptor.getProperty("subscriptions");
             assertThat(subscriptions.size()).isEqualTo(1);
             assertThat(subscriptions).containsValue(SINGLE_RESPONSE_HANDLER);
             // when second subscription with different query name...
-            testSubject.subscribe(new QualifiedName("test2"), RESPONSE_NAME, SINGLE_RESPONSE_HANDLER);
+            testSubject.subscribe(new QualifiedName("test2"), SINGLE_RESPONSE_HANDLER);
             // then...
             testSubject.describeTo(testDescriptor);
             subscriptions = testDescriptor.getProperty("subscriptions");
             assertThat(subscriptions.size()).isEqualTo(2);
             assertThat(subscriptions).containsValue(SINGLE_RESPONSE_HANDLER);
-            // when third subscription with different response name...
-            testSubject.subscribe(QUERY_NAME, new QualifiedName(Integer.class), SINGLE_RESPONSE_HANDLER);
+
+            // when third subscription with the same query name...
+            testSubject.subscribe(QUERY_NAME, SINGLE_RESPONSE_HANDLER);
             // then...
             testSubject.describeTo(testDescriptor);
             subscriptions = testDescriptor.getProperty("subscriptions");
-            assertThat(subscriptions.size()).isEqualTo(3);
+            assertThat(subscriptions.size()).isEqualTo(2);
         }
 
         @Test
         void subscribingSameHandlerTwiceDoesNotThrowDuplicateQueryHandlerSubscriptionException() {
             // given...
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, SINGLE_RESPONSE_HANDLER);
+            testSubject.subscribe(QUERY_NAME, SINGLE_RESPONSE_HANDLER);
             // when/then...
-            assertDoesNotThrow(() -> testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, SINGLE_RESPONSE_HANDLER));
+            assertDoesNotThrow(() -> testSubject.subscribe(QUERY_NAME, SINGLE_RESPONSE_HANDLER));
         }
 
         @Test
-        void subscribingDifferentHandlerForSameNamesThrowsDuplicateQueryHandlerSubscriptionException() {
+        void subscribingDifferentHandlerForSameNameThrowsDuplicateQueryHandlerSubscriptionException() {
             // given...
             QueryHandler testHandler = (query, context) -> MessageStream.empty().cast();
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, SINGLE_RESPONSE_HANDLER);
+            testSubject.subscribe(QUERY_NAME, SINGLE_RESPONSE_HANDLER);
             // when/then...
-            assertThatThrownBy(() -> testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, testHandler))
+            assertThatThrownBy(() -> testSubject.subscribe(QUERY_NAME, testHandler))
                     .isInstanceOf(DuplicateQueryHandlerSubscriptionException.class);
         }
     }
@@ -149,9 +149,9 @@ class SimpleQueryBusTest {
     class DirectQuery {
 
         @Test
-        void directQueryForUnknownQueryNameAndResponseNameReturnsFailedNoHandlerForQueryExceptionStream() {
+        void directQueryForUnknownQueryNameReturnsFailedNoHandlerForQueryExceptionStream() {
             // given...
-            QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
+            QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD);
             // when...
             MessageStream<QueryResponseMessage> result = testSubject.query(testQuery, null);
             // then...
@@ -164,8 +164,8 @@ class SimpleQueryBusTest {
         @Test
         void directQueryReturnsMessageStreamWithSingleEntry() {
             // given...
-            QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, SINGLE_RESPONSE_HANDLER);
+            QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD);
+            testSubject.subscribe(QUERY_NAME, SINGLE_RESPONSE_HANDLER);
             // when...
             MessageStream<QueryResponseMessage> result = testSubject.query(testQuery, null);
             // then...
@@ -181,8 +181,8 @@ class SimpleQueryBusTest {
         @Test
         void directQueryReturnsMessageStreamWithMultipleEntries() {
             // given...
-            QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, MULTI_RESPONSE_HANDLER);
+            QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD);
+            testSubject.subscribe(QUERY_NAME, MULTI_RESPONSE_HANDLER);
             // when...
             MessageStream<QueryResponseMessage> result = testSubject.query(testQuery, null);
             // then...
@@ -198,11 +198,11 @@ class SimpleQueryBusTest {
         @Test
         void directQueryReturnsFailedMessageStreamFromThrowingQueryHandler() {
             // given...
-            QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
+            QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD);
             QueryHandler failingHandler = (query, context) -> {
                 throw new MockException("Mock");
             };
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, failingHandler);
+            testSubject.subscribe(QUERY_NAME, failingHandler);
             // when...
             MessageStream<QueryResponseMessage> result = testSubject.query(testQuery, null);
             // then...
@@ -217,9 +217,9 @@ class SimpleQueryBusTest {
         @Test
         void directQueryReturnsFailedMessageStreamFromFailingStreamResultQueryHandler() {
             // given...
-            QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
+            QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD);
             QueryHandler failingHandler = (query, context) -> MessageStream.failed(new MockException("Mock"));
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, failingHandler);
+            testSubject.subscribe(QUERY_NAME, failingHandler);
             // when...
             MessageStream<QueryResponseMessage> result = testSubject.query(testQuery, null);
             // then...
@@ -234,8 +234,8 @@ class SimpleQueryBusTest {
         @Test
         void directQueryResultsInEmptyMessageStream() {
             // given...
-            QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, (query, context) -> MessageStream.empty().cast());
+            QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD);
+            testSubject.subscribe(QUERY_NAME, (query, context) -> MessageStream.empty().cast());
             // when...
             MessageStream<QueryResponseMessage> result = testSubject.query(testQuery, null);
             // then...
@@ -247,8 +247,8 @@ class SimpleQueryBusTest {
         @Test
         void directQuerySingleResponseWithTransaction() throws Exception {
             // given...
-            QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, SINGLE_RESPONSE_HANDLER);
+            QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD);
+            testSubject.subscribe(QUERY_NAME, SINGLE_RESPONSE_HANDLER);
             // when...
             CompletableFuture<Object> result = testSubject.query(testQuery, null)
                                                           .first()
@@ -263,8 +263,8 @@ class SimpleQueryBusTest {
         @Test
         void directQueryMultipleResponsesWithTransaction() throws Exception {
             // given...
-            QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, MULTI_RESPONSE_HANDLER);
+            QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD);
+            testSubject.subscribe(QUERY_NAME, MULTI_RESPONSE_HANDLER);
             // when...
             CompletableFuture<List<String>> result =
                     testSubject.query(testQuery, null)
@@ -286,9 +286,9 @@ class SimpleQueryBusTest {
     class StreamingQuery {
 
         @Test
-        void streamingQueryForUnknownQueryNameAndResponseNameReturnsFailedNoHandlerForQueryExceptionPublisherStream() {
+        void streamingQueryForUnknownQueryNameReturnsFailedNoHandlerForQueryExceptionPublisherStream() {
             // given...
-            QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
+            QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD);
             // when/then...
             MessageStream<QueryResponseMessage> actual = testSubject.query(testQuery, null);
 
@@ -300,8 +300,8 @@ class SimpleQueryBusTest {
         @Test
         void streamingQueryReturnsPublisherWithSingleEntry() {
             // given...
-            QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, SINGLE_RESPONSE_HANDLER);
+            QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD);
+            testSubject.subscribe(QUERY_NAME, SINGLE_RESPONSE_HANDLER);
             // when/then...
             MessageStream<QueryResponseMessage> actual = testSubject.query(testQuery, null);
 
@@ -313,9 +313,9 @@ class SimpleQueryBusTest {
         @Test
         void streamingQueryReturnsFailedPublisherFromFailingStreamResultQueryHandler() {
             // given...
-            QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
+            QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD);
             QueryHandler failingHandler = (query, context) -> MessageStream.failed(new MockException("Mock"));
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, failingHandler);
+            testSubject.subscribe(QUERY_NAME, failingHandler);
             // when/then...
             MessageStream<QueryResponseMessage> actual = testSubject.query(testQuery, null);
 
@@ -328,8 +328,8 @@ class SimpleQueryBusTest {
         @Test
         void streamingQueryResultsInEmptyMessageStream() {
             // given...
-            QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, (query, context) -> MessageStream.empty().cast());
+            QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD);
+            testSubject.subscribe(QUERY_NAME, (query, context) -> MessageStream.empty().cast());
             // when/then...
             MessageStream<QueryResponseMessage> actual = testSubject.query(testQuery, null);
 
@@ -342,10 +342,10 @@ class SimpleQueryBusTest {
     class SubscriptionQuery {
 
         @Test
-        void subscriptionQueryForUnknownQueryNameAndResponseNameReturnsFailedNoHandlerForQueryExceptionInitialResult() {
+        void subscriptionQueryForUnknownQueryNameReturnsFailedNoHandlerForQueryExceptionInitialResult() {
             // given...
-            SubscriptionQueryMessage testQuery =
-                    new GenericSubscriptionQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
+            QueryMessage testQuery =
+                    new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD);
             // when...
             MessageStream<QueryResponseMessage> result =
                     testSubject.subscriptionQuery(testQuery, null, Queues.SMALL_BUFFER_SIZE);
@@ -358,9 +358,9 @@ class SimpleQueryBusTest {
         @Test
         void subscriptionQueryInitialResultReturnsSingleEntry() {
             // given...
-            SubscriptionQueryMessage testQuery =
-                    new GenericSubscriptionQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, SINGLE_RESPONSE_HANDLER);
+            QueryMessage testQuery =
+                    new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD);
+            testSubject.subscribe(QUERY_NAME, SINGLE_RESPONSE_HANDLER);
             // when...
             MessageStream<QueryResponseMessage> result =
                     testSubject.subscriptionQuery(testQuery, null, Queues.SMALL_BUFFER_SIZE);
@@ -374,9 +374,9 @@ class SimpleQueryBusTest {
         @Test
         void subscriptionQueryInitialResultReturnsMultipleEntries() {
             // given...
-            SubscriptionQueryMessage testQuery =
-                    new GenericSubscriptionQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, MULTI_RESPONSE_HANDLER);
+            QueryMessage testQuery =
+                    new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD);
+            testSubject.subscribe(QUERY_NAME, MULTI_RESPONSE_HANDLER);
             // when...
             MessageStream<QueryResponseMessage> result =
                     testSubject.subscriptionQuery(testQuery, null, Queues.SMALL_BUFFER_SIZE);
@@ -392,9 +392,9 @@ class SimpleQueryBusTest {
         @Test
         void subscriptionQueryInitialResultReturnsEmptyMessageStream() {
             // given...
-            SubscriptionQueryMessage testQuery =
-                    new GenericSubscriptionQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, (query, context) -> MessageStream.empty().cast());
+            QueryMessage testQuery =
+                    new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD);
+            testSubject.subscribe(QUERY_NAME, (query, context) -> MessageStream.empty().cast());
             // when...
             MessageStream<QueryResponseMessage> result =
                     testSubject.subscriptionQuery(testQuery, null, Queues.SMALL_BUFFER_SIZE);
@@ -407,12 +407,12 @@ class SimpleQueryBusTest {
         @Test
         void subscriptionQueryInitialResultReportsException() {
             // given...
-            SubscriptionQueryMessage testQuery =
-                    new GenericSubscriptionQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
+            QueryMessage testQuery =
+                    new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD);
             QueryHandler failingHandler = (query, context) -> {
                 throw new MockException("Mock");
             };
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, failingHandler);
+            testSubject.subscribe(QUERY_NAME, failingHandler);
             // when...
             MessageStream<QueryResponseMessage> result =
                     testSubject.subscriptionQuery(testQuery, null, Queues.SMALL_BUFFER_SIZE);
@@ -429,8 +429,8 @@ class SimpleQueryBusTest {
         @Test
         void subscribeToUpdatesForSameQueryTwiceThrowsSubscriptionQueryAlreadyRegisteredException() {
             // given...
-            SubscriptionQueryMessage testQuery =
-                    new GenericSubscriptionQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
+            QueryMessage testQuery =
+                    new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD);
             testSubject.subscribeToUpdates(testQuery, Queues.SMALL_BUFFER_SIZE);
             // when/then...
             assertThatThrownBy(() -> testSubject.subscribeToUpdates(testQuery, Queues.SMALL_BUFFER_SIZE))
@@ -440,8 +440,8 @@ class SimpleQueryBusTest {
         @Test
         void completingUpdateHandlerFromSubscribeToUpdatesCompletesUpdates() {
             // given...
-            SubscriptionQueryMessage testQuery =
-                    new GenericSubscriptionQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
+            QueryMessage testQuery =
+                    new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD);
             SubscriptionQueryUpdateMessage updateMessage =
                     new GenericSubscriptionQueryUpdateMessage(UPDATE_PAYLOAD_TYPE, UPDATE_PAYLOAD);
             MessageStream<SubscriptionQueryUpdateMessage> result = testSubject.subscribeToUpdates(testQuery,
@@ -463,13 +463,13 @@ class SimpleQueryBusTest {
         @Test
         void emittedUpdateLandsInSubscriptionQueryUpdates() {
             // given...
-            SubscriptionQueryMessage testQuery =
-                    new GenericSubscriptionQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
-            Predicate<SubscriptionQueryMessage> queryFilter =
+            QueryMessage testQuery =
+                    new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD);
+            Predicate<QueryMessage> queryFilter =
                     query -> query.identifier().equals(testQuery.identifier());
             SubscriptionQueryUpdateMessage updateMessage =
                     new GenericSubscriptionQueryUpdateMessage(UPDATE_PAYLOAD_TYPE, UPDATE_PAYLOAD);
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, (query, context) -> MessageStream.empty().cast());
+            testSubject.subscribe(QUERY_NAME, (query, context) -> MessageStream.empty().cast());
             MessageStream<QueryResponseMessage> responses = testSubject.subscriptionQuery(testQuery,
                                                                                           null,
                                                                                           Queues.SMALL_BUFFER_SIZE);
@@ -484,17 +484,17 @@ class SimpleQueryBusTest {
         @Test
         void emittedUpdateLandsInAllMatchingSubscriptionQueryUpdates() {
             // given...
-            SubscriptionQueryMessage testQueryOne =
-                    new GenericSubscriptionQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
-            SubscriptionQueryMessage testQueryTwo =
-                    new GenericSubscriptionQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
-            SubscriptionQueryMessage testQueryThree =
-                    new GenericSubscriptionQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
+            QueryMessage testQueryOne =
+                    new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD);
+            QueryMessage testQueryTwo =
+                    new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD);
+            QueryMessage testQueryThree =
+                    new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD);
             // Filter allows emitting updates to subscription queries one and two
-            Predicate<SubscriptionQueryMessage> queryFilter = query ->
+            Predicate<QueryMessage> queryFilter = query ->
                     query.identifier().equals(testQueryOne.identifier())
                             || query.identifier().equals(testQueryTwo.identifier());
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, (query, context) -> MessageStream.empty().cast());
+            testSubject.subscribe(QUERY_NAME, (query, context) -> MessageStream.empty().cast());
 
             SubscriptionQueryUpdateMessage updateMessage =
                     new GenericSubscriptionQueryUpdateMessage(UPDATE_PAYLOAD_TYPE, UPDATE_PAYLOAD);
@@ -521,8 +521,8 @@ class SimpleQueryBusTest {
         @Test
         void emittingUpdatesConcurrently() {
             // given...
-            SubscriptionQueryMessage testQuery =
-                    new GenericSubscriptionQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
+            QueryMessage testQuery =
+                    new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD);
             SubscriptionQueryUpdateMessage updateMessage =
                     new GenericSubscriptionQueryUpdateMessage(UPDATE_PAYLOAD_TYPE, UPDATE_PAYLOAD);
             MessageStream<SubscriptionQueryUpdateMessage> updateHandler = testSubject.subscribeToUpdates(testQuery,
@@ -547,14 +547,14 @@ class SimpleQueryBusTest {
         void emittingUpdatesWithProcessingContextStagesEmitsToAfterCommit() {
             // given...
             AtomicBoolean filterInvoked = new AtomicBoolean(false);
-            SubscriptionQueryMessage testQuery =
-                    new GenericSubscriptionQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
-            Predicate<SubscriptionQueryMessage> queryFilter =
+            QueryMessage testQuery =
+                    new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD);
+            Predicate<QueryMessage> queryFilter =
                     query -> {
                         filterInvoked.set(true);
                         return query.identifier().equals(testQuery.identifier());
                     };
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, (query, context) -> MessageStream.empty().cast());
+            testSubject.subscribe(QUERY_NAME, (query, context) -> MessageStream.empty().cast());
             SubscriptionQueryUpdateMessage updateMessage =
                     new GenericSubscriptionQueryUpdateMessage(UPDATE_PAYLOAD_TYPE, UPDATE_PAYLOAD);
             // We should have a subscription query for an update handler to even exist.
@@ -581,9 +581,9 @@ class SimpleQueryBusTest {
         @Test
         void emittingUpdatesDoesNotRetrieveUpdateWhenNoQueriesMatch() {
             // given...
-            SubscriptionQueryMessage testQuery =
-                    new GenericSubscriptionQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
-            Predicate<SubscriptionQueryMessage> queryFilter = query -> false;
+            QueryMessage testQuery =
+                    new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD);
+            Predicate<QueryMessage> queryFilter = query -> false;
             AtomicBoolean updateSupplierInvoked = new AtomicBoolean(false);
             Supplier<SubscriptionQueryUpdateMessage> updateSupplier = () -> {
                 updateSupplierInvoked.set(true);
@@ -604,17 +604,17 @@ class SimpleQueryBusTest {
         @Test
         void completingSubscriptionCompletesMatchingSubscriptionQueriesOnly() {
             // given...
-            SubscriptionQueryMessage testQueryOne =
-                    new GenericSubscriptionQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
-            SubscriptionQueryMessage testQueryTwo =
-                    new GenericSubscriptionQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
-            SubscriptionQueryMessage testQueryThree =
-                    new GenericSubscriptionQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
+            QueryMessage testQueryOne =
+                    new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD);
+            QueryMessage testQueryTwo =
+                    new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD);
+            QueryMessage testQueryThree =
+                    new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD);
             // Filter will complete subscription queries one and two
-            Predicate<SubscriptionQueryMessage> queryFilter = query ->
+            Predicate<QueryMessage> queryFilter = query ->
                     query.identifier().equals(testQueryOne.identifier())
                             || query.identifier().equals(testQueryTwo.identifier());
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, (query, context) -> MessageStream.empty().cast());
+            testSubject.subscribe(QUERY_NAME, (query, context) -> MessageStream.empty().cast());
 
             SubscriptionQueryUpdateMessage updateMessage =
                     new GenericSubscriptionQueryUpdateMessage(UPDATE_PAYLOAD_TYPE, UPDATE_PAYLOAD);
@@ -644,9 +644,9 @@ class SimpleQueryBusTest {
         void completingSubscriptionsWithProcessingContextStagesCompletionToAfterCommit() {
             // given...
             AtomicBoolean filterInvoked = new AtomicBoolean(false);
-            SubscriptionQueryMessage testQuery =
-                    new GenericSubscriptionQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
-            Predicate<SubscriptionQueryMessage> queryFilter =
+            QueryMessage testQuery =
+                    new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD);
+            Predicate<QueryMessage> queryFilter =
                     query -> {
                         filterInvoked.set(true);
                         return query.identifier().equals(testQuery.identifier());
@@ -671,17 +671,17 @@ class SimpleQueryBusTest {
         @Test
         void completingSubscriptionExceptionallyCompletesMatchingSubscriptionQueriesOnly() {
             // given...
-            SubscriptionQueryMessage testQueryOne =
-                    new GenericSubscriptionQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
-            SubscriptionQueryMessage testQueryTwo =
-                    new GenericSubscriptionQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
-            SubscriptionQueryMessage testQueryThree =
-                    new GenericSubscriptionQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
+            QueryMessage testQueryOne =
+                    new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD);
+            QueryMessage testQueryTwo =
+                    new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD);
+            QueryMessage testQueryThree =
+                    new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD);
 
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, SINGLE_RESPONSE_HANDLER);
+            testSubject.subscribe(QUERY_NAME, SINGLE_RESPONSE_HANDLER);
 
             // Filter will complete subscription queries one and two
-            Predicate<SubscriptionQueryMessage> queryFilter = query ->
+            Predicate<QueryMessage> queryFilter = query ->
                     query.identifier().equals(testQueryOne.identifier())
                             || query.identifier().equals(testQueryTwo.identifier());
             MockException mockException = new MockException("Mock");
@@ -716,9 +716,9 @@ class SimpleQueryBusTest {
         void completingSubscriptionsExceptionallyWithProcessingContextStagesCompletionToAfterCommit() {
             // given...
             AtomicBoolean filterInvoked = new AtomicBoolean(false);
-            SubscriptionQueryMessage testQuery =
-                    new GenericSubscriptionQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
-            Predicate<SubscriptionQueryMessage> queryFilter =
+            QueryMessage testQuery =
+                    new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD);
+            Predicate<QueryMessage> queryFilter =
                     query -> {
                         filterInvoked.set(true);
                         return query.identifier().equals(testQuery.identifier());

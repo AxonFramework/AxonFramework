@@ -19,6 +19,7 @@ package org.axonframework.axonserver.connector.util;
 import com.google.protobuf.ByteString;
 import io.axoniq.axonserver.grpc.ErrorMessage;
 import io.axoniq.axonserver.grpc.SerializedObject;
+import jakarta.annotation.Nullable;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.common.AxonException;
 
@@ -58,15 +59,20 @@ public final class ExceptionConverter {
      * Serializes a given {@link Throwable} into an {@link ErrorMessage}.
      *
      * @param clientLocation the name of the client were the {@link ErrorMessage} originates from
+     * @param errorCode The error code identifying the type of action that resulted in an error, if known
      * @param t              the {@link Throwable} to base this {@link ErrorMessage} on
      * @return the {@link ErrorMessage} originating from the given {@code clientLocation} and based on the
      * {@link Throwable}
      */
-    public static ErrorMessage convertToErrorMessage(String clientLocation, Throwable t) {
+    public static ErrorMessage convertToErrorMessage(String clientLocation, @Nullable ErrorCode errorCode,
+                                                     Throwable t) {
         ErrorMessage.Builder builder =
                 ErrorMessage.newBuilder()
                             .setLocation(getOrDefault(clientLocation, ""))
                             .setMessage(t.getMessage() == null ? t.getClass().getName() : t.getMessage());
+        if (errorCode != null) {
+            builder.setErrorCode(errorCode.errorCode());
+        }
         builder.addDetails(t.getMessage() == null ? t.getClass().getName() : t.getMessage());
         while (t.getCause() != null) {
             t = t.getCause();
