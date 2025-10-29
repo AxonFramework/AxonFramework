@@ -169,7 +169,7 @@ public class InterceptingCommandBus implements CommandBus {
                                    .first()
                                    .<CommandResultMessage>cast()
                                    .asCompletableFuture()
-                                   .thenApply(Entry::message);
+                                   .thenApply(entry -> entry == null ? null : entry.message());
         }
     }
 }

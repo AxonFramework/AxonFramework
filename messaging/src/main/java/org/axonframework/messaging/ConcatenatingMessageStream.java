@@ -61,11 +61,18 @@ class ConcatenatingMessageStream<M extends Message> implements MessageStream<M> 
     }
 
     @Override
-    public void onAvailable(@Nonnull Runnable callback) {
-        first.onAvailable(() -> {
+    public void setCallback(@Nonnull Runnable callback) {
+        first.setCallback(() -> {
+            if (!(first.isCompleted() && first.error().isEmpty()) || second.hasNextAvailable()
+                    || second.isCompleted()) {
+                if (first.error().isPresent()) {
+                    second.close();
+                }
+                callback.run();
+            }
+        });
+        second.setCallback(() -> {
             if (first.isCompleted() && first.error().isEmpty()) {
-                second.onAvailable(callback);
-            } else {
                 callback.run();
             }
         });

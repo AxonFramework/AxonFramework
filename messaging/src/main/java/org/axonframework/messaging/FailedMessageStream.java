@@ -55,7 +55,7 @@ class FailedMessageStream<M extends Message> implements MessageStream.Empty<M> {
     }
 
     @Override
-    public void onAvailable(@Nonnull Runnable callback) {
+    public void setCallback(@Nonnull Runnable callback) {
         // the stream is failed, so we can call the callback right away that there is relevant state to read
         callback.run();
     }
@@ -92,7 +92,7 @@ class FailedMessageStream<M extends Message> implements MessageStream.Empty<M> {
     }
 
     @Override
-    public Empty<M> whenComplete(@Nonnull Runnable completeHandler) {
+    public Empty<M> onComplete(@Nonnull Runnable completeHandler) {
         return this;
     }
 

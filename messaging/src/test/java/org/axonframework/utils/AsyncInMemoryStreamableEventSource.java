@@ -323,7 +323,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
         }
 
         @Override
-        public void onAvailable(@Nonnull Runnable callback) {
+        public void setCallback(@Nonnull Runnable callback) {
             this.callback.set(callback);
             if (streamCallbackSupported && hasNextAvailable()) {
                 callback.run();

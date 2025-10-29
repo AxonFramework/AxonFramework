@@ -68,7 +68,7 @@ public class TracingEventHandlingComponent extends DelegatingEventHandlingCompon
         span.start();
         try (SpanScope ignored = span.makeCurrent()) { // works as long as the MessageStream doesn't change threads
             return delegate.handle(event, context)
-                           .whenComplete(span::end)
+                           .onComplete(span::end)
                            .onErrorContinue(ex -> {
                                span.recordException(ex);
                                span.end();
