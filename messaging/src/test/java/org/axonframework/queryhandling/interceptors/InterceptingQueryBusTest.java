@@ -547,6 +547,10 @@ class InterceptingQueryBusTest {
         // then
         Map<String, Object> properties = mockComponentDescriptor.getDescribedProperties();
         assertThat(properties).containsKey("delegate");
+        assertThat((Object) mockComponentDescriptor.getProperty("delegate")).isEqualTo(delegateQueryBus);
+        assertThat(properties).containsKey("dispatchInterceptors");
+        assertThat(properties).containsKey("handlerInterceptors");
+        assertThat(properties).containsKey("updateDispatchInterceptors");
     }
 
     /**
