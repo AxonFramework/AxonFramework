@@ -25,7 +25,6 @@ import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryHandler;
-import org.axonframework.queryhandling.QueryHandlerName;
 import org.axonframework.queryhandling.QueryHandlingComponent;
 import org.axonframework.queryhandling.SimpleQueryHandlingComponent;
 
@@ -49,7 +48,7 @@ class SimpleQueryHandlingModule extends BaseModule<SimpleQueryHandlingModule>
         QueryHandlingModule.QueryHandlerPhase {
 
     private final String queryHandlingComponentName;
-    private final Map<QueryHandlerName, ComponentBuilder<QueryHandler>> handlerBuilders;
+    private final Map<QualifiedName, ComponentBuilder<QueryHandler>> handlerBuilders;
     private final List<ComponentBuilder<QueryHandlingComponent>> handlingComponentBuilders;
 
     SimpleQueryHandlingModule(@Nonnull String moduleName) {
@@ -66,9 +65,8 @@ class SimpleQueryHandlingModule extends BaseModule<SimpleQueryHandlingModule>
 
     @Override
     public QueryHandlerPhase queryHandler(@Nonnull QualifiedName queryName,
-                                          @Nonnull QualifiedName responseName,
                                           @Nonnull ComponentBuilder<QueryHandler> queryHandlerBuilder) {
-        handlerBuilders.put(new QueryHandlerName(queryName, responseName),
+        handlerBuilders.put(requireNonNull(queryName, "queryName must not be null"),
                             requireNonNull(queryHandlerBuilder, "The query handler builder cannot be null."));
         return this;
     }

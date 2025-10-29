@@ -69,9 +69,7 @@ class MethodQueryHandlerDefinitionTest {
         QueryHandlingMember<MethodQueryHandlerDefinitionTest> handler = messageHandler("optionalReturnType");
         assertEquals(String.class, handler.resultType());
 
-        GenericQueryMessage message = new GenericQueryMessage(new MessageType(String.class),
-                                                              "mock",
-                                                              new MessageType(String.class));
+        GenericQueryMessage message = new GenericQueryMessage(new MessageType(String.class), "mock");
 
         ProcessingContext context = StubProcessingContext.forMessage(message);
         assertTrue(handler.canHandle(message, context));

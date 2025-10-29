@@ -17,7 +17,6 @@
 package org.axonframework.axonserver.connector.query;
 
 import io.axoniq.axonserver.connector.AxonServerConnection;
-import io.axoniq.axonserver.connector.ErrorCategory;
 import io.axoniq.axonserver.connector.FlowControl;
 import io.axoniq.axonserver.connector.Registration;
 import io.axoniq.axonserver.connector.ReplyChannel;
@@ -25,8 +24,6 @@ import io.axoniq.axonserver.connector.ResultStream;
 import io.axoniq.axonserver.connector.impl.AsyncRegistration;
 import io.axoniq.axonserver.connector.query.QueryDefinition;
 import io.axoniq.axonserver.connector.query.QueryHandler;
-import io.axoniq.axonserver.grpc.ErrorMessage;
-import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
@@ -34,16 +31,14 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.axonserver.connector.util.ExceptionConverter;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.lifecycle.ShutdownLatch;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.queryhandling.QueryHandlerName;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.distributed.QueryBusConnector;
 import org.slf4j.Logger;
@@ -79,7 +74,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
     private final String componentName;
     private final LocalSegmentAdapter localSegmentAdapter;
 
-    private final Map<QueryHandlerName, Registration> subscriptions = new ConcurrentHashMap<>();
+    private final Map<QualifiedName, Registration> subscriptions = new ConcurrentHashMap<>();
     private final ShutdownLatch shutdownLatch = new ShutdownLatch();
     private final Duration queryInProgressAwait = Duration.ofSeconds(5);
 
@@ -111,10 +106,10 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
 
     // region [Connector]
     @Override
-    public CompletableFuture<Void> subscribe(@Nonnull QueryHandlerName name) {
-        logger.debug("Subscribing to query handler [{}] with response type [{}]",
-                     name.queryName(), name.responseName());
-        QueryDefinition definition = new QueryDefinition(name.queryName().name(), name.responseName().name());
+    public CompletableFuture<Void> subscribe(@Nonnull QualifiedName name) {
+        logger.debug("Subscribing to query handler [{}].",
+                     name);
+        QueryDefinition definition = new QueryDefinition(name.fullName(), "");
         Registration registration = connection.queryChannel()
                                               .registerQueryHandler(localSegmentAdapter, definition);
 
@@ -130,7 +125,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
     }
 
     @Override
-    public boolean unsubscribe(@Nonnull QueryHandlerName name) {
+    public boolean unsubscribe(@Nonnull QualifiedName name) {
         Registration subscription = subscriptions.remove(name);
         if (subscription != null) {
             subscription.cancel();
@@ -166,7 +161,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
 
     @Nonnull
     @Override
-    public MessageStream<QueryResponseMessage> subscriptionQuery(@Nonnull SubscriptionQueryMessage query,
+    public MessageStream<QueryResponseMessage> subscriptionQuery(@Nonnull QueryMessage query,
                                                                  @Nullable ProcessingContext context,
                                                                  int updateBufferSize) {
         shutdownLatch.ifShuttingDown("Cannot dispatch new queries as this bus is being shut down");
@@ -176,12 +171,9 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
                                    .subscriptionQuery(QueryConverter.convertQueryMessage(query,
                                                                                          clientId,
                                                                                          componentName),
-                                                      // TODO legacy requirement. Should be removed from connector
-                                                      SerializedObject.getDefaultInstance(),
                                                       updateBufferSize,
                                                       Math.min(updateBufferSize / 4, 8));
-            return MessageStream.fromFuture(result.initialResult()
-                                                  .thenApply(QueryConverter::convertQueryResponse))
+            return new QueryResponseMessageStream(result.initialResults())
                                 .concatWith(new QueryUpdateMessageStream(result.updates()))
                                 .onClose(queryInTransit::end);
         }
@@ -251,42 +243,9 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
             if (previous != null) {
                 previous.run();
             }
-            result.onClose(queriesInProgress.remove(query.getMessageIdentifier()))
-                  .setCallback(() -> {
-                      // TODO #3808 - Check if sufficient permits from flow control
-                      // This logic should be executed by tasks with scheduling gates on the response thread pool
-                      while (result.hasNextAvailable()) {
-                          var next = result.next();
-                          next.ifPresent(i -> responseHandler.send(QueryConverter.convertQueryResponseMessage(query.getMessageIdentifier(),
-                                                                                                              i.message())));
-                      }
-                      if (result.isCompleted()) {
-                          result.error()
-                                .ifPresentOrElse(error -> {
-                                                     ErrorMessage ex = ExceptionConverter.convertToErrorMessage(clientId, error);
-                                                     QueryResponse errorResponse =
-                                                             QueryResponse.newBuilder()
-                                                                          .setErrorCode(ErrorCode.getQueryExecutionErrorCode(error)
-                                                                                                 .errorCode())
-                                                                          .setErrorMessage(ex)
-                                                                          .setRequestIdentifier(query.getMessageIdentifier())
-                                                                          .build();
-                                                     responseHandler.sendLast(errorResponse);
-                                                 },
-                                                 responseHandler::complete);
-                      }
-                  });
-            return new FlowControl() {
-                @Override
-                public void request(long requested) {
-                    // TODO #3808 - Implement flow control on responses
-                }
-
-                @Override
-                public void cancel() {
-                    result.close();
-                }
-            };
+            return new FlowControlledResponseSender(clientId, query.getMessageIdentifier(),
+                                                    result.onClose(queriesInProgress.remove(query.getMessageIdentifier())),
+                                                    responseHandler);
         }
 
         @Override
@@ -345,7 +304,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
 
         @Override
         public CompletableFuture<Void> completeExceptionally(@Nonnull Throwable error) {
-            updateHandler.sendUpdate(QueryConverter.convertQueryUpdate(clientId, error));
+            updateHandler.sendUpdate(QueryConverter.convertQueryUpdate(clientId, ErrorCode.QUERY_EXECUTION_ERROR, error));
             updateHandler.complete();
             return FutureUtils.emptyCompletedFuture();
         }

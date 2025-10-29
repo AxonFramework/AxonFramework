@@ -20,17 +20,16 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.interceptors.InterceptingCommandBus;
 import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.ConvertingCommandGateway;
+import org.axonframework.commandhandling.interceptors.InterceptingCommandBus;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.InterceptingEventBus;
-import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.gateway.DefaultEventGateway;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
@@ -401,7 +400,6 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
         ModuleBuilder<QueryHandlingModule> statefulCommandHandlingModule =
                 QueryHandlingModule.named("test")
                                    .queryHandlers(handlerPhase -> handlerPhase.queryHandler(
-                                           new QualifiedName(String.class),
                                            new QualifiedName(String.class),
                                            (query, context) -> MessageStream.empty().cast()
                                    ));

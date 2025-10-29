@@ -36,8 +36,7 @@ class SpanUtilsTest {
     @Test
     void determineMessageNameForQueryWithoutName() {
         GenericQueryMessage message = new GenericQueryMessage(new MessageType("query"),
-                                                              "MyPayload",
-                                                              new MessageType(String.class));
+                                                              "MyPayload");
 
         assertEquals("query#0.0.1", SpanUtils.determineMessageName(message));
     }
@@ -45,16 +44,14 @@ class SpanUtilsTest {
     @Test
     void determineMessageNameForQueryWithName() {
         GenericQueryMessage message = new GenericQueryMessage(new MessageType("query"),
-                                                              "MyPayload",
-                                                              new MessageType(String.class));
+                                                              "MyPayload");
         assertEquals("query#0.0.1", SpanUtils.determineMessageName(message));
     }
 
     @Test
     void determineMessageNameForQueryWithSameName() {
         GenericQueryMessage message = new GenericQueryMessage(new MessageType("query"),
-                                                              "MyPayload",
-                                                              new MessageType(String.class));
+                                                              "MyPayload");
         assertEquals("query#0.0.1", SpanUtils.determineMessageName(message));
     }
 

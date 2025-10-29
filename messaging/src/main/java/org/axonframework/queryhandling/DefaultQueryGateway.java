@@ -25,7 +25,6 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.serialization.Converter;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
@@ -80,7 +79,7 @@ public class DefaultQueryGateway implements QueryGateway {
     public <R> CompletableFuture<R> query(@Nonnull Object query,
                                           @Nonnull Class<R> responseType,
                                           @Nullable ProcessingContext context) {
-        QueryMessage queryMessage = asQueryMessage(query, responseType);
+        QueryMessage queryMessage = asQueryMessage(query);
         MessageStream<QueryResponseMessage> resultStream = queryBus.query(queryMessage, context);
         CompletableFuture<R> resultFuture =
                 resultStream.first()
@@ -105,7 +104,7 @@ public class DefaultQueryGateway implements QueryGateway {
     public <R> CompletableFuture<List<R>> queryMany(@Nonnull Object query,
                                                     @Nonnull Class<R> responseType,
                                                     @Nullable ProcessingContext context) {
-        QueryMessage queryMessage = asQueryMessage(query, responseType);
+        QueryMessage queryMessage = asQueryMessage(query);
         MessageStream<QueryResponseMessage> resultStream = queryBus.query(queryMessage, context);
         CompletableFuture<List<R>> resultFuture =
                 resultStream.reduce(new ArrayList<>(), (list, entry) -> {
@@ -126,7 +125,7 @@ public class DefaultQueryGateway implements QueryGateway {
     public <R> Publisher<R> streamingQuery(@Nonnull Object query,
                                            @Nonnull Class<R> responseType,
                                            @Nullable ProcessingContext context) {
-        return Mono.fromSupplier(() -> asQueryMessage(query, responseType))
+        return Mono.fromSupplier(() -> asQueryMessage(query))
                    .flatMapMany(queryMessage -> FluxUtils.of(queryBus.query(queryMessage, context)))
                    .map(MessageStream.Entry::message)
                    .mapNotNull(m -> m.payloadAs(responseType, converter));
@@ -152,8 +151,7 @@ public class DefaultQueryGateway implements QueryGateway {
                                               @Nonnull Function<QueryResponseMessage, T> mapper,
                                               @Nullable ProcessingContext context,
                                               int updateBufferSize) {
-        SubscriptionQueryMessage queryMessage = asSubscriptionQueryMessage(query,
-                                                                           resolveTypeFor(responseType));
+        QueryMessage queryMessage = asQueryMessage(query);
         MessageStream<QueryResponseMessage> response = queryBus.subscriptionQuery(queryMessage,
                                                                                   context,
                                                                                   updateBufferSize);
@@ -163,33 +161,17 @@ public class DefaultQueryGateway implements QueryGateway {
                         .doOnError((e) -> response.close());
     }
 
-    private QueryMessage asQueryMessage(Object query, Class<?> responseType) {
+    private QueryMessage asQueryMessage(Object query) {
         if (query instanceof QueryMessage queryMessage) {
             return queryMessage;
         }
         return query instanceof Message message
-                ? new GenericQueryMessage(message, resolveTypeFor(responseType))
-                : new GenericQueryMessage(resolveTypeFor(query), query, resolveTypeFor(responseType));
-    }
-
-    private SubscriptionQueryMessage asSubscriptionQueryMessage(Object query,
-                                                                MessageType messageType) {
-        if (query instanceof SubscriptionQueryMessage queryMessage) {
-            return queryMessage;
-        }
-        return query instanceof Message
-                ? new GenericSubscriptionQueryMessage((Message) query, messageType)
-                : new GenericSubscriptionQueryMessage(resolveTypeFor(query),
-                                                      query,
-                                                      messageType);
+                ? new GenericQueryMessage(message)
+                : new GenericQueryMessage(resolveTypeFor(query), query);
     }
 
     private MessageType resolveTypeFor(Object payload) {
         return messageTypeResolver.resolveOrThrow(payload);
-    }
-
-    private MessageType resolveTypeFor(Class<?> clazz) {
-        return messageTypeResolver.resolveOrThrow(clazz);
     }
 
     @Override

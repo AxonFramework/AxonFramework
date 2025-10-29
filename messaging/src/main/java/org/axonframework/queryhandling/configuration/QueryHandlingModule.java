@@ -21,7 +21,6 @@ import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.Module;
 import org.axonframework.configuration.ModuleBuilder;
-import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotations.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotations.ParameterResolverFactory;
@@ -114,9 +113,9 @@ public interface QueryHandlingModule extends Module, ModuleBuilder<QueryHandling
      * {@link org.axonframework.configuration.ApplicationConfigurer} this module is given to.
      * <p>
      * Provides roughly two options for configuring query handlers. Firstly, a query handler can be registered as is,
-     * through the {@link #queryHandler(QualifiedName, QualifiedName, QueryHandler)} method. Secondly, if the query
+     * through the {@link #queryHandler(QualifiedName, QueryHandler)} method. Secondly, if the query
      * handler provides components from the {@link Configuration}, a {@link ComponentBuilder builder} of the query
-     * handler can be registered through the {@link #queryHandler(QualifiedName, QualifiedName, ComponentBuilder)}
+     * handler can be registered through the {@link #queryHandler(QualifiedName, ComponentBuilder)}
      * method.
      */
     interface QueryHandlerPhase extends ModuleBuilder<QueryHandlingModule> {
@@ -133,20 +132,17 @@ public interface QueryHandlingModule extends Module, ModuleBuilder<QueryHandling
          * {@link org.axonframework.configuration.ApplicationConfigurer} the module is registered on.
          *
          * @param queryName    The qualified name of the query the given {@code queryHandler} can handle.
-         * @param responseName The qualified name of the query response the given {@code queryHandler} returns.
          * @param queryHandler The query handler to register with this module.
          * @return The query handler phase of this builder, for a fluent API.
          */
         default QueryHandlingModule.QueryHandlerPhase queryHandler(@Nonnull QualifiedName queryName,
-                                                                   @Nonnull QualifiedName responseName,
                                                                    @Nonnull QueryHandler queryHandler) {
             requireNonNull(queryHandler, "The query handler cannot be null.");
-            return queryHandler(queryName, responseName, c -> queryHandler);
+            return queryHandler(queryName, c -> queryHandler);
         }
 
         /**
-         * Registers the given {@code queryHandlerBuilder} for the given qualified {@code queryName} and
-         * {@code responseName} within this module.
+         * Registers the given {@code queryHandlerBuilder} for the given qualified {@code queryName} within this module.
          * <p>
          * Once this module is finalized, the query handler from the {@code queryHandlerBuilder} will be subscribed with
          * the {@link org.axonframework.queryhandling.QueryBus} of the
@@ -154,15 +150,12 @@ public interface QueryHandlingModule extends Module, ModuleBuilder<QueryHandling
          *
          * @param queryName           The qualified name of the query the {@link QueryHandler} created by the given
          *                            {@code queryHandlerBuilder}.
-         * @param responseName        The qualified name of the query response the {@link QueryHandler} created by the
-         *                            given {@code queryHandlerBuilder} returns.
          * @param queryHandlerBuilder A builder of a {@link QueryHandler}. Provides the {@link Configuration} to
          *                            retrieve components from to use during construction of the query handler.
          * @return The query handler phase of this builder, for a fluent API.
          */
         QueryHandlingModule.QueryHandlerPhase queryHandler(
                 @Nonnull QualifiedName queryName,
-                @Nonnull QualifiedName responseName,
                 @Nonnull ComponentBuilder<QueryHandler> queryHandlerBuilder
         );
 
@@ -206,7 +199,6 @@ public interface QueryHandlingModule extends Module, ModuleBuilder<QueryHandling
                     handlingComponentBuilder.build(c),
                     c.getComponent(ParameterResolverFactory.class),
                     ClasspathHandlerDefinition.forClass(c.getClass()),
-                    c.getComponent(MessageTypeResolver.class),
                     c.getComponent(MessageConverter.class)
             ));
         }

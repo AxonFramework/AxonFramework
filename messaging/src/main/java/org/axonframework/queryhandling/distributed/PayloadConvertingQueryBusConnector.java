@@ -25,7 +25,6 @@ import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 
 import java.util.concurrent.CompletableFuture;
@@ -70,7 +69,7 @@ public class PayloadConvertingQueryBusConnector extends DelegatingQueryBusConnec
 
     @Nonnull
     @Override
-    public MessageStream<QueryResponseMessage> subscriptionQuery(@Nonnull SubscriptionQueryMessage query,
+    public MessageStream<QueryResponseMessage> subscriptionQuery(@Nonnull QueryMessage query,
                                                                  @Nullable ProcessingContext context,
                                                                  int updateBufferSize) {
         return delegate.subscriptionQuery(query.withConvertedPayload(targetType, converter), context, updateBufferSize);
@@ -88,7 +87,7 @@ public class PayloadConvertingQueryBusConnector extends DelegatingQueryBusConnec
 
             @Nonnull
             @Override
-            public Registration registerUpdateHandler(@Nonnull SubscriptionQueryMessage subscriptionQueryMessage,
+            public Registration registerUpdateHandler(@Nonnull QueryMessage subscriptionQueryMessage,
                                                       @Nonnull UpdateCallback updateCallback) {
                 return handler.registerUpdateHandler(subscriptionQueryMessage, new UpdateCallback() {
                     @Nonnull

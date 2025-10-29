@@ -21,11 +21,10 @@ import jakarta.annotation.Nullable;
 import org.axonframework.common.Registration;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.queryhandling.QueryHandlerName;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 
 import java.util.concurrent.CompletableFuture;
@@ -63,11 +62,11 @@ public interface QueryBusConnector extends DescribableComponent {
      * @param query The query to send to the remote QueryBus.
      * @param context The context, if available, in which the query is generated
      * @param updateBufferSize The size of the buffer used to store updates for the subscription query.
-     * @see org.axonframework.queryhandling.QueryBus#subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int)
+     * @see org.axonframework.queryhandling.QueryBus#subscriptionQuery(QueryMessage, ProcessingContext, int)
      * @return the stream of responses for the query
      */
     @Nonnull
-    MessageStream<QueryResponseMessage> subscriptionQuery(@Nonnull SubscriptionQueryMessage query,
+    MessageStream<QueryResponseMessage> subscriptionQuery(@Nonnull QueryMessage query,
                                                           @Nullable ProcessingContext context,
                                                           int updateBufferSize);
 
@@ -78,21 +77,20 @@ public interface QueryBusConnector extends DescribableComponent {
     /**
      * Subscribes this connector to queries matching the given {@code name}.
      *
-     * @param name A combination of the {@link org.axonframework.messaging.QualifiedName} of the
-     *             {@link QueryMessage#type()} and {@link QueryMessage#responseType()} to subscribe to.
+     * @param name The {@link org.axonframework.messaging.QualifiedName} of the
+     *             {@link QueryMessage#type()} to subscribe to.
      * @return A {@code CompletableFuture} that completes successfully when this connector subscribed to the given
      * {@code name}.
      */
-    CompletableFuture<Void> subscribe(@Nonnull QueryHandlerName name);
+    CompletableFuture<Void> subscribe(@Nonnull QualifiedName name);
 
     /**
      * Unsubscribes this connector from queries with the given {@code name}.
      *
-     * @param name A combination of the {@link org.axonframework.messaging.QualifiedName} of the
-     *             {@link QueryMessage#type()} and {@link QueryMessage#responseType()} to unsubscribe from.
+     * @param name The {@link org.axonframework.messaging.QualifiedName} of the {@link QueryMessage#type()} to unsubscribe from.
      * @return {@code true} if unsubscribing was successful, {@code false} otherwise.
      */
-    boolean unsubscribe(@Nonnull QueryHandlerName name);
+    boolean unsubscribe(@Nonnull QualifiedName name);
 
 
     /**
@@ -125,7 +123,7 @@ public interface QueryBusConnector extends DescribableComponent {
          * @return A {@link Registration} instance that can be used to deregister the update handler.
          */
         @Nonnull
-        Registration registerUpdateHandler(@Nonnull SubscriptionQueryMessage subscriptionQueryMessage,
+        Registration registerUpdateHandler(@Nonnull QueryMessage subscriptionQueryMessage,
                                            @Nonnull UpdateCallback updateCallback);
 
     }

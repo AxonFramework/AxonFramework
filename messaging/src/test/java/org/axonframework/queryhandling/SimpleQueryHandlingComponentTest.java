@@ -39,8 +39,6 @@ import static org.mockito.Mockito.*;
  */
 class SimpleQueryHandlingComponentTest {
 
-    private static final MessageType RESPONSE_TYPE = new MessageType(String.class);
-
     private final AtomicBoolean query1Handled = new AtomicBoolean(false);
     private final AtomicBoolean query2HandledParent = new AtomicBoolean(false);
     private final AtomicBoolean query2HandledChild = new AtomicBoolean(false);
@@ -49,14 +47,14 @@ class SimpleQueryHandlingComponentTest {
     private final SimpleQueryHandlingComponent handlingComponent = SimpleQueryHandlingComponent
             .create("MySuperComponent")
             .subscribe(
-                    new QualifiedName("Query1"), new QualifiedName(String.class),
+                    new QualifiedName("Query1"),
                     (query, context) -> {
                         query1Handled.set(true);
                         return MessageStream.empty().cast();
                     }
             )
             .subscribe(
-                    new QualifiedName("Query2"), new QualifiedName(String.class),
+                    new QualifiedName("Query2"),
                     (query, context) -> {
                         query2HandledParent.set(true);
                         return MessageStream.empty().cast();
@@ -66,14 +64,14 @@ class SimpleQueryHandlingComponentTest {
                     SimpleQueryHandlingComponent
                             .create("MySubComponent")
                             .subscribe(
-                                    new QualifiedName("Query2"), new QualifiedName(String.class),
+                                    new QualifiedName("Query2"),
                                     (query, context) -> {
                                         query2HandledChild.set(true);
                                         return MessageStream.empty().cast();
                                     }
                             )
                             .subscribe(
-                                    new QualifiedName("Query3"), new QualifiedName(String.class),
+                                    new QualifiedName("Query3"),
                                     (query, context) -> {
                                         query3Handled.set(true);
                                         return MessageStream.empty().cast();
@@ -83,7 +81,7 @@ class SimpleQueryHandlingComponentTest {
 
     @Test
     void handlesTheMostSpecificRegisteredHandler() {
-        QueryMessage query1 = new GenericQueryMessage(new MessageType("Query1"), "", RESPONSE_TYPE);
+        QueryMessage query1 = new GenericQueryMessage(new MessageType("Query1"), "");
         handlingComponent.handle(query1, StubProcessingContext.forMessage(query1));
         assertTrue(query1Handled.get());
         assertFalse(query2HandledParent.get());
@@ -92,7 +90,7 @@ class SimpleQueryHandlingComponentTest {
 
         query1Handled.set(false);
 
-        QueryMessage query2 = new GenericQueryMessage(new MessageType("Query2"), "", RESPONSE_TYPE);
+        QueryMessage query2 = new GenericQueryMessage(new MessageType("Query2"), "");
         handlingComponent.handle(query2, StubProcessingContext.forMessage(query2));
         assertFalse(query1Handled.get());
         assertFalse(query2HandledParent.get());
@@ -100,7 +98,7 @@ class SimpleQueryHandlingComponentTest {
         assertFalse(query3Handled.get());
 
         query2HandledChild.set(false);
-        QueryMessage query3 = new GenericQueryMessage(new MessageType("Query3"), "", RESPONSE_TYPE);
+        QueryMessage query3 = new GenericQueryMessage(new MessageType("Query3"), "");
         handlingComponent.handle(query3, StubProcessingContext.forMessage(query3));
         assertFalse(query1Handled.get());
         assertFalse(query2HandledParent.get());
@@ -111,19 +109,16 @@ class SimpleQueryHandlingComponentTest {
     @Test
     void supportedQueryReturnsAllSupportedQueries() {
         assertThat(handlingComponent.supportedQueries().size()).isEqualTo(3);
-        QueryHandlerName expectedHandlerOne =
-                new QueryHandlerName(new QualifiedName("Query1"), new QualifiedName(String.class));
-        QueryHandlerName expectedHandlerTwo =
-                new QueryHandlerName(new QualifiedName("Query2"), new QualifiedName(String.class));
-        QueryHandlerName expectedHandlerThree =
-                new QueryHandlerName(new QualifiedName("Query3"), new QualifiedName(String.class));
+        QualifiedName expectedHandlerOne = new QualifiedName("Query1");
+        QualifiedName expectedHandlerTwo = new QualifiedName("Query2");
+        QualifiedName expectedHandlerThree = new QualifiedName("Query3");
         assertThat(handlingComponent.supportedQueries())
                 .contains(expectedHandlerOne, expectedHandlerTwo, expectedHandlerThree);
     }
 
     @Test
     void handleWithUnknownPayloadReturnsInFailure() {
-        QueryMessage query = new GenericQueryMessage(new MessageType("Query4"), "", RESPONSE_TYPE);
+        QueryMessage query = new GenericQueryMessage(new MessageType("Query4"), "");
         CompletionException exception = assertThrows(
                 CompletionException.class,
                 () -> handlingComponent.handle(query, StubProcessingContext.forMessage(query))
@@ -140,9 +135,9 @@ class SimpleQueryHandlingComponentTest {
         QueryHandler faultyQueryHandler = (query, context) -> {
             throw new MockException();
         };
-        handlingComponent.subscribe(faultyQuery, new QualifiedName(String.class), faultyQueryHandler);
+        handlingComponent.subscribe(faultyQuery, faultyQueryHandler);
 
-        QueryMessage query = new GenericQueryMessage(new MessageType(faultyQuery), "", RESPONSE_TYPE);
+        QueryMessage query = new GenericQueryMessage(new MessageType(faultyQuery), "");
         MessageStream<QueryResponseMessage> result =
                 handlingComponent.handle(query, StubProcessingContext.forMessage(query));
 
@@ -154,13 +149,12 @@ class SimpleQueryHandlingComponentTest {
     @Test
     void handleReturnsFailedMessageStreamForExceptionThrowingQueryHandler() {
         QualifiedName faultyQuery = new QualifiedName("Error!");
-        QueryHandlerName faultyQueryName = new QueryHandlerName(faultyQuery, new QualifiedName(String.class));
         QueryHandlingComponent faultyComponent = mock(QueryHandlingComponent.class);
         when(faultyComponent.handle(any(), any())).thenThrow(new MockException());
-        when(faultyComponent.supportedQueries()).thenReturn(Set.of(faultyQueryName));
+        when(faultyComponent.supportedQueries()).thenReturn(Set.of(faultyQuery));
         handlingComponent.subscribe(faultyComponent);
 
-        QueryMessage query = new GenericQueryMessage(new MessageType(faultyQuery), "", RESPONSE_TYPE);
+        QueryMessage query = new GenericQueryMessage(new MessageType(faultyQuery), "");
         MessageStream<QueryResponseMessage> result =
                 handlingComponent.handle(query, StubProcessingContext.forMessage(query));
 

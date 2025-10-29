@@ -164,6 +164,17 @@ public class QueueMessageStream<M extends Message> implements MessageStream<M> {
         onConsumeCallback.get().run();
     }
 
+    /**
+     * Indicates whether this stream has been closed, either by completion or by explicit closing from the consumer.
+     * <p>
+     * Unlike {@link #isCompleted()}, this may also return {@code true} when there are still messages to consume
+     *
+     * @return {@code true} when closed or completed, otherwise {@code false}
+     */
+    public boolean isClosed() {
+        return completed.get();
+    }
+
     @Override
     public Optional<Entry<M>> peek() {
         return Optional.ofNullable(queue.peek());

@@ -29,7 +29,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.LongStream;
@@ -50,8 +49,6 @@ class StreamingQueryTest {
     private final QueryBus queryBus = QueryBusTestUtils.aQueryBus();
 
     private MyQueryHandler myQueryHandler;
-
-    private static final ConcurrentLinkedQueue<String> handlersInvoked = new ConcurrentLinkedQueue<>();
 
     @BeforeEach
     void setUp() {
@@ -80,7 +77,7 @@ class StreamingQueryTest {
     @Test
     void streamingFluxResults() {
         QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType("fluxQuery"), "criteria", new MessageType(String.class)
+                new MessageType("fluxQuery"), "criteria"
         );
 
         StepVerifier.create(streamingQueryPayloads(testQuery, String.class))
@@ -91,7 +88,7 @@ class StreamingQueryTest {
     @Test
     void optionalResults() {
         QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType("optionalResultQuery"), "criteria", new MessageType(String.class)
+                new MessageType("optionalResultQuery"), "criteria"
         );
 
         StepVerifier.create(streamingQueryPayloads(testQuery, String.class))
@@ -102,7 +99,7 @@ class StreamingQueryTest {
     @Test
     void emptyOptionalResults() {
         QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType("emptyOptionalResultQuery"), "criteria", new MessageType(String.class)
+                new MessageType("emptyOptionalResultQuery"), "criteria"
         );
 
         StepVerifier.create(streamingQuery(testQuery))
@@ -113,7 +110,7 @@ class StreamingQueryTest {
     @Test
     void streamingListResults() {
         QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType("listQuery"), "criteria", new MessageType(String.class)
+                new MessageType("listQuery"), "criteria"
         );
 
         StepVerifier.create(streamingQueryPayloads(testQuery, String.class))
@@ -124,7 +121,7 @@ class StreamingQueryTest {
     @Test
     void streamingStreamResults() {
         QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType("streamQuery"), "criteria", new MessageType(String.class)
+                new MessageType("streamQuery"), "criteria"
         );
 
         StepVerifier.create(streamingQueryPayloads(testQuery, String.class))
@@ -135,7 +132,7 @@ class StreamingQueryTest {
     @Test
     void streamingSingleResult() {
         QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType("singleResultQuery"), "criteria", new MessageType(String.class)
+                new MessageType("singleResultQuery"), "criteria"
         );
 
         StepVerifier.create(streamingQueryPayloads(testQuery, String.class))
@@ -146,7 +143,7 @@ class StreamingQueryTest {
     @Test
     void streamingCompletableFutureResult() {
         QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType("completableFutureQuery"), "criteria", new MessageType(String.class)
+                new MessageType("completableFutureQuery"), "criteria"
         );
 
         StepVerifier.create(streamingQueryPayloads(testQuery, String.class))
@@ -158,8 +155,7 @@ class StreamingQueryTest {
     void streamingFluxAfterHandlerCompletes() {
         QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType("streamingAfterHandlerCompletesQuery"),
-                "criteria",
-                new MessageType(Long.class)
+                "criteria"
         );
 
         StepVerifier.create(streamingQueryPayloads(testQuery, Long.class))
@@ -170,7 +166,7 @@ class StreamingQueryTest {
     @Test
     void streamingMonoResult() {
         QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType("monoQuery"), "criteria", new MessageType(String.class)
+                new MessageType("monoQuery"), "criteria"
         );
 
         StepVerifier.create(streamingQueryPayloads(testQuery, String.class))
@@ -181,7 +177,7 @@ class StreamingQueryTest {
     @Test
     void streamingNullResult() {
         QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType("nullQuery"), "criteria", new MessageType(String.class)
+                new MessageType("nullQuery"), "criteria"
         );
 
         StepVerifier.create(streamingQueryPayloads(testQuery, String.class))
@@ -192,7 +188,7 @@ class StreamingQueryTest {
     @Test
     void errorResult() {
         QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType("exceptionQuery"), "criteria", new MessageType(String.class)
+                new MessageType("exceptionQuery"), "criteria"
         );
 
         StepVerifier.create(streamingQueryPayloads(testQuery, String.class))
@@ -203,7 +199,7 @@ class StreamingQueryTest {
     @Test
     void throttledFluxQuery() {
         QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType("throttledFluxQuery"), "criteria", new MessageType(Long.class)
+                new MessageType("throttledFluxQuery"), "criteria"
         );
 
         StepVerifier.create(streamingQueryPayloads(testQuery, Long.class))
@@ -214,7 +210,7 @@ class StreamingQueryTest {
     @Test
     void backpressureFluxQuery() {
         QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType("backPressure"), "criteria", new MessageType(Long.class)
+                new MessageType("backPressure"), "criteria"
         );
 
         StepVerifier.create(streamingQueryPayloads(testQuery, Long.class), 10L)
@@ -228,7 +224,7 @@ class StreamingQueryTest {
     @Test
     void errorStream() {
         QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType("errorStream"), "criteria", new MessageType(String.class)
+                new MessageType("errorStream"), "criteria"
         );
 
         StepVerifier.create(streamingQueryPayloads(testQuery, String.class))
@@ -238,7 +234,7 @@ class StreamingQueryTest {
     @Test
     void queryNotExists() {
         QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType("queryNotExists"), "criteria", new MessageType(String.class)
+                new MessageType("queryNotExists"), "criteria"
         );
 
         StepVerifier.create(streamingQueryPayloads(testQuery, String.class))
@@ -248,7 +244,7 @@ class StreamingQueryTest {
     @Test
     void resubscribeWorksEvenWhenAnErrorHasBeenCashed() {
         QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType("exceptionQueryOnce"), "criteria", new MessageType(String.class)
+                new MessageType("exceptionQueryOnce"), "criteria"
         );
 
         Flux<String> flux = streamingQueryPayloads(testQuery, String.class);
@@ -260,16 +256,6 @@ class StreamingQueryTest {
         StepVerifier.create(flux)
                     .expectNext("correctNow")
                     .verifyComplete();
-    }
-
-    private static class ErrorQueryHandler {
-
-        @SuppressWarnings("unused")
-        @QueryHandler(queryName = "faultyListQuery")
-        public Flux<String> listQuery(String criteria) {
-            handlersInvoked.add("handler_error");
-            throw new RuntimeException("ooops");
-        }
     }
 
     @SuppressWarnings("unused")
@@ -284,7 +270,6 @@ class StreamingQueryTest {
 
         @QueryHandler(queryName = "listQuery")
         public List<String> listQuery(String criteria) {
-            handlersInvoked.add("handler_healthy");
             return asList("a", "b", "c", "d");
         }
 

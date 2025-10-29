@@ -22,6 +22,7 @@ import io.axoniq.axonserver.grpc.MetaDataValue;
 import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.axoniq.axonserver.grpc.query.QueryUpdate;
+import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.Metadata;
@@ -54,10 +55,6 @@ class QueryConverterTest {
                                             .setRevision("1")
                                             .setData(ByteString.copyFrom(payload))
                                             .build())
-                .setResponseType(SerializedObject.newBuilder()
-                                                 .setType("java.lang.String")
-                                                 .setRevision("1")
-                                                 .build())
                 .addProcessingInstructions(createProcessingInstruction(PRIORITY, 5))
                 .build();
 
@@ -66,7 +63,6 @@ class QueryConverterTest {
         assertThat(queryMessage).isNotNull();
         assertThat(queryMessage.identifier()).isEqualTo(messageIdentifier);
         assertThat(queryMessage.type().name()).isEqualTo("QueryType");
-        assertThat(queryMessage.responseType().name()).isEqualTo("java.lang.String");
         assertThat(queryMessage.payloadAs(byte[].class)).isEqualTo(payload);
         assertThat(queryMessage.priority()).hasValue(5);
     }
@@ -74,13 +70,11 @@ class QueryConverterTest {
     @Test
     void convertsQueryMessageToQueryRequest() {
         var type = new MessageType("QueryType", "1");
-        var responseType = new MessageType("java.lang.String", "1");
         var qm = new GenericQueryMessage(
                 new GenericMessage(messageIdentifier,
                                    type,
                                    payload,
                                    Map.of("k", "v")),
-                responseType,
                 7
         );
 
@@ -91,7 +85,6 @@ class QueryConverterTest {
         assertThat(queryRequest.getComponentName()).isEqualTo(componentName);
         assertThat(queryRequest.getMessageIdentifier()).isEqualTo(messageIdentifier);
         assertThat(queryRequest.getQuery()).isEqualTo("QueryType");
-        assertThat(queryRequest.getResponseType().getType()).isEqualTo("java.lang.String");
         assertThat(queryRequest.getPayload().getType()).isEqualTo("QueryType");
         assertThat(queryRequest.getProcessingInstructionsList())
                 .anySatisfy(pi -> assertThat(pi.getKey()).isEqualTo(PRIORITY))
@@ -148,8 +141,6 @@ class QueryConverterTest {
                                                          .setRevision("1")
                                                          .setData(ByteString.copyFrom(payload))
                                                          .build())
-                             .setResponseType(SerializedObject.newBuilder().setType("java.lang.String").setRevision("1")
-                                                              .build())
                              .build();
         var subscriptionQuery = io.axoniq.axonserver.grpc.query.SubscriptionQuery.newBuilder()
                                                                                  .setSubscriptionIdentifier(
@@ -162,7 +153,6 @@ class QueryConverterTest {
         assertThat(sqm).isNotNull();
         assertThat(sqm.identifier()).isEqualTo(messageIdentifier);
         assertThat(sqm.type().name()).isEqualTo("QueryType");
-        assertThat(sqm.responseType().name()).isEqualTo("java.lang.String");
     }
 
     @Test
@@ -203,20 +193,20 @@ class QueryConverterTest {
     @Test
     void convertsClientAndThrowableToErrorQueryUpdate() {
         var throwable = new RuntimeException("boom");
-        var qu = QueryConverter.convertQueryUpdate(clientId, throwable);
+        var qu = QueryConverter.convertQueryUpdate(clientId, ErrorCode.QUERY_EXECUTION_ERROR, throwable);
 
         assertThat(qu.getClientId()).isEqualTo(clientId);
         assertThat(qu.hasErrorMessage()).isTrue();
         assertThat(qu.getErrorMessage().getMessage()).contains("boom");
+        assertThat(qu.getErrorMessage().getErrorCode()).isEqualTo("AXONIQ-5001");
+        assertThat(qu.getErrorCode()).isEqualTo("AXONIQ-5001");
     }
 
     @Test
     void convertQueryMessageThrowsOnNonByteArrayPayload() {
         var type = new MessageType("QueryType", "1");
-        var responseType = new MessageType("java.lang.String", "1");
         var qm = new GenericQueryMessage(
-                new GenericMessage(type, "not-bytes", Metadata.emptyInstance()),
-                responseType
+                new GenericMessage(type, "not-bytes", Metadata.emptyInstance())
         );
 
         assertThatThrownBy(() -> QueryConverter.convertQueryMessage(qm, clientId, componentName))

@@ -32,11 +32,10 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.Metadata;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.queryhandling.GenericQueryMessage;
-import org.axonframework.queryhandling.QueryHandlerName;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;
@@ -76,9 +75,7 @@ class AxonServerQueryBusConnectorTest {
             Registration reg = mock(Registration.class);
             when(mockQueryChannel.registerQueryHandler(any(), any(QueryDefinition.class))).thenReturn(reg);
 
-            QueryHandlerName name = new QueryHandlerName(new MessageType("TestQuery"),
-                                                         new MessageType("java.lang.String"));
-            CompletableFuture<Void> future = testSubject.subscribe(name);
+            CompletableFuture<Void> future = testSubject.subscribe(new QualifiedName("TestQuery"));
 
             assertThat(future).isCompleted();
             verify(mockQueryChannel).registerQueryHandler(any(QueryHandler.class), any(QueryDefinition.class));
@@ -88,8 +85,7 @@ class AxonServerQueryBusConnectorTest {
         void unsubscribeCancelsRegistrationAndReturnsTrueWhenPresent() {
             Registration reg = mock(Registration.class);
             when(mockQueryChannel.registerQueryHandler(any(), any(QueryDefinition.class))).thenReturn(reg);
-            QueryHandlerName name = new QueryHandlerName(new MessageType("TestQuery"),
-                                                         new MessageType("java.lang.String"));
+            QualifiedName name = new QualifiedName("TestQuery");
             testSubject.subscribe(name).join();
 
             boolean result = testSubject.unsubscribe(name);
@@ -100,7 +96,7 @@ class AxonServerQueryBusConnectorTest {
 
         @Test
         void unsubscribeReturnsFalseWhenNotPresent() {
-            boolean result = testSubject.unsubscribe(new QueryHandlerName(new MessageType("Q"), new MessageType("R")));
+            boolean result = testSubject.unsubscribe(new QualifiedName("TestQuery"));
             assertThat(result).isFalse();
         }
     }
@@ -124,8 +120,7 @@ class AxonServerQueryBusConnectorTest {
             QueryMessage query = new GenericQueryMessage(
                     new GenericMessage(new MessageType("QueryType", "1"),
                                        "payload".getBytes(),
-                                       Metadata.emptyInstance()),
-                    new MessageType("java.lang.String", "1")
+                                       Metadata.emptyInstance())
             );
 
             // when
@@ -155,8 +150,7 @@ class AxonServerQueryBusConnectorTest {
             QueryMessage query = new GenericQueryMessage(
                     new GenericMessage(new MessageType("QueryType", "1"),
                                        "payload".getBytes(),
-                                       Metadata.emptyInstance()),
-                    new MessageType("java.lang.String", "1")
+                                       Metadata.emptyInstance())
             );
 
             MessageStream<QueryResponseMessage> stream = testSubject.query(query, null);
@@ -203,18 +197,16 @@ class AxonServerQueryBusConnectorTest {
                                                            .build()).build()
             );
             SimpleSubscriptionQueryResult sqr = new SimpleSubscriptionQueryResult(initial, updates);
-            when(mockQueryChannel.subscriptionQuery(any(), any(), anyInt(), anyInt())).thenReturn(sqr);
+            when(mockQueryChannel.subscriptionQuery(any(), anyInt(), anyInt())).thenReturn(sqr);
 
             // Build a subscription query message
             QueryMessage query = new GenericQueryMessage(
                     new GenericMessage(new MessageType("QueryType", "1"),
                                        "payload".getBytes(),
-                                       Metadata.emptyInstance()),
-                    new MessageType("java.lang.String", "1")
+                                       Metadata.emptyInstance())
             );
-            SubscriptionQueryMessage sqm = new org.axonframework.queryhandling.GenericSubscriptionQueryMessage(
-                    (org.axonframework.messaging.Message) query,
-                    new MessageType("java.lang.String", "1"),
+            QueryMessage sqm = new org.axonframework.queryhandling.GenericQueryMessage(
+                    query,
                     1
             );
 
@@ -223,7 +215,6 @@ class AxonServerQueryBusConnectorTest {
 
             // Verify buffer segment calculation: min(updateBufferSize/4, 8) -> min(10, 8) = 8
             verify(mockQueryChannel).subscriptionQuery(any(),
-                                                       eq(SerializedObject.getDefaultInstance()),
                                                        eq(updateBufferSize),
                                                        eq(8));
 
@@ -250,17 +241,24 @@ class AxonServerQueryBusConnectorTest {
 
     private static class SimpleSubscriptionQueryResult implements SubscriptionQueryResult {
 
-        private final CompletableFuture<QueryResponse> initial;
+        private final CompletableFuture<QueryResponse> initialFuture;
         private final StubResultStream<QueryUpdate> updates;
+        private final StubResultStream<QueryResponse> initialStream;
 
         SimpleSubscriptionQueryResult(QueryResponse initial, StubResultStream<QueryUpdate> updates) {
-            this.initial = CompletableFuture.completedFuture(initial);
+            this.initialFuture = CompletableFuture.completedFuture(initial);
+            this.initialStream = new StubResultStream<>(initial);
             this.updates = updates;
         }
 
         @Override
         public CompletableFuture<QueryResponse> initialResult() {
-            return initial;
+            return initialFuture;
+        }
+
+        @Override
+        public ResultStream<QueryResponse> initialResults() {
+            return initialStream;
         }
 
         @Override
