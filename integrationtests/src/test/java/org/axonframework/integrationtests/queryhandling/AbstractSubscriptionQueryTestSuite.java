@@ -30,12 +30,10 @@ import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
-import org.axonframework.queryhandling.DefaultQueryGateway;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryExecutionException;
-import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.QueryHandlingComponent;
 import org.axonframework.queryhandling.QueryPriorityCalculator;
 import org.axonframework.queryhandling.QueryResponseMessage;
@@ -47,6 +45,9 @@ import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.annotations.AnnotatedQueryHandlingComponent;
 import org.axonframework.queryhandling.annotations.QueryHandler;
 import org.axonframework.serialization.json.JacksonConverter;
+import org.axonframework.queryhandling.gateway.DefaultQueryGateway;
+import org.axonframework.queryhandling.gateway.QueryGateway;
+import org.axonframework.serialization.PassThroughConverter;
 import org.junit.jupiter.api.*;
 import reactor.core.Exceptions;
 import reactor.core.publisher.Flux;
@@ -80,8 +81,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Abstract test suite for the
- * {@link QueryBus#subscriptionQuery(QueryMessage, org.axonframework.messaging.unitofwork.ProcessingContext,
- * int)} functionality.
+ * {@link QueryBus#subscriptionQuery(QueryMessage, org.axonframework.messaging.unitofwork.ProcessingContext, int)}
+ * functionality.
  *
  * @author Milan Savic
  * @author Steven van Beelen
@@ -561,7 +562,7 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         // when...
         List<String> results = new ArrayList<>();
         CountDownLatch latch = new CountDownLatch(3);
-        Flux.from(queryGateway.subscriptionQuery(queryMessage, String.class, null, 50))
+        Flux.from(queryGateway.subscriptionQuery(queryMessage, String.class, 50))
             .subscribe(element -> {
                 results.add(element);
                 latch.countDown();
@@ -589,7 +590,7 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         ProcessingContext testContext = null;
         // when
         List<String> initialResult = new ArrayList<>();
-        Flux.from(queryGateway.subscriptionQuery(queryMessage, String.class, null, 50))
+        Flux.from(queryGateway.subscriptionQuery(queryMessage, String.class, 50))
             .subscribe(initialResult::add);
         queryBus.emitUpdate(testFilter, () -> testUpdateOne, testContext);
         queryBus.emitUpdate(testFilter, () -> testUpdateTwo, testContext);
@@ -614,7 +615,7 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         ProcessingContext testContext = null;
         // when
         List<String> initialResult = new ArrayList<>();
-        Flux.from(queryGateway.subscriptionQuery(queryMessage, String.class, null, 50))
+        Flux.from(queryGateway.subscriptionQuery(queryMessage, String.class, 50))
             .subscribe(initialResult::add);
 
         queryBus.completeSubscriptionsExceptionally(testFilter, new RuntimeException(), testContext);
@@ -628,8 +629,7 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
     void queryGatewayCorrectlyReturnsNullOnSubscriptionQueryWithNullInitialResult()
             throws ExecutionException, InterruptedException {
         CompletableFuture<String> future = Mono.from(queryGateway.subscriptionQuery(new SomeQuery("not " + FOUND),
-                                                                                    String.class,
-                                                                                    null))
+                                                                                    String.class))
                                                .toFuture();
         queryBus.completeSubscriptions(message -> true, null);
         assertNull(future.get());
@@ -638,8 +638,7 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
     @Test
     void queryGatewayCorrectlyReturnsOnSubscriptionQuery() throws ExecutionException, InterruptedException {
         CompletableFuture<String> future = Mono.from(queryGateway.subscriptionQuery(new SomeQuery(FOUND),
-                                                                                    String.class,
-                                                                                    null))
+                                                                                    String.class))
                                                .toFuture();
         String result = future.get();
         assertEquals(FOUND, result);

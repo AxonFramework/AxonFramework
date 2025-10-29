@@ -67,4 +67,20 @@ public interface EventGateway {
      */
     CompletableFuture<Void> publish(@Nullable ProcessingContext context,
                                     @Nonnull List<?> events);
+
+    /**
+     * Publishes the given {@code events} within the given {@code context}. When present, the {@code events} should be
+     * published as part of the {@code context's} lifecycle.
+     * <p>
+     * The {@code events} are mapped to {@link org.axonframework.eventhandling.EventMessage EventMessages} before they
+     * are given to an {@link org.axonframework.eventhandling.EventSink}.
+     *
+     * @param events  The collection of events to publish.
+     * @return A {@link CompletableFuture} of {@link Void}. Completion of the future depends on the
+     * {@link org.axonframework.eventhandling.EventSink} used by this gateway.
+     * @see #publish(ProcessingContext, List)
+     */
+    default CompletableFuture<Void> publish(@Nonnull List<?> events) {
+        return publish(null, events);
+    }
 }

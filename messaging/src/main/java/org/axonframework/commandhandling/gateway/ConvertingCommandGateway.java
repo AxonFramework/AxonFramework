@@ -57,13 +57,6 @@ public class ConvertingCommandGateway implements CommandGateway {
     @Override
     @Nonnull
     public CommandResult send(@Nonnull Object command,
-                              @Nullable ProcessingContext context) {
-        return new ConvertingCommandResult(converter, delegate.send(command, context));
-    }
-
-    @Override
-    @Nonnull
-    public CommandResult send(@Nonnull Object command,
                               @Nonnull Metadata metadata,
                               @Nullable ProcessingContext context) {
         return new ConvertingCommandResult(converter, delegate.send(command, metadata, context));
@@ -76,9 +69,14 @@ public class ConvertingCommandGateway implements CommandGateway {
     }
 
     private record ConvertingCommandResult(
-            MessageConverter commandConverter,
-            CommandResult delegate
+            @Nonnull MessageConverter commandConverter,
+            @Nonnull CommandResult delegate
     ) implements CommandResult {
+
+        ConvertingCommandResult {
+            requireNonNull(commandConverter, "The MessageConverter must not be null.");
+            requireNonNull(delegate, "The CommandResult must not be null.");
+        }
 
         @Override
         public CompletableFuture<? extends Message> getResultMessage() {

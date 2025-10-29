@@ -289,7 +289,7 @@ class CommandHandlingInterceptorsIT extends AbstractCommandHandlingStudentIT {
 
         // when
         Message result = commandGateway.send(
-                new ChangeStudentNameCommand(student1, "name-1"), null
+                new ChangeStudentNameCommand(student1, "name-1")
         ).getResultMessage().join();
 
         // then
@@ -343,7 +343,7 @@ class CommandHandlingInterceptorsIT extends AbstractCommandHandlingStudentIT {
 
         // when
         Message result = commandGateway.send(
-                new ChangeStudentNameCommand(student1, "name-1"), null
+                new ChangeStudentNameCommand(student1, "name-1")
         ).getResultMessage().join();
 
         // then
