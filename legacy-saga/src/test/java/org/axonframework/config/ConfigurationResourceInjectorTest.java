@@ -21,7 +21,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.MessagingConfigurer;
-import org.axonframework.queryhandling.QueryGateway;
+import org.axonframework.queryhandling.gateway.QueryGateway;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;

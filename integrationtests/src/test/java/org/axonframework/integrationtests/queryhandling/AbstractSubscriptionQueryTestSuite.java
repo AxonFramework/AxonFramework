@@ -28,12 +28,10 @@ import org.axonframework.messaging.annotations.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
-import org.axonframework.queryhandling.DefaultQueryGateway;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryExecutionException;
-import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.QueryHandlingComponent;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryPriorityCalculator;
@@ -44,6 +42,8 @@ import org.axonframework.queryhandling.SubscriptionQueryAlreadyRegisteredExcepti
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.annotations.AnnotatedQueryHandlingComponent;
 import org.axonframework.queryhandling.annotations.QueryHandler;
+import org.axonframework.queryhandling.gateway.DefaultQueryGateway;
+import org.axonframework.queryhandling.gateway.QueryGateway;
 import org.axonframework.serialization.PassThroughConverter;
 import org.junit.jupiter.api.*;
 import reactor.core.Exceptions;
@@ -78,8 +78,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Abstract test suite for the
- * {@link QueryBus#subscriptionQuery(QueryMessage, org.axonframework.messaging.unitofwork.ProcessingContext,
- * int)} functionality.
+ * {@link QueryBus#subscriptionQuery(QueryMessage, org.axonframework.messaging.unitofwork.ProcessingContext, int)}
+ * functionality.
  *
  * @author Milan Savic
  * @author Steven van Beelen
@@ -387,8 +387,8 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         // then before we commit we don't have anything yet...
         List<String> updateList = new ArrayList<>();
         FluxUtils.of(result)
-              .filter(e -> e.message() instanceof SubscriptionQueryUpdateMessage)
-              .mapNotNull(e -> e.message().payloadAs(String.class)).subscribe(updateList::add);
+                 .filter(e -> e.message() instanceof SubscriptionQueryUpdateMessage)
+                 .mapNotNull(e -> e.message().payloadAs(String.class)).subscribe(updateList::add);
         assertTrue(updateList.isEmpty());
         // when we execute the UoW, it commits...
         testUoW.execute().join();
@@ -463,13 +463,14 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         for (int i = 0; i <= 200; i++) {
             int number = i;
             queryBus.emitUpdate(testFilter,
-                                () -> new GenericSubscriptionQueryUpdateMessage(TEST_UPDATE_PAYLOAD_TYPE, "Update" + number),
+                                () -> new GenericSubscriptionQueryUpdateMessage(TEST_UPDATE_PAYLOAD_TYPE,
+                                                                                "Update" + number),
                                 testContext);
         }
         queryBus.completeSubscriptions(testFilter, testContext);
         // then...
         StepVerifier.create(FluxUtils.of(result).map(MessageStream.Entry::message)
-                                  .filter(m -> m instanceof SubscriptionQueryUpdateMessage))
+                                     .filter(m -> m instanceof SubscriptionQueryUpdateMessage))
                     .recordWith(LinkedList::new)
                     .thenConsumeWhile(x -> true)
                     .expectRecordedMatches(AbstractSubscriptionQueryTestSuite::assertRecorded)
@@ -489,7 +490,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         MessageStream<QueryResponseMessage> result = queryBus.subscriptionQuery(queryMessage, null, 100);
         // when...
         Flux<QueryResponseMessage> updates = FluxUtils.of(result).map(MessageStream.Entry::message)
-                                                   .onBackpressureBuffer(100);
+                                                      .onBackpressureBuffer(100);
         // then...
         StepVerifier.create(updates, StepVerifierOptions.create().initialRequest(0))
                     .expectSubscription()
@@ -534,8 +535,8 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         queryBus.emitUpdate(testFilter, () -> testUpdateTwo, testContext);
         // then...
         StepVerifier.create(FluxUtils.of(result).map(MessageStream.Entry::message)
-                                  .filter(SubscriptionQueryUpdateMessage.class::isInstance)
-                                  .mapNotNull(Message::payload))
+                                     .filter(SubscriptionQueryUpdateMessage.class::isInstance)
+                                     .mapNotNull(Message::payload))
                     .expectNext("Update1")
                     .verifyComplete();
     }
@@ -549,7 +550,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         // when...
         List<String> results = new ArrayList<>();
         CountDownLatch latch = new CountDownLatch(3);
-        Flux.from(queryGateway.subscriptionQuery(queryMessage, String.class, null, 50))
+        Flux.from(queryGateway.subscriptionQuery(queryMessage, String.class, 50))
             .subscribe(element -> {
                 results.add(element);
                 latch.countDown();
@@ -575,7 +576,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         ProcessingContext testContext = null;
         // when
         List<String> initialResult = new ArrayList<>();
-        Flux.from(queryGateway.subscriptionQuery(queryMessage, String.class, null, 50))
+        Flux.from(queryGateway.subscriptionQuery(queryMessage, String.class, 50))
             .subscribe(initialResult::add);
         queryBus.emitUpdate(testFilter, () -> testUpdateOne, testContext);
         queryBus.emitUpdate(testFilter, () -> testUpdateTwo, testContext);
@@ -598,7 +599,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         ProcessingContext testContext = null;
         // when
         List<String> initialResult = new ArrayList<>();
-        Flux.from(queryGateway.subscriptionQuery(queryMessage, String.class, null, 50))
+        Flux.from(queryGateway.subscriptionQuery(queryMessage, String.class, 50))
             .subscribe(initialResult::add);
 
         queryBus.completeSubscriptionsExceptionally(testFilter, new RuntimeException(), testContext);
@@ -611,8 +612,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     void queryGatewayCorrectlyReturnsNullOnSubscriptionQueryWithNullInitialResult()
             throws ExecutionException, InterruptedException {
         CompletableFuture<String> future = Mono.from(queryGateway.subscriptionQuery(new SomeQuery("not " + FOUND),
-                                                                                    String.class,
-                                                                                    null))
+                                                                                    String.class))
                                                .toFuture();
         queryBus.completeSubscriptions(message -> true, null);
         assertNull(future.get());
@@ -621,8 +621,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     @Test
     void queryGatewayCorrectlyReturnsOnSubscriptionQuery() throws ExecutionException, InterruptedException {
         CompletableFuture<String> future = Mono.from(queryGateway.subscriptionQuery(new SomeQuery(FOUND),
-                                                                                    String.class,
-                                                                                    null))
+                                                                                    String.class))
                                                .toFuture();
         String result = future.get();
         assertEquals(FOUND, result);

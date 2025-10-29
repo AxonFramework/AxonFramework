@@ -171,7 +171,7 @@ public abstract class AbstractAdministrationIT extends AbstractAxonServerIT {
     }
 
     private void sendCommand(Object command) {
-        commandGateway.send(command, null).getResultMessage().join();
+        commandGateway.send(command).getResultMessage().join();
     }
 }
 

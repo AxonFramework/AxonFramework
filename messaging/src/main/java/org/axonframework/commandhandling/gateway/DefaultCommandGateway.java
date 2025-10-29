@@ -27,11 +27,9 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.Metadata;
-import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 import static java.util.Objects.requireNonNull;
 
@@ -71,13 +69,6 @@ public class DefaultCommandGateway implements CommandGateway {
         this.messageTypeResolver = requireNonNull(messageTypeResolver, "The messageTypeResolver may not be null.");
         this.priorityCalculator = requireNonNull(priorityCalculator, "The CommandPriorityCalculator may not be null.");
         this.routingKeyResolver = requireNonNull(routingKeyResolver, "The RoutingStrategy may not be null.");
-    }
-
-    @Override
-    @Nonnull
-    public CommandResult send(@Nonnull Object command,
-                              @Nullable ProcessingContext context) {
-        return new FutureCommandResult(commandBus.dispatch(asCommandMessage(command, Metadata.emptyInstance()), context));
     }
 
     @Override
