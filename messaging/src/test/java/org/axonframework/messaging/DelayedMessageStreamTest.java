@@ -90,7 +90,7 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message> {
             CompletableFuture<MessageStream<Message>> testFuture = new CompletableFuture<>();
 
             MessageStream<?> testSubject = DelayedMessageStream.create(testFuture)
-                                                               .whenComplete(() -> invoked.set(true));
+                                                               .onComplete(() -> invoked.set(true));
 
             CompletableFuture<?> result = testSubject.first().asCompletableFuture();
             assertFalse(result.isDone());
@@ -110,7 +110,7 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message> {
             CompletableFuture<MessageStream<Message>> testFuture = new CompletableFuture<>();
 
             MessageStream<Message> testSubject = DelayedMessageStream.create(testFuture)
-                                                                             .whenComplete(() -> invoked.set(true));
+                                                                             .onComplete(() -> invoked.set(true));
 
             StepVerifier.create(FluxUtils.of(testSubject))
                         .verifyTimeout(Duration.ofMillis(250));
@@ -119,7 +119,7 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message> {
 
             testFuture.complete(MessageStream.just(expected));
             testSubject = DelayedMessageStream.create(testFuture)
-                                              .whenComplete(() -> invoked.set(true));
+                                              .onComplete(() -> invoked.set(true));
 
             StepVerifier.create(FluxUtils.of(testSubject))
                         .expectNextMatches(entry -> entry.message().equals(expected))
@@ -248,7 +248,7 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message> {
             CompletableFuture<MessageStream.Single<Message>> testFuture = new CompletableFuture<>();
 
             MessageStream<?> testSubject = DelayedMessageStream.createSingle(testFuture)
-                                                               .whenComplete(() -> invoked.set(true));
+                                                               .onComplete(() -> invoked.set(true));
 
             CompletableFuture<?> result = testSubject.first().asCompletableFuture();
             assertFalse(result.isDone());
@@ -268,7 +268,7 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message> {
             CompletableFuture<MessageStream.Single<Message>> testFuture = new CompletableFuture<>();
 
             MessageStream<Message> testSubject = DelayedMessageStream.createSingle(testFuture)
-                                                                             .whenComplete(() -> invoked.set(true));
+                                                                             .onComplete(() -> invoked.set(true));
 
             StepVerifier.create(FluxUtils.of(testSubject))
                         .verifyTimeout(Duration.ofMillis(250));
@@ -277,7 +277,7 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message> {
 
             testFuture.complete(MessageStream.just(expected));
             testSubject = DelayedMessageStream.createSingle(testFuture)
-                                              .whenComplete(() -> invoked.set(true));
+                                              .onComplete(() -> invoked.set(true));
 
             StepVerifier.create(FluxUtils.of(testSubject))
                         .expectNextMatches(entry -> entry.message().equals(expected))

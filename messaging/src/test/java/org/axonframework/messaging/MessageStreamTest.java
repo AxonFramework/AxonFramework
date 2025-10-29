@@ -121,31 +121,31 @@ public abstract class MessageStreamTest<M extends Message> {
     abstract M createRandomMessage();
 
     @Test
-    void shouldInvokeOnAvailableCallbackWhenMessagesAreAvailable() {
+    void shouldInvokeSetCallback() {
         MessageStream<M> testSubject = completedTestSubject(List.of(createRandomMessage()));
 
         AtomicBoolean invoked = new AtomicBoolean(false);
-        testSubject.onAvailable(() -> invoked.set(true));
+        testSubject.setCallback(() -> invoked.set(true));
 
         assertTrue(invoked.get());
     }
 
     @Test
-    void shouldInvokeOnAvailableCallbackWhenStreamIsCompleted() {
+    void shouldInvokeSetCallbackCallbackWhenStreamIsCompleted() {
         MessageStream<M> testSubject = completedTestSubject(List.of());
 
         AtomicBoolean invoked = new AtomicBoolean(false);
-        testSubject.onAvailable(() -> invoked.set(true));
+        testSubject.setCallback(() -> invoked.set(true));
 
         assertTrue(invoked.get());
     }
 
     @Test
-    void shouldInvokeOnAvailableCallbackWhenCompletedExceptionally() {
+    void shouldInvokeOnAvailableCallbackOnCompletedExceptionally() {
         MessageStream<M> testSubject = failingTestSubject(List.of(), new RuntimeException("Oops"));
 
         AtomicBoolean invoked = new AtomicBoolean(false);
-        testSubject.onAvailable(() -> invoked.set(true));
+        testSubject.setCallback(() -> invoked.set(true));
 
         assertTrue(invoked.get());
     }
@@ -160,11 +160,11 @@ public abstract class MessageStreamTest<M extends Message> {
     }
 
     @Test
-    void shouldNotInvokeOnAvailableCallbackUntilCompleted() {
+    void shouldNotInvokeSetCallbackCallbackUntilCompleted() {
         MessageStream<M> testSubject = uncompletedTestSubject(List.of(), new CompletableFuture<>());
 
         AtomicBoolean invoked = new AtomicBoolean(false);
-        testSubject.onAvailable(() -> invoked.set(true));
+        testSubject.setCallback(() -> invoked.set(true));
 
         assertFalse(invoked.get());
     }
@@ -174,7 +174,7 @@ public abstract class MessageStreamTest<M extends Message> {
         CompletableFuture<Void> completionMarker = new CompletableFuture<>();
         AtomicBoolean invoked = new AtomicBoolean(false);
         MessageStream<M> testSubject = uncompletedTestSubject(List.of(), completionMarker)
-                .whenComplete(() -> invoked.set(true));
+                .onComplete(() -> invoked.set(true));
 
 
         while (testSubject.next().isPresent()) {
@@ -188,12 +188,12 @@ public abstract class MessageStreamTest<M extends Message> {
     }
 
     @Test
-    void shouldInvokeCompletionCallbackWhenOnAvailableIsRequestedAfterCompletion() {
+    void shouldInvokeCompletionCallbackWhenSetCallbackIsRequestedAfterCompletion() {
         CompletableFuture<Void> completionMarker = new CompletableFuture<>();
         AtomicBoolean invoked = new AtomicBoolean(false);
 
         MessageStream<M> testSubject = uncompletedTestSubject(List.of(), completionMarker)
-                .whenComplete(() -> invoked.set(true));
+                .onComplete(() -> invoked.set(true));
 
         while (testSubject.hasNextAvailable()) {
             assertFalse(invoked.get());
@@ -214,7 +214,7 @@ public abstract class MessageStreamTest<M extends Message> {
         AtomicBoolean invoked = new AtomicBoolean(false);
 
         MessageStream<M> testSubject = uncompletedTestSubject(List.of(createRandomMessage()), completionMarker)
-                .whenComplete(() -> invoked.set(true));
+                .onComplete(() -> invoked.set(true));
 
         completionMarker.complete(null);
         // streams _must not_ have notified their listeners at this point
@@ -233,7 +233,7 @@ public abstract class MessageStreamTest<M extends Message> {
     void shouldInvokeCompletionCallbackImmediatelyOnCompletedEmptyStream() {
         AtomicBoolean invoked = new AtomicBoolean(false);
 
-        completedEmptyStreamTestSubject().whenComplete(() -> invoked.set(true));
+        completedEmptyStreamTestSubject().onComplete(() -> invoked.set(true));
 
         assertTrue(invoked.get());
     }
@@ -243,7 +243,7 @@ public abstract class MessageStreamTest<M extends Message> {
         AtomicBoolean invoked = new AtomicBoolean(false);
 
         CompletableFuture<Void> completionMarker = new CompletableFuture<>();
-        uncompletedTestSubject(List.of(), completionMarker).whenComplete(() -> invoked.set(true));
+        uncompletedTestSubject(List.of(), completionMarker).onComplete(() -> invoked.set(true));
 
         assertFalse(invoked.get());
         completionMarker.complete(null);
@@ -251,7 +251,7 @@ public abstract class MessageStreamTest<M extends Message> {
     }
 
     @Test
-    void shouldNotInvokeOnAvailableCallbackWhenNotCompletedAndAvailableMessageIsConsumed() {
+    void shouldNotInvokeSetCallbackMessageIsConsumed() {
         MessageStream<M> testSubject = uncompletedTestSubject(List.of(createRandomMessage()),
                                                               new CompletableFuture<>());
 
@@ -259,13 +259,13 @@ public abstract class MessageStreamTest<M extends Message> {
         assertFalse(testSubject.next().isPresent());
 
         AtomicBoolean invoked = new AtomicBoolean(false);
-        testSubject.onAvailable(() -> invoked.set(true));
+        testSubject.setCallback(() -> invoked.set(true));
 
         assertFalse(invoked.get());
     }
 
     @Test
-    void shouldNotInvokeOnAvailableCallbackWhenNotCompletedAndAvailableMessagesAreConsumed() {
+    void shouldNotInvokeSetCallbackMessagesAreConsumed() {
         MessageStream<M> testSubject = uncompletedTestSubject(List.of(createRandomMessage(), createRandomMessage()),
                                                               new CompletableFuture<>());
 
@@ -274,20 +274,20 @@ public abstract class MessageStreamTest<M extends Message> {
         assertFalse(testSubject.next().isPresent());
 
         AtomicBoolean invoked = new AtomicBoolean(false);
-        testSubject.onAvailable(() -> invoked.set(true));
+        testSubject.setCallback(() -> invoked.set(true));
 
         assertFalse(invoked.get());
     }
 
     @Test
-    void shouldInvokeOnAvailableCallbackWhenNotCompletedAndNotAllAvailableMessagesAreConsumed() {
+    void shouldInvokeSetCallbackMessagesAreConsumed() {
         MessageStream<M> testSubject = uncompletedTestSubject(List.of(createRandomMessage(), createRandomMessage()),
                                                               new CompletableFuture<>());
 
         assertTrue(testSubject.next().isPresent());
 
         AtomicBoolean invoked = new AtomicBoolean(false);
-        testSubject.onAvailable(() -> invoked.set(true));
+        testSubject.setCallback(() -> invoked.set(true));
 
         assertTrue(invoked.get());
     }
@@ -930,7 +930,7 @@ public abstract class MessageStreamTest<M extends Message> {
 
         MessageStream<M> testSubject = completedTestSubject(List.of());
 
-        testSubject.whenComplete(() -> invoked.set(true))
+        testSubject.onComplete(() -> invoked.set(true))
                    .first().asCompletableFuture()
                    .join();
 
@@ -944,7 +944,7 @@ public abstract class MessageStreamTest<M extends Message> {
 
         MessageStream<M> testSubject = failingTestSubject(List.of(), expected);
 
-        CompletableFuture<Entry<M>> result = testSubject.whenComplete(() -> invoked.set(true))
+        CompletableFuture<Entry<M>> result = testSubject.onComplete(() -> invoked.set(true))
                                                         .first().asCompletableFuture();
         assertTrue(result.isCompletedExceptionally());
         assertEquals(expected, result.exceptionNow());
@@ -957,7 +957,7 @@ public abstract class MessageStreamTest<M extends Message> {
 
         MessageStream<M> testSubject = completedTestSubject(List.of());
 
-        StepVerifier.create(FluxUtils.of(testSubject.whenComplete(() -> invoked.set(true))))
+        StepVerifier.create(FluxUtils.of(testSubject.onComplete(() -> invoked.set(true))))
                     .verifyComplete();
         assertTrue(invoked.get());
     }
@@ -968,7 +968,7 @@ public abstract class MessageStreamTest<M extends Message> {
 
         MessageStream.Single<M> testSubject = completedSingleStreamTestSubject(createRandomMessage());
 
-        StepVerifier.create(FluxUtils.of(testSubject.whenComplete(() -> invoked.set(true))).singleOrEmpty())
+        StepVerifier.create(FluxUtils.of(testSubject.onComplete(() -> invoked.set(true))).singleOrEmpty())
                     .expectNextCount(1)
                     .verifyComplete();
         assertTrue(invoked.get());
@@ -981,7 +981,7 @@ public abstract class MessageStreamTest<M extends Message> {
         RuntimeException oops = new RuntimeException("oops");
         MessageStream<M> testSubject = failingTestSubject(List.of(), oops);
 
-        StepVerifier.create(FluxUtils.of(testSubject.whenComplete(() -> invoked.set(true))))
+        StepVerifier.create(FluxUtils.of(testSubject.onComplete(() -> invoked.set(true))))
                     .verifyErrorMatches(e -> e == oops);
         assertFalse(invoked.get());
     }
@@ -995,7 +995,7 @@ public abstract class MessageStreamTest<M extends Message> {
         Assumptions.assumeTrue(testSubject instanceof MessageStream.Single<M>);
 
         StepVerifier.create(
-            FluxUtils.of(((MessageStream.Single<M>) testSubject).whenComplete(() -> invoked.set(true)))
+            FluxUtils.of(((MessageStream.Single<M>) testSubject).onComplete(() -> invoked.set(true)))
                 .singleOrEmpty()
         )
         .verifyErrorMatches(e -> e == oops);
@@ -1011,7 +1011,7 @@ public abstract class MessageStreamTest<M extends Message> {
         MessageStream<M> testSubject = completedTestSubject(List.of(expectedMessage));
 
         StepVerifier.create(
-            FluxUtils.of(testSubject.whenComplete(() -> {
+            FluxUtils.of(testSubject.onComplete(() -> {
                 throw expected;
             }))
         )
@@ -1020,7 +1020,7 @@ public abstract class MessageStreamTest<M extends Message> {
     }
 
     @Test
-    void shouldExecuteWhenCompleteCallbackOnlyAfterAllMessagesProcessed() {
+    void shouldExecuteOnCompleteCallbackOnlyAfterAllMessagesProcessed() {
         AtomicBoolean callbackExecuted = new AtomicBoolean(false);
         AtomicInteger processedCount = new AtomicInteger(0);
 
@@ -1030,7 +1030,7 @@ public abstract class MessageStreamTest<M extends Message> {
                 processedCount.incrementAndGet();
                 assertFalse(callbackExecuted.get(), "Callback should not execute until completion");
             })
-            .whenComplete(() -> callbackExecuted.set(true));
+            .onComplete(() -> callbackExecuted.set(true));
 
         StepVerifier.create(FluxUtils.of(testSubject))
                     .expectNextCount(3)
@@ -1041,12 +1041,12 @@ public abstract class MessageStreamTest<M extends Message> {
     }
 
     @Test
-    void shouldNotExecuteWhenCompleteCallbackOnError() {
+    void shouldNotExecuteOnCompleteCallbackOnError() {
         RuntimeException testException = new RuntimeException("Stream failed");
         AtomicBoolean callbackExecuted = new AtomicBoolean(false);
 
         MessageStream<M> testSubject = failingTestSubject(List.of(), testException)
-            .whenComplete(() -> callbackExecuted.set(true));
+            .onComplete(() -> callbackExecuted.set(true));
 
         StepVerifier.create(FluxUtils.of(testSubject))
                     .expectErrorMatches(e -> e instanceof RuntimeException && e.getMessage().equals("Stream failed"))
@@ -1056,12 +1056,12 @@ public abstract class MessageStreamTest<M extends Message> {
     }
 
     @Test
-    void shouldNotChangeStreamContentWithWhenComplete() {
+    void shouldNotChangeStreamContentWithOnComplete() {
         List<M> originalMessages = List.of(createRandomMessage(), createRandomMessage(), createRandomMessage());
         AtomicBoolean callbackExecuted = new AtomicBoolean(false);
 
         MessageStream<M> original = completedTestSubject(originalMessages);
-        MessageStream<M> withCallback = original.whenComplete(() -> callbackExecuted.set(true));
+        MessageStream<M> withCallback = original.onComplete(() -> callbackExecuted.set(true));
 
         StepVerifier.create(FluxUtils.of(withCallback))
                     .expectNextMatches(entry -> entry.message().equals(originalMessages.get(0)))
@@ -1073,13 +1073,13 @@ public abstract class MessageStreamTest<M extends Message> {
     }
 
     @Test
-    void shouldChainMultipleWhenCompleteCallbacks() {
+    void shouldChainMultipleOnCompleteCallbacks() {
         AtomicInteger callbackCount = new AtomicInteger(0);
 
         MessageStream<M> testSubject = completedTestSubject(List.of(createRandomMessage()))
-            .whenComplete(callbackCount::incrementAndGet)
-            .whenComplete(callbackCount::incrementAndGet)
-            .whenComplete(callbackCount::incrementAndGet);
+            .onComplete(callbackCount::incrementAndGet)
+            .onComplete(callbackCount::incrementAndGet)
+            .onComplete(callbackCount::incrementAndGet);
 
         StepVerifier.create(FluxUtils.of(testSubject))
                     .expectNextCount(1)
@@ -1089,15 +1089,15 @@ public abstract class MessageStreamTest<M extends Message> {
     }
 
     @Test
-    void shouldShowDifferentPurposesOfConcatWithAndWhenComplete() {
+    void shouldShowDifferentPurposesOfConcatWithAndOnComplete() {
         AtomicBoolean stream1Completed = new AtomicBoolean(false);
         AtomicBoolean stream2Completed = new AtomicBoolean(false);
 
         MessageStream<M> stream1 = completedTestSubject(List.of(createRandomMessage()))
-            .whenComplete(() -> stream1Completed.set(true));
+            .onComplete(() -> stream1Completed.set(true));
 
         MessageStream<M> stream2 = completedTestSubject(List.of(createRandomMessage()))
-            .whenComplete(() -> stream2Completed.set(true));
+            .onComplete(() -> stream2Completed.set(true));
 
         MessageStream<M> concatenated = stream1.concatWith(stream2);
 
@@ -1114,7 +1114,7 @@ public abstract class MessageStreamTest<M extends Message> {
         AtomicBoolean invoked = new AtomicBoolean();
 
         MessageStream<M> testSubject = uncompletedTestSubject(List.of(), new CompletableFuture<>());
-        testSubject.onAvailable(() -> invoked.set(true));
+        testSubject.setCallback(() -> invoked.set(true));
 
         assertFalse(invoked.get());
         publishAdditionalMessage(testSubject, createRandomMessage());

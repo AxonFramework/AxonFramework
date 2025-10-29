@@ -113,7 +113,7 @@ public class SourcingEventMessageStream implements MessageStream<EventMessage> {
     }
 
     @Override
-    public void onAvailable(@Nonnull Runnable callback) {
+    public void setCallback(@Nonnull Runnable callback) {
         stream.onAvailable(callback);
     }
 

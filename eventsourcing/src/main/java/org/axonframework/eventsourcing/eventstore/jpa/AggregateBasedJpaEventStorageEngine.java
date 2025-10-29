@@ -300,7 +300,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
         return aggregateSources.stream()
                                .map(AggregateSource::source)
                                .reduce(MessageStream.empty().cast(), MessageStream::concatWith)
-                               .whenComplete(() -> endOfStreams.complete(null))
+                               .onComplete(() -> endOfStreams.complete(null))
                                .concatWith(MessageStream.fromFuture(
                                        endOfStreams.thenApply(event -> TerminalEventMessage.INSTANCE),
                                        unused -> Context.with(
@@ -330,7 +330,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
                                          this::convertToEventMessage,
                                          entry -> setMarkerAndBuildContext(entry, markerReference))
                              // Defaults the marker when the aggregate stream was empty
-                             .whenComplete(() -> markerReference.compareAndSet(
+                             .onComplete(() -> markerReference.compareAndSet(
                                      null, new AggregateBasedConsistencyMarker(aggregateIdentifier, 0)
                              ))
                              .cast();

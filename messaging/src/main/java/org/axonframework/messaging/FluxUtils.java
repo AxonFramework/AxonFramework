@@ -53,7 +53,7 @@ public final class FluxUtils {
             FluxStreamAdapter<M> fluxTask = new FluxStreamAdapter<>(source, emitter);
             emitter.onRequest(i -> fluxTask.process());
             emitter.onCancel(source::close);
-            source.onAvailable(fluxTask::process);
+            source.setCallback(fluxTask::process);
         });
     }
 

@@ -320,7 +320,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
         abstract Optional<Entry<EventMessage>> lastEntry();
 
         @Override
-        public void onAvailable(@Nonnull Runnable callback) {
+        public void setCallback(@Nonnull Runnable callback) {
             this.callback.set(callback);
             if (eventStorage.isEmpty() || eventStorage.containsKey(Math.max(0, this.position.get()))) {
                 callback.run();

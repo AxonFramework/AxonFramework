@@ -83,7 +83,7 @@ class FluxMessageStream<M extends Message> implements MessageStream<M> {
     }
 
     @Override
-    public void onAvailable(@Nonnull Runnable callback) {
+    public void setCallback(@Nonnull Runnable callback) {
         this.availabilityCallback.set(callback);
         if (hasNextAvailable() || isCompleted()) {
             callback.run();
