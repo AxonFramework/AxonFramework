@@ -81,6 +81,7 @@ public class InterceptingQueryBus implements QueryBus {
 
     private final QueryInterceptingDispatcher queryInterceptingDispatcher;
     private final SubscriptionQueryInterceptingDispatcher subscriptionQueryInterceptingDispatcher;
+    private final SubscribeToUpdatesInterceptingDispatcher subscribeToUpdatesInterceptingDispatcher;
     private final InterceptingResponseUpdateDispatcher interceptingResponseUpdateDispatcher;
 
     /**
@@ -104,12 +105,20 @@ public class InterceptingQueryBus implements QueryBus {
             @Nonnull List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> updateDispatchInterceptors
     ) {
         this.delegate = requireNonNull(delegate, "The query bus delegate must not be null.");
-        this.handlerInterceptors =   requireNonNull(handlerInterceptors, "The handler interceptors must not be null.");
-        this.dispatchInterceptors = requireNonNull(dispatchInterceptors, "The dispatch interceptors must not be null.");
-        this.updateDispatchInterceptors = requireNonNull(updateDispatchInterceptors, "The update dispatch interceptors must not be null.");
+        this.handlerInterceptors = new ArrayList<>(
+                requireNonNull(handlerInterceptors, "The handler interceptors must not be null.")
+        );
+        this.dispatchInterceptors = new ArrayList<>(
+                requireNonNull(dispatchInterceptors, "The dispatch interceptors must not be null.")
+        );
+        this.updateDispatchInterceptors = new ArrayList<>(
+                requireNonNull(updateDispatchInterceptors, "The update dispatch interceptors must not be null.")
+        );
         this.queryInterceptingDispatcher = new QueryInterceptingDispatcher(dispatchInterceptors, this::dispatchQuery);
         this.subscriptionQueryInterceptingDispatcher = new SubscriptionQueryInterceptingDispatcher(dispatchInterceptors,
                                                                                                    delegate);
+        this.subscribeToUpdatesInterceptingDispatcher = new SubscribeToUpdatesInterceptingDispatcher(dispatchInterceptors,
+                                                                                                      delegate);
         this.interceptingResponseUpdateDispatcher = new InterceptingResponseUpdateDispatcher(updateDispatchInterceptors);
     }
 
@@ -143,7 +152,7 @@ public class InterceptingQueryBus implements QueryBus {
     @Override
     public MessageStream<SubscriptionQueryUpdateMessage> subscribeToUpdates(@Nonnull SubscriptionQueryMessage query,
                                                                             int updateBufferSize) {
-        return delegate.subscribeToUpdates(query, updateBufferSize);
+        return subscribeToUpdatesInterceptingDispatcher.dispatch(query, updateBufferSize);
     }
 
     @Nonnull
@@ -273,6 +282,43 @@ public class InterceptingQueryBus implements QueryBus {
                     interceptors,
                     subscriptionDispatcher
             ).proceed(query, context).cast();
+        }
+    }
+
+    private static class SubscribeToUpdatesInterceptingDispatcher {
+
+        private final List<MessageDispatchInterceptor<? super QueryMessage>> interceptors;
+        private final QueryBus delegate;
+
+        private SubscribeToUpdatesInterceptingDispatcher(
+                List<MessageDispatchInterceptor<? super QueryMessage>> interceptors,
+                QueryBus delegate
+        ) {
+            this.interceptors = interceptors;
+            this.delegate = delegate;
+        }
+
+        private MessageStream<SubscriptionQueryUpdateMessage> dispatch(
+                @Nonnull SubscriptionQueryMessage query,
+                int updateBufferSize
+        ) {
+            // Create a new chain per call because the dispatcher needs the updateBufferSize parameter
+            // which varies per invocation and is not part of the BiFunction signature.
+            // We cannot use Processing Context to pass this value, because Processing Context can be null.
+            BiFunction<? super QueryMessage, ProcessingContext, MessageStream<?>> subscribeToUpdatesDispatcher =
+                    (interceptedQuery, interceptedContext) -> {
+                        if (!(interceptedQuery instanceof SubscriptionQueryMessage)) {
+                            throw new IllegalArgumentException(
+                                    "Expected SubscriptionQueryMessage but got: " + interceptedQuery.getClass());
+                        }
+                        return delegate.subscribeToUpdates((SubscriptionQueryMessage) interceptedQuery,
+                                                           updateBufferSize);
+                    };
+
+            return new DefaultMessageDispatchInterceptorChain<>(
+                    interceptors,
+                    subscribeToUpdatesDispatcher
+            ).proceed(query, null).cast();
         }
     }
 

@@ -568,6 +568,45 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
 
             interceptingConfig.shutdown();
         }
+
+        @Test
+        void subscribeToUpdatesDispatchInterceptorsApplied() {
+            // given
+            AtomicInteger interceptor1Invocations = new AtomicInteger(0);
+            AtomicInteger interceptor2Invocations = new AtomicInteger(0);
+
+            MessageDispatchInterceptor<Message> dispatchInterceptor1 = (message, context, chain) -> {
+                interceptor1Invocations.incrementAndGet();
+                return chain.proceed(message.andMetadata(Map.of("dispatch1", "value")), context);
+            };
+            MessageDispatchInterceptor<Message> dispatchInterceptor2 = (message, context, chain) -> {
+                interceptor2Invocations.incrementAndGet();
+                return chain.proceed(message.andMetadata(Map.of("dispatch2", "value")), context);
+            };
+
+            AxonConfiguration interceptingConfig = createMessagingConfigurer()
+                    .registerQueryDispatchInterceptor(config -> dispatchInterceptor1)
+                    .registerQueryDispatchInterceptor(config -> dispatchInterceptor2)
+                    .build();
+            QueryBus interceptingQueryBus = interceptingConfig.getComponent(QueryBus.class);
+
+            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
+                    TEST_QUERY_TYPE, "test", TEST_RESPONSE_TYPE
+            );
+
+            // when
+            MessageStream<SubscriptionQueryUpdateMessage> updateStream =
+                    interceptingQueryBus.subscribeToUpdates(testQuery, 10);
+
+            // then - Verify dispatch interceptors were invoked
+            assertThat(interceptor1Invocations.get()).isEqualTo(1);
+            assertThat(interceptor2Invocations.get()).isEqualTo(1);
+
+            // Verify that the update stream was created successfully
+            assertNotNull(updateStream, "Expected subscribeToUpdates to return a non-null stream");
+
+            interceptingConfig.shutdown();
+        }
     }
 
     @Nested
