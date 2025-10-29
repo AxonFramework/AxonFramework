@@ -234,9 +234,9 @@ class InterceptingQueryBusTest {
             testSubject.query(testQuery, context);
 
             // then - Verify REQUEST interception: handler interceptors added metadata to the query BEFORE handler saw it
-            // Handler interceptors apply within the UnitOfWork context, after dispatch interceptors
+            // Handler interceptors apply within the Processing Context, after dispatch interceptors
             assertThat(handler.getRecordedQueries()).hasSize(1);
-            QueryMessage recordedQuery = handler.getRecordedQueries().get(0);
+            QueryMessage recordedQuery = handler.getRecordedQueries().getFirst();
             assertTrue(recordedQuery.metadata().containsKey("handler1"),
                        "Expected handler1 interceptor to add metadata to REQUEST");
             assertTrue(recordedQuery.metadata().containsKey("handler2"),
@@ -398,6 +398,36 @@ class InterceptingQueryBusTest {
                        "Expected handler1 interceptor to add metadata to query");
             assertTrue(recordedQuery.metadata().containsKey("handler2"),
                        "Expected handler2 interceptor to add metadata to query");
+        }
+
+        @Test
+        void subscriptionQueryDispatchInterceptorsApplied() {
+            // given
+            RecordingQueryHandler handler = new RecordingQueryHandler();
+            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, handler);
+
+            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
+                    TEST_QUERY_TYPE, "test", TEST_RESPONSE_TYPE
+            );
+            ProcessingContext context = StubProcessingContext.forMessage(testQuery);
+
+            // when
+            MessageStream<QueryResponseMessage> result = testSubject.subscriptionQuery(testQuery, context, 10);
+
+            // then
+            QueryResponseMessage response = result.first().asCompletableFuture().join().message();
+            assertTrue(response.metadata().containsKey("dispatch1"),
+                       "Expected dispatch1 interceptor to be applied to response");
+            assertTrue(response.metadata().containsKey("dispatch2"),
+                       "Expected dispatch2 interceptor to be applied to response");
+
+            // Verify dispatch interceptors added metadata to the query received by handler
+            assertThat(handler.getRecordedQueries()).hasSize(1);
+            QueryMessage recordedQuery = handler.getRecordedQueries().getFirst();
+            assertTrue(recordedQuery.metadata().containsKey("dispatch1"),
+                       "Expected dispatch1 interceptor to add metadata to query");
+            assertTrue(recordedQuery.metadata().containsKey("dispatch2"),
+                       "Expected dispatch2 interceptor to add metadata to query");
         }
     }
 

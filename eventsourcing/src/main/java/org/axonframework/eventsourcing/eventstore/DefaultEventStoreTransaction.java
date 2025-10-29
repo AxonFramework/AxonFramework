@@ -103,7 +103,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
                          }
                      })
                      .filter(entry -> entry.getResource(ConsistencyMarker.RESOURCE_KEY) == null)
-                     .whenComplete(() -> updateAppendPosition(markerReference));
+                     .onComplete(() -> updateAppendPosition(markerReference));
     }
 
     /**

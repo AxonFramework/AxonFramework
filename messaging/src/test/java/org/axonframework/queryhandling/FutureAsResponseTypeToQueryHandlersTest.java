@@ -72,10 +72,9 @@ class FutureAsResponseTypeToQueryHandlersTest {
                 new GenericQueryMessage(new MessageType("myQueryWithMultipleResponses"), "criteria");
 
         List<String> result = queryBus.query(testQuery, null)
-                                      .reduce(new ArrayList<String>(), (list, entry) -> {
-                                          list.add(entry.message().payloadAs(String.class));
-                                          return list;
-                                      })
+                .first()
+                .asCompletableFuture()
+                .thenApply(e -> e.message().payloadAs(LIST_OF_STRINGS))
                                       .get();
 
         assertEquals(asList("Response1", "Response2"), result);
@@ -94,7 +93,8 @@ class FutureAsResponseTypeToQueryHandlersTest {
                                     .get();
 
         assertEquals("Response", result);
-        assertThat(resultStream.hasNextAvailable()).isTrue();
+        assertThat(resultStream.hasNextAvailable()).isFalse();
+        assertThat(resultStream.isCompleted()).isTrue();
     }
 
     @Test

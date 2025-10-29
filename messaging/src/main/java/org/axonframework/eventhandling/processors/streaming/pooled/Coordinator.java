@@ -983,7 +983,7 @@ class Coordinator {
                              trackingToken,
                              eventCriteria);
                 availabilityCallbackSupported = true;
-                eventStream.onAvailable(this::scheduleImmediateCoordinationTask);
+                eventStream.setCallback(this::scheduleImmediateCoordinationTask);
                 lastScheduledToken = trackingToken;
             }
         }

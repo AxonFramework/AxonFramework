@@ -51,7 +51,7 @@ class CompletionCallbackMessageStream<M extends Message> extends DelegatingMessa
         super(delegate);
         this.delegate = delegate;
         this.completeHandler = completeHandler;
-        delegate.onAvailable(this::invokeCompletionHandlerIfCompleted);
+        delegate.setCallback(this::invokeCompletionHandlerIfCompleted);
     }
 
     @Override
@@ -79,8 +79,8 @@ class CompletionCallbackMessageStream<M extends Message> extends DelegatingMessa
     }
 
     @Override
-    public void onAvailable(@Nonnull Runnable callback) {
-        delegate.onAvailable(() -> {
+    public void setCallback(@Nonnull Runnable callback) {
+        delegate.setCallback(() -> {
             callback.run();
             invokeCompletionHandlerIfCompleted();
         });

@@ -84,12 +84,11 @@ public class DefaultQueryGateway implements QueryGateway {
         CompletableFuture<R> resultFuture =
                 resultStream.first()
                             .asCompletableFuture()
-                            .thenApply(MessageStream.Entry::message)
-                            .thenApply(queryResponseMessage -> {
-                                if (queryResponseMessage == null) { // in the case of MessageStream.Empty
+                            .thenApply(entry -> {
+                                if (entry == null) {
                                     return null;
                                 }
-                                return queryResponseMessage.payloadAs(responseType, converter);
+                                return entry.message().payloadAs(responseType, converter);
                             });
         // We cannot chain the whenComplete call, as otherwise CompletableFuture#cancel is not propagated to the lambda.
         resultFuture.whenComplete((r, e) -> {

@@ -44,8 +44,8 @@ public abstract class DelegatingMessageStream<DM extends Message, RM extends Mes
     }
 
     @Override
-    public void onAvailable(@Nonnull Runnable callback) {
-        delegate.onAvailable(callback);
+    public void setCallback(@Nonnull Runnable callback) {
+        delegate.setCallback(callback);
     }
 
     @Override
