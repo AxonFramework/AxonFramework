@@ -229,7 +229,7 @@ public enum ErrorCode {
      * @return the Axon Framework exception
      */
     public AxonException convert(String source, Throwable throwable) {
-        return convert(ExceptionConverter.convertToErrorMessage(source, throwable),
+        return convert(ExceptionConverter.convertToErrorMessage(source, null, throwable),
                        () -> HandlerExecutionException.resolveDetails(throwable).orElse(null));
     }
 

@@ -27,6 +27,8 @@ import io.axoniq.axonserver.grpc.query.QueryResponse;
 import io.axoniq.axonserver.grpc.query.QueryUpdate;
 import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.MetadataConverter;
 import org.axonframework.axonserver.connector.util.ExceptionConverter;
 import org.axonframework.axonserver.connector.util.ProcessingInstructionUtils;
@@ -282,18 +284,22 @@ public final class QueryConverter {
      * client identifier.
      *
      * @param clientId The identifier of the client associated with the error. Must not be null.
+     * @param errorCode The error code identifying the type of action that resulted in an error, if known.
      * @param error    The {@link Throwable} containing error details to be translated into an error message. Must not
      *                 be null.
      * @return A {@link QueryUpdate} containing the client identifier and an error message derived from the provided
      * {@link Throwable}.
      */
-    public static QueryUpdate convertQueryUpdate(String clientId, Throwable error) {
-        return QueryUpdate.newBuilder()
-                          .setErrorMessage(ExceptionConverter.convertToErrorMessage(clientId, error))
-                          .setClientId(clientId)
-                          .build();
+    public static QueryUpdate convertQueryUpdate(String clientId, @Nullable ErrorCode errorCode, Throwable error) {
+        QueryUpdate.Builder builder =
+                QueryUpdate.newBuilder()
+                           .setErrorMessage(ExceptionConverter.convertToErrorMessage(clientId, errorCode, error))
+                           .setClientId(clientId);
+        if (errorCode != null) {
+            builder.setErrorCode(errorCode.errorCode());
+        }
+        return builder.build();
     }
-
 
     private static void addPriority(QueryRequest.Builder builder, QueryMessage query) {
         query.priority().ifPresent(priority -> {

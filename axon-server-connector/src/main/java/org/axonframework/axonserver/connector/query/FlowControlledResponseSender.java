@@ -95,11 +95,11 @@ class FlowControlledResponseSender implements FlowControl {
                 closed.set(true);
                 upstream.error()
                         .ifPresentOrElse(error -> {
-                                             ErrorMessage ex = ExceptionConverter.convertToErrorMessage(clientId, error);
+                                             ErrorCode errorCode = ErrorCode.getQueryExecutionErrorCode(error);
+                                             ErrorMessage ex = ExceptionConverter.convertToErrorMessage(clientId, errorCode, error);
                                              QueryResponse errorResponse =
                                                      QueryResponse.newBuilder()
-                                                                  .setErrorCode(ErrorCode.getQueryExecutionErrorCode(error)
-                                                                                         .errorCode())
+                                                                  .setErrorCode(errorCode.errorCode())
                                                                   .setErrorMessage(ex)
                                                                   .setRequestIdentifier(queryIdentifier)
                                                                   .build();

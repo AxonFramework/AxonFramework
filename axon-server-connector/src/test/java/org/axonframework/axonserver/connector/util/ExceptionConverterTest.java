@@ -17,6 +17,7 @@
 package org.axonframework.axonserver.connector.util;
 
 import io.axoniq.axonserver.grpc.ErrorMessage;
+import org.axonframework.axonserver.connector.ErrorCode;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -26,18 +27,20 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class ExceptionConverterTest {
     @Test
-    void convertToErrorMessageNullClient() {
-        ErrorMessage result = ExceptionConverter.convertToErrorMessage(null,
+    void convertToErrorMessageNullClientAndErrorCode() {
+        ErrorMessage result = ExceptionConverter.convertToErrorMessage(null, null,
                                                                        new RuntimeException(
                                                                     "Something went wrong"));
         assertEquals("", result.getLocation());
+        assertEquals("", result.getErrorCode());
     }
 
     @Test
-    void convertToErrorMessageNonNullClient() {
-        ErrorMessage result = ExceptionConverter.convertToErrorMessage("Client",
+    void convertToErrorMessageNonNullClientAndErrorCode() {
+        ErrorMessage result = ExceptionConverter.convertToErrorMessage("Client", ErrorCode.QUERY_EXECUTION_ERROR,
                                                                        new RuntimeException(
                                                                     "Something went wrong"));
         assertEquals("Client", result.getLocation());
+        assertEquals("AXONIQ-5001", result.getErrorCode());
     }
 }

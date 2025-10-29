@@ -22,6 +22,7 @@ import io.axoniq.axonserver.grpc.MetaDataValue;
 import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.axoniq.axonserver.grpc.query.QueryUpdate;
+import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.Metadata;
@@ -203,11 +204,13 @@ class QueryConverterTest {
     @Test
     void convertsClientAndThrowableToErrorQueryUpdate() {
         var throwable = new RuntimeException("boom");
-        var qu = QueryConverter.convertQueryUpdate(clientId, throwable);
+        var qu = QueryConverter.convertQueryUpdate(clientId, ErrorCode.QUERY_EXECUTION_ERROR, throwable);
 
         assertThat(qu.getClientId()).isEqualTo(clientId);
         assertThat(qu.hasErrorMessage()).isTrue();
         assertThat(qu.getErrorMessage().getMessage()).contains("boom");
+        assertThat(qu.getErrorMessage().getErrorCode()).isEqualTo("AXONIQ-5001");
+        assertThat(qu.getErrorCode()).isEqualTo("AXONIQ-5001");
     }
 
     @Test

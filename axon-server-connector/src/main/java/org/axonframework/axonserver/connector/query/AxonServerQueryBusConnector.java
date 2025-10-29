@@ -30,6 +30,7 @@ import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
+import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.lifecycle.ShutdownLatch;
@@ -304,7 +305,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
 
         @Override
         public CompletableFuture<Void> completeExceptionally(@Nonnull Throwable error) {
-            updateHandler.sendUpdate(QueryConverter.convertQueryUpdate(clientId, error));
+            updateHandler.sendUpdate(QueryConverter.convertQueryUpdate(clientId, ErrorCode.QUERY_EXECUTION_ERROR, error));
             updateHandler.complete();
             return FutureUtils.emptyCompletedFuture();
         }
