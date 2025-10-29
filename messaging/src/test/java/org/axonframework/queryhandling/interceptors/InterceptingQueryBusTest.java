@@ -404,11 +404,9 @@ class InterceptingQueryBusTest {
         void subscriptionQueryDispatchInterceptorsApplied() {
             // given
             RecordingQueryHandler handler = new RecordingQueryHandler();
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, handler);
+            testSubject.subscribe(QUERY_NAME, handler);
 
-            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
-                    TEST_QUERY_TYPE, "test", TEST_RESPONSE_TYPE
-            );
+            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test");
             ProcessingContext context = StubProcessingContext.forMessage(testQuery);
 
             // when

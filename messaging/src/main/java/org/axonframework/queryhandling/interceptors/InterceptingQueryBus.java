@@ -252,7 +252,7 @@ public class InterceptingQueryBus implements QueryBus {
         }
 
         private MessageStream<QueryResponseMessage> dispatch(
-                @Nonnull SubscriptionQueryMessage query,
+                @Nonnull QueryMessage query,
                 @Nullable ProcessingContext context,
                 int updateBufferSize
         ) {
@@ -260,15 +260,9 @@ public class InterceptingQueryBus implements QueryBus {
             // which varies per invocation and is not part of the BiFunction signature.
             // We cannot use Processing Context to pass this value, because Processing Context can be null.
             BiFunction<? super QueryMessage, ProcessingContext, MessageStream<?>> subscriptionDispatcher =
-                    (interceptedQuery, interceptedContext) -> {
-                        if (!(interceptedQuery instanceof SubscriptionQueryMessage)) {
-                            throw new IllegalArgumentException(
-                                    "Expected SubscriptionQueryMessage but got: " + interceptedQuery.getClass());
-                        }
-                        return delegate.subscriptionQuery((SubscriptionQueryMessage) interceptedQuery,
-                                                          interceptedContext,
-                                                          updateBufferSize);
-                    };
+                    (interceptedQuery, interceptedContext) -> delegate.subscriptionQuery(interceptedQuery,
+                                                                                         interceptedContext,
+                                                                                         updateBufferSize);
 
             return new DefaultMessageDispatchInterceptorChain<>(
                     interceptors,

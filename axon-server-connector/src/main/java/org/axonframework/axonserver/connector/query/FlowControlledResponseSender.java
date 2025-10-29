@@ -63,7 +63,7 @@ class FlowControlledResponseSender implements FlowControl {
         if (requests.getAndUpdate(current ->
                                           current > Long.MAX_VALUE - requested ? Long.MAX_VALUE :
                                                   current + requested) == 0) {
-            upstream.onAvailable(this::responseSendingLoop);
+            upstream.setCallback(this::responseSendingLoop);
         }
         responseSendingLoop();
     }
