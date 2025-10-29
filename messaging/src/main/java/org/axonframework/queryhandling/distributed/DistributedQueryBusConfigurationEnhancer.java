@@ -45,7 +45,7 @@ public class DistributedQueryBusConfigurationEnhancer implements ConfigurationEn
      * application of the decorator to the delegate or the distributed query bus, depending on the order of
      * registration.
      */
-    public static final int DISTRIBUTED_QUERY_BUS_ORDER = InterceptingQueryBus.DECORATION_ORDER -1;
+    public static final int DISTRIBUTED_QUERY_BUS_ORDER = InterceptingQueryBus.DECORATION_ORDER - 50;
 
     @Override
     public void enhance(@Nonnull ComponentRegistry componentRegistry) {
