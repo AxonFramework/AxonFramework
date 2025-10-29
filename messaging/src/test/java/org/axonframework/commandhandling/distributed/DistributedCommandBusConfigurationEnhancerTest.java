@@ -22,6 +22,8 @@ import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.MessagingConfigurer;
 import org.junit.jupiter.api.*;
 
+import java.lang.reflect.Field;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -45,8 +47,12 @@ class DistributedCommandBusConfigurationEnhancerTest {
                                    })
                                    .build();
 
-        assertInstanceOf(DistributedCommandBus.class, config.getComponent(CommandBus.class));
+        CommandBus commandBus = config.getComponent(CommandBus.class);
+        assertInstanceOf(InterceptingCommandBus.class, commandBus);
         assertTrue(config.hasComponent(DistributedCommandBusConfiguration.class));
+
+        // Verify that the delegate of InterceptingCommandBus is a DistributedCommandBus
+        assertInstanceOf(DistributedCommandBus.class, extractDelegate(commandBus));
     }
 
     @Test
@@ -62,5 +68,15 @@ class DistributedCommandBusConfigurationEnhancerTest {
         // Intercepting at all times, since we have a default CorrelationDataInterceptor.
         assertInstanceOf(InterceptingCommandBus.class, commandBus);
         assertFalse(config.hasComponent(DistributedCommandBusConfiguration.class));
+    }
+
+    private static CommandBus extractDelegate(CommandBus commandBus) {
+        try {
+            Field delegateField = InterceptingCommandBus.class.getDeclaredField("delegate");
+            delegateField.setAccessible(true);
+            return (CommandBus) delegateField.get(commandBus);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException("Failed to extract delegate from InterceptingCommandBus", e);
+        }
     }
 }
