@@ -185,7 +185,6 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
                 QueryHandlingModule.named("test")
                                    .queryHandlers(handlerPhase -> handlerPhase.queryHandler(
                                            new QualifiedName(String.class),
-                                           new QualifiedName(String.class),
                                            (query, context) -> MessageStream.empty().cast()
                                    ));
 

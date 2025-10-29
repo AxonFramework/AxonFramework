@@ -16,14 +16,10 @@
 package org.axonframework.queryhandling.annotations;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotations.AnnotatedHandlerInspector;
-import org.axonframework.messaging.annotations.AnnotationMessageTypeResolver;
 import org.axonframework.messaging.annotations.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotations.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotations.HandlerDefinition;
@@ -34,13 +30,11 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryExecutionException;
-import org.axonframework.queryhandling.QueryHandlerName;
 import org.axonframework.queryhandling.QueryHandlingComponent;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.SimpleQueryHandlingComponent;
 
-import java.lang.reflect.Type;
 import java.util.Optional;
 import java.util.Set;
 
@@ -62,7 +56,6 @@ public class AnnotatedQueryHandlingComponent<T> implements QueryHandlingComponen
     private final SimpleQueryHandlingComponent handlingComponent;
     private final T target;
     private final AnnotatedHandlerInspector<T> model;
-    private final MessageTypeResolver messageTypeResolver;
     private final MessageConverter converter;
 
     /**
@@ -95,7 +88,6 @@ public class AnnotatedQueryHandlingComponent<T> implements QueryHandlingComponen
         this(annotatedQueryHandler,
              parameterResolverFactory,
              ClasspathHandlerDefinition.forClass(annotatedQueryHandler.getClass()),
-             new AnnotationMessageTypeResolver(),
              converter);
     }
 
@@ -106,16 +98,12 @@ public class AnnotatedQueryHandlingComponent<T> implements QueryHandlingComponen
      * @param annotatedQueryHandler    The object containing the {@link QueryHandler} annotated methods.
      * @param parameterResolverFactory The parameter resolver factory to resolve handler parameters with.
      * @param handlerDefinition        The handler definition used to create concrete handlers.
-     * @param messageTypeResolver      The {@link MessageTypeResolver} resolving the {@link QualifiedName names} for
-     *                                 {@link QueryMessage QueryMessage} and
-     *                                 {@link QueryResponseMessage QueryResponseMessages}.
      * @param converter                The converter to use for converting the payload of the command to the type
      *                                 expected by the handler method.
      */
     public AnnotatedQueryHandlingComponent(@Nonnull T annotatedQueryHandler,
                                            @Nonnull ParameterResolverFactory parameterResolverFactory,
                                            @Nonnull HandlerDefinition handlerDefinition,
-                                           @Nonnull MessageTypeResolver messageTypeResolver,
                                            @Nonnull MessageConverter converter) {
         this.handlingComponent = SimpleQueryHandlingComponent.create(
                 "AnnotatedQueryHandlingComponent[%s]".formatted(annotatedQueryHandler.getClass().getName())
@@ -125,7 +113,6 @@ public class AnnotatedQueryHandlingComponent<T> implements QueryHandlingComponen
         this.model = AnnotatedHandlerInspector.inspectType((Class<T>) annotatedQueryHandler.getClass(),
                                                            parameterResolverFactory,
                                                            handlerDefinition);
-        this.messageTypeResolver = requireNonNull(messageTypeResolver, "The MessageTypeResolver may not be null.");
         this.converter = requireNonNull(converter, "The Converter may not be null.");
 
         initializeHandlersBasedOnModel();
@@ -144,11 +131,8 @@ public class AnnotatedQueryHandlingComponent<T> implements QueryHandlingComponen
     }
 
     private void registerHandler(QueryHandlingMember<? super T> handler) {
-        Type resultType = handler.resultType();
         QualifiedName queryName = new QualifiedName(handler.queryName());
-        MessageType responseType = messageTypeResolver.resolve((Class<?>) resultType)
-                                                      .orElseGet(() -> new MessageType((Class<?>) resultType));
-        handlingComponent.subscribe(queryName, responseType.qualifiedName(), constructQueryHandlerFor(handler));
+        handlingComponent.subscribe(queryName, constructQueryHandlerFor(handler));
     }
 
     private org.axonframework.queryhandling.QueryHandler constructQueryHandlerFor(
@@ -189,7 +173,7 @@ public class AnnotatedQueryHandlingComponent<T> implements QueryHandlingComponen
     }
 
     @Override
-    public Set<QueryHandlerName> supportedQueries() {
+    public Set<QualifiedName> supportedQueries() {
         return Set.copyOf(handlingComponent.supportedQueries());
     }
 }

@@ -111,8 +111,7 @@ class ExceptionHandlerTest {
     void exceptionHandlerIsInvokedForAnQueryHandlerThrowingAnException() {
         QueryMessage query = new GenericQueryMessage(
                 TEST_QUERY_TYPE,
-                new SomeQuery(() -> new RuntimeException("some-exception")),
-                new MessageType(SomeQueryResponse.class));
+                new SomeQuery(() -> new RuntimeException("some-exception")));
 
         try {
             Object result = handle(query);

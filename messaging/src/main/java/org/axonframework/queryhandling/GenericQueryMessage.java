@@ -39,7 +39,6 @@ import java.util.OptionalInt;
  */
 public class GenericQueryMessage extends MessageDecorator implements QueryMessage {
 
-    private final MessageType responseType;
     private final Integer priority;
 
     /**
@@ -50,13 +49,10 @@ public class GenericQueryMessage extends MessageDecorator implements QueryMessag
      *
      * @param type         The {@link MessageType type} for this {@link QueryMessage}.
      * @param payload      The payload expressing the query for this {@link CommandMessage}.
-     * @param responseType The expected {@link MessageType response type} for this {@link QueryMessage}.
      */
     public GenericQueryMessage(@Nonnull MessageType type,
-                               @Nullable Object payload,
-                               @Nonnull MessageType responseType) {
+                               @Nullable Object payload) {
         this(new GenericMessage(type, payload, Metadata.emptyInstance()),
-             responseType,
              null);
     }
 
@@ -73,12 +69,10 @@ public class GenericQueryMessage extends MessageDecorator implements QueryMessag
      * @param delegate     The {@link Message} containing {@link Message#payload() payload},
      *                     {@link Message#type() type}, {@link Message#identifier() identifier} and
      *                     {@link Message#metadata() metadata} for the {@link QueryMessage} to reconstruct.
-     * @param responseType The expected {@link MessageType response type} for this {@link QueryMessage}.
      * @see GenericQueryMessage(Message, MessageType, Integer)
      */
-    public GenericQueryMessage(@Nonnull Message delegate,
-                               @Nonnull MessageType responseType) {
-        this(delegate, responseType, null);
+    public GenericQueryMessage(@Nonnull Message delegate) {
+        this(delegate, null);
     }
 
     /**
@@ -94,33 +88,24 @@ public class GenericQueryMessage extends MessageDecorator implements QueryMessag
      * @param delegate     The {@link Message} containing {@link Message#payload() payload},
      *                     {@link Message#type() type}, {@link Message#identifier() identifier} and
      *                     {@link Message#metadata() metadata} for the {@link QueryMessage} to reconstruct.
-     * @param responseType The expected {@link MessageType response type} for this {@link QueryMessage}.
      * @param priority     The priority of this query message. May be {@code null} to indicate no priority.
      */
     public GenericQueryMessage(@Nonnull Message delegate,
-                               @Nonnull MessageType responseType,
                                @Nullable Integer priority) {
         super(delegate);
-        this.responseType = responseType;
         this.priority = priority;
     }
 
     @Override
     @Nonnull
-    public MessageType responseType() {
-        return responseType;
-    }
-
-    @Override
-    @Nonnull
     public QueryMessage withMetadata(@Nonnull Map<String, String> metadata) {
-        return new GenericQueryMessage(delegate().withMetadata(metadata), responseType, priority);
+        return new GenericQueryMessage(delegate().withMetadata(metadata), priority);
     }
 
     @Override
     @Nonnull
     public QueryMessage andMetadata(@Nonnull Map<String, String> metadata) {
-        return new GenericQueryMessage(delegate().andMetadata(metadata), responseType, priority);
+        return new GenericQueryMessage(delegate().andMetadata(metadata), priority);
     }
 
     @Override
@@ -135,7 +120,7 @@ public class GenericQueryMessage extends MessageDecorator implements QueryMessag
                                                delegate.type(),
                                                convertedPayload,
                                                delegate.metadata());
-        return new GenericQueryMessage(converted, responseType, priority);
+        return new GenericQueryMessage(converted, priority);
     }
 
     @Override
@@ -147,7 +132,6 @@ public class GenericQueryMessage extends MessageDecorator implements QueryMessag
     protected void describeTo(StringBuilder stringBuilder) {
         super.describeTo(stringBuilder);
         stringBuilder
-                .append(", responseType='").append(responseType()).append("'")
                 .append(", priority='").append(priority().orElse(0)).append("'");
     }
 

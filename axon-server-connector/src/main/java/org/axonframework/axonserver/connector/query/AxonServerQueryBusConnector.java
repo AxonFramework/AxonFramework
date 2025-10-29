@@ -35,11 +35,10 @@ import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.lifecycle.ShutdownLatch;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.queryhandling.QueryHandlerName;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.distributed.QueryBusConnector;
 import org.slf4j.Logger;
@@ -75,7 +74,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
     private final String componentName;
     private final LocalSegmentAdapter localSegmentAdapter;
 
-    private final Map<QueryHandlerName, Registration> subscriptions = new ConcurrentHashMap<>();
+    private final Map<QualifiedName, Registration> subscriptions = new ConcurrentHashMap<>();
     private final ShutdownLatch shutdownLatch = new ShutdownLatch();
     private final Duration queryInProgressAwait = Duration.ofSeconds(5);
 
@@ -107,10 +106,10 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
 
     // region [Connector]
     @Override
-    public CompletableFuture<Void> subscribe(@Nonnull QueryHandlerName name) {
-        logger.debug("Subscribing to query handler [{}] with response type [{}]",
-                     name.queryName(), name.responseName());
-        QueryDefinition definition = new QueryDefinition(name.queryName().name(), name.responseName().name());
+    public CompletableFuture<Void> subscribe(@Nonnull QualifiedName name) {
+        logger.debug("Subscribing to query handler [{}].",
+                     name);
+        QueryDefinition definition = new QueryDefinition(name.fullName(), "");
         Registration registration = connection.queryChannel()
                                               .registerQueryHandler(localSegmentAdapter, definition);
 
@@ -126,7 +125,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
     }
 
     @Override
-    public boolean unsubscribe(@Nonnull QueryHandlerName name) {
+    public boolean unsubscribe(@Nonnull QualifiedName name) {
         Registration subscription = subscriptions.remove(name);
         if (subscription != null) {
             subscription.cancel();
@@ -162,7 +161,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
 
     @Nonnull
     @Override
-    public MessageStream<QueryResponseMessage> subscriptionQuery(@Nonnull SubscriptionQueryMessage query,
+    public MessageStream<QueryResponseMessage> subscriptionQuery(@Nonnull QueryMessage query,
                                                                  @Nullable ProcessingContext context,
                                                                  int updateBufferSize) {
         shutdownLatch.ifShuttingDown("Cannot dispatch new queries as this bus is being shut down");

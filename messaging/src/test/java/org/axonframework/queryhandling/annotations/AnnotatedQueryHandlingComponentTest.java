@@ -72,7 +72,7 @@ class AnnotatedQueryHandlingComponentTest {
     void handleReturnsFaultyMessageStreamWithNoHandlerForQueryException() {
         // given...
         QueryMessage testQuery =
-                new GenericQueryMessage(new MessageType("unknown"), null, new MessageType(String.class));
+                new GenericQueryMessage(new MessageType("unknown"), null);
         ProcessingContext testContext = StubProcessingContext.forMessage(testQuery);
         // when...
         MessageStream<QueryResponseMessage> result = testSubject.handle(testQuery, testContext);
@@ -88,7 +88,7 @@ class AnnotatedQueryHandlingComponentTest {
         // given...
         String expectedResponse = "hello";
         QueryMessage testQuery =
-                new GenericQueryMessage(new MessageType("echo"), expectedResponse, new MessageType(String.class));
+                new GenericQueryMessage(new MessageType("echo"), expectedResponse);
         ProcessingContext testContext = StubProcessingContext.forMessage(testQuery);
         // when...
         MessageStream<QueryResponseMessage> result = testSubject.handle(testQuery, testContext);
@@ -106,7 +106,7 @@ class AnnotatedQueryHandlingComponentTest {
     void handleInvokesQueryHandlerReturningFaultyMessageStream() {
         // given...
         QueryMessage testQuery =
-                new GenericQueryMessage(new MessageType("faulty"), "hello", new MessageType(Integer.class));
+                new GenericQueryMessage(new MessageType("faulty"), "hello");
         ProcessingContext testContext = StubProcessingContext.forMessage(testQuery);
         // when...
         MessageStream<QueryResponseMessage> result = testSubject.handle(testQuery, testContext);
@@ -121,8 +121,7 @@ class AnnotatedQueryHandlingComponentTest {
     void handleInvokesQueryHandlerReturningAnEmptyOptional() {
         // given...
         QueryMessage testQuery = new GenericQueryMessage(new MessageType("emptyOptional"),
-                                                         "hello",
-                                                         new MessageType(String.class));
+                                                         "hello");
         ProcessingContext testContext = StubProcessingContext.forMessage(testQuery);
         // when...
         MessageStream<QueryResponseMessage> result = testSubject.handle(testQuery, testContext);
@@ -135,7 +134,7 @@ class AnnotatedQueryHandlingComponentTest {
         // given...
         String expectedResponse = "hello";
         QueryMessage testQuery =
-                new GenericQueryMessage(new MessageType("optional"), expectedResponse, new MessageType(String.class));
+                new GenericQueryMessage(new MessageType("optional"), expectedResponse);
         ProcessingContext testContext = StubProcessingContext.forMessage(testQuery);
         // when...
         MessageStream<QueryResponseMessage> result = testSubject.handle(testQuery, testContext);
@@ -154,7 +153,7 @@ class AnnotatedQueryHandlingComponentTest {
         // given...
         int desiredResponsesCount = 5;
         QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType("multipleResponses"), desiredResponsesCount, new MessageType(String.class)
+                new MessageType("multipleResponses"), desiredResponsesCount
         );
         ProcessingContext testContext = StubProcessingContext.forMessage(testQuery);
         // when...
@@ -172,8 +171,7 @@ class AnnotatedQueryHandlingComponentTest {
     void handleInvokesQueryHandlerReturningNull() {
         // given...
         QueryMessage testQuery = new GenericQueryMessage(new MessageType("nullResponse"),
-                                                         "hello",
-                                                         new MessageType(String.class));
+                                                         "hello");
         ProcessingContext testContext = StubProcessingContext.forMessage(testQuery);
         // when...
         MessageStream<QueryResponseMessage> result = testSubject.handle(testQuery, testContext);

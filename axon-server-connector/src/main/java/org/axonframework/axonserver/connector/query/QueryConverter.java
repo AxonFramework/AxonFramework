@@ -38,11 +38,9 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
-import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
 import org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 
 import java.util.Objects;
@@ -53,7 +51,7 @@ import static org.axonframework.axonserver.connector.util.ProcessingInstructionU
 /**
  * Utility class to convert queries during
  * {@link AxonServerQueryBusConnector#query(QueryMessage, ProcessingContext) dispatching} and handling of
- * {@link AxonServerQueryBusConnector#subscribe(org.axonframework.queryhandling.QueryHandlerName) subscribed} query
+ * {@link AxonServerQueryBusConnector#subscribe(org.axonframework.messaging.QualifiedName) subscribed} query
  * handlers in the {@link AxonServerQueryBusConnector}.
  * <p>
  * This utility class is marked as {@link Internal} as it is specific for the {@link AxonServerQueryBusConnector}.
@@ -81,8 +79,6 @@ public final class QueryConverter {
         Integer priority = ProcessingInstructionUtils.priority(queryRequest.getProcessingInstructionsList());
 
         var type = new MessageType(payload.getType(), payload.getRevision());
-        var responseType = new MessageType(queryRequest.getResponseType().getType(),
-                                           queryRequest.getResponseType().getRevision());
         return new GenericQueryMessage(
                 new GenericMessage(
                         queryRequest.getMessageIdentifier(),
@@ -90,7 +86,6 @@ public final class QueryConverter {
                         payload.getData().toByteArray(),
                         MetadataConverter.convertMetadataValuesToGrpc(queryRequest.getMetaDataMap())
                 ),
-                responseType,
                 priority
         );
     }
@@ -128,11 +123,6 @@ public final class QueryConverter {
                       .setComponentName(componentName)
                       .setMessageIdentifier(query.identifier())
                       .setQuery(query.type().name())
-                      // TODO discuss desire for response version too
-                      .setResponseType(SerializedObject.newBuilder()
-                                                       .setType(query.responseType().name())
-                                                       .setRevision(query.responseType().version())
-                                                       .build())
                       .putAllMetaData(MetadataConverter.convertGrpcToMetadataValues(query.metadata()))
                       .setPayload(SerializedObject.newBuilder()
                                                   .setData(ByteString.copyFrom(payloadAsBytes))
@@ -209,17 +199,17 @@ public final class QueryConverter {
     }
 
     /**
-     * Converts a {@link SubscriptionQuery} into a {@link SubscriptionQueryMessage}. This method processes the given
+     * Converts a {@link SubscriptionQuery} into a {@link QueryMessage}. This method processes the given
      * {@link SubscriptionQuery} by extracting its identifier, payload, metadata, and other necessary fields to
-     * construct a {@link SubscriptionQueryMessage}.
+     * construct a {@link QueryMessage}.
      *
      * @param query The {@link SubscriptionQuery} to be converted. Must not be null. The {@link SubscriptionQuery}
      *              should contain properly set payload, metadata, and response type details.
-     * @return A {@link SubscriptionQueryMessage} representation of the provided {@link SubscriptionQuery}. It includes
+     * @return A {@link QueryMessage} representation of the provided {@link SubscriptionQuery}. It includes
      * the processed payload, metadata, and response type.
      * @throws NullPointerException if the provided {@link SubscriptionQuery} is null.
      */
-    public static SubscriptionQueryMessage convertSubscriptionQueryMessage(@Nonnull SubscriptionQuery query) {
+    public static QueryMessage convertSubscriptionQueryMessage(@Nonnull SubscriptionQuery query) {
         SerializedObject responsePayload = query.getQueryRequest().getPayload();
         var message = new GenericMessage(
                 query.getSubscriptionIdentifier(),
@@ -228,11 +218,7 @@ public final class QueryConverter {
                 MetadataConverter.convertMetadataValuesToGrpc(query.getQueryRequest().getMetaDataMap())
         );
 
-        return new GenericSubscriptionQueryMessage(
-                message,
-                new MessageType(query.getQueryRequest().getResponseType().getType(),
-                                query.getQueryRequest().getResponseType().getRevision())
-        );
+        return new GenericQueryMessage(message);
     }
 
 

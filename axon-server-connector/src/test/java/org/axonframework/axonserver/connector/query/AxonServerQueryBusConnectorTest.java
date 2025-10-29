@@ -32,11 +32,10 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.Metadata;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.queryhandling.GenericQueryMessage;
-import org.axonframework.queryhandling.QueryHandlerName;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;
@@ -76,9 +75,7 @@ class AxonServerQueryBusConnectorTest {
             Registration reg = mock(Registration.class);
             when(mockQueryChannel.registerQueryHandler(any(), any(QueryDefinition.class))).thenReturn(reg);
 
-            QueryHandlerName name = new QueryHandlerName(new MessageType("TestQuery"),
-                                                         new MessageType("java.lang.String"));
-            CompletableFuture<Void> future = testSubject.subscribe(name);
+            CompletableFuture<Void> future = testSubject.subscribe(new QualifiedName("TestQuery"));
 
             assertThat(future).isCompleted();
             verify(mockQueryChannel).registerQueryHandler(any(QueryHandler.class), any(QueryDefinition.class));
@@ -88,8 +85,7 @@ class AxonServerQueryBusConnectorTest {
         void unsubscribeCancelsRegistrationAndReturnsTrueWhenPresent() {
             Registration reg = mock(Registration.class);
             when(mockQueryChannel.registerQueryHandler(any(), any(QueryDefinition.class))).thenReturn(reg);
-            QueryHandlerName name = new QueryHandlerName(new MessageType("TestQuery"),
-                                                         new MessageType("java.lang.String"));
+            QualifiedName name = new QualifiedName("TestQuery");
             testSubject.subscribe(name).join();
 
             boolean result = testSubject.unsubscribe(name);
@@ -100,7 +96,7 @@ class AxonServerQueryBusConnectorTest {
 
         @Test
         void unsubscribeReturnsFalseWhenNotPresent() {
-            boolean result = testSubject.unsubscribe(new QueryHandlerName(new MessageType("Q"), new MessageType("R")));
+            boolean result = testSubject.unsubscribe(new QualifiedName("TestQuery"));
             assertThat(result).isFalse();
         }
     }
@@ -124,8 +120,7 @@ class AxonServerQueryBusConnectorTest {
             QueryMessage query = new GenericQueryMessage(
                     new GenericMessage(new MessageType("QueryType", "1"),
                                        "payload".getBytes(),
-                                       Metadata.emptyInstance()),
-                    new MessageType("java.lang.String", "1")
+                                       Metadata.emptyInstance())
             );
 
             // when
@@ -155,8 +150,7 @@ class AxonServerQueryBusConnectorTest {
             QueryMessage query = new GenericQueryMessage(
                     new GenericMessage(new MessageType("QueryType", "1"),
                                        "payload".getBytes(),
-                                       Metadata.emptyInstance()),
-                    new MessageType("java.lang.String", "1")
+                                       Metadata.emptyInstance())
             );
 
             MessageStream<QueryResponseMessage> stream = testSubject.query(query, null);
@@ -209,12 +203,10 @@ class AxonServerQueryBusConnectorTest {
             QueryMessage query = new GenericQueryMessage(
                     new GenericMessage(new MessageType("QueryType", "1"),
                                        "payload".getBytes(),
-                                       Metadata.emptyInstance()),
-                    new MessageType("java.lang.String", "1")
+                                       Metadata.emptyInstance())
             );
-            SubscriptionQueryMessage sqm = new org.axonframework.queryhandling.GenericSubscriptionQueryMessage(
+            QueryMessage sqm = new org.axonframework.queryhandling.GenericQueryMessage(
                     query,
-                    new MessageType("java.lang.String", "1"),
                     1
             );
 

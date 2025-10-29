@@ -58,10 +58,10 @@ class QueryMessageHandlerInterceptorChainTest {
 
     @Test
     void chainWithDifferentProceedCalls() {
-        QueryMessage testQuery = query("message", String.class);
+        QueryMessage testQuery = query("message");
 
         MessageHandlerInterceptor<QueryMessage> interceptorOne =
-                (message, context, chain) -> chain.proceed(query("testing", String.class), context);
+                (message, context, chain) -> chain.proceed(query("testing"), context);
         MessageHandlerInterceptor<QueryMessage> interceptorTwo =
                 (message, context, chain) -> chain.proceed(message, context);
         MessageHandlerInterceptorChain<QueryMessage> testSubject =
@@ -80,8 +80,8 @@ class QueryMessageHandlerInterceptorChainTest {
     void subsequentChainInvocationsStartFromBeginningAndInvokeInOrder() {
         // given...
         AtomicInteger invocationCount = new AtomicInteger(0);
-        QueryMessage firstQuery = query("first", String.class);
-        QueryMessage secondQuery = query("second", String.class);
+        QueryMessage firstQuery = query("first");
+        QueryMessage secondQuery = query("second");
         ProcessingContext firstContext = StubProcessingContext.forMessage(firstQuery);
         ProcessingContext secondContext = StubProcessingContext.forMessage(secondQuery);
 
@@ -140,7 +140,7 @@ class QueryMessageHandlerInterceptorChainTest {
 
     @Test
     void returnsFailedMessageStreamWhenInterceptorThrowsException() {
-        QueryMessage testQuery = query("message", String.class);
+        QueryMessage testQuery = query("message");
 
         MessageHandlerInterceptor<QueryMessage> faultyInterceptor = (message, context, chain) -> {
             throw new RuntimeException("whoops");
