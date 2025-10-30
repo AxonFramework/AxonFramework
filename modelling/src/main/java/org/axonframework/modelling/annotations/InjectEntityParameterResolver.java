@@ -82,13 +82,15 @@ class InjectEntityParameterResolver implements ParameterResolver<Object> {
         try {
             Object resolvedId = identifierResolver.resolve(message, context);
             StateManager stateManager = configuration.getComponent(StateManager.class);
-
             if (managedEntity) {
-                return stateManager.loadManagedEntity(type, resolvedId, context)
-                                  .thenApply(entity -> entity);
+                // Safe cast: widening from CompletableFuture<T> to CompletableFuture<Object>
+                // Double cast through wildcard avoids unchecked cast warnings
+                //noinspection unchecked
+                return (CompletableFuture<Object>) (CompletableFuture<?>) stateManager
+                        .loadManagedEntity(type, resolvedId, context);
             }
-            return stateManager.loadEntity(type, resolvedId, context)
-                              .thenApply(entity -> entity);
+            //noinspection unchecked
+            return (CompletableFuture<Object>) stateManager.loadEntity(type, resolvedId, context);
         } catch (EntityIdResolutionException e) {
             return CompletableFuture.failedFuture(
                     new IllegalStateException(
