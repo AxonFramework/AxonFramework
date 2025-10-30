@@ -30,6 +30,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -211,21 +212,14 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
      */
     private CompletableFuture<Object[]> resolveParameterValues(ProcessingContext context) {
         @SuppressWarnings("unchecked")
-        CompletableFuture<?>[] futures = new CompletableFuture[parameterCount];
-
-        for (int i = 0; i < parameterCount; i++) {
-            futures[i] = tryResolveParameterValue(parameterResolvers[i], context);
-        }
+        CompletableFuture<?>[] futures = Arrays.stream(parameterResolvers)
+                                               .map(resolver -> tryResolveParameterValue(resolver, context))
+                                               .toArray(CompletableFuture[]::new);
 
         return CompletableFuture.allOf(futures)
-                                .thenApply(v -> {
-                                    Object[] params = new Object[parameterCount];
-                                    for (int i = 0; i < parameterCount; i++) {
-                                        // Safe to use join() here - allOf() guarantees all futures are complete, so it doesn't block
-                                        params[i] = futures[i].resultNow();
-                                    }
-                                    return params;
-                                });
+                                .thenApply(v -> Arrays.stream(futures)
+                                                      .map(CompletableFuture::resultNow)
+                                                      .toArray());
     }
 
     @Nonnull
