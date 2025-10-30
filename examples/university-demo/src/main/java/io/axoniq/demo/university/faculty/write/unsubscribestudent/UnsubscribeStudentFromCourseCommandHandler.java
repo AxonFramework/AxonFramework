@@ -1,6 +1,7 @@
 package io.axoniq.demo.university.faculty.write.unsubscribestudent;
 
 import io.axoniq.demo.university.faculty.FacultyTags;
+import io.axoniq.demo.university.faculty.Ids;
 import io.axoniq.demo.university.faculty.events.StudentSubscribedToCourse;
 import io.axoniq.demo.university.faculty.events.StudentUnsubscribedFromCourse;
 import jakarta.annotation.Nonnull;
@@ -34,7 +35,7 @@ class UnsubscribeStudentFromCourseCommandHandler {
 
     private List<StudentUnsubscribedFromCourse> decide(UnsubscribeStudentFromCourse command, State state) {
         return state.subscribed
-                ? List.of(new StudentUnsubscribedFromCourse(command.studentId(), command.courseId()))
+                ? List.of(new StudentUnsubscribedFromCourse(Ids.FACULTY_ID, command.studentId(), command.courseId()))
                 : List.of();
     }
 

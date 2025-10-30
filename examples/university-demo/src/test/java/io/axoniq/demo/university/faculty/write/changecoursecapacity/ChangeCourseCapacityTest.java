@@ -1,6 +1,7 @@
 package io.axoniq.demo.university.faculty.write.changecoursecapacity;
 
 import io.axoniq.demo.university.UniversityApplicationTest;
+import io.axoniq.demo.university.faculty.Ids;
 import io.axoniq.demo.university.faculty.events.CourseCapacityChanged;
 import io.axoniq.demo.university.faculty.events.CourseCreated;
 import io.axoniq.demo.university.faculty.events.CourseRenamed;
@@ -33,7 +34,7 @@ class ChangeCourseCapacityTest extends UniversityApplicationTest {
         // given
         var courseId = CourseId.random();
         eventOccurred(
-                new CourseCreated(courseId, "Event Sourcing in Practice", 42)
+                new CourseCreated(Ids.FACULTY_ID, courseId, "Event Sourcing in Practice", 42)
         );
 
         // when
@@ -43,7 +44,7 @@ class ChangeCourseCapacityTest extends UniversityApplicationTest {
 
         // then
         assertEvents(
-                new CourseCapacityChanged(courseId, 7)
+                new CourseCapacityChanged(Ids.FACULTY_ID, courseId, 7)
         );
     }
 
@@ -52,7 +53,7 @@ class ChangeCourseCapacityTest extends UniversityApplicationTest {
         // given
         var courseId = CourseId.random();
         eventOccurred(
-                new CourseCreated(courseId, "Event Sourcing in Practice", 42)
+                new CourseCreated(Ids.FACULTY_ID, courseId, "Event Sourcing in Practice", 42)
         );
 
         // when
@@ -69,8 +70,8 @@ class ChangeCourseCapacityTest extends UniversityApplicationTest {
         // given
         var courseId = CourseId.random();
         eventsOccurred(
-                new CourseCreated(courseId, "Event Sourcing in Practice", 42),
-                new CourseRenamed(courseId, "Event Sourcing in Theory")
+                new CourseCreated(Ids.FACULTY_ID, courseId, "Event Sourcing in Practice", 42),
+                new CourseRenamed(Ids.FACULTY_ID, courseId, "Event Sourcing in Theory")
         );
 
         // when
@@ -80,7 +81,7 @@ class ChangeCourseCapacityTest extends UniversityApplicationTest {
 
         // then
         assertEvents(
-                new CourseCapacityChanged(courseId, 7)
+                new CourseCapacityChanged(Ids.FACULTY_ID, courseId, 7)
         );
     }
 

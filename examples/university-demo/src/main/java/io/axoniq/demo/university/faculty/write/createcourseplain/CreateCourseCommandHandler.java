@@ -1,5 +1,6 @@
 package io.axoniq.demo.university.faculty.write.createcourseplain;
 
+import io.axoniq.demo.university.faculty.Ids;
 import io.axoniq.demo.university.faculty.events.CourseCreated;
 import io.axoniq.demo.university.shared.slices.write.CommandResult;
 import jakarta.annotation.Nonnull;
@@ -49,7 +50,7 @@ class CreateCourseCommandHandler implements CommandHandler {
         if (state.created) {
             return List.of();
         }
-        return List.of(new CourseCreated(command.courseId(), command.name(), command.capacity()));
+        return List.of(new CourseCreated(Ids.FACULTY_ID, command.courseId(), command.name(), command.capacity()));
     }
 
     static final class State {

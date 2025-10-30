@@ -1,6 +1,7 @@
 package io.axoniq.demo.university.faculty.write.subscribestudent;
 
 import io.axoniq.demo.university.faculty.FacultyTags;
+import io.axoniq.demo.university.faculty.Ids;
 import io.axoniq.demo.university.faculty.events.*;
 import io.axoniq.demo.university.shared.ids.CourseId;
 import io.axoniq.demo.university.shared.ids.StudentId;
@@ -37,7 +38,7 @@ class SubscribeStudentToCourseCommandHandler {
         assertEnoughVacantSpotsInCourse(state);
         assertStudentNotAlreadySubscribed(state);
 
-        return List.of(new StudentSubscribedToCourse(command.studentId(), command.courseId()));
+        return List.of(new StudentSubscribedToCourse(Ids.FACULTY_ID, command.studentId(), command.courseId()));
     }
 
     private void assertStudentEnrolledFaculty(State state) {

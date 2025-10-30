@@ -2,6 +2,8 @@ package io.axoniq.demo.university.faculty;
 
 import io.axoniq.demo.university.faculty.automation.allcoursesfullybookednotifier.AllCoursesFullyBookedNotifierConfiguration;
 import io.axoniq.demo.university.faculty.automation.studentsubscribednotifierplain.StudentSubscribedNotifierConfiguration;
+import io.axoniq.demo.university.faculty.read.coursestats.CourseStatsConfiguration;
+import io.axoniq.demo.university.faculty.write.enrollstudent.EnrollStudentInFacultyConfiguration;
 import io.axoniq.demo.university.shared.configuration.NotificationServiceConfiguration;
 import io.axoniq.demo.university.faculty.write.changecoursecapacity.ChangeCourseCapacityConfiguration;
 import io.axoniq.demo.university.faculty.write.createcourse.CreateCourseConfiguration;
@@ -19,6 +21,7 @@ public class FacultyModuleConfiguration {
         configurer = NotificationServiceConfiguration.configure(configurer);
 
         // Write side
+        configurer = EnrollStudentInFacultyConfiguration.configure(configurer);
         configurer = CreateCourseConfiguration.configure(configurer);
         configurer = CreateCoursePlainConfiguration.configure(configurer);
         configurer = RenameCourseConfiguration.configure(configurer);
@@ -28,7 +31,7 @@ public class FacultyModuleConfiguration {
         configurer = UnsubscribeStudentConfiguration.configure(configurer);
 
         // Read side
-        // TBD
+        configurer = CourseStatsConfiguration.configure(configurer);
 
         // Automations
         configurer = StudentSubscribedNotifierConfiguration.configure(configurer);

@@ -1,6 +1,7 @@
 package io.axoniq.demo.university.faculty.write.createcourse;
 
 import io.axoniq.demo.university.faculty.FacultyTags;
+import io.axoniq.demo.university.faculty.Ids;
 import io.axoniq.demo.university.faculty.events.CourseCreated;
 import org.axonframework.commandhandling.annotations.CommandHandler;
 import org.axonframework.eventhandling.gateway.EventAppender;
@@ -27,7 +28,7 @@ class CreateCourseCommandHandler {
         if (state.created) {
             return List.of();
         }
-        return List.of(new CourseCreated(command.courseId(), command.name(), command.capacity()));
+        return List.of(new CourseCreated(Ids.FACULTY_ID, command.courseId(), command.name(), command.capacity()));
     }
 
     @EventSourcedEntity(tagKey = FacultyTags.COURSE_ID)

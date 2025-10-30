@@ -5,7 +5,7 @@ import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreami
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.queryhandling.configuration.QueryHandlingModule;
 
-class CourseStatsConfiguration {
+public class CourseStatsConfiguration {
 
     public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
         PooledStreamingEventProcessorModule projectionProcessor = EventProcessorModule

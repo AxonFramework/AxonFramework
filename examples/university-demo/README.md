@@ -105,11 +105,11 @@ void successfulSubscription() {
     var studentId = StudentId.random();
 
     fixture.given()
-           .event(new CourseCreated(courseId.raw(), "Axon Framework 5: Getting Started", 2))
-           .event(new StudentEnrolledInFaculty(studentId, "Mateusz", "Nowak"))
+           .event(new CourseCreated(Ids.FACULTY_ID, courseId.raw(), "Axon Framework 5: Getting Started", 2))
+           .event(new StudentEnrolledInFaculty(Ids.FACULTY_ID, studentId, "Mateusz", "Nowak"))
            .when()
            .command(new SubscribeStudentToCourse(studentId, courseId))
            .then()
-           .events(new StudentSubscribedToCourse(studentId, courseId));
+           .events(new StudentSubscribedToCourse(Ids.FACULTY_ID, studentId, courseId));
 }
 ```

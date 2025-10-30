@@ -1,6 +1,7 @@
 package io.axoniq.demo.university.faculty.write.changecoursecapacity;
 
 import io.axoniq.demo.university.faculty.FacultyTags;
+import io.axoniq.demo.university.faculty.Ids;
 import io.axoniq.demo.university.faculty.events.CourseCapacityChanged;
 import io.axoniq.demo.university.faculty.events.CourseCreated;
 import org.axonframework.commandhandling.annotations.CommandHandler;
@@ -31,7 +32,7 @@ class ChangeCourseCapacityCommandHandler {
         if (command.capacity() == state.capacity) {
             return List.of();
         }
-        return List.of(new CourseCapacityChanged(command.courseId(), command.capacity()));
+        return List.of(new CourseCapacityChanged(Ids.FACULTY_ID, command.courseId(), command.capacity()));
     }
 
     @EventSourcedEntity(tagKey = FacultyTags.COURSE_ID)
