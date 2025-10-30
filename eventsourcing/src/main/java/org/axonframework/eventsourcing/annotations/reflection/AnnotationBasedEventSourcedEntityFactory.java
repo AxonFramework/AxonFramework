@@ -349,11 +349,17 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
         private E invoke(ID id, ProcessingContext context) {
             ProcessingContext contextWithId = context.withResource(ID_KEY, id);
             ProcessingContext convertedContext = mapContextWithMessageIfNecessary(contextWithId);
-            Object[] args = new Object[executable.getParameterCount()];
-            for (int i = 0; i < args.length; i++) {
-                args[i] = tryResolveParameterValue(parameterResolvers[i], convertedContext).join();
-            }
-            return constructEntityWithArguments(args);
+
+            CompletableFuture<?>[] futures = Arrays.stream(parameterResolvers)
+                                                   .map(resolver -> tryResolveParameterValue(resolver, convertedContext))
+                                                   .toArray(CompletableFuture[]::new);
+
+            return CompletableFuture.allOf(futures)
+                                    .thenApply(v -> Arrays.stream(futures)
+                                                          .map(CompletableFuture::resultNow)
+                                                          .toArray())
+                                    .thenApply(this::constructEntityWithArguments)
+                                    .join();
         }
 
         @Nonnull
