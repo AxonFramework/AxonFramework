@@ -74,15 +74,9 @@ class InjectEntityParameterResolver implements ParameterResolver<Object> {
         this.managedEntity = managedEntity;
     }
 
-    @Nullable
-    @Override
-    public Object resolveParameterValue(@Nonnull ProcessingContext context) {
-        return FutureUtils.joinAndUnwrap(resolveParameterValueAsync(context));
-    }
-
     @Nonnull
     @Override
-    public CompletableFuture<Object> resolveParameterValueAsync(@Nonnull ProcessingContext context) {
+    public CompletableFuture<Object> resolveParameterValue(@Nonnull ProcessingContext context) {
         Message message = Message.fromContext(context);
 
         try {

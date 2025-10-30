@@ -171,7 +171,7 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
                                    @Nonnull ProcessingContext context,
                                    @Nullable T target) {
         ProcessingContext contextWithMessage = Message.addToContext(context, message);
-        CompletableFuture<Object[]> parametersFuture = resolveParameterValuesAsync(contextWithMessage);
+        CompletableFuture<Object[]> parametersFuture = resolveParameterValues(contextWithMessage);
 
         CompletableFuture<MessageStream<?>> invocationFuture = parametersFuture.handle((params, throwable) -> {
             if (throwable != null) {
@@ -199,32 +199,42 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
     }
 
     /**
-     * Resolves all parameter values asynchronously by calling {@link ParameterResolver#resolveParameterValueAsync(ProcessingContext)}
-     * on each resolver. All futures are composed using {@link CompletableFuture#allOf(CompletableFuture[])}.
+     * Resolves all parameter values asynchronously by calling
+     * {@link ParameterResolver#resolveParameterValue(ProcessingContext)} on each resolver. All futures are composed
+     * using {@link CompletableFuture#allOf(CompletableFuture[])}.
      * <p>
-     * This method is non-blocking. The returned {@link CompletableFuture} completes when all parameter resolvers
-     * have completed their async resolution.
+     * This method is non-blocking. The returned {@link CompletableFuture} completes when all parameter resolvers have
+     * completed their async resolution.
      *
      * @param context The processing context to resolve parameters from.
      * @return A {@link CompletableFuture} that completes with an array of resolved parameter values.
      */
-    private CompletableFuture<Object[]> resolveParameterValuesAsync(ProcessingContext context) {
+    private CompletableFuture<Object[]> resolveParameterValues(ProcessingContext context) {
         @SuppressWarnings("unchecked")
         CompletableFuture<?>[] futures = new CompletableFuture[parameterCount];
 
         for (int i = 0; i < parameterCount; i++) {
-            futures[i] = parameterResolvers[i].resolveParameterValueAsync(context);
+            futures[i] = tryResolveParameterValue(parameterResolvers[i], context);
         }
 
         return CompletableFuture.allOf(futures)
-                               .thenApply(v -> {
-                                   Object[] params = new Object[parameterCount];
-                                   for (int i = 0; i < parameterCount; i++) {
-                                       // Safe to use join() here - allOf() guarantees all futures are complete, so it doesn't block
-                                       params[i] = futures[i].resultNow();
-                                   }
-                                   return params;
-                               });
+                                .thenApply(v -> {
+                                    Object[] params = new Object[parameterCount];
+                                    for (int i = 0; i < parameterCount; i++) {
+                                        // Safe to use join() here - allOf() guarantees all futures are complete, so it doesn't block
+                                        params[i] = futures[i].resultNow();
+                                    }
+                                    return params;
+                                });
+    }
+
+    @Nonnull
+    private CompletableFuture<?> tryResolveParameterValue(ParameterResolver<?> parameterResolver, ProcessingContext context) {
+        try {
+            return parameterResolver.resolveParameterValue(context);
+        } catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
+        }
     }
 
     @Override
