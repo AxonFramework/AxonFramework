@@ -1,16 +1,21 @@
 package io.axoniq.demo.university.faculty.automation.allcoursesfullybookednotifier;
 
 import io.axoniq.demo.university.faculty.FacultyTags;
-import io.axoniq.demo.university.shared.application.notifier.NotificationService;
+import io.axoniq.demo.university.faculty.Ids;
 import io.axoniq.demo.university.faculty.events.*;
+import io.axoniq.demo.university.shared.application.notifier.NotificationService;
 import io.axoniq.demo.university.shared.ids.CourseId;
+import io.axoniq.demo.university.shared.ids.FacultyId;
 import org.axonframework.commandhandling.annotations.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandDispatcher;
 import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.eventhandling.gateway.EventAppender;
+import org.axonframework.eventsourcing.annotations.EventCriteriaBuilder;
 import org.axonframework.eventsourcing.annotations.EventSourcedEntity;
 import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
 import org.axonframework.eventsourcing.annotations.reflection.EntityCreator;
+import org.axonframework.eventstreaming.EventCriteria;
+import org.axonframework.eventstreaming.Tag;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.annotations.InjectEntity;
@@ -32,8 +37,6 @@ import java.util.concurrent.CompletableFuture;
  * - Assessing whether all courses are fully booked and sending a notification if necessary.
  */
 public class WhenAllCoursesFullyBookedThenSendNotification {
-
-    private static final String FACULTY_ID = "ONLY_FACULTY_ID";
 
     @EventSourcedEntity
     record State(Map<CourseId, Course> courses, boolean notified) {
@@ -66,31 +69,51 @@ public class WhenAllCoursesFullyBookedThenSendNotification {
         @EventSourcingHandler
         State evolve(CourseCreated event) {
             courses.put(event.courseId(), new Course(event.capacity(), 0));
-            return new State(courses, notified);
+            return new State(courses, isNotified());
         }
 
         @EventSourcingHandler
         State evolve(CourseCapacityChanged event) {
             courses.computeIfPresent(event.courseId(), (id, course) -> course.capacity(event.capacity()));
-            return new State(courses, notified);
+            return new State(courses, isNotified());
         }
 
         @EventSourcingHandler
         State evolve(StudentSubscribedToCourse event) {
             courses.computeIfPresent(event.courseId(), (id, course) -> course.studentSubscribed());
-            return new State(courses, notified);
+            return new State(courses, isNotified());
         }
 
         @EventSourcingHandler
         State evolve(StudentUnsubscribedFromCourse event) {
             courses.computeIfPresent(event.courseId(), (id, course) -> course.studentUnsubscribed());
-            return new State(courses, notified);
+            return new State(courses, isNotified());
         }
 
         @EventSourcingHandler
         State evolve(AllCoursesFullyBookedNotificationSent event) {
             return new State(courses, true);
         }
+
+        private boolean isNotified() {
+            if (courses.values().stream().allMatch(State.Course::isFullyBooked)) {
+                return notified;
+            }
+            return false;
+        }
+
+        @EventCriteriaBuilder
+        private static EventCriteria resolveCriteria(FacultyId facultyId) {
+            return EventCriteria.havingTags(Tag.of(FacultyTags.FACULTY_ID, facultyId.toString()))
+                    .andBeingOneOfTypes(
+                            CourseCreated.class.getName(),
+                            CourseCapacityChanged.class.getName(),
+                            StudentSubscribedToCourse.class.getName(),
+                            StudentUnsubscribedFromCourse.class.getName(),
+                            AllCoursesFullyBookedNotificationSent.class.getName()
+                    );
+        }
+
     }
 
     static class AutomationCommandHandler {
@@ -98,7 +121,7 @@ public class WhenAllCoursesFullyBookedThenSendNotification {
         @CommandHandler
         void decide(
                 SendAllCoursesFullyBookedNotification command,
-                @InjectEntity(idProperty = FacultyTags.FACULTY_ID) State state,
+                @InjectEntity State state,
                 ProcessingContext context
         ) {
             var canNotify = state != null && !state.notified();
@@ -119,7 +142,7 @@ public class WhenAllCoursesFullyBookedThenSendNotification {
                 CommandDispatcher commandDispatcher,
                 ProcessingContext context
         ) {
-            var state = context.component(StateManager.class).loadEntity(State.class, FACULTY_ID, context).join();
+            var state = context.component(StateManager.class).loadEntity(State.class, Ids.FACULTY_ID, context).join();
             return sendNotificationIfAllCoursesFullyBooked(state, commandDispatcher);
         }
 
@@ -129,7 +152,7 @@ public class WhenAllCoursesFullyBookedThenSendNotification {
                 CommandDispatcher commandDispatcher,
                 ProcessingContext context
         ) {
-            var state = context.component(StateManager.class).loadEntity(State.class, FACULTY_ID, context).join();
+            var state = context.component(StateManager.class).loadEntity(State.class, Ids.FACULTY_ID, context).join();
             return sendNotificationIfAllCoursesFullyBooked(state, commandDispatcher);
         }
 
@@ -143,7 +166,7 @@ public class WhenAllCoursesFullyBookedThenSendNotification {
             if (!shouldNotify) {
                 return CompletableFuture.completedFuture(null);
             }
-            return commandDispatcher.send(new SendAllCoursesFullyBookedNotification(FACULTY_ID), Object.class);
+            return commandDispatcher.send(new SendAllCoursesFullyBookedNotification(Ids.FACULTY_ID), Object.class);
         }
 
     }

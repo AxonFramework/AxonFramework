@@ -1,6 +1,7 @@
 package io.axoniq.demo.university.faculty.write.renamecourse;
 
 import io.axoniq.demo.university.UniversityApplicationTest;
+import io.axoniq.demo.university.faculty.Ids;
 import io.axoniq.demo.university.faculty.events.CourseCreated;
 import io.axoniq.demo.university.faculty.events.CourseRenamed;
 import io.axoniq.demo.university.shared.ids.CourseId;
@@ -32,7 +33,7 @@ class RenameCourseTest extends UniversityApplicationTest {
         // given
         var courseId = CourseId.random();
         eventOccurred(
-                new CourseCreated(courseId, "Event Sourcing in Practice", 42)
+                new CourseCreated(Ids.FACULTY_ID, courseId, "Event Sourcing in Practice", 42)
         );
 
         // when
@@ -42,7 +43,7 @@ class RenameCourseTest extends UniversityApplicationTest {
 
         // then
         assertEvents(
-                new CourseRenamed(courseId, "Event Sourcing in Theory")
+                new CourseRenamed(Ids.FACULTY_ID, courseId, "Event Sourcing in Theory")
         );
     }
 
@@ -51,7 +52,7 @@ class RenameCourseTest extends UniversityApplicationTest {
         // given
         var courseId = CourseId.random();
         eventOccurred(
-                new CourseCreated(courseId, "Event Sourcing in Practice", 42)
+                new CourseCreated(Ids.FACULTY_ID, courseId, "Event Sourcing in Practice", 42)
         );
 
         // when
@@ -68,8 +69,8 @@ class RenameCourseTest extends UniversityApplicationTest {
         // given
         var courseId = CourseId.random();
         eventsOccurred(
-                new CourseCreated(courseId, "Event Sourcing in Practice", 42),
-                new CourseRenamed(courseId, "Event Sourcing in Theory")
+                new CourseCreated(Ids.FACULTY_ID, courseId, "Event Sourcing in Practice", 42),
+                new CourseRenamed(Ids.FACULTY_ID, courseId, "Event Sourcing in Theory")
         );
 
         // when
@@ -79,7 +80,7 @@ class RenameCourseTest extends UniversityApplicationTest {
 
         // then
         assertEvents(
-                new CourseRenamed(courseId, "Theoretical Practice of Event Sourcing")
+                new CourseRenamed(Ids.FACULTY_ID, courseId, "Theoretical Practice of Event Sourcing")
         );
     }
 

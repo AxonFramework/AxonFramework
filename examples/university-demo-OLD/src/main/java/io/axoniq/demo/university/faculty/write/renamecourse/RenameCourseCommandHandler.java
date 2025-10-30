@@ -1,6 +1,7 @@
 package io.axoniq.demo.university.faculty.write.renamecourse;
 
 import io.axoniq.demo.university.faculty.FacultyTags;
+import io.axoniq.demo.university.faculty.Ids;
 import io.axoniq.demo.university.faculty.events.CourseCreated;
 import io.axoniq.demo.university.faculty.events.CourseRenamed;
 import org.axonframework.commandhandling.annotations.CommandHandler;
@@ -31,7 +32,7 @@ class RenameCourseCommandHandler {
         if (command.name().equals(state.name)) {
             return List.of();
         }
-        return List.of(new CourseRenamed(command.courseId(), command.name()));
+        return List.of(new CourseRenamed(Ids.FACULTY_ID, command.courseId(), command.name()));
     }
 
     @EventSourcedEntity(tagKey = FacultyTags.COURSE_ID)

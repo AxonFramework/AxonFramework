@@ -1,6 +1,7 @@
 package io.axoniq.demo.university.faculty.write.unsubscribestudent;
 
 import io.axoniq.demo.university.UniversityApplicationTest;
+import io.axoniq.demo.university.faculty.Ids;
 import io.axoniq.demo.university.faculty.events.CourseCreated;
 import io.axoniq.demo.university.faculty.events.StudentEnrolledInFaculty;
 import io.axoniq.demo.university.faculty.events.StudentSubscribedToCourse;
@@ -24,16 +25,16 @@ class UnsubscribeStudentFromCourseTest extends UniversityApplicationTest {
         var courseId = CourseId.random();
 
         eventsOccurred(
-                new StudentEnrolledInFaculty(studentId, "Novak", "Djokovic"),
-                new CourseCreated(courseId, "Tennis", 1),
-                new StudentSubscribedToCourse(studentId, courseId)
+                new StudentEnrolledInFaculty(Ids.FACULTY_ID, studentId, "Novak", "Djokovic"),
+                new CourseCreated(Ids.FACULTY_ID, courseId, "Tennis", 1),
+                new StudentSubscribedToCourse(Ids.FACULTY_ID, studentId, courseId)
         );
 
         // when
         executeCommand(new UnsubscribeStudentFromCourse(studentId, courseId));
 
         // then
-        assertEvents(new StudentUnsubscribedFromCourse(studentId, courseId));
+        assertEvents(new StudentUnsubscribedFromCourse(Ids.FACULTY_ID, studentId, courseId));
     }
 
     @Test
@@ -56,8 +57,8 @@ class UnsubscribeStudentFromCourseTest extends UniversityApplicationTest {
         var studentId = StudentId.random();
 
         eventsOccurred(
-                new StudentSubscribedToCourse(studentId, courseId),
-                new StudentUnsubscribedFromCourse(studentId, courseId)
+                new StudentSubscribedToCourse(Ids.FACULTY_ID, studentId, courseId),
+                new StudentUnsubscribedFromCourse(Ids.FACULTY_ID, studentId, courseId)
         );
 
         // when

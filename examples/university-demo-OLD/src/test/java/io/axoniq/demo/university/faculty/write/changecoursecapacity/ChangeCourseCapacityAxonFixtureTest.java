@@ -1,6 +1,7 @@
 package io.axoniq.demo.university.faculty.write.changecoursecapacity;
 
 import io.axoniq.demo.university.faculty.FacultyAxonTestFixture;
+import io.axoniq.demo.university.faculty.Ids;
 import io.axoniq.demo.university.faculty.events.CourseCapacityChanged;
 import io.axoniq.demo.university.faculty.events.CourseCreated;
 import io.axoniq.demo.university.faculty.events.CourseRenamed;
@@ -45,12 +46,12 @@ class ChangeCourseCapacityAxonFixtureTest {
         var courseId = CourseId.random();
 
         fixture.given()
-                .event(new CourseCreated(courseId, "Event Sourcing in Practice", 42))
+                .event(new CourseCreated(Ids.FACULTY_ID, courseId, "Event Sourcing in Practice", 42))
                 .when()
                 .command(new ChangeCourseCapacity(courseId, 7))
                 .then()
                 .success()
-                .events(new CourseCapacityChanged(courseId, 7));
+                .events(new CourseCapacityChanged(Ids.FACULTY_ID, courseId, 7));
     }
 
     @Test
@@ -58,7 +59,7 @@ class ChangeCourseCapacityAxonFixtureTest {
         var courseId = CourseId.random();
 
         fixture.given()
-                .event(new CourseCreated(courseId, "Event Sourcing in Practice", 42))
+                .event(new CourseCreated(Ids.FACULTY_ID, courseId, "Event Sourcing in Practice", 42))
                 .when()
                 .command(new ChangeCourseCapacity(courseId, 42))
                 .then()
@@ -71,13 +72,13 @@ class ChangeCourseCapacityAxonFixtureTest {
         var courseId = CourseId.random();
 
         fixture.given()
-                .event(new CourseCreated(courseId, "Event Sourcing in Practice", 42))
-                .event(new CourseRenamed(courseId, "Event Sourcing in Theory"))
+                .event(new CourseCreated(Ids.FACULTY_ID, courseId, "Event Sourcing in Practice", 42))
+                .event(new CourseRenamed(Ids.FACULTY_ID, courseId, "Event Sourcing in Theory"))
                 .when()
                 .command(new ChangeCourseCapacity(courseId, 7))
                 .then()
                 .success()
-                .events(new CourseCapacityChanged(courseId, 7));
+                .events(new CourseCapacityChanged(Ids.FACULTY_ID, courseId, 7));
     }
 
 }

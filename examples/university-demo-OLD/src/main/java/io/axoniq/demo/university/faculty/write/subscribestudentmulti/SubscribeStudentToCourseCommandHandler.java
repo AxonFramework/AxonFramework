@@ -1,6 +1,7 @@
 package io.axoniq.demo.university.faculty.write.subscribestudentmulti;
 
 import io.axoniq.demo.university.faculty.FacultyTags;
+import io.axoniq.demo.university.faculty.Ids;
 import io.axoniq.demo.university.faculty.events.StudentSubscribedToCourse;
 import org.axonframework.commandhandling.annotations.CommandHandler;
 import org.axonframework.eventhandling.gateway.EventAppender;
@@ -30,7 +31,7 @@ class SubscribeStudentToCourseCommandHandler {
         assertEnoughVacantSpotsInCourse(course);
         assertStudentNotAlreadySubscribed(course, student);
 
-        return List.of(new StudentSubscribedToCourse(command.studentId(), command.courseId()));
+        return List.of(new StudentSubscribedToCourse(Ids.FACULTY_ID, command.studentId(), command.courseId()));
     }
 
     private void assertStudentEnrolledFaculty(Student student) {

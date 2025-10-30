@@ -1,11 +1,14 @@
 package io.axoniq.demo.university.faculty.write.renamecourse;
 
 import io.axoniq.demo.university.faculty.FacultyAxonTestFixture;
+import io.axoniq.demo.university.faculty.Ids;
 import io.axoniq.demo.university.faculty.events.CourseCreated;
 import io.axoniq.demo.university.faculty.events.CourseRenamed;
 import io.axoniq.demo.university.shared.ids.CourseId;
 import org.axonframework.test.fixture.AxonTestFixture;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -43,12 +46,12 @@ class RenameCourseAxonFixtureTest {
         var courseId = CourseId.random();
 
         fixture.given()
-                .event(new CourseCreated(courseId, "Event Sourcing in Practice", 42))
+                .event(new CourseCreated(Ids.FACULTY_ID, courseId, "Event Sourcing in Practice", 42))
                 .when()
                 .command(new RenameCourse(courseId, "Event Sourcing in Theory"))
                 .then()
                 .success()
-                .events(new CourseRenamed(courseId, "Event Sourcing in Theory"));
+                .events(new CourseRenamed(Ids.FACULTY_ID, courseId, "Event Sourcing in Theory"));
     }
 
     @Test
@@ -56,7 +59,7 @@ class RenameCourseAxonFixtureTest {
         var courseId = CourseId.random();
 
         fixture.given()
-                .event(new CourseCreated(courseId, "Event Sourcing in Practice", 42))
+                .event(new CourseCreated(Ids.FACULTY_ID, courseId, "Event Sourcing in Practice", 42))
                 .when()
                 .command(new RenameCourse(courseId, "Event Sourcing in Practice"))
                 .then()
@@ -69,12 +72,12 @@ class RenameCourseAxonFixtureTest {
         var courseId = CourseId.random();
 
         fixture.given()
-                .event(new CourseCreated(courseId, "Event Sourcing in Practice", 42))
-                .event(new CourseRenamed(courseId, "Event Sourcing in Theory"))
+                .event(new CourseCreated(Ids.FACULTY_ID, courseId, "Event Sourcing in Practice", 42))
+                .event(new CourseRenamed(Ids.FACULTY_ID, courseId, "Event Sourcing in Theory"))
                 .when()
                 .command(new RenameCourse(courseId, "Theoretical Practice of Event Sourcing"))
                 .then()
                 .success()
-                .events(new CourseRenamed(courseId, "Theoretical Practice of Event Sourcing"));
+                .events(new CourseRenamed(Ids.FACULTY_ID, courseId, "Theoretical Practice of Event Sourcing"));
     }
 }

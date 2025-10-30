@@ -1,6 +1,7 @@
 package io.axoniq.demo.university.faculty.write.createcourse;
 
 import io.axoniq.demo.university.UniversityApplicationTest;
+import io.axoniq.demo.university.faculty.Ids;
 import io.axoniq.demo.university.faculty.events.CourseCreated;
 import io.axoniq.demo.university.shared.ids.CourseId;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
@@ -27,7 +28,7 @@ class CreateCourseTest extends UniversityApplicationTest {
 
         // then
         assertEvents(
-                new CourseCreated(courseId, courseName, capacity)
+                new CourseCreated(Ids.FACULTY_ID, courseId, courseName, capacity)
         );
     }
 
@@ -39,7 +40,7 @@ class CreateCourseTest extends UniversityApplicationTest {
         var capacity = 3;
 
         eventOccurred(
-                new CourseCreated(courseId, courseName, capacity)
+                new CourseCreated(Ids.FACULTY_ID, courseId, courseName, capacity)
         );
 
         // when

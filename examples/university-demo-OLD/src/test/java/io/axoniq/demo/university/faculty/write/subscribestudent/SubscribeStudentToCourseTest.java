@@ -1,6 +1,7 @@
 package io.axoniq.demo.university.faculty.write.subscribestudent;
 
 import io.axoniq.demo.university.UniversityApplicationTest;
+import io.axoniq.demo.university.faculty.Ids;
 import io.axoniq.demo.university.faculty.events.CourseCreated;
 import io.axoniq.demo.university.faculty.events.StudentEnrolledInFaculty;
 import io.axoniq.demo.university.faculty.events.StudentSubscribedToCourse;
@@ -26,15 +27,15 @@ class SubscribeStudentToCourseTest extends UniversityApplicationTest {
         var studentId = StudentId.random();
 
         eventsOccurred(
-                new StudentEnrolledInFaculty(studentId, "Mateusz", "Nowak"),
-                new CourseCreated(courseId, "Axon Framework 5: Be a PRO", 2)
+                new StudentEnrolledInFaculty(Ids.FACULTY_ID, studentId, "Mateusz", "Nowak"),
+                new CourseCreated(Ids.FACULTY_ID, courseId, "Axon Framework 5: Be a PRO", 2)
         );
 
         // when
         executeCommand(new SubscribeStudentToCourse(studentId, courseId));
 
         // then
-        assertEvents(new StudentSubscribedToCourse(studentId, courseId));
+        assertEvents(new StudentSubscribedToCourse(Ids.FACULTY_ID, studentId, courseId));
     }
 
     @Test
@@ -44,9 +45,9 @@ class SubscribeStudentToCourseTest extends UniversityApplicationTest {
         var studentId = StudentId.random();
 
         eventsOccurred(
-                new StudentEnrolledInFaculty(studentId, "Allard", "Buijze"),
-                new CourseCreated(courseId, "Axon Framework 5: Be a PRO", 2),
-                new StudentSubscribedToCourse(studentId, courseId)
+                new StudentEnrolledInFaculty(Ids.FACULTY_ID, studentId, "Allard", "Buijze"),
+                new CourseCreated(Ids.FACULTY_ID, courseId, "Axon Framework 5: Be a PRO", 2),
+                new StudentSubscribedToCourse(Ids.FACULTY_ID, studentId, courseId)
         );
 
         // when-then
@@ -65,12 +66,12 @@ class SubscribeStudentToCourseTest extends UniversityApplicationTest {
         var student3Id = StudentId.random();
 
         eventsOccurred(
-                new StudentEnrolledInFaculty(student1Id, "Mateusz", "Nowak"),
-                new StudentEnrolledInFaculty(student2Id, "Steven", "van Beelen"),
-                new StudentEnrolledInFaculty(student3Id, "Mitchell", "Herrijgers"),
-                new CourseCreated(courseId, "Event Sourcing Masterclass", 2),
-                new StudentSubscribedToCourse(student1Id, courseId),
-                new StudentSubscribedToCourse(student2Id, courseId)
+                new StudentEnrolledInFaculty(Ids.FACULTY_ID, student1Id, "Mateusz", "Nowak"),
+                new StudentEnrolledInFaculty(Ids.FACULTY_ID, student2Id, "Steven", "van Beelen"),
+                new StudentEnrolledInFaculty(Ids.FACULTY_ID, student3Id, "Mitchell", "Herrijgers"),
+                new CourseCreated(Ids.FACULTY_ID, courseId, "Event Sourcing Masterclass", 2),
+                new StudentSubscribedToCourse(Ids.FACULTY_ID, student1Id, courseId),
+                new StudentSubscribedToCourse(Ids.FACULTY_ID, student2Id, courseId)
         );
 
         // when-then
@@ -90,14 +91,14 @@ class SubscribeStudentToCourseTest extends UniversityApplicationTest {
         var targetCourseId = CourseId.random();
 
         eventsOccurred(
-                new StudentEnrolledInFaculty(studentId, "Milan", "Savic"),
-                new CourseCreated(targetCourseId, "Programming", 10),
-                new CourseCreated(course1Id, "Course 1", 10),
-                new CourseCreated(course2Id, "Course 2", 10),
-                new CourseCreated(course3Id, "Course 3", 10),
-                new StudentSubscribedToCourse(studentId, course1Id),
-                new StudentSubscribedToCourse(studentId, course2Id),
-                new StudentSubscribedToCourse(studentId, course3Id)
+                new StudentEnrolledInFaculty(Ids.FACULTY_ID, studentId, "Milan", "Savic"),
+                new CourseCreated(Ids.FACULTY_ID, targetCourseId, "Programming", 10),
+                new CourseCreated(Ids.FACULTY_ID, course1Id, "Course 1", 10),
+                new CourseCreated(Ids.FACULTY_ID, course2Id, "Course 2", 10),
+                new CourseCreated(Ids.FACULTY_ID, course3Id, "Course 3", 10),
+                new StudentSubscribedToCourse(Ids.FACULTY_ID, studentId, course1Id),
+                new StudentSubscribedToCourse(Ids.FACULTY_ID, studentId, course2Id),
+                new StudentSubscribedToCourse(Ids.FACULTY_ID, studentId, course3Id)
         );
 
         // when-then

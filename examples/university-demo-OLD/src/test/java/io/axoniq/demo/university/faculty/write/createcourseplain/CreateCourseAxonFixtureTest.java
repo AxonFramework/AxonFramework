@@ -1,10 +1,13 @@
 package io.axoniq.demo.university.faculty.write.createcourseplain;
 
 import io.axoniq.demo.university.faculty.FacultyAxonTestFixture;
+import io.axoniq.demo.university.faculty.Ids;
 import io.axoniq.demo.university.faculty.events.CourseCreated;
 import io.axoniq.demo.university.shared.ids.CourseId;
 import org.axonframework.test.fixture.AxonTestFixture;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 class CreateCourseAxonFixtureTest {
 
@@ -31,7 +34,7 @@ class CreateCourseAxonFixtureTest {
                 .command(new CreateCourse(courseId, courseName, capacity))
                 .then()
                 .success()
-                .events(new CourseCreated(courseId, courseName, capacity));
+                .events(new CourseCreated(Ids.FACULTY_ID, courseId, courseName, capacity));
     }
 
     @Test
@@ -41,7 +44,7 @@ class CreateCourseAxonFixtureTest {
         var capacity = 3;
 
         fixture.given()
-                .event(new CourseCreated(courseId, courseName, capacity))
+                .event(new CourseCreated(Ids.FACULTY_ID, courseId, courseName, capacity))
                 .when()
                 .command(new CreateCourse(courseId, courseName, capacity))
                 .then()

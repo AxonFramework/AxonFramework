@@ -1,6 +1,7 @@
 package io.axoniq.demo.university.faculty.automation.studentsubscribednotifier;
 
 import io.axoniq.demo.university.UniversityApplicationTest;
+import io.axoniq.demo.university.faculty.Ids;
 import io.axoniq.demo.university.shared.configuration.NotificationServiceConfiguration;
 import io.axoniq.demo.university.shared.infrastructure.notifier.RecordingNotificationService;
 import io.axoniq.demo.university.faculty.events.StudentSubscribedToCourse;
@@ -29,7 +30,7 @@ public class WhenStudentSubscribedThenSendNotificationTest extends UniversityApp
         // when
         var studentId = StudentId.random();
         var courseId = CourseId.random();
-        eventsOccurred(new StudentSubscribedToCourse(studentId, courseId));
+        eventsOccurred(new StudentSubscribedToCourse(Ids.FACULTY_ID, studentId, courseId));
 
         // then
         var expectedNotification = new NotificationService.Notification(studentId.raw(), "You have subscribed to course " + courseId);

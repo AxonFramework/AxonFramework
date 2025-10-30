@@ -1,5 +1,6 @@
 package io.axoniq.demo.university.faculty.automation.allcoursesfullybookednotifier;
 
+import io.axoniq.demo.university.shared.ids.FacultyId;
 import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessorModule;
@@ -13,8 +14,8 @@ import java.util.concurrent.CompletableFuture;
 public class AllCoursesFullyBookedNotifierConfiguration {
 
     public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
-        EntityModule<String, WhenAllCoursesFullyBookedThenSendNotification.State> automationState =
-                EventSourcedEntityModule.annotated(String.class, WhenAllCoursesFullyBookedThenSendNotification.State.class);
+        EntityModule<FacultyId, WhenAllCoursesFullyBookedThenSendNotification.State> automationState =
+                EventSourcedEntityModule.annotated(FacultyId.class, WhenAllCoursesFullyBookedThenSendNotification.State.class);
 
         PooledStreamingEventProcessorModule automationProcessor = EventProcessorModule
                 .pooledStreaming("Automation_WhenAllCoursesFullyBookedThenSendNotification_Processor")
