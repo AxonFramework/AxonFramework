@@ -73,7 +73,7 @@ class ConcludesBatchParameterResolverFactoryTest {
         new LegacyBatchingUnitOfWork<>(events)
                 .execute((ctx) -> {
                     ProcessingContext event0Context = forMessage(events.getFirst());
-                    assertThat(testSubject.resolveParameterValue(event0Context)).isCompletedExceptionally();
+                    assertThat(testSubject.resolveParameterValue(event0Context)).isCompletedWithValue(false);
                 });
     }
 
@@ -83,7 +83,7 @@ class ConcludesBatchParameterResolverFactoryTest {
         new LegacyBatchingUnitOfWork<>(events)
                 .execute((ctx) -> {
                     ProcessingContext lastEventContext = forMessage(events.get(4));
-                    assertThat(testSubject.resolveParameterValue(lastEventContext)).isCompletedExceptionally();
+                    assertThat(testSubject.resolveParameterValue(lastEventContext)).isCompletedWithValue(true);
                 });
     }
 
