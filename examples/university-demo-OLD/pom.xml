@@ -11,7 +11,7 @@
     <properties>
         <assertj.version>3.27.3</assertj.version>
         <awaitility.version>4.3.0</awaitility.version>
-        <axon.version>5.0.0-RC1</axon.version>
+        <axon.version>5.0.0-rc2</axon.version>
         <hamcrest.version>3.0</hamcrest.version>
         <junit.version>5.12.1</junit.version>
         <jackson.version>2.20.0</jackson.version>
