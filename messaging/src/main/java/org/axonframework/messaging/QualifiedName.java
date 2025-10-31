@@ -116,11 +116,12 @@ public record QualifiedName(@Nonnull String name) {
 
     /**
      * Returns the full name of this QualifiedName, consisting of the namespace and localName, separated by a "."
-     * (dot).
+     * (dot). If no namespace is defined, it returns the localName only.
      *
      * @return the full name of this QualifiedName
+     * @see #name()
      */
     public String fullName() {
-        return namespace() + "." + localName();
+        return name;
     }
 }
