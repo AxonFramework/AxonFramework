@@ -114,6 +114,22 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         Hooks.resetOnErrorDropped();
     }
 
+    /**
+     * Schedules a task to be executed after a delay of 500 milliseconds using virtual threads. This is commonly used in
+     * subscription query tests to simulate asynchronous updates.
+     *
+     * @param task the task to execute after the delay
+     */
+    private void scheduleAfterDelay(Runnable task) {
+        try (ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor()) {
+            executor.schedule(() -> {
+                try (ExecutorService virtualExecutor = Executors.newVirtualThreadPerTaskExecutor()) {
+                    virtualExecutor.submit(task);
+                }
+            }, 500, TimeUnit.MILLISECONDS);
+        }
+    }
+
 
     private static boolean assertRecorded(Collection<QueryResponseMessage> elements) {
         LinkedList<QueryResponseMessage> recordedMessages = new LinkedList<>(elements);
@@ -158,19 +174,25 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
                 new GenericSubscriptionQueryUpdateMessage(new MessageType("query-integer"), 2);
         // when
         MessageStream<QueryResponseMessage> resultOne = queryBus.subscriptionQuery(queryMessage1, testContext, 50);
-        queryBus.emitUpdate(stringQueryFilter, () -> stringUpdateOne, testContext);
-        queryBus.completeSubscriptions(stringQueryFilter, testContext);
-        queryBus.emitUpdate(stringQueryFilter, () -> stringUpdateTwo, testContext);
+        scheduleAfterDelay(() -> {
+            queryBus.emitUpdate(stringQueryFilter, () -> stringUpdateOne, testContext);
+            queryBus.completeSubscriptions(stringQueryFilter, testContext);
+            queryBus.emitUpdate(stringQueryFilter, () -> stringUpdateTwo, testContext);
+        });
         MessageStream<QueryResponseMessage> resultTwo = queryBus.subscriptionQuery(queryMessage2, testContext, 50);
-        queryBus.emitUpdate(integerQueryFilter, () -> integerUpdateOne, testContext);
-        queryBus.completeSubscriptions(integerQueryFilter, testContext);
-        queryBus.emitUpdate(integerQueryFilter, () -> integerUpdateTwo, testContext);
+        scheduleAfterDelay(() -> {
+            queryBus.emitUpdate(integerQueryFilter, () -> integerUpdateOne, testContext);
+            queryBus.completeSubscriptions(integerQueryFilter, testContext);
+            queryBus.emitUpdate(integerQueryFilter, () -> integerUpdateTwo, testContext);
+        });
         // then
-        StepVerifier.create(FluxUtils.of(resultOne).map(MessageStream.Entry::message).mapNotNull(m -> m.payloadAs(String.class, CONVERTER)))
+        StepVerifier.create(FluxUtils.of(resultOne).map(MessageStream.Entry::message)
+                                     .mapNotNull(m -> m.payloadAs(String.class, CONVERTER)))
                     .expectNext("Message1", "Message2", "Message3", "Update11")
                     .expectComplete()
                     .verify();
-        StepVerifier.create(FluxUtils.of(resultTwo).map(MessageStream.Entry::message).mapNotNull(m -> m.payloadAs(Integer.class, CONVERTER)))
+        StepVerifier.create(FluxUtils.of(resultTwo).map(MessageStream.Entry::message)
+                                     .mapNotNull(m -> m.payloadAs(Integer.class, CONVERTER)))
                     .expectNext(0, 1)
                     .verifyComplete();
     }
@@ -190,8 +212,10 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
                 new GenericSubscriptionQueryUpdateMessage(TEST_UPDATE_PAYLOAD_TYPE, null, String.class);
         // when
         MessageStream<QueryResponseMessage> result = queryBus.subscriptionQuery(queryMessage, null, 50);
-        queryBus.emitUpdate(testFilter, () -> testUpdate, testContext);
-        queryBus.completeSubscriptions(testFilter, testContext);
+        scheduleAfterDelay(() -> {
+            queryBus.emitUpdate(testFilter, () -> testUpdate, testContext);
+            queryBus.completeSubscriptions(testFilter, testContext);
+        });
         // then
         StepVerifier.create(FluxUtils.of(result).filter(m -> m.message() instanceof SubscriptionQueryUpdateMessage))
                     .expectNextMatches(e -> e.message().payload() == null)
@@ -246,15 +270,14 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         // when
         MessageStream<QueryResponseMessage> result =
                 queryBus.subscriptionQuery(queryMessage, null, Queues.SMALL_BUFFER_SIZE);
-        try (ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor()) {
-            executor.schedule(() -> {
-                queryBus.emitUpdate(testFilter, () -> testUpdateOne, testContext);
-                queryBus.completeSubscriptionsExceptionally(testFilter, toBeThrown, testContext);
-                queryBus.emitUpdate(testFilter, () -> testUpdateTwo, testContext);
-            }, 500, TimeUnit.MILLISECONDS);
-        }
+        scheduleAfterDelay(() -> {
+            queryBus.emitUpdate(testFilter, () -> testUpdateOne, testContext);
+            queryBus.completeSubscriptionsExceptionally(testFilter, toBeThrown, testContext);
+            queryBus.emitUpdate(testFilter, () -> testUpdateTwo, testContext);
+        });
         // then
-        StepVerifier.create(FluxUtils.of(result).map(MessageStream.Entry::message).mapNotNull(m -> m.payloadAs(String.class, CONVERTER)))
+        StepVerifier.create(FluxUtils.of(result).map(MessageStream.Entry::message)
+                                     .mapNotNull(m -> m.payloadAs(String.class, CONVERTER)))
                     .expectNext("Message1", "Message2", "Message3", "Update1")
                     .expectErrorMatches(toBeThrown::equals)
                     .verify();
@@ -294,9 +317,11 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
                  .map(MessageStream.Entry::message)
                  .mapNotNull(m -> m.payloadAs(String.class, CONVERTER))
                  .subscribe(queryTwoUpdates::add, t -> queryTwoUpdates.add("Error2"));
-        queryBus.emitUpdate(testFilter, () -> testUpdateOne, testContext);
-        queryBus.completeSubscriptionsExceptionally(testFilter, new RuntimeException(), testContext);
-        queryBus.emitUpdate(testFilter, () -> testUpdateTwo, testContext);
+        scheduleAfterDelay(() -> {
+            queryBus.emitUpdate(testFilter, () -> testUpdateOne, testContext);
+            queryBus.completeSubscriptionsExceptionally(testFilter, new RuntimeException(), testContext);
+            queryBus.emitUpdate(testFilter, () -> testUpdateTwo, testContext);
+        });
         // then
         assertEquals(Arrays.asList("Message1", "Message2", "Message3", "Update1", "Error1"), queryOneUpdates);
         assertEquals(Arrays.asList("Message1", "Message2", "Message3", "Update1", "Error2"), queryTwoUpdates);
@@ -350,15 +375,14 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         ProcessingContext testContext = null;
         // when
         MessageStream<QueryResponseMessage> result = queryBus.subscriptionQuery(queryMessage, null, 50);
-        try (ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor()) {
-            executor.schedule(() -> {
-                queryBus.emitUpdate(testFilter, () -> testUpdateOne, testContext);
-                queryBus.completeSubscriptions(testFilter, testContext);
-                queryBus.emitUpdate(testFilter, () -> testUpdateTwo, testContext);
-            }, 500, TimeUnit.MILLISECONDS);
-        }
+        scheduleAfterDelay(() -> {
+            queryBus.emitUpdate(testFilter, () -> testUpdateOne, testContext);
+            queryBus.completeSubscriptions(testFilter, testContext);
+            queryBus.emitUpdate(testFilter, () -> testUpdateTwo, testContext);
+        });
         // then
-        StepVerifier.create(FluxUtils.of(result).map(MessageStream.Entry::message).mapNotNull(m -> m.payloadAs(String.class, CONVERTER)))
+        StepVerifier.create(FluxUtils.of(result).map(MessageStream.Entry::message)
+                                     .mapNotNull(m -> m.payloadAs(String.class, CONVERTER)))
                     .expectNext("Message1", "Message2", "Message3", "Update1")
                     .verifyComplete();
     }
@@ -402,7 +426,8 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
     @Test
     void orderingOfOperationOnUpdateHandler() {
         // given
-        QualifiedName emitFirstThenReturnInitialQueryName = new QualifiedName("test.emitFirstThenReturnInitial." + UUID.randomUUID());
+        QualifiedName emitFirstThenReturnInitialQueryName = new QualifiedName(
+                "test.emitFirstThenReturnInitial." + UUID.randomUUID());
 
         queryBus.subscribe(emitFirstThenReturnInitialQueryName, (query, context) -> {
             QueryUpdateEmitter emitter = QueryUpdateEmitter.forContext(context);
@@ -490,14 +515,16 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         ProcessingContext testContext = null;
         // when...
         MessageStream<QueryResponseMessage> result = queryBus.subscriptionQuery(queryMessage, null, 100);
-        for (int i = 0; i <= 200; i++) {
-            int number = i;
-            queryBus.emitUpdate(testFilter,
-                                () -> new GenericSubscriptionQueryUpdateMessage(TEST_UPDATE_PAYLOAD_TYPE,
-                                                                                "Update" + number),
-                                testContext);
-        }
-        queryBus.completeSubscriptions(testFilter, testContext);
+        scheduleAfterDelay(() -> {
+            for (int i = 0; i <= 200; i++) {
+                int number = i;
+                queryBus.emitUpdate(testFilter,
+                                    () -> new GenericSubscriptionQueryUpdateMessage(TEST_UPDATE_PAYLOAD_TYPE,
+                                                                                    "Update" + number),
+                                    testContext);
+            }
+            queryBus.completeSubscriptions(testFilter, testContext);
+        });
         // then...
         StepVerifier.create(FluxUtils.of(result).map(MessageStream.Entry::message)
                                      .filter(m -> m instanceof SubscriptionQueryUpdateMessage))
@@ -562,9 +589,11 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         ProcessingContext testContext = null;
         MessageStream<QueryResponseMessage> result = queryBus.subscriptionQuery(queryMessage, null, 50);
         // when...
-        queryBus.emitUpdate(testFilter, () -> testUpdateOne, testContext);
-        result.close();
-        queryBus.emitUpdate(testFilter, () -> testUpdateTwo, testContext);
+        scheduleAfterDelay(() -> {
+            queryBus.emitUpdate(testFilter, () -> testUpdateOne, testContext);
+            result.close();
+            queryBus.emitUpdate(testFilter, () -> testUpdateTwo, testContext);
+        });
         // then...
         StepVerifier.create(FluxUtils.of(result).map(MessageStream.Entry::message)
                                      .filter(SubscriptionQueryUpdateMessage.class::isInstance)
@@ -576,7 +605,8 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
     @Test
     void subscriptionQueryResultHandle() throws InterruptedException {
         // given...
-        QualifiedName emitFirstThenReturnInitialQueryName = new QualifiedName("test.emitFirstThenReturnInitial." + UUID.randomUUID());
+        QualifiedName emitFirstThenReturnInitialQueryName = new QualifiedName(
+                "test.emitFirstThenReturnInitial." + UUID.randomUUID());
 
         queryBus.subscribe(emitFirstThenReturnInitialQueryName, (query, context) -> {
             QueryUpdateEmitter emitter = QueryUpdateEmitter.forContext(context);
@@ -606,12 +636,12 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         CountDownLatch latch = new CountDownLatch(3);
         MessageStream<QueryResponseMessage> stream = queryBus.subscriptionQuery(queryMessage, null, 50);
         FluxUtils.of(stream)
-                .map(MessageStream.Entry::message)
-                .mapNotNull(m -> m.payloadAs(String.class, CONVERTER))
-                .subscribe(element -> {
-                    results.add(element);
-                    latch.countDown();
-                });
+                 .map(MessageStream.Entry::message)
+                 .mapNotNull(m -> m.payloadAs(String.class, CONVERTER))
+                 .subscribe(element -> {
+                     results.add(element);
+                     latch.countDown();
+                 });
         // then...
         assertThat(latch.await(500, TimeUnit.MILLISECONDS)).isTrue();
         assertEquals(Arrays.asList("Initial", "Update1", "Update2"), results);
@@ -643,12 +673,14 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         List<String> initialResult = new ArrayList<>();
         MessageStream<QueryResponseMessage> stream = queryBus.subscriptionQuery(queryMessage, null, 50);
         FluxUtils.of(stream)
-                .map(MessageStream.Entry::message)
-                .mapNotNull(m -> m.payloadAs(String.class, CONVERTER))
-                .subscribe(initialResult::add);
-        queryBus.emitUpdate(testFilter, () -> testUpdateOne, testContext);
-        queryBus.emitUpdate(testFilter, () -> testUpdateTwo, testContext);
-        queryBus.completeSubscriptions(testFilter, testContext);
+                 .map(MessageStream.Entry::message)
+                 .mapNotNull(m -> m.payloadAs(String.class, CONVERTER))
+                 .subscribe(initialResult::add);
+        scheduleAfterDelay(() -> {
+            queryBus.emitUpdate(testFilter, () -> testUpdateOne, testContext);
+            queryBus.emitUpdate(testFilter, () -> testUpdateTwo, testContext);
+            queryBus.completeSubscriptions(testFilter, testContext);
+        });
         // then
         assertTrue(initialResult.isEmpty());
     }
@@ -677,12 +709,14 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         List<String> initialResult = new ArrayList<>();
         MessageStream<QueryResponseMessage> stream = queryBus.subscriptionQuery(queryMessage, null, 50);
         FluxUtils.of(stream)
-                .map(MessageStream.Entry::message)
-                .mapNotNull(m -> m.payloadAs(String.class, CONVERTER))
-                .subscribe(initialResult::add);
+                 .map(MessageStream.Entry::message)
+                 .mapNotNull(m -> m.payloadAs(String.class, CONVERTER))
+                 .subscribe(initialResult::add);
 
-        queryBus.completeSubscriptionsExceptionally(testFilter, new RuntimeException(), testContext);
-        queryBus.emitUpdate(testFilter, () -> testUpdate, testContext);
+        scheduleAfterDelay(() -> {
+            queryBus.completeSubscriptionsExceptionally(testFilter, new RuntimeException(), testContext);
+            queryBus.emitUpdate(testFilter, () -> testUpdate, testContext);
+        });
         // then
         assertTrue(initialResult.isEmpty());
     }
@@ -703,8 +737,8 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         QueryMessage queryMessage = new GenericQueryMessage(someQueryType, new SomeQuery("not " + FOUND));
         MessageStream<QueryResponseMessage> stream = queryBus.subscriptionQuery(queryMessage, null, 50);
         CompletableFuture<String> future = stream.first().asCompletableFuture()
-                .thenApply(e -> e.message().payloadAs(String.class, CONVERTER));
-        queryBus.completeSubscriptions(message -> true, null);
+                                                 .thenApply(e -> e.message().payloadAs(String.class, CONVERTER));
+        scheduleAfterDelay(() -> queryBus.completeSubscriptions(message -> true, null));
         assertNull(future.get());
     }
 
@@ -723,7 +757,7 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         QueryMessage queryMessage = new GenericQueryMessage(someQueryType, new SomeQuery(FOUND));
         MessageStream<QueryResponseMessage> stream = queryBus.subscriptionQuery(queryMessage, null, 50);
         CompletableFuture<String> future = stream.first().asCompletableFuture()
-                .thenApply(e -> e.message().payloadAs(String.class, CONVERTER));
+                                                 .thenApply(e -> e.message().payloadAs(String.class, CONVERTER));
         String result = future.get();
         assertEquals(FOUND, result);
     }
