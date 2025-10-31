@@ -62,7 +62,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.LockSupport;
 import javax.annotation.Nonnull;
@@ -269,13 +268,13 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
      */
     public CompletableFuture<Void> disconnect() {
         if (axonServerConnectionManager.isConnected(context)) {
+            logger.trace("Disconnecting the AxonServerCommandBus.");
             axonServerConnectionManager.getConnection(context).commandChannel().prepareDisconnect();
         }
 
-        // Wait for in-progress command handlers to complete
         if (!awaitCommandHandlersCompletion(commandInProgressAwait)) {
             logger.info("Awaited termination of commands in progress without success. Going to cancel remaining commands in progress.");
-            cancelCommandHandlers();
+            cancelCommandsInProgress();
         }
 
         return CompletableFuture.completedFuture(null);
@@ -291,22 +290,12 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         Instant startAwait = Instant.now();
         Instant endAwait = startAwait.plusSeconds(timeout.getSeconds());
         while (Instant.now().isBefore(endAwait) && !commandsInProgress.isEmpty()) {
-            commandsInProgress.values()
-                              .stream()
-                              .findFirst()
-                              .ifPresent(commandInProgress -> {
-                                  while (Instant.now().isBefore(endAwait) && commandInProgress.isProcessing()) {
-                                      LockSupport.parkNanos(10_000_000);
-                                  }
-                              });
+            LockSupport.parkNanos(10_000_000);
         }
         return commandsInProgress.isEmpty();
     }
 
-    /**
-     * Cancels all in-progress command handlers.
-     */
-    private void cancelCommandHandlers() {
+    private void cancelCommandsInProgress() {
         commandsInProgress.values()
                           .iterator()
                           .forEachRemaining(CommandProcessingTask::cancel);
@@ -338,7 +327,6 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         private final CommandSerializer serializer;
         private final CommandBusSpanFactory spanFactory;
         private final ConcurrentHashMap<String, CommandProcessingTask> commandsInProgress;
-        private final AtomicBoolean processing = new AtomicBoolean(true);
 
         public CommandProcessingTask(Command command,
                                      CommandSerializer serializer,
@@ -381,19 +369,8 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
                     }
                 });
             } finally {
-                // Mark as no longer processing and remove from tracking
-                processing.set(false);
                 commandsInProgress.remove(command.getMessageIdentifier());
             }
-        }
-
-        /**
-         * Checks if this command is still being processed.
-         *
-         * @return {@code true} if processing, {@code false} otherwise
-         */
-        public boolean isProcessing() {
-            return processing.get();
         }
 
         /**
@@ -401,7 +378,6 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
          */
         public void cancel() {
             result.cancel(true);
-            processing.set(false);
             commandsInProgress.remove(command.getMessageIdentifier());
         }
     }
