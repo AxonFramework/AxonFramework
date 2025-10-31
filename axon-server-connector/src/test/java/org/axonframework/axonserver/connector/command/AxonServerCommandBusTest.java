@@ -540,6 +540,7 @@ class AxonServerCommandBusTest {
         }).when(mockCommandChannel)
           .registerCommandHandler(any(), anyInt(), eq("testCommand"));
 
+        //noinspection resource
         commandInProgressTestSubject.subscribe("testCommand", message -> {
             handlerLatch.await();
             return message.getPayload();
