@@ -16,8 +16,8 @@
 
 package org.axonframework.integrationtests.queryhandling;
 
+import org.assertj.core.util.Strings;
 import org.axonframework.messaging.FluxUtils;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
@@ -60,7 +60,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
@@ -113,23 +112,6 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
     void tearDown() {
         Hooks.resetOnErrorDropped();
     }
-
-    /**
-     * Schedules a task to be executed after a delay of 500 milliseconds using virtual threads. This is commonly used in
-     * subscription query tests to simulate asynchronous updates.
-     *
-     * @param task the task to execute after the delay
-     */
-    private void scheduleAfterDelay(Runnable task) {
-        try (ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor()) {
-            executor.schedule(() -> {
-                try (ExecutorService virtualExecutor = Executors.newVirtualThreadPerTaskExecutor()) {
-                    virtualExecutor.submit(task);
-                }
-            }, 500, TimeUnit.MILLISECONDS);
-        }
-    }
-
 
     private static boolean assertRecorded(Collection<QueryResponseMessage> elements) {
         LinkedList<QueryResponseMessage> recordedMessages = new LinkedList<>(elements);
@@ -218,7 +200,7 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         });
         // then
         StepVerifier.create(FluxUtils.of(result).filter(m -> m.message() instanceof SubscriptionQueryUpdateMessage))
-                    .expectNextMatches(e -> e.message().payload() == null)
+                    .expectNextMatches(e -> Strings.isNullOrEmpty(e.message().payloadAs(String.class, CONVERTER)))
                     .verifyComplete();
     }
 
@@ -434,9 +416,13 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
             CountDownLatch latch = new CountDownLatch(1);
             try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
                 executor.submit(() -> {
-                    emitter.emit(emitFirstThenReturnInitialQueryName, TEST_QUERY_PAYLOAD::equals, "Update1");
-                    emitter.emit(emitFirstThenReturnInitialQueryName, TEST_QUERY_PAYLOAD::equals, "Update2");
-                    emitter.complete(emitFirstThenReturnInitialQueryName, TEST_QUERY_PAYLOAD::equals);
+                    emitter.emit(emitFirstThenReturnInitialQueryName,
+                                 AbstractSubscriptionQueryTestSuite::equalsTestQueryPayload, "Update1");
+                    emitter.emit(emitFirstThenReturnInitialQueryName,
+                                 AbstractSubscriptionQueryTestSuite::equalsTestQueryPayload,
+                                 "Update2");
+                    emitter.complete(emitFirstThenReturnInitialQueryName,
+                                     AbstractSubscriptionQueryTestSuite::equalsTestQueryPayload);
                     latch.countDown();
                 });
             }
@@ -455,9 +441,14 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         // when
         MessageStream<QueryResponseMessage> result = queryBus.subscriptionQuery(queryMessage, null, 50);
         // then
-        StepVerifier.create(FluxUtils.of(result).map(MessageStream.Entry::message).mapNotNull(Message::payload))
+        StepVerifier.create(FluxUtils.of(result).map(MessageStream.Entry::message)
+                                     .mapNotNull(m -> m.payloadAs(String.class, CONVERTER)))
                     .expectNext("Initial", "Update1", "Update2")
                     .verifyComplete();
+    }
+
+    private static boolean equalsTestQueryPayload(Object o) {
+        return TEST_QUERY_PAYLOAD.equals(CONVERTER.convert(o, String.class));
     }
 
     @Test
@@ -495,7 +486,8 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         StepVerifier.create(FluxUtils.of(result).map(MessageStream.Entry::message))
                     .expectErrorMatches(exception -> {
                         if (exception instanceof QueryExecutionException qee) {
-                            return toBeThrown.equals(qee.getCause());
+                            // QueryExecutionException was serialized, so we don't have an original Exception type
+                            return qee.getCause().getMessage().contains(toBeThrown.getMessage());
                         }
                         return false;
                     })
@@ -613,9 +605,14 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
             CountDownLatch latch = new CountDownLatch(1);
             try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
                 executor.submit(() -> {
-                    emitter.emit(emitFirstThenReturnInitialQueryName, TEST_QUERY_PAYLOAD::equals, "Update1");
-                    emitter.emit(emitFirstThenReturnInitialQueryName, TEST_QUERY_PAYLOAD::equals, "Update2");
-                    emitter.complete(emitFirstThenReturnInitialQueryName, TEST_QUERY_PAYLOAD::equals);
+                    emitter.emit(emitFirstThenReturnInitialQueryName,
+                                 AbstractSubscriptionQueryTestSuite::equalsTestQueryPayload,
+                                 "Update1");
+                    emitter.emit(emitFirstThenReturnInitialQueryName,
+                                 AbstractSubscriptionQueryTestSuite::equalsTestQueryPayload,
+                                 "Update2");
+                    emitter.complete(emitFirstThenReturnInitialQueryName,
+                                     AbstractSubscriptionQueryTestSuite::equalsTestQueryPayload);
                     latch.countDown();
                 });
             }
@@ -765,5 +762,25 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
 
     private record SomeQuery(String filter) {
 
+    }
+
+    private void scheduleAfterDelay(Runnable task) {
+        CountDownLatch latch = new CountDownLatch(1);
+        Thread.ofVirtual().start(() -> {
+            try {
+                TimeUnit.MILLISECONDS.sleep(500);
+                task.run();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } finally {
+                latch.countDown();
+            }
+        });
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
     }
 }
