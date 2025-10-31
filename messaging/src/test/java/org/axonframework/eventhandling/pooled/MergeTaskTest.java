@@ -50,7 +50,9 @@ class MergeTaskTest {
 
     private CompletableFuture<Boolean> result;
     private final Map<Integer, WorkPackage> workPackages = new HashMap<>();
+    private final Map<Integer, java.time.Instant> releasesDeadlines = new HashMap<>();
     private final TokenStore tokenStore = mock(TokenStore.class);
+    private final java.time.Clock clock = java.time.Clock.systemUTC();
 
     private MergeTask testSubject;
 
@@ -61,9 +63,10 @@ class MergeTaskTest {
     void setUp() {
         result = new CompletableFuture<>();
         when(tokenStore.fetchSegments(PROCESSOR_NAME)).thenReturn(SEGMENT_IDS);
+        releasesDeadlines.clear();
 
         testSubject = new MergeTask(
-                result, PROCESSOR_NAME, SEGMENT_TO_MERGE, workPackages, tokenStore, NoTransactionManager.instance()
+                result, PROCESSOR_NAME, SEGMENT_TO_MERGE, workPackages, releasesDeadlines, tokenStore, NoTransactionManager.instance(), clock
         );
     }
 
