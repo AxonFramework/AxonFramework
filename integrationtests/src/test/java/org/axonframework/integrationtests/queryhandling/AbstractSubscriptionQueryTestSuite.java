@@ -32,6 +32,7 @@ import org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryExecutionException;
 import org.axonframework.queryhandling.QueryResponseMessage;
+import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SubscriptionQueryAlreadyRegisteredException;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
@@ -402,29 +403,15 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
     void orderingOfOperationOnUpdateHandler() {
         // given
         QualifiedName emitFirstThenReturnInitialQueryName = new QualifiedName("test.emitFirstThenReturnInitial." + UUID.randomUUID());
-        MessageType emitFirstThenReturnInitialQueryType = new MessageType(emitFirstThenReturnInitialQueryName.fullName());
 
         queryBus.subscribe(emitFirstThenReturnInitialQueryName, (query, context) -> {
+            QueryUpdateEmitter emitter = QueryUpdateEmitter.forContext(context);
             CountDownLatch latch = new CountDownLatch(1);
             try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
                 executor.submit(() -> {
-                    queryBus.emitUpdate(
-                            msg -> emitFirstThenReturnInitialQueryType.equals(msg.type())
-                                    && TEST_QUERY_PAYLOAD.equals(msg.payloadAs(String.class, CONVERTER)),
-                            () -> new GenericSubscriptionQueryUpdateMessage(TEST_RESPONSE_TYPE, "Update1"),
-                            null
-                    );
-                    queryBus.emitUpdate(
-                            msg -> emitFirstThenReturnInitialQueryType.equals(msg.type())
-                                    && TEST_QUERY_PAYLOAD.equals(msg.payloadAs(String.class, CONVERTER)),
-                            () -> new GenericSubscriptionQueryUpdateMessage(TEST_RESPONSE_TYPE, "Update2"),
-                            null
-                    );
-                    queryBus.completeSubscriptions(
-                            msg -> emitFirstThenReturnInitialQueryType.equals(msg.type())
-                                    && TEST_QUERY_PAYLOAD.equals(msg.payloadAs(String.class, CONVERTER)),
-                            null
-                    );
+                    emitter.emit(emitFirstThenReturnInitialQueryName, TEST_QUERY_PAYLOAD::equals, "Update1");
+                    emitter.emit(emitFirstThenReturnInitialQueryName, TEST_QUERY_PAYLOAD::equals, "Update2");
+                    emitter.complete(emitFirstThenReturnInitialQueryName, TEST_QUERY_PAYLOAD::equals);
                     latch.countDown();
                 });
             }
@@ -438,7 +425,7 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         });
 
         QueryMessage queryMessage = new GenericQueryMessage(
-                emitFirstThenReturnInitialQueryType, TEST_QUERY_PAYLOAD
+                new MessageType(emitFirstThenReturnInitialQueryName.fullName()), TEST_QUERY_PAYLOAD
         );
         // when
         MessageStream<QueryResponseMessage> result = queryBus.subscriptionQuery(queryMessage, null, 50);
@@ -590,29 +577,15 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
     void subscriptionQueryResultHandle() throws InterruptedException {
         // given...
         QualifiedName emitFirstThenReturnInitialQueryName = new QualifiedName("test.emitFirstThenReturnInitial." + UUID.randomUUID());
-        MessageType emitFirstThenReturnInitialQueryType = new MessageType(emitFirstThenReturnInitialQueryName.fullName());
 
         queryBus.subscribe(emitFirstThenReturnInitialQueryName, (query, context) -> {
+            QueryUpdateEmitter emitter = QueryUpdateEmitter.forContext(context);
             CountDownLatch latch = new CountDownLatch(1);
             try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
                 executor.submit(() -> {
-                    queryBus.emitUpdate(
-                            msg -> emitFirstThenReturnInitialQueryType.equals(msg.type())
-                                    && TEST_QUERY_PAYLOAD.equals(msg.payloadAs(String.class, CONVERTER)),
-                            () -> new GenericSubscriptionQueryUpdateMessage(TEST_RESPONSE_TYPE, "Update1"),
-                            null
-                    );
-                    queryBus.emitUpdate(
-                            msg -> emitFirstThenReturnInitialQueryType.equals(msg.type())
-                                    && TEST_QUERY_PAYLOAD.equals(msg.payloadAs(String.class, CONVERTER)),
-                            () -> new GenericSubscriptionQueryUpdateMessage(TEST_RESPONSE_TYPE, "Update2"),
-                            null
-                    );
-                    queryBus.completeSubscriptions(
-                            msg -> emitFirstThenReturnInitialQueryType.equals(msg.type())
-                                    && TEST_QUERY_PAYLOAD.equals(msg.payloadAs(String.class, CONVERTER)),
-                            null
-                    );
+                    emitter.emit(emitFirstThenReturnInitialQueryName, TEST_QUERY_PAYLOAD::equals, "Update1");
+                    emitter.emit(emitFirstThenReturnInitialQueryName, TEST_QUERY_PAYLOAD::equals, "Update2");
+                    emitter.complete(emitFirstThenReturnInitialQueryName, TEST_QUERY_PAYLOAD::equals);
                     latch.countDown();
                 });
             }
@@ -626,7 +599,7 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         });
 
         QueryMessage queryMessage = new GenericQueryMessage(
-                emitFirstThenReturnInitialQueryType, TEST_QUERY_PAYLOAD
+                new MessageType(emitFirstThenReturnInitialQueryName.fullName()), TEST_QUERY_PAYLOAD
         );
         // when...
         List<String> results = new ArrayList<>();
