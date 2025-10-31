@@ -200,8 +200,8 @@ public interface QueryGateway extends DescribableComponent {
      * The {@code query} is sent once the {@code Publisher} is subscribed to. Furthermore, updates are received at the
      * moment the query is sent, and until it is cancelled by the caller or closed by the emitting side.
      * <p>
-     * The given {@code query} is wrapped as the payload of the {@link QueryMessage} that is eventually
-     * posted on the {@code QueryBus}, unless the {@code query} already implements {@link Message}. In that case, a
+     * The given {@code query} is wrapped as the payload of the {@link QueryMessage} that is eventually posted on the
+     * {@code QueryBus}, unless the {@code query} already implements {@link Message}. In that case, a
      * {@code QueryMessage} is constructed from that message's payload and
      * {@link org.axonframework.messaging.Metadata}.
      * <p>
@@ -210,8 +210,7 @@ public interface QueryGateway extends DescribableComponent {
      * {@code QueryBus} instead.
      * <p>
      * The returned Publisher must be subscribed to and consumed from before the buffer fills up. Once the buffer is
-     * full, any attempt to add an update will complete the stream with an exception. To control the buffer size, use
-     * {@link #subscriptionQuery(Object, Class, ProcessingContext, int)}.
+     * full, any attempt to add an update will complete the stream with an exception.
      *
      * @param query        The {@code query} to be sent.
      * @param responseType The response type returned by this query as the initial result and the updates.
@@ -234,8 +233,8 @@ public interface QueryGateway extends DescribableComponent {
      * The {@code query} is sent once the {@code Publisher} is subscribed to. Furthermore, updates are received at the
      * moment the query is sent, and until it is cancelled by the caller or closed by the emitting side.
      * <p>
-     * The given {@code query} is wrapped as the payload of the {@link QueryMessage} that is eventually
-     * posted on the {@code QueryBus}, unless the {@code query} already implements {@link Message}. In that case, a
+     * The given {@code query} is wrapped as the payload of the {@link QueryMessage} that is eventually posted on the
+     * {@code QueryBus}, unless the {@code query} already implements {@link Message}. In that case, a
      * {@code QueryMessage} is constructed from that message's payload and
      * {@link org.axonframework.messaging.Metadata}.
      * <p>
@@ -244,20 +243,18 @@ public interface QueryGateway extends DescribableComponent {
      * {@code QueryBus} instead.
      * <p>
      * The returned Publisher must be subscribed to and consumed from before the buffer fills up. Once the buffer is
-     * full, any attempt to add an update will complete the stream with an exception. To control the buffer size, use
-     * {@link #subscriptionQuery(Object, Class, ProcessingContext, int)}.
+     * full, any attempt to add an update will complete the stream with an exception.
      *
      * @param query        The {@code query} to be sent.
      * @param responseType The response type returned by this query as the initial result and the updates.
      * @param <R>          The type of all the responses.
      * @return A {@link org.reactivestreams.Publisher} streaming the results as dictated by the given
      * {@code responseType}.
-     * @see #subscriptionQuery(Object, Class, Function, ProcessingContext, int)
      */
     @Nonnull
     default <R> Publisher<R> subscriptionQuery(@Nonnull Object query,
                                                @Nonnull Class<R> responseType) {
-        return subscriptionQuery(query, responseType, m -> m.payloadAs(responseType), null, Queues.SMALL_BUFFER_SIZE);
+        return subscriptionQuery(query, responseType, (ProcessingContext) null);
     }
 
     /**
@@ -267,8 +264,8 @@ public interface QueryGateway extends DescribableComponent {
      * The {@code query} is sent once the {@code Publisher} is subscribed to. Furthermore, updates are received at the
      * moment the query is sent, and until it is cancelled by the caller or closed by the emitting side.
      * <p>
-     * The given {@code query} is wrapped as the payload of the {@link QueryMessage} that is eventually
-     * posted on the {@code QueryBus}, unless the {@code query} already implements {@link Message}. In that case, a
+     * The given {@code query} is wrapped as the payload of the {@link QueryMessage} that is eventually posted on the
+     * {@code QueryBus}, unless the {@code query} already implements {@link Message}. In that case, a
      * {@code QueryMessage} is constructed from that message's payload and
      * {@link org.axonframework.messaging.Metadata}.
      * <p>
@@ -289,12 +286,10 @@ public interface QueryGateway extends DescribableComponent {
      * {@code responseType}.
      */
     @Nonnull
-    default <R> Publisher<R> subscriptionQuery(@Nonnull Object query,
-                                               @Nonnull Class<R> responseType,
-                                               @Nullable ProcessingContext context,
-                                               int updateBufferSize) {
-        return subscriptionQuery(query, responseType, m -> m.payloadAs(responseType), context, updateBufferSize);
-    }
+    <R> Publisher<R> subscriptionQuery(@Nonnull Object query,
+                                       @Nonnull Class<R> responseType,
+                                       @Nullable ProcessingContext context,
+                                       int updateBufferSize);
 
     /**
      * Sends given {@code query} over the {@link QueryBus} and returns a {@link Publisher} supplying the initial updates
@@ -307,8 +302,8 @@ public interface QueryGateway extends DescribableComponent {
      * query is sent, and until the subscription to the Publisher is canceled by the caller or closed by the emitting
      * side.
      * <p>
-     * The given {@code query} is wrapped as the payload of the {@link QueryMessage} that is eventually
-     * posted on the {@code QueryBus}, unless the {@code query} already implements {@link Message}. In that case, a
+     * The given {@code query} is wrapped as the payload of the {@link QueryMessage} that is eventually posted on the
+     * {@code QueryBus}, unless the {@code query} already implements {@link Message}. In that case, a
      * {@code QueryMessage} is constructed from that message's payload and
      * {@link org.axonframework.messaging.Metadata}.
      * <p>
@@ -347,8 +342,8 @@ public interface QueryGateway extends DescribableComponent {
      * query is sent, and until the subscription to the Publisher is canceled by the caller or closed by the emitting
      * side.
      * <p>
-     * The given {@code query} is wrapped as the payload of the {@link QueryMessage} that is eventually
-     * posted on the {@code QueryBus}, unless the {@code query} already implements {@link Message}. In that case, a
+     * The given {@code query} is wrapped as the payload of the {@link QueryMessage} that is eventually posted on the
+     * {@code QueryBus}, unless the {@code query} already implements {@link Message}. In that case, a
      * {@code QueryMessage} is constructed from that message's payload and
      * {@link org.axonframework.messaging.Metadata}.
      * <p>
@@ -385,8 +380,8 @@ public interface QueryGateway extends DescribableComponent {
      * query is sent, and until the subscription to the Publisher is canceled by the caller or closed by the emitting
      * side.
      * <p>
-     * The given {@code query} is wrapped as the payload of the {@link QueryMessage} that is eventually
-     * posted on the {@code QueryBus}, unless the {@code query} already implements {@link Message}. In that case, a
+     * The given {@code query} is wrapped as the payload of the {@link QueryMessage} that is eventually posted on the
+     * {@code QueryBus}, unless the {@code query} already implements {@link Message}. In that case, a
      * {@code QueryMessage} is constructed from that message's payload and
      * {@link org.axonframework.messaging.Metadata}.
      * <p>
@@ -402,14 +397,7 @@ public interface QueryGateway extends DescribableComponent {
      * @see #subscriptionQuery(Object, Class, Function, ProcessingContext, int)
      */
     @Nonnull
-    default <R> Publisher<R> subscriptionQuery(@Nonnull Object query,
-                                               @Nonnull Class<R> responseType,
-                                               int updateBufferSize) {
-        return subscriptionQuery(query, responseType, m -> m.payloadAs(responseType), null, updateBufferSize);
-    }
-
-    ;
-
+    <R> Publisher<R> subscriptionQuery(@Nonnull Object query, @Nonnull Class<R> responseType, int updateBufferSize);
 
     /**
      * Sends given {@code query} over the {@link QueryBus} and returns a {@link Publisher} supplying the initial updates
@@ -422,8 +410,8 @@ public interface QueryGateway extends DescribableComponent {
      * query is sent, and until the subscription to the Publisher is canceled by the caller or closed by the emitting
      * side.
      * <p>
-     * The given {@code query} is wrapped as the payload of the {@link QueryMessage} that is eventually
-     * posted on the {@code QueryBus}, unless the {@code query} already implements {@link Message}. In that case, a
+     * The given {@code query} is wrapped as the payload of the {@link QueryMessage} that is eventually posted on the
+     * {@code QueryBus}, unless the {@code query} already implements {@link Message}. In that case, a
      * {@code QueryMessage} is constructed from that message's payload and
      * {@link org.axonframework.messaging.Metadata}.
      * <p>
@@ -459,8 +447,8 @@ public interface QueryGateway extends DescribableComponent {
      * query is sent, and until the subscription to the Publisher is canceled by the caller or closed by the emitting
      * side.
      * <p>
-     * The given {@code query} is wrapped as the payload of the {@link QueryMessage} that is eventually
-     * posted on the {@code QueryBus}, unless the {@code query} already implements {@link Message}. In that case, a
+     * The given {@code query} is wrapped as the payload of the {@link QueryMessage} that is eventually posted on the
+     * {@code QueryBus}, unless the {@code query} already implements {@link Message}. In that case, a
      * {@code QueryMessage} is constructed from that message's payload and
      * {@link org.axonframework.messaging.Metadata}.
      * <p>

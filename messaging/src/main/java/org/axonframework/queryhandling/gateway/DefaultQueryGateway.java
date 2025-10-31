@@ -26,8 +26,6 @@ import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.*;
-import org.axonframework.queryhandling.gateway.QueryGateway;
-import org.axonframework.serialization.Converter;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 import reactor.util.concurrent.Queues;
