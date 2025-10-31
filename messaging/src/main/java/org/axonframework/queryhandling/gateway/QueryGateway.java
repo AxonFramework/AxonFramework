@@ -397,7 +397,11 @@ public interface QueryGateway extends DescribableComponent {
      * @see #subscriptionQuery(Object, Class, Function, ProcessingContext, int)
      */
     @Nonnull
-    <R> Publisher<R> subscriptionQuery(@Nonnull Object query, @Nonnull Class<R> responseType, int updateBufferSize);
+    default <R> Publisher<R> subscriptionQuery(@Nonnull Object query,
+                                               @Nonnull Class<R> responseType,
+                                               int updateBufferSize) {
+        return subscriptionQuery(query, responseType, (ProcessingContext) null, updateBufferSize);
+    }
 
     /**
      * Sends given {@code query} over the {@link QueryBus} and returns a {@link Publisher} supplying the initial updates
