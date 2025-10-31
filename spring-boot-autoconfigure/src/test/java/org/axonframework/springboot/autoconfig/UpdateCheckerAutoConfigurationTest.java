@@ -3,6 +3,7 @@ package org.axonframework.springboot.autoconfig;
 import org.axonframework.updates.UpdateChecker;
 import org.axonframework.updates.UpdateCheckerHttpClient;
 import org.axonframework.updates.UpdateCheckerReporter;
+import org.axonframework.updates.configuration.EnvironmentVariableUsagePropertyProvider;
 import org.axonframework.updates.configuration.UsagePropertyProvider;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -34,6 +35,9 @@ class UpdateCheckerAutoConfigurationTest {
     void cleanup() {
         // Reset the system property after each test to avoid side effects
         System.clearProperty(AXONIQ_USAGE_FORCE_TEST_ENVIRONMENT);
+        System.clearProperty(EnvironmentVariableUsagePropertyProvider.DISABLED_KEY);
+        System.clearProperty(EnvironmentVariableUsagePropertyProvider.URL_KEY);
+
     }
 
     @Test
@@ -46,11 +50,30 @@ class UpdateCheckerAutoConfigurationTest {
             assertThat(context).hasBean("updateCheckerHttpClient");
             assertThat(context).hasBean("updateCheckerReporter");
             assertThat(context).hasBean("updateChecker");
+            assertThat(context.getBean("usagePropertyProvider", UsagePropertyProvider.class)
+                              .getUrl()).isEqualTo("https://get.axoniq.io/updates/framework");
         });
     }
 
     @Test
-    void updateCheckerBeansAreNotRegisteredForNonTestEnvironment() {
+    void updateCheckerSpringPropertiesTakePrecedenceOverSystemProperties() {
+        System.setProperty(AXONIQ_USAGE_FORCE_TEST_ENVIRONMENT, "true");
+        System.setProperty(EnvironmentVariableUsagePropertyProvider.DISABLED_KEY, "false");
+        System.setProperty(EnvironmentVariableUsagePropertyProvider.URL_KEY, "wrong_url");
+        testContext.withPropertyValues("axon.update-check.disabled:true")
+                .withPropertyValues("axon.update-check.url:https://test.example.com")
+                .run(context -> {
+                    assertThat(context).hasBean("usagePropertyProvider");
+                    assertThat(context.getBean("usagePropertyProvider", UsagePropertyProvider.class).getDisabled()).isTrue();
+                    assertThat(context.getBean("usagePropertyProvider", UsagePropertyProvider.class).getUrl()).isEqualTo("https://test.example.com");
+                    assertThat(context).hasBean("updateCheckerHttpClient");
+                    assertThat(context).hasBean("updateCheckerReporter");
+                    assertThat(context).hasBean("updateChecker");
+                });
+    }
+
+    @Test
+    void updateCheckerBeansAreNotRegisteredForTestEnvironment() {
         testContext.run(context -> {
             assertThat(context).doesNotHaveBean("usagePropertyProvider");
             assertThat(context).doesNotHaveBean("updateCheckerHttpClient");
