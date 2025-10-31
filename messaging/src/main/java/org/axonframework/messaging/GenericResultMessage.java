@@ -35,8 +35,6 @@ import java.util.Optional;
  */
 public class GenericResultMessage extends MessageDecorator implements ResultMessage {
 
-    private final Throwable exception;
-
     /**
      * Constructs a {@link GenericResultMessage} for the given {@code type} and {@code result}.
      * <p>
@@ -48,20 +46,6 @@ public class GenericResultMessage extends MessageDecorator implements ResultMess
     public GenericResultMessage(@Nonnull MessageType type,
                                 @Nullable Object result) {
         this(type, result, Metadata.emptyInstance());
-    }
-
-    /**
-     * Constructs a {@link GenericResultMessage} for the given {@code type} and {@code exception}.
-     * <p>
-     * Uses the correlation data of the current Unit of Work, if present.
-     *
-     * @param type      The {@link MessageType type} for this {@link ResultMessage}.
-     * @param exception The {@link Throwable} describing the error representing the response of this
-     *                  {@link ResultMessage}.
-     */
-    public GenericResultMessage(@Nonnull MessageType type,
-                                @Nonnull Throwable exception) {
-        this(type, exception, Metadata.emptyInstance());
     }
 
     /**
@@ -78,20 +62,6 @@ public class GenericResultMessage extends MessageDecorator implements ResultMess
     }
 
     /**
-     * Constructs a {@code GenericResultMessage} for the given {@code type}, {@code exception}, and {@code metadata}.
-     *
-     * @param type      The {@link MessageType type} for this {@link ResultMessage}.
-     * @param exception The {@link Throwable} describing the error representing the response of this
-     *                  {@link ResultMessage}.
-     * @param metadata  The metadata for this {@link ResultMessage}.
-     */
-    public GenericResultMessage(@Nonnull MessageType type,
-                                @Nonnull Throwable exception,
-                                @Nonnull Map<String, String> metadata) {
-        this(new GenericMessage(type, null, metadata), exception);
-    }
-
-    /**
      * Constructs a {@code GenericResultMessage} for the given {@code delegate}, intended to reconstruct another
      * {@link ResultMessage}.
      * <p>
@@ -103,26 +73,7 @@ public class GenericResultMessage extends MessageDecorator implements ResultMess
      *                 {@link QueryResponseMessage} to reconstruct.
      */
     public GenericResultMessage(@Nonnull Message delegate) {
-        this(delegate, GenericResultMessage.findExceptionResult(delegate));
-    }
-
-    /**
-     * Constructs a {@code GenericResultMessage} for the given {@code delegate} and {@code exception} as a cause for the
-     * failure, intended to reconstruct another {@link ResultMessage}.
-     * <p>
-     * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
-     * of Work.
-     *
-     * @param delegate  The {@link Message} containing {@link Message#payload() payload}, {@link Message#type() type},
-     *                  {@link Message#identifier() identifier} and {@link Message#metadata() metadata} for the
-     *                  {@link QueryResponseMessage} to reconstruct.
-     * @param exception The {@link Throwable} describing the error representing the response of this
-     *                  {@link ResultMessage}.
-     */
-    public GenericResultMessage(@Nonnull Message delegate,
-                                @Nullable Throwable exception) {
         super(delegate);
-        this.exception = exception;
     }
 
     /**
@@ -146,50 +97,19 @@ public class GenericResultMessage extends MessageDecorator implements ResultMess
             return new GenericResultMessage(resultMessage);
         }
         MessageType type = result == null ? new MessageType("empty.result") : new MessageType(result.getClass());
-
         return new GenericResultMessage(type, result);
-    }
-
-    /**
-     * Creates a ResultMessage with the given {@code exception} result.
-     *
-     * @param exception the Exception describing the cause of an error
-     * @return a message containing exception result
-     * @deprecated In favor of using the constructor, as we intend to enforce thinking about the
-     * {@link MessageType type}.
-     */
-    @Deprecated
-    public static ResultMessage asResultMessage(Throwable exception) {
-        return new GenericResultMessage(new MessageType(exception.getClass()), exception);
-    }
-
-    private static Throwable findExceptionResult(Message delegate) {
-        if (delegate instanceof ResultMessage && ((ResultMessage) delegate).isExceptional()) {
-            return ((ResultMessage) delegate).exceptionResult();
-        }
-        return null;
-    }
-
-    @Override
-    public boolean isExceptional() {
-        return exception != null;
-    }
-
-    @Override
-    public Optional<Throwable> optionalExceptionResult() {
-        return Optional.ofNullable(exception);
     }
 
     @Override
     @Nonnull
     public ResultMessage withMetadata(@Nonnull Map<String, String> metadata) {
-        return new GenericResultMessage(delegate().withMetadata(metadata), exception);
+        return new GenericResultMessage(delegate().withMetadata(metadata));
     }
 
     @Override
     @Nonnull
     public ResultMessage andMetadata(@Nonnull Map<String, String> metadata) {
-        return new GenericResultMessage(delegate().andMetadata(metadata), exception);
+        return new GenericResultMessage(delegate().andMetadata(metadata));
     }
 
     @Override
@@ -204,41 +124,11 @@ public class GenericResultMessage extends MessageDecorator implements ResultMess
                                                     delegate.type(),
                                                     convertedPayload,
                                                     delegate.metadata());
-        return optionalExceptionResult().isPresent()
-                ? new GenericResultMessage(converted, optionalExceptionResult().get())
-                : new GenericResultMessage(converted);
-    }
-
-    @Override
-    protected void describeTo(StringBuilder stringBuilder) {
-        stringBuilder.append("payload={")
-                     .append(isExceptional() ? null : payload())
-                     .append('}')
-                     .append(", metadata={")
-                     .append(metadata())
-                     .append('}')
-                     .append(", messageIdentifier='")
-                     .append(identifier())
-                     .append('\'')
-                     .append(", exception='")
-                     .append(exception)
-                     .append('\'');
+        return new GenericResultMessage(converted);
     }
 
     @Override
     protected String describeType() {
         return "GenericResultMessage";
-    }
-
-    @Override
-    public Object payload() {
-        if (isExceptional()) {
-            throw new IllegalPayloadAccessException(
-                    "This result completed exceptionally, payload is not available. "
-                            + "Try calling 'exceptionResult' to see the cause of failure.",
-                    exception
-            );
-        }
-        return super.payload();
     }
 }
