@@ -30,6 +30,7 @@ import org.axonframework.queryhandling.gateway.QueryGateway;
 import org.axonframework.serialization.Converter;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
+import reactor.util.concurrent.Queues;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -136,6 +137,12 @@ public class DefaultQueryGateway implements QueryGateway {
 
     @Nonnull
     @Override
+    public <R> Publisher<R> subscriptionQuery(@Nonnull Object query, @Nonnull Class<R> responseType) {
+        return subscriptionQuery(query, responseType, m -> m.payloadAs(responseType, converter), null, Queues.SMALL_BUFFER_SIZE);
+    }
+
+    @Nonnull
+    @Override
     public <R> Publisher<R> subscriptionQuery(@Nonnull Object query,
                                               @Nonnull Class<R> responseType,
                                               @Nullable ProcessingContext context,
@@ -144,6 +151,18 @@ public class DefaultQueryGateway implements QueryGateway {
                                  responseType,
                                  m -> m.payloadAs(responseType, converter),
                                  context,
+                                 updateBufferSize);
+    }
+
+    @Nonnull
+    @Override
+    public <R> Publisher<R> subscriptionQuery(@Nonnull Object query,
+                                              @Nonnull Class<R> responseType,
+                                              int updateBufferSize) {
+        return subscriptionQuery(query,
+                                 responseType,
+                                 m -> m.payloadAs(responseType, converter),
+                                 null,
                                  updateBufferSize);
     }
 
