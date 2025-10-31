@@ -123,20 +123,21 @@ class SplitTask extends CoordinatorTask {
     }
 
     private boolean splitAndRelease(Segment segmentToSplit) {
-        transactionManager.executeInTransaction(() -> {
-            TrackingToken tokenToSplit = tokenStore.fetchToken(name, segmentToSplit.getSegmentId());
-            TrackerStatus[] splitStatuses = TrackerStatus.split(segmentToSplit, tokenToSplit);
-            tokenStore.initializeSegment(
-                    splitStatuses[1].getInternalTrackingToken(), name, splitStatuses[1].getSegment().getSegmentId()
-            );
-            tokenStore.releaseClaim(name, splitStatuses[0].getSegment().getSegmentId());
-            logger.info("Processor [{}] successfully split {} into {} and {}.",
-                        name, segmentToSplit, splitStatuses[0].getSegment(), splitStatuses[1].getSegment());
-        });
-
-        // Remove the segment from the releases deadlines to allow the Coordinator to claim the split segments
-        releasesDeadlines.remove(segmentToSplit.getSegmentId());
-
+        try {
+            transactionManager.executeInTransaction(() -> {
+                TrackingToken tokenToSplit = tokenStore.fetchToken(name, segmentToSplit.getSegmentId());
+                TrackerStatus[] splitStatuses = TrackerStatus.split(segmentToSplit, tokenToSplit);
+                tokenStore.initializeSegment(
+                        splitStatuses[1].getInternalTrackingToken(), name, splitStatuses[1].getSegment().getSegmentId()
+                );
+                tokenStore.releaseClaim(name, splitStatuses[0].getSegment().getSegmentId());
+                logger.info("Processor [{}] successfully split {} into {} and {}.",
+                            name, segmentToSplit, splitStatuses[0].getSegment(), splitStatuses[1].getSegment());
+            });
+        } finally {
+            // Remove the segment from the releases deadlines to allow the Coordinator to claim the split segments
+            releasesDeadlines.remove(segmentToSplit.getSegmentId());
+        }
         return true;
     }
 

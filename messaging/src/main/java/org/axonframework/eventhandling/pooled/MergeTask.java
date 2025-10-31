@@ -141,26 +141,28 @@ class MergeTask extends CoordinatorTask {
 
     private Boolean mergeSegments(Segment thisSegment, TrackingToken thisToken,
                                   Segment thatSegment, TrackingToken thatToken) {
-        Segment mergedSegment = thisSegment.mergedWith(thatSegment);
-        // We want to keep the token with the segmentId obtained by the merge operation, and to delete the other
-        int tokenToDelete = mergedSegment.getSegmentId() == thisSegment.getSegmentId()
-                ? thatSegment.getSegmentId() : thisSegment.getSegmentId();
-        TrackingToken mergedToken = thatSegment.getSegmentId() < thisSegment.getSegmentId()
-                ? MergedTrackingToken.merged(thatToken, thisToken)
-                : MergedTrackingToken.merged(thisToken, thatToken);
+        try {
+            Segment mergedSegment = thisSegment.mergedWith(thatSegment);
+            // We want to keep the token with the segmentId obtained by the merge operation, and to delete the other
+            int tokenToDelete = mergedSegment.getSegmentId() == thisSegment.getSegmentId()
+                    ? thatSegment.getSegmentId() : thisSegment.getSegmentId();
+            TrackingToken mergedToken = thatSegment.getSegmentId() < thisSegment.getSegmentId()
+                    ? MergedTrackingToken.merged(thatToken, thisToken)
+                    : MergedTrackingToken.merged(thisToken, thatToken);
 
-        transactionManager.executeInTransaction(() -> {
-            tokenStore.deleteToken(name, tokenToDelete);
-            tokenStore.storeToken(mergedToken, name, mergedSegment.getSegmentId());
-            tokenStore.releaseClaim(name, mergedSegment.getSegmentId());
-        });
+            transactionManager.executeInTransaction(() -> {
+                tokenStore.deleteToken(name, tokenToDelete);
+                tokenStore.storeToken(mergedToken, name, mergedSegment.getSegmentId());
+                tokenStore.releaseClaim(name, mergedSegment.getSegmentId());
+            });
 
-        // Remove both segments from the releases deadlines to allow the Coordinator to claim the merged segment
-        releasesDeadlines.remove(thisSegment.getSegmentId());
-        releasesDeadlines.remove(thatSegment.getSegmentId());
-
-        logger.info("Processor [{}] successfully merged {} with {} into {}.",
-                    name, thisSegment, thatSegment, mergedSegment);
+            logger.info("Processor [{}] successfully merged {} with {} into {}.",
+                        name, thisSegment, thatSegment, mergedSegment);
+        } finally {
+            // Remove both segments from the releases deadlines to allow the Coordinator to claim the merged segment
+            releasesDeadlines.remove(thisSegment.getSegmentId());
+            releasesDeadlines.remove(thatSegment.getSegmentId());
+        }
         return true;
     }
 
