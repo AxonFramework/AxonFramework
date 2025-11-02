@@ -86,8 +86,8 @@
         <c3p0.version>0.9.1.2</c3p0.version>
         <hikari.version>7.0.2</hikari.version>
         <hsqldb.version>2.7.2</hsqldb.version>
-        <hibernate-core.version>7.1.4.Final</hibernate-core.version>
-        <mysql-connector-java.version>9.4.0</mysql-connector-java.version>
+        <hibernate-core.version>7.1.6.Final</hibernate-core.version>
+        <mysql-connector-java.version>9.5.0</mysql-connector-java.version>
         <postgresql.version>42.7.8</postgresql.version>
         <!-- Jakarta -->
         <jakarta.annotation.version>3.0.0</jakarta.annotation.version>
@@ -101,7 +101,7 @@
         <slf4j.version>2.0.17</slf4j.version>
         <!-- Metrics -->
         <dropwizard.metrics.version>4.2.37</dropwizard.metrics.version>
-        <micrometer.version>1.15.4</micrometer.version>
+        <micrometer.version>1.15.5</micrometer.version>
         <!-- Other -->
         <byte-buddy.version>1.17.8</byte-buddy.version>
         <commons-io.version>2.20.0</commons-io.version>
@@ -109,29 +109,29 @@
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
         <javassist.version>3.30.2-GA</javassist.version>
         <eaio-uuid.version>3.2</eaio-uuid.version>
-        <equalsverifier.version>4.2</equalsverifier.version>
+        <equalsverifier.version>4.2.1</equalsverifier.version>
         <!-- Reactive -->
-        <projectreactor.version>3.7.11</projectreactor.version>
+        <projectreactor.version>3.7.12</projectreactor.version>
         <reactive.streams.spec.version>1.0.4</reactive.streams.spec.version>
         <!-- Conversion -->
-        <avro.version>1.12.0</avro.version>
+        <avro.version>1.12.1</avro.version>
         <dom4j.version>2.2.0</dom4j.version>
         <gson.version>2.13.2</gson.version>
-        <jackson.version>2.20.0</jackson.version>
+        <jackson.version>2.20.1</jackson.version>
         <!-- Scheduling -->
         <db-scheduler.version>13.0.0</db-scheduler.version>
         <jobrunr.version>8.1.0</jobrunr.version>
-        <quartz.version>2.5.0</quartz.version>
+        <quartz.version>2.5.1</quartz.version>
         <!-- Spring -->
-        <spring.version>6.2.11</spring.version>
-        <spring.boot.version>3.5.6</spring.boot.version>
-        <spring-security.version>6.5.5</spring-security.version>
+        <spring.version>6.2.12</spring.version>
+        <spring.boot.version>3.5.7</spring.boot.version>
+        <spring-security.version>6.5.6</spring-security.version>
         <!-- Testing -->
         <awaitility.version>4.3.0</awaitility.version>
         <hamcrest.version>3.0</hamcrest.version>
-        <junit.jupiter.version>6.0.0</junit.jupiter.version>
+        <junit.jupiter.version>6.0.1</junit.jupiter.version>
         <mockito.version>5.20.0</mockito.version>
-        <testcontainers.version>1.21.3</testcontainers.version>
+        <testcontainers.version>2.0.1</testcontainers.version>
         <assertj.version>3.27.6</assertj.version>
         <!-- Validation -->
         <hibernate-validator.version>9.0.1.Final</hibernate-validator.version>
