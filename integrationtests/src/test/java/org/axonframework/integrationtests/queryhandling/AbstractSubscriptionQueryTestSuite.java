@@ -221,17 +221,19 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         );
         MessageStream<QueryResponseMessage> result = queryBus.subscriptionQuery(queryMessage, null, 50);
         // when...
-        testUoW.onInvocation(context -> queryBus.emitUpdate(testFilter, () -> testUpdate, context));
+        testUoW.runOnInvocation(context -> queryBus.emitUpdate(testFilter, () -> testUpdate, context).join());
         // then, before we commit, we don't have anything yet...
         List<String> updateList = new ArrayList<>();
         FluxUtils.of(result)
                  .filter(e -> e.message() instanceof SubscriptionQueryUpdateMessage)
-                 .mapNotNull(e -> e.message().payloadAs(String.class, CONVERTER)).subscribe(updateList::add);
+                 .mapNotNull(e -> e.message().payloadAs(String.class, CONVERTER))
+                 .subscribe(updateList::add);
         assertTrue(updateList.isEmpty());
         // when we execute the UoW, it commits...
         testUoW.execute().join();
         // then...
         Awaitility.await()
+                  .atMost(Duration.ofSeconds(5))
                   .untilAsserted(() -> assertEquals(expectedUpdates, updateList));
     }
 
@@ -402,22 +404,22 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         // when...
         MessageStream<QueryResponseMessage> result = queryBus.subscriptionQuery(queryMessage, null, 50);
         testUoW.runOnInvocation(context -> {
-            queryBus.emitUpdate(testFilter, () -> testUpdate, context);
-            queryBus.completeSubscriptions(testFilter, context);
+            queryBus.emitUpdate(testFilter, () -> testUpdate, context).join();
+            queryBus.completeSubscriptions(testFilter, context).join();
         });
         // when...
-        testUoW.onInvocation(context -> queryBus.emitUpdate(testFilter, () -> testUpdate, context));
+        testUoW.runOnInvocation(context -> queryBus.emitUpdate(testFilter, () -> testUpdate, context).join());
         // then before we commit we don't have anything yet...
         List<String> updateList = new ArrayList<>();
         FluxUtils.of(result)
                  .filter(e -> e.message() instanceof SubscriptionQueryUpdateMessage)
-                 .mapNotNull(e -> e.message().payloadAs(String.class, CONVERTER)).subscribe(updateList::add);
+                 .mapNotNull(e -> e.message().payloadAs(String.class, CONVERTER))
+                 .subscribe(updateList::add);
         assertTrue(updateList.isEmpty());
         // when we execute the UoW, it commits...
         testUoW.execute().join();
         // then...
-        await().atMost(Duration.ofMillis(500))
-               .pollDelay(Duration.ofMillis(50))
+        await().atMost(Duration.ofSeconds(5))
                .untilAsserted(() -> assertEquals(expectedUpdates, updateList));
         assertTrue(result.isCompleted() && result.error().isEmpty());
     }
@@ -511,7 +513,8 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         return exception -> {
             if (exception instanceof QueryExecutionException qee) {
                 // QueryExecutionException was serialized, so we don't have an original Exception type
-                var queryExecutionCause = Optional.ofNullable(toBeThrown.getMessage()).orElse(toBeThrown.getClass().getSimpleName());
+                var queryExecutionCause = Optional.ofNullable(toBeThrown.getMessage()).orElse(toBeThrown.getClass()
+                                                                                                        .getSimpleName());
                 return qee.getCause().getMessage().contains(queryExecutionCause);
             }
             return exception.equals(toBeThrown);
@@ -537,9 +540,9 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
                 queryBus.emitUpdate(testFilter,
                                     () -> new GenericSubscriptionQueryUpdateMessage(TEST_UPDATE_PAYLOAD_TYPE,
                                                                                     "Update" + number),
-                                    testContext);
+                                    testContext).join();
             }
-            queryBus.completeSubscriptions(testFilter, testContext);
+            queryBus.completeSubscriptions(testFilter, testContext).join();
         });
         // then...
         StepVerifier.create(FluxUtils.of(result).map(MessageStream.Entry::message)
