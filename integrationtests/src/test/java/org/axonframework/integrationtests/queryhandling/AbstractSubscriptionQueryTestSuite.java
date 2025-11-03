@@ -256,9 +256,9 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         MessageStream<QueryResponseMessage> result =
                 queryBus.subscriptionQuery(queryMessage, null, Queues.SMALL_BUFFER_SIZE);
         scheduleAfterDelay(() -> {
-            queryBus.emitUpdate(testFilter, () -> testUpdateOne, testContext);
-            queryBus.completeSubscriptionsExceptionally(testFilter, toBeThrown, testContext);
-            queryBus.emitUpdate(testFilter, () -> testUpdateTwo, testContext);
+            queryBus.emitUpdate(testFilter, () -> testUpdateOne, testContext).join();
+            queryBus.completeSubscriptionsExceptionally(testFilter, toBeThrown, testContext).join();
+            queryBus.emitUpdate(testFilter, () -> testUpdateTwo, testContext).join();
         });
         // then
         StepVerifier.create(FluxUtils.of(result).map(MessageStream.Entry::message)
@@ -302,9 +302,11 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
                  .map(MessageStream.Entry::message)
                  .mapNotNull(m -> m.payloadAs(String.class, CONVERTER))
                  .subscribe(queryTwoUpdates::add, t -> queryTwoUpdates.add("Error2"));
-        queryBus.emitUpdate(testFilter, () -> testUpdateOne, testContext);
-        queryBus.completeSubscriptionsExceptionally(testFilter, new RuntimeException(), testContext);
-        queryBus.emitUpdate(testFilter, () -> testUpdateTwo, testContext);
+        scheduleAfterDelay(() -> {
+            queryBus.emitUpdate(testFilter, () -> testUpdateOne, testContext).join();
+            queryBus.completeSubscriptionsExceptionally(testFilter, new RuntimeException(), testContext).join();
+            queryBus.emitUpdate(testFilter, () -> testUpdateTwo, testContext).join();
+        });
         // then
         Awaitility
                 .await()
@@ -335,8 +337,8 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         // when staging the subscription query and updates...
         MessageStream<QueryResponseMessage> result = queryBus.subscriptionQuery(queryMessage, null, 50);
         testUoW.runOnInvocation(context -> {
-            queryBus.emitUpdate(testFilter, () -> testUpdate, context);
-            queryBus.completeSubscriptionsExceptionally(testFilter, new RuntimeException(), context);
+            queryBus.emitUpdate(testFilter, () -> testUpdate, context).join();
+            queryBus.completeSubscriptionsExceptionally(testFilter, new RuntimeException(), context).join();
         });
         // then before we commit we don't have any updates yet...
         Optional<MessageStream.Entry<QueryResponseMessage>> peeked = result
@@ -346,9 +348,13 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         // when we execute the UoW, it commits...
         testUoW.execute().join();
         // then...
-        assertEquals(TEST_QUERY_PAYLOAD,
-                     result.next().map(e -> e.message().payloadAs(String.class, CONVERTER)).orElse(null));
-        assertTrue(result.isCompleted() && result.error().isPresent());
+        Awaitility.await()
+                  .atMost(Duration.ofSeconds(5))
+                  .untilAsserted(() -> {
+                      assertEquals(TEST_QUERY_PAYLOAD,
+                                   result.next().map(e -> e.message().payloadAs(String.class, CONVERTER)).orElse(null));
+                      assertTrue(result.isCompleted() && result.error().isPresent());
+                  });
     }
 
     @SuppressWarnings("ConstantValue")
@@ -505,7 +511,8 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         return exception -> {
             if (exception instanceof QueryExecutionException qee) {
                 // QueryExecutionException was serialized, so we don't have an original Exception type
-                return qee.getCause().getMessage().contains(toBeThrown.getMessage());
+                var queryExecutionCause = Optional.ofNullable(toBeThrown.getMessage()).orElse(toBeThrown.getClass().getSimpleName());
+                return qee.getCause().getMessage().contains(queryExecutionCause);
             }
             return exception.equals(toBeThrown);
         };
