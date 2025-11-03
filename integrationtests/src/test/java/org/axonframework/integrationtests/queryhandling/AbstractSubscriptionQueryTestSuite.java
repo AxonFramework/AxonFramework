@@ -116,9 +116,9 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
     private static boolean assertRecorded(Collection<QueryResponseMessage> elements) {
         LinkedList<QueryResponseMessage> recordedMessages = new LinkedList<>(elements);
         assert recordedMessages.peekFirst() != null;
-        boolean firstIs101 = "Update0".equals(recordedMessages.peekFirst().payload());
+        boolean firstIs101 = "Update0".equals(recordedMessages.peekFirst().payloadAs(String.class, CONVERTER));
         assert recordedMessages.peekLast() != null;
-        boolean lastIs200 = "Update99".equals(recordedMessages.peekLast().payload());
+        boolean lastIs200 = "Update99".equals(recordedMessages.peekLast().payloadAs(String.class, CONVERTER));
         return elements.size() == 100 && firstIs101 && lastIs200;
     }
 
