@@ -71,7 +71,7 @@ final class PropertySequencingPolicyTest {
         );
 
         assertThrows(ConversionException.class,
-                     () -> sequencingPolicy.getSequenceIdengit tifierFor(anEvent("42"), aProcessingContext()));
+                     () -> sequencingPolicy.getSequenceIdentifierFor(anEvent("42"), aProcessingContext()));
     }
 
     @Test
