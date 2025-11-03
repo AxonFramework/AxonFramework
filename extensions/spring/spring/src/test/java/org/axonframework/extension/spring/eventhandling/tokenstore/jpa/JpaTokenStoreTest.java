@@ -26,7 +26,6 @@ import org.axonframework.eventhandling.processors.streaming.token.store.jpa.JpaT
 import org.axonframework.eventhandling.processors.streaming.token.store.jpa.JpaTokenStoreConfiguration;
 import org.axonframework.eventhandling.processors.streaming.token.store.jpa.TokenEntry;
 import org.axonframework.serialization.TestConverter;
-import org.axonframework.serialization.json.JacksonSerializer;
 import org.hibernate.dialect.HSQLDialect;
 import org.hibernate.jpa.HibernatePersistenceProvider;
 import org.junit.jupiter.api.*;

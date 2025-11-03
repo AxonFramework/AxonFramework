@@ -39,6 +39,7 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * @author Marc Gathier
  * @since 4.0
  */
+@Deprecated(forRemoval = true, since = "5.0.0")
 public class GrpcMetadataConverter {
 
     private final Serializer serializer;

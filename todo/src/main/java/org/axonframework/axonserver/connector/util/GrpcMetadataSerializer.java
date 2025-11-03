@@ -29,6 +29,7 @@ import java.util.function.Function;
  * @author Sara Pellegrini
  * @since 4.0
  */
+@Deprecated(forRemoval = true, since = "5.0.0")
 public class GrpcMetadataSerializer implements Function<Metadata, Map<String, MetaDataValue>> {
 
     private final GrpcMetadataConverter metadataConverter;

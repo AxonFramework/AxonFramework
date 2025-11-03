@@ -29,6 +29,7 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * @author Sara Pellegrini
  * @since 4.0
  */
+@Deprecated(forRemoval = true, since = "5.0.0")
 public class GrpcObjectSerializer<O> implements Function<O, io.axoniq.axonserver.grpc.SerializedObject> {
 
     /**
