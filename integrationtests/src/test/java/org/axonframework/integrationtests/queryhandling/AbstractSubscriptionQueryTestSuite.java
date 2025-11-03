@@ -581,8 +581,8 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         ProcessingContext testContext = null;
         MessageStream<QueryResponseMessage> result = queryBus.subscriptionQuery(queryMessage, null, 50);
         // when...
-        scheduleAfterDelay(() -> {
-            queryBus.emitUpdate(testFilter, () -> testUpdateOne, testContext);
+        scheduleAfterDelay(() -> queryBus.emitUpdate(testFilter, () -> testUpdateOne, testContext));
+        scheduleAfterDelay(() -> { // we give the update a time to be processed before disposing the subscription...
             result.close();
             queryBus.emitUpdate(testFilter, () -> testUpdateTwo, testContext);
         });
