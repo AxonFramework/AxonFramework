@@ -18,6 +18,7 @@ package org.axonframework.integrationtests.queryhandling;
 
 import jakarta.annotation.Nonnull;
 import org.assertj.core.util.Strings;
+import org.awaitility.Awaitility;
 import org.axonframework.messaging.FluxUtils;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
@@ -230,7 +231,8 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         // when we execute the UoW, it commits...
         testUoW.execute().join();
         // then...
-        assertEquals(expectedUpdates, updateList);
+        Awaitility.await()
+                  .untilAsserted(() -> assertEquals(expectedUpdates, updateList));
     }
 
     @SuppressWarnings("ConstantValue")
@@ -268,7 +270,7 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
 
     @SuppressWarnings("ConstantValue")
     @Test
-    void completingSubscriptionQueryExceptionallyWhenOneOfSubscriptionFails() {
+    void completingSubscriptionQueryExceptionallyWhenOneOfSubscriptionFails() throws InterruptedException {
         // given
         QueryMessage queryMessage1 = new GenericQueryMessage(
                 CHAT_MESSAGES_QUERY_TYPE, TEST_QUERY_PAYLOAD
@@ -300,14 +302,22 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
                  .map(MessageStream.Entry::message)
                  .mapNotNull(m -> m.payloadAs(String.class, CONVERTER))
                  .subscribe(queryTwoUpdates::add, t -> queryTwoUpdates.add("Error2"));
-        scheduleAfterDelay(() -> {
-            queryBus.emitUpdate(testFilter, () -> testUpdateOne, testContext);
-            queryBus.completeSubscriptionsExceptionally(testFilter, new RuntimeException(), testContext);
-            queryBus.emitUpdate(testFilter, () -> testUpdateTwo, testContext);
-        });
+        queryBus.emitUpdate(testFilter, () -> testUpdateOne, testContext);
+        queryBus.completeSubscriptionsExceptionally(testFilter, new RuntimeException(), testContext);
+        queryBus.emitUpdate(testFilter, () -> testUpdateTwo, testContext);
         // then
-        assertEquals(Arrays.asList("Message1", "Message2", "Message3", "Update1", "Error1"), queryOneUpdates);
-        assertEquals(Arrays.asList("Message1", "Message2", "Message3", "Update1", "Error2"), queryTwoUpdates);
+        Awaitility
+                .await()
+                .untilAsserted(() -> {
+                    assertEquals(
+                            Arrays.asList("Message1", "Message2", "Message3", "Update1", "Error1"),
+                            queryOneUpdates
+                    );
+                    assertEquals(
+                            Arrays.asList("Message1", "Message2", "Message3", "Update1", "Error2"),
+                            queryTwoUpdates
+                    );
+                });
     }
 
     @Test
@@ -452,6 +462,7 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         return TEST_QUERY_PAYLOAD.equals(CONVERTER.convert(o, String.class));
     }
 
+    //fixme: SimpleQueryBus throws for duplicated subscriptions, how it should work with AxonServer?
     @Test
     void doubleSubscriptionMessage() {
         // given

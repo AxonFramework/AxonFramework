@@ -37,7 +37,6 @@ import java.io.IOException;
  * @author Milan Savic
  * @author Steven van Beelen
  */
-@Disabled("TODO #3809 - enable this test after fix")
 @Testcontainers
 public class DistributedQueryBusSubscriptionQueryTest extends AbstractSubscriptionQueryTestSuite {
 
