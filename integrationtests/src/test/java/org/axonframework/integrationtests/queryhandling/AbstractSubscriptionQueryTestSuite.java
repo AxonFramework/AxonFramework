@@ -736,7 +736,7 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         CompletableFuture<String> future = stream.first().asCompletableFuture()
                                                  .thenApply(e -> e.message().payloadAs(String.class, CONVERTER));
         scheduleAfterDelay(() -> queryBus.completeSubscriptions(message -> true, null));
-        assertNull(future.get());
+        assertNull(future.get()); // fixme: there is a difference between Distributed (we convert: null -> bytes[0] -> string) we ends with empty string and the Local (we just pass null)
     }
 
     @Test
