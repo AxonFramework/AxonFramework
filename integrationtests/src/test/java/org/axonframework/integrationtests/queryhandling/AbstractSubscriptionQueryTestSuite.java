@@ -16,6 +16,7 @@
 
 package org.axonframework.integrationtests.queryhandling;
 
+import jakarta.annotation.Nonnull;
 import org.assertj.core.util.Strings;
 import org.axonframework.messaging.FluxUtils;
 import org.axonframework.messaging.MessageStream;
@@ -261,7 +262,7 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         StepVerifier.create(FluxUtils.of(result).map(MessageStream.Entry::message)
                                      .mapNotNull(m -> m.payloadAs(String.class, CONVERTER)))
                     .expectNext("Message1", "Message2", "Message3", "Update1")
-                    .expectErrorMatches(toBeThrown::equals)
+                    .expectErrorMatches(assertQueryExecutionException(toBeThrown))
                     .verify();
     }
 
@@ -484,14 +485,19 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         MessageStream<QueryResponseMessage> result = queryBus.subscriptionQuery(queryMessage, null, 50);
         // then
         StepVerifier.create(FluxUtils.of(result).map(MessageStream.Entry::message))
-                    .expectErrorMatches(exception -> {
-                        if (exception instanceof QueryExecutionException qee) {
-                            // QueryExecutionException was serialized, so we don't have an original Exception type
-                            return qee.getCause().getMessage().contains(toBeThrown.getMessage());
-                        }
-                        return false;
-                    })
+                    .expectErrorMatches(assertQueryExecutionException(toBeThrown))
                     .verify();
+    }
+
+    @Nonnull
+    private Predicate<Throwable> assertQueryExecutionException(Throwable toBeThrown) {
+        return exception -> {
+            if (exception instanceof QueryExecutionException qee) {
+                // QueryExecutionException was serialized, so we don't have an original Exception type
+                return qee.getCause().getMessage().contains(toBeThrown.getMessage());
+            }
+            return exception.equals(toBeThrown);
+        };
     }
 
     @SuppressWarnings("ConstantValue")
