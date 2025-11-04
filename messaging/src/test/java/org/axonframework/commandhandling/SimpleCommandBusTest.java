@@ -29,7 +29,7 @@ import org.axonframework.messaging.unitofwork.ProcessingLifecycleHandlerRegistra
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
-import org.axonframework.utils.MockException;
+import org.axonframework.common.utils.MockException;
 import org.junit.jupiter.api.*;
 
 import java.util.Collections;

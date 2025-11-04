@@ -18,6 +18,7 @@ package org.axonframework.extension.spring.config;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotations.Internal;
+import org.axonframework.common.configuration.LifecycleHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.SmartLifecycle;
@@ -31,7 +32,7 @@ import java.util.function.Supplier;
 
 /**
  * A {@link SmartLifecycle} implementation wrapping a
- * {@link org.axonframework.configuration.LifecycleHandler shutdown-specific lifecycle handler} to allow it to be
+ * {@link LifecycleHandler shutdown-specific lifecycle handler} to allow it to be
  * managed by Spring.
  *
  * @author Allard Buijze

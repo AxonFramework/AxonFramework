@@ -18,7 +18,7 @@ package org.axonframework.commandhandling.gateway;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.DescribableComponent;
-import org.axonframework.configuration.Configuration;
+import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.annotations.MessageHandler;

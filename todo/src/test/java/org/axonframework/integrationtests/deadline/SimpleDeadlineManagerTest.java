@@ -16,7 +16,7 @@
 
 package org.axonframework.integrationtests.deadline;
 
-import org.axonframework.configuration.Configuration;
+import org.axonframework.common.configuration.Configuration;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineManagerSpanFactory;
 import org.axonframework.deadline.SimpleDeadlineManager;

@@ -18,11 +18,7 @@ package org.axonframework.test.fixture;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.configuration.AxonConfiguration;
-import org.axonframework.messaging.MessageStream;
-import org.hamcrest.StringDescription;
-
-import java.util.function.Consumer;
+import org.axonframework.common.configuration.AxonConfiguration;
 
 /**
  * Implementation of the {@link AxonTestThenMessage then-message-phase} for

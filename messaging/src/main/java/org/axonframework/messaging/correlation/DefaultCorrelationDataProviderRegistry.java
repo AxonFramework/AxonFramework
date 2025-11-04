@@ -18,9 +18,9 @@ package org.axonframework.messaging.correlation;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotations.Internal;
-import org.axonframework.configuration.ComponentBuilder;
-import org.axonframework.configuration.ComponentDefinition;
-import org.axonframework.configuration.Configuration;
+import org.axonframework.common.configuration.ComponentBuilder;
+import org.axonframework.common.configuration.ComponentDefinition;
+import org.axonframework.common.configuration.Configuration;
 
 import java.util.ArrayList;
 import java.util.List;

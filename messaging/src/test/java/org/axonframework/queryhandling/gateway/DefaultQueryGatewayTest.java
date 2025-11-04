@@ -30,7 +30,7 @@ import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryPriorityCalculator;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.serialization.PassThroughConverter;
-import org.axonframework.utils.MockException;
+import org.axonframework.common.utils.MockException;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 import org.reactivestreams.Publisher;

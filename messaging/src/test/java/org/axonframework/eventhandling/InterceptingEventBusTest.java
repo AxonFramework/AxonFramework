@@ -24,7 +24,7 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
-import org.axonframework.utils.MockException;
+import org.axonframework.common.utils.MockException;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -138,7 +138,7 @@ class InterceptingEventBusTest {
     @Test
     void delegateSubscribeDirectly() {
         // given
-        BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> testConsumer = 
+        BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> testConsumer =
             (events, context) -> CompletableFuture.completedFuture(null);
         Registration testRegistration = mock(Registration.class);
         when(eventBus.subscribe(any())).thenReturn(testRegistration);

@@ -17,14 +17,13 @@
 package org.axonframework.integrationtests.deadline.jobrunr;
 
 import org.axonframework.common.transaction.NoTransactionManager;
-import org.axonframework.configuration.Configuration;
+import org.axonframework.common.configuration.Configuration;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineManagerSpanFactory;
 import org.axonframework.deadline.jobrunr.JobRunrDeadlineManager;
 import org.axonframework.integrationtests.deadline.AbstractDeadlineManagerTestSuite;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.modelling.command.AggregateScopeDescriptor;
-import org.axonframework.serialization.TestConverter;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.jobrunr.configuration.JobRunr;
 import org.jobrunr.scheduling.JobScheduler;

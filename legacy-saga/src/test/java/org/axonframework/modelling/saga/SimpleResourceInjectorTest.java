@@ -20,7 +20,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.inject.Inject;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.utils.MockException;
+import org.axonframework.common.utils.MockException;
 import org.junit.jupiter.api.*;
 
 import java.util.function.Consumer;

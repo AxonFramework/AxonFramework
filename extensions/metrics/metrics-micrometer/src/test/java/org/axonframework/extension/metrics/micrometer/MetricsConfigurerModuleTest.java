@@ -16,7 +16,7 @@
 
 package org.axonframework.extension.metrics.micrometer;
 
-import org.axonframework.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.ComponentRegistry;
 import org.junit.jupiter.api.*;
 
 import static org.mockito.Mockito.*;

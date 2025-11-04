@@ -18,16 +18,13 @@ package org.axonframework.modelling.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.configuration.CommandHandlingModule;
-import org.axonframework.configuration.ApplicationConfigurer;
-import org.axonframework.configuration.AxonConfiguration;
-import org.axonframework.configuration.Component;
-import org.axonframework.configuration.ComponentDecorator;
-import org.axonframework.configuration.ComponentRegistry;
-import org.axonframework.configuration.ConfigurationEnhancer;
-import org.axonframework.configuration.LifecycleRegistry;
-import org.axonframework.configuration.MessagingConfigurer;
-import org.axonframework.configuration.Module;
-import org.axonframework.configuration.ModuleBuilder;
+import org.axonframework.common.configuration.*;
+import org.axonframework.common.configuration.Module;
+import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.common.configuration.AxonConfiguration;
+import org.axonframework.common.configuration.ComponentDecorator;
+import org.axonframework.common.configuration.LifecycleRegistry;
+import org.axonframework.common.configuration.ModuleBuilder;
 import org.axonframework.queryhandling.configuration.QueryHandlingModule;
 
 import java.util.Objects;
@@ -132,7 +129,7 @@ public class ModellingConfigurer implements ApplicationConfigurer {
     }
 
     /**
-     * Registers the given {@code entityModule} on the root-level {@link org.axonframework.configuration.Configuration}.
+     * Registers the given {@code entityModule} on the root-level {@link Configuration}.
      * This will make the entity available in the globally available {@link org.axonframework.modelling.StateManager}.
      *
      * @param entityModule The entity module to register.

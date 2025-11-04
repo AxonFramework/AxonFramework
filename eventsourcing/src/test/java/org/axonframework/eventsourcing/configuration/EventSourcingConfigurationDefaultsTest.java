@@ -17,9 +17,9 @@
 package org.axonframework.eventsourcing.configuration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.configuration.ApplicationConfigurer;
-import org.axonframework.configuration.Configuration;
-import org.axonframework.configuration.MessagingConfigurer;
+import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.configuration.MessagingConfigurer;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;

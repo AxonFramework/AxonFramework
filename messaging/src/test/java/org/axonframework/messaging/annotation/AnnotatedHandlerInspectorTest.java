@@ -30,7 +30,7 @@ import org.axonframework.messaging.annotations.MethodInvokingMessageHandlingMemb
 import org.axonframework.messaging.annotations.ParameterResolverFactory;
 import org.axonframework.messaging.interceptors.annotations.MessageHandlerInterceptor;
 import org.axonframework.messaging.interceptors.annotations.MessageHandlerInterceptorMemberChain;
-import org.axonframework.utils.MockException;
+import org.axonframework.common.utils.MockException;
 import org.junit.jupiter.api.*;
 import org.mockito.internal.util.collections.*;
 

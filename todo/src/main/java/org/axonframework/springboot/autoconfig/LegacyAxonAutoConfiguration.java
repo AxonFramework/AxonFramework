@@ -18,7 +18,7 @@ package org.axonframework.springboot.autoconfig;
 
 import org.axonframework.axonserver.connector.TagsConfiguration;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.configuration.Configuration;
+import org.axonframework.common.configuration.Configuration;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.snapshotting.AggregateSnapshotter;
 import org.axonframework.eventsourcing.snapshotting.Snapshotter;

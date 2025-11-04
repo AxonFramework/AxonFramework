@@ -18,7 +18,7 @@ package org.axonframework.modelling.configuration;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandlingComponent;
-import org.axonframework.configuration.AxonConfiguration;
+import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.correlation.CorrelationDataProviderRegistry;

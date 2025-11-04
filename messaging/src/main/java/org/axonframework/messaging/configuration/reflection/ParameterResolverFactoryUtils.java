@@ -17,10 +17,10 @@
 package org.axonframework.messaging.configuration.reflection;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.configuration.ComponentDecorator;
-import org.axonframework.configuration.ComponentRegistry;
-import org.axonframework.configuration.Configuration;
-import org.axonframework.configuration.SearchScope;
+import org.axonframework.common.configuration.ComponentDecorator;
+import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.configuration.SearchScope;
 import org.axonframework.messaging.annotations.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotations.ParameterResolverFactory;
 

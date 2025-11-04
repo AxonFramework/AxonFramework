@@ -18,7 +18,7 @@ package org.axonframework.eventhandling.configuration;
 
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.configuration.Configuration;
+import org.axonframework.common.configuration.Configuration;
 
 import java.util.Objects;
 import java.util.function.BiFunction;

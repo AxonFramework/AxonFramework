@@ -17,13 +17,14 @@
 package org.axonframework.common.infra;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.configuration.Component;
 
 /**
  * Contract allowing components {@link #describeTo(ComponentDescriptor) to describe} themselves with a given
  * {@link ComponentDescriptor}.
  * <p>
  * Components should focus on providing their internal state and structure to the
- * {@link org.axonframework.configuration.Component} without concern for how that information will be serialized or
+ * {@link Component} without concern for how that information will be serialized or
  * displayed. This separation of concerns allows for multiple output formats from the same component hierarchy.
  *
  * @author Allard Buijze

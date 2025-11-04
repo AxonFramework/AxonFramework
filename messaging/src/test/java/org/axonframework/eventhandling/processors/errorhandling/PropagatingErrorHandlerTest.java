@@ -18,7 +18,7 @@ package org.axonframework.eventhandling.processors.errorhandling;
 
 import org.axonframework.eventhandling.processors.EventProcessingException;
 import org.axonframework.messaging.Context;
-import org.axonframework.utils.MockException;
+import org.axonframework.common.utils.MockException;
 import org.junit.jupiter.api.*;
 
 import java.util.Collections;

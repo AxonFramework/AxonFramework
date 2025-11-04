@@ -17,7 +17,8 @@
 package org.axonframework.monitoring;
 
 import org.axonframework.common.Assert;
-import org.axonframework.configuration.Configuration;
+import org.axonframework.common.configuration.Component;
+import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.Message;
 
 import java.util.Comparator;
@@ -30,7 +31,7 @@ import java.util.function.Function;
 
 /**
  * Class used by {@code LegacyDefaultConfigurer} to maintain the configuration for Message Monitors and create the
- * function used in the {@link org.axonframework.configuration.Component}.
+ * function used in the {@link Component}.
  */
 class MessageMonitorFactoryBuilder {
 

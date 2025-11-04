@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing.annotations.reflection;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.configuration.Configuration;
+import org.axonframework.common.configuration.Configuration;
 import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.annotations.EventSourcedEntity;

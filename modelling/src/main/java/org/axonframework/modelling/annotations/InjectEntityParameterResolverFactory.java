@@ -18,7 +18,7 @@ package org.axonframework.modelling.annotations;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.configuration.Configuration;
+import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.annotations.ParameterResolver;
 import org.axonframework.messaging.annotations.ParameterResolverFactory;
 import org.axonframework.modelling.EntityIdResolver;

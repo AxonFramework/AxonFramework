@@ -27,7 +27,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.MonoUtils;
-import org.axonframework.util.ClasspathResolver;
+import org.axonframework.common.util.ClasspathResolver;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 

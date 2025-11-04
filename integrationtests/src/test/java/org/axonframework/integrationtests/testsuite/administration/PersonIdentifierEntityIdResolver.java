@@ -17,7 +17,7 @@
 package org.axonframework.integrationtests.testsuite.administration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.configuration.Configuration;
+import org.axonframework.common.configuration.Configuration;
 import org.axonframework.integrationtests.testsuite.administration.commands.AssignTaskCommand;
 import org.axonframework.integrationtests.testsuite.administration.commands.ChangeEmailAddress;
 import org.axonframework.integrationtests.testsuite.administration.commands.CompleteTaskCommand;

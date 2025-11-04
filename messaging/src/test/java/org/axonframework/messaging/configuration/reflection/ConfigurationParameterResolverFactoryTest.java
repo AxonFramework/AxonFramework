@@ -17,7 +17,7 @@
 package org.axonframework.messaging.configuration.reflection;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.configuration.Configuration;
+import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;

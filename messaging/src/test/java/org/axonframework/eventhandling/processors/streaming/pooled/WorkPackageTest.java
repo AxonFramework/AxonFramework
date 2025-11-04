@@ -17,7 +17,6 @@
 package org.axonframework.eventhandling.processors.streaming.pooled;
 
 import jakarta.annotation.Nonnull;
-import org.assertj.core.api.Assertions;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
@@ -34,7 +33,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.SimpleEntry;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
-import org.axonframework.utils.DelegateScheduledExecutorService;
+import org.axonframework.common.utils.DelegateScheduledExecutorService;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -51,7 +50,7 @@ import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.axonframework.utils.AssertUtils.assertWithin;
+import static org.axonframework.common.utils.AssertUtils.assertWithin;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 

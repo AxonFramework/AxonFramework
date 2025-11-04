@@ -30,7 +30,8 @@ import org.axonframework.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.common.Assert;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.lifecycle.ShutdownLatch;
+import org.axonframework.common.lifecycle.Phase;
+import org.axonframework.common.lifecycle.ShutdownLatch;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
@@ -161,7 +162,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
      * Disconnect the command bus for receiving commands from Axon Server, by unsubscribing all registered command
      * handlers.
      * <p>
-     * This shutdown operation is performed in the {@link org.axonframework.lifecycle.Phase#INBOUND_COMMAND_CONNECTOR}
+     * This shutdown operation is performed in the {@link Phase#INBOUND_COMMAND_CONNECTOR}
      * phase.
      *
      * @return A completable future that resolves once the {@link AxonServerConnection#commandChannel()} has prepared
@@ -178,7 +179,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
     /**
      * Shutdown the command bus asynchronously for dispatching commands to Axon Server. This process will wait for
      * dispatched commands which have not received a response yet. This shutdown operation is performed in the
-     * {@link org.axonframework.lifecycle.Phase#OUTBOUND_COMMAND_CONNECTORS} phase.
+     * {@link Phase#OUTBOUND_COMMAND_CONNECTORS} phase.
      *
      * @return A completable future which is resolved once all command dispatching activities are completed.
      */

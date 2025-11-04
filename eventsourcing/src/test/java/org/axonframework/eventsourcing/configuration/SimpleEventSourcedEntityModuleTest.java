@@ -18,7 +18,7 @@ package org.axonframework.eventsourcing.configuration;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandlingComponent;
-import org.axonframework.configuration.AxonConfiguration;
+import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.EventSourcingRepository;

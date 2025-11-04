@@ -17,8 +17,8 @@
 package org.axonframework.eventhandling.configuration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.configuration.Configuration;
-import org.axonframework.configuration.Module;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.configuration.Module;
 import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessorConfiguration;
 import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessorsConfigurer;

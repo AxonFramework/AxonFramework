@@ -20,8 +20,8 @@ import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.common.Registration;
-import org.axonframework.configuration.Configuration;
-import org.axonframework.configuration.MessagingConfigurer;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.configuration.MessagingConfigurer;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
@@ -41,7 +41,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;

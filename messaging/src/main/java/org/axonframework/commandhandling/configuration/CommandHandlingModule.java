@@ -20,10 +20,11 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandHandlingComponent;
 import org.axonframework.commandhandling.annotations.AnnotatedCommandHandlingComponent;
-import org.axonframework.configuration.ComponentBuilder;
-import org.axonframework.configuration.Configuration;
-import org.axonframework.configuration.Module;
-import org.axonframework.configuration.ModuleBuilder;
+import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.common.configuration.ComponentBuilder;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.configuration.Module;
+import org.axonframework.common.configuration.ModuleBuilder;
 import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotations.ParameterResolverFactory;
@@ -53,7 +54,7 @@ import static java.util.Objects.requireNonNull;
  * </pre>
  * <p>
  * Note that users do not have to invoke {@link #build()} themselves when using this interface, as the
- * {@link org.axonframework.configuration.ApplicationConfigurer} takes care of that.
+ * {@link ApplicationConfigurer} takes care of that.
  *
  * @author Allard Buijze
  * @author Mateusz Nowak
@@ -109,7 +110,7 @@ public interface CommandHandlingModule extends Module, ModuleBuilder<CommandHand
      * <p>
      * Every registered {@link CommandHandler} will be subscribed with the
      * {@link org.axonframework.commandhandling.CommandBus} of the
-     * {@link org.axonframework.configuration.ApplicationConfigurer} this module is given to.
+     * {@link ApplicationConfigurer} this module is given to.
      * <p>
      * Provides roughly two options for configuring command handlers. Firstly, a command handler can
      * be registered as is, through the {@link #commandHandler(QualifiedName, CommandHandler)} method. Secondly, if the
@@ -127,7 +128,7 @@ public interface CommandHandlingModule extends Module, ModuleBuilder<CommandHand
          * <p>
          * Once this module is finalized, the command handler will be subscribed with the
          * {@link org.axonframework.commandhandling.CommandBus} of the
-         * {@link org.axonframework.configuration.ApplicationConfigurer} the module is registered on.
+         * {@link ApplicationConfigurer} the module is registered on.
          *
          * @param commandName    The qualified name of the command the given {@code commandHandler} can handle.
          * @param commandHandler The command handler to register with this module.
@@ -145,7 +146,7 @@ public interface CommandHandlingModule extends Module, ModuleBuilder<CommandHand
          * <p>
          * Once this module is finalized, the command handler from the {@code commandHandlerBuilder} will be
          * subscribed with the {@link org.axonframework.commandhandling.CommandBus} of the
-         * {@link org.axonframework.configuration.ApplicationConfigurer} the module is registered on.
+         * {@link ApplicationConfigurer} the module is registered on.
          *
          * @param commandName           The qualified name of the command the {@link CommandHandler} created by
          *                              the given {@code commandHandlerBuilder}.
@@ -167,7 +168,7 @@ public interface CommandHandlingModule extends Module, ModuleBuilder<CommandHand
          * Once this module is finalized, the resulting {@link CommandHandlingComponent} from the
          * {@code handlingComponentBuilder} will be subscribed with the
          * {@link org.axonframework.commandhandling.CommandBus} of the
-         * {@link org.axonframework.configuration.ApplicationConfigurer} the module is registered on.
+         * {@link ApplicationConfigurer} the module is registered on.
          *
          * @param handlingComponentBuilder A builder of a {@link CommandHandlingComponent}. Provides the
          *                                 {@link Configuration} to retrieve components from to use during construction
@@ -184,7 +185,7 @@ public interface CommandHandlingModule extends Module, ModuleBuilder<CommandHand
          * <p>
          * This will scan the given {@code handlingComponentBuilder} for methods annotated with {@link CommandHandler}
          * and register them as command handlers for the {@link org.axonframework.commandhandling.CommandBus} of the
-         * {@link org.axonframework.configuration.ApplicationConfigurer}.
+         * {@link ApplicationConfigurer}.
          *
          * @param handlingComponentBuilder A builder of a {@link CommandHandlingComponent}. Provides the
          *                                 {@link Configuration} to retrieve components from to use during construction

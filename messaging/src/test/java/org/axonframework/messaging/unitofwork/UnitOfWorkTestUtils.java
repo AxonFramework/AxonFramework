@@ -17,6 +17,7 @@
 package org.axonframework.messaging.unitofwork;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.configuration.ComponentNotFoundException;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.EmptyApplicationContext;
 
@@ -39,7 +40,7 @@ public final class UnitOfWorkTestUtils {
      * Please note this instance will be created using the {@link SimpleUnitOfWorkFactory} with an
      * {@link EmptyApplicationContext}, so you will not be able to get any components from the
      * {@link ProcessingContext#component} method - it will always throw a
-     * {@link org.axonframework.configuration.ComponentNotFoundException}.
+     * {@link ComponentNotFoundException}.
      *
      * @return A new {@link UnitOfWork} with the random identifier.
      */
@@ -54,7 +55,7 @@ public final class UnitOfWorkTestUtils {
      * Please note this instance will be created using the {@link SimpleUnitOfWorkFactory} with an
      * {@link EmptyApplicationContext}, so you will not be able to get any components from the
      * {@link ProcessingContext#component} method - it will always throw a
-     * {@link org.axonframework.configuration.ComponentNotFoundException}.
+     * {@link ComponentNotFoundException}.
      *
      * @param identifier The identifier for the {@link UnitOfWork}.
      * @return A new {@link UnitOfWork} with the given identifier.
@@ -71,7 +72,7 @@ public final class UnitOfWorkTestUtils {
      * <p>
      * Please note this will delegate to the {@link SimpleUnitOfWorkFactory} with an {@link EmptyApplicationContext}, so
      * you will not be able to get any components from the {@link ProcessingContext#component} method - it will always
-     * throw a {@link org.axonframework.configuration.ComponentNotFoundException}.
+     * throw a {@link ComponentNotFoundException}.
      *
      * @param transactionManager The transaction manager used to manage transactions for the units of work.
      * @return A new instance of {@link TransactionalUnitOfWorkFactory} using the provided transaction manager.

@@ -21,7 +21,7 @@ import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jdbc.UnitOfWorkAwareConnectionProviderWrapper;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.configuration.Configuration;
+import org.axonframework.common.configuration.Configuration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.deadletter.jdbc.DeadLetterSchema;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;

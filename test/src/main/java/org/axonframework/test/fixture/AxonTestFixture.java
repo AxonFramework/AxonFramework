@@ -18,8 +18,8 @@ package org.axonframework.test.fixture;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.configuration.ApplicationConfigurer;
-import org.axonframework.configuration.AxonConfiguration;
+import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;

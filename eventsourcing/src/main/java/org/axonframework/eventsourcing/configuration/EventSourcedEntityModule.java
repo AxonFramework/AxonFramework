@@ -18,8 +18,8 @@ package org.axonframework.eventsourcing.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.configuration.ComponentBuilder;
-import org.axonframework.configuration.ModuleBuilder;
+import org.axonframework.common.configuration.ComponentBuilder;
+import org.axonframework.common.configuration.ModuleBuilder;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.annotations.EventSourcedEntity;

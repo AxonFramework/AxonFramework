@@ -18,8 +18,8 @@ package org.axonframework.eventhandling.interceptors;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotations.Internal;
-import org.axonframework.configuration.ComponentRegistry;
-import org.axonframework.configuration.DecoratorDefinition;
+import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.DecoratorDefinition;
 import org.axonframework.eventhandling.DelegatingEventHandlingComponent;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;

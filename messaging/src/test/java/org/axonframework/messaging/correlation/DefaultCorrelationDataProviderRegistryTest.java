@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.correlation;
 
-import org.axonframework.configuration.Configuration;
+import org.axonframework.common.configuration.Configuration;
 import org.junit.jupiter.api.*;
 
 import java.util.List;

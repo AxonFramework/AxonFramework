@@ -18,7 +18,7 @@ package org.axonframework.messaging.unitofwork;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.configuration.ComponentNotFoundException;
+import org.axonframework.common.configuration.ComponentNotFoundException;
 import org.axonframework.messaging.Message;
 
 import java.util.Map;

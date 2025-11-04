@@ -18,8 +18,8 @@ package org.axonframework.extension.springboot.autoconfig;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.configuration.ComponentRegistry;
-import org.axonframework.configuration.ConfigurationEnhancer;
+import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.messaging.interceptors.HandlerInterceptorRegistry;
 import org.axonframework.messaging.timeout.HandlerTimeoutHandlerEnhancerDefinition;
 import org.axonframework.messaging.timeout.TaskTimeoutSettings;

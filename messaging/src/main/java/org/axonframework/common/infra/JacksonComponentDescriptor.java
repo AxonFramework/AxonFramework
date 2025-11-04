@@ -21,7 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.annotation.Nonnull;
-import org.axonframework.configuration.Component;
+import org.axonframework.common.configuration.Component;
 
 import java.util.Collection;
 import java.util.IdentityHashMap;

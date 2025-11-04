@@ -33,7 +33,7 @@ import org.axonframework.modelling.command.AggregateLifecycle;
 import org.axonframework.modelling.command.AggregateRoot;
 import org.axonframework.modelling.command.DefaultRepositorySpanFactory;
 import org.axonframework.tracing.TestSpanFactory;
-import org.axonframework.utils.StubDomainEvent;
+import org.axonframework.common.utils.StubDomainEvent;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;

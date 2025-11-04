@@ -19,9 +19,9 @@ package org.axonframework.eventhandling.configuration;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotations.Internal;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.configuration.ComponentRegistry;
-import org.axonframework.configuration.Configuration;
-import org.axonframework.configuration.MessagingConfigurer;
+import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.configuration.MessagingConfigurer;
 import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessorsConfigurer;
@@ -56,9 +56,9 @@ import java.util.function.UnaryOperator;
  * The module automatically configures default transaction management by registering a
  * {@link TransactionalUnitOfWorkFactory} when a {@link TransactionManager} is available in the configuration.
  * <p>
- * This module is automatically created and registered by the {@link org.axonframework.configuration.MessagingConfigurer}
+ * This module is automatically created and registered by the {@link MessagingConfigurer}
  * when the application starts, so you typically don't need to instantiate it manually. Instead, access it through
- * {@link org.axonframework.configuration.MessagingConfigurer#eventProcessing(java.util.function.Consumer)}.
+ * {@link MessagingConfigurer#eventProcessing(java.util.function.Consumer)}.
  * <p>
  * Example usage:
  * <pre>{@code
@@ -87,9 +87,9 @@ public class EventProcessingConfigurer {
      * Constructs a new event processing module with the given name.
      * <p>
      * This constructor is marked as {@link Internal} because the module is automatically created and managed by the
-     * {@link org.axonframework.configuration.MessagingConfigurer}. Typically, users should not instantiate this class
+     * {@link MessagingConfigurer}. Typically, users should not instantiate this class
      * directly but instead access it through
-     * {@link org.axonframework.configuration.MessagingConfigurer#eventProcessing(java.util.function.Consumer)}.
+     * {@link MessagingConfigurer#eventProcessing(java.util.function.Consumer)}.
      *
      * @param parent The {@code MessagingConfigurer} to enhance with configuration of event processing components.
      */
@@ -103,7 +103,7 @@ public class EventProcessingConfigurer {
     /**
      * Builds the configurer, registering the necessary modules and customizations.
      * <p>
-     * This method is typically called by the {@link org.axonframework.configuration.MessagingConfigurer} during
+     * This method is typically called by the {@link MessagingConfigurer} during
      * application startup to finalize the configuration of event processors.
      */
     public void build() {

@@ -17,8 +17,8 @@
 package org.axonframework.messaging.configuration.reflection;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.configuration.ComponentRegistry;
-import org.axonframework.configuration.ConfigurationEnhancer;
+import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.ConfigurationEnhancer;
 
 /**
  * {@link ConfigurationEnhancer} that registers the {@link ConfigurationParameterResolverFactory} as additional

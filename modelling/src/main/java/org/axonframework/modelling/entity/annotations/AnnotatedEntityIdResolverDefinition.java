@@ -17,7 +17,7 @@
 package org.axonframework.modelling.entity.annotations;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.configuration.Configuration;
+import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.modelling.annotations.AnnotationBasedEntityIdResolver;

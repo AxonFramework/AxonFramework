@@ -26,7 +26,7 @@ import org.axonframework.messaging.annotations.UnsupportedHandlerException;
 import org.axonframework.messaging.annotations.WrappedMessageHandlingMember;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.util.ClasspathResolver;
+import org.axonframework.common.util.ClasspathResolver;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;

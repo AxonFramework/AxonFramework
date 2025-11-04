@@ -21,8 +21,8 @@ import jakarta.annotation.Nullable;
 import org.axonframework.common.Registration;
 import org.axonframework.common.annotations.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.configuration.ComponentRegistry;
-import org.axonframework.configuration.DecoratorDefinition;
+import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.DecoratorDefinition;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 

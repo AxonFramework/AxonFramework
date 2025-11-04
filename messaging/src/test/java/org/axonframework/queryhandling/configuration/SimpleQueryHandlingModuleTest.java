@@ -17,10 +17,10 @@
 package org.axonframework.queryhandling.configuration;
 
 import org.axonframework.common.infra.MockComponentDescriptor;
-import org.axonframework.configuration.AxonConfiguration;
-import org.axonframework.configuration.ComponentBuilder;
-import org.axonframework.configuration.Configuration;
-import org.axonframework.configuration.MessagingConfigurer;
+import org.axonframework.common.configuration.AxonConfiguration;
+import org.axonframework.common.configuration.ComponentBuilder;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.configuration.MessagingConfigurer;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.correlation.CorrelationDataProviderRegistry;
@@ -28,7 +28,7 @@ import org.axonframework.messaging.correlation.DefaultCorrelationDataProviderReg
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.queryhandling.QueryHandlingComponent;
-import org.axonframework.utils.StubLifecycleRegistry;
+import org.axonframework.common.utils.StubLifecycleRegistry;
 import org.junit.jupiter.api.*;
 
 import java.util.Map;

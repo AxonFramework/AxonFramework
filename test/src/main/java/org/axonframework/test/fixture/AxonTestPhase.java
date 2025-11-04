@@ -19,7 +19,7 @@ package org.axonframework.test.fixture;
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.configuration.Configuration;
+import org.axonframework.common.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.unitofwork.UnitOfWork;

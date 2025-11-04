@@ -16,7 +16,7 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
-import org.axonframework.configuration.DecoratorDefinition;
+import org.axonframework.common.configuration.DecoratorDefinition;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.CorrelationDataProviderRegistry;
 import org.springframework.boot.autoconfigure.AutoConfiguration;

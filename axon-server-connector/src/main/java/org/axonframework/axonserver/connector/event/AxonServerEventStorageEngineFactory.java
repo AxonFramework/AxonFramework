@@ -20,11 +20,11 @@ import io.axoniq.axonserver.connector.AxonServerConnection;
 import jakarta.annotation.Nonnull;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.configuration.Component;
-import org.axonframework.configuration.ComponentFactory;
-import org.axonframework.configuration.Configuration;
-import org.axonframework.configuration.InstantiatedComponentDefinition;
-import org.axonframework.configuration.LifecycleRegistry;
+import org.axonframework.common.configuration.Component;
+import org.axonframework.common.configuration.ComponentFactory;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.configuration.InstantiatedComponentDefinition;
+import org.axonframework.common.configuration.LifecycleRegistry;
 import org.axonframework.eventhandling.conversion.EventConverter;
 
 import java.util.Optional;

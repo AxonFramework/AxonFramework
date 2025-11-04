@@ -17,7 +17,7 @@
 package org.axonframework.integrationtests.deadline.quartz;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.configuration.Configuration;
+import org.axonframework.common.configuration.Configuration;
 import org.axonframework.deadline.DeadlineException;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineManagerSpanFactory;

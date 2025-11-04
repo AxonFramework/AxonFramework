@@ -25,7 +25,7 @@ import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.util.PriorityRunnable;
+import org.axonframework.common.util.PriorityRunnable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

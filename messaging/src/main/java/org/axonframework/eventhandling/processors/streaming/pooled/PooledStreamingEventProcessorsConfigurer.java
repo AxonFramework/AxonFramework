@@ -18,9 +18,9 @@ package org.axonframework.eventhandling.processors.streaming.pooled;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotations.Internal;
-import org.axonframework.configuration.ComponentRegistry;
-import org.axonframework.configuration.Configuration;
-import org.axonframework.configuration.ModuleBuilder;
+import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.configuration.ModuleBuilder;
 import org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessingConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;

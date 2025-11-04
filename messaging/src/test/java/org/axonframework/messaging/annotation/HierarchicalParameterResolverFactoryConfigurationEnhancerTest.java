@@ -16,9 +16,9 @@
 
 package org.axonframework.messaging.annotation;
 
-import org.axonframework.configuration.DefaultComponentRegistry;
-import org.axonframework.configuration.LifecycleRegistry;
-import org.axonframework.configuration.Configuration;
+import org.axonframework.common.configuration.DefaultComponentRegistry;
+import org.axonframework.common.configuration.LifecycleRegistry;
+import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.annotations.HierarchicalParameterResolverFactory;
 import org.axonframework.messaging.annotations.ParameterResolver;
 import org.axonframework.messaging.annotations.ParameterResolverFactory;

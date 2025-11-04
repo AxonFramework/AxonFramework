@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.annotations;
 
-import org.axonframework.configuration.Configuration;
+import org.axonframework.common.configuration.Configuration;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventhandling.gateway.ProcessingContextEventAppender;

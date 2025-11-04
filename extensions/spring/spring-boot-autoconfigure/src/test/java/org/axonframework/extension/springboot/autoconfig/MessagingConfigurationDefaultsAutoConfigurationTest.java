@@ -19,8 +19,9 @@ package org.axonframework.extension.springboot.autoconfig;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.RoutingStrategy;
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.configuration.ComponentRegistry;
-import org.axonframework.configuration.ConfigurationEnhancer;
+import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.ConfigurationEnhancer;
+import org.axonframework.common.configuration.MessagingConfigurationDefaults;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.conversion.EventConverter;
@@ -44,7 +45,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 /**
- * Test class validating that the {@link org.axonframework.configuration.MessagingConfigurationDefaults} are registered
+ * Test class validating that the {@link MessagingConfigurationDefaults} are registered
  * and customizable when using Spring Boot.
  *
  * @author Steven van Beelen
