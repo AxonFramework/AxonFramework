@@ -39,6 +39,7 @@ import org.junit.jupiter.api.*;
 import org.opentest4j.TestAbortedException;
 import reactor.test.StepVerifier;
 
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -55,6 +56,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import static java.util.Collections.emptySet;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -574,6 +576,27 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
         } else {
             fail("Unexpected exception", actualException);
         }
+    }
+
+    @Test
+    void firstTokenShouldReturnNonNullForEmptyStore() throws InterruptedException, ExecutionException {
+        assertThat(testSubject.firstToken(processingContext()).get()).isNotNull();
+    }
+
+    @Test
+    void latestTokenShouldReturnNonNullForEmptyStore() throws InterruptedException, ExecutionException {
+        assertThat(testSubject.latestToken(processingContext()).get()).isNotNull();
+    }
+
+    @Test
+    void firstTokenAndLatestTokenShouldBeEqualForEmptyStore() throws InterruptedException, ExecutionException {
+        assertThat(testSubject.latestToken(processingContext()).get())
+            .isEqualTo(testSubject.firstToken(processingContext()).get());
+    }
+
+    @Test
+    void tokenAtShouldReturnNonNullForEmptyStore() throws InterruptedException, ExecutionException {
+        assertThat(testSubject.tokenAt(Instant.now(), processingContext()).get()).isNotNull();
     }
 
     private void assertTrackedEntry(Entry<EventMessage> actual, EventMessage expected, long eventNumber) {

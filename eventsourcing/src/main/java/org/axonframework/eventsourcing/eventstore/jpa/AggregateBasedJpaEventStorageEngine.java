@@ -107,10 +107,10 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     private static final TypeReference<Map<String, String>> METADATA_MAP_TYPE_REF = new TypeReference<>() {
     };
 
-    private static final String FIRST_TOKEN_QUERY = "SELECT MIN(e.globalIndex) - 1 FROM AggregateEventEntry e";
-    private static final String LATEST_TOKEN_QUERY = "SELECT MAX(e.globalIndex) FROM AggregateEventEntry e";
+    private static final String FIRST_TOKEN_QUERY = "SELECT COALESCE(MIN(e.globalIndex) - 1, -1) FROM AggregateEventEntry e";
+    private static final String LATEST_TOKEN_QUERY = "SELECT COALESCE(MAX(e.globalIndex), -1) FROM AggregateEventEntry e";
     private static final String TOKEN_AT_QUERY = """
-            SELECT MIN(e.globalIndex) - 1 \
+            SELECT COALESCE(MIN(e.globalIndex) - 1, -1) \
             FROM AggregateEventEntry e \
             WHERE e.timestamp >= :dateTime""";
     private static final String EVENTS_BY_AGGREGATE_QUERY = """
@@ -486,24 +486,17 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     @Nonnull
     private CompletableFuture<TrackingToken> queryToken(String firstTokenQuery) {
         try (EntityManager entityManager = entityManager()) {
-            List<Long> results = entityManager.createQuery(firstTokenQuery, Long.class).getResultList();
-            if (results.isEmpty() || results.getFirst() == null) {
-                return CompletableFuture.completedFuture(null);
-            }
-            return CompletableFuture.completedFuture(new GapAwareTrackingToken(results.getFirst(), Set.of()));
+            long position = entityManager.createQuery(firstTokenQuery, Long.class).getSingleResult();
+            return CompletableFuture.completedFuture(new GapAwareTrackingToken(position, Set.of()));
         }
     }
 
     @Override
     public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at, @Nullable ProcessingContext processingContext) {
         try (EntityManager entityManager = entityManager()) {
-            List<Long> results = entityManager.createQuery(TOKEN_AT_QUERY, Long.class)
-                                              .setParameter("dateTime", formatInstant(at))
-                                              .getResultList();
-            if (results.isEmpty() || results.getFirst() == null) {
-                return latestToken(processingContext);
-            }
-            Long position = results.getFirst();
+            long position = entityManager.createQuery(TOKEN_AT_QUERY, Long.class)
+                                         .setParameter("dateTime", formatInstant(at))
+                                         .getSingleResult();
             return CompletableFuture.completedFuture(new GapAwareTrackingToken(position, Set.of()));
         }
     }
