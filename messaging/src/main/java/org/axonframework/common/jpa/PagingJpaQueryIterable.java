@@ -17,7 +17,7 @@
 package org.axonframework.common.jpa;
 
 import jakarta.persistence.TypedQuery;
-import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.messaging.unitofwork.transaction.TransactionManager;
 
 import java.util.ArrayDeque;
 import java.util.Deque;

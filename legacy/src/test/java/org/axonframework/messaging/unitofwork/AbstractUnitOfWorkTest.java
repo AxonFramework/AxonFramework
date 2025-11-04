@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.unitofwork;
 
-import org.axonframework.common.transaction.Transaction;
-import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.messaging.unitofwork.transaction.Transaction;
+import org.axonframework.messaging.unitofwork.transaction.TransactionManager;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.GenericResultMessage;
 import org.axonframework.messaging.MessageType;

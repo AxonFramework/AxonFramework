@@ -20,8 +20,8 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.Persistence;
-import org.axonframework.common.transaction.NoOpTransactionManager;
-import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.messaging.unitofwork.transaction.NoOpTransactionManager;
+import org.axonframework.messaging.unitofwork.transaction.TransactionManager;
 import org.junit.jupiter.api.*;
 
 import java.util.Iterator;

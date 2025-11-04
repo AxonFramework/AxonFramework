@@ -17,7 +17,7 @@
 package org.axonframework.deadline.jobrunr;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.messaging.unitofwork.transaction.TransactionManager;
 import org.axonframework.deadline.TestScopeDescriptor;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.ScopeDescriptor;

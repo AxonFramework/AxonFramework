@@ -16,7 +16,7 @@
 
 package org.axonframework.deadline.quartz;
 
-import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.messaging.unitofwork.transaction.TransactionManager;
 import org.axonframework.deadline.DeadlineManagerSpanFactory;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;

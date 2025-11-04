@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing.eventstore.jdbc;
 
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
-import org.axonframework.common.transaction.NoTransactionManager;
+import org.axonframework.messaging.unitofwork.transaction.NoTransactionManager;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackedEventData;

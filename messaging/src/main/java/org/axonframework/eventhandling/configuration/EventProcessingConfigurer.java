@@ -18,7 +18,7 @@ package org.axonframework.eventhandling.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotations.Internal;
-import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.messaging.unitofwork.transaction.TransactionManager;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.MessagingConfigurer;

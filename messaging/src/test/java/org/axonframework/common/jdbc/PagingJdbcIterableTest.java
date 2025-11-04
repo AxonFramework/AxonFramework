@@ -17,8 +17,8 @@
 package org.axonframework.common.jdbc;
 
 import org.axonframework.common.IdentifierFactory;
-import org.axonframework.common.transaction.Transaction;
-import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.messaging.unitofwork.transaction.Transaction;
+import org.axonframework.messaging.unitofwork.transaction.TransactionManager;
 import org.hsqldb.jdbc.JDBCDataSource;
 import org.junit.jupiter.api.*;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;

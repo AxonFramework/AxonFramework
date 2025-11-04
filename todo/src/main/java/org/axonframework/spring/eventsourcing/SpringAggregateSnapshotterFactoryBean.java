@@ -18,8 +18,8 @@ package org.axonframework.spring.eventsourcing;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.DirectExecutor;
-import org.axonframework.common.transaction.NoTransactionManager;
-import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.messaging.unitofwork.transaction.NoTransactionManager;
+import org.axonframework.messaging.unitofwork.transaction.TransactionManager;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.snapshotting.AggregateSnapshotter;
 import org.axonframework.messaging.annotations.ClasspathParameterResolverFactory;

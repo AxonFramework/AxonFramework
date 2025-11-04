@@ -18,7 +18,7 @@ package org.axonframework.spring.eventsourcing;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.messaging.unitofwork.transaction.TransactionManager;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.snapshotting.AggregateSnapshotter;
@@ -27,6 +27,7 @@ import org.axonframework.messaging.annotations.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotations.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotations.HandlerDefinition;
 import org.axonframework.messaging.annotations.ParameterResolverFactory;
+import org.axonframework.messaging.unitofwork.transaction.NoTransactionManager;
 import org.axonframework.tracing.SpanFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -68,7 +69,7 @@ public class SpringAggregateSnapshotter extends AggregateSnapshotter implements 
      * instances are lazily retrieved by the {@link ApplicationContext}.
      * <p>
      * The {@link Executor} is defaulted to an {@link org.axonframework.common.DirectExecutor#INSTANCE}, the
-     * {@link TransactionManager} defaults to a {@link org.axonframework.common.transaction.NoTransactionManager} and
+     * {@link TransactionManager} defaults to a {@link NoTransactionManager} and
      * the {@link SpanFactory} defaults to a {@link org.axonframework.tracing.NoOpSpanFactory}. Additionally, this
      * Builder has convenience functions to default the {@link ParameterResolverFactory} and {@link HandlerDefinition}
      * based on instances of these available on the classpath in case these are not provided (respectively
@@ -124,7 +125,7 @@ public class SpringAggregateSnapshotter extends AggregateSnapshotter implements 
      * lazily retrieved by the {@link ApplicationContext}.
      * <p>
      * The {@link Executor} is defaulted to an {@link org.axonframework.common.DirectExecutor#INSTANCE}, the
-     * {@link TransactionManager} defaults to a {@link org.axonframework.common.transaction.NoTransactionManager} and
+     * {@link TransactionManager} defaults to a {@link NoTransactionManager} and
      * the {@link SpanFactory} defaults to a {@link org.axonframework.tracing.NoOpSpanFactory}. Additionally, this
      * Builder has convenience functions to default the {@link ParameterResolverFactory} and {@link HandlerDefinition}
      * based on instances of these available on the classpath in case these are not provided (respectively

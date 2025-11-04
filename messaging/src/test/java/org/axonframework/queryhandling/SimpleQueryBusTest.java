@@ -16,8 +16,8 @@
 package org.axonframework.queryhandling;
 
 import org.axonframework.common.infra.MockComponentDescriptor;
-import org.axonframework.common.transaction.Transaction;
-import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.messaging.unitofwork.transaction.Transaction;
+import org.axonframework.messaging.unitofwork.transaction.TransactionManager;
 import org.axonframework.messaging.FluxUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;

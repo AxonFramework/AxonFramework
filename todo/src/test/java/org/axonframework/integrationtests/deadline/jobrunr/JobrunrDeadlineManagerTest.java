@@ -16,7 +16,7 @@
 
 package org.axonframework.integrationtests.deadline.jobrunr;
 
-import org.axonframework.common.transaction.NoTransactionManager;
+import org.axonframework.messaging.unitofwork.transaction.NoTransactionManager;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineManagerSpanFactory;

@@ -18,7 +18,7 @@ package org.axonframework.messaging.unitofwork;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.configuration.ComponentNotFoundException;
-import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.messaging.unitofwork.transaction.TransactionManager;
 import org.axonframework.messaging.EmptyApplicationContext;
 
 import java.util.UUID;

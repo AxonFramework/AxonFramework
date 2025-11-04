@@ -16,7 +16,7 @@
 
 package org.axonframework.common.jdbc;
 
-import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.messaging.unitofwork.transaction.TransactionManager;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

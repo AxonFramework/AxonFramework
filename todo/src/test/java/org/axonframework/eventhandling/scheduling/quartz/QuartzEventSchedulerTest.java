@@ -17,8 +17,8 @@
 package org.axonframework.eventhandling.scheduling.quartz;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.transaction.Transaction;
-import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.messaging.unitofwork.transaction.Transaction;
+import org.axonframework.messaging.unitofwork.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
