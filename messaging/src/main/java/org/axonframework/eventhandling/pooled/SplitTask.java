@@ -49,8 +49,10 @@ class SplitTask extends CoordinatorTask {
     private final String name;
     private final int segmentId;
     private final Map<Integer, WorkPackage> workPackages;
+    private final Map<Integer, java.time.Instant> releasesDeadlines;
     private final TokenStore tokenStore;
     private final TransactionManager transactionManager;
+    private final java.time.Clock clock;
 
     /**
      * Constructs a {@link SplitTask}.
@@ -62,22 +64,28 @@ class SplitTask extends CoordinatorTask {
      * @param segmentId          the identifier of the {@link Segment} this instruction should split
      * @param workPackages       the collection of {@link WorkPackage}s controlled by the {@link Coordinator}. Will be
      *                           queried for the presence of the given {@code segmentId}
+     * @param releasesDeadlines  the map of segments that are blocked from claiming until a specified time
      * @param tokenStore         the storage solution for {@link TrackingToken}s. Used to claim the {@code segmentId} if
      *                           it is not present in the {@code workPackages} and to store the split segment
      * @param transactionManager a {@link TransactionManager} used to invoke all {@link TokenStore} operations inside a
+     * @param clock              the clock used for time-based operations
      */
     SplitTask(CompletableFuture<Boolean> result,
               String name,
               int segmentId,
               Map<Integer, WorkPackage> workPackages,
+              Map<Integer, java.time.Instant> releasesDeadlines,
               TokenStore tokenStore,
-              TransactionManager transactionManager) {
+              TransactionManager transactionManager,
+              java.time.Clock clock) {
         super(result, name);
         this.name = name;
         this.segmentId = segmentId;
         this.workPackages = workPackages;
+        this.releasesDeadlines = releasesDeadlines;
         this.tokenStore = tokenStore;
         this.transactionManager = transactionManager;
+        this.clock = clock;
     }
 
     /**
@@ -90,6 +98,10 @@ class SplitTask extends CoordinatorTask {
     @Override
     protected CompletableFuture<Boolean> task() {
         logger.debug("Processor [{}] will perform split instruction for segment {}.", name, segmentId);
+        // Block the segment from being claimed by the Coordinator while we perform the split.
+        // This prevents a race condition where the Coordinator might claim a segment that's being split.
+        releasesDeadlines.put(segmentId, clock.instant().plusSeconds(60)); // Block for 1 minute (will be cleared after split)
+
         // Remove WorkPackage so that the CoordinatorTask cannot find it to release its claim upon impending abortion.
         WorkPackage workPackage = workPackages.remove(segmentId);
         return workPackage != null ? abortAndSplit(workPackage) : fetchSegmentAndSplit(segmentId);
@@ -111,16 +123,21 @@ class SplitTask extends CoordinatorTask {
     }
 
     private boolean splitAndRelease(Segment segmentToSplit) {
-        transactionManager.executeInTransaction(() -> {
-            TrackingToken tokenToSplit = tokenStore.fetchToken(name, segmentToSplit.getSegmentId());
-            TrackerStatus[] splitStatuses = TrackerStatus.split(segmentToSplit, tokenToSplit);
-            tokenStore.initializeSegment(
-                    splitStatuses[1].getInternalTrackingToken(), name, splitStatuses[1].getSegment().getSegmentId()
-            );
-            tokenStore.releaseClaim(name, splitStatuses[0].getSegment().getSegmentId());
-            logger.info("Processor [{}] successfully split {} into {} and {}.",
-                        name, segmentToSplit, splitStatuses[0].getSegment(), splitStatuses[1].getSegment());
-        });
+        try {
+            transactionManager.executeInTransaction(() -> {
+                TrackingToken tokenToSplit = tokenStore.fetchToken(name, segmentToSplit.getSegmentId());
+                TrackerStatus[] splitStatuses = TrackerStatus.split(segmentToSplit, tokenToSplit);
+                tokenStore.initializeSegment(
+                        splitStatuses[1].getInternalTrackingToken(), name, splitStatuses[1].getSegment().getSegmentId()
+                );
+                tokenStore.releaseClaim(name, splitStatuses[0].getSegment().getSegmentId());
+                logger.info("Processor [{}] successfully split {} into {} and {}.",
+                            name, segmentToSplit, splitStatuses[0].getSegment(), splitStatuses[1].getSegment());
+            });
+        } finally {
+            // Remove the segment from the releases deadlines to allow the Coordinator to claim the split segments
+            releasesDeadlines.remove(segmentToSplit.getSegmentId());
+        }
         return true;
     }
 

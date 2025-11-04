@@ -42,7 +42,9 @@ class SplitTaskTest {
 
     private CompletableFuture<Boolean> result;
     private final Map<Integer, WorkPackage> workPackages = new HashMap<>();
+    private final Map<Integer, java.time.Instant> releasesDeadlines = new HashMap<>();
     private final TokenStore tokenStore = mock(TokenStore.class);
+    private final java.time.Clock clock = java.time.Clock.systemUTC();
 
     private SplitTask testSubject;
 
@@ -53,7 +55,7 @@ class SplitTaskTest {
         result = new CompletableFuture<>();
 
         testSubject = new SplitTask(
-                result, PROCESSOR_NAME, SEGMENT_ID, workPackages, tokenStore, NoTransactionManager.instance()
+                result, PROCESSOR_NAME, SEGMENT_ID, workPackages, releasesDeadlines, tokenStore, NoTransactionManager.instance(), clock
         );
     }
 
