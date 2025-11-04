@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class QueueMessageStreamTest extends MessageStreamTest<EventMessage> {
 
     @Override
-    MessageStream<EventMessage> completedTestSubject(List<EventMessage> messages) {
+    protected MessageStream<EventMessage> completedTestSubject(List<EventMessage> messages) {
         QueueMessageStream<EventMessage> testSubject = new QueueMessageStream<>();
         messages.forEach(m -> testSubject.offer(m, Context.empty()));
         testSubject.complete();
@@ -39,13 +39,13 @@ class QueueMessageStreamTest extends MessageStreamTest<EventMessage> {
     }
 
     @Override
-    MessageStream.Single<EventMessage> completedSingleStreamTestSubject(EventMessage message) {
+    protected MessageStream.Single<EventMessage> completedSingleStreamTestSubject(EventMessage message) {
         Assumptions.abort("QueueMessageStream does not support explicit single-item streams");
         return null;
     }
 
     @Override
-    MessageStream.Empty<EventMessage> completedEmptyStreamTestSubject() {
+    protected MessageStream.Empty<EventMessage> completedEmptyStreamTestSubject() {
         Assumptions.abort("QueueMessageStream does not support explicit zero-item streams");
         return null;
     }
@@ -73,7 +73,7 @@ class QueueMessageStreamTest extends MessageStreamTest<EventMessage> {
     }
 
     @Override
-    MessageStream<EventMessage> failingTestSubject(List<EventMessage> messages, Exception failure) {
+    protected MessageStream<EventMessage> failingTestSubject(List<EventMessage> messages, RuntimeException failure) {
         QueueMessageStream<EventMessage> testSubject = new QueueMessageStream<>();
         messages.forEach(m -> testSubject.offer(m, Context.empty()));
         testSubject.completeExceptionally(failure);
@@ -81,7 +81,7 @@ class QueueMessageStreamTest extends MessageStreamTest<EventMessage> {
     }
 
     @Override
-    EventMessage createRandomMessage() {
+    protected EventMessage createRandomMessage() {
         return new GenericEventMessage(new MessageType("message"),
                                          "test-" + ThreadLocalRandom.current().nextInt(10000));
     }

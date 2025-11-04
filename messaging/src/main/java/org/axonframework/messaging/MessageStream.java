@@ -310,11 +310,15 @@ public interface MessageStream<M extends Message> {
 
     /**
      * Registers the callback to invoke when {@link Entry entries} are available for reading or when the stream
-     * completes (either normally or with an error). An invocation of this method does not in any way guarantee that
+     * completes (either normally or with an error). An invocation of the callback does not in any way guarantee that
      * entries are indeed available, or that the stream has indeed been completed. Implementations may choose to
      * suppress repeated invocations of the callback if no entries have been read in the meantime.
      * <p>
      * Any previously registered callback is replaced with the given {@code callback}.
+     * <p>
+     * The callback is called on an arbitrary thread, and it should keep work performed on this thread to a minimum
+     * as this may interfere with other callbacks handled by the same thread. Any exception thrown by the callback
+     * will result in the stream completing with this exception as the error.
      *
      * @param callback The callback to invoke when {@link Entry entries} are available for reading, or the stream
      *                 completes.
@@ -391,7 +395,7 @@ public interface MessageStream<M extends Message> {
 
     /**
      * Returns a {@link CompletableFuture} of type {@code R}, using the given {@code identity} as the initial value for
-     * the given {@code accumulator}.
+     * the given {@code accumulator}. Throws an exception if this stream is unbounded.
      * <p>
      * The {@code accumulator} will process all {@link Entry entries} within this stream until a single value of type
      * {@code R} is left.
@@ -405,6 +409,7 @@ public interface MessageStream<M extends Message> {
      *                    stream.
      * @return A {@link CompletableFuture} carrying the result of the given {@code accumulator} that reduced the entire
      * stream.
+     * @throws UnsupportedOperationException if this stream is unbounded
      */
     default <R> CompletableFuture<R> reduce(@Nonnull R identity, @Nonnull BiFunction<R, Entry<M>, R> accumulator) {
         return MessageStreamUtils.reduce(this, identity, accumulator);
@@ -450,12 +455,13 @@ public interface MessageStream<M extends Message> {
 
     /**
      * Returns a stream that concatenates this stream with the given {@code other} stream, if this stream completes
-     * successfully.
+     * successfully. Throws an exception if this stream is unbounded.
      * <p>
      * When {@code this} stream completes with an error, so does the returned stream.
      *
      * @param other The MessageStream to append to this stream.
      * @return A stream concatenating this stream with given {@code other}.
+     * @throws UnsupportedOperationException if this stream is unbounded
      */
     default MessageStream<M> concatWith(@Nonnull MessageStream<M> other) {
         return new ConcatenatingMessageStream<>(this, other);
@@ -463,9 +469,11 @@ public interface MessageStream<M extends Message> {
 
     /**
      * Returns a stream that invokes the given {@code completeHandler} when the stream completes normally.
+     * Throws an exception if this stream is unbounded.
      *
      * @param completeHandler The {@link Runnable} to invoke when the stream completes normally.
      * @return A stream that invokes the {@code completeHandler} upon normal completion.
+     * @throws UnsupportedOperationException if this stream is unbounded
      */
     default MessageStream<M> onComplete(@Nonnull Runnable completeHandler) {
         return new CompletionCallbackMessageStream<>(this, completeHandler);
