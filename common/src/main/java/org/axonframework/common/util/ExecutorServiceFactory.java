@@ -17,7 +17,6 @@
 package org.axonframework.common.util;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.commandhandling.distributed.DistributedCommandBus;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -26,7 +25,7 @@ import java.util.function.BiFunction;
 /**
  * A Functional Interface towards a {@link BiFunction} which ingests both a Configuration and a {@link BlockingQueue} of
  * {@link Runnable}, and outputs an {@link ExecutorService}. Provides a means to allow configuration of the used
- * {@code ExecutorService} in, for example, the {@link DistributedCommandBus}, but maintaining the option for the
+ * {@code ExecutorService} in, for example, the {@link org.axonframework.commandhandling.distributed.DistributedCommandBus}, but maintaining the option for the
  * framework to provide a {@code BlockingQueue} which is tailored towards message prioritization when building the
  * executor.
  * <p>

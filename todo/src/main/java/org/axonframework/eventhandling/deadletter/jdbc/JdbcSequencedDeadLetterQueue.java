@@ -19,7 +19,6 @@ package org.axonframework.eventhandling.deadletter.jdbc;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.JdbcException;
-import org.axonframework.common.jdbc.PagingJdbcIterable;
 import org.axonframework.messaging.unitofwork.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;

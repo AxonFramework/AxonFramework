@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package org.axonframework.common;
+package org.axonframework.commandhandling;
 
-import org.axonframework.commandhandling.NoHandlerForCommandException;
+import org.axonframework.common.ExceptionUtils;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -28,7 +28,7 @@ class ExceptionUtilsTest {
     @Test
     void isExplicitlyNonTransientForTransientExceptions() {
         NoHandlerForCommandException transientException = new NoHandlerForCommandException("No handler message");
-        assertFalse(ExceptionUtils.isExplicitlyNonTransient(transientException));
+        Assertions.assertFalse(ExceptionUtils.isExplicitlyNonTransient(transientException));
     }
 
     @Test

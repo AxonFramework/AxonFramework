@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.common.util;
+package org.axonframework.messaging.annotations;
 
 import org.axonframework.commandhandling.annotations.CommandHandler;
 import org.axonframework.eventhandling.annotations.EventHandler;

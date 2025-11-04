@@ -16,7 +16,6 @@
 
 package org.axonframework.common.annotations;
 
-import org.axonframework.commandhandling.annotations.RoutingKey;
 import org.junit.jupiter.api.*;
 
 import java.lang.annotation.Annotation;
@@ -87,13 +86,6 @@ class AnnotationUtilsTest {
         assertEquals("dynamic-override", results.get("property"));
         assertEquals("extra", results.get("extraValue"));
         assertEquals("otherValue", results.get("theTarget"));
-    }
-
-    @Test
-    void findAttributesOnNonExistentAnnotation() throws NoSuchMethodException {
-        Optional<Map<String, Object>> result =
-                findAnnotationAttributes(getClass().getDeclaredMethod("dynamicallyOverridden"), RoutingKey.class);
-        assertFalse(result.isPresent(), "Didn't expect attributes to be found for non-existent annotation");
     }
 
     @Test

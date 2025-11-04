@@ -41,7 +41,7 @@ Adjust packages in `import` statements and FQCNs according to the new locations 
 |Axon 4.6.x |Axon 4.7.x
 
 |`org.axonframework.common.jpa.EntityManagerProvider`                                 |`org.axonframework.common.legacyjpa.EntityManagerProvider`
-|`org.axonframework.common.jpa.PagingJpaQueryIterable`                                |`org.axonframework.common.legacyjpa.PagingJpaQueryIterable`
+|`org.axonframework.eventhandling.deadletter.jpa.PagingJpaQueryIterable`                                |`org.axonframework.common.legacyjpa.PagingJpaQueryIterable`
 |`org.axonframework.common.jpa.SimpleEntityManagerProvider`                           |`org.axonframework.common.legacyjpa.SimpleEntityManagerProvider`
 |`org.axonframework.eventhandling.deadletter.jpa.DeadLetterJpaConverter`              |`org.axonframework.eventhandling.deadletter.legacyjpa.DeadLetterJpaConverter`
 |`org.axonframework.eventhandling.deadletter.jpa.EventMessageDeadLetterJpaConverter`  |`org.axonframework.eventhandling.deadletter.legacyjpa.EventMessageDeadLetterJpaConverter`
