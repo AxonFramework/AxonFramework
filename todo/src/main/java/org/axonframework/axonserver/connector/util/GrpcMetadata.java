@@ -29,6 +29,7 @@ import java.util.function.Supplier;
  * @author Sara Pellegrini
  * @since 4.0
  */
+@Deprecated(forRemoval = true, since = "5.0.0")
 public class GrpcMetadata implements Supplier<Metadata> {
 
     private final Map<String, MetaDataValue> metaDataValues;

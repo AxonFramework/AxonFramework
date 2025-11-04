@@ -70,7 +70,7 @@ final class PropertySequencingPolicyTest {
                 "id"
         );
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(ConversionException.class,
                      () -> sequencingPolicy.getSequenceIdentifierFor(anEvent("42"), aProcessingContext()));
     }
 

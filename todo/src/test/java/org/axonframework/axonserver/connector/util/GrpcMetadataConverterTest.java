@@ -35,6 +35,7 @@ import static org.mockito.Mockito.*;
  *
  * @author Steven van Beelen
  */
+@Deprecated(forRemoval = true, since = "5.0.0")
 class GrpcMetadataConverterTest {
 
     private final Serializer serializer = spy(JacksonSerializer.defaultSerializer());

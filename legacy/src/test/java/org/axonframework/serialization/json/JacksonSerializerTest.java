@@ -29,6 +29,7 @@ import org.axonframework.messaging.Metadata;
 import org.axonframework.queryhandling.annotations.QueryHandler;
 import org.axonframework.serialization.*;
 import org.junit.jupiter.api.*;
+import org.mockito.*;
 
 import java.io.InputStream;
 import java.time.Instant;
@@ -38,7 +39,6 @@ import java.util.List;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link JacksonSerializer}.
@@ -149,7 +149,7 @@ class JacksonSerializerTest {
 
     @Test
     void readUnknownSerializedTypeCachesLookupResults() {
-        ObjectMapper spiedMapper = spy(objectMapper);
+        ObjectMapper spiedMapper = Mockito.spy(objectMapper);
         testSubject = JacksonSerializer.builder()
                                        .objectMapper(spiedMapper)
                                        .build();
@@ -161,12 +161,12 @@ class JacksonSerializerTest {
             assertEquals(UnknownSerializedType.class, actual);
         }
 
-        verify(spiedMapper, times(1)).getTypeFactory();
+        Mockito.verify(spiedMapper, Mockito.times(1)).getTypeFactory();
     }
 
     @Test
     void readUnknownSerializedTypeWithCachingDisabled() {
-        ObjectMapper spiedMapper = spy(objectMapper);
+        ObjectMapper spiedMapper = Mockito.spy(objectMapper);
         testSubject = JacksonSerializer.builder()
                                        .objectMapper(spiedMapper)
                                        .disableCachingOfUnknownClasses()
@@ -179,7 +179,7 @@ class JacksonSerializerTest {
             assertEquals(UnknownSerializedType.class, actual);
         }
 
-        verify(spiedMapper, times(10)).getTypeFactory();
+        Mockito.verify(spiedMapper, Mockito.times(10)).getTypeFactory();
     }
 
     @Test
@@ -196,7 +196,7 @@ class JacksonSerializerTest {
 
     @Test
     void customObjectMapper() {
-        ObjectMapper objectMapper = spy(new ObjectMapper());
+        ObjectMapper objectMapper = Mockito.spy(new ObjectMapper());
 
         testSubject = JacksonSerializer.builder()
                                        .objectMapper(objectMapper)
@@ -208,8 +208,8 @@ class JacksonSerializerTest {
 
         assertNotNull(actual);
         assertTrue(testSubject.getConverter() instanceof ChainingContentTypeConverter);
-        verify(objectMapper).readerFor(SimpleSerializableType.class);
-        verify(objectMapper).writer();
+        Mockito.verify(objectMapper).readerFor(SimpleSerializableType.class);
+        Mockito.verify(objectMapper).writer();
     }
 
     @Test

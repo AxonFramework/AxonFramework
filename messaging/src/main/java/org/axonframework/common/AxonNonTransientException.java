@@ -17,7 +17,7 @@
 package org.axonframework.common;
 
 /**
- * Exception indicating an error has been cause that cannot be resolved without intervention. Retrying the operation
+ * Exception indicating an error has been caused that cannot be resolved without intervention. Retrying the operation
  * that threw the exception will most likely result in the same exception being thrown.
  * <p/>
  * Examples of such errors are programming errors and version conflicts.
