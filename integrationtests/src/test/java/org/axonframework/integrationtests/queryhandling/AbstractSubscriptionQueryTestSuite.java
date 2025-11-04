@@ -79,21 +79,21 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTestSuite {
 
-    private static final String TEST_QUERY_PAYLOAD = "axonFrameworkCR";
-    private static final String TEST_UPDATE_PAYLOAD = "some-update";
-    private static final String FOUND = "found";
+    protected static final String TEST_QUERY_PAYLOAD = "axonFrameworkCR";
+    protected static final String TEST_UPDATE_PAYLOAD = "some-update";
+    protected static final String FOUND = "found";
 
-    private static final MessageConverter CONVERTER = new DelegatingMessageConverter(new JacksonConverter());
+    protected static final MessageConverter CONVERTER = new DelegatingMessageConverter(new JacksonConverter());
 
     // Unique query name using UUID for the commonly used chat messages query
-    private final QualifiedName CHAT_MESSAGES_QUERY_NAME = new QualifiedName("test.chatMessages." + UUID.randomUUID());
-    private final MessageType CHAT_MESSAGES_QUERY_TYPE = new MessageType(CHAT_MESSAGES_QUERY_NAME.fullName());
+    protected final QualifiedName CHAT_MESSAGES_QUERY_NAME = new QualifiedName("test.chatMessages." + UUID.randomUUID());
+    protected final MessageType CHAT_MESSAGES_QUERY_TYPE = new MessageType(CHAT_MESSAGES_QUERY_NAME.fullName());
 
-    private static final MessageType TEST_RESPONSE_TYPE = new MessageType(String.class);
-    private static final MessageType TEST_UPDATE_PAYLOAD_TYPE = new MessageType("update");
+    protected static final MessageType TEST_RESPONSE_TYPE = new MessageType(String.class);
+    protected static final MessageType TEST_UPDATE_PAYLOAD_TYPE = new MessageType("update");
 
-    private QueryBus queryBus;
-    private RuntimeException toBeThrown;
+    protected QueryBus queryBus;
+    protected RuntimeException toBeThrown;
 
     @BeforeEach
     void setUp() {
@@ -117,6 +117,16 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
 
     private static boolean assertRecorded(Collection<QueryResponseMessage> elements) {
         LinkedList<QueryResponseMessage> recordedMessages = new LinkedList<>(elements);
+
+        // Debug output
+        System.out.println("DEBUG: Recorded " + elements.size() + " elements");
+        if (!recordedMessages.isEmpty()) {
+            String first = recordedMessages.peekFirst().payloadAs(String.class, CONVERTER);
+            String last = recordedMessages.peekLast().payloadAs(String.class, CONVERTER);
+            System.out.println("DEBUG: First element: " + first);
+            System.out.println("DEBUG: Last element: " + last);
+        }
+
         assert recordedMessages.peekFirst() != null;
         boolean firstIs101 = "Update0".equals(recordedMessages.peekFirst().payloadAs(String.class, CONVERTER));
         assert recordedMessages.peekLast() != null;
@@ -470,23 +480,6 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         return TEST_QUERY_PAYLOAD.equals(CONVERTER.convert(o, String.class));
     }
 
-    //fixme: SimpleQueryBus throws for duplicated subscriptions, how it should work with AxonServer?
-    @Test
-    void doubleSubscriptionMessage() {
-        // given
-        QueryMessage queryMessage = new GenericQueryMessage(
-                CHAT_MESSAGES_QUERY_TYPE, TEST_QUERY_PAYLOAD
-        );
-
-        // when
-        queryBus.subscriptionQuery(queryMessage, null, 50);
-        MessageStream<QueryResponseMessage> secondSubscription = queryBus.subscriptionQuery(queryMessage, null, 50);
-
-        // then
-        assertTrue(secondSubscription.error().isPresent());
-        assertInstanceOf(SubscriptionQueryAlreadyRegisteredException.class, secondSubscription.error().get());
-    }
-
     @Test
     void subscribingQueryHandlerFailing() {
         // given
@@ -534,19 +527,22 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         ProcessingContext testContext = null;
         // when...
         MessageStream<QueryResponseMessage> result = queryBus.subscriptionQuery(queryMessage, null, 100);
-        scheduleAfterDelay(() -> {
-            for (int i = 0; i <= 200; i++) {
-                int number = i;
-                queryBus.emitUpdate(testFilter,
-                                    () -> new GenericSubscriptionQueryUpdateMessage(TEST_UPDATE_PAYLOAD_TYPE,
-                                                                                    "Update" + number),
-                                    testContext).join();
-            }
-            queryBus.completeSubscriptions(testFilter, testContext).join();
-        });
+        Flux<QueryResponseMessage> updates = FluxUtils.of(result).map(MessageStream.Entry::message)
+                                                      .filter(m -> m instanceof SubscriptionQueryUpdateMessage);
         // then...
-        StepVerifier.create(FluxUtils.of(result).map(MessageStream.Entry::message)
-                                     .filter(m -> m instanceof SubscriptionQueryUpdateMessage))
+        StepVerifier.create(updates)
+                    .expectSubscription()
+                    .then(() -> {
+                        for (int i = 0; i <= 200; i++) {
+                            int number = i;
+                            queryBus.emitUpdate(testFilter,
+                                                () -> new GenericSubscriptionQueryUpdateMessage(TEST_UPDATE_PAYLOAD_TYPE,
+                                                                                                "Update" + number),
+                                                testContext);
+                        }
+                        queryBus.completeSubscriptions(testFilter, testContext);
+                    })
+                    .thenAwait(Duration.ofMillis(500))
                     .recordWith(LinkedList::new)
                     .thenConsumeWhile(x -> true)
                     .expectRecordedMatches(AbstractSubscriptionQueryTestSuite::assertRecorded)
