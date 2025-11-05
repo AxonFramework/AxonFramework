@@ -177,6 +177,12 @@
             <artifactId>mysql-connector-j</artifactId>
             <version>${mysql-connector-java.version}</version>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.protobuf</groupId>
+                    <artifactId>protobuf-java</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <!-- Reactor -->
         <dependency>
