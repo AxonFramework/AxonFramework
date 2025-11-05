@@ -19,7 +19,7 @@ package org.axonframework.commandhandling.gateway;
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.messaging.Message;
-import org.axonframework.serialization.ConversionException;
+import org.axonframework.conversion.ConversionException;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;

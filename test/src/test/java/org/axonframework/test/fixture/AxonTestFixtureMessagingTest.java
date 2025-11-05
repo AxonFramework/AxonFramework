@@ -22,7 +22,7 @@ import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.common.configuration.ComponentRegistry;
-import org.axonframework.common.configuration.MessagingConfigurer;
+import org.axonframework.messaging.configuration.MessagingConfigurer;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.EmptyApplicationContext;

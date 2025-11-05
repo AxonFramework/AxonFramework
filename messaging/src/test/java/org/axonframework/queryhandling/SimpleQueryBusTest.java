@@ -490,7 +490,7 @@ class SimpleQueryBusTest {
                     new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD);
             QueryMessage testQueryThree =
                     new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD);
-            // Filter allows emitting updates to subscription queries one and two
+            // Filter allows emitting update to subscription queries one and two
             Predicate<QueryMessage> queryFilter = query ->
                     query.identifier().equals(testQueryOne.identifier())
                             || query.identifier().equals(testQueryTwo.identifier());

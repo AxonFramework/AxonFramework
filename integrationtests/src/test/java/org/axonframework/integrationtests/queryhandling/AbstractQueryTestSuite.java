@@ -17,7 +17,7 @@
 package org.axonframework.integrationtests.queryhandling;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.configuration.MessagingConfigurer;
+import org.axonframework.messaging.configuration.MessagingConfigurer;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageDispatchInterceptorChain;

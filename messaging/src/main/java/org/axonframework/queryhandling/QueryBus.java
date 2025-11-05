@@ -73,11 +73,11 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
     /**
      * Dispatch the given {@code query} to a single QueryHandler subscribed to the given {@code query}'s
      * queryName/initialResponseType/updateResponseType. The result is lazily created and there will be no execution of
-     * the query handler before there is a subscription to the initial result. In order not to miss updates, the query
-     * bus will queue all updates which happen after the subscription query is done and once the subscription to the
-     * flux is made, these updates will be emitted.
+     * the query handler before there is a subscription to the initial result. In order not to miss update, the query
+     * bus will queue all update which happen after the subscription query is done and once the subscription to the
+     * flux is made, these update will be emitted.
      * <p>
-     * If there is an error during retrieving or consuming initial result, stream for incremental updates is NOT
+     * If there is an error during retrieving or consuming initial result, stream for incremental update is NOT
      * interrupted.
      * <p>
      * If there is an error during emitting an update, subscription is cancelled causing further emits not reaching the
@@ -90,8 +90,8 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      *
      * @param query            The subscription query to dispatch.
      * @param context          The processing context under which the query is being published (can be {@code null}).
-     * @param updateBufferSize The size of the buffer which accumulates updates.
-     * @return query result containing initial result and incremental updates, or a failed {@link MessageStream} with
+     * @param updateBufferSize The size of the buffer which accumulates update.
+     * @return query result containing initial result and incremental update, or a failed {@link MessageStream} with
      * {@link SubscriptionQueryAlreadyRegisteredException} if a subscription with the same query identifier already
      * exists.
      */
@@ -102,10 +102,10 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
 
     /**
      * Subscribes the given {@code query} with the given {@code updateBufferSize}, and returns the MessageStream
-     * that provides the updates of the subscription query.
+     * that provides the update of the subscription query.
      * <p>
      * Can be used directly instead when fine-grained control of update handlers is required. If using the
-     * updates directly is not mandatory for your use case, we strongly recommend using
+     * update directly is not mandatory for your use case, we strongly recommend using
      * {@link #subscriptionQuery(QueryMessage, ProcessingContext, int)} instead.
      * <p>
      * Note that the returned MessageStream must be consumed from before the buffer fills up. Once the buffer is full,
@@ -116,8 +116,8 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      * {@link SubscriptionQueryAlreadyRegisteredException} instead of throwing the exception.
      *
      * @param query            The subscription query for which we register an update handler.
-     * @param updateBufferSize The size of the buffer that accumulates updates.
-     * @return a MessageStream of updates for the given subscription query, or a failed {@link MessageStream} with
+     * @param updateBufferSize The size of the buffer that accumulates update.
+     * @return a MessageStream of update for the given subscription query, or a failed {@link MessageStream} with
      * {@link SubscriptionQueryAlreadyRegisteredException} if a subscription with the same query identifier already
      * exists.
      */
@@ -168,7 +168,7 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      * {@link QueryBus#subscriptionQuery(QueryMessage, ProcessingContext, int) subscription queries}
      * matching the given {@code filter} exceptionally with the given {@code cause}.
      * <p>
-     * To be used whenever {@link #emitUpdate(Predicate, Supplier, ProcessingContext) emitting updates} should be
+     * To be used whenever {@link #emitUpdate(Predicate, Supplier, ProcessingContext) emitting update} should be
      * stopped due to some exception.
      *
      * @param filter  A predicate filtering on {@link QueryMessage QueryMessages}. Subscription

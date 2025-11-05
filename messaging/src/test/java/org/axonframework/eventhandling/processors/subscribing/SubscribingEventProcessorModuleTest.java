@@ -21,7 +21,7 @@ import jakarta.annotation.Nullable;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.common.configuration.DefaultComponentRegistry;
-import org.axonframework.common.configuration.MessagingConfigurer;
+import org.axonframework.messaging.configuration.MessagingConfigurer;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.RecordingEventHandlingComponent;
@@ -42,7 +42,7 @@ import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.SubscribableEventSource;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
-import org.axonframework.serialization.json.JacksonConverter;
+import org.axonframework.conversion.json.JacksonConverter;
 import org.axonframework.common.utils.StubLifecycleRegistry;
 import org.junit.jupiter.api.*;
 

@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging;
 
-import org.axonframework.common.ContextTestSuite;
 import org.axonframework.messaging.Context.ResourceKey;
 
 /**

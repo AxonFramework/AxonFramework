@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-org.axonframework.common.configuration.MessagingConfigurationDefaults
+org.axonframework.messaging.configuration.MessagingConfigurationDefaults
 org.axonframework.commandhandling.annotations.CommandDispatcherParameterResolverFactoryConfigurationEnhancer
 org.axonframework.commandhandling.distributed.DistributedCommandBusConfigurationEnhancer
 org.axonframework.queryhandling.distributed.DistributedQueryBusConfigurationEnhancer
@@ -22,4 +22,3 @@ org.axonframework.eventhandling.configuration.EventBusConfigurationDefaults
 org.axonframework.messaging.reflection.ClasspathParameterResolverConfigurationEnhancer
 org.axonframework.messaging.configuration.reflection.ConfigurationParameterResolverConfigurationEnhancer
 org.axonframework.messaging.reflection.HierarchicalParameterResolverFactoryConfigurationEnhancer
-org.axonframework.updates.UpdateCheckerConfigurationEnhancer

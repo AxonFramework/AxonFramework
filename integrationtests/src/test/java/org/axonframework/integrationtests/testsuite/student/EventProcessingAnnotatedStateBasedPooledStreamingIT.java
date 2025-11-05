@@ -31,7 +31,7 @@ import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.configuration.StateBasedEntityModule;
 import org.axonframework.modelling.repository.InMemoryRepository;
-import org.axonframework.serialization.Converter;
+import org.axonframework.conversion.Converter;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;

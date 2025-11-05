@@ -17,6 +17,7 @@
 package org.axonframework.serialization;
 
 import org.axonframework.common.AxonNonTransientException;
+import org.axonframework.conversion.Converter;
 
 /**
  * Indicates that an exception occurred while serializing or deserializing an object.

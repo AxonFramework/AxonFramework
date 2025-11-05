@@ -22,8 +22,8 @@ import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.conversion.DelegatingEventConverter;
 import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
-import org.axonframework.serialization.ConversionException;
-import org.axonframework.serialization.json.JacksonConverter;
+import org.axonframework.conversion.ConversionException;
+import org.axonframework.conversion.json.JacksonConverter;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;

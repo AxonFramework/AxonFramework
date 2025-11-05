@@ -16,6 +16,7 @@
 
 package org.axonframework.common.utils;
 
+import org.axonframework.eventhandling.AsyncInMemoryStreamableEventSource;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;

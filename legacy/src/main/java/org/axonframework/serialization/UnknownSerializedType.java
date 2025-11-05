@@ -16,6 +16,8 @@
 
 package org.axonframework.serialization;
 
+import org.axonframework.conversion.Converter;
+
 /**
  * Class representing a serialized object of which there is no class available in the current class loader. This class
  * provides access to the raw underlying data, as well as any format supported by the serializer.

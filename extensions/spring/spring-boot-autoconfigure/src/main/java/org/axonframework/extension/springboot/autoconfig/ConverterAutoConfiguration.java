@@ -21,16 +21,17 @@ import com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper;
 import jakarta.annotation.Nonnull;
 import org.apache.avro.message.SchemaStore;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.conversion.ContentTypeConverter;
 import org.axonframework.eventhandling.conversion.DelegatingEventConverter;
 import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.conversion.MessageConverter;
-import org.axonframework.serialization.ChainingContentTypeConverter;
-import org.axonframework.serialization.Converter;
-import org.axonframework.serialization.avro.AvroConverter;
-import org.axonframework.serialization.avro.AvroConverterConfiguration;
-import org.axonframework.serialization.avro.AvroConverterStrategy;
-import org.axonframework.serialization.json.JacksonConverter;
+import org.axonframework.conversion.ChainingContentTypeConverter;
+import org.axonframework.conversion.Converter;
+import org.axonframework.conversion.avro.AvroConverter;
+import org.axonframework.conversion.avro.AvroConverterConfiguration;
+import org.axonframework.conversion.avro.AvroConverterStrategy;
+import org.axonframework.conversion.json.JacksonConverter;
 import org.axonframework.extension.springboot.ConverterProperties;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanClassLoaderAware;
@@ -51,7 +52,7 @@ import static java.util.Objects.requireNonNull;
 import static org.springframework.beans.factory.BeanFactoryUtils.beansOfTypeIncludingAncestors;
 
 /**
- * Autoconfiguration class dedicated to configuring the {@link org.axonframework.serialization.Converter}.
+ * Autoconfiguration class dedicated to configuring the {@link Converter}.
  * <p>
  * Users can influence the configuration through the {@link ConverterProperties}.
  *
@@ -195,11 +196,11 @@ public class ConverterAutoConfiguration implements ApplicationContextAware, Bean
 
     /**
      * Sets the application context used to validate for the existence of other required properties to construct the
-     * specified {@link org.axonframework.serialization.Converter Converters}.
+     * specified {@link Converter Converters}.
      *
      * @param applicationContext The application context used to validate for the existence of other required properties
      *                           to construct the specified
-     *                           {@link org.axonframework.serialization.Converter Converters}.
+     *                           {@link Converter Converters}.
      */
     @Override
     public void setApplicationContext(@Nonnull ApplicationContext applicationContext) throws BeansException {
@@ -208,10 +209,10 @@ public class ConverterAutoConfiguration implements ApplicationContextAware, Bean
 
     /**
      * Sets the class loader used by the {@link ChainingContentTypeConverter} to load
-     * {@link org.axonframework.serialization.ContentTypeConverter ContentTypeConverters}.
+     * {@link ContentTypeConverter ContentTypeConverters}.
      *
      * @param classLoader The class loader used by the {@link ChainingContentTypeConverter} to load
-     *                    {@link org.axonframework.serialization.ContentTypeConverter ContentTypeConverters}.
+     *                    {@link ContentTypeConverter ContentTypeConverters}.
      */
     @Override
     public void setBeanClassLoader(@Nonnull ClassLoader classLoader) {

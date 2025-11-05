@@ -20,7 +20,7 @@ import org.axonframework.common.infra.MockComponentDescriptor;
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.Configuration;
-import org.axonframework.common.configuration.MessagingConfigurer;
+import org.axonframework.messaging.configuration.MessagingConfigurer;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.correlation.CorrelationDataProviderRegistry;

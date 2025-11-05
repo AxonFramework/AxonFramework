@@ -104,7 +104,7 @@ class TracingQueryBusTest {
 //            Objects.requireNonNull(initialResult.block()).payload();
 //            spanFactory.verifySpanCompleted("QueryBus.query");
 //            updatedLatch.await();
-//            Objects.requireNonNull(result.updates().next().block()).payload();
+//            Objects.requireNonNull(result.update().next().block()).payload();
 //            spanFactory.verifySpanCompleted("QueryUpdateEmitter.emitQueryUpdateMessage");
 //        } finally {
 //            disposable.dispose();

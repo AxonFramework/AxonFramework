@@ -16,6 +16,8 @@
 
 package org.axonframework.serialization;
 
+import org.axonframework.conversion.Converter;
+
 /**
  * Describes the type of a serialized object. This information is used to decide how to deserialize an object.
  *

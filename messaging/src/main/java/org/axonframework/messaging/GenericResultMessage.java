@@ -20,7 +20,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.serialization.Converter;
+import org.axonframework.conversion.Converter;
 
 import java.lang.reflect.Type;
 import java.util.Map;

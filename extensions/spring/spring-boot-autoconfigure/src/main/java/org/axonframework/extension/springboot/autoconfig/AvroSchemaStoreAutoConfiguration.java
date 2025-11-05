@@ -18,6 +18,7 @@ package org.axonframework.extension.springboot.autoconfig;
 
 import org.apache.avro.Schema;
 import org.apache.avro.message.SchemaStore;
+import org.axonframework.conversion.Converter;
 import org.axonframework.extension.spring.serialization.avro.AvroSchemaPackages;
 import org.axonframework.extension.spring.serialization.avro.AvroSchemaScan;
 import org.axonframework.extension.spring.serialization.avro.ClasspathAvroSchemaLoader;
@@ -41,7 +42,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Autoconfigures required beans for the Avro {@link org.axonframework.serialization.Converter}.
+ * Autoconfigures required beans for the Avro {@link Converter}.
  *
  * @author Simon Zambrovski
  * @author Jan Galinski

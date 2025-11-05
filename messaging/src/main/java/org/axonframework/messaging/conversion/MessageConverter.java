@@ -19,7 +19,7 @@ package org.axonframework.messaging.conversion;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.messaging.Message;
-import org.axonframework.serialization.Converter;
+import org.axonframework.conversion.Converter;
 
 import java.lang.reflect.Type;
 
@@ -27,7 +27,7 @@ import java.lang.reflect.Type;
  * A converter specific for {@link Message Messages}, acting on the payload.
  * <p>
  * This interface serves the purpose of enforcing use of the right type of converter. Implementation of this interface
- * typically delegate operations to a {@link org.axonframework.serialization.Converter} instance.
+ * typically delegate operations to a {@link Converter} instance.
  *
  * @author Steven van Beelen
  * @since 5.0.0

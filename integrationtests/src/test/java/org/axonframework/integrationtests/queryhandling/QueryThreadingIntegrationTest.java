@@ -36,7 +36,7 @@ import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.distributed.DistributedQueryBus;
 import org.axonframework.queryhandling.distributed.DistributedQueryBusConfiguration;
 import org.axonframework.queryhandling.distributed.PayloadConvertingQueryBusConnector;
-import org.axonframework.serialization.json.JacksonConverter;
+import org.axonframework.conversion.json.JacksonConverter;
 import org.axonframework.test.server.AxonServerContainer;
 import org.axonframework.common.utils.MockException;
 import org.junit.jupiter.api.*;
@@ -185,13 +185,13 @@ class QueryThreadingIntegrationTest {
                                  .extracting(this::messagePayloadAsString)
                                  .isEqualTo("a");
 
-        // this means we have the initial result. Let's send some updates
+        // this means we have the initial result. Let's send some update
         queryBus1.emitUpdate(m -> true,
                              () -> new GenericSubscriptionQueryUpdateMessage(MESSAGE_TYPE_STRING, "u1"),
                              null);
         queryBus1.completeSubscriptions(m -> true, null);
 
-        // and check for these updates to arrive
+        // and check for these update to arrive
         await().atMost(Duration.ofSeconds(1)).until(result::hasNextAvailable);
         assertThat(result.next()).isPresent()
                                  .get()
@@ -231,7 +231,7 @@ class QueryThreadingIntegrationTest {
                                  .get()
                                  .extracting(this::messagePayloadAsString)
                                  .isEqualTo("a1");
-        // this means we have the first initial result. Let's send some updates
+        // this means we have the first initial result. Let's send some update
         queryBus1.emitUpdate(m -> true,
                              () -> new GenericSubscriptionQueryUpdateMessage(MESSAGE_TYPE_STRING, "u1"),
                              null);
@@ -240,13 +240,13 @@ class QueryThreadingIntegrationTest {
                                  .get()
                                  .extracting(this::messagePayloadAsString)
                                  .isEqualTo("a2");
-        // this means we have all the initial results. Let's send some more updates
+        // this means we have all the initial results. Let's send some more update
         queryBus1.emitUpdate(m -> true,
                              () -> new GenericSubscriptionQueryUpdateMessage(MESSAGE_TYPE_STRING, "u2"),
                              null);
         queryBus1.completeSubscriptions(m -> true, null);
 
-        // and check for these updates to arrive
+        // and check for these update to arrive
         await().atMost(Duration.ofSeconds(1)).until(result::hasNextAvailable);
         assertThat(result.next()).isPresent()
                                  .get()

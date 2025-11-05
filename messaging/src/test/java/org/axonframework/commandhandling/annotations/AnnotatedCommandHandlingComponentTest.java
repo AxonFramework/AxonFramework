@@ -28,11 +28,12 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotations.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotations.ParameterResolverFactory;
+import org.axonframework.messaging.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.interceptors.annotations.ExceptionHandler;
 import org.axonframework.messaging.interceptors.annotations.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
-import org.axonframework.serialization.PassThroughConverter;
+import org.axonframework.conversion.PassThroughConverter;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -66,7 +67,7 @@ class AnnotatedCommandHandlingComponentTest {
 
         testSubject = new AnnotatedCommandHandlingComponent<>(annotatedCommandHandler,
                                                               parameterResolverFactory,
-                                                              PassThroughConverter.MESSAGE_INSTANCE);
+                                                              new DelegatingMessageConverter(PassThroughConverter.INSTANCE));
 
         when(commandBus.subscribe(any(QualifiedName.class), any())).thenReturn(commandBus);
         when(commandBus.subscribe(anySet(), any())).thenReturn(commandBus);
@@ -157,7 +158,7 @@ class AnnotatedCommandHandlingComponentTest {
                                                                    withInterceptor,
                                                                    new ArrayList<>());
         testSubject = new AnnotatedCommandHandlingComponent<>(annotatedCommandHandler,
-                                                              PassThroughConverter.MESSAGE_INSTANCE);
+                                                              new DelegatingMessageConverter(PassThroughConverter.INSTANCE));
 
         Object result = testSubject.handle(testCommandMessage, mock(ProcessingContext.class))
                                    .first()
@@ -183,7 +184,7 @@ class AnnotatedCommandHandlingComponentTest {
                                                                    new ArrayList<>(),
                                                                    interceptedExceptions);
         testSubject = new AnnotatedCommandHandlingComponent<>(annotatedCommandHandler,
-                                                              PassThroughConverter.MESSAGE_INSTANCE);
+                                                              new DelegatingMessageConverter(PassThroughConverter.INSTANCE));
 
         try {
             testSubject.handle(testCommandMessage, mock(ProcessingContext.class));

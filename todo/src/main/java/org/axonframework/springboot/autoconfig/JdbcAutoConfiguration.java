@@ -35,7 +35,7 @@ import org.axonframework.eventsourcing.eventstore.jdbc.JdbcSQLErrorCodesResolver
 import org.axonframework.eventsourcing.eventstore.jdbc.LegacyJdbcEventStorageEngine;
 import org.axonframework.extension.springboot.autoconfig.JpaAutoConfiguration;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.json.JacksonConverter;
+import org.axonframework.conversion.json.JacksonConverter;
 import org.axonframework.extension.spring.jdbc.SpringDataSourceConnectionProvider;
 import org.axonframework.extension.springboot.EventProcessorProperties;
 import org.axonframework.extension.springboot.TokenStoreProperties;

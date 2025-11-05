@@ -19,13 +19,13 @@ package org.axonframework.queryhandling;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.ResultMessage;
-import org.axonframework.serialization.Converter;
+import org.axonframework.conversion.Converter;
 
 import java.lang.reflect.Type;
 import java.util.Map;
 
 /**
- * A {@link ResultMessage} implementation that holds incremental updates of a subscription query.
+ * A {@link ResultMessage} implementation that holds incremental update of a subscription query.
  *
  * @author Milan Savic
  * @since 3.3.0

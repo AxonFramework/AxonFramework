@@ -31,7 +31,7 @@ import org.axonframework.eventhandling.processors.streaming.token.store.ConfigTo
 import org.axonframework.eventhandling.processors.streaming.token.store.UnableToClaimTokenException;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
-import org.axonframework.serialization.TestConverter;
+import org.axonframework.conversion.TestConverter;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;

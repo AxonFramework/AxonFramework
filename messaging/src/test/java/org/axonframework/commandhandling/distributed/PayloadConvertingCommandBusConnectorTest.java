@@ -25,7 +25,7 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.serialization.Converter;
+import org.axonframework.conversion.Converter;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 

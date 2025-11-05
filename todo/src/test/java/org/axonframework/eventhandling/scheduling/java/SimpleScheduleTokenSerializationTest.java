@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.scheduling.java;
 
-import org.axonframework.serialization.TestConverter;
+import org.axonframework.conversion.TestConverter;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 

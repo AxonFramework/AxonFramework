@@ -19,9 +19,9 @@ package org.axonframework.messaging;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.TypeReference;
-import org.axonframework.serialization.ChainingContentTypeConverter;
-import org.axonframework.serialization.ConversionException;
-import org.axonframework.serialization.Converter;
+import org.axonframework.conversion.ChainingContentTypeConverter;
+import org.axonframework.conversion.ConversionException;
+import org.axonframework.conversion.Converter;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Type;

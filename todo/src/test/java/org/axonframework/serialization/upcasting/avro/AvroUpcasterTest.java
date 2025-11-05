@@ -16,7 +16,8 @@
 
 package org.axonframework.serialization.upcasting.avro;
 
-import org.axonframework.serialization.avro.test.ComplexObject;
+import org.axonframework.conversion.avro.test.ComplexObject;
+import org.axonframework.conversion.avro.test.ComplexObjectSchemas;
 
 /**
  * TODO #3597 - Left this test in the codebase to be able to re-create is as soon upcasting is redesigned.
@@ -78,7 +79,7 @@ class AvroUpcasterTest {
     }
 
 
-     // Purpose: the  {@link org.axonframework.serialization.avro.test.ComplexObjectSchemas#incompatibleSchema} does not
+     // Purpose: the  {@link ComplexObjectSchemas#incompatibleSchema} does not
      // define value1, so it is incompatible to the schema of {@link ComplexObject}. The Upcaster has to add the
      // additional field.
     @Test

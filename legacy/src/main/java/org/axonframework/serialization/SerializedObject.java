@@ -16,6 +16,8 @@
 
 package org.axonframework.serialization;
 
+import org.axonframework.conversion.Converter;
+
 /**
  * Interface describing the structure of a serialized object.
  *

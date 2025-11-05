@@ -341,7 +341,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
 
     /**
      * Specifies a time in milliseconds the work packages of this processor should extend the claim on a
-     * {@link TrackingToken}. The threshold will only be met in absence of regular event processing, since that updates
+     * {@link TrackingToken}. The threshold will only be met in absence of regular event processing, since that update
      * the {@code TrackingToken} automatically. Defaults to {@code 5000} milliseconds.
      *
      * @param claimExtensionThreshold The time in milliseconds the work packages of this processor should extend the

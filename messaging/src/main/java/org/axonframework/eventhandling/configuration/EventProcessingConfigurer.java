@@ -21,7 +21,7 @@ import org.axonframework.common.annotations.Internal;
 import org.axonframework.messaging.unitofwork.transaction.TransactionManager;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.Configuration;
-import org.axonframework.common.configuration.MessagingConfigurer;
+import org.axonframework.messaging.configuration.MessagingConfigurer;
 import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessorsConfigurer;

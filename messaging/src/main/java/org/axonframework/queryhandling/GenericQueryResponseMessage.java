@@ -24,7 +24,7 @@ import org.axonframework.messaging.GenericResultMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.Metadata;
-import org.axonframework.serialization.Converter;
+import org.axonframework.conversion.Converter;
 
 import java.lang.reflect.Type;
 import java.util.Map;

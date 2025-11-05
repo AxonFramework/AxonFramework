@@ -20,8 +20,8 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.serialization.ConversionException;
-import org.axonframework.serialization.Converter;
+import org.axonframework.conversion.ConversionException;
+import org.axonframework.conversion.Converter;
 
 import java.lang.reflect.Type;
 import java.util.Map;

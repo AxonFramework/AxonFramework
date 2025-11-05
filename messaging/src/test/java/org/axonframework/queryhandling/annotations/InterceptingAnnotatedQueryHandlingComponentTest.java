@@ -18,6 +18,7 @@ package org.axonframework.queryhandling.annotations;
 import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.interceptors.annotations.ExceptionHandler;
 import org.axonframework.messaging.interceptors.annotations.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -26,7 +27,7 @@ import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.QueryHandlingComponent;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.serialization.PassThroughConverter;
+import org.axonframework.conversion.PassThroughConverter;
 import org.axonframework.common.utils.MockException;
 import org.junit.jupiter.api.*;
 
@@ -54,7 +55,7 @@ class InterceptingAnnotatedQueryHandlingComponentTest {
         List<QueryMessage> withoutInterceptor = new ArrayList<>();
         QueryHandlingComponent testSubject = new AnnotatedQueryHandlingComponent<>(
                 new MyInterceptingQueryHandler(withoutInterceptor, withInterceptor, new ArrayList<>()),
-                PassThroughConverter.MESSAGE_INSTANCE
+                new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
         );
 
         QueryMessage testQuery = new GenericQueryMessage(new MessageType("echo"), "Hi");
@@ -78,7 +79,7 @@ class InterceptingAnnotatedQueryHandlingComponentTest {
         List<Exception> interceptedExceptions = new ArrayList<>();
         QueryHandlingComponent testSubject = new AnnotatedQueryHandlingComponent<>(
                 new MyInterceptingQueryHandler(new ArrayList<>(), new ArrayList<>(), interceptedExceptions),
-                PassThroughConverter.MESSAGE_INSTANCE
+                new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
         );
 
         QueryMessage testQuery = new GenericQueryMessage(new MessageType("faulty"),

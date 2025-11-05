@@ -17,7 +17,7 @@
 package org.axonframework.eventhandling.scheduling.jobrunr;
 
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
-import org.axonframework.serialization.TestConverter;
+import org.axonframework.conversion.TestConverter;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;

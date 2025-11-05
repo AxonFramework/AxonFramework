@@ -27,7 +27,7 @@ import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.common.configuration.LifecycleRegistry;
-import org.axonframework.common.configuration.MessagingConfigurer;
+import org.axonframework.messaging.configuration.MessagingConfigurer;
 import org.axonframework.common.configuration.Module;
 import org.axonframework.common.configuration.ModuleBuilder;
 import org.axonframework.eventhandling.EventSink;

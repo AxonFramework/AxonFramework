@@ -23,7 +23,7 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.conversion.MessageConverter;
-import org.axonframework.serialization.Converter;
+import org.axonframework.conversion.Converter;
 
 import java.lang.reflect.Type;
 import java.util.Objects;

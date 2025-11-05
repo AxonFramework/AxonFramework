@@ -712,7 +712,7 @@ class WorkPackage {
 
         /**
          * The time in milliseconds after which the claim of the {@link TrackingToken} will be extended. Will only be
-         * used in absence of regular token updates through event processing. Defaults to {@code 5000};
+         * used in absence of regular token update through event processing. Defaults to {@code 5000};
          *
          * @param claimExtensionThreshold the time in milliseconds after which the claim of the {@link TrackingToken}
          *                                will be extended

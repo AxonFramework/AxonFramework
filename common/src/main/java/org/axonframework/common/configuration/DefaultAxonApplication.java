@@ -52,7 +52,7 @@ import static org.axonframework.common.Assert.assertStrictPositive;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class DefaultAxonApplication implements ApplicationConfigurer, LifecycleRegistry {
+public class DefaultAxonApplication implements ApplicationConfigurer, LifecycleRegistry {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -67,7 +67,10 @@ class DefaultAxonApplication implements ApplicationConfigurer, LifecycleRegistry
 
     private final AtomicReference<AxonConfiguration> configuration = new AtomicReference<>();
 
-    DefaultAxonApplication() {
+    /**
+     * Creates a default axon application.
+     */
+    public DefaultAxonApplication() {
         this.componentRegistry = new DefaultComponentRegistry();
     }
 

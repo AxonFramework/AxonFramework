@@ -19,7 +19,7 @@ package org.axonframework.commandhandling.distributed;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.interceptors.InterceptingCommandBus;
 import org.axonframework.common.configuration.Configuration;
-import org.axonframework.common.configuration.MessagingConfigurer;
+import org.axonframework.messaging.configuration.MessagingConfigurer;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Field;

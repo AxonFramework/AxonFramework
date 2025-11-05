@@ -25,6 +25,7 @@ import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.common.configuration.ComponentDecorator;
 import org.axonframework.common.configuration.LifecycleRegistry;
 import org.axonframework.common.configuration.ModuleBuilder;
+import org.axonframework.messaging.configuration.MessagingConfigurer;
 import org.axonframework.queryhandling.configuration.QueryHandlingModule;
 
 import java.util.Objects;

@@ -39,7 +39,7 @@ import org.axonframework.messaging.annotations.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotations.ParameterResolverFactory;
 import org.axonframework.messaging.annotations.SimpleResourceParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
-import org.axonframework.serialization.json.JacksonConverter;
+import org.axonframework.conversion.json.JacksonConverter;
 
 import java.util.LinkedList;
 import java.util.List;

@@ -35,8 +35,8 @@ import org.axonframework.queryhandling.annotations.QueryHandler;
 import org.axonframework.queryhandling.distributed.DistributedQueryBus;
 import org.axonframework.queryhandling.distributed.DistributedQueryBusConfiguration;
 import org.axonframework.queryhandling.distributed.PayloadConvertingQueryBusConnector;
-import org.axonframework.serialization.PassThroughConverter;
-import org.axonframework.serialization.json.JacksonConverter;
+import org.axonframework.conversion.PassThroughConverter;
+import org.axonframework.conversion.json.JacksonConverter;
 import org.axonframework.test.server.AxonServerContainer;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
@@ -121,7 +121,7 @@ class StreamingQueryIT {
                 axonServerQueryBus(senderLocalSegment, nonStreamingAxonServerAddress);
 
         QueryHandlingComponent queryHandlingComponent =
-                new AnnotatedQueryHandlingComponent<>(new MyQueryHandler(), PassThroughConverter.MESSAGE_INSTANCE);
+                new AnnotatedQueryHandlingComponent<>(new MyQueryHandler(), new DelegatingMessageConverter(PassThroughConverter.INSTANCE));
         handlerQueryBus.subscribe(queryHandlingComponent);
         nonStreamingHandlerQueryBus.subscribe(queryHandlingComponent);
     }

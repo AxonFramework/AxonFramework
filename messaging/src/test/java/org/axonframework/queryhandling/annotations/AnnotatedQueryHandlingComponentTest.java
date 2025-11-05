@@ -20,6 +20,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.annotations.UnsupportedHandlerException;
+import org.axonframework.messaging.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.queryhandling.GenericQueryMessage;
@@ -27,7 +28,7 @@ import org.axonframework.queryhandling.NoHandlerForQueryException;
 import org.axonframework.queryhandling.QueryExecutionException;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.serialization.PassThroughConverter;
+import org.axonframework.conversion.PassThroughConverter;
 import org.axonframework.common.utils.MockException;
 import org.junit.jupiter.api.*;
 
@@ -51,20 +52,20 @@ class AnnotatedQueryHandlingComponentTest {
     @BeforeEach
     void setUp() {
         testSubject = new AnnotatedQueryHandlingComponent<>(new MyQueryHandler(),
-                                                            PassThroughConverter.MESSAGE_INSTANCE);
+                                                            new DelegatingMessageConverter(PassThroughConverter.INSTANCE));
     }
 
     @Test
     void subscribeFailsForHandlerWithInvalidParameters() {
         assertThatThrownBy(() -> new AnnotatedQueryHandlingComponent<>(
-                new FaultyParameterOrderQueryHandler(), PassThroughConverter.MESSAGE_INSTANCE
+                new FaultyParameterOrderQueryHandler(), new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
         )).isInstanceOf(UnsupportedHandlerException.class);
     }
 
     @Test
     void subscribeFailsForHandlerWithVoidReturnType() {
         assertThatThrownBy(() -> new AnnotatedQueryHandlingComponent<>(
-                new VoidReturnTypeQueryHandler(), PassThroughConverter.MESSAGE_INSTANCE
+                new VoidReturnTypeQueryHandler(), new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
         )).isInstanceOf(UnsupportedHandlerException.class);
     }
 

@@ -18,7 +18,7 @@ package org.axonframework.extension.spring.serialization.avro;
 
 import org.apache.avro.Schema;
 import org.apache.avro.specific.SpecificRecordBase;
-import org.axonframework.serialization.avro.AvroUtil;
+import org.axonframework.conversion.avro.AvroUtil;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.io.ResourceLoader;

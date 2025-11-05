@@ -27,8 +27,8 @@ import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.eventstreaming.Tag;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.Metadata;
-import org.axonframework.serialization.Converter;
-import org.axonframework.serialization.json.JacksonConverter;
+import org.axonframework.conversion.Converter;
+import org.axonframework.conversion.json.JacksonConverter;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 

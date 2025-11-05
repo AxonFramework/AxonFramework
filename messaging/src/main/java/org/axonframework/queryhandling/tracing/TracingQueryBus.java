@@ -74,7 +74,7 @@ public class TracingQueryBus {
                 1024
         );
 
-        result.updates().subscribe();
+        result.update().subscribe();
 //        testSubject.emit(any -> true, "some-awesome-text");
         result.complete();
 

@@ -19,7 +19,7 @@ package org.axonframework.monitoring.configuration;
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.configuration.ComponentRegistry;
-import org.axonframework.common.configuration.MessagingConfigurationDefaults;
+import org.axonframework.messaging.configuration.MessagingConfigurationDefaults;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.ComponentDefinition;

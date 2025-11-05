@@ -18,7 +18,7 @@ package org.axonframework.queryhandling.distributed;
 
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.conversion.DelegatingMessageConverter;
-import org.axonframework.serialization.Converter;
+import org.axonframework.conversion.Converter;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;

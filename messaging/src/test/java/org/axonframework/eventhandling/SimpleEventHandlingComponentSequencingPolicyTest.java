@@ -31,8 +31,8 @@ import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
-import org.axonframework.serialization.Converter;
-import org.axonframework.serialization.PassThroughConverter;
+import org.axonframework.conversion.Converter;
+import org.axonframework.conversion.PassThroughConverter;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;

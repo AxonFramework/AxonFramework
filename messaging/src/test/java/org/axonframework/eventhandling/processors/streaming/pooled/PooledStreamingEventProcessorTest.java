@@ -38,7 +38,7 @@ import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
-import org.axonframework.common.utils.AsyncInMemoryStreamableEventSource;
+import org.axonframework.eventhandling.AsyncInMemoryStreamableEventSource;
 import org.axonframework.common.utils.DelegateScheduledExecutorService;
 import org.axonframework.common.utils.MockException;
 import org.junit.jupiter.api.*;
@@ -758,7 +758,7 @@ class PooledStreamingEventProcessorTest {
             verify(tokenStore, never()).storeToken(any(), eq(PROCESSOR_NAME), eq(0), any());
 
             // Although the WorkPackage is waiting, the Coordinator should in the meantime fail with extending the claim.
-            // This updates the processing status of the WorkPackage.
+            // This update the processing status of the WorkPackage.
             await().pollDelay(Duration.ofMillis(50))
                    .atMost(Duration.ofSeconds(5))
                    .until(() -> testSubject.processingStatus().get(0)

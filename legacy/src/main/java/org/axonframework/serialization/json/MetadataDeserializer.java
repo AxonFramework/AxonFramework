@@ -20,6 +20,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.jsontype.TypeDeserializer;
+import org.axonframework.conversion.json.JacksonConverter;
 import org.axonframework.messaging.Metadata;
 
 import java.io.IOException;

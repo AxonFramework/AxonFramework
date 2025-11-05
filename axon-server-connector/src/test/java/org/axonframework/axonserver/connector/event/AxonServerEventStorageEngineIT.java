@@ -24,7 +24,7 @@ import org.axonframework.eventhandling.conversion.DelegatingEventConverter;
 import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.eventsourcing.eventstore.StorageEngineTestSuite;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.serialization.ChainingContentTypeConverter;
+import org.axonframework.conversion.ChainingContentTypeConverter;
 import org.axonframework.test.server.AxonServerContainer;
 import org.axonframework.test.server.AxonServerContainerUtils;
 import org.junit.jupiter.api.*;

@@ -245,7 +245,7 @@ class WorkPackageTest {
                     any(ProcessingContext.class)
             );
             assertEquals(expectedToken, tokenCaptor.getValue());
-            // status updates are sent temporarily, so we can't guarantee when they are sent. But at least one must have been sent.
+            // status update are sent temporarily, so we can't guarantee when they are sent. But at least one must have been sent.
             assertThat(trackerStatusUpdates.size()).isGreaterThanOrEqualTo(1);
         });
         OptionalLong resultPosition = trackerStatusUpdates.getFirst().getCurrentPosition();

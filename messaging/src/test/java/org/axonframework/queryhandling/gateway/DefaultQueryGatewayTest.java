@@ -22,6 +22,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.Metadata;
+import org.axonframework.messaging.conversion.DelegatingMessageConverter;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage;
@@ -29,7 +30,7 @@ import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryPriorityCalculator;
 import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.serialization.PassThroughConverter;
+import org.axonframework.conversion.PassThroughConverter;
 import org.axonframework.common.utils.MockException;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -71,7 +72,7 @@ class DefaultQueryGatewayTest {
         testSubject = new DefaultQueryGateway(queryBus,
                                               new ClassBasedMessageTypeResolver(),
                                               QueryPriorityCalculator.defaultCalculator(),
-                                              PassThroughConverter.MESSAGE_INSTANCE);
+                                              new DelegatingMessageConverter(PassThroughConverter.INSTANCE));
 
         queryCaptor = ArgumentCaptor.forClass(QueryMessage.class);
         streamingQueryCaptor = ArgumentCaptor.forClass(QueryMessage.class);

@@ -63,6 +63,7 @@ import org.axonframework.messaging.annotations.MultiHandlerEnhancerDefinition;
 import org.axonframework.messaging.annotations.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotations.ParameterResolverFactory;
 import org.axonframework.messaging.annotations.SimpleResourceParameterResolverFactory;
+import org.axonframework.messaging.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
@@ -79,7 +80,7 @@ import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
-import org.axonframework.serialization.PassThroughConverter;
+import org.axonframework.conversion.PassThroughConverter;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.matchers.FieldFilter;
@@ -229,7 +230,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                 getParameterResolverFactory(),
                 getHandlerDefinition(),
                 new ClassBasedMessageTypeResolver(),
-                PassThroughConverter.MESSAGE_INSTANCE
+                new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
         ));
         return this;
     }

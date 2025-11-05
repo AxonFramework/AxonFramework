@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.cfg.MapperConfig;
 import com.fasterxml.jackson.databind.introspect.Annotated;
 import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
 import com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper;
+import org.axonframework.conversion.TestConverter;
 import org.axonframework.serialization.json.JacksonSerializer;
 
 import java.beans.ConstructorProperties;

@@ -124,7 +124,7 @@ public interface SagaSqlSchema {
     PreparedStatement sql_deleteAssociationEntries(Connection connection, String sagaIdentifier) throws SQLException;
 
     /**
-     * Creates a PreparedStatement that updates the serialized form of an existing Saga entry, of given
+     * Creates a PreparedStatement that update the serialized form of an existing Saga entry, of given
      * {@code sagaType} and with given {@code sagaIdentifier}.
      *
      * @param connection     The connection to create the PreparedStatement for
@@ -132,7 +132,7 @@ public interface SagaSqlSchema {
      * @param serializedSaga The serialized form of the saga to update
      * @param sagaType       The serialized type of the saga
      * @param revision       The revision identifier of the serialized form
-     * @return a statement that updates a Saga entry, when executed
+     * @return a statement that update a Saga entry, when executed
      * @throws SQLException when an error occurs creating the PreparedStatement
      */
     PreparedStatement sql_updateSaga(Connection connection, String sagaIdentifier, byte[] serializedSaga,

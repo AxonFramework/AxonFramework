@@ -40,7 +40,7 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.modelling.annotations.AnnotationBasedEntityEvolvingComponent;
 import org.axonframework.modelling.EntityEvolver;
-import org.axonframework.serialization.Converter;
+import org.axonframework.conversion.Converter;
 import org.junit.jupiter.api.*;
 
 import java.util.Objects;

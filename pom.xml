@@ -26,6 +26,7 @@
     <modules>
         <module>axon-server-connector</module>
         <module>common</module>
+        <module>conversion</module>
         <module>eventsourcing</module>
         <module>extensions</module>
         <module>integrationtests</module>
@@ -37,6 +38,7 @@
         <module>modelling</module>
         <module>test</module>
         <module>todo</module>
+        <module>update</module>
     </modules>
     <packaging>pom</packaging>
 

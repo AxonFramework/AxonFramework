@@ -19,6 +19,7 @@ package org.axonframework.queryhandling;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.DescribableComponent;
+import org.axonframework.conversion.ConversionException;
 import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.messaging.MessageTypeNotResolvedException;
 import org.axonframework.messaging.MessageTypeResolver;
@@ -32,8 +33,8 @@ import java.util.function.Supplier;
 /**
  * Query-specific component that interacts with
  * {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int) subscription queries} about
- * {@link #emit(Class, Predicate, Object) updates}, {@link #completeExceptionally(Class, Predicate, Throwable) errors},
- * and when there are {@link #complete(Class, Predicate) no more updates}.
+ * {@link #emit(Class, Predicate, Object) update}, {@link #completeExceptionally(Class, Predicate, Throwable) errors},
+ * and when there are {@link #complete(Class, Predicate) no more update}.
  * <p>
  * Implementations of the {@code QueryUpdateEmitter} are expected to be {@link ProcessingContext context-aware}, to
  * ensure operations occur within the correct order of (for example) the lifecycle of an
@@ -86,7 +87,7 @@ public interface QueryUpdateEmitter extends DescribableComponent {
      *                                                             {@link org.axonframework.messaging.MessageType}
      *                                                             equivalent required to filter the
      *                                                             {@link SubscriptionQueryMessage#payload()}.
-     * @throws org.axonframework.serialization.ConversionException If the {@link SubscriptionQueryMessage#payload()}
+     * @throws ConversionException If the {@link SubscriptionQueryMessage#payload()}
      *                                                             could not be converted to the given {@code queryType}
      *                                                             to perform the given {@code filter}. Will only occur
      *                                                             if a {@link org.axonframework.messaging.MessageType}
@@ -113,7 +114,7 @@ public interface QueryUpdateEmitter extends DescribableComponent {
      *                                                             {@link org.axonframework.messaging.MessageType}
      *                                                             equivalent required to filter the
      *                                                             {@link SubscriptionQueryMessage#payload()}.
-     * @throws org.axonframework.serialization.ConversionException If the {@link SubscriptionQueryMessage#payload()}
+     * @throws ConversionException If the {@link SubscriptionQueryMessage#payload()}
      *                                                             could not be converted to the given {@code queryType}
      *                                                             to perform the given {@code filter}. Will only occur
      *                                                             if a {@link org.axonframework.messaging.MessageType}
@@ -166,7 +167,7 @@ public interface QueryUpdateEmitter extends DescribableComponent {
      *                                                             {@link org.axonframework.messaging.MessageType}
      *                                                             equivalent required to filter the
      *                                                             {@link SubscriptionQueryMessage#payload()}.
-     * @throws org.axonframework.serialization.ConversionException If the {@link SubscriptionQueryMessage#payload()}
+     * @throws ConversionException If the {@link SubscriptionQueryMessage#payload()}
      *                                                             could not be converted to the given {@code queryType}
      *                                                             to perform the given {@code filter}. Will only occur
      *                                                             if a {@link org.axonframework.messaging.MessageType}
@@ -195,7 +196,7 @@ public interface QueryUpdateEmitter extends DescribableComponent {
      *                                                             {@link org.axonframework.messaging.MessageType}
      *                                                             equivalent required to filter the
      *                                                             {@link SubscriptionQueryMessage#payload()}.
-     * @throws org.axonframework.serialization.ConversionException If the {@link SubscriptionQueryMessage#payload()}
+     * @throws ConversionException If the {@link SubscriptionQueryMessage#payload()}
      *                                                             could not be converted to the given {@code queryType}
      *                                                             to perform the given {@code filter}. Will only occur
      *                                                             if a {@link org.axonframework.messaging.MessageType}

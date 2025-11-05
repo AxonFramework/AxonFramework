@@ -17,7 +17,6 @@
 package org.axonframework.eventhandling.deadletter.jdbc;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.serialization.TestConverter;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
 

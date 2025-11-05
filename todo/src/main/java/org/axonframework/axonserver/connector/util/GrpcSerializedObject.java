@@ -16,7 +16,7 @@
 
 package org.axonframework.axonserver.connector.util;
 
-import org.axonframework.serialization.Converter;
+import org.axonframework.conversion.Converter;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;

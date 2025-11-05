@@ -88,14 +88,14 @@ public class InterceptingQueryBus implements QueryBus {
      * {@code delegate}. The given {@code handlerInterceptors} are wrapped around the
      * {@link QueryHandler query handlers} when subscribing. The given {@code dispatchInterceptors} are invoked before
      * dispatching is provided to the given {@code delegate}. The given {@code updateDispatchInterceptors} are invoked
-     * before emitting subscription query updates.
+     * before emitting subscription query update.
      *
      * @param delegate                   The delegate {@code QueryBus} that will handle all dispatching and handling
      *                                   logic.
      * @param handlerInterceptors        The interceptors to invoke before handling a query and if present on the query
      *                                   result.
      * @param dispatchInterceptors       The interceptors to invoke before dispatching a query and on the query result.
-     * @param updateDispatchInterceptors The interceptors to invoke before emitting subscription query updates.
+     * @param updateDispatchInterceptors The interceptors to invoke before emitting subscription query update.
      */
     public InterceptingQueryBus(
             @Nonnull QueryBus delegate,

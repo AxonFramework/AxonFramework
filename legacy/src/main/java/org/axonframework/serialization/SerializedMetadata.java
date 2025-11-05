@@ -16,6 +16,7 @@
 
 package org.axonframework.serialization;
 
+import org.axonframework.conversion.Converter;
 import org.axonframework.messaging.Metadata;
 
 import java.util.Objects;

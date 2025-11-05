@@ -24,7 +24,7 @@ import org.axonframework.eventhandling.processors.streaming.token.store.TokenSto
 import org.axonframework.eventhandling.processors.streaming.token.store.jpa.JpaTokenStore;
 import org.axonframework.eventhandling.processors.streaming.token.store.jpa.JpaTokenStoreConfiguration;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
-import org.axonframework.serialization.json.JacksonConverter;
+import org.axonframework.conversion.json.JacksonConverter;
 import org.axonframework.extension.springboot.TokenStoreProperties;
 import org.axonframework.extension.springboot.util.RegisterDefaultEntities;
 import org.axonframework.extension.springboot.util.jpa.ContainerManagedEntityManagerProvider;

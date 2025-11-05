@@ -20,7 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
-import org.axonframework.common.configuration.MessagingConfigurationDefaults;
+import org.axonframework.messaging.configuration.MessagingConfigurationDefaults;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.configuration.EventBusConfigurationDefaults;

@@ -31,8 +31,8 @@ import org.axonframework.messaging.annotations.MetadataValue;
 import org.axonframework.messaging.annotations.SourceId;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
-import org.axonframework.serialization.Converter;
-import org.axonframework.serialization.PassThroughConverter;
+import org.axonframework.conversion.Converter;
+import org.axonframework.conversion.PassThroughConverter;
 import org.junit.jupiter.api.*;
 
 import java.time.Clock;

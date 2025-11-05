@@ -19,6 +19,7 @@ package org.axonframework.serialization;
 import java.lang.reflect.Type;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.conversion.Converter;
 
 /**
  * Interface describing a serialization mechanism. Implementations can serialize objects of given type {@code T} to an

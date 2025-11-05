@@ -126,7 +126,7 @@ public class DistributedQueryBus implements QueryBus {
     @Override
     public MessageStream<SubscriptionQueryUpdateMessage> subscribeToUpdates(@Nonnull QueryMessage query,
                                                                             int updateBufferSize) {
-        // not ideal, but the AxonServer Connector doesn't support just subscribing to updates yet
+        // not ideal, but the AxonServer Connector doesn't support just subscribing to update yet
         return subscriptionQuery(query, null, updateBufferSize)
                 .filter(e -> e.message() instanceof SubscriptionQueryUpdateMessage)
                 .cast();

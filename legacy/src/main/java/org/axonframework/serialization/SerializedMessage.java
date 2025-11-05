@@ -18,6 +18,7 @@ package org.axonframework.serialization;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.conversion.Converter;
 import org.axonframework.messaging.AbstractMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;

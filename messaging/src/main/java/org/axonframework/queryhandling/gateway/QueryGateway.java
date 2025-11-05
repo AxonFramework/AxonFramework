@@ -195,9 +195,9 @@ public interface QueryGateway extends DescribableComponent {
 
     /**
      * Sends given {@code query} over the {@link QueryBus} as a subscription query, combining the initial result and
-     * emitted updates as a {@link Publisher} of the given {@code responseType}.
+     * emitted update as a {@link Publisher} of the given {@code responseType}.
      * <p>
-     * The {@code query} is sent once the {@code Publisher} is subscribed to. Furthermore, updates are received at the
+     * The {@code query} is sent once the {@code Publisher} is subscribed to. Furthermore, update are received at the
      * moment the query is sent, and until it is cancelled by the caller or closed by the emitting side.
      * <p>
      * The given {@code query} is wrapped as the payload of the {@link QueryMessage} that is eventually posted on the
@@ -205,7 +205,7 @@ public interface QueryGateway extends DescribableComponent {
      * {@code QueryMessage} is constructed from that message's payload and
      * {@link org.axonframework.messaging.Metadata}.
      * <p>
-     * Note that any {@code null} results, on the initial result or the updates, wil lbe filtered out by the gateway. If
+     * Note that any {@code null} results, on the initial result or the update, wil lbe filtered out by the gateway. If
      * you require the {@code null} to be returned for the initial and update results, we suggest using the
      * {@code QueryBus} instead.
      * <p>
@@ -213,7 +213,7 @@ public interface QueryGateway extends DescribableComponent {
      * full, any attempt to add an update will complete the stream with an exception.
      *
      * @param query        The {@code query} to be sent.
-     * @param responseType The response type returned by this query as the initial result and the updates.
+     * @param responseType The response type returned by this query as the initial result and the update.
      * @param context      The processing context, if any, to dispatch the given {@code query} in.
      * @param <R>          The type of all the responses.
      * @return A {@link org.reactivestreams.Publisher} streaming the results as dictated by the given
@@ -228,9 +228,9 @@ public interface QueryGateway extends DescribableComponent {
 
     /**
      * Sends given {@code query} over the {@link QueryBus} as a subscription query, combining the initial result and
-     * emitted updates as a {@link Publisher} of the given {@code responseType}.
+     * emitted update as a {@link Publisher} of the given {@code responseType}.
      * <p>
-     * The {@code query} is sent once the {@code Publisher} is subscribed to. Furthermore, updates are received at the
+     * The {@code query} is sent once the {@code Publisher} is subscribed to. Furthermore, update are received at the
      * moment the query is sent, and until it is cancelled by the caller or closed by the emitting side.
      * <p>
      * The given {@code query} is wrapped as the payload of the {@link QueryMessage} that is eventually posted on the
@@ -238,7 +238,7 @@ public interface QueryGateway extends DescribableComponent {
      * {@code QueryMessage} is constructed from that message's payload and
      * {@link org.axonframework.messaging.Metadata}.
      * <p>
-     * Note that any {@code null} results, on the initial result or the updates, wil lbe filtered out by the gateway. If
+     * Note that any {@code null} results, on the initial result or the update, wil lbe filtered out by the gateway. If
      * you require the {@code null} to be returned for the initial and update results, we suggest using the
      * {@code QueryBus} instead.
      * <p>
@@ -246,7 +246,7 @@ public interface QueryGateway extends DescribableComponent {
      * full, any attempt to add an update will complete the stream with an exception.
      *
      * @param query        The {@code query} to be sent.
-     * @param responseType The response type returned by this query as the initial result and the updates.
+     * @param responseType The response type returned by this query as the initial result and the update.
      * @param <R>          The type of all the responses.
      * @return A {@link org.reactivestreams.Publisher} streaming the results as dictated by the given
      * {@code responseType}.
@@ -259,9 +259,9 @@ public interface QueryGateway extends DescribableComponent {
 
     /**
      * Sends given {@code query} over the {@link QueryBus} as a subscription query, combining the initial result and
-     * emitted updates as a {@link Publisher} of the given {@code responseType}.
+     * emitted update as a {@link Publisher} of the given {@code responseType}.
      * <p>
-     * The {@code query} is sent once the {@code Publisher} is subscribed to. Furthermore, updates are received at the
+     * The {@code query} is sent once the {@code Publisher} is subscribed to. Furthermore, update are received at the
      * moment the query is sent, and until it is cancelled by the caller or closed by the emitting side.
      * <p>
      * The given {@code query} is wrapped as the payload of the {@link QueryMessage} that is eventually posted on the
@@ -269,7 +269,7 @@ public interface QueryGateway extends DescribableComponent {
      * {@code QueryMessage} is constructed from that message's payload and
      * {@link org.axonframework.messaging.Metadata}.
      * <p>
-     * Note that any {@code null} results, on the initial result or the updates, will be filtered out by the gateway. If
+     * Note that any {@code null} results, on the initial result or the update, will be filtered out by the gateway. If
      * you require the {@code null} to be returned for the initial and update results, we suggest using the
      * {@code QueryBus} instead.
      * <p>
@@ -277,9 +277,9 @@ public interface QueryGateway extends DescribableComponent {
      * full, any attempt to add an update will complete the stream with an exception.
      *
      * @param query            The {@code query} to be sent.
-     * @param responseType     The response type returned by this query as the initial result and the updates.
+     * @param responseType     The response type returned by this query as the initial result and the update.
      * @param context          The processing context, if any, to dispatch the given {@code query} in.
-     * @param updateBufferSize The size of buffer which accumulates updates before a subscription to the {@code Flux} is
+     * @param updateBufferSize The size of buffer which accumulates update before a subscription to the {@code Flux} is
      *                         made.
      * @param <R>              The type of all the responses.
      * @return A {@link org.reactivestreams.Publisher} streaming the results as dictated by the given
@@ -292,13 +292,13 @@ public interface QueryGateway extends DescribableComponent {
                                        int updateBufferSize);
 
     /**
-     * Sends given {@code query} over the {@link QueryBus} and returns a {@link Publisher} supplying the initial updates
-     * followed by the updates. The given {@code mapper} is used to map the {@link QueryResponseMessage} to the desired
-     * object type. To distinguish between the initial result and the updates, the given {@code mapper} can check
+     * Sends given {@code query} over the {@link QueryBus} and returns a {@link Publisher} supplying the initial update
+     * followed by the update. The given {@code mapper} is used to map the {@link QueryResponseMessage} to the desired
+     * object type. To distinguish between the initial result and the update, the given {@code mapper} can check
      * whether the given {@code responseMessage} is an instance of {@link SubscriptionQueryUpdateMessage}. In that case
      * the message is considered an update, otherwise it is considered the initial result.
      * <p>
-     * The {@code query} is sent upon invocation of this method. Furthermore, updates are received at the moment the
+     * The {@code query} is sent upon invocation of this method. Furthermore, update are received at the moment the
      * query is sent, and until the subscription to the Publisher is canceled by the caller or closed by the emitting
      * side.
      * <p>
@@ -307,7 +307,7 @@ public interface QueryGateway extends DescribableComponent {
      * {@code QueryMessage} is constructed from that message's payload and
      * {@link org.axonframework.messaging.Metadata}.
      * <p>
-     * Note that any {@code null} results, on the initial result or the updates, will be filtered out by the gateway. If
+     * Note that any {@code null} results, on the initial result or the update, will be filtered out by the gateway. If
      * you require the {@code null} to be returned for the initial and update results, we suggest using the
      * {@code QueryBus} instead.
      * <p>
@@ -320,7 +320,7 @@ public interface QueryGateway extends DescribableComponent {
      * @param mapper       A {@link Function} that maps the {@link QueryResponseMessage} to the desired response
      * @param context      The processing context, if any, to dispatch the given {@code query} in.
      * @param <R>          The type payload to map the responses to.
-     * @return Registration which can be used to cancel receiving updates.
+     * @return Registration which can be used to cancel receiving update.
      * @see #subscriptionQuery(Object, Class, Function, ProcessingContext, int)
      */
     @Nonnull
@@ -332,13 +332,13 @@ public interface QueryGateway extends DescribableComponent {
     }
 
     /**
-     * Sends given {@code query} over the {@link QueryBus} and returns a {@link Publisher} supplying the initial updates
-     * followed by the updates. The given {@code mapper} is used to map the {@link QueryResponseMessage} to the desired
-     * object type. To distinguish between the initial result and the updates, the given {@code mapper} can check
+     * Sends given {@code query} over the {@link QueryBus} and returns a {@link Publisher} supplying the initial update
+     * followed by the update. The given {@code mapper} is used to map the {@link QueryResponseMessage} to the desired
+     * object type. To distinguish between the initial result and the update, the given {@code mapper} can check
      * whether the given {@code responseMessage} is an instance of {@link SubscriptionQueryUpdateMessage}. In that case
      * the message is considered an update, otherwise it is considered the initial result.
      * <p>
-     * The {@code query} is sent upon invocation of this method. Furthermore, updates are received at the moment the
+     * The {@code query} is sent upon invocation of this method. Furthermore, update are received at the moment the
      * query is sent, and until the subscription to the Publisher is canceled by the caller or closed by the emitting
      * side.
      * <p>
@@ -347,7 +347,7 @@ public interface QueryGateway extends DescribableComponent {
      * {@code QueryMessage} is constructed from that message's payload and
      * {@link org.axonframework.messaging.Metadata}.
      * <p>
-     * Note that any {@code null} results, on the initial result or the updates, will be filtered out by the gateway. If
+     * Note that any {@code null} results, on the initial result or the update, will be filtered out by the gateway. If
      * you require the {@code null} to be returned for the initial and update results, we suggest using the
      * {@code QueryBus} instead.
      * <p>
@@ -359,7 +359,7 @@ public interface QueryGateway extends DescribableComponent {
      * @param responseType The response type returned by this query as the initial result
      * @param mapper       A {@link Function} that maps the {@link QueryResponseMessage} to the desired response
      * @param <R>          The type payload to map the responses to.
-     * @return Registration which can be used to cancel receiving updates.
+     * @return Registration which can be used to cancel receiving update.
      * @see #subscriptionQuery(Object, Class, Function, ProcessingContext, int)
      */
     @Nonnull
@@ -370,13 +370,13 @@ public interface QueryGateway extends DescribableComponent {
     }
 
     /**
-     * Sends given {@code query} over the {@link QueryBus} and returns a {@link Publisher} supplying the initial updates
-     * followed by the updates. The given {@code mapper} is used to map the {@link QueryResponseMessage} to the desired
-     * object type. To distinguish between the initial result and the updates, the given {@code mapper} can check
+     * Sends given {@code query} over the {@link QueryBus} and returns a {@link Publisher} supplying the initial update
+     * followed by the update. The given {@code mapper} is used to map the {@link QueryResponseMessage} to the desired
+     * object type. To distinguish between the initial result and the update, the given {@code mapper} can check
      * whether the given {@code responseMessage} is an instance of {@link SubscriptionQueryUpdateMessage}. In that case
      * the message is considered an update, otherwise it is considered the initial result.
      * <p>
-     * The {@code query} is sent upon invocation of this method. Furthermore, updates are received at the moment the
+     * The {@code query} is sent upon invocation of this method. Furthermore, update are received at the moment the
      * query is sent, and until the subscription to the Publisher is canceled by the caller or closed by the emitting
      * side.
      * <p>
@@ -385,15 +385,15 @@ public interface QueryGateway extends DescribableComponent {
      * {@code QueryMessage} is constructed from that message's payload and
      * {@link org.axonframework.messaging.Metadata}.
      * <p>
-     * Note that any {@code null} results, on the initial result or the updates, will be filtered out by the gateway. If
+     * Note that any {@code null} results, on the initial result or the update, will be filtered out by the gateway. If
      * you require the {@code null} to be returned for the initial and update results, we suggest using the
      * {@code QueryBus} instead.
      *
      * @param query            The {@code query} to be sent.
      * @param responseType     The response type returned by this query as the initial result
-     * @param updateBufferSize The size of the buffer which accumulates updates to be processed.
+     * @param updateBufferSize The size of the buffer which accumulates update to be processed.
      * @param <R>              The type payload to map the responses to.
-     * @return Registration which can be used to cancel receiving updates.
+     * @return Registration which can be used to cancel receiving update.
      * @see #subscriptionQuery(Object, Class, Function, ProcessingContext, int)
      */
     @Nonnull
@@ -404,13 +404,13 @@ public interface QueryGateway extends DescribableComponent {
     }
 
     /**
-     * Sends given {@code query} over the {@link QueryBus} and returns a {@link Publisher} supplying the initial updates
-     * followed by the updates. The given {@code mapper} is used to map the {@link QueryResponseMessage} to the desired
-     * object type. To distinguish between the initial result and the updates, the given {@code mapper} can check
+     * Sends given {@code query} over the {@link QueryBus} and returns a {@link Publisher} supplying the initial update
+     * followed by the update. The given {@code mapper} is used to map the {@link QueryResponseMessage} to the desired
+     * object type. To distinguish between the initial result and the update, the given {@code mapper} can check
      * whether the given {@code responseMessage} is an instance of {@link SubscriptionQueryUpdateMessage}. In that case
      * the message is considered an update, otherwise it is considered the initial result.
      * <p>
-     * The {@code query} is sent upon invocation of this method. Furthermore, updates are received at the moment the
+     * The {@code query} is sent upon invocation of this method. Furthermore, update are received at the moment the
      * query is sent, and until the subscription to the Publisher is canceled by the caller or closed by the emitting
      * side.
      * <p>
@@ -419,7 +419,7 @@ public interface QueryGateway extends DescribableComponent {
      * {@code QueryMessage} is constructed from that message's payload and
      * {@link org.axonframework.messaging.Metadata}.
      * <p>
-     * Note that any {@code null} results, on the initial result or the updates, will be filtered out by the gateway. If
+     * Note that any {@code null} results, on the initial result or the update, will be filtered out by the gateway. If
      * you require the {@code null} to be returned for the initial and update results, we suggest using the
      * {@code QueryBus} instead.
      *
@@ -428,9 +428,9 @@ public interface QueryGateway extends DescribableComponent {
      * @param mapper           A {@link Function} that maps the {@link QueryResponseMessage} to the desired response.
      *                         Messages for which the mapper returns a {@code null} value are filtered out.
      * @param context          The processing context, if any, to dispatch the given {@code query} in.
-     * @param updateBufferSize The size of the buffer which accumulates updates to be processed.
+     * @param updateBufferSize The size of the buffer which accumulates update to be processed.
      * @param <R>              The type payload to map the responses to.
-     * @return Registration which can be used to cancel receiving updates.
+     * @return Registration which can be used to cancel receiving update.
      * @see QueryBus#subscriptionQuery(QueryMessage, ProcessingContext, int)
      */
     @Nonnull
@@ -441,13 +441,13 @@ public interface QueryGateway extends DescribableComponent {
                                        int updateBufferSize);
 
     /**
-     * Sends given {@code query} over the {@link QueryBus} and returns a {@link Publisher} supplying the initial updates
-     * followed by the updates. The given {@code mapper} is used to map the {@link QueryResponseMessage} to the desired
-     * object type. To distinguish between the initial result and the updates, the given {@code mapper} can check
+     * Sends given {@code query} over the {@link QueryBus} and returns a {@link Publisher} supplying the initial update
+     * followed by the update. The given {@code mapper} is used to map the {@link QueryResponseMessage} to the desired
+     * object type. To distinguish between the initial result and the update, the given {@code mapper} can check
      * whether the given {@code responseMessage} is an instance of {@link SubscriptionQueryUpdateMessage}. In that case
      * the message is considered an update, otherwise it is considered the initial result.
      * <p>
-     * The {@code query} is sent upon invocation of this method. Furthermore, updates are received at the moment the
+     * The {@code query} is sent upon invocation of this method. Furthermore, update are received at the moment the
      * query is sent, and until the subscription to the Publisher is canceled by the caller or closed by the emitting
      * side.
      * <p>
@@ -456,7 +456,7 @@ public interface QueryGateway extends DescribableComponent {
      * {@code QueryMessage} is constructed from that message's payload and
      * {@link org.axonframework.messaging.Metadata}.
      * <p>
-     * Note that any {@code null} results, on the initial result or the updates, will be filtered out by the gateway. If
+     * Note that any {@code null} results, on the initial result or the update, will be filtered out by the gateway. If
      * you require the {@code null} to be returned for the initial and update results, we suggest using the
      * {@code QueryBus} instead.
      *
@@ -464,9 +464,9 @@ public interface QueryGateway extends DescribableComponent {
      * @param responseType     The response type returned by this query as the initial result
      * @param mapper           A {@link Function} that maps the {@link QueryResponseMessage} to the desired response.
      *                         Messages for which the mapper returns a {@code null} value are filtered out.
-     * @param updateBufferSize The size of the buffer which accumulates updates to be processed.
+     * @param updateBufferSize The size of the buffer which accumulates update to be processed.
      * @param <R>              The type payload to map the responses to.
-     * @return Registration which can be used to cancel receiving updates.
+     * @return Registration which can be used to cancel receiving update.
      * @see #subscriptionQuery(Object, Class, Function, ProcessingContext, int)
      */
     @Nonnull

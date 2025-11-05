@@ -24,13 +24,13 @@ import org.axonframework.messaging.GenericResultMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.Metadata;
-import org.axonframework.serialization.Converter;
+import org.axonframework.conversion.Converter;
 
 import java.lang.reflect.Type;
 import java.util.Map;
 
 /**
- * Generic implementation of the {@link SubscriptionQueryUpdateMessage} interface holding incremental updates of a
+ * Generic implementation of the {@link SubscriptionQueryUpdateMessage} interface holding incremental update of a
  * subscription query.
  *
  * @author Milan Savic

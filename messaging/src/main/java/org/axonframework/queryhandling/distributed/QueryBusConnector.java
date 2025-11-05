@@ -61,7 +61,7 @@ public interface QueryBusConnector extends DescribableComponent {
      *
      * @param query The query to send to the remote QueryBus.
      * @param context The context, if available, in which the query is generated
-     * @param updateBufferSize The size of the buffer used to store updates for the subscription query.
+     * @param updateBufferSize The size of the buffer used to store update for the subscription query.
      * @see org.axonframework.queryhandling.QueryBus#subscriptionQuery(QueryMessage, ProcessingContext, int)
      * @return the stream of responses for the query
      */
@@ -103,7 +103,7 @@ public interface QueryBusConnector extends DescribableComponent {
     /**
      * Defines a handler for processing query messages and managing subscription queries.
      * Implementations of this interface are responsible for handling incoming query messages
-     * and optionally registering handlers for subscription queries to send updates.
+     * and optionally registering handlers for subscription queries to send update.
      */
     interface Handler {
 
@@ -118,8 +118,8 @@ public interface QueryBusConnector extends DescribableComponent {
         /**
          * Registers an update handler for a given subscription query message and its associated update sender.
          *
-         * @param subscriptionQueryMessage The subscription query message for which updates are handled.
-         * @param updateCallback The callback responsible for sending updates back to the subscription.
+         * @param subscriptionQueryMessage The subscription query message for which update are handled.
+         * @param updateCallback The callback responsible for sending update back to the subscription.
          * @return A {@link Registration} instance that can be used to deregister the update handler.
          */
         @Nonnull
@@ -132,14 +132,14 @@ public interface QueryBusConnector extends DescribableComponent {
      * Defines a callback mechanism to handle update messages for subscription queries
      * in a reactive and asynchronous manner.
      * <p/>
-     * The {@code UpdateCallback} interface is used to send updates, complete the processing,
+     * The {@code UpdateCallback} interface is used to send update, complete the processing,
      * or handle exceptional completion during subscription queries.
      */
     interface UpdateCallback {
 
         /**
          * Sends a subscription query update message asynchronously.
-         * This method handles the delivery of incremental updates to listeners
+         * This method handles the delivery of incremental update to listeners
          * in the context of a subscription query.
          *
          * @param update The {@link SubscriptionQueryUpdateMessage} containing the update data
@@ -153,7 +153,7 @@ public interface QueryBusConnector extends DescribableComponent {
 
         /**
          * Completes the processing of a subscription query gracefully.
-         * This method signals that no further updates will be sent as part of the
+         * This method signals that no further update will be sent as part of the
          * subscription query and completes any associated operations.
          *
          * @return A {@link CompletableFuture} that completes when the process has been

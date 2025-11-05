@@ -19,7 +19,6 @@ package org.axonframework.eventhandling.scheduling.jobrunr;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.unitofwork.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.serialization.TestConverter;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.jobrunr.scheduling.JobScheduler;
 import org.junit.jupiter.api.*;

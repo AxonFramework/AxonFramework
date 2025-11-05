@@ -23,7 +23,7 @@ import org.axonframework.common.DateTimeUtils;
 import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.store.jpa.TokenEntry;
-import org.axonframework.serialization.Converter;
+import org.axonframework.conversion.Converter;
 
 import java.time.Clock;
 import java.time.Instant;

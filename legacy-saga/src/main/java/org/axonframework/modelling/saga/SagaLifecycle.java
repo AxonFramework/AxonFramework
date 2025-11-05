@@ -140,7 +140,7 @@ public abstract class SagaLifecycle extends Scope {
 
     /**
      * {@link SagaLifecycle} instance method to execute given {@code task} in the context of this SagaLifeCycle. This
-     * updates the thread's current saga lifecycle before executing the task. If a lifecycle is already registered with
+     * update the thread's current saga lifecycle before executing the task. If a lifecycle is already registered with
      * the current thread that one will be temporarily replaced with this lifecycle until the task completes.
      *
      * @param task the task to execute

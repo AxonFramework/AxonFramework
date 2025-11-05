@@ -171,7 +171,7 @@ class AxonServerQueryBusConnectorTest {
 
         @Test
         void subscriptionQueryDelegatesToQueryChannelWithCalculatedBufferSegmentAndEmitsInitialAndUpdates() {
-            // Given a subscription result with one initial result and two updates
+            // Given a subscription result with one initial result and two update
             String initialPayloadId = UUID.randomUUID().toString();
             QueryResponse initial = QueryResponse.newBuilder()
                                                  .setMessageIdentifier(initialPayloadId)
@@ -223,7 +223,7 @@ class AxonServerQueryBusConnectorTest {
             assertThat(first).isPresent();
             assertThat(first.get().message().payloadAs(byte[].class)).isEqualTo("result".getBytes());
 
-            // Then updates
+            // Then update
             Optional<MessageStream.Entry<QueryResponseMessage>> second = responses.next();
             Optional<MessageStream.Entry<QueryResponseMessage>> third = responses.next();
             assertThat(second).isPresent();

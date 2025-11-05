@@ -21,7 +21,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
-import org.axonframework.serialization.ConversionException;
+import org.axonframework.conversion.ConversionException;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;
@@ -45,7 +45,7 @@ final class FallbackSequencingPolicyTest {
             SequencingPolicy fallback = (event, context) -> Optional.of("fallback");
 
             // when / then
-            assertThrows(NullPointerException.class, 
+            assertThrows(NullPointerException.class,
                     () -> new FallbackSequencingPolicy<>(null, fallback, RuntimeException.class));
         }
 
@@ -55,7 +55,7 @@ final class FallbackSequencingPolicyTest {
             SequencingPolicy delegate = (event, context) -> Optional.of("delegate");
 
             // when / then
-            assertThrows(NullPointerException.class, 
+            assertThrows(NullPointerException.class,
                     () -> new FallbackSequencingPolicy<>(delegate, null, RuntimeException.class));
         }
 
@@ -66,7 +66,7 @@ final class FallbackSequencingPolicyTest {
             SequencingPolicy fallback = (event, context) -> Optional.of("fallback");
 
             // when / then
-            assertThrows(NullPointerException.class, 
+            assertThrows(NullPointerException.class,
                     () -> new FallbackSequencingPolicy<>(delegate, fallback, null));
         }
     }
@@ -80,7 +80,7 @@ final class FallbackSequencingPolicyTest {
             var expectedIdentifier = "delegate-result";
             SequencingPolicy delegate = (event, context) -> Optional.of(expectedIdentifier);
             SequencingPolicy fallback = (event, context) -> Optional.of("fallback-result");
-            FallbackSequencingPolicy<RuntimeException> policy = 
+            FallbackSequencingPolicy<RuntimeException> policy =
                     new FallbackSequencingPolicy<>(delegate, fallback, RuntimeException.class);
 
             // when
@@ -98,7 +98,7 @@ final class FallbackSequencingPolicyTest {
                 throw new IllegalArgumentException("Delegate failed");
             };
             SequencingPolicy fallback = (event, context) -> Optional.of(expectedIdentifier);
-            FallbackSequencingPolicy<IllegalArgumentException> policy = 
+            FallbackSequencingPolicy<IllegalArgumentException> policy =
                     new FallbackSequencingPolicy<>(delegate, fallback, IllegalArgumentException.class);
 
             // when
@@ -115,11 +115,11 @@ final class FallbackSequencingPolicyTest {
                 throw new RuntimeException("Unhandled exception");
             };
             SequencingPolicy fallback = (event, context) -> Optional.of("fallback-result");
-            FallbackSequencingPolicy<IllegalArgumentException> policy = 
+            FallbackSequencingPolicy<IllegalArgumentException> policy =
                     new FallbackSequencingPolicy<>(delegate, fallback, IllegalArgumentException.class);
 
             // when / then
-            assertThrows(RuntimeException.class, 
+            assertThrows(RuntimeException.class,
                     () -> policy.getSequenceIdentifierFor(anEvent("test"), aProcessingContext()));
         }
 
@@ -131,7 +131,7 @@ final class FallbackSequencingPolicyTest {
                 throw new IllegalStateException("Delegate failed with subclass");
             };
             SequencingPolicy fallback = (event, context) -> Optional.of(expectedIdentifier);
-            FallbackSequencingPolicy<RuntimeException> policy = 
+            FallbackSequencingPolicy<RuntimeException> policy =
                     new FallbackSequencingPolicy<>(delegate, fallback, RuntimeException.class);
 
             // when
@@ -148,7 +148,7 @@ final class FallbackSequencingPolicyTest {
             SequencingPolicy fallback = (event, context) -> {
                 throw new RuntimeException("Fallback should not be called");
             };
-            FallbackSequencingPolicy<IllegalArgumentException> policy = 
+            FallbackSequencingPolicy<IllegalArgumentException> policy =
                     new FallbackSequencingPolicy<>(delegate, fallback, IllegalArgumentException.class);
 
             // when / then
@@ -200,13 +200,13 @@ final class FallbackSequencingPolicyTest {
                 throw new IllegalArgumentException("First policy failed");
             };
             SequencingPolicy secondPolicy = (event, context) -> {
-                throw new ConversionException("Second policy failed");  
+                throw new ConversionException("Second policy failed");
             };
             SequencingPolicy finalPolicy = (event, context) -> Optional.of("final-result");
 
-            FallbackSequencingPolicy<ConversionException> secondFallback = 
+            FallbackSequencingPolicy<ConversionException> secondFallback =
                     new FallbackSequencingPolicy<>(secondPolicy, finalPolicy, ConversionException.class);
-            FallbackSequencingPolicy<IllegalArgumentException> firstFallback = 
+            FallbackSequencingPolicy<IllegalArgumentException> firstFallback =
                     new FallbackSequencingPolicy<>(firstPolicy, secondFallback, IllegalArgumentException.class);
 
             // when

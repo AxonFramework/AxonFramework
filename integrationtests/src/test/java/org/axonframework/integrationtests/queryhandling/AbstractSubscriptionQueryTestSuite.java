@@ -44,10 +44,9 @@ import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.annotations.AnnotatedQueryHandlingComponent;
 import org.axonframework.queryhandling.annotations.QueryHandler;
-import org.axonframework.serialization.json.JacksonConverter;
+import org.axonframework.conversion.json.JacksonConverter;
 import org.axonframework.queryhandling.gateway.DefaultQueryGateway;
 import org.axonframework.queryhandling.gateway.QueryGateway;
-import org.axonframework.serialization.PassThroughConverter;
 import org.junit.jupiter.api.*;
 import reactor.core.Exceptions;
 import reactor.core.publisher.Flux;
@@ -323,13 +322,13 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         QueryMessage queryMessage = new GenericQueryMessage(
                 new MessageType(testQueryName), TEST_QUERY_PAYLOAD
         );
-        // when staging the subscription query and updates...
+        // when staging the subscription query and update...
         MessageStream<QueryResponseMessage> result = queryBus.subscriptionQuery(queryMessage, null, 50);
         testUoW.runOnInvocation(context -> {
             queryBus.emitUpdate(testFilter, () -> testUpdate, context);
             queryBus.completeSubscriptionsExceptionally(testFilter, new RuntimeException(), context);
         });
-        // then before we commit we don't have any updates yet...
+        // then before we commit we don't have any update yet...
         Optional<MessageStream.Entry<QueryResponseMessage>> peeked = result
                 .filter(m -> m.message() instanceof SubscriptionQueryUpdateMessage)
                 .peek();

@@ -30,7 +30,7 @@ import org.axonframework.tracing.Span;
 public interface QueryUpdateEmitterSpanFactory {
 
     /**
-     * Creates a span for the scheduling of emitting a query update. Query updates are scheduled to be emitted in the
+     * Creates a span for the scheduling of emitting a query update. Query update are scheduled to be emitted in the
      * commit phase of the UnitOfWork, so these traces are separated to see the proper timings.
      *
      * @param update The update to create a span for.

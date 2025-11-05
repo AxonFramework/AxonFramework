@@ -25,8 +25,8 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDecorator;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.Metadata;
-import org.axonframework.serialization.CachingSupplier;
-import org.axonframework.serialization.Converter;
+import org.axonframework.conversion.CachingSupplier;
+import org.axonframework.conversion.Converter;
 
 import java.lang.reflect.Type;
 import java.time.Clock;

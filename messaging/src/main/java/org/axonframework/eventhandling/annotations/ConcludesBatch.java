@@ -26,7 +26,7 @@ import java.lang.annotation.Target;
  * injected with a value that informs whether the event is the last event of a processed batch of events. The parameter
  * type must be assignable from {@link Boolean}.
  * <p>
- * Times when this information is useful is e.g. when patching updates to a database, client or other external system.
+ * Times when this information is useful is e.g. when patching update to a database, client or other external system.
  * In those cases it is preferable to reduce the number of IO operations.
  *
  * @author Rene de Waele

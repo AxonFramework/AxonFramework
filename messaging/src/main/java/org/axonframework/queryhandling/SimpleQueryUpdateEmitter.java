@@ -23,7 +23,7 @@ import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.serialization.Converter;
+import org.axonframework.conversion.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +35,7 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * Simple implementation of the {@link QueryUpdateEmitter}, delegating operations to a {@link QueryBus} for emitting
- * updates, completing subscription queries, and completing subscription queries exceptionally.
+ * update, completing subscription queries, and completing subscription queries exceptionally.
  * <p>
  * Uses the {@link ProcessingContext} given during construction of the {@code SimpleQueryUpdateEmitter} to perform all
  * operations in the expected lifecycle order.
@@ -77,7 +77,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
      * @param converter           The {@code MessageConverter} used to convert the
      *                            {@link Message#payloadAs(Type, Converter) payload} whenever a filter is used based on
      *                            a concrete type. For example, through {@link #emit(Class, Predicate, Object)}.
-     * @param context             The {@code ProcessingContext} within which updates are emitted, subscription query are
+     * @param context             The {@code ProcessingContext} within which update are emitted, subscription query are
      *                            completed, and subscription queries are completed exceptionally in.
      */
     public SimpleQueryUpdateEmitter(@Nonnull QueryBus queryBus,

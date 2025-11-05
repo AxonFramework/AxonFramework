@@ -241,7 +241,7 @@ public interface DeadLetterStatementFactory<E extends EventMessage> {
      * <p>
      * Claiming a {@code DeadLetter} ensures only a single thread
      * {@link JdbcSequencedDeadLetterQueue#process(Function) processes} the {@code DeadLetter}. This operation typically
-     * updates the {@link DeadLetterSchema#processingStartedColumn() processing started} field with the given
+     * update the {@link DeadLetterSchema#processingStartedColumn() processing started} field with the given
      * {@code current} {@link Instant}, marking it as claimed for a certain timeframe.
      * <p>
      * The returned statement is used <em>after</em> the {@link JdbcSequencedDeadLetterQueue} searched for

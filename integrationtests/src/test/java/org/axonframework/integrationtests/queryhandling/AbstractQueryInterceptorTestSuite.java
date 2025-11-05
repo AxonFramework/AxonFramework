@@ -37,7 +37,7 @@ import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
-import org.axonframework.serialization.json.JacksonConverter;
+import org.axonframework.conversion.json.JacksonConverter;
 import org.axonframework.common.utils.MockException;
 import org.junit.jupiter.api.*;
 import reactor.test.StepVerifier;

@@ -44,7 +44,7 @@ import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.entity.EntityMetamodelBuilder;
 import org.axonframework.modelling.entity.PolymorphicEntityMetamodel;
 import org.axonframework.modelling.entity.child.EntityChildMetamodel;
-import org.axonframework.serialization.ConversionException;
+import org.axonframework.conversion.ConversionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

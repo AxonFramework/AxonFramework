@@ -17,6 +17,7 @@
 package org.axonframework.serialization;
 
 import org.axonframework.common.Assert;
+import org.axonframework.conversion.Converter;
 
 import java.util.function.Supplier;
 

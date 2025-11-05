@@ -25,7 +25,7 @@ import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.modelling.EntityIdResolutionException;
 import org.axonframework.modelling.annotations.AnnotationBasedEntityIdResolver;
 import org.axonframework.modelling.annotations.TargetEntityId;
-import org.axonframework.serialization.json.JacksonConverter;
+import org.axonframework.conversion.json.JacksonConverter;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.*;

@@ -21,7 +21,7 @@ import java.sql.SQLException;
 import java.time.Instant;
 
 /**
- * Writer interface for writing a formatted timestamp to a {@link PreparedStatement} during updates of the database.
+ * Writer interface for writing a formatted timestamp to a {@link PreparedStatement} during update of the database.
  * Used in {@link AppendEventsStatementBuilder} and {@link AppendSnapshotStatementBuilder}.
  *
  * @author Trond Marius Øvstetun

@@ -32,9 +32,11 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.annotations.AnnotatedEventHandlingComponent;
 import org.axonframework.eventhandling.annotations.EventHandler;
+import org.axonframework.eventhandling.conversion.DelegatingEventConverter;
 import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.annotations.DefaultParameterResolverFactory;
 import org.axonframework.messaging.annotations.ParameterResolverFactory;
+import org.axonframework.messaging.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
@@ -45,7 +47,7 @@ import org.axonframework.queryhandling.annotations.AnnotatedQueryHandlingCompone
 import org.axonframework.queryhandling.annotations.QueryHandler;
 import org.axonframework.queryhandling.gateway.DefaultQueryGateway;
 import org.axonframework.queryhandling.gateway.QueryGateway;
-import org.axonframework.serialization.PassThroughConverter;
+import org.axonframework.conversion.PassThroughConverter;
 import org.junit.jupiter.api.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -73,7 +75,7 @@ class AsyncMessageHandlerTest {
     private final QueryGateway queryGateway = new DefaultQueryGateway(queryBus,
                                                                       new ClassBasedMessageTypeResolver(),
                                                                       QueryPriorityCalculator.defaultCalculator(),
-                                                                      PassThroughConverter.MESSAGE_INSTANCE);
+                                                                      new DelegatingMessageConverter(PassThroughConverter.INSTANCE));
     private final EventBus eventBus = new SimpleEventBus();
     private final AtomicBoolean eventHandlerCalled = new AtomicBoolean();
 
@@ -103,7 +105,7 @@ class AsyncMessageHandlerTest {
             void withVoidReturnTypeShouldBeCalled() {
                 var ehc = new AnnotatedEventHandlingComponent<>(new VoidEventHandler(), PARAMETER_RESOLVER_FACTORY);
                 ProcessingContext testContext =
-                        StubProcessingContext.withComponent(EventConverter.class, PassThroughConverter.EVENT_INSTANCE);
+                        StubProcessingContext.withComponent(EventConverter.class, new DelegatingEventConverter(PassThroughConverter.INSTANCE));
 
                 eventBus.subscribe((messages, context) -> {
                     messages.forEach(m -> ehc.handle(m, testContext));
@@ -117,7 +119,7 @@ class AsyncMessageHandlerTest {
             void returningMonoShouldExecuteIt() {
                 var ehc = new AnnotatedEventHandlingComponent<>(new MonoEventHandler(), PARAMETER_RESOLVER_FACTORY);
                 ProcessingContext testContext =
-                        StubProcessingContext.withComponent(EventConverter.class, PassThroughConverter.EVENT_INSTANCE);
+                        StubProcessingContext.withComponent(EventConverter.class, new DelegatingEventConverter(PassThroughConverter.INSTANCE));
 
                 eventBus.subscribe((messages, context) -> {
                     messages.forEach(m -> ehc.handle(m, testContext));
@@ -132,7 +134,7 @@ class AsyncMessageHandlerTest {
                 var ehc = new AnnotatedEventHandlingComponent<>(new CompletableFutureEventHandler(),
                                                                 PARAMETER_RESOLVER_FACTORY);
                 ProcessingContext testContext =
-                        StubProcessingContext.withComponent(EventConverter.class, PassThroughConverter.EVENT_INSTANCE);
+                        StubProcessingContext.withComponent(EventConverter.class, new DelegatingEventConverter(PassThroughConverter.INSTANCE));
 
                 eventBus.subscribe((messages, context) -> {
                     messages.forEach(m -> ehc.handle(m, testContext));
@@ -149,7 +151,7 @@ class AsyncMessageHandlerTest {
             @Test
             void returningCompletableFutureShouldUseItsResult() {
                 commandBus.subscribe(new AnnotatedCommandHandlingComponent<>(new CompletableFutureCommandHandler(),
-                                                                             PassThroughConverter.MESSAGE_INSTANCE));
+                                                                             new DelegatingMessageConverter(PassThroughConverter.INSTANCE)));
 
                 assertCommands();
             }
@@ -157,7 +159,7 @@ class AsyncMessageHandlerTest {
             @Test
             void returningMonoShouldUseItsResult() {
                 commandBus.subscribe(new AnnotatedCommandHandlingComponent<>(new MonoCommandHandler(),
-                                                                             PassThroughConverter.MESSAGE_INSTANCE));
+                                                                             new DelegatingMessageConverter(PassThroughConverter.INSTANCE)));
 
                 assertCommands();
             }
@@ -165,7 +167,7 @@ class AsyncMessageHandlerTest {
             @Test
             void returningBooleanShouldUseResult() {
                 commandBus.subscribe(new AnnotatedCommandHandlingComponent<>(new BooleanCommandHandler(),
-                                                                             PassThroughConverter.MESSAGE_INSTANCE));
+                                                                             new DelegatingMessageConverter(PassThroughConverter.INSTANCE)));
 
                 assertCommands();
             }
@@ -178,7 +180,7 @@ class AsyncMessageHandlerTest {
             void returningJustShouldUseResult() {
                 int echoInt = 1;
                 queryBus.subscribe(new AnnotatedQueryHandlingComponent<>(new JustQueryHandler(),
-                                                                         PassThroughConverter.MESSAGE_INSTANCE));
+                                                                         new DelegatingMessageConverter(PassThroughConverter.INSTANCE)));
 
                 CompletableFuture<Integer> result = queryGateway.query(new EchoValue(echoInt), Integer.class, null);
                 assertThat(result).isDone();
@@ -189,7 +191,7 @@ class AsyncMessageHandlerTest {
             void returningPrimitiveShouldUseResult() {
                 int echoInt = 1;
                 queryBus.subscribe(new AnnotatedQueryHandlingComponent<>(new PrimitiveQueryHandler(),
-                                                                         PassThroughConverter.MESSAGE_INSTANCE));
+                                                                         new DelegatingMessageConverter(PassThroughConverter.INSTANCE)));
 
                 CompletableFuture<Integer> result = queryGateway.query(new EchoValue(echoInt), Integer.class, null);
                 assertThat(result).isDone();
@@ -200,7 +202,7 @@ class AsyncMessageHandlerTest {
             void returningOptionalShouldUseResult() {
                 int echoInt = 1;
                 queryBus.subscribe(new AnnotatedQueryHandlingComponent<>(new OptionalQueryHandler(),
-                                                                         PassThroughConverter.MESSAGE_INSTANCE));
+                                                                         new DelegatingMessageConverter(PassThroughConverter.INSTANCE)));
 
                 CompletableFuture<Integer> result = queryGateway.query(new EchoValue(echoInt), Integer.class, null);
                 assertThat(result).isDone();
@@ -211,7 +213,7 @@ class AsyncMessageHandlerTest {
             void returningCompletableFutureShouldUseItsResult() {
                 int echoInt = 1;
                 queryBus.subscribe(new AnnotatedQueryHandlingComponent<>(new CompletableFutureQueryHandler(),
-                                                                         PassThroughConverter.MESSAGE_INSTANCE));
+                                                                         new DelegatingMessageConverter(PassThroughConverter.INSTANCE)));
 
                 CompletableFuture<Integer> result = queryGateway.query(new EchoValue(echoInt), Integer.class, null);
                 assertThat(result).isDone();
@@ -222,7 +224,7 @@ class AsyncMessageHandlerTest {
             void returningMonoShouldUseItsResult() {
                 int echoInt = 1;
                 queryBus.subscribe(new AnnotatedQueryHandlingComponent<>(new MonoQueryHandler(),
-                                                                         PassThroughConverter.MESSAGE_INSTANCE));
+                                                                         new DelegatingMessageConverter(PassThroughConverter.INSTANCE)));
 
                 CompletableFuture<Integer> result = queryGateway.query(new EchoValue(echoInt), Integer.class, null);
                 assertThat(result).isDone();
@@ -234,7 +236,7 @@ class AsyncMessageHandlerTest {
                 int echoIntOne = 1;
                 int echoIntTwo = 2;
                 queryBus.subscribe(new AnnotatedQueryHandlingComponent<>(new IterableQueryHandler(),
-                                                                         PassThroughConverter.MESSAGE_INSTANCE));
+                                                                         new DelegatingMessageConverter(PassThroughConverter.INSTANCE)));
 
                 CompletableFuture<List<Integer>> result =
                         queryGateway.queryMany(new EchoValue(echoIntOne, echoIntTwo), Integer.class, null);
@@ -247,7 +249,7 @@ class AsyncMessageHandlerTest {
                 int echoIntOne = 1;
                 int echoIntTwo = 2;
                 queryBus.subscribe(new AnnotatedQueryHandlingComponent<>(new StreamQueryHandler(),
-                                                                         PassThroughConverter.MESSAGE_INSTANCE));
+                                                                         new DelegatingMessageConverter(PassThroughConverter.INSTANCE)));
 
                 CompletableFuture<List<Integer>> result =
                         queryGateway.queryMany(new EchoValue(echoIntOne, echoIntTwo), Integer.class, null);
@@ -260,7 +262,7 @@ class AsyncMessageHandlerTest {
                 int echoIntOne = 1;
                 int echoIntTwo = 2;
                 queryBus.subscribe(new AnnotatedQueryHandlingComponent<>(new FluxQueryHandler(),
-                                                                         PassThroughConverter.MESSAGE_INSTANCE));
+                                                                         new DelegatingMessageConverter(PassThroughConverter.INSTANCE)));
 
                 CompletableFuture<List<Integer>> result =
                         queryGateway.queryMany(new EchoValue(echoIntOne, echoIntTwo), Integer.class, null);
