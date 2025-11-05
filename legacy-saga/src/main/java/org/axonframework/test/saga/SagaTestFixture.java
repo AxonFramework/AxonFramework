@@ -188,10 +188,10 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
                 ).proceed(unitOfWork.getMessage(), context)
         );
 
-        if (resultMessage.isExceptional()) {
-            Throwable e = resultMessage.exceptionResult();
-            if (Error.class.isAssignableFrom(e.getClass())) {
-                throw (Error) e;
+        if (resultMessage.payload() instanceof Throwable) {
+            Throwable e = resultMessage.payloadAs(Throwable.class);
+            if (e instanceof Error error) {
+                throw error;
             }
             throw new FixtureExecutionException("Exception occurred while handling an event", e);
         }

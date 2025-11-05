@@ -22,7 +22,6 @@ import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.HandlerExecutionException;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.test.FixtureExecutionException;
@@ -481,8 +480,8 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
 
     public void recordResult(@Nonnull CommandMessage commandMessage,
                              @Nonnull Message result) {
-        if (result instanceof ResultMessage commandResultMessage && commandResultMessage.isExceptional()) {
-            recordException(commandResultMessage.exceptionResult());
+        if (result.payload() instanceof Throwable e) {
+            recordException(e);
         } else {
             actualReturnValue = result;
         }
