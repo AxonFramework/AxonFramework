@@ -54,12 +54,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.LockSupport;
 import javax.annotation.Nonnull;
 
 import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.priority;
@@ -93,6 +97,8 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
     private final ShutdownLatch shutdownLatch = new ShutdownLatch();
     private final ExecutorService executorService;
     private final CommandBusSpanFactory spanFactory;
+    private final Duration commandInProgressAwait;
+    private final ConcurrentHashMap<String, CommandProcessingTask> commandsInProgress = new ConcurrentHashMap<>();
 
     /**
      * Instantiate a Builder to be able to create an {@link AxonServerCommandBus}.
@@ -135,6 +141,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         this.executorService =
                 builder.executorServiceBuilder.apply(builder.configuration, new PriorityBlockingQueue<>(1000));
         this.spanFactory = builder.spanFactory;
+        this.commandInProgressAwait = builder.commandInProgressAwait;
 
         dispatchInterceptors = new DispatchInterceptors<>();
     }
@@ -220,7 +227,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
                                                                new CompletableFuture<>();
                                                        CommandProcessingTask processingTask = new CommandProcessingTask(
                                                                c, serializer, result, localSegment,
-                                                               spanFactory);
+                                                               spanFactory, commandsInProgress);
                                                        long priority = priority(c.getProcessingInstructionsList());
                                                        long sequence = TASK_SEQUENCE.incrementAndGet();
                                                        executorService.execute(
@@ -255,12 +262,43 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
     /**
      * Disconnect the command bus for receiving commands from Axon Server, by unsubscribing all registered command
      * handlers. This shutdown operation is performed in the {@link Phase#INBOUND_COMMAND_CONNECTOR} phase.
+     * <p>
+     * This method will wait for in-progress command handlers to complete, up to the configured
+     * {@code commandInProgressAwait} duration. If handlers do not complete within this time, they will be cancelled.
      */
     public CompletableFuture<Void> disconnect() {
         if (axonServerConnectionManager.isConnected(context)) {
-            return axonServerConnectionManager.getConnection(context).commandChannel().prepareDisconnect();
+            logger.trace("Disconnecting the AxonServerCommandBus.");
+            axonServerConnectionManager.getConnection(context).commandChannel().prepareDisconnect();
         }
+
+        if (!awaitCommandHandlersCompletion(commandInProgressAwait)) {
+            logger.info("Awaited termination of commands in progress without success. Going to cancel remaining commands in progress.");
+            cancelCommandsInProgress();
+        }
+
         return CompletableFuture.completedFuture(null);
+    }
+
+    /**
+     * Waits for all in-progress command handlers to complete within the given timeout.
+     *
+     * @param timeout the maximum time to wait for command handlers to complete
+     * @return {@code true} if all handlers completed within the timeout, {@code false} otherwise
+     */
+    private boolean awaitCommandHandlersCompletion(Duration timeout) {
+        Instant startAwait = Instant.now();
+        Instant endAwait = startAwait.plusSeconds(timeout.getSeconds());
+        while (Instant.now().isBefore(endAwait) && !commandsInProgress.isEmpty()) {
+            LockSupport.parkNanos(10_000_000);
+        }
+        return commandsInProgress.isEmpty();
+    }
+
+    private void cancelCommandsInProgress() {
+        commandsInProgress.values()
+                          .iterator()
+                          .forEachRemaining(CommandProcessingTask::cancel);
     }
 
     /**
@@ -288,42 +326,59 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         private final Command command;
         private final CommandSerializer serializer;
         private final CommandBusSpanFactory spanFactory;
+        private final ConcurrentHashMap<String, CommandProcessingTask> commandsInProgress;
 
         public CommandProcessingTask(Command command,
                                      CommandSerializer serializer,
                                      CompletableFuture<CommandResponse> result,
                                      CommandBus localSegment,
-                                     CommandBusSpanFactory spanFactory) {
+                                     CommandBusSpanFactory spanFactory,
+                                     ConcurrentHashMap<String, CommandProcessingTask> commandsInProgress) {
             this.command = command;
             this.serializer = serializer;
             this.result = result;
             this.localSegment = localSegment;
             this.spanFactory = spanFactory;
+            this.commandsInProgress = commandsInProgress;
+            // Register this task
+            commandsInProgress.put(command.getMessageIdentifier(), this);
         }
 
         @Override
         public void run() {
-            CommandMessage<?> deserializedCommand = serializer.deserialize(command);
-            Span span = spanFactory.createHandleCommandSpan(deserializedCommand, true);
-            span.run(() -> {
-                try {
-                    localSegment.dispatch(
-                            deserializedCommand,
-                            (CommandCallback<Object, Object>) (commandMessage, commandResultMessage) -> {
-                                if (commandResultMessage.isExceptional()) {
-                                    span.recordException(commandResultMessage.exceptionResult());
+            try {
+                CommandMessage<?> deserializedCommand = serializer.deserialize(command);
+                Span span = spanFactory.createHandleCommandSpan(deserializedCommand, true);
+                span.run(() -> {
+                    try {
+                        localSegment.dispatch(
+                                deserializedCommand,
+                                (CommandCallback<Object, Object>) (commandMessage, commandResultMessage) -> {
+                                    if (commandResultMessage.isExceptional()) {
+                                        span.recordException(commandResultMessage.exceptionResult());
+                                    }
+                                    result.complete(
+                                            serializer.serialize(commandResultMessage,
+                                                                 command.getMessageIdentifier())
+                                    );
                                 }
-                                result.complete(
-                                        serializer.serialize(commandResultMessage,
-                                                             command.getMessageIdentifier())
-                                );
-                            }
-                    );
-                } catch (Exception e) {
-                    span.recordException(e);
-                    result.completeExceptionally(e);
-                }
-            });
+                        );
+                    } catch (Exception e) {
+                        span.recordException(e);
+                        result.completeExceptionally(e);
+                    }
+                });
+            } finally {
+                commandsInProgress.remove(command.getMessageIdentifier());
+            }
+        }
+
+        /**
+         * Cancels this command processing task.
+         */
+        public void cancel() {
+            result.cancel(true);
+            commandsInProgress.remove(command.getMessageIdentifier());
         }
     }
 
@@ -357,6 +412,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
                 c -> StringUtils.nonEmptyOrNull(defaultContext) ? defaultContext : configuration.getContext();
         private CommandBusSpanFactory spanFactory = DefaultCommandBusSpanFactory
                 .builder().spanFactory(NoOpSpanFactory.INSTANCE).build();
+        private Duration commandInProgressAwait = Duration.ofSeconds(5);
 
         /**
          * Sets the {@link AxonServerConnectionManager} used to create connections between this application and an Axon
@@ -542,6 +598,21 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         public Builder spanFactory(@Nonnull CommandBusSpanFactory spanFactory) {
             assertNonNull(spanFactory, "SpanFactory may not be null");
             this.spanFactory = spanFactory;
+            return this;
+        }
+
+        /**
+         * Sets the duration to wait for in-progress command handlers to complete during shutdown. When {@code disconnect()}
+         * is called, the command bus will wait up to this duration for active command handlers to finish processing before
+         * proceeding with the shutdown. If handlers do not complete within this time, they will be cancelled.
+         * Defaults to 5 seconds.
+         *
+         * @param commandInProgressAwait the maximum duration to wait for command handlers to complete
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder commandInProgressAwait(@Nonnull Duration commandInProgressAwait) {
+            assertNonNull(commandInProgressAwait, "Command in progress await duration may not be null");
+            this.commandInProgressAwait = commandInProgressAwait;
             return this;
         }
 
