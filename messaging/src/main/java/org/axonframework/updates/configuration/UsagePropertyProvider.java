@@ -16,15 +16,17 @@
 
 package org.axonframework.updates.configuration;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Provides properties related to the Anonymous Usage Collection feature. This interface allows for different
  * implementations to provide properties such as whether the collection is disabled and the URL for the collection
  * endpoint.
  * <p>
- * To use this, please {@link #create()} to obtain an instance that combines multiple property providers, such as
- * command line, property file, and default providers.
+ * To use this, please {@link #create(UsagePropertyProvider...)} to obtain an instance that combines multiple property
+ * providers, such as command line, property file, and default providers.
  *
  * @author Mitchell Herrijgers
  * @since 4.12.0
@@ -59,12 +61,14 @@ public interface UsagePropertyProvider {
      *
      * @return A new {@code UsagePropertyProvider} instance.
      */
-    static UsagePropertyProvider create() {
-        return new HierarchicalUsagePropertyProvider(Arrays.asList(
+    static UsagePropertyProvider create(UsagePropertyProvider... additionalProviders) {
+        List<UsagePropertyProvider> list = new ArrayList<>(Arrays.asList(
                 new CommandLineUsagePropertyProvider(),
                 new EnvironmentVariableUsagePropertyProvider(),
                 new PropertyFileUsagePropertyProvider(),
                 DefaultUsagePropertyProvider.INSTANCE
         ));
+        list.addAll(Arrays.asList(additionalProviders));
+        return new HierarchicalUsagePropertyProvider(list);
     }
 }
