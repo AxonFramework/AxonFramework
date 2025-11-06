@@ -19,9 +19,9 @@ package org.axonframework.axonserver.connector.util;
 import com.google.protobuf.ByteString;
 import io.axoniq.axonserver.grpc.MetaDataValue;
 import org.axonframework.messaging.core.Metadata;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.SerializedType;
-import org.axonframework.serialization.Serializer;
+import org.axonframework.conversion.SerializedObject;
+import org.axonframework.conversion.SerializedType;
+import org.axonframework.conversion.Serializer;
 
 import java.util.HashMap;
 import java.util.Map;

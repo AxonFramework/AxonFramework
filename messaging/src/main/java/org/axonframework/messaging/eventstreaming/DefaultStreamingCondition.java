@@ -17,7 +17,7 @@
 package org.axonframework.messaging.eventstreaming;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 
 import static java.util.Objects.requireNonNull;
 

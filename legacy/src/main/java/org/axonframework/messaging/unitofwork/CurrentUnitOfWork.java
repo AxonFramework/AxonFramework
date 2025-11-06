@@ -38,7 +38,7 @@ public abstract class CurrentUnitOfWork {
     private static final ThreadLocal<Deque<LegacyUnitOfWork<?>>> CURRENT = new ThreadLocal<>();
 
     /**
-     * Indicates whether a unit of work has already been started. This method can be used by interceptors to prevent
+     * Indicates whether a unit of work has already been started. This method can be used by interception to prevent
      * nesting of UnitOfWork instances.
      *
      * @return whether a UnitOfWork has already been started.

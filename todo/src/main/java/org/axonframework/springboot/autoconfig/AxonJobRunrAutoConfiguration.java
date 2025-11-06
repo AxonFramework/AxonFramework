@@ -27,7 +27,7 @@ import org.axonframework.messaging.eventhandling.scheduling.EventScheduler;
 import org.axonframework.messaging.eventhandling.scheduling.jobrunr.JobRunrEventScheduler;
 import org.axonframework.extension.springboot.autoconfig.AxonServerAutoConfiguration;
 import org.axonframework.messaging.core.ScopeAwareProvider;
-import org.axonframework.serialization.Serializer;
+import org.axonframework.conversion.Serializer;
 import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;

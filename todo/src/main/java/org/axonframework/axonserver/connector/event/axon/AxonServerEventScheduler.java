@@ -33,8 +33,8 @@ import org.axonframework.messaging.eventhandling.scheduling.EventScheduler;
 import org.axonframework.messaging.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.messaging.eventhandling.scheduling.java.SimpleScheduleToken;
 import org.axonframework.messaging.core.Metadata;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.Serializer;
+import org.axonframework.conversion.SerializedObject;
+import org.axonframework.conversion.Serializer;
 
 import java.time.Duration;
 import java.time.Instant;

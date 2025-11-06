@@ -76,19 +76,19 @@ public interface EntityModel<T> {
     }
 
     /**
-     * Gets all command handler interceptors per type in this aggregate hierarchy.
+     * Gets all command handler interception per type in this aggregate hierarchy.
      *
-     * @return a map of command handler interceptors per type
+     * @return a map of command handler interception per type
      */
     default Map<Class<?>, List<MessageHandlingMember<? super T>>> allCommandHandlerInterceptors() {
         return Collections.emptyMap();
     }
 
     /**
-     * Gets command handler interceptors for provided {@code type} in this aggregate hierarchy.
+     * Gets command handler interception for provided {@code type} in this aggregate hierarchy.
      *
      * @param type the aggregate type in this hierarchy
-     * @return a stream of command handler interceptors for provided {@code type}
+     * @return a stream of command handler interception for provided {@code type}
      */
     default Stream<MessageHandlingMember<? super T>> commandHandlerInterceptors(Class<? extends T> type) {
         return Stream.empty();

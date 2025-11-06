@@ -23,12 +23,12 @@ import org.axonframework.messaging.eventhandling.GenericDomainEventMessage;
 import org.axonframework.messaging.eventhandling.GenericTrackedDomainEventMessage;
 import org.axonframework.messaging.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.messaging.core.MessageType;
-import org.axonframework.serialization.LazyDeserializingObject;
-import org.axonframework.serialization.SerializedMessage;
-import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.upcasting.event.EventUpcaster;
-import org.axonframework.serialization.upcasting.event.InitialEventRepresentation;
-import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
+import org.axonframework.conversion.LazyDeserializingObject;
+import org.axonframework.conversion.SerializedMessage;
+import org.axonframework.conversion.Serializer;
+import org.axonframework.conversion.upcasting.event.EventUpcaster;
+import org.axonframework.conversion.upcasting.event.InitialEventRepresentation;
+import org.axonframework.conversion.upcasting.event.IntermediateEventRepresentation;
 
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;

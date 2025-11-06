@@ -18,11 +18,11 @@ package org.axonframework.extension.springboot;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.eventhandling.EventBus;
-import org.axonframework.messaging.eventhandling.processors.EventProcessor;
-import org.axonframework.messaging.eventhandling.processors.streaming.StreamingEventProcessor;
-import org.axonframework.messaging.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
-import org.axonframework.messaging.eventhandling.processors.streaming.token.store.TokenStore;
-import org.axonframework.messaging.eventhandling.processors.subscribing.SubscribingEventProcessor;
+import org.axonframework.messaging.eventhandling.processing.EventProcessor;
+import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
+import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessor;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
+import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessor;
 import org.axonframework.extension.spring.config.EventProcessorSettings;
 import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
 import org.axonframework.messaging.eventhandling.sequencing.SequentialPerAggregatePolicy;
@@ -43,15 +43,15 @@ import java.util.concurrent.TimeUnit;
 public class EventProcessorProperties {
 
     /**
-     * The configuration of each of the processors. The key is the name of the processor, the value represents the
+     * The configuration of each of the processing. The key is the name of the processor, the value represents the
      * settings to use for the processor with that name.
      */
     private final Map<String, ProcessorSettings> processors = new HashMap<>();
 
     /**
-     * Returns the settings for each of the configured processors, by name.
+     * Returns the settings for each of the configured processing, by name.
      *
-     * @return the settings for each of the configured processors, by name.
+     * @return the settings for each of the configured processing, by name.
      */
     public Map<String, ProcessorSettings> getProcessors() {
         return processors;

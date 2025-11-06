@@ -26,9 +26,9 @@ import org.axonframework.messaging.core.annotations.AnnotatedHandlerAttributes;
 import org.axonframework.messaging.core.annotations.HandlerAttributes;
 import org.axonframework.messaging.core.annotations.HasHandlerAttributes;
 import org.axonframework.messaging.core.annotations.MessageHandler;
-import org.axonframework.messaging.core.interceptors.annotations.ExceptionHandler;
-import org.axonframework.messaging.core.interceptors.annotations.MessageHandlerInterceptor;
-import org.axonframework.messaging.core.interceptors.annotations.ResultHandler;
+import org.axonframework.messaging.core.interception.annotations.ExceptionHandler;
+import org.axonframework.messaging.core.interception.annotations.MessageHandlerInterceptor;
+import org.axonframework.messaging.core.interception.annotations.ResultHandler;
 import org.junit.jupiter.api.*;
 
 import java.lang.annotation.Documented;

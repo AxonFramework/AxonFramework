@@ -23,9 +23,8 @@ import org.axonframework.messaging.eventhandling.GenericDomainEventMessage;
 import org.axonframework.messaging.eventhandling.annotations.Event;
 import org.axonframework.messaging.eventsourcing.eventstore.jpa.SnapshotEventEntry;
 import org.axonframework.messaging.core.MessageType;
-import org.axonframework.messaging.eventsourcing.snapshotting.RevisionSnapshotFilter;
-import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.json.JacksonSerializer;
+import org.axonframework.conversion.Serializer;
+import org.axonframework.conversion.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;

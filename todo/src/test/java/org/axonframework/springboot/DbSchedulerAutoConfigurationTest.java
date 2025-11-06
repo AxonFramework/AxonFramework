@@ -28,7 +28,7 @@ import org.axonframework.messaging.eventhandling.scheduling.EventScheduler;
 import org.axonframework.messaging.eventhandling.scheduling.dbscheduler.DbSchedulerEventScheduler;
 import org.axonframework.messaging.eventhandling.scheduling.dbscheduler.DbSchedulerHumanReadableEventData;
 import org.axonframework.messaging.core.ScopeAwareProvider;
-import org.axonframework.serialization.Serializer;
+import org.axonframework.conversion.Serializer;
 import org.axonframework.extension.springboot.util.ConditionalOnMissingQualifiedBean;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Qualifier;

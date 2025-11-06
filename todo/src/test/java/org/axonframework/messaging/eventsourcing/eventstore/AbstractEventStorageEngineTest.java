@@ -23,7 +23,7 @@ import org.axonframework.messaging.eventsourcing.eventstore.jdbc.LegacyJdbcEvent
 import org.axonframework.messaging.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.modelling.ConcurrencyException;
 import org.axonframework.modelling.command.AggregateStreamCreationException;
-import org.axonframework.serialization.upcasting.event.EventUpcaster;
+import org.axonframework.conversion.upcasting.event.EventUpcaster;
 import org.junit.jupiter.api.*;
 
 import java.util.Iterator;

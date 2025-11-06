@@ -23,14 +23,14 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.processors.EventProcessor;
-import org.axonframework.messaging.eventhandling.processors.errorhandling.ErrorHandler;
-import org.axonframework.messaging.eventhandling.processors.errorhandling.PropagatingErrorHandler;
+import org.axonframework.messaging.eventhandling.processing.EventProcessor;
+import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorHandler;
+import org.axonframework.messaging.eventhandling.processing.errorhandling.PropagatingErrorHandler;
 import org.axonframework.messaging.eventhandling.tracing.DefaultEventProcessorSpanFactory;
 import org.axonframework.messaging.eventhandling.tracing.EventProcessorSpanFactory;
 import org.axonframework.messaging.core.EmptyApplicationContext;
 import org.axonframework.messaging.core.MessageHandlerInterceptor;
-import org.axonframework.messaging.core.interceptors.HandlerInterceptorRegistry;
+import org.axonframework.messaging.core.interception.HandlerInterceptorRegistry;
 import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.core.unitofwork.UnitOfWork;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
@@ -237,6 +237,6 @@ public class EventProcessorConfiguration implements DescribableComponent {
         descriptor.describeProperty("messageMonitor", messageMonitor);
         descriptor.describeProperty("spanFactory", spanFactory);
         descriptor.describeProperty("unitOfWorkFactory", unitOfWorkFactory);
-        descriptor.describeProperty("interceptors", interceptors);
+        descriptor.describeProperty("interception", interceptors);
     }
 }

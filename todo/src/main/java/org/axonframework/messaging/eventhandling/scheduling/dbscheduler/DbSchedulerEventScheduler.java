@@ -39,9 +39,9 @@ import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.SimpleSerializedObject;
+import org.axonframework.conversion.SerializedObject;
+import org.axonframework.conversion.Serializer;
+import org.axonframework.conversion.SimpleSerializedObject;
 import org.slf4j.Logger;
 
 import java.time.Duration;

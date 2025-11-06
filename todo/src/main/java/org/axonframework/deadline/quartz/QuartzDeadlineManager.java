@@ -33,7 +33,7 @@ import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.ScopeAwareProvider;
 import org.axonframework.messaging.core.ScopeDescriptor;
-import org.axonframework.serialization.Serializer;
+import org.axonframework.conversion.Serializer;
 import org.axonframework.messaging.tracing.NoOpSpanFactory;
 import org.axonframework.messaging.tracing.Span;
 import org.axonframework.messaging.tracing.SpanFactory;

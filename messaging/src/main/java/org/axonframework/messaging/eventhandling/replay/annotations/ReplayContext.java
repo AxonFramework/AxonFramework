@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.replay.annotations;
 
-import org.axonframework.messaging.eventhandling.processors.streaming.token.ReplayToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

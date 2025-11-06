@@ -19,7 +19,7 @@ package org.axonframework.messaging.eventsourcing.eventstore.jdbc.statements;
 import org.axonframework.messaging.eventhandling.DomainEventMessage;
 import org.axonframework.messaging.eventsourcing.eventstore.jdbc.EventSchema;
 import org.axonframework.messaging.eventsourcing.eventstore.jdbc.LegacyJdbcEventStorageEngine;
-import org.axonframework.serialization.Serializer;
+import org.axonframework.conversion.Serializer;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

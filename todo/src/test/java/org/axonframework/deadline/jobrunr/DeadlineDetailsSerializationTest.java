@@ -23,9 +23,9 @@ import org.axonframework.messaging.core.GenericMessage;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.ScopeDescriptor;
-import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.SimpleSerializedObject;
-import org.axonframework.serialization.json.JacksonSerializer;
+import org.axonframework.conversion.Serializer;
+import org.axonframework.conversion.SimpleSerializedObject;
+import org.axonframework.conversion.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
 
 import java.time.Instant;

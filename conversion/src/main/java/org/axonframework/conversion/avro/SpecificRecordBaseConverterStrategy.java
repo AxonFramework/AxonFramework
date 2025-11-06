@@ -49,7 +49,7 @@ public class SpecificRecordBaseConverterStrategy implements AvroConverterStrateg
     private AvroConverterStrategyConfiguration config = AvroConverterStrategyConfiguration.DEFAULT;
 
     /**
-     * Constructs avro serialization strategy supporting serialization and deserialization of Java Avro classes
+     * Constructs avro conversion strategy supporting conversion and deserialization of Java Avro classes
      * extending {@link SpecificRecordBase}.
      *
      * @param schemaStore                  schema store to resolve schema from fingerprint.

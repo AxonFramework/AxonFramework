@@ -59,8 +59,8 @@ class LoadBalancingStrategyAutoConfigurationTest {
     void loadBalancingStrategyIsTakenIntoAccount() {
         testContext.withUserConfiguration(TestContext.class)
                    .withPropertyValues(
-                           "axon.axonserver.eventhandling.processors.my-processor.load-balancing-strategy=PER_THREAD",
-                           "axon.axonserver.eventhandling.processors.my-processor.automatic-balancing=true"
+                           "axon.axonserver.eventhandling.processing.my-processor.load-balancing-strategy=PER_THREAD",
+                           "axon.axonserver.eventhandling.processing.my-processor.automatic-balancing=true"
                    )
                    .run(context -> {
                        AxonServerConfiguration serverConfig = context.getBean(AxonServerConfiguration.class);

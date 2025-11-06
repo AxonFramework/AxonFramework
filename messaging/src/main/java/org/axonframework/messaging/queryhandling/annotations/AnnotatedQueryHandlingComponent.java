@@ -25,7 +25,7 @@ import org.axonframework.messaging.core.annotations.ClasspathParameterResolverFa
 import org.axonframework.messaging.core.annotations.HandlerDefinition;
 import org.axonframework.messaging.core.annotations.ParameterResolverFactory;
 import org.axonframework.messaging.core.conversion.MessageConverter;
-import org.axonframework.messaging.core.interceptors.annotations.MessageHandlerInterceptorMemberChain;
+import org.axonframework.messaging.core.interception.annotations.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.messaging.queryhandling.QueryBus;

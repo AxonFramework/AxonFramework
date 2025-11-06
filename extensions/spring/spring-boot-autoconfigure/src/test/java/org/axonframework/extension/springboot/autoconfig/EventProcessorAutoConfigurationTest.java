@@ -18,9 +18,9 @@ package org.axonframework.extension.springboot.autoconfig;
 
 import org.axonframework.messaging.eventhandling.annotations.EventHandler;
 import org.axonframework.messaging.eventhandling.gateway.EventGateway;
-import org.axonframework.messaging.eventhandling.processors.streaming.StreamingEventProcessor;
-import org.axonframework.messaging.eventhandling.processors.streaming.token.store.TokenStore;
-import org.axonframework.messaging.eventhandling.processors.streaming.token.store.inmemory.InMemoryTokenStore;
+import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.store.inmemory.InMemoryTokenStore;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;

@@ -49,7 +49,7 @@ public class InboundEventMessageChannelAdapter implements MessageHandler, Subscr
     private final EventMessageConverter eventMessageConverter;
 
     /**
-     * Initialize the adapter to publish all incoming events to the subscribed processors. Note that this instance should
+     * Initialize the adapter to publish all incoming events to the subscribed processing. Note that this instance should
      *  be registered as a consumer of a Spring Message Channel.
      */
     public InboundEventMessageChannelAdapter() {
@@ -70,7 +70,7 @@ public class InboundEventMessageChannelAdapter implements MessageHandler, Subscr
     }
 
     /**
-     * Initialize the adapter to publish all incoming events to the subscribed processors. Note that this instance should
+     * Initialize the adapter to publish all incoming events to the subscribed processing. Note that this instance should
      *  be registered as a consumer of a Spring Message Channel.
      *
      * @param processors Processors to be subscribed

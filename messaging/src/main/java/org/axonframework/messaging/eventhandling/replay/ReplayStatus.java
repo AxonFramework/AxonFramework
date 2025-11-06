@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.eventhandling.replay;
 
-import org.axonframework.messaging.eventhandling.processors.streaming.StreamingEventProcessor;
-import org.axonframework.messaging.eventhandling.processors.subscribing.SubscribingEventProcessor;
+import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
+import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessor;
 import org.axonframework.messaging.eventhandling.replay.annotations.AllowReplay;
 
 /**

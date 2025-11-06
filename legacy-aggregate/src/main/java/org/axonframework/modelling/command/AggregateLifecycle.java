@@ -32,7 +32,7 @@ public abstract class AggregateLifecycle extends Scope {
 
     /**
      * Apply a {@link DomainEventMessage} with given payload and metadata (metadata from
-     * interceptors will be combined with the provided metadata). Applying events means they are immediately applied
+     * interception will be combined with the provided metadata). Applying events means they are immediately applied
      * (published) to the aggregate and scheduled for publication to other event handlers.
      * <p/>
      * The event is applied on all entities part of this aggregate. If the event is applied from an event handler of the
@@ -52,7 +52,7 @@ public abstract class AggregateLifecycle extends Scope {
 
     /**
      * Apply a {@link DomainEventMessage} with given payload without metadata (though
-     * interceptors can also be used to provide metadata). Applying events means they are immediately applied
+     * interception can also be used to provide metadata). Applying events means they are immediately applied
      * (published) to the aggregate and scheduled for publication to other event handlers.
      * <p/>
      * The event is applied on all entities part of this aggregate. If the event is applied from an event handler of the
@@ -156,7 +156,7 @@ public abstract class AggregateLifecycle extends Scope {
 
     /**
      * Apply a {@link DomainEventMessage} with given payload and metadata (metadata from
-     * interceptors will be combined with the provided metadata). The event should be applied to the aggregate
+     * interception will be combined with the provided metadata). The event should be applied to the aggregate
      * immediately and scheduled for publication to other event handlers.
      * <p/>
      * The event should be applied on all entities part of this aggregate. If the event is applied from an event handler

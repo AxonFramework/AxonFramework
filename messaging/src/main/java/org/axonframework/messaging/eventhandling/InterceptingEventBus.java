@@ -32,8 +32,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 
 /**
- * Decorator around the {@link EventBus} intercepting all {@link EventMessage events} before they are
- * {@link #publish(ProcessingContext, List) published} with {@link MessageDispatchInterceptor dispatch interceptors}.
+ * Decorator around the {@link EventBus} interception all {@link EventMessage events} before they are
+ * {@link #publish(ProcessingContext, List) published} with {@link MessageDispatchInterceptor dispatch interception}.
  * <p>
  * This {@code InterceptingEventBus} is typically registered as a
  * {@link ComponentRegistry#registerDecorator(DecoratorDefinition) decorator} and automatically kicks in whenever
@@ -66,17 +66,17 @@ public class InterceptingEventBus implements EventBus {
     /**
      * Constructs a {@code InterceptingEventBus}, delegating all operations to the given {@code delegate}.
      * <p>
-     * The given {@code interceptors} are invoked before {@link #publish(ProcessingContext, List) publishing} is done
+     * The given {@code interception} are invoked before {@link #publish(ProcessingContext, List) publishing} is done
      * by the given {@code delegate}.
      *
      * @param delegate     The delegate {@code EventBus} that will handle all dispatching and handling logic.
-     * @param interceptors The interceptors to invoke before publishing an event.
+     * @param interceptors The interception to invoke before publishing an event.
      */
     @Internal
     public InterceptingEventBus(@Nonnull EventBus delegate,
                                 @Nonnull List<MessageDispatchInterceptor<? super EventMessage>> interceptors) {
         this.delegate = Objects.requireNonNull(delegate, "The EventBus may not be null.");
-        this.interceptors = Objects.requireNonNull(interceptors, "The dispatch interceptors must not be null.");
+        this.interceptors = Objects.requireNonNull(interceptors, "The dispatch interception must not be null.");
         this.delegateSink = new InterceptingEventSink(delegate, interceptors);
     }
 

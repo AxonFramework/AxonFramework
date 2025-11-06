@@ -23,7 +23,7 @@ import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageHandlerInterceptor;
-import org.axonframework.messaging.core.interceptors.HandlerInterceptorRegistry;
+import org.axonframework.messaging.core.interception.HandlerInterceptorRegistry;
 import org.axonframework.messaging.core.timeout.HandlerTimeoutHandlerEnhancerDefinition;
 import org.axonframework.messaging.core.timeout.TaskTimeoutSettings;
 import org.axonframework.messaging.core.timeout.UnitOfWorkTimeoutInterceptorBuilder;

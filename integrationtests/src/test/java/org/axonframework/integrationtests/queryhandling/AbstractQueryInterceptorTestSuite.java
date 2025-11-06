@@ -53,7 +53,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Abstract test suite for comprehensive {@link QueryBus} interceptor integration testing. Tests all interceptor
- * functionality for regular queries, subscription queries, and update interceptors.
+ * functionality for regular queries, subscription queries, and update interception.
  * <p>
  * This suite translates all test cases from {@code InterceptingQueryBusTest} to integration tests, validating that
  * interceptor functionality works correctly with both {@code SimpleQueryBus} and {@code DistributedQueryBus}.
@@ -89,7 +89,7 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
                         .expectNextCount(1)
                         .verifyComplete();
 
-            // then - Verify REQUEST interception: interceptors added metadata to the query BEFORE handler saw it
+            // then - Verify REQUEST interception: interception added metadata to the query BEFORE handler saw it
             assertThat(handler.getRecordedQueries()).hasSize(1);
 
             interceptingConfig.shutdown();
@@ -120,7 +120,7 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
                         .expectNextCount(1)
                         .verifyComplete();
 
-            // then - Verify REQUEST interception: interceptors added metadata to the query BEFORE handler saw it
+            // then - Verify REQUEST interception: interception added metadata to the query BEFORE handler saw it
             assertThat(handler.getRecordedQueries()).hasSize(1);
             QueryMessage recordedQuery = handler.getRecordedQueries().getFirst();
             assertTrue(recordedQuery.metadata().containsKey("dispatch1"),
@@ -155,7 +155,7 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
                                                                                     StubProcessingContext.forMessage(
                                                                                             testQuery));
 
-            // then - Verify RESPONSE interception: interceptors added metadata to the response AFTER handler executed
+            // then - Verify RESPONSE interception: interception added metadata to the response AFTER handler executed
             QueryResponseMessage response = result.first().asCompletableFuture().join().message();
             assertTrue(response.metadata().containsKey("dispatch1"),
                        "Expected dispatch1 interceptor to add metadata to RESPONSE");
@@ -284,7 +284,7 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
             // when
             interceptingQueryBus.query(testQuery, context).first().asCompletableFuture().join();
 
-            // then - Verify REQUEST interception: handler interceptors added metadata to the query BEFORE handler saw it
+            // then - Verify REQUEST interception: handler interception added metadata to the query BEFORE handler saw it
             assertThat(handler.getRecordedQueries()).hasSize(1);
             QueryMessage recordedQuery = handler.getRecordedQueries().getFirst();
             assertTrue(recordedQuery.metadata().containsKey("handler1"),
@@ -318,7 +318,7 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
             // when
             MessageStream<QueryResponseMessage> result = interceptingQueryBus.query(testQuery, context);
 
-            // then - Verify RESPONSE interception: handler interceptors added metadata to the response AFTER handler executed
+            // then - Verify RESPONSE interception: handler interception added metadata to the response AFTER handler executed
             QueryResponseMessage response = result.first().asCompletableFuture().join().message();
             assertTrue(response.metadata().containsKey("handler1"),
                        "Expected handler1 interceptor to add metadata to RESPONSE");
@@ -508,7 +508,7 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
             assertTrue(response.metadata().containsKey("handler2"),
                        "Expected handler2 interceptor to be applied to response");
 
-            // Verify handler interceptors added metadata to the query received by handler
+            // Verify handler interception added metadata to the query received by handler
             assertThat(handler.getRecordedQueries()).hasSize(1);
             QueryMessage recordedQuery = handler.getRecordedQueries().get(0);
             assertTrue(recordedQuery.metadata().containsKey("handler1"),
@@ -551,7 +551,7 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
             assertTrue(response.metadata().containsKey("dispatch2"),
                        "Expected dispatch2 interceptor to be applied to response");
 
-            // Verify dispatch interceptors added metadata to the query received by handler
+            // Verify dispatch interception added metadata to the query received by handler
             assertThat(handler.getRecordedQueries()).hasSize(1);
             QueryMessage recordedQuery = handler.getRecordedQueries().getFirst();
             assertTrue(recordedQuery.metadata().containsKey("dispatch1"),
@@ -591,7 +591,7 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
             MessageStream<SubscriptionQueryUpdateMessage> updateStream =
                     interceptingQueryBus.subscribeToUpdates(testQuery, 10);
 
-            // then - Verify dispatch interceptors were invoked
+            // then - Verify dispatch interception were invoked
             assertThat(interceptor1Invocations.get()).isEqualTo(1);
             assertThat(interceptor2Invocations.get()).isEqualTo(1);
 
@@ -674,7 +674,7 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
             );
 
             // then
-            // Verify that emitUpdate works without interceptors
+            // Verify that emitUpdate works without interception
             assertDoesNotThrow(result::join);
         }
 

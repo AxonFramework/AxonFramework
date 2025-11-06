@@ -26,7 +26,7 @@ import java.util.Collection;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * Tests serialization capabilities of {@link QuartzScheduleToken}.
+ * Tests conversion capabilities of {@link QuartzScheduleToken}.
  *
  * @author JohT
  */

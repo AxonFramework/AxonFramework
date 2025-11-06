@@ -34,7 +34,7 @@ import org.axonframework.messaging.eventhandling.EventBus;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericDomainEventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.eventsourcing.AggregateFactory;
 import org.axonframework.messaging.eventsourcing.GenericAggregateFactory;
 import org.axonframework.messaging.eventsourcing.LegacyEventSourcingRepository;

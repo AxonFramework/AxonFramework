@@ -26,7 +26,7 @@ import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.InterceptingEventBus;
 import org.axonframework.messaging.eventhandling.SimpleEventBus;
 import org.axonframework.messaging.core.MessageDispatchInterceptor;
-import org.axonframework.messaging.core.interceptors.DispatchInterceptorRegistry;
+import org.axonframework.messaging.core.interception.DispatchInterceptorRegistry;
 
 import java.util.List;
 

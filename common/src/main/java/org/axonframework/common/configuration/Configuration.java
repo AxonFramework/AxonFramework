@@ -208,9 +208,9 @@ public interface Configuration extends DescribableComponent {
      * <p>
      * Example usage:
      * <pre>{@code
-     * Map<String, EventProcessor> processors = configuration.getComponents(EventProcessor.class);
-     * EventProcessor defaultProcessor = processors.get(null);  // unnamed processor
-     * EventProcessor orderProcessor = processors.get("orderProcessor");  // named processor
+     * Map<String, EventProcessor> processing = configuration.getComponents(EventProcessor.class);
+     * EventProcessor defaultProcessor = processing.get(null);  // unnamed processor
+     * EventProcessor orderProcessor = processing.get("orderProcessor");  // named processor
      * }</pre>
      *
      * @param type The type of component, typically the interface the component implements.

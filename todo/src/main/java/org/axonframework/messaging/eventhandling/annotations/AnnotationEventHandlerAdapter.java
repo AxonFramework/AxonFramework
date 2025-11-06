@@ -31,7 +31,7 @@ import org.axonframework.messaging.core.annotations.AnnotatedHandlerInspector;
 import org.axonframework.messaging.core.annotations.ClasspathHandlerDefinition;
 import org.axonframework.messaging.core.annotations.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.core.annotations.HandlerDefinition;
-import org.axonframework.messaging.core.interceptors.annotations.MessageHandlerInterceptorMemberChain;
+import org.axonframework.messaging.core.interception.annotations.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.core.annotations.MessageHandlingMember;
 import org.axonframework.messaging.core.annotations.ParameterResolverFactory;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;

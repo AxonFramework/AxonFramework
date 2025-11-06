@@ -62,7 +62,7 @@ public abstract class AbstractQueryTestSuite {
 
     /**
      * Creates a {@link MessagingConfigurer} with the test-specific configuration (e.g., AxonServer enabled/disabled).
-     * This configurer is not yet built, allowing tests to register additional components like interceptors.
+     * This configurer is not yet built, allowing tests to register additional components like interception.
      *
      * @return A {@link MessagingConfigurer} instance ready for additional configuration.
      */

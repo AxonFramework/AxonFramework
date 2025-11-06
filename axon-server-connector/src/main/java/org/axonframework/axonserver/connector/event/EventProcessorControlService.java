@@ -28,10 +28,10 @@ import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.annotations.Internal;
 import org.axonframework.common.configuration.Configuration;
-import org.axonframework.messaging.eventhandling.processors.EventProcessor;
-import org.axonframework.messaging.eventhandling.processors.streaming.StreamingEventProcessor;
-import org.axonframework.messaging.eventhandling.processors.streaming.token.store.TokenStore;
-import org.axonframework.messaging.eventhandling.processors.subscribing.SubscribingEventProcessor;
+import org.axonframework.messaging.eventhandling.processing.EventProcessor;
+import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
+import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessor;
 import org.axonframework.common.lifecycle.Phase;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.slf4j.Logger;
@@ -75,7 +75,7 @@ public class EventProcessorControlService {
      * configured load balancing strategies through the {@link AdminChannel} of the {@code context}.
      *
      * @param configuration     The {@link EventProcessor} configuration of this application, used to retrieve the
-     *                          registered event processors from.
+     *                          registered event processing from.
      * @param connectionManager A {@link AxonServerConnectionManager} from which to retrieve the {@link ControlChannel}
      *                          and {@link AdminChannel}.
      * @param context           The context of this application instance to retrieve the {@link ControlChannel} and
@@ -102,7 +102,7 @@ public class EventProcessorControlService {
      * {@code context} and set the load balancing strategies through the {@link AdminChannel} for the configured
      * {@code context}.
      * <p>
-     * The registration is performed in {@link Phase#INBOUND_EVENT_CONNECTORS} phase, to ensure the event processors
+     * The registration is performed in {@link Phase#INBOUND_EVENT_CONNECTORS} phase, to ensure the event processing
      * this service provides control over have been started.
      */
     public void start() {

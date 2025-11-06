@@ -26,7 +26,7 @@ import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
 import java.beans.ConstructorProperties;
 
 /**
- * Internal {@link AnnotationIntrospector} for jackson to test JSON serialization ignoring all creator annotations
+ * Internal {@link AnnotationIntrospector} for jackson to test JSON conversion ignoring all creator annotations
  * except for the {@link ConstructorProperties}-annotation.
  *
  * @author JohT

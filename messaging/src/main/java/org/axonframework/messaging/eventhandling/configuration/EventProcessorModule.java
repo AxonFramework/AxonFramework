@@ -19,13 +19,13 @@ package org.axonframework.messaging.eventhandling.configuration;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.Module;
-import org.axonframework.messaging.eventhandling.processors.EventProcessor;
-import org.axonframework.messaging.eventhandling.processors.subscribing.SubscribingEventProcessorConfiguration;
-import org.axonframework.messaging.eventhandling.processors.subscribing.SubscribingEventProcessorsConfigurer;
-import org.axonframework.messaging.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessorConfiguration;
-import org.axonframework.messaging.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessorModule;
-import org.axonframework.messaging.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessorsConfigurer;
-import org.axonframework.messaging.eventhandling.processors.subscribing.SubscribingEventProcessorModule;
+import org.axonframework.messaging.eventhandling.processing.EventProcessor;
+import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessorConfiguration;
+import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessorsConfigurer;
+import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorConfiguration;
+import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorModule;
+import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorsConfigurer;
+import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessorModule;
 
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -34,7 +34,7 @@ import java.util.function.Function;
  * Interface for configuring individual {@link EventProcessor} modules.
  * <p>
  * This interface is typically not implemented or used directly. Instead, use the provided factory methods to create
- * specific processor modules, or access existing processors through parent module configurations like
+ * specific processor modules, or access existing processing through parent module configurations like
  * {@link SubscribingEventProcessorsConfigurer} or {@link PooledStreamingEventProcessorsConfigurer}.
  * <p>
  * Example usage:
@@ -105,7 +105,7 @@ public interface EventProcessorModule extends Module {
     /**
      * Configuration phase interface that provides methods for setting up event processor configurations.
      * <p>
-     * This interface offers two approaches for finishing event processors setup:
+     * This interface offers two approaches for finishing event processing setup:
      * <ul>
      * <li>{@link #notCustomized()} - Just accepts the shared and type-specific configuration without customizing it</li>
      * <li>{@link #customized(BiFunction)} - Incremental customization on top of shared and type-specific defaults</li>

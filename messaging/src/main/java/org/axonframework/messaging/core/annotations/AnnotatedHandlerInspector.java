@@ -17,9 +17,9 @@
 package org.axonframework.messaging.core.annotations;
 
 import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
-import org.axonframework.messaging.core.interceptors.annotations.MessageHandlerInterceptorMemberChain;
-import org.axonframework.messaging.core.interceptors.annotations.MessageInterceptingMember;
-import org.axonframework.messaging.core.interceptors.annotations.NoMoreInterceptors;
+import org.axonframework.messaging.core.interception.annotations.MessageHandlerInterceptorMemberChain;
+import org.axonframework.messaging.core.interception.annotations.MessageInterceptingMember;
+import org.axonframework.messaging.core.interception.annotations.NoMoreInterceptors;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
@@ -233,7 +233,7 @@ public class AnnotatedHandlerInspector<T> {
                                                    registerHandler(inspectedType, h);
                                                })));
 
-        // we need to consider interceptors from parent/subclasses as well
+        // we need to consider interception from parent/subclasses as well
         subClassInspectors.forEach(sci -> sci.getAllInterceptors()
                                              .forEach((key, value) -> value.forEach(
                                                      h -> registerHandler(key, (MessageHandlingMember<T>) h))
@@ -284,7 +284,7 @@ public class AnnotatedHandlerInspector<T> {
 
     /**
      * Returns an Interceptor Chain of annotated interceptor methods defined on the given {@code type}. The given chain
-     * will invoke all relevant interceptors in an order defined by the handler definition.
+     * will invoke all relevant interception in an order defined by the handler definition.
      *
      * @param type The type containing the handler definitions
      * @return an interceptor chain that invokes the interceptor handlers defined on the inspected type
@@ -313,7 +313,7 @@ public class AnnotatedHandlerInspector<T> {
      * key, and a SortedSet of interceptor methods defined on that type, in the order they are considered for
      * invocation.
      *
-     * @return a map of interceptors per type
+     * @return a map of interception per type
      */
     public Map<Class<?>, SortedSet<MessageHandlingMember<? super T>>> getAllInterceptors() {
         return Collections.unmodifiableMap(interceptors);

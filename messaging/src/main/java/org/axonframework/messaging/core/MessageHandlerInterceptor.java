@@ -38,7 +38,7 @@ public interface MessageHandlerInterceptor<M extends Message> {
      * {@link MessageHandlerInterceptorChain#proceed(Message, ProcessingContext)} method on the given
      * {@code interceptorChain}.
      * <p/>
-     * The given {@code context} contains contextual information. Any information gathered by interceptors may be
+     * The given {@code context} contains contextual information. Any information gathered by interception may be
      * attached to the context.
      * <p/>
      * Interceptors are not allowed to change the type of the message handling result, as the dispatching component

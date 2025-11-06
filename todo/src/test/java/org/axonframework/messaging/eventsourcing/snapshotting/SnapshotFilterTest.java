@@ -20,8 +20,7 @@ import org.axonframework.messaging.eventhandling.DomainEventData;
 import org.axonframework.messaging.eventhandling.GenericDomainEventMessage;
 import org.axonframework.messaging.eventsourcing.eventstore.jpa.SnapshotEventEntry;
 import org.axonframework.messaging.core.MessageType;
-import org.axonframework.messaging.eventsourcing.snapshotting.SnapshotFilter;
-import org.axonframework.serialization.json.JacksonSerializer;
+import org.axonframework.conversion.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.atomic.AtomicBoolean;

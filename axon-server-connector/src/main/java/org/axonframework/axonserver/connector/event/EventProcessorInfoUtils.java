@@ -20,11 +20,11 @@ import io.axoniq.axonserver.grpc.control.EventProcessorInfo;
 import io.axoniq.axonserver.grpc.control.EventProcessorInfo.SegmentStatus;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotations.Internal;
-import org.axonframework.messaging.eventhandling.processors.EventProcessor;
-import org.axonframework.messaging.eventhandling.processors.streaming.StreamingEventProcessor;
-import org.axonframework.messaging.eventhandling.processors.streaming.segmenting.EventTrackerStatus;
-import org.axonframework.messaging.eventhandling.processors.streaming.token.TrackingToken;
-import org.axonframework.messaging.eventhandling.processors.subscribing.SubscribingEventProcessor;
+import org.axonframework.messaging.eventhandling.processing.EventProcessor;
+import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
+import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.EventTrackerStatus;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
+import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessor;
 
 import java.util.List;
 

@@ -19,8 +19,8 @@ package org.axonframework.messaging.core.annotations;
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
-import org.axonframework.messaging.core.interceptors.annotations.MessageHandlerInterceptorMemberChain;
-import org.axonframework.messaging.core.interceptors.annotations.NoMoreInterceptors;
+import org.axonframework.messaging.core.interception.annotations.MessageHandlerInterceptorMemberChain;
+import org.axonframework.messaging.core.interception.annotations.NoMoreInterceptors;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.util.Iterator;
@@ -63,7 +63,7 @@ public class ChainedMessageHandlerInterceptorMember<T> implements MessageHandler
                                    @Nonnull T target,
                                    @Nonnull MessageHandlingMember<? super T> handler) {
 
-        // TODO #3485 - Implement this accordingly for annotated interceptors.
+        // TODO #3485 - Implement this accordingly for annotated interception.
         //  Or, fully replace this for MessageHandlingComponent decoration instead.
         return doHandle(message, context, target, handler);
         /*
@@ -92,7 +92,7 @@ public class ChainedMessageHandlerInterceptorMember<T> implements MessageHandler
                              @Nonnull ProcessingContext context,
                              @Nonnull T target,
                              @Nonnull MessageHandlingMember<? super T> handler) throws Exception {
-        // TODO #3485 - Implement this accordingly for annotated interceptors.
+        // TODO #3485 - Implement this accordingly for annotated interception.
         //  Or, fully replace this for MessageHandlingComponent decoration instead.
         return doHandleSync(message, context, target, handler);
         /*

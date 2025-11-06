@@ -19,8 +19,8 @@ package org.axonframework.extension.springboot;
 import jakarta.persistence.EntityManagerFactory;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.jpa.EntityManagerProvider;
-import org.axonframework.messaging.eventhandling.processors.streaming.token.store.TokenStore;
-import org.axonframework.messaging.eventhandling.processors.streaming.token.store.jpa.JpaTokenStore;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.store.jpa.JpaTokenStore;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.axonframework.extension.springboot.util.jpa.ContainerManagedEntityManagerProvider;
 import org.junit.jupiter.api.*;
@@ -109,7 +109,7 @@ class JpaAutoConfigurationTest {
     @Disabled("TODO #3517")
     void sequencedDeadLetterQueueCanBeSetViaSpringConfiguration() {
       /*
-        testContext.withPropertyValues("axon.eventhandling.processors.first.dlq.enabled=true")
+        testContext.withPropertyValues("axon.eventhandling.processing.first.dlq.enabled=true")
                    .run(context -> {
                        assertNotNull(context.getBean(DeadLetterQueueProviderConfigurerModule.class));
 

@@ -26,7 +26,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Auto configuration for event processors.
+ * Auto configuration for event processing.
  *
  * @author Milan Savic
  * @author Simon Zambrovski

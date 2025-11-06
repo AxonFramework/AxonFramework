@@ -22,7 +22,7 @@ import org.axonframework.messaging.eventhandling.EventBus;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.eventhandling.annotations.Timestamp;
-import org.axonframework.messaging.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.annotations.MetadataValue;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;

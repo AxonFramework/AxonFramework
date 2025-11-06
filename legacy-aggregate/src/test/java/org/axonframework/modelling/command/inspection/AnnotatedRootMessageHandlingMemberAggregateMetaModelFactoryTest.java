@@ -80,8 +80,8 @@ import static org.mockito.Mockito.*;
  * <p>
  * <b>Command Handling and Intercepting Tests</b>
  * <p>
- * There are four tests for command handling and intercepting in place. Two for command handling and two for command
- * intercepting, subdivided in an Aggregate hierarchy and a polymorphic Aggregate test cases.
+ * There are four tests for command handling and interception in place. Two for command handling and two for command
+ * interception, subdivided in an Aggregate hierarchy and a polymorphic Aggregate test cases.
  * <p>
  * A {@link CommandHandlingMember} resides on the {@link NodeAggregate}. When a {@link MemberCommand} is dispatched to a
  * leaf implementation (e.g. the {@link LeafAggregate}) it is anticipated that the {@link CommandHandlingMember} will be
@@ -90,7 +90,7 @@ import static org.mockito.Mockito.*;
  * Furthermore the {@link MemberCommand} has an interceptor present on each level of the aggregate root (thus the
  * {@link RootAggregate}, {@link NodeAggregate} and {@link LeafAggregate}/{@link OtherLeafAggregate} aggregate).
  * Regardless of the handled message type by a {@link CommandHandlerInterceptor} annotated method, any matching
- * interceptors will be invoked on any level of the aggregate's hierarchy. As such the number of invocations on the
+ * interception will be invoked on any level of the aggregate's hierarchy. As such the number of invocations on the
  * command interceptor for the {@link MemberCommand} should be three, matching the number of interceptor methods.
  *
  * @author Steven van Beelen

@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import org.axonframework.messaging.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.MessageStream;

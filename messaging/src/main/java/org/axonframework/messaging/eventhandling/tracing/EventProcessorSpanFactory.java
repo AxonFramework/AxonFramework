@@ -17,15 +17,15 @@
 package org.axonframework.messaging.eventhandling.tracing;
 
 import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.processors.streaming.StreamingEventProcessor;
-import org.axonframework.messaging.eventhandling.processors.EventProcessor;
+import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
+import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.tracing.Span;
 
 import java.util.List;
 
 /**
  * Span factory that creates spans for the {@link EventProcessor} implementations. You can customize the spans of the
- * event processors by creating your own implementation.
+ * event processing by creating your own implementation.
  *
  * @author Mitchell Herrijgers
  * @since 4.9.0

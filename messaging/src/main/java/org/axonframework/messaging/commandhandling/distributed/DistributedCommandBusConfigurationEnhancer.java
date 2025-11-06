@@ -18,7 +18,7 @@ package org.axonframework.messaging.commandhandling.distributed;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.commandhandling.CommandBus;
-import org.axonframework.messaging.commandhandling.interceptors.InterceptingCommandBus;
+import org.axonframework.messaging.commandhandling.interception.InterceptingCommandBus;
 import org.axonframework.common.annotations.Internal;
 import org.axonframework.common.configuration.ComponentDecorator;
 import org.axonframework.common.configuration.ComponentRegistry;

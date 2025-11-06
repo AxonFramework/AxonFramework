@@ -17,9 +17,9 @@
 package org.axonframework.modelling.saga;
 
 import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.processors.errorhandling.ListenerInvocationErrorHandler;
-import org.axonframework.messaging.eventhandling.processors.errorhandling.LoggingErrorHandler;
-import org.axonframework.messaging.eventhandling.processors.streaming.segmenting.Segment;
+import org.axonframework.messaging.eventhandling.processing.errorhandling.ListenerInvocationErrorHandler;
+import org.axonframework.messaging.eventhandling.processing.errorhandling.LoggingErrorHandler;
+import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
 import org.axonframework.messaging.core.annotations.HandlerDefinition;
 import org.axonframework.messaging.core.annotations.ParameterResolverFactory;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;

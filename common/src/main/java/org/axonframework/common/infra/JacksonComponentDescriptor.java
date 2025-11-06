@@ -77,7 +77,7 @@ public class JacksonComponentDescriptor implements ComponentDescriptor {
     /**
      * Constructs a new {@code JacksonComponentDescriptor} with the provided {@link ObjectMapper}.
      *
-     * @param objectMapper The ObjectMapper to use for JSON serialization.
+     * @param objectMapper The ObjectMapper to use for JSON conversion.
      */
     public JacksonComponentDescriptor(ObjectMapper objectMapper) {
         this(objectMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS), new IdentityHashMap<>());
@@ -86,7 +86,7 @@ public class JacksonComponentDescriptor implements ComponentDescriptor {
     /**
      * Private constructor used for creating nested descriptors that share the processed components map.
      *
-     * @param objectMapper        The ObjectMapper to use for JSON serialization.
+     * @param objectMapper        The ObjectMapper to use for JSON conversion.
      * @param processedComponents Map containing already processed components and their IDs.
      */
     private JacksonComponentDescriptor(ObjectMapper objectMapper,

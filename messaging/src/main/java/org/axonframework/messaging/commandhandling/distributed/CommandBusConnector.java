@@ -32,7 +32,7 @@ import java.util.function.BiConsumer;
  * It allows for the dispatching of commands across different command bus instances, whether they are local or remote.
  * <p>
  * One connector can be wrapped with another through the {@link DelegatingCommandBusConnector}, upon which more
- * functionality can be added, such as payload conversion or serialization.
+ * functionality can be added, such as payload conversion or conversion.
  *
  * @author Allard Buijze
  * @author Mitchell Herrijgers

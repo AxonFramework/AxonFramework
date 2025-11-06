@@ -22,11 +22,11 @@ import org.axonframework.messaging.core.unitofwork.transaction.TransactionManage
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.core.configuration.MessagingConfigurer;
-import org.axonframework.messaging.eventhandling.processors.EventProcessor;
-import org.axonframework.messaging.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
-import org.axonframework.messaging.eventhandling.processors.subscribing.SubscribingEventProcessorsConfigurer;
-import org.axonframework.messaging.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessorsConfigurer;
-import org.axonframework.messaging.eventhandling.processors.subscribing.SubscribingEventProcessor;
+import org.axonframework.messaging.eventhandling.processing.EventProcessor;
+import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessor;
+import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessorsConfigurer;
+import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorsConfigurer;
+import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessor;
 import org.axonframework.messaging.core.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 
@@ -51,7 +51,7 @@ import java.util.function.UnaryOperator;
  * <p>
  * The main purpose is to provide shared configuration capabilities for all event processor types, allowing you to set
  * default configurations like {@link UnitOfWorkFactory} that apply to
- * all processors while still enabling type-specific customizations.
+ * all processing while still enabling type-specific customizations.
  * <p>
  * The module automatically configures default transaction management by registering a
  * {@link TransactionalUnitOfWorkFactory} when a {@link TransactionManager} is available in the configuration.
@@ -104,7 +104,7 @@ public class EventProcessingConfigurer {
      * Builds the configurer, registering the necessary modules and customizations.
      * <p>
      * This method is typically called by the {@link MessagingConfigurer} during
-     * application startup to finalize the configuration of event processors.
+     * application startup to finalize the configuration of event processing.
      */
     public void build() {
         componentRegistry(
@@ -121,14 +121,14 @@ public class EventProcessingConfigurer {
     }
 
     /**
-     * Configures default settings that will be applied to all event processors managed by this module.
+     * Configures default settings that will be applied to all event processing managed by this module.
      * <p>
      * This method allows you to specify configurations that should be shared across both pooled streaming and
-     * subscribing event processors. The provided function receives both the Axon {@link Configuration} and the
+     * subscribing event processing. The provided function receives both the Axon {@link Configuration} and the
      * {@link EventProcessorConfiguration}, allowing access to application-wide components when setting defaults.
      * <p>
      * Common use cases include setting default {@link UnitOfWorkFactory}, error
-     * handlers, or processing policies that should apply to all processors unless explicitly overridden.
+     * handlers, or processing policies that should apply to all processing unless explicitly overridden.
      *
      * @param configureDefaults A function that receives the Axon configuration and {@link EventProcessorConfiguration},
      *                          returning a modified {@link EventProcessorConfiguration} with the desired defaults
@@ -143,7 +143,7 @@ public class EventProcessingConfigurer {
     }
 
     /**
-     * Configures default settings that will be applied to all event processors managed by this module.
+     * Configures default settings that will be applied to all event processing managed by this module.
      * <p>
      * This is a simplified version of {@link #defaults(BiFunction)} that provides only the
      * {@link EventProcessorConfiguration} for modification, without access to the Axon {@link Configuration}. Use this
@@ -164,10 +164,10 @@ public class EventProcessingConfigurer {
      * Provides access to configure {@link PooledStreamingEventProcessor}
      * instances through the {@link PooledStreamingEventProcessorsConfigurer}.
      * <p>
-     * Use this method to define specific pooled streaming event processors, set their configurations, and register
+     * Use this method to define specific pooled streaming event processing, set their configurations, and register
      * event handling components. The provided function receives the module for
      * {@link PooledStreamingEventProcessor}s and can register individual
-     * processors or configure module-wide settings.
+     * processing or configure module-wide settings.
      *
      * @param processorsModuleTask A function that configures the {@link PooledStreamingEventProcessorsConfigurer}.
      * @return This module instance for method chaining.
@@ -184,9 +184,9 @@ public class EventProcessingConfigurer {
      * Provides access to configure {@link SubscribingEventProcessor} instances through
      * the {@link SubscribingEventProcessorsConfigurer}.
      * <p>
-     * Use this method to define specific subscribing event processors, set their configurations, and register event
+     * Use this method to define specific subscribing event processing, set their configurations, and register event
      * handling components. The provided function receives the module for
-     * {@link SubscribingEventProcessor}s and can register individual processors or
+     * {@link SubscribingEventProcessor}s and can register individual processing or
      * configure module-wide settings.
      *
      * @param processorsModuleTask A function that configures the {@link SubscribingEventProcessorsConfigurer}.

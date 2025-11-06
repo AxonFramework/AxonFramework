@@ -21,11 +21,11 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Lob;
 import jakarta.persistence.MappedSuperclass;
 import org.axonframework.common.DateTimeUtils;
-import org.axonframework.serialization.SerializedMetadata;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.SimpleSerializedObject;
-import org.axonframework.serialization.SimpleSerializedType;
+import org.axonframework.conversion.SerializedMetadata;
+import org.axonframework.conversion.SerializedObject;
+import org.axonframework.conversion.Serializer;
+import org.axonframework.conversion.SimpleSerializedObject;
+import org.axonframework.conversion.SimpleSerializedType;
 
 import java.time.Instant;
 import java.time.temporal.TemporalAccessor;
@@ -69,7 +69,7 @@ public abstract class AbstractEventEntry<T> implements EventData<T> {
      *
      * @param eventMessage The event message to convert to a serialized event entry
      * @param serializer   The serializer to convert the event
-     * @param contentType  The data type of the payload and metadata after serialization
+     * @param contentType  The data type of the payload and metadata after conversion
      */
     public AbstractEventEntry(EventMessage eventMessage, Serializer serializer, Class<T> contentType) {
         SerializedObject<T> payload = serializer.serialize(eventMessage.payload(), contentType);

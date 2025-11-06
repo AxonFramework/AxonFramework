@@ -68,7 +68,7 @@ class DbSchedulerHumanReadableDeadlineDetailsTest {
     @MethodSource("axonSerializers")
     @ParameterizedTest
     void whenDataInPojoIsSerializedAndDeserializedItShouldBeTheSame(
-            org.axonframework.serialization.Serializer serializer) {
+            org.axonframework.conversion.Serializer serializer) {
         String expectedType = "aggregateType";
         String expectedIdentifier = "identifier";
         ScopeDescriptor descriptor = new TestScopeDescriptor(expectedType, expectedIdentifier);
@@ -92,9 +92,9 @@ class DbSchedulerHumanReadableDeadlineDetailsTest {
         return serializers;
     }
 
-    public static Collection<org.axonframework.serialization.Serializer> axonSerializers() {
-        List<org.axonframework.serialization.Serializer> testConverterList = new ArrayList<>();
-        testConverterList.add(org.axonframework.serialization.json.JacksonSerializer.defaultSerializer());
+    public static Collection<org.axonframework.conversion.Serializer> axonSerializers() {
+        List<org.axonframework.conversion.Serializer> testConverterList = new ArrayList<>();
+        testConverterList.add(org.axonframework.conversion.json.JacksonSerializer.defaultSerializer());
         return testConverterList;
     }
 

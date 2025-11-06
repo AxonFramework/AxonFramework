@@ -21,8 +21,8 @@ import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageDispatchInterceptor;
 import org.axonframework.messaging.core.MessageHandlerInterceptor;
-import org.axonframework.messaging.core.interceptors.DispatchInterceptorRegistry;
-import org.axonframework.messaging.core.interceptors.HandlerInterceptorRegistry;
+import org.axonframework.messaging.core.interception.DispatchInterceptorRegistry;
+import org.axonframework.messaging.core.interception.HandlerInterceptorRegistry;
 import org.axonframework.messaging.queryhandling.QueryMessage;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -36,11 +36,11 @@ import java.util.Optional;
  * Interceptor autoconfiguration class for Axon Framework application. Discovers {@link MessageHandlerInterceptor}s and
  * {@link MessageDispatchInterceptor} and registers them with the respective buses and gateways.
  * <p>
- * Note: This class use a hack approach! Because some gateways/buses (or custom interceptors provided by the framework
- * user) need an axonConfiguration to initialize, the usual way of registering interceptors in the
+ * Note: This class use a hack approach! Because some gateways/buses (or custom interception provided by the framework
+ * user) need an axonConfiguration to initialize, the usual way of registering interception in the
  * ConfigurerModule.onInitialize method does not work for them. This is due to a circular reference caused e.g. by
  * JpaJavaxEventStoreAutoConfiguration. So we register them by injecting gateway/bus components in to the
- * InitializingBean function and register the interceptors there.
+ * InitializingBean function and register the interception there.
  *
  * @author Christian Thiel
  * @since 4.11.0
@@ -53,11 +53,11 @@ public class InterceptorAutoConfiguration {
      * Bean creation method for a {@link DecoratorDefinition} that registers {@link Message}-specific
      * {@link MessageDispatchInterceptor MessageDispatchInterceptors} with the {@link DispatchInterceptorRegistry}.
      *
-     * @param commandInterceptors {@link CommandMessage}-specific and generic {@link Message} dispatch interceptors to
+     * @param commandInterceptors {@link CommandMessage}-specific and generic {@link Message} dispatch interception to
      *                            register for commands.
-     * @param eventInterceptors   {@link EventMessage}-specific and generic {@link Message} dispatch interceptors to
+     * @param eventInterceptors   {@link EventMessage}-specific and generic {@link Message} dispatch interception to
      *                            register for events.
-     * @param queryInterceptors   {@link QueryMessage}-specific and generic {@link Message} dispatch interceptors to
+     * @param queryInterceptors   {@link QueryMessage}-specific and generic {@link Message} dispatch interception to
      *                            register for queries.
      * @return A bean creation method for a {@link DecoratorDefinition} that registers {@link Message}-specific
      * {@link MessageDispatchInterceptor MessageDispatchInterceptors} with the {@link DispatchInterceptorRegistry}.
@@ -106,10 +106,10 @@ public class InterceptorAutoConfiguration {
      * Bean creation method for a {@link DecoratorDefinition} that registers {@link Message}-specific
      * {@link MessageHandlerInterceptor MessageHandlerInterceptors} with the {@link HandlerInterceptorRegistry}.
      *
-     * @param interceptors        Generic {@link Message} handler interceptors to register.
-     * @param commandInterceptors {@link CommandMessage}-specific handler interceptors to register.
-     * @param eventInterceptors   {@link EventMessage}-specific handler interceptors to register.
-     * @param queryInterceptors   {@link QueryMessage}-specific handler interceptors to register.
+     * @param interceptors        Generic {@link Message} handler interception to register.
+     * @param commandInterceptors {@link CommandMessage}-specific handler interception to register.
+     * @param eventInterceptors   {@link EventMessage}-specific handler interception to register.
+     * @param queryInterceptors   {@link QueryMessage}-specific handler interception to register.
      * @return A bean creation method for a {@link DecoratorDefinition} that registers {@link Message}-specific
      * {@link MessageHandlerInterceptor MessageHandlerInterceptors} with the {@link DispatchInterceptorRegistry}.
      */

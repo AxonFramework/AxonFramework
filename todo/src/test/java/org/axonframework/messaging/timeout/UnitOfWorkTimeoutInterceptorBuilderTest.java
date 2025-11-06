@@ -17,7 +17,7 @@ package org.axonframework.messaging.timeout;
 
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventTestUtils;
-import org.axonframework.messaging.eventhandling.interceptors.EventMessageHandlerInterceptorChain;
+import org.axonframework.messaging.eventhandling.interception.EventMessageHandlerInterceptorChain;
 import org.axonframework.messaging.core.MessageHandlerInterceptor;
 import org.axonframework.messaging.core.timeout.AxonTimeoutException;
 import org.axonframework.messaging.core.timeout.UnitOfWorkTimeoutInterceptorBuilder;

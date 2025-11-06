@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventsourcing.eventstore.jdbc.statements;
 
-import org.axonframework.messaging.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.eventsourcing.eventstore.jdbc.EventSchema;
 import org.axonframework.messaging.eventsourcing.eventstore.jdbc.LegacyJdbcEventStorageEngine;
 

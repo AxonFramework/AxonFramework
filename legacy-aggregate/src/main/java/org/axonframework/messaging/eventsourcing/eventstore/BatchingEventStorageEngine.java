@@ -22,8 +22,8 @@ import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.eventsourcing.eventstore.StreamSpliterator;
 import org.axonframework.messaging.eventhandling.DomainEventData;
 import org.axonframework.messaging.eventhandling.TrackedEventData;
-import org.axonframework.messaging.eventhandling.processors.streaming.token.TrackingToken;
-import org.axonframework.serialization.Serializer;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
+import org.axonframework.conversion.Serializer;
 
 import java.util.List;
 import java.util.function.Predicate;

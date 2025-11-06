@@ -20,7 +20,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.CollectionUtils;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.messaging.core.annotations.HandlerDefinition;
-import org.axonframework.messaging.core.interceptors.annotations.MessageHandlerInterceptorMemberChain;
+import org.axonframework.messaging.core.interception.annotations.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.core.annotations.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;

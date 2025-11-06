@@ -24,7 +24,7 @@ import org.axonframework.deadline.jobrunr.JobRunrDeadlineManager;
 import org.axonframework.integrationtests.deadline.AbstractDeadlineManagerTestSuite;
 import org.axonframework.messaging.core.ScopeAwareProvider;
 import org.axonframework.modelling.command.AggregateScopeDescriptor;
-import org.axonframework.serialization.json.JacksonSerializer;
+import org.axonframework.conversion.json.JacksonSerializer;
 import org.jobrunr.configuration.JobRunr;
 import org.jobrunr.scheduling.JobScheduler;
 import org.jobrunr.server.BackgroundJobServer;

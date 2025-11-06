@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventstreaming;
 
-import org.axonframework.messaging.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.messaging.eventstreaming.StartingFrom;
 import org.axonframework.messaging.eventstreaming.StreamingCondition;

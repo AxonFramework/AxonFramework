@@ -22,12 +22,12 @@ import org.axonframework.common.IdentifierFactory;
 import org.axonframework.messaging.eventhandling.DomainEventMessage;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.TrackedEventMessage;
-import org.axonframework.messaging.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.messaging.deadletter.DeadLetter;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.Serializer;
+import org.axonframework.conversion.SerializedObject;
+import org.axonframework.conversion.Serializer;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

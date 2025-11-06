@@ -24,7 +24,7 @@ import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.core.annotations.MessageHandlingMember;
-import org.axonframework.messaging.core.interceptors.annotations.NoMoreInterceptors;
+import org.axonframework.messaging.core.interception.annotations.NoMoreInterceptors;
 import org.axonframework.modelling.saga.metamodel.AnnotationSagaMetaModelFactory;
 import org.junit.jupiter.api.*;
 

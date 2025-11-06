@@ -22,12 +22,10 @@ import org.axonframework.messaging.eventhandling.EventTestUtils;
 import org.axonframework.messaging.eventhandling.GenericDomainEventMessage;
 import org.axonframework.messaging.eventhandling.GenericTrackedDomainEventMessage;
 import org.axonframework.messaging.eventhandling.TrackedEventMessage;
-import org.axonframework.messaging.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
-import org.axonframework.messaging.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.eventsourcing.DomainEventStream;
 import org.axonframework.messaging.core.MessageType;
-import org.axonframework.messaging.eventsourcing.eventstore.LegacyEventStorageEngine;
-import org.axonframework.messaging.eventsourcing.eventstore.SequenceEventStorageEngine;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 

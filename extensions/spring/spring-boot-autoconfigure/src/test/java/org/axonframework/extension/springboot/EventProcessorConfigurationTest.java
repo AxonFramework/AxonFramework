@@ -20,10 +20,10 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.Module;
-import org.axonframework.messaging.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessorModule;
-import org.axonframework.messaging.eventhandling.processors.streaming.token.store.TokenStore;
-import org.axonframework.messaging.eventhandling.processors.streaming.token.store.inmemory.InMemoryTokenStore;
-import org.axonframework.messaging.eventhandling.processors.subscribing.SubscribingEventProcessorModule;
+import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorModule;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.store.inmemory.InMemoryTokenStore;
+import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessorModule;
 import org.axonframework.extension.spring.config.SpringComponentRegistry;
 import org.axonframework.extension.springboot.fixture.event.test1.FirstHandler;
 import org.axonframework.extension.springboot.fixture.event.test2.Test2EventHandlingConfiguration;
@@ -169,8 +169,8 @@ class EventProcessorConfigurationTest {
             return Stream.of(
                     Arguments.of(
                             Map.of(
-                                    "axon.eventhandling.processors[" + KEY1 + "].mode", "SUBSCRIBING",
-                                    "axon.eventhandling.processors[" + KEY1 + "].source", "nonExisting1"
+                                    "axon.eventhandling.processing[" + KEY1 + "].mode", "SUBSCRIBING",
+                                    "axon.eventhandling.processing[" + KEY1 + "].source", "nonExisting1"
                             ),
                             "Could not find a mandatory Source with name 'nonExisting1' "
                                     + "for event processor '" + KEY1 + "'.",
@@ -178,7 +178,7 @@ class EventProcessorConfigurationTest {
                     ),
                     Arguments.of(
                             Map.of(
-                                    "axon.eventhandling.processors[" + KEY1 + "].source", "nonExisting1"
+                                    "axon.eventhandling.processing[" + KEY1 + "].source", "nonExisting1"
                             ),
                             "Could not find a mandatory Source with name 'nonExisting1' "
                                     + "for event processor '" + KEY1 + "'.",
@@ -186,7 +186,7 @@ class EventProcessorConfigurationTest {
                     ),
                     Arguments.of(
                             Map.of(
-                                    "axon.eventhandling.processors[" + KEY1 + "].tokenStore", "nonExisting1"
+                                    "axon.eventhandling.processing[" + KEY1 + "].tokenStore", "nonExisting1"
                             ),
                             "Could not find a mandatory TokenStore with name 'nonExisting1' "
                                     + "for event processor '" + KEY1 + "'.",

@@ -441,7 +441,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
                             return MessageStream.failed(e);
                         }
                     },
-                    interceptors
+                    interception
             ).proceed(commandMessage, context);
 
              */

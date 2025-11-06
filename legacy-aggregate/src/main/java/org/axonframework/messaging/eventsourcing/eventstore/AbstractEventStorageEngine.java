@@ -26,11 +26,11 @@ import org.axonframework.messaging.eventhandling.DomainEventMessage;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.TrackedEventData;
 import org.axonframework.messaging.eventhandling.TrackedEventMessage;
-import org.axonframework.messaging.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.eventsourcing.DomainEventStream;
 import org.axonframework.modelling.ConcurrencyException;
 import org.axonframework.modelling.command.AggregateStreamCreationException;
-import org.axonframework.serialization.Serializer;
+import org.axonframework.conversion.Serializer;
 
 import java.util.List;
 import java.util.Optional;
@@ -41,7 +41,7 @@ import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
- * Abstract {@link LegacyEventStorageEngine} implementation that takes care of event serialization and upcasting.
+ * Abstract {@link LegacyEventStorageEngine} implementation that takes care of event conversion and upcasting.
  *
  * @author Rene de Waele
  * @since 3.0

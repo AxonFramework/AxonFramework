@@ -107,7 +107,7 @@ class DeadLetteredEventProcessingTask
         // We use this methods format to be able to define the Error Handler may throw Exceptions.
         /*
         return new EventMessageHandlerInterceptorChain(handler,
-                interceptors
+                interception
         ).proceed(message, context)
          .first()
          .<EventMessage<?>>cast()

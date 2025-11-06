@@ -23,8 +23,8 @@ import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.annotations.EventHandler;
 import org.axonframework.messaging.eventhandling.gateway.EventGateway;
-import org.axonframework.messaging.eventhandling.processors.streaming.token.store.TokenStore;
-import org.axonframework.messaging.eventhandling.processors.streaming.token.store.inmemory.InMemoryTokenStore;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.store.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageDispatchInterceptor;
 import org.axonframework.messaging.core.MessageDispatchInterceptorChain;
@@ -71,7 +71,7 @@ class InterceptorAutoConfigurationTest {
     }
 
     @Test
-    @Disabled("TODO # #3485 - Ordering of interceptors is not supported")
+    @Disabled("TODO # #3485 - Ordering of interception is not supported")
     public void commandHandlerInterceptorsAreRegisteredInCorrectOrder() {
         testApplicationContext.withUserConfiguration(MessageInterceptorContext.class).run(context -> {
             context.getBean(CommandGateway.class).sendAndWait(new Object());
@@ -95,7 +95,7 @@ class InterceptorAutoConfigurationTest {
     }
 
     @Test
-    @Disabled("TODO # #3485 - Ordering of interceptors is not supported")
+    @Disabled("TODO # #3485 - Ordering of interception is not supported")
     public void queryHandlerInterceptorsAreRegisteredInCorrectOrder() {
         testApplicationContext.withUserConfiguration(MessageInterceptorContext.class).run(context -> {
             context.getBean(QueryGateway.class).query("foo", String.class, null);
@@ -120,7 +120,7 @@ class InterceptorAutoConfigurationTest {
     }
 
     @Test
-    @Disabled("TODO # #3485 - Ordering of interceptors is not supported")
+    @Disabled("TODO # #3485 - Ordering of interception is not supported")
     public void eventHandlerInterceptorsAreRegisteredInCorrectOrder() {
         testApplicationContext.withUserConfiguration(MessageInterceptorContext.class).run(context -> {
             context.getBean(EventGateway.class).publish(null, "foo");

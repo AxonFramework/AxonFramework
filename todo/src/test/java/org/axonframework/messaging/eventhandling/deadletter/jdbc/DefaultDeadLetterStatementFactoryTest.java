@@ -17,8 +17,7 @@
 package org.axonframework.messaging.eventhandling.deadletter.jdbc;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.messaging.eventhandling.deadletter.jdbc.DefaultDeadLetterStatementFactory;
-import org.axonframework.serialization.json.JacksonSerializer;
+import org.axonframework.conversion.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;

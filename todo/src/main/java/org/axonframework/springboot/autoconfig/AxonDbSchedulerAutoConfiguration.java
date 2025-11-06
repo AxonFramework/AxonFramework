@@ -31,7 +31,7 @@ import org.axonframework.messaging.eventhandling.scheduling.dbscheduler.DbSchedu
 import org.axonframework.messaging.eventhandling.scheduling.dbscheduler.DbSchedulerEventScheduler;
 import org.axonframework.extension.springboot.autoconfig.AxonServerAutoConfiguration;
 import org.axonframework.messaging.core.ScopeAwareProvider;
-import org.axonframework.serialization.Serializer;
+import org.axonframework.conversion.Serializer;
 import org.axonframework.extension.springboot.util.ConditionalOnMissingQualifiedBean;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;

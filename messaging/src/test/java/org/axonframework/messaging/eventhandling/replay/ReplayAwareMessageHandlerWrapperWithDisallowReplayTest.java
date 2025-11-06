@@ -18,9 +18,9 @@ package org.axonframework.messaging.eventhandling.replay;
 
 import org.axonframework.messaging.eventhandling.annotations.AnnotatedEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.annotations.EventHandler;
-import org.axonframework.messaging.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
-import org.axonframework.messaging.eventhandling.processors.streaming.token.ReplayToken;
-import org.axonframework.messaging.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.eventhandling.replay.annotations.AllowReplay;
 import org.axonframework.messaging.eventhandling.replay.annotations.DisallowReplay;
 import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
