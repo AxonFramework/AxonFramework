@@ -124,11 +124,11 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
     private static void assertRecorded(Collection<QueryResponseMessage> elements) {
         LinkedList<QueryResponseMessage> recordedMessages = new LinkedList<>(elements);
 
-        assertEquals(100, elements.size());
+        assertEquals(10, elements.size());
         assertNotNull(recordedMessages.peekFirst());
         assertEquals("Update0", recordedMessages.peekFirst().payloadAs(String.class, CONVERTER));
         assertNotNull(recordedMessages.peekLast());
-        assertEquals("Update99", recordedMessages.peekLast().payloadAs(String.class, CONVERTER));
+        assertEquals("Update9", recordedMessages.peekLast().payloadAs(String.class, CONVERTER));
     }
 
     @SuppressWarnings("ConstantValue")
