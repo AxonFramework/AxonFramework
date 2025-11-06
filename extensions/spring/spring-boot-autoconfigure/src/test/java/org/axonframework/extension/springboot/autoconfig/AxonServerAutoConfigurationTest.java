@@ -27,8 +27,8 @@ import org.axonframework.messaging.commandhandling.distributed.CommandBusConnect
 import org.axonframework.messaging.commandhandling.distributed.DistributedCommandBusConfiguration;
 import org.axonframework.messaging.commandhandling.distributed.PayloadConvertingCommandBusConnector;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.extension.springboot.utils.GrpcServerStub;
-import org.axonframework.extension.springboot.utils.TcpUtils;
+import org.axonframework.extension.springboot.util.GrpcServerStub;
+import org.axonframework.extension.springboot.util.TcpUtils;
 import org.axonframework.messaging.queryhandling.distributed.DistributedQueryBusConfiguration;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Value;

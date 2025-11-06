@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.extension.springboot.utils;
+package org.axonframework.extension.springboot.util;
 
 import org.axonframework.common.io.IOUtils;
 

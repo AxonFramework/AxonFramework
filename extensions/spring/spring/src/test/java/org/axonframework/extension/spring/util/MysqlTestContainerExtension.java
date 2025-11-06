@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.extension.spring.utils;
+package org.axonframework.extension.spring.util;
 
 import org.junit.jupiter.api.extension.*;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;

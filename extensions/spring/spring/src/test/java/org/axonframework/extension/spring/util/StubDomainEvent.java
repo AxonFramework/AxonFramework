@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.extension.spring.utils;
+package org.axonframework.extension.spring.util;
 
 /**
  * Stub Domain Event, used for testing purposes.
