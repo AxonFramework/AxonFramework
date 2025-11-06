@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.eventsourcing.utils;
+package org.axonframework.messaging.eventsourcing.util;
 
 import org.apache.logging.log4j.core.Appender;
 import org.apache.logging.log4j.core.Core;

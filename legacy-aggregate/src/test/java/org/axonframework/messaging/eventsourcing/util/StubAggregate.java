@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.eventsourcing.utils;
+package org.axonframework.messaging.eventsourcing.util;
 
 import org.axonframework.messaging.eventhandling.DomainEventMessage;
 import org.axonframework.messaging.eventhandling.EventMessage;
