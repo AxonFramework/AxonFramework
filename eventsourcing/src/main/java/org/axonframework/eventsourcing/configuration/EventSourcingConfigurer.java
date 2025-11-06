@@ -51,8 +51,8 @@ import java.util.function.Consumer;
  * <ul>
  *     <li>Registers a {@link org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver} for class {@link TagResolver}</li>
  *     <li>Registers a {@link org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine} for class {@link EventStorageEngine}</li>
- *     <li>Registers a {@link org.axonframework.eventsourcing.eventstore.SimpleEventStore} for class {@link EventStore}</li>
- *     <li>Registers a {@link org.axonframework.eventsourcing.eventstore.SimpleEventStore} for class {@link EventSink}</li>
+ *     <li>Registers a {@link org.axonframework.eventsourcing.eventstore.StorageEngineBackedEventStore} for class {@link EventStore}</li>
+ *     <li>Registers a {@link org.axonframework.eventsourcing.eventstore.StorageEngineBackedEventStore} for class {@link EventSink}</li>
  * </ul>
  * To replace or decorate any of these defaults, use their respective interfaces as the identifier. For example, to
  * adjust the {@code EventStore}, do

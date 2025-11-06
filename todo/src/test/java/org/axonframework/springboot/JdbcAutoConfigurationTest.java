@@ -28,7 +28,7 @@ import org.axonframework.eventhandling.processors.streaming.token.store.jdbc.Jdb
 import org.axonframework.eventhandling.processors.streaming.token.store.jdbc.TokenSchema;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
+import org.axonframework.eventsourcing.eventstore.StorageEngineBackedEventStore;
 import org.axonframework.eventsourcing.eventstore.jdbc.EventSchema;
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcSQLErrorCodesResolver;
 import org.axonframework.eventsourcing.eventstore.jdbc.LegacyJdbcEventStorageEngine;
@@ -77,7 +77,7 @@ public class JdbcAutoConfigurationTest {
             assertThat(context).hasSingleBean(LegacyJdbcEventStorageEngine.class);
             assertThat(context).getBean(LegacyEventStorageEngine.class)
                                .isInstanceOf(LegacyJdbcEventStorageEngine.class);
-            assertThat(context).getBean(EventStore.class).isInstanceOf(SimpleEventStore.class);
+            assertThat(context).getBean(EventStore.class).isInstanceOf(StorageEngineBackedEventStore.class);
             assertThat(context).getBean(TokenStore.class).isInstanceOf(JdbcTokenStore.class);
             assertThat(context).getBean(SagaStore.class).isInstanceOf(JdbcSagaStore.class);
 //            assertThat(context).getBean(TokenStore.class)

@@ -23,7 +23,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
+import org.axonframework.eventsourcing.eventstore.StorageEngineBackedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.eventsourcing.utils.StubAggregate;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -64,7 +64,7 @@ class CachingEventSourcingRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        mockEventStore = spy(new SimpleEventStore(new InMemoryEventStorageEngine(), new SimpleEventBus(), new AnnotationBasedTagResolver()));
+        mockEventStore = spy(new StorageEngineBackedEventStore(new InMemoryEventStorageEngine(), new SimpleEventBus(), new AnnotationBasedTagResolver()));
         Map<String, CacheConfiguration<?, ?>> caches = new HashMap<>();
         DefaultConfiguration config = new DefaultConfiguration(caches, null);
         cacheManager = new EhcacheManager(config);

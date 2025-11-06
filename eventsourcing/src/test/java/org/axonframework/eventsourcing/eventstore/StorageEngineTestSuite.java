@@ -53,7 +53,7 @@ import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test suite validating the {@link SimpleEventStore} and {@link DefaultEventStoreTransaction} for different
+ * Test suite validating the {@link StorageEngineBackedEventStore} and {@link DefaultEventStoreTransaction} for different
  * implementations of the {@link EventStorageEngine}.
  *
  * @author Steven van Beelen

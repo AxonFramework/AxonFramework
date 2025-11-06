@@ -22,7 +22,7 @@ import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
+import org.axonframework.eventsourcing.eventstore.StorageEngineBackedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.spring.eventsourcing.context.SpringWiredAggregate;
@@ -84,7 +84,7 @@ class SpringPrototypeAggregateFactoryTest {
         // Wired to ensure an EventStore is present for the aggregate to allow event sourcing.
         @Bean
         public EventStore eventStore() {
-            return new SimpleEventStore(new InMemoryEventStorageEngine(), new SimpleEventBus(), new AnnotationBasedTagResolver());
+            return new StorageEngineBackedEventStore(new InMemoryEventStorageEngine(), new SimpleEventBus(), new AnnotationBasedTagResolver());
         }
 
         /**

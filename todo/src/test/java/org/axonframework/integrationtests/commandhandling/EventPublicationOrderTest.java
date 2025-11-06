@@ -27,7 +27,7 @@ import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventsourcing.LegacyEventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
+import org.axonframework.eventsourcing.eventstore.StorageEngineBackedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
@@ -52,7 +52,7 @@ class EventPublicationOrderTest {
     @BeforeEach
     void setUp() {
         this.commandBus = aCommandBus();
-        eventStore = spy(new SimpleEventStore(new InMemoryEventStorageEngine(), new SimpleEventBus(), new AnnotationBasedTagResolver()));
+        eventStore = spy(new StorageEngineBackedEventStore(new InMemoryEventStorageEngine(), new SimpleEventBus(), new AnnotationBasedTagResolver()));
         LegacyEventSourcingRepository<StubAggregate> repository =
                 LegacyEventSourcingRepository.builder(StubAggregate.class)
                                              .eventStore(eventStore)

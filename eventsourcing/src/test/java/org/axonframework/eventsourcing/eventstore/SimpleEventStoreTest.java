@@ -60,7 +60,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Test class validating the {@link SimpleEventStore} supports just one context and delegates operations to
+ * Test class validating the {@link StorageEngineBackedEventStore} supports just one context and delegates operations to
  * {@link EventStorageEngine}.
  *
  * @author Mateusz Nowak
@@ -73,7 +73,7 @@ class SimpleEventStoreTest {
     private TagResolver tagResolver = mock(TagResolver.class);
     private ProcessingContext processingContext = mock(ProcessingContext.class);
 
-    private SimpleEventStore testSubject = new SimpleEventStore(mockStorageEngine, new SimpleEventBus(), tagResolver);
+    private StorageEngineBackedEventStore testSubject = new StorageEngineBackedEventStore(mockStorageEngine, new SimpleEventBus(), tagResolver);
 
     private static GlobalSequenceTrackingToken aGlobalSequenceToken() {
         return new GlobalSequenceTrackingToken(999);

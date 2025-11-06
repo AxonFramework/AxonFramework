@@ -34,7 +34,7 @@ import org.axonframework.eventhandling.annotations.Timestamp;
 import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
+import org.axonframework.eventsourcing.eventstore.StorageEngineBackedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
@@ -116,7 +116,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     void setUp() {
         spanFactory = new TestSpanFactory();
         EventStore eventStore =
-                spy(new SimpleEventStore(new InMemoryEventStorageEngine(), new SimpleEventBus(), new AnnotationBasedTagResolver()));
+                spy(new StorageEngineBackedEventStore(new InMemoryEventStorageEngine(), new SimpleEventBus(), new AnnotationBasedTagResolver()));
         List<CorrelationDataProvider> correlationDataProviders = new ArrayList<>();
         correlationDataProviders.add(new MessageOriginProvider());
         correlationDataProviders.add(new SimpleCorrelationDataProvider(CUSTOM_CORRELATION_DATA_KEY));
