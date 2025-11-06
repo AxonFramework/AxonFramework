@@ -17,8 +17,8 @@
 package org.axonframework.axonserver.connector;
 
 import io.axoniq.axonserver.connector.AxonServerConnectionFactory;
-import org.axonframework.eventhandling.processors.EventProcessor;
-import org.axonframework.eventhandling.processors.streaming.StreamingEventProcessor;
+import org.axonframework.messaging.eventhandling.processing.EventProcessor;
+import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.lang.management.ManagementFactory;
@@ -154,7 +154,7 @@ public class AxonServerConfiguration {
     private int queryResponseThreads = 5;
 
     /**
-     * The interval (in ms.) application sends status updates on event processors to Axon Server. Defaults to
+     * The interval (in ms.) application sends status update on event processors to Axon Server. Defaults to
      * {@code 500} milliseconds.
      */
     private int processorsNotificationRate = 500;
@@ -722,20 +722,20 @@ public class AxonServerConfiguration {
     }
 
     /**
-     * The interval (in ms.) application sends status updates on event processors to Axon Server. Defaults to
+     * The interval (in ms.) application sends status update on event processors to Axon Server. Defaults to
      * {@code 500} milliseconds.
      *
-     * @return The interval (in ms.) application sends status updates on event processors to Axon Server.
+     * @return The interval (in ms.) application sends status update on event processors to Axon Server.
      */
     public int getProcessorsNotificationRate() {
         return processorsNotificationRate;
     }
 
     /**
-     * Sets the interval (in ms.) application sends status updates on event processors to Axon Server. Defaults to
+     * Sets the interval (in ms.) application sends status update on event processors to Axon Server. Defaults to
      * {@code 500} milliseconds.
      *
-     * @param processorsNotificationRate The interval (in ms.) application sends status updates on event processors to
+     * @param processorsNotificationRate The interval (in ms.) application sends status update on event processors to
      *                                   Axon Server.
      */
     public void setProcessorsNotificationRate(int processorsNotificationRate) {

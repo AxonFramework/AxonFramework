@@ -16,9 +16,10 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.messaging.MessageHandlerInterceptorChain;
-import org.axonframework.messaging.interceptors.annotations.MessageHandlerInterceptor;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.core.MessageHandlerInterceptorChain;
+import org.axonframework.messaging.core.interception.annotation.MessageHandlerInterceptor;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -36,10 +37,10 @@ import java.lang.annotation.Target;
  * <p>
  * It is possible to specify {@link MessageHandlerInterceptorChain} parameter as part of command handler
  * interceptor signature. If this parameter is not specified, command handler will be executed automatically, as if
- * the {@link MessageHandlerInterceptorChain#proceedSync(org.axonframework.messaging.unitofwork.ProcessingContext)} was invoked as the last instruction.
+ * the {@link MessageHandlerInterceptorChain#proceedSync(ProcessingContext)} was invoked as the last instruction.
  * <p>
  * If a parameter of type {@link MessageHandlerInterceptorChain} is defined, it must be called to have the command handler invoked.
- * It may choose to return the result of the {@link MessageHandlerInterceptorChain#proceedSync(org.axonframework.messaging.unitofwork.ProcessingContext)} call directly, change it, or even
+ * It may choose to return the result of the {@link MessageHandlerInterceptorChain#proceedSync(ProcessingContext)} call directly, change it, or even
  * discard it.
  * <p>
  * Annotated methods that do not declare an {@link MessageHandlerInterceptorChain} parameter must declare a {@code void} return type,
@@ -49,7 +50,7 @@ import java.lang.annotation.Target;
  * <ul>
  * <li>Throwing an exception</li>
  * <li>Specifying {@link MessageHandlerInterceptorChain} parameter and not calling {@link
- * MessageHandlerInterceptorChain#proceedSync(org.axonframework.messaging.unitofwork.ProcessingContext)} method on it</li>
+ * MessageHandlerInterceptorChain#proceedSync(ProcessingContext)} method on it</li>
  * </ul>
  * <p>
  * It is possible to have multiple interceptors for the same command. In that case, if there are interceptors in both

@@ -16,7 +16,7 @@
 
 package org.axonframework.test.eventscheduler;
 
-import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.EventMessage;
 
 import java.time.Instant;
 

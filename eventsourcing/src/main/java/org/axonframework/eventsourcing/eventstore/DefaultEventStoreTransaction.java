@@ -17,11 +17,12 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine.AppendTransaction;
-import org.axonframework.messaging.Context.ResourceKey;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.Context.ResourceKey;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventstreaming.Tag;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -66,7 +67,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
      * @param processingContext  The {@link ProcessingContext} from which to
      *                           {@link #appendEvent(EventMessage) append events} and attach resources to.
      * @param eventTagger        A function that will process each {@link EventMessage} to attach
-     *                           {@link org.axonframework.eventstreaming.Tag Tags}, before it is added to the
+     *                           {@link Tag Tags}, before it is added to the
      *                           transaction.
      */
     public DefaultEventStoreTransaction(@Nonnull EventStorageEngine eventStorageEngine,

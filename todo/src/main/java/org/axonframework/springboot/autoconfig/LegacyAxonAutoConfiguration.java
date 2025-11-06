@@ -17,15 +17,15 @@
 package org.axonframework.springboot.autoconfig;
 
 import org.axonframework.axonserver.connector.TagsConfiguration;
-import org.axonframework.messaging.unitofwork.transaction.TransactionManager;
+import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.eventsourcing.snapshotting.AggregateSnapshotter;
-import org.axonframework.eventsourcing.snapshotting.Snapshotter;
-import org.axonframework.eventsourcing.snapshotting.SnapshotterSpanFactory;
+import org.axonframework.messaging.eventsourcing.snapshotting.AggregateSnapshotter;
+import org.axonframework.messaging.eventsourcing.snapshotting.Snapshotter;
+import org.axonframework.messaging.eventsourcing.snapshotting.SnapshotterSpanFactory;
 import org.axonframework.extension.springboot.autoconfig.EventProcessingAutoConfiguration;
-import org.axonframework.messaging.annotations.HandlerDefinition;
-import org.axonframework.messaging.annotations.ParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.HandlerDefinition;
+import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.spring.eventsourcing.SpringAggregateSnapshotter;
 import org.axonframework.extension.springboot.DistributedCommandBusProperties;
 import org.axonframework.extension.springboot.TagsConfigurationProperties;

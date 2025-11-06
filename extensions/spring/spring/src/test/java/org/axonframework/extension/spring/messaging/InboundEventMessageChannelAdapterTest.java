@@ -16,8 +16,8 @@
 
 package org.axonframework.extension.spring.messaging;
 
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.EventBus;
+import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.extension.spring.utils.StubDomainEvent;
 import org.junit.jupiter.api.*;
 import org.mockito.*;

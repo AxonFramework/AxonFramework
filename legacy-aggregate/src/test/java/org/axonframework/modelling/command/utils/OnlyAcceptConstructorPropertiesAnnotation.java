@@ -26,9 +26,9 @@ import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
 import java.beans.ConstructorProperties;
 
 /**
- * Internal {@link AnnotationIntrospector} for jackson to test JSON serialization ignoring all
+ * Internal {@link AnnotationIntrospector} for jackson to test JSON conversion ignoring all
  * creator annotations except for the {@link ConstructorProperties}-annotation.
- * 
+ *
  * @author JohT
  */
 public class OnlyAcceptConstructorPropertiesAnnotation extends JacksonAnnotationIntrospector {
@@ -36,7 +36,7 @@ public class OnlyAcceptConstructorPropertiesAnnotation extends JacksonAnnotation
     public static final ObjectMapper attachTo(ObjectMapper objectMapper) {
         return objectMapper.setAnnotationIntrospector(new OnlyAcceptConstructorPropertiesAnnotation());
     }
-    
+
     @Override
     public Mode findCreatorAnnotation(MapperConfig<?> config, Annotated annotated) {
         return (annotated.hasAnnotation(ConstructorProperties.class))? super.findCreatorAnnotation(config, annotated) : Mode.DISABLED;

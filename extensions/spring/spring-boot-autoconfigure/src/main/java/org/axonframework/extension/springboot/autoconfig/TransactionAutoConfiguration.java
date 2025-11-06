@@ -17,7 +17,7 @@
 package org.axonframework.extension.springboot.autoconfig;
 
 import jakarta.persistence.EntityManagerFactory;
-import org.axonframework.messaging.unitofwork.transaction.TransactionManager;
+import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
 import org.axonframework.extension.spring.messaging.unitofwork.SpringTransactionManager;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;

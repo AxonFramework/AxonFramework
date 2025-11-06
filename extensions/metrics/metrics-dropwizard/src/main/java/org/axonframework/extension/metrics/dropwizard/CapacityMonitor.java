@@ -24,8 +24,8 @@ import com.codahale.metrics.MetricSet;
 import com.codahale.metrics.SlidingTimeWindowReservoir;
 import com.codahale.metrics.Snapshot;
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.Message;
-import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.monitoring.MessageMonitor;
 
 import java.util.HashMap;
 import java.util.Map;

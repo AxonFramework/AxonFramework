@@ -18,8 +18,9 @@ package org.axonframework.extension.spring.config;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.eventhandling.processors.EventProcessor;
-import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
+import org.axonframework.messaging.eventhandling.processing.EventProcessor;
+import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessor;
+import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessor;
 
 import java.util.Map;
 
@@ -52,7 +53,7 @@ public sealed interface EventProcessorSettings {
      */
     enum ProcessorMode {
         /**
-         * Indicates a {@link org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessor} should
+         * Indicates a {@link SubscribingEventProcessor} should
          * be used.
          */
         SUBSCRIBING,

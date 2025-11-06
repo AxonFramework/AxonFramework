@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.unitofwork;
 
-import org.axonframework.messaging.GenericResultMessage;
-import org.axonframework.messaging.ResultMessage;
+import org.axonframework.messaging.core.GenericResultMessage;
+import org.axonframework.messaging.core.ResultMessage;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;

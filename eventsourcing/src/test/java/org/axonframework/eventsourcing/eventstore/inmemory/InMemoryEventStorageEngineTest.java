@@ -18,7 +18,7 @@ package org.axonframework.eventsourcing.eventstore.inmemory;
 
 import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
 import org.axonframework.eventsourcing.eventstore.StorageEngineTestSuite;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 /**
  * Test class validating the {@link SimpleEventStore} together with the {@link InMemoryEventStorageEngine}.

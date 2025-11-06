@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.saga;
 
-import org.axonframework.messaging.annotations.HasHandlerAttributes;
+import org.axonframework.messaging.core.annotation.HasHandlerAttributes;
 
 import java.lang.annotation.*;
 

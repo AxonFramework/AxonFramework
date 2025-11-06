@@ -16,13 +16,13 @@
 
 package org.axonframework.modelling.configuration;
 
-import org.axonframework.commandhandling.configuration.CommandHandlingModule;
+import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.common.configuration.ApplicationConfigurerTestSuite;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.ModuleBuilder;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.queryhandling.configuration.QueryHandlingModule;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.queryhandling.configuration.QueryHandlingModule;
 import org.junit.jupiter.api.*;
 
 import static org.assertj.core.api.Assertions.assertThat;

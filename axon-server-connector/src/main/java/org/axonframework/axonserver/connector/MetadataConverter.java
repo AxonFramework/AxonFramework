@@ -18,7 +18,7 @@ package org.axonframework.axonserver.connector;
 
 import io.axoniq.axonserver.grpc.MetaDataValue;
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.annotations.Internal;
+import org.axonframework.common.annotation.Internal;
 
 import java.util.HashMap;
 import java.util.Map;

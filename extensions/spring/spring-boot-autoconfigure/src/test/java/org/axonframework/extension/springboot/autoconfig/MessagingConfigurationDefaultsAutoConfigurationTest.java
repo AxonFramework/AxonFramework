@@ -16,22 +16,22 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.RoutingStrategy;
-import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.commandhandling.RoutingStrategy;
+import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
-import org.axonframework.common.configuration.MessagingConfigurationDefaults;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventSink;
-import org.axonframework.eventhandling.conversion.EventConverter;
-import org.axonframework.eventhandling.gateway.EventGateway;
+import org.axonframework.messaging.core.configuration.MessagingConfigurationDefaults;
+import org.axonframework.messaging.eventhandling.EventBus;
+import org.axonframework.messaging.eventhandling.EventSink;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.axonframework.messaging.eventhandling.gateway.EventGateway;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurationDefaults;
-import org.axonframework.messaging.MessageTypeResolver;
-import org.axonframework.messaging.conversion.MessageConverter;
-import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.gateway.QueryGateway;
-import org.axonframework.serialization.Converter;
+import org.axonframework.messaging.core.MessageTypeResolver;
+import org.axonframework.messaging.core.conversion.MessageConverter;
+import org.axonframework.messaging.queryhandling.QueryBus;
+import org.axonframework.messaging.queryhandling.gateway.QueryGateway;
+import org.axonframework.conversion.Converter;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;

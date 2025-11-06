@@ -17,7 +17,7 @@
 package org.axonframework.modelling.command;
 
 import org.axonframework.common.property.Property;
-import org.axonframework.messaging.Message;
+import org.axonframework.messaging.core.Message;
 import org.axonframework.modelling.command.inspection.EntityModel;
 
 import java.lang.reflect.AnnotatedElement;
@@ -28,14 +28,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 import jakarta.annotation.Nonnull;
 
-import static org.axonframework.common.annotations.AnnotationUtils.findAnnotationAttributes;
+import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
 import static org.axonframework.common.property.PropertyAccessStrategy.getProperty;
 
 /**
  * Only forward messages of type {@code T} if the routing key of the message matches that of the entity. Essentially,
  * this means that events are only forwarded if the Message mentions the identifier of the entity instance.
  *
- * @param <T> the implementation {@code T} of the {@link org.axonframework.messaging.Message} being filtered.
+ * @param <T> the implementation {@code T} of the {@link Message} being filtered.
  * @author Steven van Beelen
  * @since 3.1
  */

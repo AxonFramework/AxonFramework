@@ -17,7 +17,7 @@
 package org.axonframework.test.deadline;
 
 import org.axonframework.deadline.DeadlineMessage;
-import org.axonframework.messaging.Message;
+import org.axonframework.messaging.core.Message;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.matchers.FieldFilter;
 import org.hamcrest.Description;

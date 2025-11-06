@@ -19,6 +19,8 @@ package org.axonframework.modelling.configuration;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.ModuleBuilder;
+import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.core.Message;
 import org.axonframework.modelling.EntityIdResolver;
 import org.axonframework.modelling.repository.SimpleRepositoryEntityLoader;
 import org.axonframework.modelling.repository.SimpleRepositoryEntityPersister;
@@ -141,7 +143,7 @@ public interface StateBasedEntityModule<ID, E> extends EntityModule<ID, E> {
      * Allows for providing an {@link EntityIdResolver} to resolve the entity's ID based on the command payload.
      * Required for any command handlers in the {@link org.axonframework.modelling.entity.EntityMetamodel}. This is
      * optional, and users can choose to skip this by calling {@link ModuleBuilder#build()}. Any command handlers will
-     * not be subscribed to the {@link org.axonframework.commandhandling.CommandBus} in that case.
+     * not be subscribed to the {@link CommandBus} in that case.
      *
      * @param <ID> The type of identifier used to identify the state-based entity that's being built.
      * @param <E>  The type of the state-based entity being built.
@@ -150,7 +152,7 @@ public interface StateBasedEntityModule<ID, E> extends EntityModule<ID, E> {
 
         /**
          * Registers the given {@code entityIdResolver} to resolver the entity's identifiers from a given
-         * {@link org.axonframework.messaging.Message} when loading.
+         * {@link Message} when loading.
          *
          * @param entityIdResolver A factory method constructing an {@link EntityIdResolver}.
          * @return The {@link StateBasedEntityModule}, signaling the end of this builder.

@@ -16,7 +16,7 @@
 
 package org.axonframework.test.aggregate;
 
-import org.axonframework.commandhandling.annotations.CommandHandler;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
 
 /**
  * @author Allard Buijze

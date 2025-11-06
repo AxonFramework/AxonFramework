@@ -17,15 +17,19 @@
 package org.axonframework.test.fixture;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.messaging.commandhandling.GenericCommandMessage;
 import org.axonframework.common.configuration.AxonConfiguration;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageTypeResolver;
-import org.axonframework.messaging.Metadata;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageTypeResolver;
+import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.UnitOfWork;
+import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
+import org.axonframework.messaging.eventhandling.EventSink;
 
 import java.util.Arrays;
 import java.util.List;
@@ -55,14 +59,14 @@ class AxonTestWhen implements AxonTestPhase.When {
      *
      * @param configuration       The configuration which this test fixture phase is based on.
      * @param customization       Collection of customizations made for this test fixture.
-     * @param commandBus          The recording {@link org.axonframework.commandhandling.CommandBus}, used to capture
+     * @param commandBus          The recording {@link CommandBus}, used to capture
      *                            and validate any commands that have been sent.
-     * @param eventSink           The recording {@link org.axonframework.eventhandling.EventSink}, used to capture and
+     * @param eventSink           The recording {@link EventSink}, used to capture and
      *                            validate any events that have been sent.
      * @param messageTypeResolver The message type resolver used to generate the
-     *                            {@link org.axonframework.messaging.MessageType} out of command, event, or query
+     *                            {@link MessageType} out of command, event, or query
      *                            payloads provided to this phase.
-     * @param unitOfWorkFactory   The factory of the {@link org.axonframework.messaging.unitofwork.UnitOfWork}, used to
+     * @param unitOfWorkFactory   The factory of the {@link UnitOfWork}, used to
      *                            execute every test in.
      */
     public AxonTestWhen(

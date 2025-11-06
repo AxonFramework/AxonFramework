@@ -16,7 +16,7 @@
 
 package org.axonframework.common.stream;
 
-import org.axonframework.eventhandling.TrackingEventStream;
+import org.axonframework.messaging.eventhandling.TrackingEventStream;
 
 import java.util.Spliterator;
 import java.util.Spliterators;

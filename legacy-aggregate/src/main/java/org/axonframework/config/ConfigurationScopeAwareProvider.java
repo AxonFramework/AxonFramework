@@ -18,9 +18,9 @@ package org.axonframework.config;
 
 import org.axonframework.common.Assert;
 import org.axonframework.common.configuration.Configuration;
-import org.axonframework.messaging.ScopeAware;
-import org.axonframework.messaging.ScopeAwareProvider;
-import org.axonframework.messaging.ScopeDescriptor;
+import org.axonframework.messaging.core.ScopeAware;
+import org.axonframework.messaging.core.ScopeAwareProvider;
+import org.axonframework.messaging.core.ScopeDescriptor;
 import org.axonframework.modelling.command.Repository;
 
 import java.util.ArrayList;

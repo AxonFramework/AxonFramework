@@ -16,9 +16,9 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
-import org.axonframework.messaging.correlation.CorrelationDataProvider;
-import org.axonframework.messaging.correlation.CorrelationDataProviderRegistry;
-import org.axonframework.messaging.correlation.SimpleCorrelationDataProvider;
+import org.axonframework.messaging.core.correlation.CorrelationDataProvider;
+import org.axonframework.messaging.core.correlation.CorrelationDataProviderRegistry;
+import org.axonframework.messaging.core.correlation.SimpleCorrelationDataProvider;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;

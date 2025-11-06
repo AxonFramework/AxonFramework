@@ -17,14 +17,14 @@
 package org.axonframework.modelling.saga;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.replay.ResetNotSupportedException;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.Metadata;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
-import org.axonframework.messaging.annotations.MessageHandlingMember;
-import org.axonframework.messaging.interceptors.annotations.NoMoreInterceptors;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.eventhandling.replay.ResetNotSupportedException;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.core.annotation.MessageHandlingMember;
+import org.axonframework.messaging.core.interception.annotation.NoMoreInterceptors;
 import org.axonframework.modelling.saga.metamodel.AnnotationSagaMetaModelFactory;
 import org.junit.jupiter.api.*;
 
@@ -250,7 +250,7 @@ class AnnotatedSagaTest {
 
         @Override
         public void handleStubDomainEvent(SagaEndEvent event) {
-            // Since this method overrides a handler, it doesn't need the annotations anymore
+            // Since this method overrides a handler, it doesn't need the annotation anymore
             super.handleStubDomainEvent(event);
             removeAssociationWith("propertyName", event.getPropertyName());
         }

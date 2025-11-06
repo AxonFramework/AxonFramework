@@ -18,9 +18,9 @@ package org.axonframework.modelling.command;
 
 import org.axonframework.common.property.Property;
 import org.axonframework.common.property.PropertyAccessStrategy;
-import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.core.GenericMessage;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageType;
 import org.axonframework.modelling.command.inspection.EntityModel;
 import org.junit.jupiter.api.*;
 

@@ -19,25 +19,33 @@ package org.axonframework.integrationtests.queryhandling;
 import jakarta.annotation.Nonnull;
 import org.assertj.core.util.Strings;
 import org.awaitility.Awaitility;
-import org.axonframework.messaging.FluxUtils;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.conversion.DelegatingMessageConverter;
-import org.axonframework.messaging.conversion.MessageConverter;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
-import org.axonframework.queryhandling.GenericQueryMessage;
-import org.axonframework.queryhandling.GenericQueryResponseMessage;
-import org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage;
-import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryExecutionException;
-import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.queryhandling.QueryUpdateEmitter;
-import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
-import org.axonframework.serialization.json.JacksonConverter;
+import org.axonframework.conversion.json.JacksonConverter;
+import org.axonframework.messaging.core.FluxUtils;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.conversion.DelegatingMessageConverter;
+import org.axonframework.messaging.core.conversion.MessageConverter;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.UnitOfWork;
+import org.axonframework.messaging.core.unitofwork.UnitOfWorkTestUtils;
+import org.axonframework.messaging.queryhandling.GenericQueryMessage;
+import org.axonframework.messaging.queryhandling.GenericQueryResponseMessage;
+import org.axonframework.messaging.queryhandling.GenericSubscriptionQueryUpdateMessage;
+import org.axonframework.messaging.queryhandling.QueryBus;
+import org.axonframework.messaging.queryhandling.QueryExecutionException;
+import org.axonframework.messaging.queryhandling.QueryMessage;
+import org.axonframework.messaging.queryhandling.QueryResponseMessage;
+import org.axonframework.messaging.queryhandling.QueryUpdateEmitter;
+import org.axonframework.messaging.queryhandling.SubscriptionQueryUpdateMessage;
+import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.MultiParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.queryhandling.annotation.AnnotatedQueryHandlingComponent;
+import org.axonframework.messaging.queryhandling.annotation.QueryHandler;
+import org.axonframework.conversion.json.JacksonConverter;
+import org.axonframework.messaging.queryhandling.gateway.DefaultQueryGateway;
+import org.axonframework.messaging.queryhandling.gateway.QueryGateway;
 import org.junit.jupiter.api.*;
 import reactor.core.Exceptions;
 import reactor.core.publisher.Flux;
@@ -69,9 +77,7 @@ import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Abstract test suite for the
- * {@link QueryBus#subscriptionQuery(QueryMessage, org.axonframework.messaging.unitofwork.ProcessingContext, int)}
- * functionality.
+ * Abstract test suite for the {@link QueryBus#subscriptionQuery(QueryMessage, ProcessingContext, int)} functionality.
  *
  * @author Milan Savic
  * @author Steven van Beelen
@@ -85,7 +91,8 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
     protected static final MessageConverter CONVERTER = new DelegatingMessageConverter(new JacksonConverter());
 
     // Unique query name using UUID for the commonly used chat messages query
-    protected final QualifiedName CHAT_MESSAGES_QUERY_NAME = new QualifiedName("test.chatMessages." + UUID.randomUUID());
+    protected final QualifiedName CHAT_MESSAGES_QUERY_NAME = new QualifiedName(
+            "test.chatMessages." + UUID.randomUUID());
     protected final MessageType CHAT_MESSAGES_QUERY_TYPE = new MessageType(CHAT_MESSAGES_QUERY_NAME.fullName());
 
     protected static final MessageType TEST_RESPONSE_TYPE = new MessageType(String.class);
@@ -340,7 +347,7 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         QueryMessage queryMessage = new GenericQueryMessage(
                 CHAT_MESSAGES_QUERY_TYPE, TEST_QUERY_PAYLOAD
         );
-        // when staging the subscription query and updates...
+        // when staging the subscription query and update...
         MessageStream<QueryResponseMessage> result = queryBus.subscriptionQuery(queryMessage, null, 50);
 
         await().until(result::hasNextAvailable);
@@ -350,7 +357,7 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
             queryBus.emitUpdate(testFilter, () -> testUpdate, context).join();
             queryBus.completeSubscriptionsExceptionally(testFilter, new RuntimeException(), context).join();
         });
-        // then before we commit we don't have any updates yet...
+        // then before we commit we don't have any update yet...
         Optional<MessageStream.Entry<QueryResponseMessage>> peeked = result
                 .filter(m -> m.message() instanceof SubscriptionQueryUpdateMessage)
                 .peek();

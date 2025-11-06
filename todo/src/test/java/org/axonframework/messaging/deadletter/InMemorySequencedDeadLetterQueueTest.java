@@ -17,8 +17,8 @@
 package org.axonframework.messaging.deadletter;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.Metadata;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.core.Metadata;
 import org.junit.jupiter.api.*;
 
 import java.time.Clock;

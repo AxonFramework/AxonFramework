@@ -17,8 +17,8 @@
 package org.axonframework.modelling.command;
 
 import org.axonframework.common.BuilderUtils;
-import org.axonframework.tracing.Span;
-import org.axonframework.tracing.SpanFactory;
+import org.axonframework.messaging.tracing.Span;
+import org.axonframework.messaging.tracing.SpanFactory;
 
 /**
  * Default implementation of the {@link RepositorySpanFactory}. The attribute used for the identifier of the aggregate

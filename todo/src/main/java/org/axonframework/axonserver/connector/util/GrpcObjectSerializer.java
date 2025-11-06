@@ -17,7 +17,7 @@
 package org.axonframework.axonserver.connector.util;
 
 import com.google.protobuf.ByteString;
-import org.axonframework.serialization.SerializedObject;
+import org.axonframework.conversion.SerializedObject;
 
 import java.util.function.Function;
 
@@ -56,10 +56,10 @@ public class GrpcObjectSerializer<O> implements Function<O, io.axoniq.axonserver
      * Constructs a {@link GrpcObjectSerializer} using the given {@code serializer} to serialize the payload and type of
      * given objects with.
      *
-     * @param serializer the {@link org.axonframework.serialization.Serializer} used to serialize the payload and type
+     * @param serializer the {@link org.axonframework.conversion.Serializer} used to serialize the payload and type
      *                   of given objects with
      */
-    public GrpcObjectSerializer(org.axonframework.serialization.Serializer serializer) {
+    public GrpcObjectSerializer(org.axonframework.conversion.Serializer serializer) {
         this(serializer::serialize);
     }
 

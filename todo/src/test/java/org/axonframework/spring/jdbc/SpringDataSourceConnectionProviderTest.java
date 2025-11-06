@@ -18,7 +18,7 @@ package org.axonframework.spring.jdbc;
 
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.UnitOfWorkAwareConnectionProviderWrapper;
-import org.axonframework.messaging.unitofwork.transaction.Transaction;
+import org.axonframework.messaging.core.unitofwork.transaction.Transaction;
 import org.axonframework.extension.spring.jdbc.SpringDataSourceConnectionProvider;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;

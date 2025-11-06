@@ -16,9 +16,9 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.commandhandling.GenericCommandMessage;
+import org.axonframework.messaging.core.MessageType;
 import org.junit.jupiter.api.*;
 
 import java.lang.annotation.ElementType;

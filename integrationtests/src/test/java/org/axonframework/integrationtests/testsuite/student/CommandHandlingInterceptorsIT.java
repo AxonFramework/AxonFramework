@@ -17,22 +17,22 @@
 package org.axonframework.integrationtests.testsuite.student;
 
 
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.GenericCommandResultMessage;
-import org.axonframework.eventhandling.gateway.EventAppender;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.commandhandling.GenericCommandResultMessage;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 import org.axonframework.integrationtests.testsuite.student.commands.ChangeStudentNameCommand;
 import org.axonframework.integrationtests.testsuite.student.events.StudentNameChangedEvent;
 import org.axonframework.integrationtests.testsuite.student.state.Student;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.MessageDispatchInterceptorChain;
-import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.MessageHandlerInterceptorChain;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageDispatchInterceptor;
+import org.axonframework.messaging.core.MessageDispatchInterceptorChain;
+import org.axonframework.messaging.core.MessageHandlerInterceptor;
+import org.axonframework.messaging.core.MessageHandlerInterceptorChain;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.modelling.StateManager;
-import org.axonframework.serialization.Converter;
+import org.axonframework.conversion.Converter;
 import org.junit.jupiter.api.*;
 
 import java.util.Map;
@@ -42,7 +42,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Integration tests for command dispatch and handler interceptors.
+ * Integration tests for command dispatch and handler interception.
  *
  * @author Mateusz Nowak
  */
@@ -66,7 +66,7 @@ class CommandHandlingInterceptorsIT extends AbstractCommandHandlingStudentIT {
                 c -> (command, context) -> {
                     handlerInvocations.incrementAndGet();
 
-                    // Verify that dispatch interceptors added metadata to the command
+                    // Verify that dispatch interception added metadata to the command
                     assertTrue(command.metadata().containsKey("dispatch1"),
                                "Expected dispatch1 interceptor to add metadata to command");
                     assertTrue(command.metadata().containsKey("dispatch2"),
@@ -144,7 +144,7 @@ class CommandHandlingInterceptorsIT extends AbstractCommandHandlingStudentIT {
                 c -> (command, context) -> {
                     handlerInvocations.incrementAndGet();
 
-                    // Verify that handler interceptors added metadata to the command
+                    // Verify that handler interception added metadata to the command
                     assertTrue(command.metadata().containsKey("handler1"),
                                "Expected handler1 interceptor to add metadata to command");
                     assertTrue(command.metadata().containsKey("handler2"),
@@ -220,7 +220,7 @@ class CommandHandlingInterceptorsIT extends AbstractCommandHandlingStudentIT {
                 c -> (command, context) -> {
                     handlerInvocations.incrementAndGet();
 
-                    // Verify that both interceptors added metadata to the command
+                    // Verify that both interception added metadata to the command
                     assertTrue(command.metadata().containsKey("dispatch"),
                                "Expected dispatch interceptor to add metadata to command");
                     assertTrue(command.metadata().containsKey("handler"),

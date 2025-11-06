@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.unitofwork;
 
-import org.axonframework.messaging.ResultMessage;
+import org.axonframework.messaging.core.ResultMessage;
 
 import java.util.Objects;
 

@@ -26,7 +26,7 @@ public class GiftCard {
 
     private int remainingValue;
 
-    // omitted constructors, command and event sourcing handlers 
+    // omitted constructors, command and event sourcing handlers
 }
 
 public class GiftCardTransaction {
@@ -81,7 +81,7 @@ The field declaration for both the `Collection` or `Map` should contain proper g
 
 [source,java]
 ----
-import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.messaging.commandhandling.CommandHandler;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateMember;
 import org.axonframework.modelling.command.EntityId;
@@ -98,7 +98,7 @@ public class GiftCard {
 
     private int remainingValue;
 
-    // omitted constructors, command and event sourcing handlers 
+    // omitted constructors, command and event sourcing handlers
 
 }
 
@@ -145,7 +145,7 @@ When an entity (including the aggregate root) applies an event, it is handled by
 
 [source,java]
 ----
-import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.messaging.commandhandling.CommandHandler;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateMember;
 import org.axonframework.modelling.command.EntityId;
@@ -169,9 +169,9 @@ public class GiftCard {
     public void on(CardRedeemedEvent evt) {
         // 1.
         transactions.add(new GiftCardTransaction(evt.getTransactionId(), evt.getAmount()));
-    } 
+    }
 
-    // omitted constructors, command and event sourcing handlers 
+    // omitted constructors, command and event sourcing handlers
 }
 
 public class GiftCardTransaction {
@@ -229,7 +229,7 @@ public class GiftCard {
     @AggregateMember(eventForwardingMode = ForwardMatchingInstances.class)
     private List<GiftCardTransaction> transactions = new ArrayList<>();
 
-    // omitted constructors, command and event sourcing handlers 
+    // omitted constructors, command and event sourcing handlers
 }
 ----
 

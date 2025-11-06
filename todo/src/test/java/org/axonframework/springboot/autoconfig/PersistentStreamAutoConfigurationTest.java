@@ -19,7 +19,7 @@ package org.axonframework.springboot.autoconfig;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamScheduledExecutorBuilder;
 import org.axonframework.common.AxonThreadFactory;
-import org.axonframework.eventhandling.sequencing.SequentialPerAggregatePolicy;
+import org.axonframework.messaging.eventhandling.sequencing.SequentialPerAggregatePolicy;
 import org.axonframework.springboot.utils.GrpcServerStub;
 import org.axonframework.springboot.utils.TcpUtils;
 import org.junit.jupiter.api.*;
@@ -120,9 +120,9 @@ class PersistentStreamAutoConfigurationTest {
     @Test
     void persistentStreamProcessorsConfigurerModuleAddsSequencingPolicy() {
         testContext.withPropertyValues("axon.axonserver.persistent-streams[payments-stream].name=My Payments",
-                                       "axon.eventhandling.processors.payments.source=payments-stream",
-                                       "axon.eventhandling.processors.payments.dlq.enabled=true",
-                                       "axon.eventhandling.processors.payments.mode=SUBSCRIBING")
+                                       "axon.eventhandling.processing.payments.source=payments-stream",
+                                       "axon.eventhandling.processing.payments.dlq.enabled=true",
+                                       "axon.eventhandling.processing.payments.mode=SUBSCRIBING")
                    .run(context -> {
 //                       assertThat(context).getBean("persistentStreamProcessorsConfigurerModule").isNotNull();
 //                       ConfigurerModule configurerModule =
@@ -140,8 +140,8 @@ class PersistentStreamAutoConfigurationTest {
     @Test
     void persistentStreamProcessorsConfigurerModuleAddsNoSequencingPolicyWithoutDlq() {
         testContext.withPropertyValues("axon.axonserver.persistent-streams[payments-stream].name=My Payments",
-                                       "axon.eventhandling.processors.payments.source=payments-stream",
-                                       "axon.eventhandling.processors.payments.mode=SUBSCRIBING")
+                                       "axon.eventhandling.processing.payments.source=payments-stream",
+                                       "axon.eventhandling.processing.payments.mode=SUBSCRIBING")
                    .run(context -> {
 //                       assertThat(context).getBean("persistentStreamProcessorsConfigurerModule").isNotNull();
 //                       ConfigurerModule configurerModule =
@@ -165,7 +165,7 @@ class PersistentStreamAutoConfigurationTest {
     @Test
     void persistentStreamScheduledExecutorBuilderConstructsUniqueScheduledExecutorServices() {
         testContext.withPropertyValues("axon.axonserver.persistent-streams[payments-stream].name=My Payments",
-                                       "axon.eventhandling.processors.payments.source=payments-stream")
+                                       "axon.eventhandling.processing.payments.source=payments-stream")
                    .run(context -> {
                        assertThat(context).hasSingleBean(PersistentStreamScheduledExecutorBuilder.class);
                        PersistentStreamScheduledExecutorBuilder executorBuilder =
@@ -180,7 +180,7 @@ class PersistentStreamAutoConfigurationTest {
     void persistentStreamScheduledExecutorBuilderReusesScheduledExecutorService() {
         testContext.withUserConfiguration(SinglePersistentStreamScheduledExecutorServiceConfiguration.class)
                    .withPropertyValues("axon.axonserver.persistent-streams[payments-stream].name=My Payments",
-                                       "axon.eventhandling.processors.payments.source=payments-stream")
+                                       "axon.eventhandling.processing.payments.source=payments-stream")
                    .run(context -> {
                        assertThat(context).hasSingleBean(PersistentStreamScheduledExecutorBuilder.class);
                        PersistentStreamScheduledExecutorBuilder executorBuilder =

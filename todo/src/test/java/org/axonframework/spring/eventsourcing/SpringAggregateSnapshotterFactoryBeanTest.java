@@ -16,14 +16,14 @@
 
 package org.axonframework.spring.eventsourcing;
 
-import org.axonframework.eventhandling.DomainEventMessage;
-import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.axonframework.eventsourcing.AbstractAggregateFactory;
-import org.axonframework.eventsourcing.AggregateFactory;
-import org.axonframework.eventsourcing.LegacyEventSourcingRepository;
+import org.axonframework.messaging.eventhandling.DomainEventMessage;
+import org.axonframework.messaging.eventhandling.GenericDomainEventMessage;
+import org.axonframework.messaging.eventsourcing.AbstractAggregateFactory;
+import org.axonframework.messaging.eventsourcing.AggregateFactory;
+import org.axonframework.messaging.eventsourcing.LegacyEventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.integrationtests.commandhandling.StubAggregate;
-import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.core.MessageType;
 import org.axonframework.modelling.command.RepositoryProvider;
 import org.junit.jupiter.api.*;
 import org.springframework.context.ApplicationContext;

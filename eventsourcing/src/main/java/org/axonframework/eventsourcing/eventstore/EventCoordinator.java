@@ -16,23 +16,22 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.axonframework.common.annotations.Internal;
+import org.axonframework.common.annotation.Internal;
 
 import java.util.List;
 
 /**
  * Coordinates appended events notifications for event storage engines.
  * <p>
- * Implementations can notify only within the current process, or coordinate
- * between multiple instances using mechanisms such as polling, messaging,
- * or database notifications.
+ * Implementations can notify only within the current process, or coordinate between multiple instances using mechanisms
+ * such as polling, messaging, or database notifications.
  */
 @Internal
 public interface EventCoordinator {
 
     /**
-     * A coordinator that only forwards append notifications within a single
-     * event storage engine. It does not coordinate between multiple instances.
+     * A coordinator that only forwards append notifications within a single event storage engine. It does not
+     * coordinate between multiple instances.
      */
     public static EventCoordinator SIMPLE = callback -> new Handle() {
         @Override
@@ -41,44 +40,40 @@ public interface EventCoordinator {
         }
 
         @Override
-        public void terminate() {}
+        public void terminate() {
+        }
     };
 
     /**
-     * Starts a coordination instance that will invoke the given callback
-     * when new events are appended.
+     * Starts a coordination instance that will invoke the given callback when new events are appended.
      * <p>
-     * The callback may be invoked on an arbitrary thread. Implementations
-     * should ensure the callback does not perform long-running or blocking
-     * operations. If the callback throws an exception, the coordination
-     * is terminated.
+     * The callback may be invoked on an arbitrary thread. Implementations should ensure the callback does not perform
+     * long-running or blocking operations. If the callback throws an exception, the coordination is terminated.
      *
-     * @param onAppendDetected the callback to invoke when new events are detected;
-     *                         must not be {@code null}
-     * @return a handle to interact with the coordination instance, including
-     *         notifying of new events and terminating the coordination; never {@code null}
+     * @param onAppendDetected the callback to invoke when new events are detected; must not be {@code null}
+     * @return a handle to interact with the coordination instance, including notifying of new events and terminating
+     * the coordination; never {@code null}
      */
     Handle startCoordination(Runnable onAppendDetected);
 
     /**
-     * Represents a handle to a coordination instance, allowing the engine
-     * to notify of new events and to terminate the coordination.
+     * Represents a handle to a coordination instance, allowing the engine to notify of new events and to terminate the
+     * coordination.
      */
     interface Handle {
 
         /**
          * Invoked by the storage engine when new events have been appended.
          * <p>
-         * This method may be called concurrently from multiple threads.
-         * Implementations should avoid heavy or blocking operations.
+         * This method may be called concurrently from multiple threads. Implementations should avoid heavy or blocking
+         * operations.
          *
          * @param events the events that were appended; never {@code null} or empty
          */
         void onEventsAppended(List<TaggedEventMessage<?>> events);
 
         /**
-         * Terminates this coordination instance, releasing any resources
-         * or threads used internally.
+         * Terminates this coordination instance, releasing any resources or threads used internally.
          * <p>
          * After termination, the handle should not be used again.
          */

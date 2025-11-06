@@ -17,16 +17,16 @@
 package org.axonframework.integrationtests.testsuite.student;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.configuration.CommandHandlingModule;
-import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.common.configuration.MessagingConfigurer;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
+import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.integrationtests.testsuite.student.commands.ChangeStudentNameCommand;
 import org.axonframework.integrationtests.testsuite.student.commands.EnrollStudentToCourseCommand;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageDispatchInterceptor;
+import org.axonframework.messaging.core.MessageHandlerInterceptor;
 import org.junit.jupiter.api.BeforeEach;
 
 import java.util.ArrayList;
@@ -62,7 +62,7 @@ public abstract class AbstractCommandHandlingStudentIT extends AbstractStudentIT
         EventSourcingConfigurer configured = super.testSuiteConfigurer(configurer)
                                                   .registerCommandHandlingModule(commandHandlingModule.commandHandlers());
 
-        // Register interceptors if any were added
+        // Register interception if any were added
         if (!dispatchInterceptors.isEmpty() || !handlerInterceptors.isEmpty()) {
             configured = configured.messaging(this::registerInterceptors);
         }
@@ -71,9 +71,9 @@ public abstract class AbstractCommandHandlingStudentIT extends AbstractStudentIT
     }
 
     /**
-     * Registers dispatch and handler interceptors with the messaging configurer.
+     * Registers dispatch and handler interception with the messaging configurer.
      *
-     * @param messagingConfigurer The messaging configurer to register interceptors with.
+     * @param messagingConfigurer The messaging configurer to register interception with.
      * @return The configured messaging configurer.
      */
     private MessagingConfigurer registerInterceptors(MessagingConfigurer messagingConfigurer) {

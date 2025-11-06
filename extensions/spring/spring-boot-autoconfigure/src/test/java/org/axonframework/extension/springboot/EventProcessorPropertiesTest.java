@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.springboot;
 
-import org.axonframework.extension.springboot.EventProcessorProperties;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;

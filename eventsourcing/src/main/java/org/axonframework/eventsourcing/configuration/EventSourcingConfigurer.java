@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing.configuration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.commandhandling.configuration.CommandHandlingModule;
+import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.common.configuration.ApplicationConfigurer;
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.common.configuration.Component;
@@ -27,16 +27,16 @@ import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.common.configuration.LifecycleRegistry;
-import org.axonframework.common.configuration.MessagingConfigurer;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
 import org.axonframework.common.configuration.Module;
 import org.axonframework.common.configuration.ModuleBuilder;
-import org.axonframework.eventhandling.EventSink;
+import org.axonframework.messaging.eventhandling.EventSink;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.modelling.configuration.EntityModule;
 import org.axonframework.modelling.configuration.ModellingConfigurer;
-import org.axonframework.queryhandling.configuration.QueryHandlingModule;
+import org.axonframework.messaging.queryhandling.configuration.QueryHandlingModule;
 
 import java.util.Objects;
 import java.util.function.Consumer;

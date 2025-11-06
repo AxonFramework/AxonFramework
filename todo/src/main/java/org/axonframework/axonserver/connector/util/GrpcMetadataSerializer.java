@@ -17,7 +17,7 @@
 package org.axonframework.axonserver.connector.util;
 
 import io.axoniq.axonserver.grpc.MetaDataValue;
-import org.axonframework.messaging.Metadata;
+import org.axonframework.messaging.core.Metadata;
 
 import java.util.HashMap;
 import java.util.Map;

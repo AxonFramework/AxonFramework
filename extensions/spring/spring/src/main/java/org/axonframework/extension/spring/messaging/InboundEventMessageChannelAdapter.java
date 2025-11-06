@@ -17,10 +17,10 @@
 package org.axonframework.extension.spring.messaging;
 
 import org.axonframework.common.Registration;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.SubscribableEventSource;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventBus;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.core.SubscribableEventSource;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHandler;
 

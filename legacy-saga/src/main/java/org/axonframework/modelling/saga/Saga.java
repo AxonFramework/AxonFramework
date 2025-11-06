@@ -16,9 +16,9 @@
 
 package org.axonframework.modelling.saga;
 
-import org.axonframework.eventhandling.EventMessageHandler;
-import org.axonframework.eventhandling.replay.ResetNotSupportedException;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessageHandler;
+import org.axonframework.messaging.eventhandling.replay.ResetNotSupportedException;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.util.function.Consumer;
 import java.util.function.Function;

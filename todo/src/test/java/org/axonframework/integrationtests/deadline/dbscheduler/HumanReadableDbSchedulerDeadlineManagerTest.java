@@ -17,14 +17,14 @@
 package org.axonframework.integrationtests.deadline.dbscheduler;
 
 import com.github.kagkarlsson.scheduler.Scheduler;
-import org.axonframework.messaging.unitofwork.transaction.NoTransactionManager;
+import org.axonframework.messaging.core.unitofwork.transaction.NoTransactionManager;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineManagerSpanFactory;
 import org.axonframework.deadline.dbscheduler.DbSchedulerDeadlineManager;
 import org.axonframework.deadline.dbscheduler.DbSchedulerDeadlineManagerSupplier;
 import org.axonframework.integrationtests.deadline.AbstractDeadlineManagerTestSuite;
-import org.axonframework.serialization.json.JacksonSerializer;
+import org.axonframework.conversion.json.JacksonSerializer;
 import org.hsqldb.jdbc.JDBCDataSource;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;

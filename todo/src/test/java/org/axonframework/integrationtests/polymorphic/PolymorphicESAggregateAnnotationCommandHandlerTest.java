@@ -18,7 +18,7 @@ package org.axonframework.integrationtests.polymorphic;
 
 import jakarta.annotation.Nonnull;
 import jakarta.persistence.EntityManager;
-import org.axonframework.eventsourcing.LegacyEventSourcingRepository;
+import org.axonframework.messaging.eventsourcing.LegacyEventSourcingRepository;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.RepositoryProvider;
 import org.junit.jupiter.api.*;

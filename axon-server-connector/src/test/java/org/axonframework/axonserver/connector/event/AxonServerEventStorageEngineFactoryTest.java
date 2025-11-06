@@ -20,8 +20,8 @@ import org.axonframework.common.infra.MockComponentDescriptor;
 import org.axonframework.common.configuration.Component;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.serialization.ChainingContentTypeConverter;
-import org.axonframework.serialization.Converter;
+import org.axonframework.conversion.ChainingContentTypeConverter;
+import org.axonframework.conversion.Converter;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;

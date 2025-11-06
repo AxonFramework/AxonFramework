@@ -16,10 +16,10 @@
 
 package org.axonframework.modelling.saga;
 
-import org.axonframework.eventhandling.annotations.EventHandler;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.Metadata;
+import org.axonframework.messaging.eventhandling.annotation.EventHandler;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.Metadata;
 
 import java.lang.annotation.*;
 

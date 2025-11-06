@@ -17,7 +17,7 @@
 package org.axonframework.messaging.deadletter;
 
 import org.axonframework.common.StringUtils;
-import org.axonframework.messaging.Message;
+import org.axonframework.messaging.core.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
