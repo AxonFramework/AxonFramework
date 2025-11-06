@@ -16,12 +16,10 @@
 
 package org.axonframework.test.aggregate;
 
-import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.commandhandling.CommandResultMessage;
+import org.axonframework.messaging.eventhandling.EventMessage;
 import org.hamcrest.Matcher;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 import java.util.function.Consumer;
 

@@ -29,7 +29,7 @@ import io.grpc.MethodDescriptor;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.event.StubServer;
 import org.axonframework.axonserver.connector.util.TcpUtils;
-import org.axonframework.axonserver.connector.utils.PlatformService;
+import org.axonframework.axonserver.connector.util.PlatformService;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
 import org.junit.jupiter.api.*;
@@ -41,7 +41,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
+import static org.axonframework.axonserver.connector.util.AssertUtils.assertWithin;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**

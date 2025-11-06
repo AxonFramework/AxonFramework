@@ -20,7 +20,7 @@ import io.axoniq.axonserver.connector.ResultStream;
 import io.axoniq.axonserver.grpc.query.QueryUpdate;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonException;
-import org.axonframework.queryhandling.QueryResponseMessage;
+import org.axonframework.messaging.queryhandling.QueryResponseMessage;
 
 import static org.axonframework.axonserver.connector.query.QueryConverter.convertQueryUpdate;
 import static org.axonframework.axonserver.connector.util.ExceptionConverter.convertToAxonException;
@@ -28,11 +28,11 @@ import static org.axonframework.axonserver.connector.util.ExceptionConverter.con
 /**
  * A specialized implementation of {@link AbstractQueryResponseMessageStream} that processes a stream of
  * {@link QueryUpdate} objects and transforms them into {@link QueryResponseMessage} instances. This class is used to
- * handle query updates, including error handling and response message creation.
+ * handle query update, including error handling and response message creation.
  * <p/>
  * This class relies on its abstract superclass to manage the underlying {@link ResultStream}, implementing
  * functionality specific to {@link QueryUpdate} to determine whether a message represents an error and to transform
- * such updates into structured responses or exceptions.
+ * such update into structured responses or exceptions.
  */
 public class QueryUpdateMessageStream extends AbstractQueryResponseMessageStream<QueryUpdate> {
 

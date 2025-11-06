@@ -17,8 +17,8 @@
 package org.axonframework.spring.config;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.configuration.ComponentRegistry;
-import org.axonframework.configuration.ConfigurationEnhancer;
+import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;

@@ -16,11 +16,11 @@
 
 package org.axonframework.modelling.saga;
 
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.annotations.MessageHandlingMember;
-import org.axonframework.messaging.annotations.WrappedMessageHandlingMember;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.annotation.MessageHandlingMember;
+import org.axonframework.messaging.core.annotation.WrappedMessageHandlingMember;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import jakarta.annotation.Nonnull;
 

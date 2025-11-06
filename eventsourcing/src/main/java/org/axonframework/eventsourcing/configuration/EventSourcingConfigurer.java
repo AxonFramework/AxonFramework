@@ -17,26 +17,26 @@
 package org.axonframework.eventsourcing.configuration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.commandhandling.configuration.CommandHandlingModule;
-import org.axonframework.configuration.ApplicationConfigurer;
-import org.axonframework.configuration.AxonConfiguration;
-import org.axonframework.configuration.Component;
-import org.axonframework.configuration.ComponentBuilder;
-import org.axonframework.configuration.ComponentDecorator;
-import org.axonframework.configuration.ComponentRegistry;
-import org.axonframework.configuration.Configuration;
-import org.axonframework.configuration.ConfigurationEnhancer;
-import org.axonframework.configuration.LifecycleRegistry;
-import org.axonframework.configuration.MessagingConfigurer;
-import org.axonframework.configuration.Module;
-import org.axonframework.configuration.ModuleBuilder;
-import org.axonframework.eventhandling.EventSink;
+import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
+import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.common.configuration.AxonConfiguration;
+import org.axonframework.common.configuration.Component;
+import org.axonframework.common.configuration.ComponentBuilder;
+import org.axonframework.common.configuration.ComponentDecorator;
+import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.configuration.ConfigurationEnhancer;
+import org.axonframework.common.configuration.LifecycleRegistry;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.common.configuration.Module;
+import org.axonframework.common.configuration.ModuleBuilder;
+import org.axonframework.messaging.eventhandling.EventSink;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.modelling.configuration.EntityModule;
 import org.axonframework.modelling.configuration.ModellingConfigurer;
-import org.axonframework.queryhandling.configuration.QueryHandlingModule;
+import org.axonframework.messaging.queryhandling.configuration.QueryHandlingModule;
 
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -51,8 +51,8 @@ import java.util.function.Consumer;
  * <ul>
  *     <li>Registers a {@link org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver} for class {@link TagResolver}</li>
  *     <li>Registers a {@link org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine} for class {@link EventStorageEngine}</li>
- *     <li>Registers a {@link org.axonframework.eventsourcing.eventstore.SimpleEventStore} for class {@link EventStore}</li>
- *     <li>Registers a {@link org.axonframework.eventsourcing.eventstore.SimpleEventStore} for class {@link EventSink}</li>
+ *     <li>Registers a {@link org.axonframework.eventsourcing.eventstore.StorageEngineBackedEventStore} for class {@link EventStore}</li>
+ *     <li>Registers a {@link org.axonframework.eventsourcing.eventstore.StorageEngineBackedEventStore} for class {@link EventSink}</li>
  * </ul>
  * To replace or decorate any of these defaults, use their respective interfaces as the identifier. For example, to
  * adjust the {@code EventStore}, do
@@ -150,7 +150,7 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
     }
 
     /**
-     * Registers the given {@code entityModule} on the root-level {@link org.axonframework.configuration.Configuration}.
+     * Registers the given {@code entityModule} on the root-level {@link Configuration}.
      * This will make the entity available in the globally available {@link org.axonframework.modelling.StateManager}.
      *
      * @param entityModule The entity module to register.

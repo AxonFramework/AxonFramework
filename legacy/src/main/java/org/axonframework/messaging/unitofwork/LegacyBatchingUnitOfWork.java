@@ -18,10 +18,10 @@ package org.axonframework.messaging.unitofwork;
 
 import org.axonframework.common.Assert;
 import org.axonframework.common.ObjectUtils;
-import org.axonframework.messaging.GenericResultMessage;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.ResultMessage;
+import org.axonframework.messaging.core.GenericResultMessage;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.ResultMessage;
 
 import java.util.Arrays;
 import java.util.Iterator;
@@ -32,8 +32,10 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import jakarta.annotation.Nonnull;
+import org.axonframework.messaging.core.unitofwork.LegacyMessageSupportingContext;
+import org.axonframework.messaging.core.unitofwork.UnitOfWork;
 
-import static org.axonframework.messaging.GenericResultMessage.asResultMessage;
+import static org.axonframework.messaging.core.GenericResultMessage.asResultMessage;
 
 /**
  * Unit of Work implementation that is able to process a batch of Messages instead of just a single Message.

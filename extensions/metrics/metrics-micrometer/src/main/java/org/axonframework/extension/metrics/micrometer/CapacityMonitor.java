@@ -22,8 +22,8 @@ import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
 import jakarta.annotation.Nonnull;
 import org.axonframework.extension.metrics.micrometer.reservoir.SlidingTimeWindowReservoir;
-import org.axonframework.messaging.Message;
-import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.monitoring.MessageMonitor;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

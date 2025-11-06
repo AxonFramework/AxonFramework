@@ -20,7 +20,7 @@ import com.codahale.metrics.Metric;
 import com.codahale.metrics.SlidingTimeWindowReservoir;
 import com.codahale.metrics.Timer;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.messaging.monitoring.MessageMonitor;
 import org.junit.jupiter.api.*;
 
 import java.util.Map;

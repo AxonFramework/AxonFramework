@@ -17,7 +17,8 @@
 package org.axonframework.modelling.command;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.ScopeAware;
+import org.axonframework.messaging.core.ScopeAware;
+import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 
 import java.util.concurrent.Callable;
@@ -27,7 +28,7 @@ import java.util.function.Consumer;
  * The {@link Repository} provides an abstraction of the storage of aggregates.
  * <p>
  * When interacting with the {@code Repository} the framework expects an active {@link LegacyUnitOfWork} containing a
- * {@link org.axonframework.commandhandling.CommandMessage} implementation on the invoking thread to be present. If
+ * {@link CommandMessage} implementation on the invoking thread to be present. If
  * there is no active {@code UnitOfWork} an {@link IllegalStateException} is thrown.
  *
  * @param <T> The type of aggregate this repository stores.

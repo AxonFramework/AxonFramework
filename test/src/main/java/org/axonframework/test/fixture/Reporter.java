@@ -16,7 +16,7 @@
 
 package org.axonframework.test.fixture;
 
-import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.test.AxonAssertionError;
 import org.hamcrest.Description;
 

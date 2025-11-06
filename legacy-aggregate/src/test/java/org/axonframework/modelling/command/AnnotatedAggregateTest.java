@@ -16,17 +16,17 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.annotations.CommandHandler;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.commandhandling.GenericCommandMessage;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
 import org.axonframework.common.TypeReference;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.annotations.EventHandler;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.annotations.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.annotations.MultiParameterResolverFactory;
-import org.axonframework.messaging.annotations.SimpleResourceParameterResolverFactory;
+import org.axonframework.messaging.eventhandling.EventBus;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.annotation.EventHandler;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.MultiParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.SimpleResourceParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 import org.junit.jupiter.api.*;

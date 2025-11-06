@@ -16,13 +16,13 @@
 
 package org.axonframework.messaging.unitofwork;
 
-import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.GenericResultMessage;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.Metadata;
-import org.axonframework.messaging.ResultMessage;
-import org.axonframework.utils.MockException;
+import org.axonframework.messaging.core.GenericMessage;
+import org.axonframework.messaging.core.GenericResultMessage;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.core.ResultMessage;
+import org.axonframework.common.util.MockException;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -36,7 +36,6 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import static org.axonframework.messaging.GenericResultMessage.asResultMessage;
 import static org.axonframework.messaging.unitofwork.LegacyUnitOfWork.Phase.*;
 import static org.junit.jupiter.api.Assertions.*;
 

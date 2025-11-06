@@ -17,12 +17,12 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventsourcing.annotations.EventTag;
-import org.axonframework.eventsourcing.annotations.EventTags;
-import org.axonframework.eventstreaming.Tag;
-import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.eventsourcing.annotation.EventTag;
+import org.axonframework.eventsourcing.annotation.EventTags;
+import org.axonframework.messaging.eventstreaming.Tag;
+import org.axonframework.messaging.core.MessageType;
 import org.junit.jupiter.api.*;
 
 import java.util.Arrays;
@@ -646,7 +646,7 @@ class AnnotationBasedTagResolverTest {
             // Tags from container annotation on 'id' field
             assertTrue(result.contains(new Tag("id", "123")));
             assertTrue(result.contains(new Tag("identifier", "123")));
-            // Tags from repeatable annotations on 'value' field
+            // Tags from repeatable annotation on 'value' field
             assertTrue(result.contains(new Tag("value", "456")));
             assertTrue(result.contains(new Tag("amount", "456")));
             // Tags from container annotation on getName method
@@ -665,11 +665,11 @@ class AnnotationBasedTagResolverTest {
 
             // then
             assertEquals(6, result.size());
-            // Tags from field with mixed annotations
+            // Tags from field with mixed annotation
             assertTrue(result.contains(new Tag("first", "mixedValue")));
             assertTrue(result.contains(new Tag("second", "mixedValue")));
             assertTrue(result.contains(new Tag("third", "mixedValue")));
-            // Tags from method with mixed annotations
+            // Tags from method with mixed annotation
             assertTrue(result.contains(new Tag("one", "mixed")));
             assertTrue(result.contains(new Tag("two", "mixed")));
             assertTrue(result.contains(new Tag("three", "mixed")));

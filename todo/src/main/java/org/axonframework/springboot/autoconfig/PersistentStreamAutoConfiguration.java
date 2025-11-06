@@ -23,11 +23,12 @@ import org.axonframework.axonserver.connector.event.axon.PersistentStreamMessage
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamEventSourceDefinition;
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamMessageSourceFactory;
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamScheduledExecutorBuilder;
-import org.axonframework.configuration.ConfigurationEnhancer;
-import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessor;
+import org.axonframework.common.configuration.ConfigurationEnhancer;
+import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessor;
 import org.axonframework.extension.springboot.EventProcessorProperties;
 import org.axonframework.extension.springboot.util.ConditionalOnMissingQualifiedBean;
 import org.axonframework.extension.springboot.util.ConditionalOnQualifiedBean;
+import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -169,14 +170,14 @@ public class PersistentStreamAutoConfiguration {
 
     /**
      * Creates a {@code ConfigurerModule} to configure
-     * {@link org.axonframework.eventhandling.sequencing.SequencingPolicy sequencing policies} for persistent streams
-     * connected to {@link SubscribingEventProcessor subscribing event processors} with a dead letter queue.
+     * {@link SequencingPolicy sequencing policies} for persistent streams
+     * connected to {@link SubscribingEventProcessor subscribing event processing} with a dead letter queue.
      *
-     * @param processorProperties     Contains the configured event processors.
+     * @param processorProperties     Contains the configured event processing.
      * @param axonServerConfiguration Contains the persistent stream definitions.
      * @return A {@code ConfigurerModule} to configure
-     * {@link org.axonframework.eventhandling.sequencing.SequencingPolicy sequencing policies} for persistent streams
-     * connected to {@link SubscribingEventProcessor subscribing event processors} with a dead letter queue.
+     * {@link SequencingPolicy sequencing policies} for persistent streams
+     * connected to {@link SubscribingEventProcessor subscribing event processing} with a dead letter queue.
      */
     @Bean
     @ConditionalOnProperty(name = "axon.axonserver.event-store.enabled", matchIfMissing = true)

@@ -16,8 +16,8 @@
 
 package org.axonframework.modelling.saga;
 
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.tracing.Span;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.tracing.Span;
 
 /**
  * Span factory that creates spans for the {@link AbstractSagaManager}. You can customize the spans of the bus by

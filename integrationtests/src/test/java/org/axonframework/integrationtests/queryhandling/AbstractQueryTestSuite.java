@@ -17,21 +17,21 @@
 package org.axonframework.integrationtests.queryhandling;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.configuration.MessagingConfigurer;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.MessageDispatchInterceptorChain;
-import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.MessageHandlerInterceptorChain;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.queryhandling.GenericQueryResponseMessage;
-import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.queryhandling.QueryResponseMessage;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageDispatchInterceptor;
+import org.axonframework.messaging.core.MessageDispatchInterceptorChain;
+import org.axonframework.messaging.core.MessageHandlerInterceptor;
+import org.axonframework.messaging.core.MessageHandlerInterceptorChain;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.queryhandling.GenericQueryResponseMessage;
+import org.axonframework.messaging.queryhandling.QueryBus;
+import org.axonframework.messaging.queryhandling.QueryHandler;
+import org.axonframework.messaging.queryhandling.QueryMessage;
+import org.axonframework.messaging.queryhandling.QueryResponseMessage;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -62,7 +62,7 @@ public abstract class AbstractQueryTestSuite {
 
     /**
      * Creates a {@link MessagingConfigurer} with the test-specific configuration (e.g., AxonServer enabled/disabled).
-     * This configurer is not yet built, allowing tests to register additional components like interceptors.
+     * This configurer is not yet built, allowing tests to register additional components like interception.
      *
      * @return A {@link MessagingConfigurer} instance ready for additional configuration.
      */
@@ -71,7 +71,7 @@ public abstract class AbstractQueryTestSuite {
     /**
      * A recording query handler that stores all received queries for later assertion.
      */
-    protected static class RecordingQueryHandler implements org.axonframework.queryhandling.QueryHandler {
+    protected static class RecordingQueryHandler implements QueryHandler {
 
         private final List<QueryMessage> recordedQueries = new CopyOnWriteArrayList<>();
 

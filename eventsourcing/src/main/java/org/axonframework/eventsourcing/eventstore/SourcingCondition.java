@@ -17,8 +17,8 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.eventstreaming.EventCriteria;
-import org.axonframework.eventstreaming.EventsCondition;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.axonframework.messaging.eventstreaming.EventsCondition;
 
 /**
  * Interface describing the condition to {@link EventStoreTransaction#source(SourcingCondition) source} events from an

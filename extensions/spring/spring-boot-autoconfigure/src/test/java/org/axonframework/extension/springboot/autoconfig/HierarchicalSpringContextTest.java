@@ -17,17 +17,16 @@
 package org.axonframework.extension.springboot.autoconfig;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.interceptors.InterceptingCommandBus;
-import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.configuration.AxonConfiguration;
-import org.axonframework.configuration.ComponentDecorator;
-import org.axonframework.configuration.ConfigurationEnhancer;
-import org.axonframework.extension.springboot.autoconfig.AxonAutoConfiguration;
-import org.axonframework.messaging.EmptyApplicationContext;
-import org.axonframework.messaging.correlation.CorrelationDataProviderRegistry;
-import org.axonframework.messaging.correlation.DefaultCorrelationDataProviderRegistry;
-import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.commandhandling.interception.InterceptingCommandBus;
+import org.axonframework.messaging.commandhandling.SimpleCommandBus;
+import org.axonframework.common.configuration.AxonConfiguration;
+import org.axonframework.common.configuration.ComponentDecorator;
+import org.axonframework.common.configuration.ConfigurationEnhancer;
+import org.axonframework.messaging.core.EmptyApplicationContext;
+import org.axonframework.messaging.core.correlation.CorrelationDataProviderRegistry;
+import org.axonframework.messaging.core.correlation.DefaultCorrelationDataProviderRegistry;
+import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -82,8 +81,8 @@ public class HierarchicalSpringContextTest {
     @Test
     void childContextComponentsOverruleParentContextComponents() {
         testContext.run(context -> {
-            org.axonframework.configuration.Configuration axonConfiguration =
-                    context.getBean(org.axonframework.configuration.Configuration.class);
+            org.axonframework.common.configuration.Configuration axonConfiguration =
+                    context.getBean(org.axonframework.common.configuration.Configuration.class);
             AxonConfiguration rootConfiguration = context.getBean(AxonConfiguration.class);
             ApplicationContext parentContext = context.getParent();
             assertThat(parentContext).isNotNull();

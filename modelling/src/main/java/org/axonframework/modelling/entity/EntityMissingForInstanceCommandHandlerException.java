@@ -17,7 +17,7 @@
 package org.axonframework.modelling.entity;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.messaging.commandhandling.CommandMessage;
 
 /**
  * Exception indicating that an instance command handler was invoked for an entity that does not exist.

@@ -21,7 +21,7 @@
              version="3.0">
     <persistence-unit name="integrationtest" transaction-type="RESOURCE_LOCAL">
         <class>org.axonframework.eventsourcing.eventstore.jpa.AggregateEventEntry</class>
-        <class>org.axonframework.eventsourcing.eventstore.jpa.SnapshotEventEntry</class>
+        <class>org.axonframework.messaging.jpa.eventstore.eventsourcing.SnapshotEventEntry</class>
         <class>org.axonframework.modelling.saga.repository.jpa.AssociationValueEntry</class>
         <class>org.axonframework.modelling.saga.repository.jpa.SagaEntry</class>
         <properties>

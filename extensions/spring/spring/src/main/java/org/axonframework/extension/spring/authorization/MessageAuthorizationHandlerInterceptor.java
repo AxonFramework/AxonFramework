@@ -17,12 +17,12 @@
 package org.axonframework.extension.spring.authorization;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.annotations.AnnotationUtils;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.MessageHandlerInterceptorChain;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.common.annotation.AnnotationUtils;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageHandlerInterceptor;
+import org.axonframework.messaging.core.MessageHandlerInterceptorChain;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.access.annotation.Secured;

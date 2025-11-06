@@ -16,7 +16,7 @@
 
 package org.axonframework.test.fixture.sampledomain;
 
-import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 
 /**
  * Event-sourced Student model

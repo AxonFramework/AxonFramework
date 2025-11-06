@@ -29,11 +29,11 @@ import io.axoniq.axonserver.grpc.event.EventWithToken;
 import io.axoniq.axonserver.grpc.streams.PersistentStreamEvent;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
-import org.axonframework.configuration.ApplicationConfigurer;
-import org.axonframework.configuration.MessagingConfigurer;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.serialization.Converter;
-import org.axonframework.serialization.json.JacksonConverter;
+import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.conversion.Converter;
+import org.axonframework.conversion.json.JacksonConverter;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;

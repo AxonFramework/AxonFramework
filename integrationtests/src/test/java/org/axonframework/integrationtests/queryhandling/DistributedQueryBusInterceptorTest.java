@@ -17,9 +17,10 @@
 package org.axonframework.integrationtests.queryhandling;
 
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
-import org.axonframework.configuration.AxonConfiguration;
-import org.axonframework.configuration.MessagingConfigurer;
-import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.common.configuration.AxonConfiguration;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.queryhandling.distributed.DistributedQueryBus;
+import org.axonframework.messaging.queryhandling.QueryBus;
 import org.axonframework.test.server.AxonServerContainer;
 import org.axonframework.test.server.AxonServerContainerUtils;
 import org.junit.jupiter.api.*;
@@ -31,7 +32,7 @@ import java.io.IOException;
 
 /**
  * An {@link AbstractQueryInterceptorTestSuite} implementation validating query interceptor functionality with the
- * {@link org.axonframework.queryhandling.distributed.DistributedQueryBus}.
+ * {@link DistributedQueryBus}.
  *
  * @author Mateusz Nowak
  * @since 5.0.0

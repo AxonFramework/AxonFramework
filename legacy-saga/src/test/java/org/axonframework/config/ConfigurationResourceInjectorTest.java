@@ -17,11 +17,11 @@
 package org.axonframework.config;
 
 import jakarta.inject.Inject;
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.configuration.Configuration;
-import org.axonframework.configuration.MessagingConfigurer;
-import org.axonframework.queryhandling.gateway.QueryGateway;
+import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.queryhandling.gateway.QueryGateway;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;

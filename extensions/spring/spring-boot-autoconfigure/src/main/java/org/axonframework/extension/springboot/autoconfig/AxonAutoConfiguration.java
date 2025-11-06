@@ -16,8 +16,11 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
-import org.axonframework.configuration.AxonConfiguration;
-import org.axonframework.configuration.Configuration;
+import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.LifecycleRegistry;
+import org.axonframework.common.configuration.AxonConfiguration;
+import org.axonframework.common.configuration.Configuration;
 import org.axonframework.extension.spring.config.SpringAxonApplication;
 import org.axonframework.extension.spring.config.SpringComponentRegistry;
 import org.axonframework.extension.spring.config.SpringLifecycleRegistry;
@@ -30,10 +33,10 @@ import org.springframework.context.annotation.Bean;
 
 /**
  * Autoconfiguration class that defines the {@link AxonConfiguration} and
- * {@link org.axonframework.configuration.ComponentRegistry} implementations that supports beans to be accessed as
+ * {@link ComponentRegistry} implementations that supports beans to be accessed as
  * components.
  * <p>
- * Lifecycle handlers from the {@link org.axonframework.configuration.LifecycleRegistry} are managed by the Spring
+ * Lifecycle handlers from the {@link LifecycleRegistry} are managed by the Spring
  * Application context to allow "weaving" of these lifecycles with the Spring lifecycles.
  * <p>
  * This autoconfiguration will construct the beans such that they allow for a hierarchical Spring Application Context.
@@ -50,7 +53,7 @@ public class AxonAutoConfiguration {
      * not have one already.
      * <p>
      * By only checking the {@link SearchStrategy#CURRENT current} context, we ensure that every context for a
-     * hierarchical Spring Application Context receives a {@link org.axonframework.configuration.ComponentRegistry}
+     * hierarchical Spring Application Context receives a {@link ComponentRegistry}
      * instance.
      */
     @Bean
@@ -64,7 +67,7 @@ public class AxonAutoConfiguration {
      * Bean creation method registering a {@link SpringLifecycleRegistry} when there is none <b>anywhere</b>.
      * <p>
      * By checking {@link SearchStrategy#ALL everywhere}, we ensure that there only is a single
-     * {@link org.axonframework.configuration.LifecycleRegistry} at all times. Even when a hierarchical Spring
+     * {@link LifecycleRegistry} at all times. Even when a hierarchical Spring
      * Application Context is in place.
      */
     @Bean
@@ -77,7 +80,7 @@ public class AxonAutoConfiguration {
      * Bean creation method registering a {@link SpringAxonApplication} when there is none <b>anywhere</b>.
      * <p>
      * By checking {@link SearchStrategy#ALL everywhere}, we ensure that there only is a single main
-     * {@link org.axonframework.configuration.ApplicationConfigurer} at all times. Even when a hierarchical Spring
+     * {@link ApplicationConfigurer} at all times. Even when a hierarchical Spring
      * Application Context is in place.
      */
     @Bean

@@ -16,8 +16,9 @@
 
 package org.axonframework.extension.springboot;
 
-import org.axonframework.queryhandling.gateway.QueryGateway;
-import org.axonframework.queryhandling.annotations.QueryHandler;
+import org.axonframework.common.configuration.AxonConfiguration;
+import org.axonframework.messaging.queryhandling.gateway.QueryGateway;
+import org.axonframework.messaging.queryhandling.annotation.QueryHandler;
 import org.axonframework.extension.springboot.autoconfig.AxonServerActuatorAutoConfiguration;
 import org.axonframework.extension.springboot.autoconfig.AxonServerAutoConfiguration;
 import org.junit.jupiter.api.*;
@@ -46,7 +47,7 @@ import java.util.concurrent.TimeUnit;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Tests whether {@link org.axonframework.configuration.AxonConfiguration} is only shut down after processing active
+ * Tests whether {@link AxonConfiguration} is only shut down after processing active
  * requests if it is in graceful shutdown mode.
  *
  * @author Mateusz Nowak

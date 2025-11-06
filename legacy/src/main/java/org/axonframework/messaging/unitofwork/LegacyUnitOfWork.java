@@ -16,12 +16,15 @@
 
 package org.axonframework.messaging.unitofwork;
 
-import org.axonframework.common.transaction.Transaction;
-import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.Metadata;
-import org.axonframework.messaging.ResultMessage;
-import org.axonframework.messaging.correlation.CorrelationDataProvider;
+import org.axonframework.messaging.core.GenericMessage;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.ProcessingLifecycle;
+import org.axonframework.messaging.core.unitofwork.transaction.Transaction;
+import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.core.ResultMessage;
+import org.axonframework.messaging.core.correlation.CorrelationDataProvider;
 
 import java.util.Map;
 import java.util.Optional;
@@ -197,7 +200,7 @@ public interface LegacyUnitOfWork<T extends Message> {
      * Get the correlation data contained in the {@link #getMessage() message} being processed by the Unit of Work.
      * <p/>
      * By default this correlation data will be copied to other {@link Message messages} created in the context of this
-     * Unit of Work, so long as these messages extend from {@link org.axonframework.messaging.GenericMessage}.
+     * Unit of Work, so long as these messages extend from {@link GenericMessage}.
      *
      * @return The correlation data contained in the message processed by this Unit of Work
      */

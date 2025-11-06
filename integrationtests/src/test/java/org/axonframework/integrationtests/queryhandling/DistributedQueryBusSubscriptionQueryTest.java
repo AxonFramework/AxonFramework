@@ -17,9 +17,10 @@
 package org.axonframework.integrationtests.queryhandling;
 
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
-import org.axonframework.configuration.Configuration;
-import org.axonframework.configuration.MessagingConfigurer;
-import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.queryhandling.distributed.DistributedQueryBus;
+import org.axonframework.messaging.queryhandling.QueryBus;
 import org.axonframework.test.server.AxonServerContainer;
 import org.axonframework.test.server.AxonServerContainerUtils;
 import org.junit.jupiter.api.*;
@@ -31,13 +32,12 @@ import java.io.IOException;
 
 /**
  * An {@link AbstractSubscriptionQueryTestSuite} implementation validating the
- * {@link org.axonframework.queryhandling.distributed.DistributedQueryBus}.
+ * {@link DistributedQueryBus}.
  *
  * @author Mateusz Nowak
  * @author Milan Savic
  * @author Steven van Beelen
  */
-@Disabled("TODO #3809 - enable this test after fix")
 @Testcontainers
 public class DistributedQueryBusSubscriptionQueryTest extends AbstractSubscriptionQueryTestSuite {
 

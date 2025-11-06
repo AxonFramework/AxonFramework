@@ -16,31 +16,28 @@
 
 package org.axonframework.modelling;
 
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventTestUtils;
-import org.axonframework.eventhandling.conversion.DelegatingEventConverter;
-import org.axonframework.eventhandling.conversion.EventConverter;
-import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.annotations.SequenceNumber;
-import org.axonframework.eventhandling.annotations.Timestamp;
-import org.axonframework.eventhandling.annotations.EventHandler;
-import org.axonframework.messaging.ClassBasedMessageTypeResolver;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.Metadata;
-import org.axonframework.messaging.annotations.MetadataValue;
-import org.axonframework.messaging.annotations.SourceId;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
-import org.axonframework.modelling.annotations.AnnotationBasedEntityEvolvingComponent;
-import org.axonframework.serialization.json.JacksonConverter;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.eventhandling.annotation.SequenceNumber;
+import org.axonframework.messaging.eventhandling.annotation.Timestamp;
+import org.axonframework.messaging.eventhandling.annotation.EventHandler;
+import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.core.annotation.MetadataValue;
+import org.axonframework.messaging.core.annotation.SourceId;
+import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
+import org.axonframework.modelling.annotation.AnnotationBasedEntityEvolvingComponent;
+import org.axonframework.conversion.json.JacksonConverter;
 import org.junit.jupiter.api.*;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 
-import static org.axonframework.eventhandling.EventTestUtils.asEventMessage;
-import static org.axonframework.eventhandling.EventTestUtils.createEvent;
+import static org.axonframework.messaging.eventhandling.EventTestUtils.createEvent;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**

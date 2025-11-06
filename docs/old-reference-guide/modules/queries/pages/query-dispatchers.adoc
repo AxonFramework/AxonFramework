@@ -149,7 +149,7 @@ Once we have the query handling and the emitting side implemented, we can issue 
 [source,java]
 ----
 // <1>
-commandGateway.sendAndWait(new IssueCmd("gc1", amount)); 
+commandGateway.sendAndWait(new IssueCmd("gc1", amount));
 // <2>
 FetchCardSummariesQuery fetchCardSummariesQuery =
                 new FetchCardSummariesQuery(offset, limit, filter);
@@ -177,11 +177,11 @@ The type of the update is a single instance of `CardSummary`.
 Do note that the type of the update must match the type of the emission side.
 
 <3> Once the message is created, we are sending it via the `QueryGateway`.
-We receive a query result which contains two components: one is `initialResult` and the other is `updates`.
-In order to achieve 'reactiveness' we use https://projectreactor.io/[Project Reactor]'s `Mono` for `initialResult` and `Flux` for `updates`.
+We receive a query result which contains two components: one is `initialResult` and the other is `update`.
+In order to achieve 'reactiveness' we use https://projectreactor.io/[Project Reactor]'s `Mono` for `initialResult` and `Flux` for `update`.
 
 
-<4> The `SubscriptionQueryResult#handle(Consumer&lt;? super I&gt;, Consumer&lt;? super U&gt;)` method gives us the possibility to subscribe to the `initialResult` and the `updates` in one go. If we want more granular control over the results, we can use the `initialResult()` and `updates()` methods on the query result.
+<4> The `SubscriptionQueryResult#handle(Consumer&lt;? super I&gt;, Consumer&lt;? super U&gt;)` method gives us the possibility to subscribe to the `initialResult` and the `update` in one go. If we want more granular control over the results, we can use the `initialResult()` and `updates()` methods on the query result.
 
 <5> As the `queryUpdateEmitter` will continue to emit updates even when there are no subscribers, we need to notify the emitting side once we are no longer interested in receiving updates.
 Failing to do so can result in hanging infinitive streams and eventually a memory leak.
@@ -243,7 +243,7 @@ Natively, if we want fine-grained control of the producing stream, we can use fo
 @QueryHandler
 public Flux<CardSummary> handle(FetchCardSummariesQuery query) {
         ...
-    return reactiveCardRepository.findAll(); 
+    return reactiveCardRepository.findAll();
 }
 ----
 

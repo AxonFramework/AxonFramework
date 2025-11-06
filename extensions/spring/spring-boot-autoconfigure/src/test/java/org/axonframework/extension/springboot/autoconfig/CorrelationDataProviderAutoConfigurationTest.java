@@ -16,10 +16,9 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
-import org.axonframework.extension.springboot.autoconfig.CorrelationDataProviderAutoConfiguration;
-import org.axonframework.messaging.correlation.CorrelationDataProvider;
-import org.axonframework.messaging.correlation.CorrelationDataProviderRegistry;
-import org.axonframework.messaging.correlation.SimpleCorrelationDataProvider;
+import org.axonframework.messaging.core.correlation.CorrelationDataProvider;
+import org.axonframework.messaging.core.correlation.CorrelationDataProviderRegistry;
+import org.axonframework.messaging.core.correlation.SimpleCorrelationDataProvider;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -49,8 +48,8 @@ class CorrelationDataProviderAutoConfigurationTest {
 
     @Test
     void correlationDataProviderBeansAreRegisteredWithTheCorrelationDataProviderRegistry() {
-        org.axonframework.configuration.Configuration testConfig =
-                mock(org.axonframework.configuration.Configuration.class);
+        org.axonframework.common.configuration.Configuration testConfig =
+                mock(org.axonframework.common.configuration.Configuration.class);
 
         testContext.run(context -> {
             assertThat(context).hasBean("providerOne");

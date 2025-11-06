@@ -27,15 +27,15 @@ import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import io.axoniq.axonserver.grpc.query.QueryUpdate;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
-import org.axonframework.axonserver.connector.utils.StubResultStream;
-import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.Metadata;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.queryhandling.GenericQueryMessage;
-import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.queryhandling.QueryResponseMessage;
+import org.axonframework.axonserver.connector.util.StubResultStream;
+import org.axonframework.messaging.core.GenericMessage;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.queryhandling.GenericQueryMessage;
+import org.axonframework.messaging.queryhandling.QueryMessage;
+import org.axonframework.messaging.queryhandling.QueryResponseMessage;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;
@@ -171,7 +171,7 @@ class AxonServerQueryBusConnectorTest {
 
         @Test
         void subscriptionQueryDelegatesToQueryChannelWithCalculatedBufferSegmentAndEmitsInitialAndUpdates() {
-            // Given a subscription result with one initial result and two updates
+            // Given a subscription result with one initial result and two update
             String initialPayloadId = UUID.randomUUID().toString();
             QueryResponse initial = QueryResponse.newBuilder()
                                                  .setMessageIdentifier(initialPayloadId)
@@ -205,7 +205,7 @@ class AxonServerQueryBusConnectorTest {
                                        "payload".getBytes(),
                                        Metadata.emptyInstance())
             );
-            QueryMessage sqm = new org.axonframework.queryhandling.GenericQueryMessage(
+            QueryMessage sqm = new GenericQueryMessage(
                     query,
                     1
             );
@@ -223,7 +223,7 @@ class AxonServerQueryBusConnectorTest {
             assertThat(first).isPresent();
             assertThat(first.get().message().payloadAs(byte[].class)).isEqualTo("result".getBytes());
 
-            // Then updates
+            // Then update
             Optional<MessageStream.Entry<QueryResponseMessage>> second = responses.next();
             Optional<MessageStream.Entry<QueryResponseMessage>> third = responses.next();
             assertThat(second).isPresent();

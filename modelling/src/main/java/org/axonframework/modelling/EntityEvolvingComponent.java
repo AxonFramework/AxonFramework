@@ -17,8 +17,8 @@
 package org.axonframework.modelling;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.core.QualifiedName;
 
 import java.util.Set;
 

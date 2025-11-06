@@ -17,7 +17,7 @@
 package org.axonframework.modelling.command;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.messaging.commandhandling.CommandMessage;
 
 /**
  * CommandTargetResolver implementation that uses Metadata entries to extract the identifier.

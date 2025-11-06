@@ -24,7 +24,7 @@ import org.axonframework.common.IdentifierFactory;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateLifecycle;
 import org.axonframework.modelling.command.AggregateVersion;
-import org.axonframework.utils.StubDomainEvent;
+import org.axonframework.common.util.StubDomainEvent;
 
 @Entity
 public class JpaAggregate {

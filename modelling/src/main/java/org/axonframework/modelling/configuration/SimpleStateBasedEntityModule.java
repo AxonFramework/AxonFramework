@@ -17,16 +17,16 @@
 package org.axonframework.modelling.configuration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandHandlingComponent;
+import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.commandhandling.CommandHandlingComponent;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.TypeReference;
-import org.axonframework.configuration.BaseModule;
-import org.axonframework.configuration.ComponentBuilder;
-import org.axonframework.configuration.ComponentDefinition;
-import org.axonframework.configuration.Configuration;
-import org.axonframework.configuration.LifecycleRegistry;
-import org.axonframework.lifecycle.Phase;
+import org.axonframework.common.configuration.BaseModule;
+import org.axonframework.common.configuration.ComponentBuilder;
+import org.axonframework.common.configuration.ComponentDefinition;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.configuration.LifecycleRegistry;
+import org.axonframework.common.lifecycle.Phase;
 import org.axonframework.modelling.EntityIdResolver;
 import org.axonframework.modelling.repository.SimpleRepository;
 import org.axonframework.modelling.repository.SimpleRepositoryEntityLoader;

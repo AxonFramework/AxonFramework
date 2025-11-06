@@ -18,14 +18,14 @@ package org.axonframework.modelling.saga;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.axonframework.modelling.OnlyAcceptConstructorPropertiesAnnotation;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.json.JacksonSerializer;
+import org.axonframework.conversion.SerializedObject;
+import org.axonframework.conversion.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests serialization capabilities of {@link SagaScopeDescriptor}.
+ * Tests conversion capabilities of {@link SagaScopeDescriptor}.
  *
  * @author JohT
  */

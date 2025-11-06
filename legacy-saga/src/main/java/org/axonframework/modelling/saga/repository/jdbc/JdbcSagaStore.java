@@ -25,8 +25,8 @@ import org.axonframework.modelling.saga.AssociationValues;
 import org.axonframework.modelling.saga.SagaStorageException;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.jpa.SagaEntry;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.Serializer;
+import org.axonframework.conversion.SerializedObject;
+import org.axonframework.conversion.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

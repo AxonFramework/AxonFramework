@@ -17,8 +17,8 @@
 package org.axonframework.modelling;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 /**
  * Resolver for the id of an entity. The id is then used to load an entity from the

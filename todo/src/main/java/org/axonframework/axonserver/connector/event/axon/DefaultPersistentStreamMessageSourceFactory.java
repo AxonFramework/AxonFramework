@@ -17,7 +17,7 @@
 package org.axonframework.axonserver.connector.event.axon;
 
 import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
-import org.axonframework.configuration.Configuration;
+import org.axonframework.common.configuration.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

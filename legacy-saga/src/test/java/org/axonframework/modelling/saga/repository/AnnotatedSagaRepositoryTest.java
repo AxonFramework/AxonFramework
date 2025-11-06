@@ -17,17 +17,17 @@
 package org.axonframework.modelling.saga.repository;
 
 import org.axonframework.common.IdentifierFactory;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.annotations.EventHandler;
-import org.axonframework.eventhandling.EventTestUtils;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
-import org.axonframework.messaging.interceptors.annotations.MessageHandlerInterceptorMemberChain;
-import org.axonframework.messaging.annotations.MessageHandlingMember;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.annotation.EventHandler;
+import org.axonframework.messaging.eventhandling.EventTestUtils;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.core.interception.annotation.MessageHandlerInterceptorMemberChain;
+import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.modelling.saga.AssociationValue;
 import org.axonframework.modelling.saga.Saga;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
