@@ -35,7 +35,7 @@ jobs:
           cache: maven
 
       - name: 📦 Build with Maven
-        run: mvn -B compile -ntp -B -Daxon.version=${{ matrix.axon-framework.version }}
+        run: mvn -B compile -U -ntp -B -Daxon.version=${{ matrix.axon-framework.version }}
 
       - name: 🧪 Run tests
-        run: mvn -B test -ntp -B
+        run: mvn -B test -U -ntp -B
