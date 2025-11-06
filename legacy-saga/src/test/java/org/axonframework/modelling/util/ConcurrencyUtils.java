@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.utils;
+package org.axonframework.modelling.util;
 
 import java.util.ArrayList;
 import java.util.Collections;

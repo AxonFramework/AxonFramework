@@ -28,7 +28,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 
 import static org.axonframework.messaging.eventhandling.EventTestUtils.asEventMessage;
-import static org.axonframework.modelling.utils.ConcurrencyUtils.testConcurrent;
+import static org.axonframework.modelling.util.ConcurrencyUtils.testConcurrent;
 import static org.junit.jupiter.api.Assertions.*;
 
 class PayloadAssociationResolverTest {
