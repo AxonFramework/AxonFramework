@@ -237,6 +237,6 @@ public class EventProcessorConfiguration implements DescribableComponent {
         descriptor.describeProperty("messageMonitor", messageMonitor);
         descriptor.describeProperty("spanFactory", spanFactory);
         descriptor.describeProperty("unitOfWorkFactory", unitOfWorkFactory);
-        descriptor.describeProperty("interception", interceptors);
+        descriptor.describeProperty("interceptors", interceptors);
     }
 }

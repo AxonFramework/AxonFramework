@@ -53,9 +53,9 @@ import java.lang.annotation.Target;
  * MessageHandlerInterceptorChain#proceedSync(ProcessingContext)} method on it</li>
  * </ul>
  * <p>
- * It is possible to have multiple interception for the same command. In that case, if there are interception in both
+ * It is possible to have multiple interceptors for the same command. In that case, if there are interceptors in both
  * parent and child entity, the method in the parent entity will be invoked first. The order of invocation of
- * interception within the same entity is not specified.
+ * interceptors within the same entity is not specified.
  *
  * @author Milan Savic
  * @since 3.3

@@ -82,9 +82,9 @@ public class InterceptingCommandBus implements CommandBus {
      * before dispatching is provided to the given {@code delegate}.
      *
      * @param delegate             The delegate {@code CommandBus} that will handle all dispatching and handling logic.
-     * @param handlerInterceptors  The interception to invoke before handling a command and if present on the command
+     * @param handlerInterceptors  The interceptors to invoke before handling a command and if present on the command
      *                             result.
-     * @param dispatchInterceptors The interception to invoke before dispatching a command and on the command result.
+     * @param dispatchInterceptors The interceptors to invoke before dispatching a command and on the command result.
      */
     public InterceptingCommandBus(
             @Nonnull CommandBus delegate,
@@ -93,10 +93,10 @@ public class InterceptingCommandBus implements CommandBus {
     ) {
         this.delegate = requireNonNull(delegate, "The command bus delegate must be null.");
         this.handlerInterceptors = new ArrayList<>(
-                requireNonNull(handlerInterceptors, "The handler interception must not be null.")
+                requireNonNull(handlerInterceptors, "The handler interceptors must not be null.")
         );
         this.dispatchInterceptors = new ArrayList<>(
-                requireNonNull(dispatchInterceptors, "The dispatch interception must not be null.")
+                requireNonNull(dispatchInterceptors, "The dispatch interceptors must not be null.")
         );
         this.interceptingDispatcher = new InterceptingDispatcher(dispatchInterceptors, this::dispatchCommand);
     }

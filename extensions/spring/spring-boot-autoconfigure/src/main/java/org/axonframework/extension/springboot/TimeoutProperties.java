@@ -248,7 +248,7 @@ public class TimeoutProperties {
         private TaskTimeoutSettings deadline = new TaskTimeoutSettings(60000, 10000, 1000);
 
         /**
-         * Timeout settings for all event processing, unless a more specific setting is registered via the
+         * Timeout settings for all event processors, unless a more specific setting is registered via the
          * {@code event-processor} property. Defaults to 5-second timeout, 2-second warning threshold and a warning
          * interval of 1 second.
          */
@@ -256,7 +256,7 @@ public class TimeoutProperties {
         private TaskTimeoutSettings eventProcessors = new TaskTimeoutSettings(60000, 10000, 1000);
 
         /**
-         * Timeout settings for specific event processing. The key is the name of the event processor, the value is the
+         * Timeout settings for specific event processors. The key is the name of the event processor, the value is the
          * timeout settings for that event processor. Defaults to an empty map.
          */
         private final Map<String, TaskTimeoutSettings> eventProcessor = new HashMap<>();
@@ -319,30 +319,30 @@ public class TimeoutProperties {
         }
 
         /**
-         * Timeout settings for all event processing, unless a more specific setting is registered via the
+         * Timeout settings for all event processors, unless a more specific setting is registered via the
          * {@code event-processor} property. Defaults to 60-second timeout, 10-second warning threshold and a warning
          * interval of 1 second.
          *
-         * @return the timeout settings for event processing
+         * @return the timeout settings for event processors
          */
         public TaskTimeoutSettings getEventProcessors() {
             return eventProcessors;
         }
 
         /**
-         * Sets the timeout settings for event processing.
+         * Sets the timeout settings for event processors.
          *
-         * @param eventProcessors the timeout settings for event processing
+         * @param eventProcessors the timeout settings for event processors
          */
         public void setEventProcessors(TaskTimeoutSettings eventProcessors) {
             this.eventProcessors = eventProcessors;
         }
 
         /**
-         * Timeout settings for specific event processing. The key is the name of the event processor, the value is the
+         * Timeout settings for specific event processors. The key is the name of the event processor, the value is the
          * timeout settings for that event processor. Defaults to an empty map.
          *
-         * @return the timeout settings for specific event processing
+         * @return the timeout settings for specific event processors
          */
         public Map<String, TaskTimeoutSettings> getEventProcessor() {
             return eventProcessor;

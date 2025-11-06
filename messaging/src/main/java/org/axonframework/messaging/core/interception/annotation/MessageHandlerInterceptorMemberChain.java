@@ -27,8 +27,8 @@ import org.axonframework.messaging.core.unitofwork.LegacyMessageSupportingContex
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 /**
- * Interface to interact with a MessageHandlingMember instance through a chain of interception, which were used to build
- * up this chain. Unlike regular handlers, interception have the ability to act on messages on their way to the regular
+ * Interface to interact with a MessageHandlingMember instance through a chain of interceptors, which were used to build
+ * up this chain. Unlike regular handlers, interceptors have the ability to act on messages on their way to the regular
  * handler, and have the ability to block these messages.
  *
  * @param <T> The type that declares the handlers in this chain
@@ -38,16 +38,16 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 public interface MessageHandlerInterceptorMemberChain<T> {
 
     /**
-     * Handle the given {@code message} by passing it through the interception and ultimately to the given
+     * Handle the given {@code message} by passing it through the interceptors and ultimately to the given
      * {@code handler} on the given {@code target} instance. The result of this invocation is the result as given by the
-     * {@code handler}, possibly modified by any of the interception in this chain.
+     * {@code handler}, possibly modified by any of the interceptors in this chain.
      *
      * @param message The message to pass through the interceptor chain.
      * @param context The context in which the message is being handled.
-     * @param target  The target instance to invoke the interception and handlers on.
-     * @param handler The actual handler to invoke once all interception have received the message.
-     * @return The result as returned by the handlers or interception.
-     * @throws Exception Any exception thrown by the handler or any of the interception.
+     * @param target  The target instance to invoke the interceptors and handlers on.
+     * @param handler The actual handler to invoke once all interceptors have received the message.
+     * @return The result as returned by the handlers or interceptors.
+     * @throws Exception Any exception thrown by the handler or any of the interceptors.
      */
     // TODO Remove entirely once #3065, #3195, #3517, and #3728 have been resolved.
     @Internal

@@ -49,7 +49,7 @@ public class EventMessageHandlerInterceptorChain implements MessageHandlerInterc
      * Constructs a new {@code EventMessageHandlerInterceptorChain} with a list of {@code interception} and an
      * {@code eventHandler}.
      *
-     * @param interceptors The list of handler interception that are part of this chain.
+     * @param interceptors The list of handler interceptors that are part of this chain.
      * @param eventHandler The event handler to be invoked at the end of the interceptor chain.
      */
     public EventMessageHandlerInterceptorChain(@Nonnull List<MessageHandlerInterceptor<? super EventMessage>> interceptors,

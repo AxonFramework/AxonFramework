@@ -34,8 +34,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 
 /**
- * Decorator around the {@link EventSink} interception all {@link EventMessage events} before they are
- * {@link #publish(ProcessingContext, List) published} with {@link MessageDispatchInterceptor dispatch interception}.
+ * Decorator around the {@link EventSink} intercepting all {@link EventMessage events} before they are
+ * {@link #publish(ProcessingContext, List) published} with {@link MessageDispatchInterceptor dispatch interceptors}.
  * <p>
  * This {@code InterceptingEventSink} is typically registered as a
  * {@link ComponentRegistry#registerDecorator(DecoratorDefinition) decorator} and automatically kicks in whenever
@@ -67,11 +67,11 @@ public class InterceptingEventSink implements EventSink {
     /**
      * Constructs a {@code InterceptingEventSink}, delegating publishing to the given {@code delegate}.
      * <p>
-     * The given {@code interception} are invoked before {@link #publish(ProcessingContext, List) publishing} is done by
+     * The given {@code interceptors} are invoked before {@link #publish(ProcessingContext, List) publishing} is done by
      * the given {@code delegate}.
      *
      * @param delegate     The delegate {@code EventSink} that will handle all dispatching and handling logic.
-     * @param interceptors The interception to invoke before publishing an event.
+     * @param interceptors The interceptors to invoke before publishing an event.
      */
     public InterceptingEventSink(@Nonnull EventSink delegate,
                                  @Nonnull List<MessageDispatchInterceptor<? super EventMessage>> interceptors) {

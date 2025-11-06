@@ -43,9 +43,9 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * Decorator around the {@link EventStore} interception all {@link EventMessage events} before they are
+ * Decorator around the {@link EventStore} intercepting all {@link EventMessage events} before they are
  * {@link EventStoreTransaction#appendEvent(EventMessage) appended} or
- * {@link #publish(ProcessingContext, List) published} with {@link MessageDispatchInterceptor dispatch interception}.
+ * {@link #publish(ProcessingContext, List) published} with {@link MessageDispatchInterceptor dispatch interceptors}.
  * <p>
  * This {@code InterceptingEventStore} is typically registered as a
  * {@link ComponentRegistry#registerDecorator(DecoratorDefinition) decorator} and automatically kicks in whenever
@@ -81,11 +81,11 @@ public class InterceptingEventStore implements EventStore {
     /**
      * Constructs a {@code InterceptingEventStore}, delegating all operation to the given {@code delegate}.
      * <p>
-     * The given {@code interception} are invoked before {@link EventStoreTransaction#appendEvent(EventMessage)} or
+     * The given {@code interceptors} are invoked before {@link EventStoreTransaction#appendEvent(EventMessage)} or
      * {@link #publish(ProcessingContext, List) publishing} is done by the given {@code delegate}.
      *
      * @param delegate     The delegate {@code EventSink} that will handle all dispatching and handling logic.
-     * @param interceptors The interception to invoke before appending and publishing an event.
+     * @param interceptors The interceptors to invoke before appending and publishing an event.
      */
     @Internal
     public InterceptingEventStore(@Nonnull EventStore delegate,
@@ -94,7 +94,7 @@ public class InterceptingEventStore implements EventStore {
         this.interceptingTransactionKey = Context.ResourceKey.withLabel("interceptingTransaction");
 
         this.delegate = Objects.requireNonNull(delegate, "The EventStore may not be null.");
-        this.interceptors = Objects.requireNonNull(interceptors, "The dispatch interception must not be null.");
+        this.interceptors = Objects.requireNonNull(interceptors, "The dispatch interceptors must not be null.");
         this.interceptingAppender =
                 new InterceptingAppender(interceptors, context -> context.getResource(delegateTransactionKey));
         this.delegateBus = new InterceptingEventBus(delegate, interceptors);
@@ -104,7 +104,7 @@ public class InterceptingEventStore implements EventStore {
     public EventStoreTransaction transaction(@Nonnull ProcessingContext processingContext) {
         // Set the delegate transaction to ensure the InterceptingAppender can reach the correct EventStoreTransaction.
         EventStoreTransaction delegateTransaction = getAndSetDelegateTransaction(processingContext);
-        // Set the interception transaction to ensure subsequent transaction operation receive the same interception transaction.
+        // Set the intercepting transaction to ensure subsequent transaction operation receive the same intercepting transaction.
         return processingContext.computeResourceIfAbsent(
                 interceptingTransactionKey,
                 () -> new InterceptingEventStoreTransaction(processingContext, delegateTransaction)

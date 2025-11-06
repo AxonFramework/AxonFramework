@@ -27,7 +27,7 @@ import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 /**
- * Interface for a source of {@link EventMessage EventMessages} to which event processing can subscribe.
+ * Interface for a source of {@link EventMessage EventMessages} to which event processors can subscribe.
  * <p>
  * Provides functionality to {@link #subscribe(BiFunction) subscribe} event batch consumers to receive
  * {@link EventMessage events} published to this source. When subscribed, consumers will receive all events published to
@@ -51,7 +51,7 @@ public interface SubscribableEventSource {
      * <p>
      * <b>Note on {@link ProcessingContext}:</b> The {@link ProcessingContext} parameter passed to the consumer may be
      * {@code null}. When {@code null}, it is the responsibility of the registered {@code eventsBatchConsumer} to create
-     * an appropriate {@link ProcessingContext} as needed for processing the events.
+     * an appropriate {@link ProcessingContext} as needed for processors the events.
      *
      * @param eventsBatchConsumer The event batches consumer to subscribe.
      * @return A {@link Registration} handle to unsubscribe the {@code eventsBatchConsumer}. When unsubscribed, it will

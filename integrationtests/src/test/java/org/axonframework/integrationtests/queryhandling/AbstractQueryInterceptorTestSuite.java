@@ -53,7 +53,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Abstract test suite for comprehensive {@link QueryBus} interceptor integration testing. Tests all interceptor
- * functionality for regular queries, subscription queries, and update interception.
+ * functionality for regular queries, subscription queries, and update interceptors.
  * <p>
  * This suite translates all test cases from {@code InterceptingQueryBusTest} to integration tests, validating that
  * interceptor functionality works correctly with both {@code SimpleQueryBus} and {@code DistributedQueryBus}.
@@ -89,7 +89,7 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
                         .expectNextCount(1)
                         .verifyComplete();
 
-            // then - Verify REQUEST interception: interception added metadata to the query BEFORE handler saw it
+            // then - Verify REQUEST interceptor: interception added metadata to the query BEFORE handler saw it
             assertThat(handler.getRecordedQueries()).hasSize(1);
 
             interceptingConfig.shutdown();
@@ -155,7 +155,7 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
                                                                                     StubProcessingContext.forMessage(
                                                                                             testQuery));
 
-            // then - Verify RESPONSE interception: interception added metadata to the response AFTER handler executed
+            // then - Verify RESPONSE interceptor: interception added metadata to the response AFTER handler executed
             QueryResponseMessage response = result.first().asCompletableFuture().join().message();
             assertTrue(response.metadata().containsKey("dispatch1"),
                        "Expected dispatch1 interceptor to add metadata to RESPONSE");
@@ -284,7 +284,7 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
             // when
             interceptingQueryBus.query(testQuery, context).first().asCompletableFuture().join();
 
-            // then - Verify REQUEST interception: handler interception added metadata to the query BEFORE handler saw it
+            // then - Verify REQUEST interceptor: handler interception added metadata to the query BEFORE handler saw it
             assertThat(handler.getRecordedQueries()).hasSize(1);
             QueryMessage recordedQuery = handler.getRecordedQueries().getFirst();
             assertTrue(recordedQuery.metadata().containsKey("handler1"),

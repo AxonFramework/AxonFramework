@@ -24,9 +24,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Meta-Annotation used to demarcate {@link MessageHandlerInterceptor} annotated methods as interception that should
+ * Meta-Annotation used to demarcate {@link MessageHandlerInterceptor} annotated methods as interceptors that should
  * only act on the result of a handler invocation. This gives these handlers the opportunity to act on the result only,
- * without interception the call on the way <em>to</em> the handler.
+ * without intercepting the call on the way <em>to</em> the handler.
  * <p>
  * The {@link #resultType()} can be used to limit the types of responses the handler should be invoked for.
  * <p>

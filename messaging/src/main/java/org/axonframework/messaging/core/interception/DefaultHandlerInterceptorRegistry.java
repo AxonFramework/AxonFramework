@@ -165,7 +165,7 @@ public class DefaultHandlerInterceptorRegistry implements HandlerInterceptorRegi
     }
 
 
-    // Solves common verification, creation and combining for all handler interception.
+    // Solves common verification, creation and combining for all handler interceptors.
     private static <T extends Message> List<MessageHandlerInterceptor<? super T>> resolveInterceptors(
             List<ComponentDefinition<MessageHandlerInterceptor<? super T>>> definitions,
             Configuration config

@@ -51,7 +51,7 @@ import java.util.function.UnaryOperator;
  * <p>
  * The main purpose is to provide shared configuration capabilities for all event processor types, allowing you to set
  * default configurations like {@link UnitOfWorkFactory} that apply to
- * all processing while still enabling type-specific customizations.
+ * all processors while still enabling type-specific customizations.
  * <p>
  * The module automatically configures default transaction management by registering a
  * {@link TransactionalUnitOfWorkFactory} when a {@link TransactionManager} is available in the configuration.
@@ -104,7 +104,7 @@ public class EventProcessingConfigurer {
      * Builds the configurer, registering the necessary modules and customizations.
      * <p>
      * This method is typically called by the {@link MessagingConfigurer} during
-     * application startup to finalize the configuration of event processing.
+     * application startup to finalize the configuration of event processors.
      */
     public void build() {
         componentRegistry(
@@ -121,14 +121,14 @@ public class EventProcessingConfigurer {
     }
 
     /**
-     * Configures default settings that will be applied to all event processing managed by this module.
+     * Configures default settings that will be applied to all event processors managed by this module.
      * <p>
      * This method allows you to specify configurations that should be shared across both pooled streaming and
-     * subscribing event processing. The provided function receives both the Axon {@link Configuration} and the
+     * subscribing event processors. The provided function receives both the Axon {@link Configuration} and the
      * {@link EventProcessorConfiguration}, allowing access to application-wide components when setting defaults.
      * <p>
      * Common use cases include setting default {@link UnitOfWorkFactory}, error
-     * handlers, or processing policies that should apply to all processing unless explicitly overridden.
+     * handlers, or processors policies that should apply to all processors unless explicitly overridden.
      *
      * @param configureDefaults A function that receives the Axon configuration and {@link EventProcessorConfiguration},
      *                          returning a modified {@link EventProcessorConfiguration} with the desired defaults
@@ -143,7 +143,7 @@ public class EventProcessingConfigurer {
     }
 
     /**
-     * Configures default settings that will be applied to all event processing managed by this module.
+     * Configures default settings that will be applied to all event processors managed by this module.
      * <p>
      * This is a simplified version of {@link #defaults(BiFunction)} that provides only the
      * {@link EventProcessorConfiguration} for modification, without access to the Axon {@link Configuration}. Use this
@@ -164,10 +164,10 @@ public class EventProcessingConfigurer {
      * Provides access to configure {@link PooledStreamingEventProcessor}
      * instances through the {@link PooledStreamingEventProcessorsConfigurer}.
      * <p>
-     * Use this method to define specific pooled streaming event processing, set their configurations, and register
+     * Use this method to define specific pooled streaming event processors, set their configurations, and register
      * event handling components. The provided function receives the module for
      * {@link PooledStreamingEventProcessor}s and can register individual
-     * processing or configure module-wide settings.
+     * processors or configure module-wide settings.
      *
      * @param processorsModuleTask A function that configures the {@link PooledStreamingEventProcessorsConfigurer}.
      * @return This module instance for method chaining.

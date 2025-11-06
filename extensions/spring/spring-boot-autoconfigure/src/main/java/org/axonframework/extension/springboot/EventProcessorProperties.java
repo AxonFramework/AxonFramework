@@ -43,22 +43,22 @@ import java.util.concurrent.TimeUnit;
 public class EventProcessorProperties {
 
     /**
-     * The configuration of each of the processing. The key is the name of the processor, the value represents the
+     * The configuration of each of the processors. The key is the name of the processor, the value represents the
      * settings to use for the processor with that name.
      */
     private final Map<String, ProcessorSettings> processors = new HashMap<>();
 
     /**
-     * Returns the settings for each of the configured processing, by name.
+     * Returns the settings for each of the configured processors, by name.
      *
-     * @return the settings for each of the configured processing, by name.
+     * @return the settings for each of the configured processors, by name.
      */
     public Map<String, ProcessorSettings> getProcessors() {
         return processors;
     }
 
     /**
-     * The processing modes of an {@link EventProcessor}.
+     * The processor modes of an {@link EventProcessor}.
      */
     public enum Mode {
         /**

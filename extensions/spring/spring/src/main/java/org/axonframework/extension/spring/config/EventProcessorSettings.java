@@ -27,7 +27,7 @@ import java.util.Map;
 /**
  * Event processor settings.
  * <p>
- * Subclasses are segregating settings for the different processing.
+ * Subclasses are segregating settings for the different processors.
  *
  * @author Simon Zambrovski
  * @since 5.0.0

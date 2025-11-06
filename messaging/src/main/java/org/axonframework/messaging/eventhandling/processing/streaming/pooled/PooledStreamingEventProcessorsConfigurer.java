@@ -40,19 +40,19 @@ import java.util.function.UnaryOperator;
  * A configurer for managing multiple {@link PooledStreamingEventProcessor} instances within an application.
  * <p>
  * The {@code PooledStreamingEventProcessorsModule} provides a centralized way to configure and register multiple pooled
- * streaming event processing. It acts as a container that manages individual
+ * streaming event processors. It acts as a container that manages individual
  * {@link PooledStreamingEventProcessorModule} instances, allowing you to set shared defaults that apply to all
- * processing while enabling processor-specific customizations.
+ * processors while enabling processor-specific customizations.
  * <p>
- * The main purpose is to simplify the configuration of multiple event processing by providing shared configuration
+ * The main purpose is to simplify the configuration of multiple event processors by providing shared configuration
  * capabilities such as default {@link TokenStore}, {@link StreamableEventSource}, and
- * processor settings that apply to all processing unless explicitly overridden.
+ * processor settings that apply to all processors unless explicitly overridden.
  * <p>
  * The configurer automatically configures default components:
  * <ul>
  * <li>Registers an {@link InMemoryTokenStore} if no
  * {@link TokenStore} is present</li>
- * <li>Automatically wires available {@link TokenStore} and {@link StreamableEventSource} components to all processing</li>
+ * <li>Automatically wires available {@link TokenStore} and {@link StreamableEventSource} components to all processors</li>
  * <li>Applies shared customizations through the {@link #defaults(BiFunction)} and {@link #defaults(UnaryOperator)} methods</li>
  * </ul>
  * <p>
@@ -70,7 +70,7 @@ public class PooledStreamingEventProcessorsConfigurer {
     private final List<ModuleBuilder<PooledStreamingEventProcessorModule>> moduleBuilders = new ArrayList<>();
 
     /**
-     * Constructs a new pooled streaming event processing configurer.
+     * Constructs a new pooled streaming event processors configurer.
      * <p>
      * This constructor is marked as {@link Internal} because the configurer is typically created and managed by the
      * {@link EventProcessingConfigurer}. Users should not instantiate this class directly but instead access it through
@@ -84,7 +84,7 @@ public class PooledStreamingEventProcessorsConfigurer {
     }
 
     /**
-     * Builds and registers all configured pooled streaming event processing.
+     * Builds and registers all configured pooled streaming event processors.
      * <p>
      * This method is typically called automatically by the framework during configuration building. It registers
      * default components and all configured processor modules.
@@ -113,11 +113,11 @@ public class PooledStreamingEventProcessorsConfigurer {
      * by this configurer.
      * <p>
      * This method allows you to specify configurations that should be shared across all pooled streaming event
-     * processing. The provided function receives both the Axon {@link Configuration} and the processor configuration,
+     * processors. The provided function receives both the Axon {@link Configuration} and the processor configuration,
      * allowing access to application-wide components when setting defaults.
      * <p>
      * Common use cases include setting default buffer sizes, segment counts, thread pool configurations, or error
-     * handling policies that should apply to all processing unless explicitly overridden.
+     * handling policies that should apply to all processors unless explicitly overridden.
      *
      * @param configureDefaults A function that receives the Axon configuration and processor configuration, returning a
      *                          modified {@link PooledStreamingEventProcessorConfiguration} with the desired defaults

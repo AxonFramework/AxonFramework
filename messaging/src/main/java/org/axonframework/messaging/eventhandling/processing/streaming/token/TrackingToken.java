@@ -25,7 +25,7 @@ import java.util.OptionalLong;
 
 /**
  * Tag interface identifying a token that is used to identify the position of an event in an event stream. Event
- * processing use this token to keep track of the events they have processed and still need to process.
+ * processors use this token to keep track of the events they have processed and still need to process.
  *
  * @author Rene de Waele
  * @since 3.0.0

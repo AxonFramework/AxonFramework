@@ -34,7 +34,7 @@ import java.util.function.Function;
  * Interface for configuring individual {@link EventProcessor} modules.
  * <p>
  * This interface is typically not implemented or used directly. Instead, use the provided factory methods to create
- * specific processor modules, or access existing processing through parent module configurations like
+ * specific processor modules, or access existing processor through parent module configurations like
  * {@link SubscribingEventProcessorsConfigurer} or {@link PooledStreamingEventProcessorsConfigurer}.
  * <p>
  * Example usage:
@@ -105,7 +105,7 @@ public interface EventProcessorModule extends Module {
     /**
      * Configuration phase interface that provides methods for setting up event processor configurations.
      * <p>
-     * This interface offers two approaches for finishing event processing setup:
+     * This interface offers two approaches for finishing event processor setup:
      * <ul>
      * <li>{@link #notCustomized()} - Just accepts the shared and type-specific configuration without customizing it</li>
      * <li>{@link #customized(BiFunction)} - Incremental customization on top of shared and type-specific defaults</li>

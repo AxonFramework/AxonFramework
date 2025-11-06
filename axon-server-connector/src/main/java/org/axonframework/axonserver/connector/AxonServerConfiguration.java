@@ -154,13 +154,13 @@ public class AxonServerConfiguration {
     private int queryResponseThreads = 5;
 
     /**
-     * The interval (in ms.) application sends status update on event processing to Axon Server. Defaults to
+     * The interval (in ms.) application sends status update on event processors to Axon Server. Defaults to
      * {@code 500} milliseconds.
      */
     private int processorsNotificationRate = 500;
 
     /**
-     * The initial delay (in ms.) before application sends first status update on event processing to Axon Server.
+     * The initial delay (in ms.) before application sends first status update on event processors to Axon Server.
      * Defaults to {@code 5000} milliseconds.
      */
     private int processorsNotificationInitialDelay = 5000;
@@ -273,7 +273,7 @@ public class AxonServerConfiguration {
 //    private final Map<String, PersistentStreamSettings> persistentStreams = new HashMap<>();
 
     /**
-     * A toggle dictating whether to create persistent streams for all processing groups. Defaults to {@code false}.
+     * A toggle dictating whether to create persistent streams for all processors groups. Defaults to {@code false}.
      */
     private boolean autoPersistentStreamsEnable = false;
 
@@ -371,7 +371,7 @@ public class AxonServerConfiguration {
      * <p>
      * Each persistent stream will be named according to the following pattern:
      * <p>
-     * processingGroupName + "-stream"
+     * processorGroupName + "-stream"
      *
      * @return Return the settings for all persistent streams that will be created automatically.
      */
@@ -722,20 +722,20 @@ public class AxonServerConfiguration {
     }
 
     /**
-     * The interval (in ms.) application sends status update on event processing to Axon Server. Defaults to
+     * The interval (in ms.) application sends status update on event processor to Axon Server. Defaults to
      * {@code 500} milliseconds.
      *
-     * @return The interval (in ms.) application sends status update on event processing to Axon Server.
+     * @return The interval (in ms.) application sends status update on event processor to Axon Server.
      */
     public int getProcessorsNotificationRate() {
         return processorsNotificationRate;
     }
 
     /**
-     * Sets the interval (in ms.) application sends status update on event processing to Axon Server. Defaults to
+     * Sets the interval (in ms.) application sends status update on event processor to Axon Server. Defaults to
      * {@code 500} milliseconds.
      *
-     * @param processorsNotificationRate The interval (in ms.) application sends status update on event processing to
+     * @param processorsNotificationRate The interval (in ms.) application sends status update on event processor to
      *                                   Axon Server.
      */
     public void setProcessorsNotificationRate(int processorsNotificationRate) {
@@ -743,10 +743,10 @@ public class AxonServerConfiguration {
     }
 
     /**
-     * The initial delay (in ms.) before application sends first status update on event processing to Axon Server.
+     * The initial delay (in ms.) before application sends first status update on event processor to Axon Server.
      * Defaults to {@code 5000} milliseconds.
      *
-     * @return The initial delay (in ms.) before application sends first status update on event processing to Axon
+     * @return The initial delay (in ms.) before application sends first status update on event processor to Axon
      * Server.
      */
     public int getProcessorsNotificationInitialDelay() {
@@ -754,11 +754,11 @@ public class AxonServerConfiguration {
     }
 
     /**
-     * Sets the initial delay (in ms.) before application sends first status update on event processing to Axon Server.
+     * Sets the initial delay (in ms.) before application sends first status update on event processor to Axon Server.
      * Defaults to {@code 5000} milliseconds.
      *
      * @param processorsNotificationInitialDelay The initial delay (in ms.) before application sends first status update
-     *                                           on event processing to Axon Server.
+     *                                           on event processor to Axon Server.
      */
     public void setProcessorsNotificationInitialDelay(int processorsNotificationInitialDelay) {
         this.processorsNotificationInitialDelay = processorsNotificationInitialDelay;
@@ -1315,15 +1315,15 @@ public class AxonServerConfiguration {
     public static class Eventhandling {
 
         /**
-         * The configuration of each of the processing. The key is the name of the processor, the value represents the
+         * The configuration of each of the processors. The key is the name of the processor, the value represents the
          * settings to use for the processor with that name.
          */
         private final Map<String, ProcessorSettings> processors = new HashMap<>();
 
         /**
-         * Returns the settings for each of the configured processing, by name.
+         * Returns the settings for each of the configured processors, by name.
          *
-         * @return the settings for each of the configured processing, by name.
+         * @return the settings for each of the configured processors, by name.
          */
         public Map<String, ProcessorSettings> getProcessors() {
             return processors;

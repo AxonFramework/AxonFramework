@@ -44,7 +44,7 @@ public interface MessageDispatchInterceptor<M extends Message> {
      *
      * @param message          The message to intercept on dispatching.
      * @param context          The active processing context, if any. Can be used to (e.g.) validate correlation data.
-     * @param interceptorChain The interceptor chain to signal that processing is finished and further interception
+     * @param interceptorChain The interceptor chain to signal that processing is finished and further interceptors
      *                         should be called.
      * @return The resulting message stream from
      * {@link MessageDispatchInterceptorChain#proceed(Message, ProcessingContext)}.

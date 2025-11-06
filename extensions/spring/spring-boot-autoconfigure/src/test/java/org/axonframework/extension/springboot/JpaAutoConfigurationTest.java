@@ -109,7 +109,7 @@ class JpaAutoConfigurationTest {
     @Disabled("TODO #3517")
     void sequencedDeadLetterQueueCanBeSetViaSpringConfiguration() {
       /*
-        testContext.withPropertyValues("axon.eventhandling.processing.first.dlq.enabled=true")
+        testContext.withPropertyValues("axon.eventhandling.processors.first.dlq.enabled=true")
                    .run(context -> {
                        assertNotNull(context.getBean(DeadLetterQueueProviderConfigurerModule.class));
 

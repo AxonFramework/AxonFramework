@@ -32,8 +32,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 
 /**
- * Decorator around the {@link EventBus} interception all {@link EventMessage events} before they are
- * {@link #publish(ProcessingContext, List) published} with {@link MessageDispatchInterceptor dispatch interception}.
+ * Decorator around the {@link EventBus} interceptors all {@link EventMessage events} before they are
+ * {@link #publish(ProcessingContext, List) published} with {@link MessageDispatchInterceptor dispatch interceptors}.
  * <p>
  * This {@code InterceptingEventBus} is typically registered as a
  * {@link ComponentRegistry#registerDecorator(DecoratorDefinition) decorator} and automatically kicks in whenever
@@ -66,11 +66,11 @@ public class InterceptingEventBus implements EventBus {
     /**
      * Constructs a {@code InterceptingEventBus}, delegating all operations to the given {@code delegate}.
      * <p>
-     * The given {@code interception} are invoked before {@link #publish(ProcessingContext, List) publishing} is done
+     * The given {@code interceptors} are invoked before {@link #publish(ProcessingContext, List) publishing} is done
      * by the given {@code delegate}.
      *
      * @param delegate     The delegate {@code EventBus} that will handle all dispatching and handling logic.
-     * @param interceptors The interception to invoke before publishing an event.
+     * @param interceptors The interceptors to invoke before publishing an event.
      */
     @Internal
     public InterceptingEventBus(@Nonnull EventBus delegate,

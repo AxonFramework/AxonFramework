@@ -42,9 +42,9 @@ import java.util.List;
  * {@link #queryInterceptors(Configuration)}, and {@link #subscriptionQueryUpdateInterceptors(Configuration)}.
  * <p>
  * These operations are expected to be invoked within a {@link DecoratorDefinition}. As
- * such, <b>any</b> registered interception are <b>only</b> applied when the infrastructure component requiring them is
+ * such, <b>any</b> registered interceptors are <b>only</b> applied when the infrastructure component requiring them is
  * constructed. When, for example, an {@link InterceptingCommandBus} is constructed,
- * this registry is invoked to retrieve interception. Interceptors that are registered once the
+ * this registry is invoked to retrieve interceptors. Interceptors that are registered once the
  * {@code InterceptingCommandBus} has already been constructed are not taken into ac
  *
  * @author Steven van Beelen

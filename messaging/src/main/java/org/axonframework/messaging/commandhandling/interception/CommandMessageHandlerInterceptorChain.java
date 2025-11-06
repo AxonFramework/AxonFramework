@@ -46,10 +46,10 @@ public class CommandMessageHandlerInterceptorChain implements MessageHandlerInte
     private final CommandHandler interceptingHandler;
 
     /**
-     * Constructs a new {@code CommandMessageHandlerInterceptorChain} with a list of {@code interception} and an
+     * Constructs a new {@code CommandMessageHandlerInterceptorChain} with a list of {@code interceptors} and an
      * {@code commandHandler}.
      *
-     * @param interceptors   The list of handler interception that are part of this chain.
+     * @param interceptors   The list of handler interceptors that are part of this chain.
      * @param commandHandler The command handler to be invoked at the end of the interceptor chain.
      */
     public CommandMessageHandlerInterceptorChain(@Nonnull List<MessageHandlerInterceptor<? super CommandMessage>> interceptors,

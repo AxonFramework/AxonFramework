@@ -187,7 +187,7 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
         }
     }
 
-    // Solves common verification, creation and combining for all dispatch interception.
+    // Solves common verification, creation and combining for all dispatch interceptors.
     private static <T extends Message> List<MessageDispatchInterceptor<? super T>> resolveInterceptors(
             List<ComponentDefinition<MessageDispatchInterceptor<? super T>>> definitions,
             Configuration config

@@ -75,7 +75,7 @@ public class EventProcessorControlService {
      * configured load balancing strategies through the {@link AdminChannel} of the {@code context}.
      *
      * @param configuration     The {@link EventProcessor} configuration of this application, used to retrieve the
-     *                          registered event processing from.
+     *                          registered event processors from.
      * @param connectionManager A {@link AxonServerConnectionManager} from which to retrieve the {@link ControlChannel}
      *                          and {@link AdminChannel}.
      * @param context           The context of this application instance to retrieve the {@link ControlChannel} and
@@ -102,7 +102,7 @@ public class EventProcessorControlService {
      * {@code context} and set the load balancing strategies through the {@link AdminChannel} for the configured
      * {@code context}.
      * <p>
-     * The registration is performed in {@link Phase#INBOUND_EVENT_CONNECTORS} phase, to ensure the event processing
+     * The registration is performed in {@link Phase#INBOUND_EVENT_CONNECTORS} phase, to ensure the event processors
      * this service provides control over have been started.
      */
     public void start() {

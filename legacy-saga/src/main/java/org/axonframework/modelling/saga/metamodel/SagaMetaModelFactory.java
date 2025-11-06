@@ -36,7 +36,7 @@ public interface SagaMetaModelFactory {
 
     /**
      * Returns an Interceptor Chain of annotated interceptor methods for the given {@code sagaType}. The given chain
-     * will invoke all relevant interception in an order defined by the handler definition.
+     * will invoke all relevant interceptors in an order defined by the handler definition.
      *
      * @param sagaType The saga class to be inspected
      * @param <T>      The saga type

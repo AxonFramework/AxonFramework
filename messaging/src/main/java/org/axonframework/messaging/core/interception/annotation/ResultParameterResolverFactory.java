@@ -32,7 +32,7 @@ import java.util.function.Function;
 
 /**
  * ParameterResolverFactory that provides support for Parameters where the result of Handler execution is expected to be
- * injected. This is only possible in interceptor handlers that need to act on the result of downstream interception or
+ * injected. This is only possible in interceptor handlers that need to act on the result of downstream interceptors or
  * the regular handler.
  * <p>
  * The {@link ResultHandler @ResultHandler} Meta-Annotation needs to be placed on handlers that support interacting with
@@ -46,7 +46,7 @@ public class ResultParameterResolverFactory implements ParameterResolverFactory 
 
     private static final ThreadLocal<Object> REGISTERED_RESULT = new ThreadLocal<>();
     private static final Object IGNORE_RESULT_PARAMETER_MARKER = new Object();
-    private static final ResourceKey<Object> RESOURCE_KEY = ResourceKey.withLabel("Invocation result for interception");
+    private static final ResourceKey<Object> RESOURCE_KEY = ResourceKey.withLabel("Invocation result for interceptors");
 
     public static <R> R callWithResult(Object result,
                                        ProcessingContext processingContext,

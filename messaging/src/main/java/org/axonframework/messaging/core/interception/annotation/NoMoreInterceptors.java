@@ -24,7 +24,7 @@ import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 /**
- * This will implement {@link MessageHandlerInterceptorMemberChain} with no more interception. It can be used a default
+ * This will implement {@link MessageHandlerInterceptorMemberChain} with no more interceptors. It can be used a default
  * interceptor, for example in the {@link AnnotatedHandlerInspector}.
  *
  * @param <T> the type of the handlers

@@ -71,7 +71,7 @@ class InterceptorAutoConfigurationTest {
     }
 
     @Test
-    @Disabled("TODO # #3485 - Ordering of interception is not supported")
+    @Disabled("TODO # #3485 - Ordering of interceptors is not supported")
     public void commandHandlerInterceptorsAreRegisteredInCorrectOrder() {
         testApplicationContext.withUserConfiguration(MessageInterceptorContext.class).run(context -> {
             context.getBean(CommandGateway.class).sendAndWait(new Object());
@@ -95,7 +95,7 @@ class InterceptorAutoConfigurationTest {
     }
 
     @Test
-    @Disabled("TODO # #3485 - Ordering of interception is not supported")
+    @Disabled("TODO # #3485 - Ordering of interceptors is not supported")
     public void queryHandlerInterceptorsAreRegisteredInCorrectOrder() {
         testApplicationContext.withUserConfiguration(MessageInterceptorContext.class).run(context -> {
             context.getBean(QueryGateway.class).query("foo", String.class, null);
@@ -120,7 +120,7 @@ class InterceptorAutoConfigurationTest {
     }
 
     @Test
-    @Disabled("TODO # #3485 - Ordering of interception is not supported")
+    @Disabled("TODO # #3485 - Ordering of interceptors is not supported")
     public void eventHandlerInterceptorsAreRegisteredInCorrectOrder() {
         testApplicationContext.withUserConfiguration(MessageInterceptorContext.class).run(context -> {
             context.getBean(EventGateway.class).publish(null, "foo");

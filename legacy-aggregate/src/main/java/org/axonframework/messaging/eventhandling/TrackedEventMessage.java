@@ -21,7 +21,7 @@ import org.axonframework.messaging.eventhandling.processing.streaming.token.Trac
 
 /**
  * Represents an {@link EventMessage} containing a {@link TrackingToken}. The tracking token can be used be
- * {@link EventProcessor event processing} to keep track of which events it has processed.
+ * {@link EventProcessor event processor} to keep track of which events it has processed.
  *
  * @param <T> The type of payload contained in this Message
  * @author Rene de Waele
