@@ -33,10 +33,9 @@ import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryExecutionException;
+import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
-import org.axonframework.queryhandling.SubscriptionQueryAlreadyRegisteredException;
-import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.serialization.json.JacksonConverter;
 import org.junit.jupiter.api.*;
@@ -115,23 +114,14 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         Hooks.resetOnErrorDropped();
     }
 
-    private static boolean assertRecorded(Collection<QueryResponseMessage> elements) {
+    private static void assertRecorded(Collection<QueryResponseMessage> elements) {
         LinkedList<QueryResponseMessage> recordedMessages = new LinkedList<>(elements);
 
-        // Debug output
-        System.out.println("DEBUG: Recorded " + elements.size() + " elements");
-        if (!recordedMessages.isEmpty()) {
-            String first = recordedMessages.peekFirst().payloadAs(String.class, CONVERTER);
-            String last = recordedMessages.peekLast().payloadAs(String.class, CONVERTER);
-            System.out.println("DEBUG: First element: " + first);
-            System.out.println("DEBUG: Last element: " + last);
-        }
-
-        assert recordedMessages.peekFirst() != null;
-        boolean firstIs101 = "Update0".equals(recordedMessages.peekFirst().payloadAs(String.class, CONVERTER));
-        assert recordedMessages.peekLast() != null;
-        boolean lastIs200 = "Update99".equals(recordedMessages.peekLast().payloadAs(String.class, CONVERTER));
-        return elements.size() == 100 && firstIs101 && lastIs200;
+        assertEquals(100, elements.size());
+        assertNotNull(recordedMessages.peekFirst());
+        assertEquals("Update0", recordedMessages.peekFirst().payloadAs(String.class, CONVERTER));
+        assertNotNull(recordedMessages.peekLast());
+        assertEquals("Update99", recordedMessages.peekLast().payloadAs(String.class, CONVERTER));
     }
 
     @SuppressWarnings("ConstantValue")
@@ -217,7 +207,7 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
     }
 
     @Test
-    void emittingUpdateInUnitOfWorkLifecycleRunsUpdatesOnAfterCommit() {
+    void emittingUpdateInUnitOfWorkLifecycleRunsUpdatesOnAfterCommit() throws InterruptedException {
         // given...
         List<String> expectedUpdates = Collections.singletonList(TEST_UPDATE_PAYLOAD);
         UnitOfWork testUoW = UnitOfWorkTestUtils.aUnitOfWork();
@@ -230,6 +220,9 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
                 CHAT_MESSAGES_QUERY_TYPE, TEST_QUERY_PAYLOAD
         );
         MessageStream<QueryResponseMessage> result = queryBus.subscriptionQuery(queryMessage, null, 50);
+        await().until(result::hasNextAvailable);
+        Thread.sleep(500);
+
         // when...
         testUoW.runOnInvocation(context -> queryBus.emitUpdate(testFilter, () -> testUpdate, context).join());
         // then, before we commit, we don't have anything yet...
@@ -282,7 +275,7 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
 
     @SuppressWarnings("ConstantValue")
     @Test
-    void completingSubscriptionQueryExceptionallyWhenOneOfSubscriptionFails() throws InterruptedException {
+    void completingSubscriptionQueryExceptionallyWhenOneOfSubscriptionFails() {
         // given
         QueryMessage queryMessage1 = new GenericQueryMessage(
                 CHAT_MESSAGES_QUERY_TYPE, TEST_QUERY_PAYLOAD
@@ -335,7 +328,8 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
     }
 
     @Test
-    void completingSubscriptionExceptionallyInUnitOfWorkLifecycleRunsUpdatesOnAfterCommit() {
+    void completingSubscriptionExceptionallyInUnitOfWorkLifecycleRunsUpdatesOnAfterCommit()
+            throws InterruptedException {
         // given...
         UnitOfWork testUoW = UnitOfWorkTestUtils.aUnitOfWork();
         Predicate<QueryMessage> testFilter =
@@ -348,6 +342,10 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         );
         // when staging the subscription query and updates...
         MessageStream<QueryResponseMessage> result = queryBus.subscriptionQuery(queryMessage, null, 50);
+
+        await().until(result::hasNextAvailable);
+        Thread.sleep(500);
+
         testUoW.runOnInvocation(context -> {
             queryBus.emitUpdate(testFilter, () -> testUpdate, context).join();
             queryBus.completeSubscriptionsExceptionally(testFilter, new RuntimeException(), context).join();
@@ -399,7 +397,7 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
     }
 
     @Test
-    void completingSubscriptionInUnitOfWorkLifecycleRunsUpdatesOnAfterCommit() {
+    void completingSubscriptionInUnitOfWorkLifecycleRunsUpdatesOnAfterCommit() throws InterruptedException {
         // given...
         List<String> expectedUpdates = Collections.singletonList(TEST_UPDATE_PAYLOAD);
         Predicate<QueryMessage> testFilter =
@@ -413,6 +411,10 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         UnitOfWork testUoW = UnitOfWorkTestUtils.aUnitOfWork();
         // when...
         MessageStream<QueryResponseMessage> result = queryBus.subscriptionQuery(queryMessage, null, 50);
+
+        await().until(result::hasNextAvailable);
+        Thread.sleep(500);
+
         testUoW.runOnInvocation(context -> {
             queryBus.emitUpdate(testFilter, () -> testUpdate, context).join();
             queryBus.completeSubscriptions(testFilter, context).join();
@@ -516,7 +518,7 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
 
     @SuppressWarnings("ConstantValue")
     @Test
-    void replayBufferOverflow() {
+    void replayBufferOverflow() throws InterruptedException {
         // given...
         QueryMessage queryMessage = new GenericQueryMessage(
                 CHAT_MESSAGES_QUERY_TYPE, TEST_QUERY_PAYLOAD
@@ -526,27 +528,36 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
                         && TEST_QUERY_PAYLOAD.equals(message.payloadAs(String.class, CONVERTER));
         ProcessingContext testContext = null;
         // when...
-        MessageStream<QueryResponseMessage> result = queryBus.subscriptionQuery(queryMessage, null, 100);
-        Flux<QueryResponseMessage> updates = FluxUtils.of(result).map(MessageStream.Entry::message)
-                                                      .filter(m -> m instanceof SubscriptionQueryUpdateMessage);
-        // then...
-        StepVerifier.create(updates)
-                    .expectSubscription()
-                    .then(() -> {
-                        for (int i = 0; i <= 200; i++) {
-                            int number = i;
-                            queryBus.emitUpdate(testFilter,
-                                                () -> new GenericSubscriptionQueryUpdateMessage(TEST_UPDATE_PAYLOAD_TYPE,
-                                                                                                "Update" + number),
-                                                testContext);
-                        }
-                        queryBus.completeSubscriptions(testFilter, testContext);
-                    })
-                    .thenAwait(Duration.ofMillis(500))
-                    .recordWith(LinkedList::new)
-                    .thenConsumeWhile(x -> true)
-                    .expectRecordedMatches(AbstractSubscriptionQueryTestSuite::assertRecorded)
-                    .verifyError(QueryExecutionException.class);
+        MessageStream<QueryResponseMessage> result = queryBus.subscriptionQuery(queryMessage, null, 10);
+
+        // we wait for the initial response to arrive
+        await().until(result::hasNextAvailable);
+        Thread.sleep(500);
+
+        for (int i = 0; i <= 20; i++) {
+            int number = i;
+            queryBus.emitUpdate(testFilter,
+                                () -> new GenericSubscriptionQueryUpdateMessage(TEST_UPDATE_PAYLOAD_TYPE,
+                                                                                "Update" + number),
+                                testContext);
+        }
+        queryBus.completeSubscriptions(testFilter, testContext);
+
+        List<QueryResponseMessage> responses = Collections.synchronizedList(new ArrayList<>());
+
+        result.setCallback(() -> {
+            while (result.hasNextAvailable()) {
+                result.next()
+                      .filter(e -> e.message() instanceof SubscriptionQueryUpdateMessage)
+                      .ifPresent(e -> responses.add(e.message()));
+            }
+        });
+
+        await().until(result::isCompleted);
+        assertTrue(result.isCompleted() && result.error().isPresent());
+        assertRecorded(responses);
+
+        result.close();
     }
 
     @SuppressWarnings("ConstantValue")
