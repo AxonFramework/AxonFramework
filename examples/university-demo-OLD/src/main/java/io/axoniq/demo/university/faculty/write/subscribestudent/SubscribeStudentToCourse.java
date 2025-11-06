@@ -2,7 +2,7 @@ package io.axoniq.demo.university.faculty.write.subscribestudent;
 
 import io.axoniq.demo.university.shared.ids.CourseId;
 import io.axoniq.demo.university.shared.ids.StudentId;
-import org.axonframework.modelling.annotations.TargetEntityId;
+import org.axonframework.modelling.annotation.TargetEntityId;
 
 public record SubscribeStudentToCourse(StudentId studentId, CourseId courseId) {
 

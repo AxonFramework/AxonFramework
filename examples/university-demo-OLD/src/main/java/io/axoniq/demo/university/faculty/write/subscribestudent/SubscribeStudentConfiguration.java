@@ -1,6 +1,6 @@
 package io.axoniq.demo.university.faculty.write.subscribestudent;
 
-import org.axonframework.commandhandling.configuration.CommandHandlingModule;
+import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 

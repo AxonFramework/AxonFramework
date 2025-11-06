@@ -8,7 +8,7 @@ import io.axoniq.demo.university.shared.configuration.NotificationServiceConfigu
 import io.axoniq.demo.university.shared.ids.CourseId;
 import io.axoniq.demo.university.shared.ids.StudentId;
 import io.axoniq.demo.university.shared.infrastructure.notifier.RecordingNotificationService;
-import org.axonframework.configuration.Configuration;
+import org.axonframework.common.configuration.Configuration;
 import org.axonframework.test.fixture.AxonTestFixture;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

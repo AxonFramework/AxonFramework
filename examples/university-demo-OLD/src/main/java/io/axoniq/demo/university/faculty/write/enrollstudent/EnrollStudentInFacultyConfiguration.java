@@ -1,9 +1,9 @@
 package io.axoniq.demo.university.faculty.write.enrollstudent;
 
 import io.axoniq.demo.university.shared.ids.StudentId;
-import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
 
 public class EnrollStudentInFacultyConfiguration {
 

@@ -2,13 +2,13 @@ package io.axoniq.demo.university;
 
 import io.axoniq.demo.university.faculty.FacultyModuleConfiguration;
 import org.assertj.core.api.Assertions;
-import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.configuration.AxonConfiguration;
-import org.axonframework.eventhandling.gateway.EventGateway;
+import org.axonframework.common.configuration.AxonConfiguration;
+import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.eventhandling.gateway.EventGateway;
+import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.test.fixture.MessagesRecordingConfigurationEnhancer;
 import org.axonframework.test.fixture.RecordingEventStore;
 import org.axonframework.test.server.AxonServerContainerUtils;

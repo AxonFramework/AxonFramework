@@ -2,12 +2,12 @@ package io.axoniq.demo.university.faculty.automation.studentsubscribednotifierpl
 
 import io.axoniq.demo.university.faculty.events.StudentSubscribedToCourse;
 import io.axoniq.demo.university.shared.ids.StudentId;
-import org.axonframework.eventhandling.SimpleEventHandlingComponent;
-import org.axonframework.eventhandling.configuration.EventProcessorModule;
-import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessorModule;
-import org.axonframework.eventhandling.sequencing.PropertySequencingPolicy;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
+import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
+import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorModule;
+import org.axonframework.messaging.eventhandling.sequencing.PropertySequencingPolicy;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.messaging.QualifiedName;
 
 public class StudentSubscribedNotifierConfiguration {
 

@@ -7,7 +7,7 @@ import io.axoniq.demo.university.shared.ids.CourseId;
 import io.axoniq.demo.university.shared.ids.StudentId;
 import org.awaitility.Awaitility;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.queryhandling.gateway.QueryGateway;
+import org.axonframework.messaging.queryhandling.gateway.QueryGateway;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;

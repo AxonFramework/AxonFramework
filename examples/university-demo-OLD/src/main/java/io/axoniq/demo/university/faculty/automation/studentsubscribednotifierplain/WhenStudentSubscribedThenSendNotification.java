@@ -2,11 +2,11 @@ package io.axoniq.demo.university.faculty.automation.studentsubscribednotifierpl
 
 import io.axoniq.demo.university.faculty.events.StudentSubscribedToCourse;
 import io.axoniq.demo.university.shared.application.notifier.NotificationService;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.conversion.MessageConverter;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.conversion.MessageConverter;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
 
 /**
  * Automation that reacts on {@link StudentSubscribedToCourse} events and sends a notification.

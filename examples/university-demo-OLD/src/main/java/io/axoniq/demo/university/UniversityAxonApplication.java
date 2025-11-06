@@ -9,9 +9,9 @@ import io.axoniq.demo.university.faculty.write.renamecourse.RenameCourse;
 import io.axoniq.demo.university.shared.ids.StudentId;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConfigurationEnhancer;
-import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.common.configuration.AxonConfiguration;
+import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
 import org.axonframework.common.infra.FilesystemStyleComponentDescriptor;
-import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 
 import java.util.function.UnaryOperator;

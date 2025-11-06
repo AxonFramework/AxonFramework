@@ -3,9 +3,9 @@ package io.axoniq.demo.university.faculty.write.createcourse;
 import io.axoniq.demo.university.faculty.events.CourseCreated;
 import io.axoniq.demo.university.faculty.events.CourseRenamed;
 import io.axoniq.demo.university.shared.ids.CourseId;
-import org.axonframework.eventhandling.annotations.EventHandler;
-import org.axonframework.eventhandling.annotations.SequencingPolicy;
-import org.axonframework.eventhandling.sequencing.SequentialPolicy;
+import org.axonframework.messaging.eventhandling.annotation.EventHandler;
+import org.axonframework.messaging.eventhandling.annotation.SequencingPolicy;
+import org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy;
 
 import java.util.HashMap;
 import java.util.Map;

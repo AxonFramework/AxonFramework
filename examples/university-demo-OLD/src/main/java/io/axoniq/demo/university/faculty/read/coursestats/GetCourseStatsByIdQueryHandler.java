@@ -1,6 +1,6 @@
 package io.axoniq.demo.university.faculty.read.coursestats;
 
-import org.axonframework.queryhandling.annotations.QueryHandler;
+import org.axonframework.messaging.queryhandling.annotation.QueryHandler;
 
 public record GetCourseStatsByIdQueryHandler(
         CourseStatsRepository repository
