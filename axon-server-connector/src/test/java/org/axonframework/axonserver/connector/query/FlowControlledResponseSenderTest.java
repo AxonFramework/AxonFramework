@@ -19,11 +19,11 @@ package org.axonframework.axonserver.connector.query;
 import io.axoniq.axonserver.connector.ErrorCategory;
 import io.axoniq.axonserver.connector.ReplyChannel;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
-import org.axonframework.messaging.Context;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.QueueMessageStream;
-import org.axonframework.queryhandling.GenericQueryResponseMessage;
-import org.axonframework.queryhandling.QueryResponseMessage;
+import org.axonframework.messaging.core.Context;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.QueueMessageStream;
+import org.axonframework.messaging.queryhandling.GenericQueryResponseMessage;
+import org.axonframework.messaging.queryhandling.QueryResponseMessage;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
 

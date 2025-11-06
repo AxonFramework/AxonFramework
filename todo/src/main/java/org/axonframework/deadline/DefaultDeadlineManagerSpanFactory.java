@@ -17,9 +17,9 @@
 package org.axonframework.deadline;
 
 import org.axonframework.common.BuilderUtils;
-import org.axonframework.messaging.ScopeDescriptor;
-import org.axonframework.tracing.Span;
-import org.axonframework.tracing.SpanFactory;
+import org.axonframework.messaging.core.ScopeDescriptor;
+import org.axonframework.messaging.tracing.Span;
+import org.axonframework.messaging.tracing.SpanFactory;
 
 /**
  * Default implementation of the {@link DeadlineManagerSpanFactory}. The attributes used for the id of the deadline and

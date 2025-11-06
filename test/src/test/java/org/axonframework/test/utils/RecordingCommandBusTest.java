@@ -16,13 +16,13 @@
 
 package org.axonframework.test.utils;
 
-import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.commandhandling.CommandHandler;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.commandhandling.CommandResultMessage;
+import org.axonframework.messaging.commandhandling.GenericCommandMessage;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.QualifiedName;
 import org.junit.jupiter.api.*;
 
 import java.util.List;
@@ -54,7 +54,7 @@ class RecordingCommandBusTest {
         var result = testSubject.dispatch(secondTestCommand, null);
 
         Message commandResultMessage = result.get();
-        if (commandResultMessage instanceof CommandResultMessage cmr && cmr.isExceptional()) {
+        if (commandResultMessage.payload() instanceof Exception) {
             fail("Didn't expect handling to fail");
         }
         assertNull(commandResultMessage.payload(),
@@ -74,7 +74,7 @@ class RecordingCommandBusTest {
         testSubject.dispatch(firstTestCommand, null);
 
         var commandResultMessage = testSubject.dispatch(secondTestCommand, null).get();
-        if (commandResultMessage instanceof CommandResultMessage cmr && cmr.isExceptional()) {
+        if (commandResultMessage.payload() instanceof Exception) {
             fail("Didn't expect handling to fail");
         }
         assertEquals("callbackResult", commandResultMessage.payload());

@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.saga.repository.jpa;
 
-import org.axonframework.serialization.SimpleSerializedObject;
+import org.axonframework.conversion.SimpleSerializedObject;
 
 /**
  * Specialization of the SerializedObject for Sagas represented as byte array.

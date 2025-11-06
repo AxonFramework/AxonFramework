@@ -19,10 +19,13 @@ package org.axonframework.test.fixture;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.awaitility.Awaitility;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.configuration.AxonConfiguration;
-import org.axonframework.configuration.Configuration;
-import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.common.configuration.AxonConfiguration;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.eventhandling.EventSink;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.matchers.MapStringEntryMatcher;
 import org.axonframework.test.matchers.MatchAllFieldFilter;
@@ -46,7 +49,7 @@ import static org.axonframework.test.matchers.Matchers.deepEquals;
 /**
  * Abstract implementation of the {@link AxonTestPhase.Then then-phase} of the {@link AxonTestFixture}.
  *
- * @param <T> The type of {@link org.axonframework.messaging.Message} validated by this implementation.
+ * @param <T> The type of {@link Message} validated by this implementation.
  * @author Mateusz Nowak
  * @since 5.0.0
  */
@@ -68,9 +71,9 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
      *
      * @param configuration   The configuration which this test fixture phase is based on.
      * @param customization   Collection of customizations made for this test fixture.
-     * @param commandBus      The recording {@link org.axonframework.commandhandling.CommandBus}, used to capture and
+     * @param commandBus      The recording {@link CommandBus}, used to capture and
      *                        validate any commands that have been sent.
-     * @param eventSink       The recording {@link org.axonframework.eventhandling.EventSink}, used to capture and
+     * @param eventSink       The recording {@link EventSink}, used to capture and
      *                        validate any events that have been sent.
      * @param actualException The exception thrown during the when-phase, potentially {@code null}.
      */
@@ -111,7 +114,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
 
     @Override
     public T events(@Nonnull EventMessage... expectedEvents) {
-        this.events(Stream.of(expectedEvents).map(org.axonframework.messaging.Message::payload).toArray());
+        this.events(Stream.of(expectedEvents).map(Message::payload).toArray());
 
         var publishedEvents = eventSink.recorded();
         Iterator<EventMessage> iterator = publishedEvents.iterator();

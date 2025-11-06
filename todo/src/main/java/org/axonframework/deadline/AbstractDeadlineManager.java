@@ -19,14 +19,14 @@ package org.axonframework.deadline;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.Registration;
-import org.axonframework.messaging.ClassBasedMessageTypeResolver;
-import org.axonframework.messaging.DefaultMessageDispatchInterceptorChain;
-import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MessageTypeResolver;
+import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.core.DefaultMessageDispatchInterceptorChain;
+import org.axonframework.messaging.core.GenericMessage;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageDispatchInterceptor;
+import org.axonframework.messaging.core.MessageHandlerInterceptor;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 
@@ -80,20 +80,20 @@ public abstract class AbstractDeadlineManager implements DeadlineManager {
     }
 
     /**
-     * Provides a list of registered dispatch interceptors. Do note that this list is not modifiable, and that changes
-     * in the internal structure for dispatch interceptors will be reflected in this list.
+     * Provides a list of registered dispatch interception. Do note that this list is not modifiable, and that changes
+     * in the internal structure for dispatch interception will be reflected in this list.
      *
-     * @return a list of dispatch interceptors
+     * @return a list of dispatch interception
      */
     protected List<MessageDispatchInterceptor<? super DeadlineMessage>> dispatchInterceptors() {
         return Collections.unmodifiableList(dispatchInterceptors);
     }
 
     /**
-     * Provides a list of registered handler interceptors. Do note that this list is not modifiable, and that changes in
-     * the internal structure for handler interceptors will be reflected in this list.
+     * Provides a list of registered handler interception. Do note that this list is not modifiable, and that changes in
+     * the internal structure for handler interception will be reflected in this list.
      *
-     * @return a list of handler interceptors
+     * @return a list of handler interception
      */
     protected List<MessageHandlerInterceptor<? super DeadlineMessage>> handlerInterceptors() {
         return Collections.unmodifiableList(handlerInterceptors);

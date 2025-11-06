@@ -53,7 +53,7 @@ Configure your application:
 
 [source,java]
 ----
-// Returns a Configurer instance with default components configured. 
+// Returns a Configurer instance with default components configured.
 // `AxonServerEventStore` is configured as Event Store by default.
 Configurer configurer = DefaultConfigurer.defaultConfiguration();
 
@@ -114,7 +114,7 @@ Below is an example configuration of a persistence context configuration:
 <persistence xmlns="http://java.sun.com/xml/ns/persistence" version="1.0">
     <persistence-unit name="eventStore" transaction-type="RESOURCE_LOCAL"> <1>
         <class>org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry</class> <2>
-        <class>org.axonframework.eventsourcing.eventstore.jpa.SnapshotEventEntry</class>
+        <class>org.axonframework.messaging.jpa.eventstore.eventsourcing.SnapshotEventEntry</class>
     </persistence-unit>
 </persistence>
 ----
@@ -229,7 +229,7 @@ Spring Boot::
 @Configuration
 public class AxonConfig {
     // omitting other configuration methods...
-   
+
     // The EmbeddedEventStore delegates actual storage and retrieval of events to an EventStorageEngine.
     @Bean
     public EventStore eventStore(
@@ -243,7 +243,7 @@ public class AxonConfig {
                                  // ...
                                  .build();
     }
- 
+
     // The JpaEventStorageEngine stores events in a JPA-compatible data source.
     @Bean
     public EventStorageEngine eventStorageEngine(
@@ -330,7 +330,7 @@ Axon can help you here with the `createSchema` operation:
 @Configuration
 public class AxonConfig {
     // omitting other configuration methods...
-   
+
     // The EmbeddedEventStore delegates actual storage and retrieval of events to an EventStorageEngine.
     @Bean
     public EventStore eventStore(
@@ -445,7 +445,7 @@ Spring Boot::
 @Configuration
 public class AxonConfig {
     // omitting other configuration methods...
-   
+
     // The EmbeddedEventStore delegates actual storage and retrieval of events to an EventStorageEngine.
     @Bean
     public EventStore eventStore(EventStorageEngine storageEngine,
@@ -510,7 +510,7 @@ Spring Boot::
 @Configuration
 public class AxonConfig {
     // omitting other configuration methods...
-   
+
     // The EmbeddedEventStore delegates actual storage and retrieval of events to an EventStorageEngine.
     @Bean
     public EventStore eventStore(EventStorageEngine storageEngine,
@@ -573,7 +573,7 @@ Configuration API::
 
 [source,java]
 ----
-// Returns a Configurer instance with default components configured. 
+// Returns a Configurer instance with default components configured.
 // We explicitly set `JacksonSerializer` as desired event serializer.
 Configurer configurer = DefaultConfigurer.defaultConfiguration()
       .configureEventSerializer(c -> JacksonSerializer.builder().build());

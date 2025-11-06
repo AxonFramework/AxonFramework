@@ -19,16 +19,17 @@ package org.axonframework.messaging;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.stream.BlockingStream;
-import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
-import org.axonframework.eventstreaming.TrackingTokenSource;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
+import org.axonframework.messaging.eventstreaming.TrackingTokenSource;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Interface for a source of {@link Message messages} that processors can track.
+ * Interface for a source of {@link Message messages} that processing can track.
  *
  * @author Rene de Waele
  * @deprecated In favor of the {@code org.axonframework.eventsourcing.eventstore.StreamableEventSource}.

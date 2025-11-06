@@ -23,10 +23,12 @@ import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.axoniq.axonserver.grpc.query.QueryUpdate;
 import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.Metadata;
-import org.axonframework.queryhandling.GenericQueryMessage;
+import org.axonframework.messaging.core.GenericMessage;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.queryhandling.GenericQueryResponseMessage;
+import org.axonframework.messaging.queryhandling.GenericQueryMessage;
+import org.axonframework.messaging.queryhandling.GenericSubscriptionQueryUpdateMessage;
 import org.junit.jupiter.api.*;
 
 import java.util.Map;
@@ -122,7 +124,7 @@ class QueryConverterTest {
     void convertsQueryResponseMessageToQueryResponse() {
         var type = new MessageType("java.lang.String", "1");
         var message = new GenericMessage(messageIdentifier, type, "ok".getBytes(), Map.of("m", "v"));
-        var qrm = new org.axonframework.queryhandling.GenericQueryResponseMessage(message);
+        var qrm = new GenericQueryResponseMessage(message);
 
         var response = QueryConverter.convertQueryResponseMessage("req-1", qrm);
 
@@ -158,7 +160,7 @@ class QueryConverterTest {
     @Test
     void convertsSubscriptionQueryUpdateMessageToQueryUpdate() {
         var type = new MessageType("java.lang.String", "1");
-        var updateMessage = new org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage(
+        var updateMessage = new GenericSubscriptionQueryUpdateMessage(
                 new GenericMessage(messageIdentifier, type, "ok".getBytes(), Map.of("m", "v"))
         );
 

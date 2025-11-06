@@ -17,12 +17,12 @@
 package org.axonframework.test.fixture;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.configuration.Configuration;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.Metadata;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.commandhandling.CommandResultMessage;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.core.unitofwork.UnitOfWork;
 
 import java.time.Duration;
 import java.util.Arrays;

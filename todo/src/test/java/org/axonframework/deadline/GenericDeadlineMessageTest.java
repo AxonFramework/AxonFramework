@@ -19,10 +19,10 @@ package org.axonframework.deadline;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.ObjectUtils;
-import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageTestSuite;
-import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.core.GenericMessage;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageTestSuite;
+import org.axonframework.messaging.core.MessageType;
 
 import java.time.Instant;
 

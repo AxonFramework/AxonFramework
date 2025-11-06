@@ -16,8 +16,10 @@
 
 package org.axonframework.messaging.deadletter;
 
+import org.axonframework.messaging.core.Message;
+
 /**
- * Contract describing the cause for {@link DeadLetter dead lettering} a {@link org.axonframework.messaging.Message}.
+ * Contract describing the cause for {@link DeadLetter dead lettering} a {@link Message}.
  * These objects typically reflects a {@link Throwable}.
  *
  * @author Steven van Beelen

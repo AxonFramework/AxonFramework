@@ -17,28 +17,29 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.TerminalEventMessage;
-import org.axonframework.eventhandling.conversion.DelegatingEventConverter;
-import org.axonframework.eventhandling.conversion.EventConverter;
-import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.eventhandling.TerminalEventMessage;
+import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine.AppendTransaction;
-import org.axonframework.eventstreaming.EventCriteria;
-import org.axonframework.eventstreaming.StreamingCondition;
-import org.axonframework.eventstreaming.Tag;
-import org.axonframework.messaging.FluxUtils;
-import org.axonframework.messaging.LegacyResources;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageStream.Entry;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.Metadata;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.serialization.json.JacksonConverter;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.axonframework.messaging.eventstreaming.StreamingCondition;
+import org.axonframework.messaging.eventstreaming.Tag;
+import org.axonframework.messaging.core.FluxUtils;
+import org.axonframework.messaging.core.LegacyResources;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.MessageStream.Entry;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.conversion.json.JacksonConverter;
 import org.junit.jupiter.api.*;
 import org.opentest4j.TestAbortedException;
 import reactor.test.StepVerifier;
 
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -51,10 +52,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import static java.util.Collections.emptySet;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -574,6 +578,45 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
         } else {
             fail("Unexpected exception", actualException);
         }
+    }
+
+    @Test
+    void firstTokenShouldReturnNonNullForEmptyStore() throws InterruptedException, ExecutionException {
+        assertThat(testSubject.firstToken(processingContext()).get()).isNotNull();
+    }
+
+    @Test
+    void latestTokenShouldReturnNonNullForEmptyStore() throws InterruptedException, ExecutionException {
+        assertThat(testSubject.latestToken(processingContext()).get()).isNotNull();
+    }
+
+    @Test
+    void firstTokenAndLatestTokenShouldBeEqualForEmptyStore() throws InterruptedException, ExecutionException {
+        assertThat(testSubject.latestToken(processingContext()).get())
+            .isEqualTo(testSubject.firstToken(processingContext()).get());
+    }
+
+    @Test
+    void tokenAtShouldReturnNonNullForEmptyStore() throws InterruptedException, ExecutionException {
+        assertThat(testSubject.tokenAt(Instant.now(), processingContext()).get()).isNotNull();
+    }
+
+    @Test
+    @Disabled("Fails for both JPA and Axon on the last await")  // TODO #3855 - When a sourcing completes, the callback should be called per MessageStream contract
+    void callbackShouldBeCalledWhenSourcingCompletes() {
+        AtomicBoolean called = new AtomicBoolean();
+        MessageStream<EventMessage> stream = testSubject.source(SourcingCondition.conditionFor(EventCriteria.havingTags("unknown", "non-existing")), processingContext());
+
+        stream.setCallback(() -> called.set(true));
+
+        called.set(false);  // on set, it is called immediately, so clear flag again
+
+        assertThat(stream.isCompleted()).isFalse();
+
+        stream.next();  // this seems required
+
+        await().untilAsserted(() -> assertThat(stream.isCompleted()).isTrue());
+        await().untilAsserted(() -> assertThat(called).isTrue());
     }
 
     private void assertTrackedEntry(Entry<EventMessage> actual, EventMessage expected, long eventNumber) {

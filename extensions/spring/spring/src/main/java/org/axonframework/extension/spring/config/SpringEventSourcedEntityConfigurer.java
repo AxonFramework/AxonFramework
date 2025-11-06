@@ -17,14 +17,15 @@
 package org.axonframework.extension.spring.config;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.annotations.Internal;
-import org.axonframework.configuration.ComponentRegistry;
-import org.axonframework.configuration.ConfigurationEnhancer;
+import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 
 /**
  * A {@link ConfigurationEnhancer} implementation that will configure an Aggregate with the Axon
- * {@link org.axonframework.configuration.Configuration}.
+ * {@link Configuration}.
  *
  * @param <T>  The type of Aggregate to configure
  * @param <ID> The type of Aggregate id to configure

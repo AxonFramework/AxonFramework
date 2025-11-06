@@ -16,23 +16,11 @@
 
 package org.axonframework.test.aggregate;
 
-import org.axonframework.commandhandling.annotations.CommandHandler;
-import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
-import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
-import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
-import org.axonframework.test.AxonAssertionError;
 import org.junit.jupiter.api.*;
 
-import java.time.Duration;
-import java.time.Instant;
-
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
-import static org.axonframework.test.matchers.Matchers.*;
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test class intended to validate all methods in regards to scheduling and validating deadlines.

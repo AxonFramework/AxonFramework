@@ -17,7 +17,7 @@
 package org.axonframework.messaging.unitofwork;
 
 import org.axonframework.common.Assert;
-import org.axonframework.messaging.Message;
+import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork.Phase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

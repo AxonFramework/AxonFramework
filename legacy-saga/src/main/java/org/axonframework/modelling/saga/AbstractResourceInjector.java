@@ -17,7 +17,7 @@
 package org.axonframework.modelling.saga;
 
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.common.annotations.AnnotationUtils;
+import org.axonframework.common.annotation.AnnotationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -111,7 +111,7 @@ public abstract class AbstractResourceInjector implements ResourceInjector {
      * <li>{@code org.springframework.beans.factory.annotation.Autowired}</li>
      * </ul>
      *
-     * @return an array with fully qualified class names of annotations
+     * @return an array with fully qualified class names of annotation
      */
     protected String[] injectorAnnotationNames() {
         return DEFAULT_INJECT_ANNOTATIONS;

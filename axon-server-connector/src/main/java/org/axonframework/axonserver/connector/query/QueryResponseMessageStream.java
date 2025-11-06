@@ -20,14 +20,9 @@ import io.axoniq.axonserver.connector.ResultStream;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonException;
-import org.axonframework.common.annotations.Internal;
-import org.axonframework.messaging.Context;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.SimpleEntry;
-import org.axonframework.queryhandling.QueryResponseMessage;
-
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
+import org.axonframework.common.annotation.Internal;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.queryhandling.QueryResponseMessage;
 
 import static java.util.Objects.requireNonNull;
 import static org.axonframework.axonserver.connector.query.QueryConverter.convertQueryResponse;

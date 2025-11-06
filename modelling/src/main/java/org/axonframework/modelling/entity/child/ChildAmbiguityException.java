@@ -17,13 +17,14 @@
 package org.axonframework.modelling.entity.child;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 /**
  * Exception indicating that multiple child entities of a parent entity are able to handle the same command. This
  * happens if multiple {@link EntityChildMetamodel#supportedCommands()} contain the same
- * {@link org.axonframework.messaging.QualifiedName}, as well as both child entities returning true for
+ * {@link QualifiedName}, as well as both child entities returning true for
  * {@link EntityChildMetamodel#canHandle(CommandMessage, Object, ProcessingContext)}, indicating that they have an active
  * child entity that can handle the command.
  * <p>

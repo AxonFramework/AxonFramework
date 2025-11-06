@@ -16,10 +16,7 @@
 
 package org.axonframework.extension.spring.config;
 
-import org.axonframework.configuration.ApplicationConfigurerTestSuite;
-import org.axonframework.extension.spring.config.SpringAxonApplication;
-import org.axonframework.extension.spring.config.SpringComponentRegistry;
-import org.axonframework.extension.spring.config.SpringLifecycleRegistry;
+import org.axonframework.common.configuration.ApplicationConfigurerTestSuite;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 

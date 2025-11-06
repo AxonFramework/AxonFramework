@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.deadletter;
 
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.Metadata;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.Metadata;
 
 import java.util.Objects;
 import java.util.Optional;

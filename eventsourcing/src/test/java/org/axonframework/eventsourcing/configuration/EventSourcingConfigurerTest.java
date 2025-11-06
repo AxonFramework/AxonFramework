@@ -16,12 +16,12 @@
 
 package org.axonframework.eventsourcing.configuration;
 
-import org.axonframework.commandhandling.configuration.CommandHandlingModule;
-import org.axonframework.configuration.ApplicationConfigurerTestSuite;
-import org.axonframework.configuration.Configuration;
-import org.axonframework.configuration.ModuleBuilder;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventSink;
+import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
+import org.axonframework.common.configuration.ApplicationConfigurerTestSuite;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.configuration.ModuleBuilder;
+import org.axonframework.messaging.eventhandling.EventBus;
+import org.axonframework.messaging.eventhandling.EventSink;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -29,11 +29,11 @@ import org.axonframework.eventsourcing.eventstore.InterceptingEventStore;
 import org.axonframework.eventsourcing.eventstore.PayloadBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.SubscribableEventSource;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.SubscribableEventSource;
 import org.axonframework.modelling.configuration.StateBasedEntityModule;
-import org.axonframework.queryhandling.configuration.QueryHandlingModule;
+import org.axonframework.messaging.queryhandling.configuration.QueryHandlingModule;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;

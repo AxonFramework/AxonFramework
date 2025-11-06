@@ -20,23 +20,23 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.common.TypeReference;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.conversion.DelegatingMessageConverter;
-import org.axonframework.queryhandling.GenericQueryMessage;
-import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryBusTestUtils;
-import org.axonframework.queryhandling.QueryExecutionException;
-import org.axonframework.queryhandling.QueryHandlingComponent;
-import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.queryhandling.annotations.AnnotatedQueryHandlingComponent;
-import org.axonframework.queryhandling.annotations.QueryHandler;
-import org.axonframework.queryhandling.distributed.DistributedQueryBus;
-import org.axonframework.queryhandling.distributed.DistributedQueryBusConfiguration;
-import org.axonframework.queryhandling.distributed.PayloadConvertingQueryBusConnector;
-import org.axonframework.serialization.PassThroughConverter;
-import org.axonframework.serialization.json.JacksonConverter;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.conversion.DelegatingMessageConverter;
+import org.axonframework.messaging.queryhandling.GenericQueryMessage;
+import org.axonframework.messaging.queryhandling.QueryBus;
+import org.axonframework.messaging.queryhandling.QueryBusTestUtils;
+import org.axonframework.messaging.queryhandling.QueryExecutionException;
+import org.axonframework.messaging.queryhandling.QueryHandlingComponent;
+import org.axonframework.messaging.queryhandling.QueryMessage;
+import org.axonframework.messaging.queryhandling.QueryResponseMessage;
+import org.axonframework.messaging.queryhandling.annotation.AnnotatedQueryHandlingComponent;
+import org.axonframework.messaging.queryhandling.annotation.QueryHandler;
+import org.axonframework.messaging.queryhandling.distributed.DistributedQueryBus;
+import org.axonframework.messaging.queryhandling.distributed.DistributedQueryBusConfiguration;
+import org.axonframework.messaging.queryhandling.distributed.PayloadConvertingQueryBusConnector;
+import org.axonframework.conversion.PassThroughConverter;
+import org.axonframework.conversion.json.JacksonConverter;
 import org.axonframework.test.server.AxonServerContainer;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
@@ -56,7 +56,7 @@ import java.util.Objects;
 import java.util.function.Function;
 
 import static java.util.Arrays.asList;
-import static org.axonframework.messaging.FluxUtils.streamToPublisher;
+import static org.axonframework.messaging.core.FluxUtils.streamToPublisher;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -121,7 +121,7 @@ class StreamingQueryIT {
                 axonServerQueryBus(senderLocalSegment, nonStreamingAxonServerAddress);
 
         QueryHandlingComponent queryHandlingComponent =
-                new AnnotatedQueryHandlingComponent<>(new MyQueryHandler(), PassThroughConverter.MESSAGE_INSTANCE);
+                new AnnotatedQueryHandlingComponent<>(new MyQueryHandler(), new DelegatingMessageConverter(PassThroughConverter.INSTANCE));
         handlerQueryBus.subscribe(queryHandlingComponent);
         nonStreamingHandlerQueryBus.subscribe(queryHandlingComponent);
     }

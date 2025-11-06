@@ -17,12 +17,12 @@
 package org.axonframework.modelling.saga.metamodel;
 
 import org.axonframework.common.AxonException;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
-import org.axonframework.messaging.interceptors.annotations.MessageHandlerInterceptorMemberChain;
-import org.axonframework.messaging.annotations.MessageHandlingMember;
-import org.axonframework.messaging.interceptors.annotations.NoMoreInterceptors;
-import org.axonframework.messaging.interceptors.annotations.ExceptionHandler;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.core.interception.annotation.MessageHandlerInterceptorMemberChain;
+import org.axonframework.messaging.core.annotation.MessageHandlingMember;
+import org.axonframework.messaging.core.interception.annotation.NoMoreInterceptors;
+import org.axonframework.messaging.core.interception.annotation.ExceptionHandler;
 import org.axonframework.modelling.saga.AssociationValue;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.StartSaga;
@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
 import java.util.Optional;
 
-import static org.axonframework.eventhandling.EventTestUtils.asEventMessage;
+import static org.axonframework.messaging.eventhandling.EventTestUtils.asEventMessage;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AnnotationSagaMetaModelFactoryTest {

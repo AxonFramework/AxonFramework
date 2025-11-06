@@ -16,9 +16,9 @@
 
 package org.axonframework.extension.spring.messaging;
 
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.core.MessageType;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
@@ -73,8 +73,8 @@ public class DefaultEventMessageConverter implements EventMessageConverter {
         MessageType type = getType(message);
         Long timestamp = headers.getTimestamp();
 
-        org.axonframework.messaging.GenericMessage genericMessage
-                = new org.axonframework.messaging.GenericMessage(messageId, type, message.getPayload(), metadata);
+        org.axonframework.messaging.core.GenericMessage genericMessage
+                = new org.axonframework.messaging.core.GenericMessage(messageId, type, message.getPayload(), metadata);
         //noinspection DataFlowIssue - Just let it throw a NullPointerException if the timestamp is null
         return new GenericEventMessage(genericMessage, () -> Instant.ofEpochMilli(timestamp));
     }

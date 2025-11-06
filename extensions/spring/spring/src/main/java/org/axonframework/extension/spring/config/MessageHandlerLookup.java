@@ -19,10 +19,11 @@ package org.axonframework.extension.spring.config;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.common.annotations.AnnotationUtils;
-import org.axonframework.common.annotations.Internal;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.annotations.MessageHandler;
+import org.axonframework.common.annotation.AnnotationUtils;
+import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.annotation.MessageHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -46,7 +47,7 @@ import java.util.stream.Collectors;
 /**
  * A {@link BeanDefinitionRegistryPostProcessor} implementation that detects beans with Axon Message handlers and
  * registers an {@link MessageHandlerConfigurer} to have these handlers registered in the Axon
- * {@link org.axonframework.configuration.Configuration}.
+ * {@link Configuration}.
  *
  * @author Allard Buijze
  * @since 4.6.0

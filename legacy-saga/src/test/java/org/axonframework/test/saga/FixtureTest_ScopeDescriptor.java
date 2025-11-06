@@ -16,9 +16,9 @@
 
 package org.axonframework.test.saga;
 
-import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.messaging.ScopeDescriptor;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
+import org.axonframework.messaging.core.ScopeDescriptor;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.SagaScopeDescriptor;
 import org.axonframework.modelling.saga.StartSaga;
@@ -27,7 +27,7 @@ import org.junit.jupiter.api.*;
 import static org.axonframework.test.matchers.Matchers.*;
 
 /**
- * Test class validating a {@link org.axonframework.messaging.ScopeDescriptor}, specifically an {@link
+ * Test class validating a {@link org.axonframework.messaging.core.ScopeDescriptor}, specifically an {@link
  * org.axonframework.modelling.command.AggregateScopeDescriptor}, can be resolved on Aggregate's message handling
  * functions.
  *

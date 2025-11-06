@@ -18,25 +18,25 @@ package org.axonframework.modelling.command;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.commandhandling.DuplicateCommandHandlerSubscriptionException;
-import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.commandhandling.annotations.CommandHandler;
+import org.axonframework.messaging.commandhandling.DuplicateCommandHandlerSubscriptionException;
+import org.axonframework.messaging.commandhandling.SimpleCommandBus;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Priority;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.messaging.Metadata;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.annotations.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.annotations.FixedValueParameterResolver;
-import org.axonframework.messaging.annotations.MetadataValue;
-import org.axonframework.messaging.annotations.MultiParameterResolverFactory;
-import org.axonframework.messaging.annotations.ParameterResolver;
-import org.axonframework.messaging.annotations.ParameterResolverFactory;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventBus;
+import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.FixedValueParameterResolver;
+import org.axonframework.messaging.core.annotation.MetadataValue;
+import org.axonframework.messaging.core.annotation.MultiParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.ParameterResolver;
+import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
-import org.axonframework.utils.StubDomainEvent;
+import org.axonframework.common.utils.StubDomainEvent;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
@@ -55,7 +55,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 
-import static org.axonframework.commandhandling.CommandBusTestUtils.aCommandBus;
+import static org.axonframework.messaging.commandhandling.CommandBusTestUtils.aCommandBus;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -181,12 +181,12 @@ class AggregateAnnotationCommandHandlerTest {
     @Disabled("TODO #3068 - Revise Aggregate Modelling")
     void commandHandlerSubscribesToCommands() {
         verify(commandBus).subscribe(eq(new QualifiedName(CreateCommand.class)),
-                                     any(org.axonframework.commandhandling.CommandHandler.class));
+                                     any(org.axonframework.messaging.commandhandling.CommandHandler.class));
         // Is subscribed two times because of the duplicate handler. This is good and indicates usage of the
         // DuplicateCommandHandlerResolver
         verify(commandBus, times(2)).subscribe(
                 eq(new QualifiedName(UpdateCommandWithAnnotatedMethod.class)),
-                any(org.axonframework.commandhandling.CommandHandler.class)
+                any(org.axonframework.messaging.commandhandling.CommandHandler.class)
         );
     }
 

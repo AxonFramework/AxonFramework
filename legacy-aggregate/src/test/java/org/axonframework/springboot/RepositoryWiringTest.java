@@ -18,7 +18,7 @@ package org.axonframework.springboot;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import org.axonframework.eventsourcing.LegacyEventSourcingRepository;
+import org.axonframework.messaging.eventsourcing.LegacyEventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.modelling.command.GenericJpaRepository;

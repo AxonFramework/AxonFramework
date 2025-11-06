@@ -18,13 +18,13 @@ package org.axonframework.deadline.dbscheduler;
 
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.Metadata;
-import org.axonframework.messaging.ScopeDescriptor;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.SimpleSerializedObject;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.core.ScopeDescriptor;
+import org.axonframework.conversion.SerializedObject;
+import org.axonframework.conversion.Serializer;
+import org.axonframework.conversion.SimpleSerializedObject;
 
 import java.io.Serializable;
 import java.util.Arrays;

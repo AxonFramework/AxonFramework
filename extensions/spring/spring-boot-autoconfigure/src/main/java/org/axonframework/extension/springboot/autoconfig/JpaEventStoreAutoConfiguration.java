@@ -20,16 +20,17 @@ import jakarta.annotation.Nonnull;
 import jakarta.persistence.EntityManagerFactory;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
-import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.configuration.ComponentRegistry;
-import org.axonframework.configuration.ConfigurationEnhancer;
-import org.axonframework.configuration.SearchScope;
-import org.axonframework.eventhandling.conversion.EventConverter;
+import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
+import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.ConfigurationEnhancer;
+import org.axonframework.common.configuration.SearchScope;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurationDefaults;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedJpaEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedJpaEventStorageEngineConfiguration;
+import org.axonframework.eventsourcing.eventstore.jpa.JpaPollingEventCoordinator;
 import org.axonframework.extension.springboot.JpaEventStorageEngineConfigurationProperties;
 import org.axonframework.extension.springboot.util.RegisterDefaultEntities;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -39,6 +40,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.transaction.PlatformTransactionManager;
 
+import java.time.Duration;
 import java.util.function.UnaryOperator;
 
 /**
@@ -105,7 +107,13 @@ public class JpaEventStoreAutoConfiguration {
                             .gapTimeout(properties.gapTimeout())
                             .lowestGlobalSequence(properties.lowestGlobalSequence())
                             .maxGapOffset(properties.maxGapOffset())
-                            .persistenceExceptionResolver(persistenceExceptionResolver);
+                            .persistenceExceptionResolver(persistenceExceptionResolver)
+                            .eventCoordinator(
+                                new JpaPollingEventCoordinator(
+                                    entityManagerProvider,
+                                    Duration.ofMillis(properties.pollingInterval())
+                                )
+                            );
 
             registry.registerIfNotPresent(EventStorageEngine.class,
                                           (configuration)

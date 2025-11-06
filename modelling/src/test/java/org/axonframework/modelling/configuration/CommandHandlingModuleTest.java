@@ -16,20 +16,20 @@
 
 package org.axonframework.modelling.configuration;
 
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.CommandHandlingComponent;
-import org.axonframework.commandhandling.configuration.CommandHandlingModule;
+import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.commandhandling.CommandHandler;
+import org.axonframework.messaging.commandhandling.CommandHandlingComponent;
+import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.common.infra.MockComponentDescriptor;
-import org.axonframework.configuration.AxonConfiguration;
-import org.axonframework.configuration.ComponentBuilder;
-import org.axonframework.configuration.Configuration;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.correlation.CorrelationDataProviderRegistry;
-import org.axonframework.messaging.correlation.DefaultCorrelationDataProviderRegistry;
+import org.axonframework.common.configuration.AxonConfiguration;
+import org.axonframework.common.configuration.ComponentBuilder;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.correlation.CorrelationDataProviderRegistry;
+import org.axonframework.messaging.core.correlation.DefaultCorrelationDataProviderRegistry;
 import org.axonframework.modelling.StateManager;
-import org.axonframework.utils.StubLifecycleRegistry;
+import org.axonframework.common.utils.StubLifecycleRegistry;
 import org.junit.jupiter.api.*;
 
 import java.util.Map;
@@ -109,7 +109,7 @@ class CommandHandlingModuleTest {
     void buildAnnotatedCommandHandlingComponentSucceedsAndRegisters() {
         //noinspection unused
         var myCommandHandlingObject = new Object() {
-            @org.axonframework.commandhandling.annotations.CommandHandler
+            @org.axonframework.messaging.commandhandling.annotation.CommandHandler
             public void handle(String command) {
             }
         };
@@ -130,7 +130,7 @@ class CommandHandlingModuleTest {
     void buildModellingConfigurationSucceedsAndRegistersTheModuleWithComponent() {
         //noinspection unused
         var myCommandHandlingObject = new Object() {
-            @org.axonframework.commandhandling.annotations.CommandHandler
+            @org.axonframework.messaging.commandhandling.annotation.CommandHandler
             public void handle(String command) {
             }
         };

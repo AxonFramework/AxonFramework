@@ -17,28 +17,28 @@
 package org.axonframework.integrationtests.queryhandling;
 
 import org.awaitility.Awaitility;
-import org.axonframework.configuration.AxonConfiguration;
-import org.axonframework.messaging.FluxUtils;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.conversion.DelegatingMessageConverter;
-import org.axonframework.messaging.conversion.MessageConverter;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
-import org.axonframework.queryhandling.GenericQueryMessage;
-import org.axonframework.queryhandling.GenericQueryResponseMessage;
-import org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage;
-import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryHandler;
-import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
-import org.axonframework.serialization.json.JacksonConverter;
-import org.axonframework.utils.MockException;
+import org.axonframework.common.configuration.AxonConfiguration;
+import org.axonframework.messaging.core.FluxUtils;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageDispatchInterceptor;
+import org.axonframework.messaging.core.MessageHandlerInterceptor;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.conversion.DelegatingMessageConverter;
+import org.axonframework.messaging.core.conversion.MessageConverter;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.queryhandling.GenericQueryMessage;
+import org.axonframework.messaging.queryhandling.GenericQueryResponseMessage;
+import org.axonframework.messaging.queryhandling.GenericSubscriptionQueryUpdateMessage;
+import org.axonframework.messaging.queryhandling.QueryBus;
+import org.axonframework.messaging.queryhandling.QueryHandler;
+import org.axonframework.messaging.queryhandling.QueryMessage;
+import org.axonframework.messaging.queryhandling.QueryResponseMessage;
+import org.axonframework.messaging.queryhandling.SubscriptionQueryUpdateMessage;
+import org.axonframework.conversion.json.JacksonConverter;
+import org.axonframework.common.utils.MockException;
 import org.junit.jupiter.api.*;
 import reactor.test.StepVerifier;
 
@@ -89,7 +89,7 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
                         .expectNextCount(1)
                         .verifyComplete();
 
-            // then - Verify REQUEST interception: interceptors added metadata to the query BEFORE handler saw it
+            // then - Verify REQUEST interceptor: interception added metadata to the query BEFORE handler saw it
             assertThat(handler.getRecordedQueries()).hasSize(1);
 
             interceptingConfig.shutdown();
@@ -120,7 +120,7 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
                         .expectNextCount(1)
                         .verifyComplete();
 
-            // then - Verify REQUEST interception: interceptors added metadata to the query BEFORE handler saw it
+            // then - Verify REQUEST interception: interception added metadata to the query BEFORE handler saw it
             assertThat(handler.getRecordedQueries()).hasSize(1);
             QueryMessage recordedQuery = handler.getRecordedQueries().getFirst();
             assertTrue(recordedQuery.metadata().containsKey("dispatch1"),
@@ -155,7 +155,7 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
                                                                                     StubProcessingContext.forMessage(
                                                                                             testQuery));
 
-            // then - Verify RESPONSE interception: interceptors added metadata to the response AFTER handler executed
+            // then - Verify RESPONSE interceptor: interception added metadata to the response AFTER handler executed
             QueryResponseMessage response = result.first().asCompletableFuture().join().message();
             assertTrue(response.metadata().containsKey("dispatch1"),
                        "Expected dispatch1 interceptor to add metadata to RESPONSE");
@@ -284,7 +284,7 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
             // when
             interceptingQueryBus.query(testQuery, context).first().asCompletableFuture().join();
 
-            // then - Verify REQUEST interception: handler interceptors added metadata to the query BEFORE handler saw it
+            // then - Verify REQUEST interceptor: handler interception added metadata to the query BEFORE handler saw it
             assertThat(handler.getRecordedQueries()).hasSize(1);
             QueryMessage recordedQuery = handler.getRecordedQueries().getFirst();
             assertTrue(recordedQuery.metadata().containsKey("handler1"),
@@ -318,7 +318,7 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
             // when
             MessageStream<QueryResponseMessage> result = interceptingQueryBus.query(testQuery, context);
 
-            // then - Verify RESPONSE interception: handler interceptors added metadata to the response AFTER handler executed
+            // then - Verify RESPONSE interception: handler interception added metadata to the response AFTER handler executed
             QueryResponseMessage response = result.first().asCompletableFuture().join().message();
             assertTrue(response.metadata().containsKey("handler1"),
                        "Expected handler1 interceptor to add metadata to RESPONSE");
@@ -508,7 +508,7 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
             assertTrue(response.metadata().containsKey("handler2"),
                        "Expected handler2 interceptor to be applied to response");
 
-            // Verify handler interceptors added metadata to the query received by handler
+            // Verify handler interception added metadata to the query received by handler
             assertThat(handler.getRecordedQueries()).hasSize(1);
             QueryMessage recordedQuery = handler.getRecordedQueries().get(0);
             assertTrue(recordedQuery.metadata().containsKey("handler1"),
@@ -551,7 +551,7 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
             assertTrue(response.metadata().containsKey("dispatch2"),
                        "Expected dispatch2 interceptor to be applied to response");
 
-            // Verify dispatch interceptors added metadata to the query received by handler
+            // Verify dispatch interception added metadata to the query received by handler
             assertThat(handler.getRecordedQueries()).hasSize(1);
             QueryMessage recordedQuery = handler.getRecordedQueries().getFirst();
             assertTrue(recordedQuery.metadata().containsKey("dispatch1"),
@@ -591,7 +591,7 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
             MessageStream<SubscriptionQueryUpdateMessage> updateStream =
                     interceptingQueryBus.subscribeToUpdates(testQuery, 10);
 
-            // then - Verify dispatch interceptors were invoked
+            // then - Verify dispatch interception were invoked
             assertThat(interceptor1Invocations.get()).isEqualTo(1);
             assertThat(interceptor2Invocations.get()).isEqualTo(1);
 
@@ -674,7 +674,7 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
             );
 
             // then
-            // Verify that emitUpdate works without interceptors
+            // Verify that emitUpdate works without interception
             assertDoesNotThrow(result::join);
         }
 

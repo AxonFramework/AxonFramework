@@ -20,29 +20,30 @@ import org.axonframework.axonserver.connector.command.AxonServerCommandBusConnec
 import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngineFactory;
 import org.axonframework.axonserver.connector.event.EventProcessorControlService;
 import org.axonframework.axonserver.connector.query.AxonServerQueryBusConnector;
-import org.axonframework.commandhandling.distributed.CommandBusConnector;
-import org.axonframework.commandhandling.distributed.PayloadConvertingCommandBusConnector;
+import org.axonframework.messaging.commandhandling.distributed.CommandBusConnector;
+import org.axonframework.messaging.commandhandling.distributed.PayloadConvertingCommandBusConnector;
 import org.axonframework.common.FutureUtils;
-import org.axonframework.configuration.ComponentDecorator;
-import org.axonframework.configuration.ComponentDefinition;
-import org.axonframework.configuration.ComponentLifecycleHandler;
-import org.axonframework.configuration.ComponentRegistry;
-import org.axonframework.configuration.Configuration;
-import org.axonframework.configuration.ConfigurationEnhancer;
-import org.axonframework.configuration.DecoratorDefinition;
-import org.axonframework.configuration.SearchScope;
+import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.common.configuration.ComponentDecorator;
+import org.axonframework.common.configuration.ComponentDefinition;
+import org.axonframework.common.configuration.ComponentLifecycleHandler;
+import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.configuration.ConfigurationEnhancer;
+import org.axonframework.common.configuration.DecoratorDefinition;
+import org.axonframework.common.configuration.SearchScope;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.lifecycle.Phase;
-import org.axonframework.messaging.conversion.MessageConverter;
-import org.axonframework.queryhandling.distributed.PayloadConvertingQueryBusConnector;
-import org.axonframework.queryhandling.distributed.QueryBusConnector;
+import org.axonframework.common.lifecycle.Phase;
+import org.axonframework.messaging.core.conversion.MessageConverter;
+import org.axonframework.messaging.queryhandling.distributed.PayloadConvertingQueryBusConnector;
+import org.axonframework.messaging.queryhandling.distributed.QueryBusConnector;
 
 import java.util.Optional;
 import javax.annotation.Nonnull;
 
 /**
  * A {@link ConfigurationEnhancer} that is auto-loadable by the
- * {@link org.axonframework.configuration.ApplicationConfigurer}, setting sensible defaults when using Axon Server.
+ * {@link ApplicationConfigurer}, setting sensible defaults when using Axon Server.
  *
  * @author Allard Buijze
  * @since 4.0.0
@@ -51,7 +52,7 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
 
     /**
      * The {@link #order()} when this {@link AxonServerConfigurationEnhancer} enhances an
-     * {@link org.axonframework.configuration.ApplicationConfigurer}.
+     * {@link ApplicationConfigurer}.
      */
     public static final int ENHANCER_ORDER = Integer.MIN_VALUE + 10;
 

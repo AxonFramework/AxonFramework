@@ -16,8 +16,8 @@
 
 package org.axonframework.deadline;
 
-import org.axonframework.messaging.ScopeDescriptor;
-import org.axonframework.tracing.Span;
+import org.axonframework.messaging.core.ScopeDescriptor;
+import org.axonframework.messaging.tracing.Span;
 
 /**
  * Span factory that creates spans for the {@link DeadlineManager}. You can customize the spans of the bus by creating

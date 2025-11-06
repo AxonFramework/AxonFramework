@@ -18,12 +18,12 @@ package org.axonframework.extension.springboot;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.configuration.Configuration;
-import org.axonframework.configuration.Module;
-import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessorModule;
-import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
-import org.axonframework.eventhandling.processors.streaming.token.store.inmemory.InMemoryTokenStore;
-import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessorModule;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.configuration.Module;
+import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorModule;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.store.inmemory.InMemoryTokenStore;
+import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessorModule;
 import org.axonframework.extension.spring.config.SpringComponentRegistry;
 import org.axonframework.extension.springboot.fixture.event.test1.FirstHandler;
 import org.axonframework.extension.springboot.fixture.event.test2.Test2EventHandlingConfiguration;

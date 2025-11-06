@@ -58,8 +58,10 @@
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
-            <artifactId>axon-legacy</artifactId>
+            <artifactId>axon-common</artifactId>
             <version>${project.version}</version>
+            <scope>test</scope>
+            <type>test-jar</type>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>

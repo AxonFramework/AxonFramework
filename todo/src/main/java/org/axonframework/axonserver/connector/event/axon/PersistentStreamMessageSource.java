@@ -18,18 +18,17 @@ package org.axonframework.axonserver.connector.event.axon;
 import io.axoniq.axonserver.connector.event.PersistentStream;
 import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
 import org.axonframework.common.Registration;
-import org.axonframework.configuration.Configuration;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.SubscribableEventSource;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.core.SubscribableEventSource;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 /**
  * A {@link SubscribableEventSource} that receives event from a persistent stream from Axon Server. The persistent

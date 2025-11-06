@@ -17,10 +17,11 @@
 package org.axonframework.extension.tracing.opentelemetry;
 
 import io.opentelemetry.context.propagation.TextMapSetter;
-import org.axonframework.messaging.Message;
+import org.axonframework.messaging.core.Message;
 
 import java.util.Map;
 import jakarta.annotation.Nonnull;
+import org.axonframework.messaging.core.Metadata;
 
 /**
  * This {@link TextMapSetter} implementation is able to insert the current OpenTelemetry span context into a
@@ -28,7 +29,7 @@ import jakarta.annotation.Nonnull;
  * {@link Map}. It's the responsibility the implementing {@link OpenTelemetrySpanFactory} to mutate the message through
  * {@link OpenTelemetrySpanFactory#propagateContext(Message)}.
  * <p>
- * The trace becomes the message's parent span in its{@link org.axonframework.messaging.Metadata}.
+ * The trace becomes the message's parent span in its{@link Metadata}.
  *
  * @author Mitchell Herrijgers
  * @since 4.6.0

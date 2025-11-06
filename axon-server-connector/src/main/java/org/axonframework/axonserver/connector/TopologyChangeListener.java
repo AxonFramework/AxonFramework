@@ -22,7 +22,7 @@ import java.util.function.Consumer;
  * A functional interface representing a listener that is notified when a {@link TopologyChange} occurs to a specific
  * {@link AxonServerConfiguration#getContext() context}.
  * <p>
- * A {@code TopologyChange} can reflect any of the following {@link TopologyChange#type() updates}:
+ * A {@code TopologyChange} can reflect any of the following {@link TopologyChange#type() update}:
  * <ol>
  *     <li>{@link org.axonframework.axonserver.connector.TopologyChange.Type#COMMAND_HANDLER_ADDED} - A <b>command</b> handler was added by a specific instance to the context the listener is attached to.</li>
  *     <li>{@link org.axonframework.axonserver.connector.TopologyChange.Type#COMMAND_HANDLER_REMOVED} - A <b>command</b> handler was removed from a specific instance for the context the listener is attached to.</li>

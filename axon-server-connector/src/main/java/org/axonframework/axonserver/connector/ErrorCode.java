@@ -24,16 +24,16 @@ import org.axonframework.axonserver.connector.query.AxonServerNonTransientRemote
 import org.axonframework.axonserver.connector.query.AxonServerQueryDispatchException;
 import org.axonframework.axonserver.connector.query.AxonServerRemoteQueryHandlingException;
 import org.axonframework.axonserver.connector.util.ExceptionConverter;
-import org.axonframework.commandhandling.CommandExecutionException;
-import org.axonframework.commandhandling.NoHandlerForCommandException;
+import org.axonframework.messaging.commandhandling.CommandExecutionException;
+import org.axonframework.messaging.commandhandling.NoHandlerForCommandException;
 import org.axonframework.common.AxonException;
 import org.axonframework.common.ExceptionUtils;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
-import org.axonframework.messaging.EventPublicationFailedException;
-import org.axonframework.messaging.HandlerExecutionException;
+import org.axonframework.messaging.core.EventPublicationFailedException;
+import org.axonframework.messaging.core.HandlerExecutionException;
 import org.axonframework.modelling.ConcurrencyException;
-import org.axonframework.queryhandling.NoHandlerForQueryException;
-import org.axonframework.queryhandling.QueryExecutionException;
+import org.axonframework.messaging.queryhandling.NoHandlerForQueryException;
+import org.axonframework.messaging.queryhandling.QueryExecutionException;
 
 import java.util.function.Supplier;
 
@@ -234,7 +234,7 @@ public enum ErrorCode {
     }
 
     /**
-     * Returns an Query Execution ErrorCode variation based on the transiency of the given {@link Throwable}
+     * Returns a Query Execution ErrorCode variation based on the transiency of the given {@link Throwable}
      *
      * @param throwable The {@link Throwable} to inspect for transiency
      * @return {@link ErrorCode} variation

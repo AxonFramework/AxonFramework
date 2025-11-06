@@ -17,8 +17,8 @@
 package org.axonframework.test.deadline;
 
 import org.axonframework.deadline.DeadlineMessage;
-import org.axonframework.messaging.Scope;
-import org.axonframework.messaging.ScopeDescriptor;
+import org.axonframework.messaging.core.Scope;
+import org.axonframework.messaging.core.ScopeDescriptor;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;

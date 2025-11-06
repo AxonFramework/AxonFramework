@@ -17,10 +17,10 @@
 package org.axonframework.extension.spring.config;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.annotations.Internal;
-import org.axonframework.configuration.AxonConfiguration;
-import org.axonframework.configuration.LifecycleHandler;
-import org.axonframework.configuration.LifecycleRegistry;
+import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.configuration.AxonConfiguration;
+import org.axonframework.common.configuration.LifecycleHandler;
+import org.axonframework.common.configuration.LifecycleRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;

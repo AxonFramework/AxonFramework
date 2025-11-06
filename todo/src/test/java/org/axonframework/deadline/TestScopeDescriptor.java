@@ -18,7 +18,7 @@ package org.axonframework.deadline;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.axonframework.messaging.ScopeDescriptor;
+import org.axonframework.messaging.core.ScopeDescriptor;
 
 import java.util.Objects;
 

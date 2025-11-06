@@ -17,18 +17,18 @@
 package org.axonframework.modelling.saga;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.processors.errorhandling.ListenerInvocationErrorHandler;
-import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.ResultMessage;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.eventhandling.processing.errorhandling.ListenerInvocationErrorHandler;
+import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.ResultMessage;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
-import org.axonframework.tracing.TestSpanFactory;
-import org.axonframework.utils.MockException;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.tracing.TestSpanFactory;
+import org.axonframework.common.utils.MockException;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -157,8 +157,7 @@ class SagaManagerTest {
             testSubject.handle(event, ctx, Segment.ROOT_SEGMENT);
             return null;
         });
-        if (resultMessage.isExceptional()) {
-            Throwable e = resultMessage.exceptionResult();
+        if (resultMessage.payload() instanceof Throwable e) {
             assertEquals("Mock", e.getMessage());
         } else {
             fail("Expected exception to be propagated");

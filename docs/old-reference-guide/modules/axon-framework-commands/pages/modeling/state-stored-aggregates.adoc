@@ -9,8 +9,8 @@ The structure of a state-stored Aggregate is a little different from an Event So
 
 [source,java]
 ----
-import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.messaging.commandhandling.CommandHandler;
+import org.axonframework.messaging.eventhandling.EventHandler;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateMember;
 

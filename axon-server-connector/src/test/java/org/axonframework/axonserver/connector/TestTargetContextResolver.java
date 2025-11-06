@@ -16,7 +16,7 @@
 
 package org.axonframework.axonserver.connector;
 
-import org.axonframework.messaging.Message;
+import org.axonframework.messaging.core.Message;
 
 /**
  * Simple TargetContextResolver implementation  to be able to spy an instance of it for testing.

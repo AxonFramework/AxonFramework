@@ -16,40 +16,39 @@
 
 package org.axonframework.test.saga;
 
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandPriorityCalculator;
-import org.axonframework.commandhandling.annotations.AnnotationRoutingStrategy;
-import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
+import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.commandhandling.CommandPriorityCalculator;
+import org.axonframework.messaging.commandhandling.annotation.AnnotationRoutingStrategy;
+import org.axonframework.messaging.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.SimpleEventBus;
-import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventhandling.interceptors.EventMessageHandlerInterceptorChain;
-import org.axonframework.eventhandling.processors.errorhandling.ListenerInvocationErrorHandler;
-import org.axonframework.eventhandling.processors.errorhandling.LoggingErrorHandler;
-import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
-import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
-import org.axonframework.messaging.ClassBasedMessageTypeResolver;
-import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.ResultMessage;
-import org.axonframework.messaging.ScopeDescriptor;
-import org.axonframework.messaging.annotations.ClasspathHandlerDefinition;
-import org.axonframework.messaging.annotations.ClasspathHandlerEnhancerDefinition;
-import org.axonframework.messaging.annotations.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.annotations.HandlerDefinition;
-import org.axonframework.messaging.annotations.HandlerEnhancerDefinition;
-import org.axonframework.messaging.annotations.MultiHandlerDefinition;
-import org.axonframework.messaging.annotations.MultiHandlerEnhancerDefinition;
-import org.axonframework.messaging.annotations.MultiParameterResolverFactory;
-import org.axonframework.messaging.annotations.ParameterResolverFactory;
-import org.axonframework.messaging.annotations.SimpleResourceParameterResolverFactory;
+import org.axonframework.messaging.eventhandling.EventBus;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.GenericDomainEventMessage;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.eventhandling.SimpleEventBus;
+import org.axonframework.messaging.eventhandling.TrackedEventMessage;
+import org.axonframework.messaging.eventhandling.interception.EventMessageHandlerInterceptorChain;
+import org.axonframework.messaging.eventhandling.processing.errorhandling.ListenerInvocationErrorHandler;
+import org.axonframework.messaging.eventhandling.processing.errorhandling.LoggingErrorHandler;
+import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
+import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.core.GenericMessage;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageHandlerInterceptor;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.ResultMessage;
+import org.axonframework.messaging.core.ScopeDescriptor;
+import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.core.annotation.ClasspathHandlerEnhancerDefinition;
+import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.HandlerDefinition;
+import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
+import org.axonframework.messaging.core.annotation.MultiHandlerDefinition;
+import org.axonframework.messaging.core.annotation.MultiHandlerEnhancerDefinition;
+import org.axonframework.messaging.core.annotation.MultiParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.SimpleResourceParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.saga.AnnotatedSagaManager;
@@ -188,10 +187,10 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
                 ).proceed(unitOfWork.getMessage(), context)
         );
 
-        if (resultMessage.isExceptional()) {
-            Throwable e = resultMessage.exceptionResult();
-            if (Error.class.isAssignableFrom(e.getClass())) {
-                throw (Error) e;
+        if (resultMessage.payload() instanceof Throwable) {
+            Throwable e = resultMessage.payloadAs(Throwable.class);
+            if (e instanceof Error error) {
+                throw error;
             }
             throw new FixtureExecutionException("Exception occurred while handling an event", e);
         }

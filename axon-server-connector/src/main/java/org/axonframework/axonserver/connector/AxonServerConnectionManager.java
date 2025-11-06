@@ -26,7 +26,7 @@ import io.grpc.netty.shaded.io.grpc.netty.GrpcSslContexts;
 import org.axonframework.axonserver.connector.util.GrpcMessageSizeInterceptor;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ObjectUtils;
-import org.axonframework.lifecycle.Phase;
+import org.axonframework.common.lifecycle.Phase;
 
 import java.io.File;
 import java.util.Arrays;

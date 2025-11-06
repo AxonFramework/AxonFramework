@@ -16,14 +16,15 @@
 
 package org.axonframework.modelling.saga;
 
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.annotations.MessageHandlingMember;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 
 import jakarta.annotation.Nonnull;
 
 /**
  * Used to derive the value of an association property by looking it up the event message's {@link
- * org.axonframework.messaging.Metadata}.
+ * Metadata}.
  *
  * @author Sofia Guy Ang
  */
@@ -39,7 +40,7 @@ public class MetadataAssociationResolver implements AssociationResolver {
 
     /**
      * Finds the association property value by looking up the association property name in the event message's {@link
-     * org.axonframework.messaging.Metadata}.
+     * Metadata}.
      */
     @Override
     public <T> Object resolve(@Nonnull String associationPropertyName, @Nonnull EventMessage message,

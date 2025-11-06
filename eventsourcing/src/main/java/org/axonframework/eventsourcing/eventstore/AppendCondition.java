@@ -17,13 +17,13 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventstreaming.EventCriteria;
-import org.axonframework.eventstreaming.EventsCondition;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.axonframework.messaging.eventstreaming.EventsCondition;
 
 /**
  * Interface describing the consistency boundary condition for
- * {@link org.axonframework.eventhandling.EventMessage EventMessages} when
+ * {@link EventMessage EventMessages} when
  * {@link EventStoreTransaction#appendEvent(EventMessage) appending} them to an Event Store.
  *
  * @author Michal Negacz

@@ -25,10 +25,11 @@ import io.opentelemetry.context.propagation.TextMapGetter;
 import io.opentelemetry.context.propagation.TextMapPropagator;
 import io.opentelemetry.context.propagation.TextMapSetter;
 import org.axonframework.common.BuilderUtils;
-import org.axonframework.messaging.Message;
-import org.axonframework.tracing.Span;
-import org.axonframework.tracing.SpanAttributesProvider;
-import org.axonframework.tracing.SpanFactory;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.tracing.NoOpSpanFactory;
+import org.axonframework.messaging.tracing.Span;
+import org.axonframework.messaging.tracing.SpanAttributesProvider;
+import org.axonframework.messaging.tracing.SpanFactory;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -37,7 +38,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 import jakarta.annotation.Nonnull;
 
-import static org.axonframework.tracing.SpanUtils.determineMessageName;
+import static org.axonframework.messaging.tracing.SpanUtils.determineMessageName;
 
 /**
  * Creates {@link Span} implementations that are compatible with OpenTelemetry java agent instrumentation. OpenTelemetry
@@ -47,7 +48,7 @@ import static org.axonframework.tracing.SpanUtils.determineMessageName;
  * To get started with OpenTelemetry, <a href="https://opentelemetry.io/docs/">check out their documentation</a>. Note
  * that, even after configuring the correct dependencies, you still need to run the application using the OpenTelemetry
  * java agent to export data. Without this, it will have the same effect as the
- * {@link org.axonframework.tracing.NoOpSpanFactory} since the data is not sent anywhere.
+ * {@link NoOpSpanFactory} since the data is not sent anywhere.
  *
  * <p>
  * When creating a trace, the context of the current trace is used as a parent, instead of the one active at the time of

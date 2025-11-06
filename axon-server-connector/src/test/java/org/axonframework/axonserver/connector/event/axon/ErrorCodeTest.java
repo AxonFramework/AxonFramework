@@ -21,10 +21,10 @@ import org.axonframework.axonserver.connector.AxonServerException;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.command.AxonServerNonTransientRemoteCommandHandlingException;
 import org.axonframework.axonserver.connector.query.AxonServerNonTransientRemoteQueryHandlingException;
-import org.axonframework.commandhandling.CommandExecutionException;
+import org.axonframework.messaging.commandhandling.CommandExecutionException;
 import org.axonframework.common.AxonException;
-import org.axonframework.queryhandling.QueryExecutionException;
-import org.axonframework.serialization.SerializationException;
+import org.axonframework.messaging.queryhandling.QueryExecutionException;
+import org.axonframework.conversion.ConversionException;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -38,7 +38,8 @@ class ErrorCodeTest {
     @Test
     void convert4002FromCodeAndMessage() {
         ErrorCode errorCode = ErrorCode.getFromCode("AXONIQ-4002");
-        AxonException exception = errorCode.convert(ErrorMessage.newBuilder().setMessage("myMessage").build(), () -> "myCustomObject");
+        AxonException exception = errorCode.convert(ErrorMessage.newBuilder().setMessage("myMessage").build(),
+                                                    () -> "myCustomObject");
         assertTrue(exception instanceof CommandExecutionException);
         assertEquals("myMessage", exception.getMessage());
         assertEquals("myCustomObject", ((CommandExecutionException) exception).getDetails().orElse("null"));
@@ -62,7 +63,8 @@ class ErrorCodeTest {
     @Test
     void convert4005FromCodeAndMessage() {
         ErrorCode errorCode = ErrorCode.getFromCode("AXONIQ-4005");
-        AxonException exception = errorCode.convert(ErrorMessage.newBuilder().setMessage("myMessage").build(), () -> "myCustomObject");
+        AxonException exception = errorCode.convert(ErrorMessage.newBuilder().setMessage("myMessage").build(),
+                                                    () -> "myCustomObject");
         assertTrue(exception instanceof CommandExecutionException);
         assertTrue(exception.getCause() instanceof AxonServerNonTransientRemoteCommandHandlingException);
         assertEquals("myMessage", exception.getMessage());
@@ -72,7 +74,8 @@ class ErrorCodeTest {
     @Test
     void convert5003FromCodeAndMessage() {
         ErrorCode errorCode = ErrorCode.getFromCode("AXONIQ-5003");
-        AxonException exception = errorCode.convert(ErrorMessage.newBuilder().setMessage("myMessage").build(), () -> "myCustomObject");
+        AxonException exception = errorCode.convert(ErrorMessage.newBuilder().setMessage("myMessage").build(),
+                                                    () -> "myCustomObject");
         assertTrue(exception instanceof QueryExecutionException);
         assertTrue(exception.getCause() instanceof AxonServerNonTransientRemoteQueryHandlingException);
         assertEquals("myMessage", exception.getMessage());
@@ -81,7 +84,7 @@ class ErrorCodeTest {
 
     @Test
     void queryExecutionErrorCodeFromNonTransientException() {
-        ErrorCode errorCode = ErrorCode.getQueryExecutionErrorCode(new SerializationException("Fake exception"));
+        ErrorCode errorCode = ErrorCode.getQueryExecutionErrorCode(new ConversionException("Fake exception"));
         assertEquals(ErrorCode.QUERY_EXECUTION_NON_TRANSIENT_ERROR, errorCode);
     }
 
@@ -93,7 +96,7 @@ class ErrorCodeTest {
 
     @Test
     void commandExecutionErrorCodeFromNonTransientException() {
-        ErrorCode errorCode = ErrorCode.getCommandExecutionErrorCode(new SerializationException("Fake exception"));
+        ErrorCode errorCode = ErrorCode.getCommandExecutionErrorCode(new ConversionException("Fake exception"));
         assertEquals(ErrorCode.COMMAND_EXECUTION_NON_TRANSIENT_ERROR, errorCode);
     }
 
@@ -102,5 +105,4 @@ class ErrorCodeTest {
         ErrorCode errorCode = ErrorCode.getCommandExecutionErrorCode(new RuntimeException("Fake exception"));
         assertEquals(ErrorCode.COMMAND_EXECUTION_ERROR, errorCode);
     }
-
 }
