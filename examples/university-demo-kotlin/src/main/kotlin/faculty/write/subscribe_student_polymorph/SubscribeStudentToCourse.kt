@@ -3,8 +3,8 @@ package io.axoniq.demo.university.faculty.write.subscribe_student_polymorph
 import io.axoniq.demo.university.shared.ids.CourseId
 import io.axoniq.demo.university.shared.ids.StudentId
 import io.axoniq.demo.university.shared.ids.SubscriptionId
-import org.axonframework.commandhandling.annotations.Command
-import org.axonframework.modelling.annotations.TargetEntityId
+import org.axonframework.messaging.commandhandling.annotation.Command
+import org.axonframework.modelling.annotation.TargetEntityId
 
 data class SubscribeStudentToCourse(
   val studentId: StudentId,

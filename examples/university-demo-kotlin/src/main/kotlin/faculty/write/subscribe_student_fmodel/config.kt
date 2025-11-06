@@ -5,18 +5,18 @@ import io.axoniq.demo.university.faculty.events.FacultyEvent
 import io.axoniq.demo.university.faculty.events.StudentEnrolledInFaculty
 import io.axoniq.demo.university.faculty.events.StudentSubscribedToCourse
 import io.axoniq.demo.university.shared.ids.SubscriptionId
-import org.axonframework.commandhandling.annotations.CommandHandler
-import org.axonframework.commandhandling.configuration.CommandHandlingModule
-import org.axonframework.eventhandling.gateway.EventAppender
-import org.axonframework.eventsourcing.annotations.EventCriteriaBuilder
-import org.axonframework.eventsourcing.annotations.EventSourcedEntity
-import org.axonframework.eventsourcing.annotations.EventSourcingHandler
-import org.axonframework.eventsourcing.annotations.reflection.EntityCreator
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler
+import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule
+import org.axonframework.messaging.eventhandling.gateway.EventAppender
+import org.axonframework.eventsourcing.annotation.EventCriteriaBuilder
+import org.axonframework.eventsourcing.annotation.EventSourcedEntity
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler
+import org.axonframework.eventsourcing.annotation.reflection.EntityCreator
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer
-import org.axonframework.eventstreaming.EventCriteria
-import org.axonframework.messaging.ClassBasedMessageTypeResolver
-import org.axonframework.modelling.annotations.InjectEntity
+import org.axonframework.messaging.core.ClassBasedMessageTypeResolver
+import org.axonframework.messaging.eventstreaming.EventCriteria
+import org.axonframework.modelling.annotation.InjectEntity
 
 @EventSourcedEntity
 internal data class StateEntity @EntityCreator constructor(

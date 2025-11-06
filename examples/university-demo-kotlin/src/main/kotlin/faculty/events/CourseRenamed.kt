@@ -2,7 +2,7 @@ package io.axoniq.demo.university.faculty.events
 
 import io.axoniq.demo.university.faculty.FacultyTags
 import io.axoniq.demo.university.shared.ids.CourseId
-import org.axonframework.eventsourcing.annotations.EventTag
+import org.axonframework.eventsourcing.annotation.EventTag
 
 data class CourseRenamed(
   @EventTag(key = FacultyTags.COURSE)

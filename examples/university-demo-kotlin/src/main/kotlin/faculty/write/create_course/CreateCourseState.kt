@@ -2,9 +2,9 @@ package io.axoniq.demo.university.faculty.write.create_course
 
 import io.axoniq.demo.university.faculty.FacultyTags.COURSE
 import io.axoniq.demo.university.faculty.events.CourseCreated
-import org.axonframework.eventsourcing.annotations.EventSourcedEntity
-import org.axonframework.eventsourcing.annotations.EventSourcingHandler
-import org.axonframework.eventsourcing.annotations.reflection.EntityCreator
+import org.axonframework.eventsourcing.annotation.EventSourcedEntity
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler
+import org.axonframework.eventsourcing.annotation.reflection.EntityCreator
 
 @EventSourcedEntity(tagKey = COURSE)
 internal class CreateCourseState @EntityCreator constructor() {

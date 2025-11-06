@@ -1,7 +1,7 @@
 package io.axoniq.demo.university.faculty.write.enroll_student
 
 import io.axoniq.demo.university.shared.ids.StudentId
-import org.axonframework.modelling.annotations.TargetEntityId
+import org.axonframework.modelling.annotation.TargetEntityId
 
 data class EnrollStudent(
   @TargetEntityId

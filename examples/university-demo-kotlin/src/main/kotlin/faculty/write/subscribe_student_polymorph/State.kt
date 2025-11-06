@@ -1,18 +1,18 @@
 package io.axoniq.demo.university.faculty.write.subscribe_student_polymorph
 
+import io.axoniq.demo.university._ext.evolveIf
 import io.axoniq.demo.university.faculty.events.CourseCreated
 import io.axoniq.demo.university.faculty.events.StudentEnrolledInFaculty
 import io.axoniq.demo.university.faculty.events.StudentSubscribedToCourse
-import io.axoniq.demo.university._ext.evolveIf
 import io.axoniq.demo.university.shared.ids.CourseId
 import io.axoniq.demo.university.shared.ids.StudentId
 import io.axoniq.demo.university.shared.ids.SubscriptionId
-import org.axonframework.eventsourcing.annotations.EventCriteriaBuilder
-import org.axonframework.eventsourcing.annotations.EventSourcedEntity
-import org.axonframework.eventsourcing.annotations.EventSourcingHandler
-import org.axonframework.eventsourcing.annotations.reflection.EntityCreator
-import org.axonframework.eventstreaming.EventCriteria
-import org.axonframework.messaging.ClassBasedMessageTypeResolver
+import org.axonframework.eventsourcing.annotation.EventCriteriaBuilder
+import org.axonframework.eventsourcing.annotation.EventSourcedEntity
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler
+import org.axonframework.eventsourcing.annotation.reflection.EntityCreator
+import org.axonframework.messaging.core.ClassBasedMessageTypeResolver
+import org.axonframework.messaging.eventstreaming.EventCriteria
 
 @EventSourcedEntity(
   concreteTypes = [
