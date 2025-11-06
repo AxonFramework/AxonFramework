@@ -17,8 +17,6 @@
 package org.axonframework.modelling.annotations;
 
 import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
-import org.axonframework.common.FutureUtils;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotations.ParameterResolver;
@@ -85,12 +83,14 @@ class InjectEntityParameterResolver implements ParameterResolver<Object> {
             if (managedEntity) {
                 // Safe cast: widening from CompletableFuture<T> to CompletableFuture<Object>
                 // Double cast through wildcard avoids unchecked cast warnings
-                //noinspection unchecked
-                return (CompletableFuture<Object>) (CompletableFuture<?>) stateManager
+                @SuppressWarnings("unchecked")
+                CompletableFuture<Object> castCompletableFuture = (CompletableFuture<Object>) (CompletableFuture<?>) stateManager
                         .loadManagedEntity(type, resolvedId, context);
+                return castCompletableFuture;
             }
-            //noinspection unchecked
-            return (CompletableFuture<Object>) stateManager.loadEntity(type, resolvedId, context);
+            @SuppressWarnings("unchecked")
+            CompletableFuture<Object> castCompletableFuture = (CompletableFuture<Object>) stateManager.loadEntity(type, resolvedId, context);
+            return castCompletableFuture;
         } catch (EntityIdResolutionException e) {
             return CompletableFuture.failedFuture(
                     new IllegalStateException(
