@@ -93,7 +93,7 @@ public interface EventSourcedEntityModule<ID, E> extends EntityModule<ID, E> {
     }
 
     /**
-     * Creates the module for an auto-detected event-sourced entity with the given {@code entityType} and {@code idType}.
+     * Creates the module for an annotated event-sourced entity with the given {@code entityType} and {@code idType}.
      * The given {@code entityType} is expected to be annotated with {@link EventSourcedEntity}, which provides the
      * module with the necessary information to build the event-sourced entity.
      *

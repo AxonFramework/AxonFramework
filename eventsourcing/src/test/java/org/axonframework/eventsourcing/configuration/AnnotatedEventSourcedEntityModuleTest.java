@@ -62,19 +62,19 @@ class AnnotatedEventSourcedEntityModuleTest {
     }
 
     @Test
-    void autodetectedEntityThrowsNullPointerExceptionForNullIdentifierType() {
+    void annotatedEntityThrowsNullPointerExceptionForNullIdentifierType() {
         //noinspection DataFlowIssue
         assertThrows(NullPointerException.class, () -> EventSourcedEntityModule.autodetected(null, Course.class));
     }
 
     @Test
-    void autodetectedEntityThrowsNullPointerExceptionForNullEntityType() {
+    void annotatedEntityThrowsNullPointerExceptionForNullEntityType() {
         //noinspection DataFlowIssue
         assertThrows(NullPointerException.class, () -> EventSourcedEntityModule.autodetected(CourseId.class, null));
     }
 
     @Test
-    void annotatedEntityThrowsIllegalArgumentExceptionForNotAutodetectedEntity() {
+    void annotatedEntityThrowsIllegalArgumentExceptionForNotAnnotatedEntity() {
         assertThrows(IllegalArgumentException.class,
                      () -> EventSourcedEntityModule.autodetected(CourseId.class, CourseId.class));
     }

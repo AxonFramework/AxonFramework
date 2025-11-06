@@ -61,7 +61,7 @@ public interface EventHandlingComponentsConfigurer {
         /**
          * Configures a single event handling component.
          *
-         * @param component The component to configure.
+         * @param handlingComponentBuilder The component to configure.
          * @return The complete phase for decoration and finalization.
          */
         @Nonnull
