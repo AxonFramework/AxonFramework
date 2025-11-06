@@ -27,7 +27,7 @@ import java.beans.ConstructorProperties;
 
 /**
  * Internal {@link AnnotationIntrospector} for jackson to test JSON conversion ignoring all
- * creator annotations except for the {@link ConstructorProperties}-annotation.
+ * creator annotation except for the {@link ConstructorProperties}-annotation.
  *
  * @author JohT
  */

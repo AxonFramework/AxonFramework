@@ -21,7 +21,7 @@ import org.axonframework.messaging.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.commandhandling.SimpleCommandBus;
 import org.axonframework.messaging.commandhandling.annotations.CommandHandler;
 import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;

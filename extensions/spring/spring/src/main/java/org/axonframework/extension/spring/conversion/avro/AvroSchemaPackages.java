@@ -83,7 +83,7 @@ public class AvroSchemaPackages {
     }
 
     /**
-     * Registrar detecting {@link AvroSchemaScan} annotations and registering {@link AvroSchemaPackages} bean holding
+     * Registrar detecting {@link AvroSchemaScan} annotation and registering {@link AvroSchemaPackages} bean holding
      * the packages to scan for Avro schemas.
      */
     static class Registrar implements ImportBeanDefinitionRegistrar {

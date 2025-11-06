@@ -29,7 +29,7 @@ import java.lang.reflect.Parameter;
  * <p>
  * One of the implementations is the {@link ClasspathParameterResolverFactory}, which allows application developers to
  * provide custom {@code ParameterResolverFactory} implementations using the {@link java.util.ServiceLoader} mechanism.
- * To do so, place a file called {@code org.axonframework.messaging.core.annotations.ParameterResolverFactory} in the
+ * To do so, place a file called {@code org.axonframework.messaging.core.annotation.ParameterResolverFactory} in the
  * {@code META-INF/services} folder. In this file, place the fully qualified class names of all available
  * implementations.
  * <p>

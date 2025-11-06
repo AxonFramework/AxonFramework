@@ -18,7 +18,7 @@ package org.axonframework.integrationtests.testsuite.administration.state.mutabl
 
 import org.axonframework.messaging.commandhandling.annotations.CommandHandler;
 import org.axonframework.messaging.eventhandling.gateway.EventAppender;
-import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.modelling.entity.annotations.EntityMember;
 import org.axonframework.integrationtests.testsuite.administration.commands.AssignTaskCommand;
 import org.axonframework.integrationtests.testsuite.administration.commands.CreateEmployee;

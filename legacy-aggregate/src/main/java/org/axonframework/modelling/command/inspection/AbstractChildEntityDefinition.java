@@ -36,7 +36,7 @@ import java.util.stream.Stream;
 
 import static java.lang.String.format;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
-import static org.axonframework.common.annotations.AnnotationUtils.findAnnotationAttributes;
+import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
 import static org.axonframework.common.property.PropertyAccessStrategy.getProperty;
 
 /**

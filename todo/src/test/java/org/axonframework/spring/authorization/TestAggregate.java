@@ -17,7 +17,7 @@
 package org.axonframework.spring.authorization;
 
 import org.axonframework.messaging.commandhandling.annotations.CommandHandler;
-import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.CreationPolicy;

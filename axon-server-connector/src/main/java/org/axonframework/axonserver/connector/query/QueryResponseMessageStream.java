@@ -20,7 +20,7 @@ import io.axoniq.axonserver.connector.ResultStream;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonException;
-import org.axonframework.common.annotations.Internal;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.queryhandling.QueryResponseMessage;
 

@@ -19,7 +19,7 @@ package org.axonframework.messaging.commandhandling.annotations;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.messaging.commandhandling.gateway.CommandDispatcher;
-import org.axonframework.common.annotations.Internal;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.annotations.ParameterResolver;
 import org.axonframework.messaging.core.annotations.ParameterResolverFactory;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;

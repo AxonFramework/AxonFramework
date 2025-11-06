@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core.annotations;
 
-import org.axonframework.common.annotations.AnnotationUtils;
+import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.core.SimpleHandlerAttributes;
 
 import java.lang.annotation.Annotation;
@@ -27,12 +27,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import static org.axonframework.common.annotations.AnnotationUtils.findAnnotationAttributes;
-import static org.axonframework.common.annotations.AnnotationUtils.isAnnotatedWith;
+import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
+import static org.axonframework.common.annotation.AnnotationUtils.isAnnotatedWith;
 
 /**
  * Container for message handler attributes, constructed through inspecting an {@link AnnotatedElement}. It does so by
- * validating all (meta-)annotations of the given element for the presence of the {@link HasHandlerAttributes}
+ * validating all (meta-)annotation of the given element for the presence of the {@link HasHandlerAttributes}
  * annotation. Each found (meta-)annotation's attributes will be included.
  * <p>
  * This implementation can discover several collections of attributes. All attributes are prefixed with the simple name
@@ -47,7 +47,7 @@ public class AnnotatedHandlerAttributes implements HandlerAttributes {
     private final SimpleHandlerAttributes simpleHandlerAttributes;
 
     /**
-     * Create an {@code AnnotatedHandlerAttributes} containing all attributes of annotations (meta-)annotated with
+     * Create an {@code AnnotatedHandlerAttributes} containing all attributes of annotation (meta-)annotated with
      * {@link HasHandlerAttributes} on the given {@code annotatedElement}. Each attribute will be stored based on the
      * simple name of the annotation (meta-)annotated with {@code HasHandlerAttributes} combined with the attribute
      * name.

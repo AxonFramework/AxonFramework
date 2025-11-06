@@ -17,7 +17,7 @@
 package org.axonframework.common.configuration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.annotations.Internal;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 
 import java.util.Objects;

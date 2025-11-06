@@ -18,7 +18,7 @@ package org.axonframework.messaging.core.annotations;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.common.annotations.PriorityAnnotationComparator;
+import org.axonframework.common.annotation.PriorityAnnotationComparator;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;

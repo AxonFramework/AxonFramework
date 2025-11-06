@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.annotations;
 
-import org.axonframework.common.annotations.Internal;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.annotations.HandlerEnhancerDefinition;
 import org.axonframework.messaging.core.annotations.MessageHandlingMember;
 import org.axonframework.messaging.core.annotations.UnsupportedHandlerException;
@@ -36,7 +36,7 @@ import jakarta.annotation.Nonnull;
  * <p>
  * The {@link SequencingPolicy} annotation can be applied either directly to the handler method or to the declaring
  * class. When applied to the class, all handler methods in that class will inherit the sequencing policy. Method-level
- * annotations take precedence over class-level annotations.
+ * annotation take precedence over class-level annotation.
  *
  * @author Mateusz Nowak
  * @since 5.0.0

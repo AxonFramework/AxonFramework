@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core.annotations;
 
-import org.axonframework.common.annotations.Internal;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.QualifiedName;
 
@@ -27,7 +27,7 @@ import java.lang.annotation.Target;
 
 /**
  * Meta-annotation used to have a common grounds for the {@link #name()} and {@link #version()} for more specific
- * {@link org.axonframework.messaging.core.Message} annotations.
+ * {@link org.axonframework.messaging.core.Message} annotation.
  * <p>
  * Furthermore, allows for annotation scanning on a more generic level than per message type.
  *

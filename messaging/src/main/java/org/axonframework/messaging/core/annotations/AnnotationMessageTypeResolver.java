@@ -18,7 +18,7 @@ package org.axonframework.messaging.core.annotations;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.common.annotations.AnnotationUtils;
+import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.MessageTypeResolver;

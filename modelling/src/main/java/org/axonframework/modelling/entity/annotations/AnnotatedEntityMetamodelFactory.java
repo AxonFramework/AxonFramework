@@ -17,7 +17,7 @@
 package org.axonframework.modelling.entity.annotations;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.annotations.Internal;
+import org.axonframework.common.annotation.Internal;
 
 /**
  * Factory for creating {@link AnnotatedEntityMetamodel} instances for a given entity type. Used by the

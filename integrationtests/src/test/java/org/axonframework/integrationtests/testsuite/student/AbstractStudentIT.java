@@ -151,7 +151,7 @@ public abstract class AbstractStudentIT extends AbstractAxonServerIT {
 
     /**
      * Returns the {@link EntityEvolver} for the {@link Student} model. Defaults to using the
-     * {@link AnnotationBasedEntityEvolvingComponent} to use the annotations placed.
+     * {@link AnnotationBasedEntityEvolvingComponent} to use the annotation placed.
      */
     protected EntityEvolver<Student> studentEvolver(Configuration config) {
         return new AnnotationBasedEntityEvolvingComponent<>(

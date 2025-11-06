@@ -19,7 +19,7 @@ package org.axonframework.messaging.core.interception;
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.common.TypeReference;
-import org.axonframework.common.annotations.Internal;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.configuration.Component;
 import org.axonframework.common.configuration.ComponentBuilder;

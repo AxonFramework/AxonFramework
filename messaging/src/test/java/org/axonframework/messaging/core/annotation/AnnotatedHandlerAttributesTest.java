@@ -99,7 +99,7 @@ class AnnotatedHandlerAttributesTest {
      * Added as test since an {@link ExceptionHandler} is meta-annotated with {@link ResultHandler} and {@link
      * MessageHandlerInterceptor}. The former of these is in turn meta-annotated with {@link HasHandlerAttributes},
      * whilst the other is meta-annotated with {@link MessageHandler} (which too is meta-annotated with {@code
-     * HasHandlerAttributes}. In such a set up <b>all</b> meta-annotations which are {@code HasHandlerAttributes} should
+     * HasHandlerAttributes}. In such a set up <b>all</b> meta-annotation which are {@code HasHandlerAttributes} should
      * have their attributes returned, which thus should be validated to work.
      */
     @Test

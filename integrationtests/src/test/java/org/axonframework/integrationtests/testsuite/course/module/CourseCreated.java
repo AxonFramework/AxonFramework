@@ -16,7 +16,7 @@
 
 package org.axonframework.integrationtests.testsuite.course.module;
 
-import org.axonframework.eventsourcing.annotations.EventTag;
+import org.axonframework.eventsourcing.annotation.EventTag;
 
 public record CourseCreated(@EventTag(key = "Course") String courseId) {
 

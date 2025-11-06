@@ -33,7 +33,7 @@ import java.time.temporal.TemporalAccessor;
 import static org.axonframework.common.DateTimeUtils.formatInstant;
 
 /**
- * Abstract base class of a serialized event. Fields in this class contain JPA annotations that direct JPA event storage
+ * Abstract base class of a serialized event. Fields in this class contain JPA annotation that direct JPA event storage
  * engines how to store event entries.
  *
  * @author Rene de Waele

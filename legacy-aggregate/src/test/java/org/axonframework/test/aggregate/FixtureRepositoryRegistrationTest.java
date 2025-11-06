@@ -23,7 +23,7 @@ import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.messaging.eventhandling.SimpleEventBus;
 import org.axonframework.messaging.eventhandling.annotations.TimestampParameterResolverFactory;
 import org.axonframework.messaging.eventsourcing.LegacyEventSourcingRepository;
-import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.messaging.core.annotations.AnnotatedMessageHandlingMemberDefinition;
 import org.axonframework.messaging.core.annotations.HandlerDefinition;
 import org.axonframework.messaging.core.annotations.HandlerEnhancerDefinition;

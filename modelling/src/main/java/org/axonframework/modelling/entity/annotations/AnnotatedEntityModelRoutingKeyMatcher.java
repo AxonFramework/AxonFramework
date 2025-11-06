@@ -17,7 +17,7 @@
 package org.axonframework.modelling.entity.annotations;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.annotations.Internal;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.property.Property;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageType;

@@ -18,7 +18,7 @@ package org.axonframework.messaging.core.interception.annotations;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.common.annotations.AnnotationUtils;
+import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.core.Context.ResourceKey;
 import org.axonframework.messaging.core.annotations.ParameterResolver;
 import org.axonframework.messaging.core.annotations.ParameterResolverFactory;

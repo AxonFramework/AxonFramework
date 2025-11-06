@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.commandhandling.annotations;
 
-import org.axonframework.messaging.commandhandling.annotations.RoutingKey;
 import org.junit.jupiter.api.*;
 
 import java.lang.annotation.ElementType;
@@ -26,7 +25,7 @@ import java.lang.annotation.Target;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.axonframework.common.annotations.AnnotationUtils.findAnnotationAttributes;
+import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class AnnotationUtilsTest {

@@ -22,7 +22,7 @@ import org.axonframework.messaging.commandhandling.RoutingStrategy;
 import org.axonframework.messaging.commandhandling.distributed.DistributedCommandBus;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.common.annotations.AnnotationUtils;
+import org.axonframework.common.annotation.AnnotationUtils;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;

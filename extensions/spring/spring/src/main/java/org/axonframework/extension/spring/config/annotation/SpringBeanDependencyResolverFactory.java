@@ -19,7 +19,7 @@ package org.axonframework.extension.spring.config.annotation;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.Priority;
-import org.axonframework.common.annotations.AnnotationUtils;
+import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.core.annotations.ParameterResolver;
 import org.axonframework.messaging.core.annotations.ParameterResolverFactory;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;

@@ -52,7 +52,7 @@ import java.util.stream.Collectors;
 import static java.lang.String.format;
 
 /**
- * Implementation of the {@link Aggregate} interface that allows for an aggregate root to be a POJO with annotations on
+ * Implementation of the {@link Aggregate} interface that allows for an aggregate root to be a POJO with annotation on
  * its Command and Event Handler methods.
  * <p>
  * This wrapper ensures that aggregate members can use the {@link AggregateLifecycle#apply(Object)} method in a static

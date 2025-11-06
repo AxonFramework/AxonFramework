@@ -17,7 +17,7 @@
 package org.axonframework.update.api;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.annotations.Internal;
+import org.axonframework.common.annotation.Internal;
 
 /**
  * Represents an artifact with its group ID, artifact ID, and version.

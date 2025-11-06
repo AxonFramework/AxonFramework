@@ -19,7 +19,7 @@ package org.axonframework.messaging.core.unitofwork;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.FutureUtils;
-import org.axonframework.common.annotations.Internal;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.ApplicationContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -24,7 +24,7 @@ import org.axonframework.messaging.eventhandling.DomainEventMessage;
 import org.axonframework.messaging.eventhandling.EventBus;
 import org.axonframework.messaging.eventhandling.annotations.EventHandler;
 import org.axonframework.messaging.eventsourcing.AggregateFactory;
-import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.LegacyMessageHandler;
 import org.axonframework.messaging.core.Message;
@@ -54,7 +54,7 @@ import java.util.function.Supplier;
  * case to prepare the fixture for test execution.
  * <p/>
  * The fixture is initialized using a Command Handler that expects an {@code @CommandHandler} aggregate. If you have
- * implemented your own command handler (either using annotations, or by implementing the {@link LegacyMessageHandler}
+ * implemented your own command handler (either using annotation, or by implementing the {@link LegacyMessageHandler}
  * interface), you must register the command handler using {@link #registerAnnotatedCommandHandler(Object)} or
  * {@link #registerCommandHandler(Class, LegacyMessageHandler)}, respectively. A typical command handler will require a
  * repository. The test fixture initializes an Event Sourcing Repository, which can be obtained using
@@ -84,7 +84,7 @@ import java.util.function.Supplier;
  * </pre>
  * </code>
  * <p/>
- * If you use {@code @CommandHandler} annotations on the aggregate, you do not need to configure any additional command
+ * If you use {@code @CommandHandler} annotation on the aggregate, you do not need to configure any additional command
  * handlers. In that case, no configuration is required:
  * <p/>
  * Providing the "given" events using the {@link #given(Object...)} or

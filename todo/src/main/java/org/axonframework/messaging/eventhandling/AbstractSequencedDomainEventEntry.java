@@ -22,7 +22,7 @@ import jakarta.persistence.MappedSuperclass;
 import org.axonframework.conversion.Serializer;
 
 /**
- * Abstract base class of a serialized domain event. Fields in this class contain JPA annotations that direct JPA event
+ * Abstract base class of a serialized domain event. Fields in this class contain JPA annotation that direct JPA event
  * storage engines how to store event entries.
  *
  * @author Rene de Waele

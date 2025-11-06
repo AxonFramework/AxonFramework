@@ -250,7 +250,7 @@ class AnnotatedSagaTest {
 
         @Override
         public void handleStubDomainEvent(SagaEndEvent event) {
-            // Since this method overrides a handler, it doesn't need the annotations anymore
+            // Since this method overrides a handler, it doesn't need the annotation anymore
             super.handleStubDomainEvent(event);
             removeAssociationWith("propertyName", event.getPropertyName());
         }

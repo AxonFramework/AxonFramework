@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.annotations;
 
-import org.axonframework.common.annotations.Internal;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.annotations.HandlerAttributes;
 import org.axonframework.messaging.core.Message;

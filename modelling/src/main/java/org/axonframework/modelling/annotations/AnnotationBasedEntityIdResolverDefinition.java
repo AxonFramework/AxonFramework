@@ -22,7 +22,7 @@ import org.axonframework.modelling.entity.annotations.AnnotatedEntityMetamodel;
 import org.axonframework.modelling.EntityIdResolver;
 
 /**
- * Definition for an {@link EntityIdResolver} that uses annotations to resolve the entity identifier.
+ * Definition for an {@link EntityIdResolver} that uses annotation to resolve the entity identifier.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0

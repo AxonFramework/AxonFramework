@@ -43,7 +43,7 @@ import static java.util.Collections.emptySortedSet;
 import static org.axonframework.messaging.core.annotations.MessageStreamResolverUtils.resolveToStream;
 
 /**
- * Inspector for a message handling target of type {@code T} that uses annotations on the target to inspect the
+ * Inspector for a message handling target of type {@code T} that uses annotation on the target to inspect the
  * capabilities of the target.
  *
  * @param <T> The target type.

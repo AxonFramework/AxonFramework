@@ -18,7 +18,7 @@ package org.axonframework.messaging.eventhandling.processing.streaming.segmentin
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
-import org.axonframework.common.annotations.Internal;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.Context;
 
 import java.util.ArrayList;

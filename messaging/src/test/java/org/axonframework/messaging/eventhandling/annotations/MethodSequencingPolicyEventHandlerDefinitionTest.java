@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test class for {@link MethodSequencingPolicyEventHandlerDefinition} to verify proper wrapping of
- * event handlers with sequencing policy annotations.
+ * event handlers with sequencing policy annotation.
  *
  * @author Mateusz Nowak
  */
@@ -182,7 +182,7 @@ class MethodSequencingPolicyEventHandlerDefinitionTest {
         }
     }
 
-    // Test class for method-level annotations
+    // Test class for method-level annotation
     static class MethodLevelPolicyTest {
         @SuppressWarnings("unused")
         @EventHandler

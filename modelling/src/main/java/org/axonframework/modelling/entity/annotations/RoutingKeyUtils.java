@@ -18,8 +18,8 @@ package org.axonframework.modelling.entity.annotations;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.commandhandling.annotations.RoutingKey;
-import org.axonframework.common.annotations.AnnotationUtils;
-import org.axonframework.common.annotations.Internal;
+import org.axonframework.common.annotation.AnnotationUtils;
+import org.axonframework.common.annotation.Internal;
 
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
@@ -28,7 +28,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import static org.axonframework.common.annotations.AnnotationUtils.findAnnotationAttributes;
+import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
 
 /**
  * Utility class for retrieving routing keys from entity members and child entities.

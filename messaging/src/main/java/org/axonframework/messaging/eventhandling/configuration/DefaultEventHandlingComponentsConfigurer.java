@@ -17,7 +17,7 @@
 package org.axonframework.messaging.eventhandling.configuration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.annotations.Internal;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;

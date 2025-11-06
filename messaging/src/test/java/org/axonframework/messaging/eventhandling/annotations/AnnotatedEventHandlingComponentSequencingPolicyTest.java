@@ -39,7 +39,7 @@ import static org.axonframework.messaging.eventhandling.sequencing.SequentialPol
 
 /**
  * Test class validating the {@link AnnotatedEventHandlingComponent} sequencing policy behavior. Verifies that
- * {@code sequenceIdentifierFor} returns correct values based on {@link SequencingPolicy} annotations at both class and
+ * {@code sequenceIdentifierFor} returns correct values based on {@link SequencingPolicy} annotation at both class and
  * method levels.
  *
  * @author Mateusz Nowak

@@ -17,7 +17,7 @@
 package org.axonframework.extension.spring.authorization;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.annotations.AnnotationUtils;
+import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageHandlerInterceptor;
 import org.axonframework.messaging.core.MessageHandlerInterceptorChain;
@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 
 
 /**
- * A {@link MessageHandlerInterceptor} that verifies authorization based on {@link Secured} annotations on the payload
+ * A {@link MessageHandlerInterceptor} that verifies authorization based on {@link Secured} annotation on the payload
  * of {@link Message Messages}.
  *
  * @param <T> The message type this interceptor can process

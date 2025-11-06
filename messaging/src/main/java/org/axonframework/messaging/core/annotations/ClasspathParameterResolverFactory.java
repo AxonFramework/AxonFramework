@@ -28,7 +28,7 @@ import static java.util.ServiceLoader.load;
  * the {@link ServiceLoader} mechanism to locate and initialize them.
  * <p/>
  * This means for this class to find implementations, their fully qualified class name has to be put into a file called
- * {@code META-INF/services/org.axonframework.messaging.core.annotations.ParameterResolverFactory}. For more details, see
+ * {@code META-INF/services/org.axonframework.messaging.core.annotation.ParameterResolverFactory}. For more details, see
  * {@link ServiceLoader}.
  *
  * @author Allard Buijze

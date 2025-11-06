@@ -18,7 +18,7 @@ package org.axonframework.modelling.command;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
-import org.axonframework.common.annotations.AnnotationUtils;
+import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.core.Message;
 
 import java.lang.annotation.Annotation;
@@ -31,7 +31,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.ReflectionUtils.*;
 
 /**
- * CommandTargetResolver that uses annotations on the command to identify the methods that provide the Aggregate
+ * CommandTargetResolver that uses annotation on the command to identify the methods that provide the Aggregate
  * Identifier of the targeted Aggregate.
  * <p/>
  * This implementation expects at least one method (without parameters) or field in the command to be annotated with

@@ -69,7 +69,7 @@ public class AvroSchemaStoreAutoConfiguration {
 
     /**
      * Scans classpath for schemas, configured using {@link AvroSchemaScan}
-     * annotations.
+     * annotation.
      *
      * @param beanFactory  Spring bean factory.
      * @param schemaLoader List of schema loaders.

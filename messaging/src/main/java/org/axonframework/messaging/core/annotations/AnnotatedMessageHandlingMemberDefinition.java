@@ -27,7 +27,7 @@ import java.lang.reflect.Method;
 import java.util.Optional;
 import java.util.function.Function;
 
-import static org.axonframework.common.annotations.AnnotationUtils.findAnnotationAttributes;
+import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
 
 /**
  * The default HandlerDefinition implementation in Axon. It implements the rules of annotated handlers used in all the

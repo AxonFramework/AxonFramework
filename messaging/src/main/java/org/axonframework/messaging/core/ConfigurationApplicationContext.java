@@ -18,7 +18,7 @@ package org.axonframework.messaging.core;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.common.annotations.Internal;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.Configuration;
 
 import java.util.Objects;

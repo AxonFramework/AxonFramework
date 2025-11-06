@@ -19,7 +19,7 @@ package org.axonframework.messaging.eventhandling.processing.streaming.token.sto
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.annotations.Internal;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.JdbcException;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
