@@ -35,7 +35,7 @@ import java.util.concurrent.CompletableFuture;
 
 import static java.lang.String.format;
 import static org.axonframework.test.matchers.Matchers.*;
-import static org.axonframework.test.utils.DescriptionUtils.describe;
+import static org.axonframework.test.util.DescriptionUtils.describe;
 
 /**
  * Helper class for validating events published on a given EventBus.

@@ -17,4 +17,4 @@
 /**
  * A collection of classes which may prove useful when testing Axon-based classes.
  */
-package org.axonframework.test.utils;
+package org.axonframework.test.util;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.test.utils;
+package org.axonframework.test.util;
 
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandResultMessage;

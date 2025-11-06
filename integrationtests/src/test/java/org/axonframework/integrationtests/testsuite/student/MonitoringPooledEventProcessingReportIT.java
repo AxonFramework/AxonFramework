@@ -24,8 +24,8 @@ import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.QualifiedName;
-import org.axonframework.test.utils.MessageMonitorReport;
-import org.axonframework.test.utils.RecordingMessageMonitor;
+import org.axonframework.test.util.MessageMonitorReport;
+import org.axonframework.test.util.RecordingMessageMonitor;
 import org.junit.jupiter.api.*;
 
 import java.util.UUID;

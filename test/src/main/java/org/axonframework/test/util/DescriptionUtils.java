@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.test.utils;
+package org.axonframework.test.util;
 
 import org.hamcrest.Description;
 

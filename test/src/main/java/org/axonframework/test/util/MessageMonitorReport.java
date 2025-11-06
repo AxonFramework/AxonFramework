@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package org.axonframework.test.utils;
+package org.axonframework.test.util;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.monitoring.MessageMonitor;
-import org.axonframework.test.utils.MessageMonitorReport.Report.Success;
+import org.axonframework.test.util.MessageMonitorReport.Report.Success;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.AbstractList;
