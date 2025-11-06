@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.utils;
+package org.axonframework.util;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Index;

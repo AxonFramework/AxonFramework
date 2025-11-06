@@ -32,7 +32,7 @@ import org.axonframework.conversion.SimpleSerializedType;
 import org.axonframework.conversion.json.JacksonSerializer;
 import org.axonframework.conversion.upcasting.Upcaster;
 import org.axonframework.common.util.StubDomainEvent;
-import org.axonframework.utils.TestDomainEventEntry;
+import org.axonframework.util.TestDomainEventEntry;
 import org.junit.jupiter.api.*;
 
 import java.time.Instant;

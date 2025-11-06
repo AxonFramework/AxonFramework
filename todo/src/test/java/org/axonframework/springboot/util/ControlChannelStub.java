@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.springboot.utils;
+package org.axonframework.springboot.util;
 
 import io.axoniq.axonserver.grpc.control.ClientIdentification;
 import io.axoniq.axonserver.grpc.control.NodeInfo;
@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
 
-import static org.axonframework.springboot.utils.GrpcServerStub.DEFAULT_HOST;
+import static org.axonframework.springboot.util.GrpcServerStub.DEFAULT_HOST;
 
 /**
  * Stub {@link PlatformServiceGrpc.PlatformServiceImplBase} implementation used to
