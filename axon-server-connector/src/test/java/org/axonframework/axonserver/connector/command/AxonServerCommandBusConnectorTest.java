@@ -31,6 +31,7 @@ import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.lifecycle.ShutdownInProgressException;
 import org.axonframework.messaging.GenericMessage;
@@ -48,6 +49,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -339,6 +341,7 @@ class AxonServerCommandBusConnectorTest {
 
     @Test
     void disconnectInvokesPrepareDisconnectOnCommandChannel() {
+        when(commandChannel.prepareDisconnect()).thenReturn(CompletableFuture.completedFuture(null));
         when(connection.isConnected()).thenReturn(true);
 
         testSubject.disconnect();
@@ -392,6 +395,49 @@ class AxonServerCommandBusConnectorTest {
                                         assertTrue(handled.get());
                                         assertTrue(dispatchingHasShutdown.isDone());
                                     });
+    }
+
+    @Nested
+    class GracefulShutdown {
+
+        @Test
+        void disconnectCompletesWhenIncomingCommandsAreHandled() {
+            when(connection.isConnected()).thenReturn(true);
+            CompletableFuture<Void> disconnectCompletion = new CompletableFuture<>();
+            when(commandChannel.prepareDisconnect()).thenReturn(disconnectCompletion);
+
+            AtomicReference<CommandBusConnector.ResultCallback> resultCallback = new AtomicReference<>();
+            testSubject.onIncomingCommand((commandMessage, callback) -> resultCallback.set(callback));
+
+            getIncomingHandler(testSubject).handle(createTestCommandMessage(), mock());
+
+            assertNotNull(resultCallback.get(), "Command was not received");
+            CompletableFuture<Void> result = testSubject.disconnect();
+            assertNotNull(result);
+            verify(commandChannel).prepareDisconnect();
+            assertFalse(result.isDone());
+
+            disconnectCompletion.complete(null);
+
+            resultCallback.get().onSuccess(new GenericCommandResultMessage(ANY_TEST_TYPE, ANY_TEST_PAYLOAD));
+            assertTrue(result.isDone());
+        }
+
+        @Test
+        void disconnectCompletesOnPrepareWhenNoActiveCommandsAvailable() {
+            when(connection.isConnected()).thenReturn(true);
+            CompletableFuture<Void> disconnectCompletion = new CompletableFuture<>();
+            when(commandChannel.prepareDisconnect()).thenReturn(disconnectCompletion);
+
+            CompletableFuture<Void> result = testSubject.disconnect();
+            assertNotNull(result);
+            verify(commandChannel).prepareDisconnect();
+            assertFalse(result.isDone());
+
+            disconnectCompletion.complete(null);
+
+            assertTrue(result.isDone());
+        }
     }
 
     // Helpers
