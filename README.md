@@ -1,12 +1,12 @@
-<p style="text-align: center;">
+<p align="center">
   <a href="https://www.axoniq.io/products/axon-framework">
     <img src="https://framerusercontent.com/images/0U14hN92pQmqLXlmvHjKkHqogk.png" alt="Axon Framework logo"  width="150" height="150"/>
   </a>
 </p>
 
-<h1 style="text-align: center;">Axon Framework</h1>
+<h1 align="center">Axon Framework</h1>
 
-<p style="text-align: center;">
+<p align="center">
   Build modern event-driven systems with AxonIQ technology.
   <br>
   <a href="https://www.axoniq.io/products/axon-framework"><strong>Product Description »</strong></a>
