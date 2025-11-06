@@ -18,6 +18,7 @@ package org.axonframework.messaging.eventhandling.annotation;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Priority;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.Message;
@@ -27,6 +28,7 @@ import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.time.Instant;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * AbstractAnnotatedParameterResolverFactory that accepts parameters with type {@link Instant} that are annotated
@@ -60,13 +62,13 @@ public final class TimestampParameterResolverFactory
      */
     static class TimestampParameterResolver implements ParameterResolver<Instant> {
 
-        @Nullable
+        @Nonnull
         @Override
-        public Instant resolveParameterValue(@Nonnull ProcessingContext context) {
+        public CompletableFuture<Instant> resolveParameterValue(@Nonnull ProcessingContext context) {
             if (Message.fromContext(context) instanceof EventMessage eventMessage) {
-                return eventMessage.timestamp();
+                return CompletableFuture.completedFuture(eventMessage.timestamp());
             }
-            return null;
+            return FutureUtils.emptyCompletedFuture();
         }
 
         @Override

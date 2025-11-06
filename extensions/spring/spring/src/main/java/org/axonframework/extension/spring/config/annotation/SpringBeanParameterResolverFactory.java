@@ -37,6 +37,7 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * ParameterResolverFactory implementation that resolves parameters in the Spring Application Context. A parameter can
@@ -146,9 +147,10 @@ public class SpringBeanParameterResolverFactory implements ParameterResolverFact
             this.beanName = beanName;
         }
 
+        @Nonnull
         @Override
-        public Object resolveParameterValue(@Nonnull ProcessingContext context) {
-            return beanFactory.getBean(beanName);
+        public CompletableFuture<Object> resolveParameterValue(@Nonnull ProcessingContext context) {
+            return CompletableFuture.completedFuture(beanFactory.getBean(beanName));
         }
 
         @Override

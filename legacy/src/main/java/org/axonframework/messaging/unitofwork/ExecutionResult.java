@@ -56,7 +56,7 @@ public class ExecutionResult {
      * @return The exception raised during execution of the task if any, {@code null} otherwise.
      */
     public Throwable getExceptionResult() {
-        return isExceptionResult() ? result.exceptionResult() : null;
+        return result.payload() instanceof Throwable ? (Throwable) result.payload() : null;
     }
 
     /**
@@ -65,7 +65,7 @@ public class ExecutionResult {
      * @return {@code true} if execution of the task gave rise to an exception, {@code false} otherwise.
      */
     public boolean isExceptionResult() {
-        return result.isExceptional();
+        return result.payload() instanceof Throwable;
     }
 
     @Override

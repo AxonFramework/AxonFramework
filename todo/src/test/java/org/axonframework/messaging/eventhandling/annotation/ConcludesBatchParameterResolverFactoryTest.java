@@ -17,19 +17,20 @@
 package org.axonframework.messaging.eventhandling.annotation;
 
 import org.axonframework.messaging.commandhandling.GenericCommandMessage;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventTestUtils;
-import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.unitofwork.LegacyBatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Method;
 import java.util.List;
 
-import static org.axonframework.messaging.eventhandling.EventTestUtils.asEventMessage;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.axonframework.messaging.core.unitofwork.StubProcessingContext.forMessage;
+import static org.axonframework.messaging.eventhandling.EventTestUtils.asEventMessage;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ConcludesBatchParameterResolverFactoryTest {
@@ -54,15 +55,16 @@ class ConcludesBatchParameterResolverFactoryTest {
 
     @Test
     void resolvesToTrueWithoutUnitOfWork() {
-        assertEquals(true,
-                     testSubject.resolveParameterValue(forMessage(asEventMessage("testEvent"))));
+        assertThat(testSubject.resolveParameterValue(forMessage(asEventMessage("testEvent"))))
+                .isCompletedWithValue(true);
     }
 
     @Test
     void resolvesToTrueWithRegularUnitOfWork() {
         EventMessage event = asEventMessage("testEvent");
         LegacyDefaultUnitOfWork.startAndGet(event)
-                               .execute((ctx) -> assertEquals(Boolean.TRUE, testSubject.resolveParameterValue(ctx)));
+                               .execute((ctx) -> assertThat(testSubject.resolveParameterValue(ctx)).isCompletedWithValue(
+                                       Boolean.TRUE));
     }
 
     @Test
@@ -71,7 +73,7 @@ class ConcludesBatchParameterResolverFactoryTest {
         new LegacyBatchingUnitOfWork<>(events)
                 .execute((ctx) -> {
                     ProcessingContext event0Context = forMessage(events.getFirst());
-                    assertFalse(testSubject.resolveParameterValue(event0Context));
+                    assertThat(testSubject.resolveParameterValue(event0Context)).isCompletedWithValue(false);
                 });
     }
 
@@ -81,7 +83,7 @@ class ConcludesBatchParameterResolverFactoryTest {
         new LegacyBatchingUnitOfWork<>(events)
                 .execute((ctx) -> {
                     ProcessingContext lastEventContext = forMessage(events.get(4));
-                    assertTrue(testSubject.resolveParameterValue(lastEventContext));
+                    assertThat(testSubject.resolveParameterValue(lastEventContext)).isCompletedWithValue(true);
                 });
     }
 

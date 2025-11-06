@@ -28,6 +28,7 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * A {@link ParameterResolverFactory} constructing a {@link ParameterResolver} resolving the {@link DeadLetter} that is
@@ -35,8 +36,8 @@ import java.lang.reflect.Parameter;
  * <p>
  * Expects the {@code DeadLetter} to reside under the {@link LegacyUnitOfWork#resources()} using the class
  * {@link Class#getName() name} of the {@code DeadLetter} as the key. Hence, the {@code DeadLetter} processor is
- * required to add it to the resources before invoking the message handlers. If no {@link LegacyUnitOfWork} is active or there
- * is no {@code DeadLetter} is present, the resolver will return {@code null}.
+ * required to add it to the resources before invoking the message handlers. If no {@link LegacyUnitOfWork} is active or
+ * there is no {@code DeadLetter} is present, the resolver will return {@code null}.
  * <p>
  * The parameter resolver matches for any type of {@link Message}.
  *
@@ -62,13 +63,15 @@ public class DeadLetterParameterResolverFactory implements ParameterResolverFact
      */
     static class DeadLetterParameterResolver implements ParameterResolver<DeadLetter<?>> {
 
-        @Nullable
+        @Nonnull
         @Override
-        public DeadLetter<?> resolveParameterValue(@Nonnull ProcessingContext context) {
-            return CurrentUnitOfWork.isStarted()
-                    ? (DeadLetter<?>) CurrentUnitOfWork.map(uow -> uow.getResource(DeadLetter.class.getName()))
-                                                       .orElse(null)
-                    : null;
+        public CompletableFuture<DeadLetter<?>> resolveParameterValue(@Nonnull ProcessingContext context) {
+            return CompletableFuture.completedFuture(
+                    CurrentUnitOfWork.isStarted()
+                            ? (DeadLetter<?>) CurrentUnitOfWork.map(uow -> uow.getResource(DeadLetter.class.getName()))
+                                                               .orElse(null)
+                            : null
+            );
         }
 
         @Override

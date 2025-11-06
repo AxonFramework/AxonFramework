@@ -25,6 +25,7 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
+import java.util.concurrent.CompletableFuture;
 
 import static org.axonframework.common.Priority.LAST;
 
@@ -57,9 +58,9 @@ public final class FixtureResourceParameterResolverFactory implements ParameterR
             this.parameterType = parameterType;
         }
 
-        @Nullable
+        @Nonnull
         @Override
-        public Object resolveParameterValue(@Nonnull ProcessingContext context) {
+        public CompletableFuture<Object> resolveParameterValue(@Nonnull ProcessingContext context) {
             throw new FixtureExecutionException(
                     "No resource of type [" + parameterType.getName()
                             + "] has been registered. It is required for one of the handlers being executed."

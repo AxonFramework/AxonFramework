@@ -28,6 +28,7 @@ import org.axonframework.messaging.core.unitofwork.ResourceOverridingProcessingC
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 /**
@@ -112,10 +113,10 @@ public class ResultParameterResolverFactory implements ParameterResolverFactory 
             this.parameterType = resultType;
         }
 
-        @Nullable
+        @Nonnull
         @Override
-        public Object resolveParameterValue(@Nonnull ProcessingContext context) {
-            return REGISTERED_RESULT.get();
+        public CompletableFuture<Object> resolveParameterValue(@Nonnull ProcessingContext context) {
+            return CompletableFuture.completedFuture(REGISTERED_RESULT.get());
         }
 
         @Override

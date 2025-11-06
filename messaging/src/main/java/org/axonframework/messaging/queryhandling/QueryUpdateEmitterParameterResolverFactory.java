@@ -25,6 +25,7 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * {@link ParameterResolverFactory} that ensures the {@link QueryUpdateEmitter} is resolved in the context of the
@@ -49,10 +50,10 @@ public class QueryUpdateEmitterParameterResolverFactory implements ParameterReso
         }
 
         return new ParameterResolver<>() {
-            @Nullable
+            @Nonnull
             @Override
-            public QueryUpdateEmitter resolveParameterValue(@Nonnull ProcessingContext context) {
-                return QueryUpdateEmitter.forContext(context);
+            public CompletableFuture<QueryUpdateEmitter> resolveParameterValue(@Nonnull ProcessingContext context) {
+                return CompletableFuture.completedFuture(QueryUpdateEmitter.forContext(context));
             }
 
             @Override

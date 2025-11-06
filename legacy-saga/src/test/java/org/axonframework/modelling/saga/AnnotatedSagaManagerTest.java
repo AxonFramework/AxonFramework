@@ -190,8 +190,8 @@ public class AnnotatedSagaManagerTest {
             testSubject.handle(event, ctx, Segment.ROOT_SEGMENT);
             return null;
         });
-        if (resultMessage.isExceptional()) {
-            throw (Exception) resultMessage.exceptionResult();
+        if (resultMessage.payload() instanceof Exception ex) {
+            throw ex;
         }
     }
 

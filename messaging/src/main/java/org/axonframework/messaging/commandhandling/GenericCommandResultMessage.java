@@ -111,37 +111,16 @@ public class GenericCommandResultMessage extends GenericResultMessage implements
         super(delegate);
     }
 
-    /**
-     * Constructs a {@code GenericCommandResultMessage} for the given {@code delegate} and {@code exception} as a cause
-     * for the failure, intended to reconstruct another {@link CommandResultMessage}.
-     * <p>
-     * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
-     * of Work.
-     *
-     * @param delegate  The {@link Message} containing {@link Message#payload() payload}, {@link Message#type() type},
-     *                  {@link Message#identifier() identifier} and {@link Message#metadata() metadata} for the
-     *                  {@link QueryResponseMessage} to reconstruct.
-     * @param exception The {@link Throwable} describing the error representing the response of this
-     *                  {@link CommandResultMessage}.
-     */
-    @Deprecated
-    public GenericCommandResultMessage(@Nonnull Message delegate,
-                                       @Nullable Throwable exception) {
-        super(delegate, exception);
-    }
-
     @Override
     @Nonnull
     public CommandResultMessage withMetadata(@Nonnull Map<String, String> metadata) {
-        Throwable exception = optionalExceptionResult().orElse(null);
-        return new GenericCommandResultMessage(delegate().withMetadata(metadata), exception);
+        return new GenericCommandResultMessage(delegate().withMetadata(metadata));
     }
 
     @Override
     @Nonnull
     public CommandResultMessage andMetadata(@Nonnull Map<String, String> metadata) {
-        Throwable exception = optionalExceptionResult().orElse(null);
-        return new GenericCommandResultMessage(delegate().andMetadata(metadata), exception);
+        return new GenericCommandResultMessage(delegate().andMetadata(metadata));
     }
 
     @Override
@@ -157,7 +136,7 @@ public class GenericCommandResultMessage extends GenericResultMessage implements
                                                delegate.type(),
                                                convertedPayload,
                                                delegate.metadata());
-        return new GenericCommandResultMessage(converted, optionalExceptionResult().orElse(null));
+        return new GenericCommandResultMessage(converted);
     }
 
     @Override

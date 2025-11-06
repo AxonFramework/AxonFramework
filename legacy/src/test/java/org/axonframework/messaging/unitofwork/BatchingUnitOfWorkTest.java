@@ -170,20 +170,20 @@ class BatchingUnitOfWorkTest {
                                                       .map(ExecutionResult::getResult)
                                                       .collect(Collectors.toList());
         List<?> expectedPayloads = expectedMessages.stream()
-                                                   .filter(crm -> !crm.isExceptional())
+                                                   .filter(crm -> !(crm.payload() instanceof Throwable))
                                                    .map(Message::payload)
                                                    .collect(Collectors.toList());
         List<?> actualPayloads = actualMessages.stream()
-                                               .filter(crm -> !crm.isExceptional())
+                                               .filter(crm -> !(crm.payload() instanceof Throwable))
                                                .map(Message::payload)
                                                .collect(Collectors.toList());
         List<Throwable> expectedExceptions = expectedMessages.stream()
-                                                             .filter(ResultMessage::isExceptional)
-                                                             .map(ResultMessage::exceptionResult)
+                                                             .filter(crm -> (crm.payload() instanceof Throwable))
+                                                             .map(crm -> (Throwable) crm.payload())
                                                              .collect(Collectors.toList());
         List<Throwable> actualExceptions = actualMessages.stream()
-                                                         .filter(ResultMessage::isExceptional)
-                                                         .map(ResultMessage::exceptionResult)
+                                                         .filter(crm -> (crm.payload() instanceof Throwable))
+                                                         .map(crm -> (Throwable) crm.payload())
                                                          .collect(Collectors.toList());
         List<Metadata> expectedMetadata = expectedMessages.stream()
                                                           .map(Message::metadata)

@@ -21,6 +21,7 @@ import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Implementation of a {@link ParameterResolver} that resolves the Message payload as parameter in a handler method.
@@ -43,9 +44,10 @@ public class PayloadParameterResolver implements ParameterResolver<Object> {
         this.payloadType = payloadType;
     }
 
+    @Nonnull
     @Override
-    public Object resolveParameterValue(@Nonnull ProcessingContext context) {
-        return Message.fromContext(context).payload();
+    public CompletableFuture<Object> resolveParameterValue(@Nonnull ProcessingContext context) {
+        return CompletableFuture.completedFuture(Message.fromContext(context).payload());
     }
 
     @Override

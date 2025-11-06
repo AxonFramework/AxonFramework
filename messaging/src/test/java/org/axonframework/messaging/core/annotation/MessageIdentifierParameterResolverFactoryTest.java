@@ -72,7 +72,7 @@ class MessageIdentifierParameterResolverFactoryTest {
         final EventMessage eventMessage = EventTestUtils.asEventMessage("test");
         ProcessingContext context = StubProcessingContext.forMessage(eventMessage);
         assertTrue(resolver.matches(context));
-        assertEquals(eventMessage.identifier(), resolver.resolveParameterValue(context));
+        assertEquals(eventMessage.identifier(), resolver.resolveParameterValue(context).join());
     }
 
     @Test
@@ -84,7 +84,7 @@ class MessageIdentifierParameterResolverFactoryTest {
                 new GenericCommandMessage(new MessageType("command"), "test");
         ProcessingContext context = StubProcessingContext.forMessage(commandMessage);
         assertTrue(resolver.matches(context));
-        assertEquals(commandMessage.identifier(), resolver.resolveParameterValue(context));
+        assertEquals(commandMessage.identifier(), resolver.resolveParameterValue(context).join());
     }
 
     @Test

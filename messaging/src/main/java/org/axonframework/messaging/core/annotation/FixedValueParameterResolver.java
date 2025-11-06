@@ -20,6 +20,8 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
  * ParameterResolver implementation that injects a fixed value. Useful for injecting parameter values that do not rely
  * on information contained in the incoming message itself.
@@ -41,10 +43,10 @@ public class FixedValueParameterResolver<T> implements ParameterResolver<T> {
         this.value = value;
     }
 
-    @Nullable
+    @Nonnull
     @Override
-    public T resolveParameterValue(@Nonnull ProcessingContext context) {
-        return value;
+    public CompletableFuture<T> resolveParameterValue(@Nonnull ProcessingContext context) {
+        return CompletableFuture.completedFuture(value);
     }
 
     @Override

@@ -34,6 +34,7 @@ public class JpaEventStorageEngineConfigurationProperties {
     private int gapTimeout = 10_000;
     private long lowestGlobalSequence = 1;
     private int maxGapOffset = 60_000;
+    private long pollingInterval = 1000;
 
     /**
      * Batch size to retrieve events from the storage.
@@ -78,6 +79,15 @@ public class JpaEventStorageEngineConfigurationProperties {
      */
     public int maxGapOffset() {
         return maxGapOffset;
+    }
+
+    /**
+     * Retries the polling interval in milliseconds to detect new appended events.
+     *
+     * @return The polling interval. Defaults to 1000 ms.
+     */
+    public long pollingInterval() {
+        return pollingInterval;
     }
 
     /**
@@ -128,6 +138,15 @@ public class JpaEventStorageEngineConfigurationProperties {
      */
     public void maxGapOffset(int maxGapOffset) {
         this.maxGapOffset = maxGapOffset;
+    }
+
+    /**
+     * Sets the polling interval to detect new appended events.
+     *
+     * @param pollingInterval The polling interval in milliseconds.
+     */
+    public void pollingInterval(long pollingInterval) {
+        this.pollingInterval = pollingInterval;
     }
 }
 

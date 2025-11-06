@@ -74,7 +74,7 @@ class SimpleResourceParameterResolverFactoryTest {
         ParameterResolver resolver =
                 testSubject.createInstance(messageHandlingMethodWithResourceParameter, messageHandlingMethodWithResourceParameter.getParameters(), 1);
         assertTrue(resolver.matches(context));
-        assertEquals(TEST_RESOURCE, resolver.resolveParameterValue(context));
+        assertEquals(TEST_RESOURCE, resolver.resolveParameterValue(context).join());
     }
 
     @Test
@@ -82,7 +82,7 @@ class SimpleResourceParameterResolverFactoryTest {
         ParameterResolver resolver =
                 testSubject.createInstance(messageHandlingMethodWithResource2Parameter, messageHandlingMethodWithResource2Parameter.getParameters(), 1);
         assertTrue(resolver.matches(context));
-        assertEquals(TEST_RESOURCE2, resolver.resolveParameterValue(context));
+        assertEquals(TEST_RESOURCE2, resolver.resolveParameterValue(context).join());
     }
 
     @Test

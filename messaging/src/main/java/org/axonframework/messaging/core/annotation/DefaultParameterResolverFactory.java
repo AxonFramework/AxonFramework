@@ -28,6 +28,7 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Factory for the default parameter resolvers. This factory is capable for providing parameter resolvers for Message,
@@ -80,11 +81,14 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
             this.parameterType = parameterType;
         }
 
+        @Nonnull
         @Override
-        public Object resolveParameterValue(@Nonnull ProcessingContext context) {
-            return Message.fromContext(context)
-                          .metadata()
-                          .get(metadataValue.get(METADATA_VALUE_PROPERTY).toString());
+        public CompletableFuture<Object> resolveParameterValue(@Nonnull ProcessingContext context) {
+            return CompletableFuture.completedFuture(
+                    Message.fromContext(context)
+                           .metadata()
+                           .get(metadataValue.get(METADATA_VALUE_PROPERTY).toString())
+            );
         }
 
         @Override
@@ -109,11 +113,11 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
         private MetadataParameterResolver() {
         }
 
-        @Nullable
+        @Nonnull
         @Override
-        public Metadata resolveParameterValue(@Nonnull ProcessingContext context) {
+        public CompletableFuture<Metadata> resolveParameterValue(@Nonnull ProcessingContext context) {
             Message message = Message.fromContext(context);
-            return message.metadata();
+            return CompletableFuture.completedFuture(message.metadata());
         }
 
         @Override
@@ -130,10 +134,10 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
             this.parameterType = parameterType;
         }
 
-        @Nullable
+        @Nonnull
         @Override
-        public Message resolveParameterValue(@Nonnull ProcessingContext context) {
-            return Message.fromContext(context);
+        public CompletableFuture<Message> resolveParameterValue(@Nonnull ProcessingContext context) {
+            return CompletableFuture.completedFuture(Message.fromContext(context));
         }
 
         @Override

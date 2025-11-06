@@ -55,6 +55,8 @@ class MergeTask extends CoordinatorTask {
     private final Map<Integer, WorkPackage> workPackages;
     private final TokenStore tokenStore;
     private final UnitOfWorkFactory unitOfWorkFactory;
+    private final Map<Integer, java.time.Instant> releasesDeadlines;
+    private final java.time.Clock clock;
 
     /**
      * Constructs a {@code MergeTask}.
@@ -67,24 +69,30 @@ class MergeTask extends CoordinatorTask {
      * @param workPackages      The collection of {@link WorkPackage}s controlled by the {@link Coordinator}. Will be
      *                          queried for the presence of the given {@code segmentId} and the segment to merge it
      *                          with.
+     * @param releasesDeadlines  the map of segments that are blocked from claiming until a specified time
      * @param tokenStore        The storage solution for {@link TrackingToken}s. Used to claim the {@code segmentId} if
      *                          it is not present in the {@code workPackages}, to remove one of the segments and merge
      *                          the merged token.
      * @param unitOfWorkFactory The {@link UnitOfWorkFactory} that spawns {@link UnitOfWork UnitOfWorks} used to invoke
      *                          all {@link TokenStore} operations inside a unit of work.
+     * @param clock              the clock used for time-based operations
      */
     MergeTask(CompletableFuture<Boolean> result,
               String name,
               int segmentId,
               Map<Integer, WorkPackage> workPackages,
+              Map<Integer, java.time.Instant> releasesDeadlines,
               TokenStore tokenStore,
-              UnitOfWorkFactory unitOfWorkFactory) {
+              UnitOfWorkFactory unitOfWorkFactory,
+              java.time.Clock clock) {
         super(result, name);
         this.name = name;
         this.segmentId = segmentId;
         this.workPackages = workPackages;
+        this.releasesDeadlines = releasesDeadlines;
         this.unitOfWorkFactory = unitOfWorkFactory;
         this.tokenStore = tokenStore;
+        this.clock = clock;
     }
 
     /**
@@ -122,6 +130,11 @@ class MergeTask extends CoordinatorTask {
     }
 
     private CompletableFuture<TrackingToken> tokenFor(int segmentId) {
+        // Block the segment from being claimed by the Coordinator while we perform the merge.
+        // This prevents a race condition where the Coordinator might claim a segment that's being merged.
+        releasesDeadlines.put(segmentId,
+                              clock.instant().plusSeconds(60)); // Block for 1 minute (will be cleared after merge)
+
         // Remove WorkPackage so that the CoordinatorTask cannot find it to release its claim upon impending abortion.
         return workPackages.containsKey(segmentId)
                 ? workPackages.remove(segmentId)
@@ -138,27 +151,33 @@ class MergeTask extends CoordinatorTask {
 
     private Boolean mergeSegments(Segment thisSegment, TrackingToken thisToken,
                                   Segment thatSegment, TrackingToken thatToken) {
-        Segment mergedSegment = thisSegment.mergedWith(thatSegment);
-        // We want to keep the token with the segmentId obtained by the merge operation, and to delete the other
-        int tokenToDelete = mergedSegment.getSegmentId() == thisSegment.getSegmentId()
-                ? thatSegment.getSegmentId() : thisSegment.getSegmentId();
-        TrackingToken mergedToken = thatSegment.getSegmentId() < thisSegment.getSegmentId()
-                ? MergedTrackingToken.merged(thatToken, thisToken)
-                : MergedTrackingToken.merged(thisToken, thatToken);
+        try {
+            Segment mergedSegment = thisSegment.mergedWith(thatSegment);
+            // We want to keep the token with the segmentId obtained by the merge operation, and to delete the other
+            int tokenToDelete = mergedSegment.getSegmentId() == thisSegment.getSegmentId()
+                    ? thatSegment.getSegmentId() : thisSegment.getSegmentId();
+            TrackingToken mergedToken = thatSegment.getSegmentId() < thisSegment.getSegmentId()
+                    ? MergedTrackingToken.merged(thatToken, thisToken)
+                    : MergedTrackingToken.merged(thisToken, thatToken);
 
-        joinAndUnwrap(unitOfWorkFactory.create().executeWithResult(
-                context -> tokenStore.deleteToken(name, tokenToDelete, context)
-                                     .thenCompose(result -> tokenStore.storeToken(mergedToken,
-                                                                                  name,
-                                                                                  mergedSegment.getSegmentId(),
-                                                                                  context))
-                                     .thenCompose(result -> tokenStore.releaseClaim(name,
-                                                                                    mergedSegment.getSegmentId(),
-                                                                                    context))
-        ));
+            joinAndUnwrap(unitOfWorkFactory.create().executeWithResult(
+                    context -> tokenStore.deleteToken(name, tokenToDelete, context)
+                                         .thenCompose(result -> tokenStore.storeToken(mergedToken,
+                                                                                      name,
+                                                                                      mergedSegment.getSegmentId(),
+                                                                                      context))
+                                         .thenCompose(result -> tokenStore.releaseClaim(name,
+                                                                                        mergedSegment.getSegmentId(),
+                                                                                        context))
+            ));
 
-        logger.info("Processor [{}] successfully merged {} with {} into {}.",
-                    name, thisSegment, thatSegment, mergedSegment);
+            logger.info("Processor [{}] successfully merged {} with {} into {}.",
+                        name, thisSegment, thatSegment, mergedSegment);
+        } finally {
+            // Remove both segments from the releases deadlines to allow the Coordinator to claim the merged segment
+            releasesDeadlines.remove(thisSegment.getSegmentId());
+            releasesDeadlines.remove(thatSegment.getSegmentId());
+        }
         return true;
     }
 
