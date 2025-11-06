@@ -14,48 +14,39 @@
  * limitations under the License.
  */
 
-package org.axonframework.conversion.converters;
+package org.axonframework.conversion.converter;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.conversion.ConversionException;
 import org.axonframework.conversion.ContentTypeConverter;
 
-import java.io.InputStream;
-import java.sql.Blob;
-import java.sql.SQLException;
+import java.nio.charset.StandardCharsets;
 
 /**
- * A {@link ContentTypeConverter} implementation that converts {@link Blob} into an {@link InputStream}.
+ * A {@link ContentTypeConverter} implementation that converts {@code byte[]} into {@code String}.
+ * <p>
+ * Conversion is done using the {@link StandardCharsets#UTF_8 UTF-8 character set}.
  *
  * @author Allard Buijze
- * @since 2.3.0
+ * @since 2.0.0
  */
-public class BlobToInputStreamConverter implements ContentTypeConverter<Blob, InputStream> {
+public class ByteArrayToStringConverter implements ContentTypeConverter<byte[], String> {
 
     @Override
     @Nonnull
-    public Class<Blob> expectedSourceType() {
-        return Blob.class;
+    public Class<byte[]> expectedSourceType() {
+        return byte[].class;
     }
 
     @Override
     @Nonnull
-    public Class<InputStream> targetType() {
-        return InputStream.class;
+    public Class<String> targetType() {
+        return String.class;
     }
 
     @Override
     @Nullable
-    public InputStream convert(@Nullable Blob input) {
-        if (input == null) {
-            return null;
-        }
-
-        try {
-            return input.getBinaryStream();
-        } catch (SQLException e) {
-            throw new ConversionException("Error while attempting to read data from Blob.", e);
-        }
+    public String convert(@Nullable byte[] input) {
+        return input != null ? new String(input, StandardCharsets.UTF_8) : null;
     }
 }

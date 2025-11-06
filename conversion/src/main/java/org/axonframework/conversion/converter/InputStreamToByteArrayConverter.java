@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.conversion.converters;
+package org.axonframework.conversion.converter;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;

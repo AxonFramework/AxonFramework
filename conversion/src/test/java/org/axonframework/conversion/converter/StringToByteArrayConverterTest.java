@@ -14,49 +14,44 @@
  * limitations under the License.
  */
 
-package org.axonframework.conversion.converters;
+package org.axonframework.conversion.converter;
 
-import org.axonframework.conversion.converters.ByteArrayToInputStreamConverter;
 import org.junit.jupiter.api.*;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the {@link ByteArrayToInputStreamConverter}.
+ * Test class validating the {@link StringToByteArrayConverter}.
  *
- * @author Steven van Beelen
+ * @author Allard Buijze
  */
-class ByteArrayToInputStreamConverterTest {
+class StringToByteArrayConverterTest {
 
-    private ByteArrayToInputStreamConverter testSubject;
+    private StringToByteArrayConverter testSubject;
 
     @BeforeEach
     void setUp() {
-        testSubject = new ByteArrayToInputStreamConverter();
+        testSubject = new StringToByteArrayConverter();
     }
+
 
     @Test
     void validateSourceAndTargetType() {
-        assertEquals(byte[].class, testSubject.expectedSourceType());
-        assertEquals(InputStream.class, testSubject.targetType());
+        assertEquals(String.class, testSubject.expectedSourceType());
+        assertEquals(byte[].class, testSubject.targetType());
     }
 
     @Test
-    void convert() throws IOException {
-        byte[] testObject = "Hello, world!".getBytes();
-
-        InputStream result = testSubject.convert(testObject);
-
-        assertNotNull(result);
-        assertArrayEquals(testObject, result.readAllBytes());
+    void convert() {
+        assertEquals(String.class, testSubject.expectedSourceType());
+        assertEquals(byte[].class, testSubject.targetType());
+        assertArrayEquals("hello".getBytes(StandardCharsets.UTF_8), testSubject.convert("hello"));
     }
 
     @Test
     void convertIsNullSafe() {
-        //noinspection resource
         assertDoesNotThrow(() -> testSubject.convert(null));
         assertNull(testSubject.convert(null));
     }

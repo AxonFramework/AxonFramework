@@ -14,44 +14,48 @@
  * limitations under the License.
  */
 
-package org.axonframework.conversion.converters;
+package org.axonframework.conversion.converter;
 
-import org.axonframework.conversion.converters.ByteArrayToStringConverter;
 import org.junit.jupiter.api.*;
 
-import java.nio.charset.StandardCharsets;
+import java.io.IOException;
+import java.io.InputStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the {@link ByteArrayToStringConverter}.
+ * Test class validating the {@link ByteArrayToInputStreamConverter}.
  *
- * @author Allard Buijze
+ * @author Steven van Beelen
  */
-class ByteArrayToStringConverterTest {
+class ByteArrayToInputStreamConverterTest {
 
-    private ByteArrayToStringConverter testSubject;
+    private ByteArrayToInputStreamConverter testSubject;
 
     @BeforeEach
     void setUp() {
-        testSubject = new ByteArrayToStringConverter();
+        testSubject = new ByteArrayToInputStreamConverter();
     }
 
     @Test
     void validateSourceAndTargetType() {
         assertEquals(byte[].class, testSubject.expectedSourceType());
-        assertEquals(String.class, testSubject.targetType());
+        assertEquals(InputStream.class, testSubject.targetType());
     }
 
     @Test
-    void convert() {
-        assertEquals(String.class, testSubject.targetType());
-        assertEquals(byte[].class, testSubject.expectedSourceType());
-        assertEquals("hello", testSubject.convert("hello".getBytes(StandardCharsets.UTF_8)));
+    void convert() throws IOException {
+        byte[] testObject = "Hello, world!".getBytes();
+
+        InputStream result = testSubject.convert(testObject);
+
+        assertNotNull(result);
+        assertArrayEquals(testObject, result.readAllBytes());
     }
 
     @Test
     void convertIsNullSafe() {
+        //noinspection resource
         assertDoesNotThrow(() -> testSubject.convert(null));
         assertNull(testSubject.convert(null));
     }

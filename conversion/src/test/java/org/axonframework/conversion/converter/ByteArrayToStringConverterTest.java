@@ -14,43 +14,39 @@
  * limitations under the License.
  */
 
-package org.axonframework.conversion.converters;
+package org.axonframework.conversion.converter;
 
-import org.axonframework.conversion.converters.InputStreamToByteArrayConverter;
 import org.junit.jupiter.api.*;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the {@link InputStreamToByteArrayConverter}.
+ * Test class validating the {@link ByteArrayToStringConverter}.
  *
  * @author Allard Buijze
  */
-class InputStreamToByteArrayConverterTest {
+class ByteArrayToStringConverterTest {
 
-    private InputStreamToByteArrayConverter testSubject;
+    private ByteArrayToStringConverter testSubject;
 
     @BeforeEach
     void setUp() {
-        testSubject = new InputStreamToByteArrayConverter();
+        testSubject = new ByteArrayToStringConverter();
     }
 
     @Test
     void validateSourceAndTargetType() {
-        assertEquals(InputStream.class, testSubject.expectedSourceType());
-        assertEquals(byte[].class, testSubject.targetType());
+        assertEquals(byte[].class, testSubject.expectedSourceType());
+        assertEquals(String.class, testSubject.targetType());
     }
 
     @Test
     void convert() {
-        byte[] bytes = "Hello, world!".getBytes();
-        InputStream inputStream = new ByteArrayInputStream(bytes);
-        byte[] actual = testSubject.convert(inputStream);
-
-        assertArrayEquals(bytes, actual);
+        assertEquals(String.class, testSubject.targetType());
+        assertEquals(byte[].class, testSubject.expectedSourceType());
+        assertEquals("hello", testSubject.convert("hello".getBytes(StandardCharsets.UTF_8)));
     }
 
     @Test

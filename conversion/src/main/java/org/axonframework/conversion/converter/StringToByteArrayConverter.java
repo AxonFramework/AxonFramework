@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.conversion.converters;
+package org.axonframework.conversion.converter;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
@@ -23,30 +23,30 @@ import org.axonframework.conversion.ContentTypeConverter;
 import java.nio.charset.StandardCharsets;
 
 /**
- * A {@link ContentTypeConverter} implementation that converts {@code byte[]} into {@code String}.
+ * A {@link ContentTypeConverter} implementation that converts {@code Strings} into {@code byte[]}.
  * <p>
  * Conversion is done using the {@link StandardCharsets#UTF_8 UTF-8 character set}.
  *
  * @author Allard Buijze
  * @since 2.0.0
  */
-public class ByteArrayToStringConverter implements ContentTypeConverter<byte[], String> {
+public class StringToByteArrayConverter implements ContentTypeConverter<String, byte[]> {
 
     @Override
     @Nonnull
-    public Class<byte[]> expectedSourceType() {
-        return byte[].class;
-    }
-
-    @Override
-    @Nonnull
-    public Class<String> targetType() {
+    public Class<String> expectedSourceType() {
         return String.class;
     }
 
     @Override
+    @Nonnull
+    public Class<byte[]> targetType() {
+        return byte[].class;
+    }
+
+    @Override
     @Nullable
-    public String convert(@Nullable byte[] input) {
-        return input != null ? new String(input, StandardCharsets.UTF_8) : null;
+    public byte[] convert(@Nullable String input) {
+        return input != null ? input.getBytes(StandardCharsets.UTF_8) : null;
     }
 }

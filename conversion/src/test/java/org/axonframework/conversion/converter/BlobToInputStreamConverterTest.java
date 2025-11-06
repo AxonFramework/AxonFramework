@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package org.axonframework.conversion.converters;
+package org.axonframework.conversion.converter;
 
-import org.axonframework.conversion.converters.BlobToInputStreamConverter;
 import org.junit.jupiter.api.*;
 
 import java.io.ByteArrayInputStream;
