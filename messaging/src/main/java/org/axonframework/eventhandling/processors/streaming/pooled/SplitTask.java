@@ -28,6 +28,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
+import java.time.Clock;
+import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -54,10 +56,10 @@ class SplitTask extends CoordinatorTask {
     private final String name;
     private final int segmentId;
     private final Map<Integer, WorkPackage> workPackages;
-    private final Map<Integer, java.time.Instant> releasesDeadlines;
+    private final Map<Integer, Instant> releasesDeadlines;
     private final TokenStore tokenStore;
     private final UnitOfWorkFactory unitOfWorkFactory;
-    private final java.time.Clock clock;
+    private final Clock clock;
 
     /**
      * Constructs a {@code SplitTask}.
@@ -80,10 +82,10 @@ class SplitTask extends CoordinatorTask {
               String name,
               int segmentId,
               Map<Integer, WorkPackage> workPackages,
-              Map<Integer, java.time.Instant> releasesDeadlines,
+              Map<Integer, Instant> releasesDeadlines,
               TokenStore tokenStore,
               UnitOfWorkFactory unitOfWorkFactory,
-              java.time.Clock clock) {
+              Clock clock) {
 
         super(result, name);
         this.name = name;
@@ -137,7 +139,7 @@ class SplitTask extends CoordinatorTask {
                                          ))
             ));
         } finally {
-            // Remove the segment from the releases deadlines to allow the Coordinator to claim the split segments
+            // Remove the segment from the releases deadlines to allow the Coordinator to claim the split segments.
             releasesDeadlines.remove(segmentToSplit.getSegmentId());
         }
         return true;

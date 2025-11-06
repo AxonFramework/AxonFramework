@@ -835,7 +835,7 @@ class Coordinator {
                 processingGate.set(false);
 
                 if (isSpaceAvailable() && hasNextEvent()) {
-                    // All work package have space available to handle events and there are still events on the stream.
+                    // All work packages have space available to handle events and there are still events on the stream.
                     // We should thus start this process again immediately.
                     // It will likely jump all the if-statement directly, thus initiating the reading of events ASAP.
                     scheduleImmediateCoordinationTask();

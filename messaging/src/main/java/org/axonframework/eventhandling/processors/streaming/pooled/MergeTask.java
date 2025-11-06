@@ -26,6 +26,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
+import java.time.Clock;
+import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -56,7 +58,7 @@ class MergeTask extends CoordinatorTask {
     private final TokenStore tokenStore;
     private final UnitOfWorkFactory unitOfWorkFactory;
     private final Map<Integer, java.time.Instant> releasesDeadlines;
-    private final java.time.Clock clock;
+    private final Clock clock;
 
     /**
      * Constructs a {@code MergeTask}.
@@ -81,10 +83,10 @@ class MergeTask extends CoordinatorTask {
               String name,
               int segmentId,
               Map<Integer, WorkPackage> workPackages,
-              Map<Integer, java.time.Instant> releasesDeadlines,
+              Map<Integer, Instant> releasesDeadlines,
               TokenStore tokenStore,
               UnitOfWorkFactory unitOfWorkFactory,
-              java.time.Clock clock) {
+              Clock clock) {
         super(result, name);
         this.name = name;
         this.segmentId = segmentId;
@@ -174,7 +176,7 @@ class MergeTask extends CoordinatorTask {
             logger.info("Processor [{}] successfully merged {} with {} into {}.",
                         name, thisSegment, thatSegment, mergedSegment);
         } finally {
-            // Remove both segments from the releases deadlines to allow the Coordinator to claim the merged segment
+            // Remove both segments from the releases deadlines to allow the Coordinator to claim the merged segment.
             releasesDeadlines.remove(thisSegment.getSegmentId());
             releasesDeadlines.remove(thatSegment.getSegmentId());
         }
