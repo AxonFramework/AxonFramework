@@ -3,9 +3,9 @@ package io.axoniq.demo.university.faculty.write.subscribestudentmulti;
 import io.axoniq.demo.university.faculty.FacultyTags;
 import io.axoniq.demo.university.faculty.Ids;
 import io.axoniq.demo.university.faculty.events.StudentSubscribedToCourse;
-import org.axonframework.commandhandling.annotations.CommandHandler;
-import org.axonframework.eventhandling.gateway.EventAppender;
-import org.axonframework.modelling.annotations.InjectEntity;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
+import org.axonframework.modelling.annotation.InjectEntity;
 
 import java.util.List;
 

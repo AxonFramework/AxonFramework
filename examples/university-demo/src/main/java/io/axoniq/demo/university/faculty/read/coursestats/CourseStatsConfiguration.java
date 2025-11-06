@@ -1,9 +1,9 @@
 package io.axoniq.demo.university.faculty.read.coursestats;
 
-import org.axonframework.eventhandling.configuration.EventProcessorModule;
-import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessorModule;
+import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
+import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorModule;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.queryhandling.configuration.QueryHandlingModule;
+import org.axonframework.messaging.queryhandling.configuration.QueryHandlingModule;
 
 public class CourseStatsConfiguration {
 
