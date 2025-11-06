@@ -45,6 +45,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -348,11 +349,29 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
         private E invoke(ID id, ProcessingContext context) {
             ProcessingContext contextWithId = context.withResource(ID_KEY, id);
             ProcessingContext convertedContext = mapContextWithMessageIfNecessary(contextWithId);
-            Object[] args = new Object[executable.getParameterCount()];
-            for (int i = 0; i < args.length; i++) {
-                args[i] = parameterResolvers[i].resolveParameterValue(convertedContext);
+
+            CompletableFuture<?>[] futures = Arrays.stream(parameterResolvers)
+                                                   .map(resolver -> tryResolveParameterValue(resolver, convertedContext))
+                                                   .toArray(CompletableFuture[]::new);
+
+            return CompletableFuture.allOf(futures)
+                                    .thenApply(v -> Arrays.stream(futures)
+                                                          .map(CompletableFuture::resultNow)
+                                                          .toArray())
+                                    .thenApply(this::constructEntityWithArguments)
+                                    .join();
+        }
+
+        @Nonnull
+        private CompletableFuture<?> tryResolveParameterValue(
+                ParameterResolver<?> parameterResolver,
+                ProcessingContext context
+        ) {
+            try {
+                return parameterResolver.resolveParameterValue(context);
+            } catch (Exception e) {
+                return CompletableFuture.failedFuture(e);
             }
-            return constructEntityWithArguments(args);
         }
 
         private boolean supportsId(ID id) {
@@ -420,10 +439,10 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
      */
     private class IdTypeParameterResolver implements ParameterResolver<ID> {
 
-        @Nullable
+        @Nonnull
         @Override
-        public ID resolveParameterValue(@Nonnull ProcessingContext processingContext) {
-            return processingContext.getResource(ID_KEY);
+        public CompletableFuture<ID> resolveParameterValue(@Nonnull ProcessingContext processingContext) {
+            return CompletableFuture.completedFuture(processingContext.getResource(ID_KEY));
         }
 
         @Override

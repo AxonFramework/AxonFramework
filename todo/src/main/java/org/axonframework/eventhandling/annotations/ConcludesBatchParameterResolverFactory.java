@@ -26,6 +26,8 @@ import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyBatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
  * Parameter resolver factory for boolean event handler parameters annotated with {@link ConcludesBatch}. If the event
  * is processed in the context of a {@link LegacyBatchingUnitOfWork} and is the last of the batch the resolver injects a
@@ -49,12 +51,14 @@ public class ConcludesBatchParameterResolverFactory extends AbstractAnnotatedPar
         return this;
     }
 
-    @Nullable
+    @Nonnull
     @Override
-    public Boolean resolveParameterValue(@Nonnull ProcessingContext context) {
+    public CompletableFuture<Boolean> resolveParameterValue(@Nonnull ProcessingContext context) {
         Message message = Message.fromContext(context);
-        return CurrentUnitOfWork.map(unitOfWork -> !(unitOfWork instanceof LegacyBatchingUnitOfWork<?>) ||
-                ((LegacyBatchingUnitOfWork<?>) unitOfWork).isLastMessage(message)).orElse(true);
+        return CompletableFuture.completedFuture(
+                CurrentUnitOfWork.map(unitOfWork -> !(unitOfWork instanceof LegacyBatchingUnitOfWork<?>) ||
+                        ((LegacyBatchingUnitOfWork<?>) unitOfWork).isLastMessage(message)).orElse(true)
+        );
     }
 
     @Override

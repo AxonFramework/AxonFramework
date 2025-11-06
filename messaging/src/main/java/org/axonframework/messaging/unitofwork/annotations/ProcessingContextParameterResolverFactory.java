@@ -25,6 +25,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
+import java.util.concurrent.CompletableFuture;
 
 import static org.axonframework.common.Priority.LOW;
 
@@ -54,10 +55,10 @@ public class ProcessingContextParameterResolverFactory implements ParameterResol
 
     private static class ProcessingContextParameterResolver implements ParameterResolver<ProcessingContext> {
 
-        @Nullable
+        @Nonnull
         @Override
-        public ProcessingContext resolveParameterValue(@Nonnull ProcessingContext context) {
-            return context;
+        public CompletableFuture<ProcessingContext> resolveParameterValue(@Nonnull ProcessingContext context) {
+            return CompletableFuture.completedFuture(context);
         }
 
         @Override
