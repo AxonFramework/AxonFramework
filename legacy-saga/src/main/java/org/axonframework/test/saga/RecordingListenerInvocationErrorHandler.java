@@ -18,7 +18,7 @@ package org.axonframework.test.saga;
 
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventMessageHandler;
-import org.axonframework.messaging.eventhandling.processors.errorhandling.ListenerInvocationErrorHandler;
+import org.axonframework.messaging.eventhandling.processing.errorhandling.ListenerInvocationErrorHandler;
 
 import java.util.Optional;
 import jakarta.annotation.Nonnull;

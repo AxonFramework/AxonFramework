@@ -17,8 +17,8 @@
 package org.axonframework.springboot;
 
 import org.axonframework.messaging.commandhandling.CommandBus;
-import org.axonframework.messaging.eventhandling.processors.EventProcessor;
-import org.axonframework.messaging.eventhandling.processors.streaming.StreamingEventProcessor;
+import org.axonframework.messaging.eventhandling.processing.EventProcessor;
+import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
 import org.axonframework.messaging.eventsourcing.snapshotting.Snapshotter;
 import org.axonframework.messaging.queryhandling.QueryBus;
 import org.axonframework.messaging.tracing.SpanAttributesProvider;

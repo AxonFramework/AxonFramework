@@ -18,17 +18,19 @@ package org.axonframework.spring.stereotype;
 
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
-import org.axonframework.eventsourcing.annotations.AnnotationBasedEventCriteriaResolver;
-import org.axonframework.eventsourcing.annotations.AnnotationBasedEventCriteriaResolverDefinition;
-import org.axonframework.eventsourcing.annotations.CriteriaResolverDefinition;
-import org.axonframework.eventsourcing.annotations.EventCriteriaBuilder;
-import org.axonframework.eventsourcing.annotations.EventSourcedEntity;
-import org.axonframework.eventsourcing.annotations.EventSourcedEntityFactoryDefinition;
-import org.axonframework.eventsourcing.annotations.reflection.AnnotationBasedEventSourcedEntityFactoryDefinition;
+import org.axonframework.eventsourcing.annotation.AnnotationBasedEventCriteriaResolver;
+import org.axonframework.eventsourcing.annotation.AnnotationBasedEventCriteriaResolverDefinition;
+import org.axonframework.eventsourcing.annotation.CriteriaResolverDefinition;
+import org.axonframework.eventsourcing.annotation.EventCriteriaBuilder;
+import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
+import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactoryDefinition;
+import org.axonframework.eventsourcing.annotation.reflection.AnnotationBasedEventSourcedEntityFactoryDefinition;
 import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.messaging.commandhandling.CommandMessage;
-import org.axonframework.modelling.annotations.EntityIdResolverDefinition;
-import org.axonframework.modelling.entity.annotations.AnnotatedEntityIdResolverDefinition;
+import org.axonframework.modelling.annotation.EntityIdResolverDefinition;
+import org.axonframework.modelling.annotation.TargetEntityId;
+import org.axonframework.modelling.entity.annotation.AnnotatedEntityMetamodel;
+import org.axonframework.modelling.entity.annotation.AnnotatedEntityIdResolverDefinition;
 import org.springframework.context.annotation.Scope;
 import org.springframework.core.annotation.AliasFor;
 import org.springframework.stereotype.Component;
@@ -86,7 +88,7 @@ public @interface Aggregate {
      * should be specified here. Classes that are not specified here will not be scanned.
      *
      * @return The concrete types of the entity that should be considered when building the
-     * {@link org.axonframework.modelling.entity.annotations.AnnotatedEntityMetamodel}.
+     * {@link AnnotatedEntityMetamodel}.
      */
     @AliasFor(annotation = EventSourcedEntity.class, attribute = "concreteTypes")
     Class<?>[] concreteTypes() default {};
@@ -115,7 +117,7 @@ public @interface Aggregate {
      * The definition of the {@link EntityIdResolverDefinition} to use to resolve the entity id from a
      * {@link CommandMessage command message}. Defaults to the
      * {@link AnnotatedEntityIdResolverDefinition}, which resolves the entity id based on the
-     * {@link org.axonframework.modelling.annotations.TargetEntityId} annotation on a payload field or method, after
+     * {@link TargetEntityId} annotation on a payload field or method, after
      * converting the payload to the representation wanted by the entity.
      *
      * @return The definition to construct an {@link EntityIdResolverDefinition}.

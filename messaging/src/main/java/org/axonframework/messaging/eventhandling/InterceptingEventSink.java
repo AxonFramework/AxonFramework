@@ -18,7 +18,7 @@ package org.axonframework.messaging.eventhandling;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.common.annotations.Internal;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.DecoratorDefinition;
@@ -76,7 +76,7 @@ public class InterceptingEventSink implements EventSink {
     public InterceptingEventSink(@Nonnull EventSink delegate,
                                  @Nonnull List<MessageDispatchInterceptor<? super EventMessage>> interceptors) {
         this.delegate = Objects.requireNonNull(delegate, "The EventSink may not be null.");
-        this.interceptors = Objects.requireNonNull(interceptors, "The dispatch interceptors must not be null.");
+        this.interceptors = Objects.requireNonNull(interceptors, "The dispatch interception must not be null.");
         this.interceptingPublisher = new InterceptingPublisher(interceptors, this::publishEvent);
     }
 

@@ -18,7 +18,7 @@ package org.axonframework.axonserver.connector.util;
 
 import io.axoniq.axonserver.grpc.MetaDataValue;
 import org.axonframework.messaging.core.Metadata;
-import org.axonframework.serialization.Serializer;
+import org.axonframework.conversion.Serializer;
 
 import java.util.Map;
 import java.util.function.Supplier;

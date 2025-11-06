@@ -16,8 +16,7 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.serialization.SerializedObject;
+import org.axonframework.conversion.SerializedObject;
 
 import java.time.Instant;
 

@@ -18,9 +18,9 @@ package org.axonframework.messaging.core.timeout;
 
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.core.annotations.HandlerEnhancerDefinition;
-import org.axonframework.messaging.core.annotations.MessageHandlerTimeout;
-import org.axonframework.messaging.core.annotations.MessageHandlingMember;
+import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
+import org.axonframework.messaging.core.annotation.MessageHandlerTimeout;
+import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.messaging.queryhandling.QueryMessage;
 
 import jakarta.annotation.Nonnull;

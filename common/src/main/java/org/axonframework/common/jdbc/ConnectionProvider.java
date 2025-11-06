@@ -16,7 +16,7 @@
 
 package org.axonframework.common.jdbc;
 
-import org.axonframework.common.annotations.Internal;
+import org.axonframework.common.annotation.Internal;
 
 import java.sql.Connection;
 import java.sql.SQLException;

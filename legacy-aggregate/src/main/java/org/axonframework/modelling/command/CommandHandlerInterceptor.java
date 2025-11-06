@@ -18,7 +18,7 @@ package org.axonframework.modelling.command;
 
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.core.MessageHandlerInterceptorChain;
-import org.axonframework.messaging.core.interceptors.annotations.MessageHandlerInterceptor;
+import org.axonframework.messaging.core.interception.annotation.MessageHandlerInterceptor;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.lang.annotation.Documented;

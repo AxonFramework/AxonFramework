@@ -25,7 +25,7 @@ import java.util.Collection;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * Tests serialization capabilities of {@link RemoteExceptionDescription}.
+ * Tests conversion capabilities of {@link RemoteExceptionDescription}.
  *
  * @author JohT
  */

@@ -17,9 +17,9 @@
 package org.axonframework.modelling.command.inspection;
 
 import jakarta.persistence.Id;
-import org.axonframework.messaging.commandhandling.annotations.CommandHandler;
-import org.axonframework.messaging.eventhandling.annotations.EventHandler;
-import org.axonframework.messaging.core.annotations.MessageHandlingMember;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
+import org.axonframework.messaging.eventhandling.annotation.EventHandler;
+import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.CommandHandlerInterceptor;
 import org.junit.jupiter.api.*;

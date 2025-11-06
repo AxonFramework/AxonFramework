@@ -16,9 +16,9 @@
 
 package org.axonframework.messaging.eventhandling.replay;
 
-import org.axonframework.messaging.eventhandling.processors.streaming.StreamingEventProcessor;
-import org.axonframework.messaging.eventhandling.processors.subscribing.SubscribingEventProcessor;
-import org.axonframework.messaging.eventhandling.replay.annotations.AllowReplay;
+import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
+import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessor;
+import org.axonframework.messaging.eventhandling.replay.annotation.AllowReplay;
 
 /**
  * Type that can be used as parameter of Event Handler methods that indicates whether a message is delivered as part of

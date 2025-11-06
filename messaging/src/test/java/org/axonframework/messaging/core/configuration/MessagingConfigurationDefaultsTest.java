@@ -23,9 +23,9 @@ import org.axonframework.messaging.commandhandling.CommandHandler;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandPriorityCalculator;
 import org.axonframework.messaging.commandhandling.CommandResultMessage;
-import org.axonframework.messaging.commandhandling.interceptors.InterceptingCommandBus;
+import org.axonframework.messaging.commandhandling.interception.InterceptingCommandBus;
 import org.axonframework.messaging.commandhandling.RoutingStrategy;
-import org.axonframework.messaging.commandhandling.annotations.AnnotationRoutingStrategy;
+import org.axonframework.messaging.commandhandling.annotation.AnnotationRoutingStrategy;
 import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
 import org.axonframework.messaging.commandhandling.gateway.ConvertingCommandGateway;
 import org.axonframework.common.configuration.ApplicationConfigurer;
@@ -44,19 +44,17 @@ import org.axonframework.messaging.core.MessageHandlerInterceptor;
 import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.SubscribableEventSource;
-import org.axonframework.messaging.core.annotations.AnnotationMessageTypeResolver;
-import org.axonframework.messaging.core.configuration.MessagingConfigurationDefaults;
-import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.core.annotation.AnnotationMessageTypeResolver;
 import org.axonframework.messaging.core.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.core.conversion.MessageConverter;
 import org.axonframework.messaging.core.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.core.correlation.CorrelationDataProviderRegistry;
 import org.axonframework.messaging.core.correlation.DefaultCorrelationDataProviderRegistry;
 import org.axonframework.messaging.core.correlation.MessageOriginProvider;
-import org.axonframework.messaging.core.interceptors.DefaultDispatchInterceptorRegistry;
-import org.axonframework.messaging.core.interceptors.DefaultHandlerInterceptorRegistry;
-import org.axonframework.messaging.core.interceptors.DispatchInterceptorRegistry;
-import org.axonframework.messaging.core.interceptors.HandlerInterceptorRegistry;
+import org.axonframework.messaging.core.interception.DefaultDispatchInterceptorRegistry;
+import org.axonframework.messaging.core.interception.DefaultHandlerInterceptorRegistry;
+import org.axonframework.messaging.core.interception.DispatchInterceptorRegistry;
+import org.axonframework.messaging.core.interception.HandlerInterceptorRegistry;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
@@ -64,7 +62,7 @@ import org.axonframework.messaging.queryhandling.gateway.DefaultQueryGateway;
 import org.axonframework.messaging.queryhandling.QueryBus;
 import org.axonframework.messaging.queryhandling.gateway.QueryGateway;
 import org.axonframework.messaging.queryhandling.QueryPriorityCalculator;
-import org.axonframework.messaging.queryhandling.interceptors.InterceptingQueryBus;
+import org.axonframework.messaging.queryhandling.interception.InterceptingQueryBus;
 import org.axonframework.conversion.Converter;
 import org.axonframework.conversion.json.JacksonConverter;
 import org.junit.jupiter.api.*;
@@ -157,7 +155,7 @@ class MessagingConfigurationDefaultsTest {
         });
         Configuration resultConfig = configurer.build();
 
-        // Generic interceptors are wrapped for type safety and as such we cannot validate if the single interceptor is a CorrelationDataInterceptor
+        // Generic interception are wrapped for type safety and as such we cannot validate if the single interceptor is a CorrelationDataInterceptor
         DispatchInterceptorRegistry dispatchInterceptorRegistry =
                 resultConfig.getComponent(DispatchInterceptorRegistry.class);
         assertThat(dispatchInterceptorRegistry.commandInterceptors(resultConfig)).size().isEqualTo(1);

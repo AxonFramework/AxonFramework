@@ -17,9 +17,9 @@
 package org.axonframework.messaging.core.correlation;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.annotations.Internal;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.*;
-import org.axonframework.messaging.core.interceptors.CorrelationDataInterceptor;
+import org.axonframework.messaging.core.interception.CorrelationDataInterceptor;
 
 import java.util.List;
 

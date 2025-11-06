@@ -16,19 +16,15 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import org.axonframework.messaging.commandhandling.annotations.CommandHandler;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
 import org.axonframework.messaging.commandhandling.CommandMessage;
-import org.axonframework.messaging.eventhandling.replay.annotations.AllowReplay;
-import org.axonframework.messaging.eventhandling.annotations.EventHandler;
+import org.axonframework.messaging.eventhandling.replay.annotation.AllowReplay;
+import org.axonframework.messaging.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.Message;
-import org.axonframework.messaging.core.annotations.AnnotatedHandlerAttributes;
-import org.axonframework.messaging.core.annotations.HandlerAttributes;
-import org.axonframework.messaging.core.annotations.HasHandlerAttributes;
-import org.axonframework.messaging.core.annotations.MessageHandler;
-import org.axonframework.messaging.core.interceptors.annotations.ExceptionHandler;
-import org.axonframework.messaging.core.interceptors.annotations.MessageHandlerInterceptor;
-import org.axonframework.messaging.core.interceptors.annotations.ResultHandler;
+import org.axonframework.messaging.core.interception.annotation.ExceptionHandler;
+import org.axonframework.messaging.core.interception.annotation.MessageHandlerInterceptor;
+import org.axonframework.messaging.core.interception.annotation.ResultHandler;
 import org.junit.jupiter.api.*;
 
 import java.lang.annotation.Documented;
@@ -99,7 +95,7 @@ class AnnotatedHandlerAttributesTest {
      * Added as test since an {@link ExceptionHandler} is meta-annotated with {@link ResultHandler} and {@link
      * MessageHandlerInterceptor}. The former of these is in turn meta-annotated with {@link HasHandlerAttributes},
      * whilst the other is meta-annotated with {@link MessageHandler} (which too is meta-annotated with {@code
-     * HasHandlerAttributes}. In such a set up <b>all</b> meta-annotations which are {@code HasHandlerAttributes} should
+     * HasHandlerAttributes}. In such a set up <b>all</b> meta-annotation which are {@code HasHandlerAttributes} should
      * have their attributes returned, which thus should be validated to work.
      */
     @Test

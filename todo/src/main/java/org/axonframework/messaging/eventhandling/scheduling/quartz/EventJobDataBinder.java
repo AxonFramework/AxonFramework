@@ -24,7 +24,7 @@ import org.quartz.JobDataMap;
  * <p>
  * Implementors may choose how to store the event message as serializable data in {@link JobDataMap}.
  * This is useful when one does not want to be limited to event payloads requiring to be {@link java.io.Serializable}
- * (used by Quartz job data map serialization).
+ * (used by Quartz job data map conversion).
  * </p>
  *
  * @see QuartzEventScheduler

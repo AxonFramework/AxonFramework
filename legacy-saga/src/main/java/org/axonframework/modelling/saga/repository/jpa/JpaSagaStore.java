@@ -24,8 +24,8 @@ import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.modelling.saga.AssociationValue;
 import org.axonframework.modelling.saga.AssociationValues;
 import org.axonframework.modelling.saga.repository.SagaStore;
-import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.SimpleSerializedObject;
+import org.axonframework.conversion.Serializer;
+import org.axonframework.conversion.SimpleSerializedObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -288,7 +288,7 @@ public class JpaSagaStore implements SagaStore<Object> {
         if (entry != null) {
             return new String(entry.getSerializedSaga(), StandardCharsets.UTF_8);
         } else {
-            return "[Custom serialization format (not visible)]";
+            return "[Custom conversion format (not visible)]";
         }
     }
 

@@ -23,7 +23,7 @@ import org.axonframework.messaging.queryhandling.distributed.DistributedQueryBus
 import org.axonframework.messaging.queryhandling.distributed.DistributedQueryBusConfiguration;
 import org.axonframework.messaging.queryhandling.distributed.DistributedQueryBusConfigurationEnhancer;
 import org.axonframework.messaging.queryhandling.distributed.QueryBusConnector;
-import org.axonframework.messaging.queryhandling.interceptors.InterceptingQueryBus;
+import org.axonframework.messaging.queryhandling.interception.InterceptingQueryBus;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Field;

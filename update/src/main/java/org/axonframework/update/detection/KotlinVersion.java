@@ -16,7 +16,7 @@
 
 package org.axonframework.update.detection;
 
-import org.axonframework.common.annotations.Internal;
+import org.axonframework.common.annotation.Internal;
 
 /**
  * Utility class to retrieve the current Kotlin version at runtime. It attempts to access the `kotlin.KotlinVersion`

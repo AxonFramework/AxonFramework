@@ -120,9 +120,9 @@ class PersistentStreamAutoConfigurationTest {
     @Test
     void persistentStreamProcessorsConfigurerModuleAddsSequencingPolicy() {
         testContext.withPropertyValues("axon.axonserver.persistent-streams[payments-stream].name=My Payments",
-                                       "axon.eventhandling.processors.payments.source=payments-stream",
-                                       "axon.eventhandling.processors.payments.dlq.enabled=true",
-                                       "axon.eventhandling.processors.payments.mode=SUBSCRIBING")
+                                       "axon.eventhandling.processing.payments.source=payments-stream",
+                                       "axon.eventhandling.processing.payments.dlq.enabled=true",
+                                       "axon.eventhandling.processing.payments.mode=SUBSCRIBING")
                    .run(context -> {
 //                       assertThat(context).getBean("persistentStreamProcessorsConfigurerModule").isNotNull();
 //                       ConfigurerModule configurerModule =
@@ -140,8 +140,8 @@ class PersistentStreamAutoConfigurationTest {
     @Test
     void persistentStreamProcessorsConfigurerModuleAddsNoSequencingPolicyWithoutDlq() {
         testContext.withPropertyValues("axon.axonserver.persistent-streams[payments-stream].name=My Payments",
-                                       "axon.eventhandling.processors.payments.source=payments-stream",
-                                       "axon.eventhandling.processors.payments.mode=SUBSCRIBING")
+                                       "axon.eventhandling.processing.payments.source=payments-stream",
+                                       "axon.eventhandling.processing.payments.mode=SUBSCRIBING")
                    .run(context -> {
 //                       assertThat(context).getBean("persistentStreamProcessorsConfigurerModule").isNotNull();
 //                       ConfigurerModule configurerModule =
@@ -165,7 +165,7 @@ class PersistentStreamAutoConfigurationTest {
     @Test
     void persistentStreamScheduledExecutorBuilderConstructsUniqueScheduledExecutorServices() {
         testContext.withPropertyValues("axon.axonserver.persistent-streams[payments-stream].name=My Payments",
-                                       "axon.eventhandling.processors.payments.source=payments-stream")
+                                       "axon.eventhandling.processing.payments.source=payments-stream")
                    .run(context -> {
                        assertThat(context).hasSingleBean(PersistentStreamScheduledExecutorBuilder.class);
                        PersistentStreamScheduledExecutorBuilder executorBuilder =
@@ -180,7 +180,7 @@ class PersistentStreamAutoConfigurationTest {
     void persistentStreamScheduledExecutorBuilderReusesScheduledExecutorService() {
         testContext.withUserConfiguration(SinglePersistentStreamScheduledExecutorServiceConfiguration.class)
                    .withPropertyValues("axon.axonserver.persistent-streams[payments-stream].name=My Payments",
-                                       "axon.eventhandling.processors.payments.source=payments-stream")
+                                       "axon.eventhandling.processing.payments.source=payments-stream")
                    .run(context -> {
                        assertThat(context).hasSingleBean(PersistentStreamScheduledExecutorBuilder.class);
                        PersistentStreamScheduledExecutorBuilder executorBuilder =

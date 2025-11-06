@@ -97,7 +97,7 @@ public class ConverterProperties {
      * <p>
      * Defaults to the {@link ConverterType#DEFAULT default ConverterType}.
      *
-     * @return The {@link Converter} type to use for serialization of all kinds of
+     * @return The {@link Converter} type to use for conversion of all kinds of
      * objects
      */
     @Nonnull

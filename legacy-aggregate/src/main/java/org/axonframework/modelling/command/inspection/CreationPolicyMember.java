@@ -16,8 +16,8 @@
 
 package org.axonframework.modelling.command.inspection;
 
-import org.axonframework.common.annotations.Internal;
-import org.axonframework.messaging.core.annotations.MessageHandlingMember;
+import org.axonframework.common.annotation.Internal;
+import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 
 /**

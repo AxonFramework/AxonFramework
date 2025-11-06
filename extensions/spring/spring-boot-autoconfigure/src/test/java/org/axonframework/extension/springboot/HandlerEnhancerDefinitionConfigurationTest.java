@@ -17,9 +17,9 @@
 package org.axonframework.extension.springboot;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.eventhandling.annotations.EventHandler;
-import org.axonframework.messaging.core.annotations.HandlerEnhancerDefinition;
-import org.axonframework.messaging.core.annotations.MessageHandlingMember;
+import org.axonframework.messaging.eventhandling.annotation.EventHandler;
+import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
+import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;

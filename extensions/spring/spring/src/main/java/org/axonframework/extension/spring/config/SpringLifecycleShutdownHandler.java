@@ -17,7 +17,7 @@
 package org.axonframework.extension.spring.config;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.annotations.Internal;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.LifecycleHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

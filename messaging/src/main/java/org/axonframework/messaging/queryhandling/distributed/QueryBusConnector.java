@@ -36,7 +36,7 @@ import java.util.concurrent.CompletableFuture;
  * <p>
  * It allows for the dispatching of queries across different query bus instances, whether they are local or remote. One
  * connector can be wrapped with another through the {@link DelegatingQueryBusConnector}, upon which more functionality
- * can be added, such as payload conversion or serialization.
+ * can be added, such as payload conversion or conversion.
  *
  * @author Steven van Beelen
  * @since 5.0.0

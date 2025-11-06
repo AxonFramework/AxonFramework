@@ -47,7 +47,7 @@ public interface SnapshotTriggerDefinition {
 
     /**
      * Reconfigure the necessary infrastructure components in the given {@code trigger instance}, which may have been
-     * lost in the (de)serialization process.
+     * lost in the (de)conversion process.
      * <p>
      * Since implementations of the {@link SnapshotTrigger} often rely on a {@link Snapshotter} which cannot be
      * serialized, it may be necessary to inject these resources after deserialization of a trigger.

@@ -20,9 +20,9 @@ import org.axonframework.common.IdentifierFactory;
 import org.axonframework.messaging.eventhandling.DomainEventData;
 import org.axonframework.messaging.eventhandling.GenericDomainEventEntry;
 import org.axonframework.messaging.eventsourcing.eventstore.DomainEventStream;
-import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
-import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
+import org.axonframework.conversion.Serializer;
+import org.axonframework.conversion.upcasting.event.EventUpcasterChain;
+import org.axonframework.conversion.upcasting.event.NoOpEventUpcaster;
 import org.junit.jupiter.api.*;
 
 import java.time.Instant;

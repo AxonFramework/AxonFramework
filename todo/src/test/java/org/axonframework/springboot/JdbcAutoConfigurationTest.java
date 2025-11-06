@@ -23,9 +23,9 @@ import org.axonframework.common.jdbc.UnitOfWorkAwareConnectionProviderWrapper;
 import org.axonframework.messaging.eventhandling.EventBus;
 import org.axonframework.messaging.eventhandling.SimpleEventBus;
 import org.axonframework.messaging.eventhandling.deadletter.jdbc.DeadLetterSchema;
-import org.axonframework.messaging.eventhandling.processors.streaming.token.store.TokenStore;
-import org.axonframework.messaging.eventhandling.processors.streaming.token.store.jdbc.JdbcTokenStore;
-import org.axonframework.messaging.eventhandling.processors.streaming.token.store.jdbc.TokenSchema;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.store.jdbc.JdbcTokenStore;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.store.jdbc.TokenSchema;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
@@ -185,7 +185,7 @@ public class JdbcAutoConfigurationTest {
 
     @Test
     void sequencedDeadLetterQueueCanBeSetViaSpringConfiguration() {
-        testContext.withPropertyValues("axon.eventhandling.processors.first.dlq.enabled=true")
+        testContext.withPropertyValues("axon.eventhandling.processing.first.dlq.enabled=true")
                    .run(context -> {
 //                       assertNotNull(context.getBean(DeadLetterQueueProviderConfigurerModule.class));
 
@@ -204,7 +204,7 @@ public class JdbcAutoConfigurationTest {
 
     @Test
     void deadLetterQueueProviderConfigurerModuleCanBeOverwritten() {
-        testContext.withPropertyValues("axon.eventhandling.processors.first.dlq.enabled=true")
+        testContext.withPropertyValues("axon.eventhandling.processing.first.dlq.enabled=true")
                    .run(context -> {
 //                       assertNotNull(context.getBean("deadLetterQueueProviderConfigurerModule",
 //                                                     DeadLetterQueueProviderConfigurerModule.class));

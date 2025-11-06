@@ -19,7 +19,7 @@ package org.axonframework.messaging.commandhandling;
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.commandhandling.CommandHandler;
 import org.axonframework.messaging.commandhandling.CommandMessage;
-import org.axonframework.messaging.commandhandling.interceptors.CommandMessageHandlerInterceptorChain;
+import org.axonframework.messaging.commandhandling.interception.CommandMessageHandlerInterceptorChain;
 import org.axonframework.messaging.core.FluxUtils;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageHandlerInterceptor;

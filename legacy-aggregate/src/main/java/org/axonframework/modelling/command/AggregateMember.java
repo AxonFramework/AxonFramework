@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.messaging.commandhandling.annotations.CommandHandler;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -39,7 +39,7 @@ import java.lang.annotation.Target;
  * instead of Collection.
  * <p>
  * Note that if the designated Aggregate member has {@link CommandHandler} annotations to handle Command message, that
- * those may not be placed on an non-root Entity's constructor.
+ * those may not be placed on a non-root Entity's constructor.
  *
  * @author Allard Buijze
  * @since 3.0

@@ -42,7 +42,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Integration tests for command dispatch and handler interceptors.
+ * Integration tests for command dispatch and handler interception.
  *
  * @author Mateusz Nowak
  */
@@ -66,7 +66,7 @@ class CommandHandlingInterceptorsIT extends AbstractCommandHandlingStudentIT {
                 c -> (command, context) -> {
                     handlerInvocations.incrementAndGet();
 
-                    // Verify that dispatch interceptors added metadata to the command
+                    // Verify that dispatch interception added metadata to the command
                     assertTrue(command.metadata().containsKey("dispatch1"),
                                "Expected dispatch1 interceptor to add metadata to command");
                     assertTrue(command.metadata().containsKey("dispatch2"),
@@ -144,7 +144,7 @@ class CommandHandlingInterceptorsIT extends AbstractCommandHandlingStudentIT {
                 c -> (command, context) -> {
                     handlerInvocations.incrementAndGet();
 
-                    // Verify that handler interceptors added metadata to the command
+                    // Verify that handler interception added metadata to the command
                     assertTrue(command.metadata().containsKey("handler1"),
                                "Expected handler1 interceptor to add metadata to command");
                     assertTrue(command.metadata().containsKey("handler2"),
@@ -220,7 +220,7 @@ class CommandHandlingInterceptorsIT extends AbstractCommandHandlingStudentIT {
                 c -> (command, context) -> {
                     handlerInvocations.incrementAndGet();
 
-                    // Verify that both interceptors added metadata to the command
+                    // Verify that both interception added metadata to the command
                     assertTrue(command.metadata().containsKey("dispatch"),
                                "Expected dispatch interceptor to add metadata to command");
                     assertTrue(command.metadata().containsKey("handler"),

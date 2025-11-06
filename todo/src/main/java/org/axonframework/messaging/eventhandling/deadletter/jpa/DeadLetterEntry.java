@@ -20,9 +20,9 @@ import jakarta.persistence.*;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.deadletter.Cause;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.SimpleSerializedObject;
+import org.axonframework.conversion.SerializedObject;
+import org.axonframework.conversion.Serializer;
+import org.axonframework.conversion.SimpleSerializedObject;
 
 import java.time.Instant;
 import java.util.Arrays;

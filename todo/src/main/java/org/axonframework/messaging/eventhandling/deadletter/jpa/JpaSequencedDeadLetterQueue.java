@@ -32,7 +32,7 @@ import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.NoSuchDeadLetterException;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.WrongDeadLetterTypeException;
-import org.axonframework.serialization.Serializer;
+import org.axonframework.conversion.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,7 +67,7 @@ import static org.axonframework.common.BuilderUtils.*;
  * The default supports all {@code EventMessage} implementations provided by the framework. If you have a custom
  * variant, you have to build your own.
  * <p>
- * {@link org.axonframework.serialization.upcasting.Upcaster upcasters} are not supported by this implementation, so
+ * {@link org.axonframework.conversion.upcasting.Upcaster upcasters} are not supported by this implementation, so
  * breaking changes for events messages stored in the queue should be avoided.
  *
  * @param <M> An implementation of {@link Message} contained in the {@link DeadLetter dead-letters} within this queue.

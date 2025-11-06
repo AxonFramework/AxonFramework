@@ -21,7 +21,7 @@ import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.JdbcException;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
 import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.DeadLetterQueueOverflowException;
@@ -30,7 +30,7 @@ import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.NoSuchDeadLetterException;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.WrongDeadLetterTypeException;
-import org.axonframework.serialization.Serializer;
+import org.axonframework.conversion.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,7 +73,7 @@ import static org.axonframework.common.jdbc.JdbcUtils.*;
  * {@code EventMessage} implementations provided by the framework. If you have a custom variant, you have to build your
  * own.
  * <p>
- * {@link org.axonframework.serialization.upcasting.Upcaster upcasters} are not supported by this implementation, so
+ * {@link org.axonframework.conversion.upcasting.Upcaster upcasters} are not supported by this implementation, so
  * breaking changes for events messages stored in the queue should be avoided.
  *
  * @param <E> An implementation of {@link EventMessage} contained in the {@link DeadLetter dead-letters} within this

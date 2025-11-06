@@ -18,7 +18,7 @@ package org.axonframework.update.api;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.common.annotations.Internal;
+import org.axonframework.common.annotation.Internal;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,7 +55,7 @@ public record UpdateCheckResponse(
      * An example of the expected format:
      * <pre>
      * cd=86400
-     * vul=org.axonframework:axon-serialization:1.0.0:HIGH:"https://example.com/vulnerability"
+     * vul=org.axonframework:axon-conversion:1.0.0:HIGH:"https://example.com/vulnerability"
      * upd=org.axonframework:axon-messaging:5.0.1
      * </pre>
      *

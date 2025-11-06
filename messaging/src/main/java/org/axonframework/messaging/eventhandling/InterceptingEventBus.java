@@ -19,7 +19,7 @@ package org.axonframework.messaging.eventhandling;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.Registration;
-import org.axonframework.common.annotations.Internal;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.DecoratorDefinition;
@@ -32,7 +32,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 
 /**
- * Decorator around the {@link EventBus} intercepting all {@link EventMessage events} before they are
+ * Decorator around the {@link EventBus} interceptors all {@link EventMessage events} before they are
  * {@link #publish(ProcessingContext, List) published} with {@link MessageDispatchInterceptor dispatch interceptors}.
  * <p>
  * This {@code InterceptingEventBus} is typically registered as a
@@ -76,7 +76,7 @@ public class InterceptingEventBus implements EventBus {
     public InterceptingEventBus(@Nonnull EventBus delegate,
                                 @Nonnull List<MessageDispatchInterceptor<? super EventMessage>> interceptors) {
         this.delegate = Objects.requireNonNull(delegate, "The EventBus may not be null.");
-        this.interceptors = Objects.requireNonNull(interceptors, "The dispatch interceptors must not be null.");
+        this.interceptors = Objects.requireNonNull(interceptors, "The dispatch interception must not be null.");
         this.delegateSink = new InterceptingEventSink(delegate, interceptors);
     }
 

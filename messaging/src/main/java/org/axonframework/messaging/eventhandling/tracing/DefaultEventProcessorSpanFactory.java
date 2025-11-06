@@ -18,7 +18,7 @@
 
     import org.axonframework.common.BuilderUtils;
     import org.axonframework.messaging.eventhandling.EventMessage;
-    import org.axonframework.messaging.eventhandling.processors.streaming.StreamingEventProcessor;
+    import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
     import org.axonframework.messaging.tracing.NoOpSpanFactory;
     import org.axonframework.messaging.tracing.Span;
     import org.axonframework.messaging.tracing.SpanFactory;

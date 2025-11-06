@@ -24,8 +24,8 @@ import org.axonframework.messaging.eventsourcing.snapshotting.AggregateSnapshott
 import org.axonframework.messaging.eventsourcing.snapshotting.Snapshotter;
 import org.axonframework.messaging.eventsourcing.snapshotting.SnapshotterSpanFactory;
 import org.axonframework.extension.springboot.autoconfig.EventProcessingAutoConfiguration;
-import org.axonframework.messaging.core.annotations.HandlerDefinition;
-import org.axonframework.messaging.core.annotations.ParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.HandlerDefinition;
+import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.spring.eventsourcing.SpringAggregateSnapshotter;
 import org.axonframework.extension.springboot.DistributedCommandBusProperties;
 import org.axonframework.extension.springboot.TagsConfigurationProperties;

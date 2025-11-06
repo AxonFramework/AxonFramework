@@ -17,7 +17,7 @@
 package org.axonframework.messaging.eventhandling.deadletter;
 
 import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.processors.streaming.segmenting.Segment;
+import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

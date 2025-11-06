@@ -62,7 +62,7 @@ public abstract class AbstractCommandHandlingStudentIT extends AbstractStudentIT
         EventSourcingConfigurer configured = super.testSuiteConfigurer(configurer)
                                                   .registerCommandHandlingModule(commandHandlingModule.commandHandlers());
 
-        // Register interceptors if any were added
+        // Register interception if any were added
         if (!dispatchInterceptors.isEmpty() || !handlerInterceptors.isEmpty()) {
             configured = configured.messaging(this::registerInterceptors);
         }
@@ -71,9 +71,9 @@ public abstract class AbstractCommandHandlingStudentIT extends AbstractStudentIT
     }
 
     /**
-     * Registers dispatch and handler interceptors with the messaging configurer.
+     * Registers dispatch and handler interception with the messaging configurer.
      *
-     * @param messagingConfigurer The messaging configurer to register interceptors with.
+     * @param messagingConfigurer The messaging configurer to register interception with.
      * @return The configured messaging configurer.
      */
     private MessagingConfigurer registerInterceptors(MessagingConfigurer messagingConfigurer) {

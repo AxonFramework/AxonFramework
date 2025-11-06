@@ -38,7 +38,7 @@ import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.unitofwork.UnitOfWork;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
-import org.axonframework.modelling.annotations.AnnotationBasedEntityEvolvingComponent;
+import org.axonframework.modelling.annotation.AnnotationBasedEntityEvolvingComponent;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.conversion.Converter;
 import org.junit.jupiter.api.*;
@@ -151,7 +151,7 @@ public abstract class AbstractStudentIT extends AbstractAxonServerIT {
 
     /**
      * Returns the {@link EntityEvolver} for the {@link Student} model. Defaults to using the
-     * {@link AnnotationBasedEntityEvolvingComponent} to use the annotations placed.
+     * {@link AnnotationBasedEntityEvolvingComponent} to use the annotation placed.
      */
     protected EntityEvolver<Student> studentEvolver(Configuration config) {
         return new AnnotationBasedEntityEvolvingComponent<>(

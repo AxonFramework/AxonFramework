@@ -18,8 +18,8 @@ package org.axonframework.modelling.command;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.axonframework.modelling.command.utils.OnlyAcceptConstructorPropertiesAnnotation;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.json.JacksonSerializer;
+import org.axonframework.conversion.SerializedObject;
+import org.axonframework.conversion.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Jackson. It does so because an AggregateScopeDescriptor can be instantiated with a
  * {@link java.util.function.Supplier} for the {@code identifier}. We do not want to serialize a Supplier, but rather
  * the actual identifier it supplies, hence functionality is added which ensure the Supplier is called to fill the
- * {@code identifier} field just prior to the complete serialization. This test ensures this works as designed.
+ * {@code identifier} field just prior to the complete conversion. This test ensures this works as designed.
  */
 class AggregateScopeDescriptorSerializationTest {
 

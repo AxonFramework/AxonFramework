@@ -23,8 +23,8 @@ import org.axonframework.messaging.eventhandling.replay.ResetNotSupportedExcepti
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
-import org.axonframework.messaging.core.annotations.MessageHandlingMember;
-import org.axonframework.messaging.core.interceptors.annotations.NoMoreInterceptors;
+import org.axonframework.messaging.core.annotation.MessageHandlingMember;
+import org.axonframework.messaging.core.interception.annotation.NoMoreInterceptors;
 import org.axonframework.modelling.saga.metamodel.AnnotationSagaMetaModelFactory;
 import org.junit.jupiter.api.*;
 
@@ -250,7 +250,7 @@ class AnnotatedSagaTest {
 
         @Override
         public void handleStubDomainEvent(SagaEndEvent event) {
-            // Since this method overrides a handler, it doesn't need the annotations anymore
+            // Since this method overrides a handler, it doesn't need the annotation anymore
             super.handleStubDomainEvent(event);
             removeAssociationWith("propertyName", event.getPropertyName());
         }

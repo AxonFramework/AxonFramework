@@ -16,14 +16,14 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import org.axonframework.messaging.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.core.MessageType;
-import org.axonframework.serialization.LazyDeserializingObject;
-import org.axonframework.serialization.SerializedMessage;
-import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.upcasting.event.EventUpcaster;
-import org.axonframework.serialization.upcasting.event.InitialEventRepresentation;
-import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
+import org.axonframework.conversion.LazyDeserializingObject;
+import org.axonframework.conversion.SerializedMessage;
+import org.axonframework.conversion.Serializer;
+import org.axonframework.conversion.upcasting.event.EventUpcaster;
+import org.axonframework.conversion.upcasting.event.InitialEventRepresentation;
+import org.axonframework.conversion.upcasting.event.IntermediateEventRepresentation;
 
 import java.util.function.Function;
 import java.util.stream.Stream;

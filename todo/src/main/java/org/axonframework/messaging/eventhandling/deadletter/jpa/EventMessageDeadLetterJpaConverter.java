@@ -23,12 +23,12 @@ import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.eventhandling.GenericTrackedDomainEventMessage;
 import org.axonframework.messaging.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.messaging.eventhandling.TrackedEventMessage;
-import org.axonframework.messaging.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.core.MessageType;
-import org.axonframework.serialization.SerializedMessage;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.SerializedType;
-import org.axonframework.serialization.Serializer;
+import org.axonframework.conversion.SerializedMessage;
+import org.axonframework.conversion.SerializedObject;
+import org.axonframework.conversion.SerializedType;
+import org.axonframework.conversion.Serializer;
 
 import java.time.Instant;
 import java.util.Optional;

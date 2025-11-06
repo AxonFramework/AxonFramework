@@ -17,7 +17,7 @@
 package org.axonframework.messaging.eventhandling.deadletter.jpa;
 
 import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.serialization.Serializer;
+import org.axonframework.conversion.Serializer;
 
 /**
  * Converter that can convert a {@link EventMessage} to a {@link DeadLetterEventEntry} and vice versa.
@@ -32,8 +32,8 @@ public interface DeadLetterJpaConverter<M extends EventMessage> {
      * Converts an {@link EventMessage} implementation to a {@link DeadLetterEventEntry}.
      *
      * @param message    The message to convert.
-     * @param eventSerializer The {@link Serializer} for serialization of payload and metadata.
-     * @param genericSerializer The {@link Serializer} for serialization of the token, if present.
+     * @param eventSerializer The {@link Serializer} for conversion of payload and metadata.
+     * @param genericSerializer The {@link Serializer} for conversion of the token, if present.
      * @return The created {@link DeadLetterEventEntry}
      */
     DeadLetterEventEntry convert(M message, Serializer eventSerializer, Serializer genericSerializer);

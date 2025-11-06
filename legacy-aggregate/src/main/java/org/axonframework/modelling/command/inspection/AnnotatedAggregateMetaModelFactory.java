@@ -16,19 +16,19 @@
 
 package org.axonframework.modelling.command.inspection;
 
-import org.axonframework.messaging.commandhandling.annotations.CommandHandlingMember;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandlingMember;
 import org.axonframework.common.IdentifierValidator;
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.common.annotations.AnnotationUtils;
+import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.Message;
-import org.axonframework.messaging.core.annotations.AnnotatedHandlerInspector;
-import org.axonframework.messaging.core.annotations.ClasspathHandlerDefinition;
-import org.axonframework.messaging.core.annotations.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.core.annotations.HandlerDefinition;
-import org.axonframework.messaging.core.annotations.MessageHandlerInvocationException;
-import org.axonframework.messaging.core.annotations.MessageHandlingMember;
-import org.axonframework.messaging.core.annotations.ParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.AnnotatedHandlerInspector;
+import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.HandlerDefinition;
+import org.axonframework.messaging.core.annotation.MessageHandlerInvocationException;
+import org.axonframework.messaging.core.annotation.MessageHandlingMember;
+import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.AggregateRoot;
@@ -63,10 +63,10 @@ import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 import static org.axonframework.common.ListUtils.distinct;
 import static org.axonframework.common.ReflectionUtils.NOT_RECURSIVE;
-import static org.axonframework.common.annotations.AnnotationUtils.findAnnotationAttributes;
+import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
 
 /**
- * AggregateMetaModelFactory implementation that uses annotations on the target aggregate's members to build up the
+ * AggregateMetaModelFactory implementation that uses annotation on the target aggregate's members to build up the
  * meta-model of the aggregate.
  *
  * @author Allard Buijze
@@ -368,7 +368,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
             List<Member> persistenceIdMembers = new ArrayList<>();
             List<Member> aggregateVersionMembers = new ArrayList<>();
             for (Class<?> handledType : handlerInspector.getAllInspectedTypes()) {
-                // Navigate fields for Axon related annotations
+                // Navigate fields for Axon related annotation
                 for (Field field : ReflectionUtils.fieldsOf(handledType, NOT_RECURSIVE)) {
                     createChildDefinitions(childEntityDefinitions, handledType, field);
                     findAnnotationAttributes(field, EntityId.class).ifPresent(attributes -> entityIdMembers.add(field));
@@ -379,7 +379,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
                             attributes -> aggregateVersionMembers.add(field)
                     );
                 }
-                // Navigate methods for Axon related annotations
+                // Navigate methods for Axon related annotation
                 for (Method method : ReflectionUtils.methodsOf(handledType, NOT_RECURSIVE)) {
                     createChildDefinitions(childEntityDefinitions, handledType, method);
                     findAnnotationAttributes(method, EntityId.class).ifPresent(attributes -> {

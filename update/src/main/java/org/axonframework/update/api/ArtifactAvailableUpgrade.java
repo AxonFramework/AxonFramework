@@ -17,7 +17,7 @@
 package org.axonframework.update.api;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.annotations.Internal;
+import org.axonframework.common.annotation.Internal;
 
 /**
  * Represents an upgrade suggestion for a specific artifact version by the AxonIQ UpdateChecker API.

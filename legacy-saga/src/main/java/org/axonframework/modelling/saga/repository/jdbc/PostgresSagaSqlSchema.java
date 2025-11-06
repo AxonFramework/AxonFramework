@@ -15,7 +15,7 @@
  */
 package org.axonframework.modelling.saga.repository.jdbc;
 
-import org.axonframework.messaging.eventhandling.processors.streaming.StreamingEventProcessor;
+import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

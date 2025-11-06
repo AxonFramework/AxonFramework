@@ -23,13 +23,13 @@ import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.Module;
 import org.axonframework.common.configuration.ModuleBuilder;
 import org.axonframework.messaging.core.QualifiedName;
-import org.axonframework.messaging.core.annotations.ClasspathHandlerDefinition;
-import org.axonframework.messaging.core.annotations.ParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.conversion.MessageConverter;
 import org.axonframework.messaging.queryhandling.QueryBus;
 import org.axonframework.messaging.queryhandling.QueryHandler;
 import org.axonframework.messaging.queryhandling.QueryHandlingComponent;
-import org.axonframework.messaging.queryhandling.annotations.AnnotatedQueryHandlingComponent;
+import org.axonframework.messaging.queryhandling.annotation.AnnotatedQueryHandlingComponent;
 
 import java.util.function.Consumer;
 

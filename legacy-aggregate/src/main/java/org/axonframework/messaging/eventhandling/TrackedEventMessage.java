@@ -16,12 +16,12 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import org.axonframework.messaging.eventhandling.processors.EventProcessor;
-import org.axonframework.messaging.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.messaging.eventhandling.processing.EventProcessor;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 
 /**
  * Represents an {@link EventMessage} containing a {@link TrackingToken}. The tracking token can be used be
- * {@link EventProcessor event processors} to keep track of which events it has processed.
+ * {@link EventProcessor event processor} to keep track of which events it has processed.
  *
  * @param <T> The type of payload contained in this Message
  * @author Rene de Waele

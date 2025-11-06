@@ -32,7 +32,7 @@ import static java.lang.String.format;
  * <p>
  * The provided {@code SequencingPolicy} for a given {@code Configuration} returns a sequencing key for an event to
  * identify which sequence/stream the event belongs to. The policy is <b>only</b> used for when a dead letter queue is
- * attached to the processors consuming from a Persistent Stream.
+ * attached to the processing consuming from a Persistent Stream.
  *
  * @author Marc Gathier
  * @since 4.10.0

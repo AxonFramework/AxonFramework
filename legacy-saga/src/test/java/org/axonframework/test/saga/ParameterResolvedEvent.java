@@ -16,7 +16,7 @@
 
 package org.axonframework.test.saga;
 
-import org.axonframework.messaging.core.annotations.ParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 
 /**
  * Event payload dedicated to triggering the resolution of parameters through a custom {@link

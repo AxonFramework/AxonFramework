@@ -31,8 +31,8 @@ import org.axonframework.messaging.eventhandling.GenericDomainEventEntry;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.eventhandling.TrackedDomainEventData;
 import org.axonframework.messaging.eventhandling.TrackedEventData;
-import org.axonframework.messaging.eventhandling.processors.streaming.token.GapAwareTrackingToken;
-import org.axonframework.messaging.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.GapAwareTrackingToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.eventsourcing.eventstore.BatchingEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.messaging.eventsourcing.eventstore.LegacyEventStorageEngine;
@@ -53,8 +53,8 @@ import org.axonframework.messaging.eventsourcing.eventstore.jdbc.statements.Read
 import org.axonframework.messaging.eventsourcing.eventstore.jdbc.statements.TimestampWriter;
 import org.axonframework.messaging.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.modelling.ConcurrencyException;
-import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.upcasting.event.EventUpcaster;
+import org.axonframework.conversion.Serializer;
+import org.axonframework.conversion.upcasting.event.EventUpcaster;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -173,7 +173,7 @@ public class LegacyJdbcEventStorageEngine extends BatchingEventStorageEngine {
      * <p>
      * The following configurable fields have defaults:
      * <ul>
-     * <li>The {@link EventUpcaster} defaults to an {@link org.axonframework.serialization.upcasting.event.NoOpEventUpcaster}.</li>
+     * <li>The {@link EventUpcaster} defaults to an {@link org.axonframework.conversion.upcasting.event.NoOpEventUpcaster}.</li>
      * <li>The {@link PersistenceExceptionResolver} is defaulted to a {@link JdbcSQLErrorCodesResolver}</li>
      * <li>The {@code snapshotFilter} defaults to a {@link SnapshotFilter#allowAll()} instance.</li>
      * <li>The {@code batchSize} defaults to an integer of size {@code 100}.</li>
@@ -790,7 +790,7 @@ public class LegacyJdbcEventStorageEngine extends BatchingEventStorageEngine {
      * <p>
      * The following configurable fields have defaults:
      * <ul>
-     * <li>The {@link EventUpcaster} defaults to an {@link org.axonframework.serialization.upcasting.event.NoOpEventUpcaster}.</li>
+     * <li>The {@link EventUpcaster} defaults to an {@link org.axonframework.conversion.upcasting.event.NoOpEventUpcaster}.</li>
      * <li>The {@link PersistenceExceptionResolver} is defaulted to a {@link JdbcSQLErrorCodesResolver}</li>
      * <li>The {@code snapshotFilter} defaults to a {@link SnapshotFilter#allowAll()} instance.</li>
      * <li>The {@code batchSize} defaults to an integer of size {@code 100}.</li>
@@ -1194,7 +1194,7 @@ public class LegacyJdbcEventStorageEngine extends BatchingEventStorageEngine {
          * events to read, while there are still positions ahead.
          * <p>
          * This check comes at a cost of an extra query when a batch retrieval yields an empty result. This may increase
-         * database pressure when processors are at the HEAD of a stream, as each batch retrieval will result in an
+         * database pressure when processing are at the HEAD of a stream, as each batch retrieval will result in an
          * extra query, if there are no results.
          * <p>
          * Note that the extra query checks for the smallest globalSequence, higher than the last one seen. This query

@@ -17,8 +17,8 @@
 package org.axonframework.axonserver.connector.util;
 
 import org.axonframework.messaging.core.Message;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.Serializer;
+import org.axonframework.conversion.SerializedObject;
+import org.axonframework.conversion.Serializer;
 
 import java.util.function.Function;
 

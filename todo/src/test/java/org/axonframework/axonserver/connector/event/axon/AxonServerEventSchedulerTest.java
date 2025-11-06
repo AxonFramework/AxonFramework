@@ -41,7 +41,7 @@ import org.axonframework.messaging.eventhandling.scheduling.java.SimpleScheduleT
 import org.axonframework.messaging.eventhandling.scheduling.quartz.QuartzScheduleToken;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.Metadata;
-import org.axonframework.serialization.json.JacksonSerializer;
+import org.axonframework.conversion.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;

@@ -20,7 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.commandhandling.CommandHandler;
 import org.axonframework.messaging.commandhandling.CommandHandlingComponent;
 import org.axonframework.messaging.commandhandling.CommandBus;
-import org.axonframework.messaging.commandhandling.annotations.AnnotatedCommandHandlingComponent;
+import org.axonframework.messaging.commandhandling.annotation.AnnotatedCommandHandlingComponent;
 import org.axonframework.common.configuration.ApplicationConfigurer;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.Configuration;
@@ -28,7 +28,7 @@ import org.axonframework.common.configuration.Module;
 import org.axonframework.common.configuration.ModuleBuilder;
 import org.axonframework.messaging.core.conversion.MessageConverter;
 import org.axonframework.messaging.core.QualifiedName;
-import org.axonframework.messaging.core.annotations.ParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 
 import java.util.function.Consumer;
 

@@ -21,10 +21,9 @@ import org.axonframework.messaging.eventhandling.DomainEventTestUtils;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.eventhandling.TrackedEventMessage;
-import org.axonframework.messaging.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.Metadata;
-import org.axonframework.messaging.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.junit.jupiter.api.*;
 import org.springframework.transaction.annotation.Transactional;
 

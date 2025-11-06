@@ -19,8 +19,8 @@ package org.axonframework.eventsourcing.eventstore;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.annotations.EventTag;
-import org.axonframework.eventsourcing.annotations.EventTags;
+import org.axonframework.eventsourcing.annotation.EventTag;
+import org.axonframework.eventsourcing.annotation.EventTags;
 import org.axonframework.messaging.eventstreaming.Tag;
 
 import java.lang.reflect.AnnotatedElement;
@@ -39,7 +39,7 @@ import static java.lang.String.format;
 import static org.axonframework.common.ReflectionUtils.getMemberValue;
 
 /**
- * Implementation of {@link TagResolver} that processes {@link EventTag} and {@link EventTags} annotations on fields and
+ * Implementation of {@link TagResolver} that processes {@link EventTag} and {@link EventTags} annotation on fields and
  * methods of event payload objects to create {@link Tag} instances. Supports inherited fields and methods.
  * <p>
  * The {@link EventTag} annotation can be used in two ways:

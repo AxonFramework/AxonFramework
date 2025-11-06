@@ -31,12 +31,12 @@ import org.axonframework.messaging.eventhandling.deadletter.jpa.DeadLetterJpaCon
 import org.axonframework.messaging.eventhandling.deadletter.jpa.EventMessageDeadLetterJpaConverter;
 import org.axonframework.messaging.eventhandling.deadletter.jpa.JpaDeadLetter;
 import org.axonframework.messaging.eventhandling.deadletter.jpa.JpaSequencedDeadLetterQueue;
-import org.axonframework.messaging.eventhandling.processors.EventProcessor;
+import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
-import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.json.JacksonSerializer;
+import org.axonframework.conversion.Serializer;
+import org.axonframework.conversion.json.JacksonSerializer;
 import org.axonframework.extension.spring.messaging.unitofwork.SpringTransactionManager;
 //import org.axonframework.extension.utils.spring.MysqlTestContainerExtension;
 import org.junit.jupiter.api.*;

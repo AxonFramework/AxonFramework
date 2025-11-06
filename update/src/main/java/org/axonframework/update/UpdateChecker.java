@@ -17,7 +17,7 @@
 package org.axonframework.update;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.annotations.Internal;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.update.api.UpdateCheckRequest;
 import org.axonframework.update.api.UpdateCheckResponse;
 import org.axonframework.update.common.DelayedTask;

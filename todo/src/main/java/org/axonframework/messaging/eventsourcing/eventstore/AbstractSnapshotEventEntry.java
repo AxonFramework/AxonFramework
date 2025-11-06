@@ -22,7 +22,7 @@ import jakarta.persistence.MappedSuperclass;
 import org.axonframework.messaging.eventhandling.AbstractEventEntry;
 import org.axonframework.messaging.eventhandling.DomainEventData;
 import org.axonframework.messaging.eventhandling.DomainEventMessage;
-import org.axonframework.serialization.Serializer;
+import org.axonframework.conversion.Serializer;
 
 import java.util.Objects;
 
@@ -52,7 +52,7 @@ public abstract class AbstractSnapshotEventEntry<T> extends AbstractEventEntry<T
      *
      * @param eventMessage The event message to convert to a serialized event entry
      * @param serializer   The serializer to convert the event
-     * @param contentType  The data type of the payload and metadata after serialization
+     * @param contentType  The data type of the payload and metadata after conversion
      */
     public AbstractSnapshotEventEntry(DomainEventMessage eventMessage, Serializer serializer, Class<T> contentType) {
         super(eventMessage, serializer, contentType);

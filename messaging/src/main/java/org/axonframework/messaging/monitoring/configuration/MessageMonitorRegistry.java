@@ -42,8 +42,8 @@ import org.axonframework.messaging.queryhandling.SubscriptionQueryUpdateMessage;
  * <p>
  * Multiple {@code MessageMonitor}s will be combined to a single {@link MultiMessageMonitor}.
  * <p>
- * Ingesting and reporting of messages is done via monitoring interceptors which wrap the monitor.
- * These interceptors are registered through the {@link MessagingConfigurationDefaults} dispatcher
+ * Ingesting and reporting of messages is done via monitoring interception which wrap the monitor.
+ * These interception are registered through the {@link MessagingConfigurationDefaults} dispatcher
  * registry factory methods.
  *
  * @author Jan Galinski

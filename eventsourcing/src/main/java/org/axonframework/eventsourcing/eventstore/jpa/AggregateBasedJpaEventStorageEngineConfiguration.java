@@ -19,9 +19,9 @@ package org.axonframework.eventsourcing.eventstore.jpa;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
-import org.axonframework.messaging.eventhandling.processors.streaming.token.GapAwareTrackingToken;
 import org.axonframework.eventsourcing.eventstore.EventCoordinator;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.GapAwareTrackingToken;
 
 import java.util.List;
 import java.util.function.Predicate;
@@ -42,7 +42,8 @@ import static org.axonframework.common.BuilderUtils.assertStrictPositive;
  *                                     {@link
  *                                     org.axonframework.eventsourcing.eventstore.EventStorageEngine#source(SourcingCondition)
  *                                     sourcing} events. Defaults to the first empty batch.
- * @param eventCoordinator             The {@link EventCoordinator} to use. Defaults to {@link EventCoordinator#SIMPLE}.
+ * @param eventCoordinator             The {@link EventCoordinator} to use. Defaults to
+ *                                     {@link EventCoordinator#SIMPLE}.
  * @param batchSize                    The batch size used to retrieve events from the storage layer. Defaults to
  *                                     {@code 100}.
  * @param gapCleaningThreshold         The threshold of the number of gaps in a {@link GapAwareTrackingToken} before an
@@ -160,7 +161,8 @@ public record AggregateBasedJpaEventStorageEngineConfiguration(
      * @param eventCoordinator The {@link EventCoordinator} to use, cannot be {@code null}.
      * @return A new configuration instance, for fluent interfacing.
      */
-    public AggregateBasedJpaEventStorageEngineConfiguration eventCoordinator(@Nonnull EventCoordinator eventCoordinator) {
+    public AggregateBasedJpaEventStorageEngineConfiguration eventCoordinator(
+            @Nonnull EventCoordinator eventCoordinator) {
         return new AggregateBasedJpaEventStorageEngineConfiguration(this.persistenceExceptionResolver,
                                                                     this.finalBatchPredicate,
                                                                     eventCoordinator,

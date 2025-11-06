@@ -25,7 +25,7 @@ import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandPriorityCalculator;
 import org.axonframework.messaging.commandhandling.GenericCommandResultMessage;
 import org.axonframework.messaging.commandhandling.SimpleCommandBus;
-import org.axonframework.messaging.commandhandling.annotations.AnnotationRoutingStrategy;
+import org.axonframework.messaging.commandhandling.annotation.AnnotationRoutingStrategy;
 import org.axonframework.messaging.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.messaging.commandhandling.distributed.DistributedCommandBus;
 import org.axonframework.messaging.commandhandling.distributed.DistributedCommandBusConfiguration;

@@ -43,7 +43,7 @@ public interface DomainEventMessage extends EventMessage {
     /**
      * Returns the identifier of the Aggregate that generated this DomainEvent. Note that the value returned does not
      * necessarily have to be the same instance that was provided at creation time. It is possible that (due to
-     * serialization, for example) the value returned here has a different structure.
+     * conversion, for example) the value returned here has a different structure.
      *
      * @return the identifier of the Aggregate that generated this DomainEvent
      */

@@ -79,7 +79,7 @@ class AvroConverterTest extends ConverterTestSuite<AvroConverter> {
     /**
      * Overriding this method because the super implementation tries to
      * use objects of type {@link SomeInput} as input
-     * for serialization. In Avro, every object for serialization
+     * for conversion. In Avro, every object for conversion
      * needs to follow a schema and depending on the implementation
      * framework follow specific style. For example if you use default, by Apache
      * Avro Maven plugin generated classes representing Avro Schemas, those will be subclassing

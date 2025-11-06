@@ -21,7 +21,7 @@ import org.axonframework.messaging.core.unitofwork.transaction.TransactionManage
 import org.axonframework.deadline.TestScopeDescriptor;
 import org.axonframework.messaging.core.ScopeAwareProvider;
 import org.axonframework.messaging.core.ScopeDescriptor;
-import org.axonframework.serialization.json.JacksonSerializer;
+import org.axonframework.conversion.json.JacksonSerializer;
 import org.jobrunr.scheduling.JobScheduler;
 import org.junit.jupiter.api.*;
 

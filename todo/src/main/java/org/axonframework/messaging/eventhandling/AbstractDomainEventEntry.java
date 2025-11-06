@@ -18,10 +18,10 @@ package org.axonframework.messaging.eventhandling;
 
 import jakarta.persistence.Basic;
 import jakarta.persistence.MappedSuperclass;
-import org.axonframework.serialization.Serializer;
+import org.axonframework.conversion.Serializer;
 
 /**
- * Abstract base class of a serialized domain event. Fields in this class contain JPA annotations that direct JPA event
+ * Abstract base class of a serialized domain event. Fields in this class contain JPA annotation that direct JPA event
  * storage engines how to store event entries.
  *
  * @author Rene de Waele
@@ -47,7 +47,7 @@ public abstract class AbstractDomainEventEntry<T> extends AbstractEventEntry<T> 
      *
      * @param eventMessage The event message to convert to a serialized event entry
      * @param serializer   The serializer to convert the event
-     * @param contentType  The data type of the payload and metadata after serialization
+     * @param contentType  The data type of the payload and metadata after conversion
      */
     public AbstractDomainEventEntry(DomainEventMessage eventMessage, Serializer serializer, Class<T> contentType) {
         super(eventMessage, serializer, contentType);

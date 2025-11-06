@@ -32,9 +32,9 @@ import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.Metadata;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.SimpleSerializedObject;
+import org.axonframework.conversion.SerializedObject;
+import org.axonframework.conversion.Serializer;
+import org.axonframework.conversion.SimpleSerializedObject;
 import org.quartz.JobBuilder;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
@@ -241,7 +241,7 @@ public class QuartzEventScheduler implements EventScheduler {
      * {@link Serializer}. All the important EventMessage fields, thus the message identifier, timestamp, and the
      * serialized payload and metadata, are stored as separate values in the JobDataMap.
      * <p>
-     * The old approach, which let Quartz do the serialization of the entire EventMessage at once, is maintained for
+     * The old approach, which let Quartz do the conversion of the entire EventMessage at once, is maintained for
      * backwards compatibility only.
      */
     public static class DirectEventJobDataBinder implements EventJobDataBinder {

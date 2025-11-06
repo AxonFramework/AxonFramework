@@ -27,7 +27,7 @@ import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
-import org.axonframework.serialization.SimpleSerializedObject;
+import org.axonframework.conversion.SimpleSerializedObject;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -237,7 +237,7 @@ public class DeadLetterEventEntry {
 
     /**
      * Returns the original {@link TrackedEventMessage#trackingToken()} as a
-     * {@link org.axonframework.serialization.SerializedObject}, if the original message was a
+     * {@link org.axonframework.conversion.SerializedObject}, if the original message was a
      * {@code TrackedEventMessage}.
      *
      * @return The original tracking token.

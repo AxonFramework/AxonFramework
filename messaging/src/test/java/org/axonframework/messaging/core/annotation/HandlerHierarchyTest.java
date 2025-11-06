@@ -17,20 +17,20 @@
 package org.axonframework.messaging.core.annotation;
 
 import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.annotations.EventHandler;
+import org.axonframework.messaging.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.core.Message;
-import org.axonframework.messaging.core.annotations.DefaultParameterResolverFactory;
-import org.axonframework.messaging.core.annotations.HandlerComparator;
-import org.axonframework.messaging.core.annotations.MessageHandlingMember;
-import org.axonframework.messaging.core.annotations.MethodInvokingMessageHandlingMember;
-import org.axonframework.messaging.core.annotations.MultiParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.DefaultParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.HandlerComparator;
+import org.axonframework.messaging.core.annotation.MessageHandlingMember;
+import org.axonframework.messaging.core.annotation.MethodInvokingMessageHandlingMember;
+import org.axonframework.messaging.core.annotation.MultiParameterResolverFactory;
 import org.junit.jupiter.api.*;
 
 import java.util.Arrays;
 import java.util.List;
 
-import static org.axonframework.messaging.core.annotations.MessageStreamResolverUtils.resolveToStream;
+import static org.axonframework.messaging.core.annotation.MessageStreamResolverUtils.resolveToStream;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**

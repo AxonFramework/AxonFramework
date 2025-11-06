@@ -26,7 +26,7 @@ import java.util.Collection;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * Tests serialization capabilities of {@link SimpleScheduleToken}.
+ * Tests conversion capabilities of {@link SimpleScheduleToken}.
  *
  * @author JohT
  */

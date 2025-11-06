@@ -16,10 +16,10 @@
 
 package org.axonframework.extension.springboot;
 
-import org.axonframework.messaging.commandhandling.annotations.CommandHandler;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
 import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
 import org.axonframework.messaging.queryhandling.gateway.QueryGateway;
-import org.axonframework.messaging.queryhandling.annotations.QueryHandler;
+import org.axonframework.messaging.queryhandling.annotation.QueryHandler;
 import org.axonframework.extension.springboot.autoconfig.AxonServerActuatorAutoConfiguration;
 import org.axonframework.extension.springboot.autoconfig.AxonServerAutoConfiguration;
 import org.junit.jupiter.api.*;

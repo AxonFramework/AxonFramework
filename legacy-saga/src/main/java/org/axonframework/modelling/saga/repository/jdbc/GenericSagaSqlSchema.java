@@ -16,8 +16,8 @@
 package org.axonframework.modelling.saga.repository.jdbc;
 
 import org.axonframework.modelling.saga.AssociationValue;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.SimpleSerializedObject;
+import org.axonframework.conversion.SerializedObject;
+import org.axonframework.conversion.SimpleSerializedObject;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
