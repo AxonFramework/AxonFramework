@@ -1,10 +1,8 @@
 <p align="center">
   <a href="https://www.axoniq.io/products/axon-framework">
-    <img src="https://www.axoniq.io/hubfs/axon-framework.svg" alt="Axon Framework logo" width="200" height="200">
+    <img src="https://raw.githubusercontent.com/AxonFramework/.github/main/images/AxonFrameworkLogo-2025.png" alt="Axon Framework logo" width="500"/>
   </a>
 </p>
-
-<h1 align="center">Axon Framework</h1>
 
 <p align="center">
   Build modern event-driven systems with AxonIQ technology.
