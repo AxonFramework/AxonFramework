@@ -8,10 +8,8 @@ import io.axoniq.demo.university.shared.ids.CourseId
 import org.axonframework.test.fixture.AxonTestFixture
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
-@Disabled("Fails with RC3, see #4")
 class CreateCourseFunctionalTest {
 
   private lateinit var fixture: AxonTestFixture
