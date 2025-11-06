@@ -33,6 +33,7 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.Arrays;
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -100,11 +101,11 @@ class MultiParameterResolverFactoryTest {
                                          ArgumentMatchers.anyInt()))
                 .thenReturn(null);
         when(mockResolver2.matches(context)).thenReturn(true);
-        when(mockResolver2.resolveParameterValue(context)).thenReturn("Resolved");
+        when(mockResolver2.resolveParameterValue(context)).thenReturn(CompletableFuture.completedFuture("Resolved"));
 
         ParameterResolver factory = testSubject.createInstance(equals, equals.getParameters(), 0);
         assertTrue(factory.matches(context));
-        assertEquals("Resolved", factory.resolveParameterValue(context));
+        assertEquals("Resolved", factory.resolveParameterValue(context).join());
 
         verify(mockResolver1, never()).resolveParameterValue(context);
     }

@@ -33,32 +33,32 @@ class CompletionCallbackMessageStreamTest extends MessageStreamTest<Message> {
     };
 
     @Override
-    MessageStream<Message> completedTestSubject(List<Message> messages) {
+    protected MessageStream<Message> completedTestSubject(List<Message> messages) {
         return new CompletionCallbackMessageStream<>(MessageStream.fromIterable(messages), NO_OP_COMPLETION_CALLBACK);
     }
 
     @Override
-    MessageStream.Single<Message> completedSingleStreamTestSubject(Message message) {
+    protected MessageStream.Single<Message> completedSingleStreamTestSubject(Message message) {
         Assumptions.abort("CompletionCallbackMessageStream does not support explicit single-item streams");
         return null;
     }
 
     @Override
-    MessageStream.Empty<Message> completedEmptyStreamTestSubject() {
+    protected MessageStream.Empty<Message> completedEmptyStreamTestSubject() {
         Assumptions.abort("CompletionCallbackMessageStream does not support explicit zero-item streams");
         return null;
     }
 
     @Override
-    MessageStream<Message> failingTestSubject(List<Message> messages,
-                                                      Exception failure) {
+    protected MessageStream<Message> failingTestSubject(List<Message> messages,
+                                                        RuntimeException failure) {
         return new CompletionCallbackMessageStream<>(MessageStream.fromIterable(messages)
                                                                   .concatWith(MessageStream.failed(failure)),
                                                      NO_OP_COMPLETION_CALLBACK);
     }
 
     @Override
-    Message createRandomMessage() {
+    protected Message createRandomMessage() {
         return new GenericMessage(new MessageType("message"),
                                     "test-" + ThreadLocalRandom.current().nextInt(10000));
     }

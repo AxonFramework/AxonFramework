@@ -22,6 +22,8 @@ import org.axonframework.common.Priority;
 import org.axonframework.messaging.core.LegacyResources;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
  * An extension of the AbstractAnnotatedParameterResolverFactory that accepts parameters of a {@link String} type that
  * are annotated with the {@link SourceId} annotation and assigns the aggregate identifier of the DomainEventMessage.
@@ -53,14 +55,14 @@ public final class SourceIdParameterResolverFactory
      */
     static class SourceIdParameterResolver implements ParameterResolver<String> {
 
-        @Nullable
+        @Nonnull
         @Override
-        public String resolveParameterValue(@Nonnull ProcessingContext context) {
+        public CompletableFuture<String> resolveParameterValue(@Nonnull ProcessingContext context) {
             var sourceId = context.getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY);
             if (sourceId != null) {
-                return sourceId;
+                return CompletableFuture.completedFuture(sourceId);
             }
-            throw new IllegalArgumentException();
+            return CompletableFuture.failedFuture(new IllegalArgumentException("No sourceId found"));
         }
 
         @Override

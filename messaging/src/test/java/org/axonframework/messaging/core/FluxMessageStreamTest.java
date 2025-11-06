@@ -36,18 +36,18 @@ import static org.junit.jupiter.api.Assertions.*;
 class FluxMessageStreamTest extends MessageStreamTest<Message> {
 
     @Override
-    MessageStream<Message> completedTestSubject(List<Message> messages) {
+    protected MessageStream<Message> completedTestSubject(List<Message> messages) {
         return FluxUtils.asMessageStream(Flux.fromIterable(messages));
     }
 
     @Override
-    MessageStream.Single<Message> completedSingleStreamTestSubject(Message message) {
+    protected MessageStream.Single<Message> completedSingleStreamTestSubject(Message message) {
         Assumptions.abort("FluxMessageStream doesn't support explicit single-value streams");
         return null;
     }
 
     @Override
-    MessageStream.Empty<Message> completedEmptyStreamTestSubject() {
+    protected MessageStream.Empty<Message> completedEmptyStreamTestSubject() {
         Assumptions.abort("FluxMessageStream doesn't support explicitly empty streams");
         return null;
     }
@@ -69,12 +69,12 @@ class FluxMessageStreamTest extends MessageStreamTest<Message> {
     }
 
     @Override
-    MessageStream<Message> failingTestSubject(List<Message> messages, Exception failure) {
+    protected MessageStream<Message> failingTestSubject(List<Message> messages, RuntimeException failure) {
         return FluxUtils.asMessageStream(Flux.fromIterable(messages).concatWith(Mono.error(failure)));
     }
 
     @Override
-    Message createRandomMessage() {
+    protected  Message createRandomMessage() {
         return new GenericMessage(new MessageType("message"),
                                     "test-" + ThreadLocalRandom.current().nextInt(10000));
     }

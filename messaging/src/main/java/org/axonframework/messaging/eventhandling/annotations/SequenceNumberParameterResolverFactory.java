@@ -25,6 +25,8 @@ import org.axonframework.messaging.core.annotations.ParameterResolver;
 import org.axonframework.messaging.core.annotations.ParameterResolverFactory;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
  * An extension of the AbstractAnnotatedParameterResolverFactory that accepts parameters of a {@link Long} type
  * annotated with the {@link SequenceNumber} annotation and assigns the sequenceNumber of the DomainEventMessage.
@@ -58,10 +60,10 @@ public final class SequenceNumberParameterResolverFactory extends
      */
     public static class SequenceNumberParameterResolver implements ParameterResolver<Long> {
 
-        @Nullable
+        @Nonnull
         @Override
-        public Long resolveParameterValue(@Nonnull ProcessingContext context) {
-            return context.getResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY);
+        public CompletableFuture<Long> resolveParameterValue(@Nonnull ProcessingContext context) {
+            return CompletableFuture.completedFuture(context.getResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY));
         }
 
         @Override

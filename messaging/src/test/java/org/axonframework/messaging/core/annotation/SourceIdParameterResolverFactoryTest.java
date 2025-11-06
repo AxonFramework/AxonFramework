@@ -73,7 +73,7 @@ class SourceIdParameterResolverFactoryTest {
         String aggregateId = UUID.randomUUID().toString();
         ProcessingContext context = StubProcessingContext.forMessage(eventMessage, aggregateId, 0L, "aggregateType");
         assertTrue(resolver.matches(context));
-        assertEquals(aggregateId, resolver.resolveParameterValue(context));
+        assertEquals(aggregateId, resolver.resolveParameterValue(context).join());
     }
 
     @Test

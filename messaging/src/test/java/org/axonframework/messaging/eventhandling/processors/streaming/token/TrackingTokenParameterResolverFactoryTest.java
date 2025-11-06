@@ -61,7 +61,7 @@ class TrackingTokenParameterResolverFactoryTest {
         ProcessingContext testContext = StubProcessingContext.forMessage(testMessage)
                                                              .withResource(TrackingToken.RESOURCE_KEY, trackingToken);
         assertTrue(resolver.matches(testContext));
-        assertSame(trackingToken, resolver.resolveParameterValue(testContext));
+        assertSame(trackingToken, resolver.resolveParameterValue(testContext).join());
     }
 
     @SuppressWarnings("unused")

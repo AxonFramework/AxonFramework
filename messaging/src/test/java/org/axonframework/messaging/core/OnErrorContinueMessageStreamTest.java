@@ -30,26 +30,26 @@ import java.util.concurrent.ThreadLocalRandom;
 class OnErrorContinueMessageStreamTest extends MessageStreamTest<Message> {
 
     @Override
-    MessageStream<Message> completedTestSubject(List<Message> messages) {
+    protected MessageStream<Message> completedTestSubject(List<Message> messages) {
         return new OnErrorContinueMessageStream<>(MessageStream.fromIterable(messages),
                                                   error -> MessageStream.empty().cast());
     }
 
     @Override
-    MessageStream.Single<Message> completedSingleStreamTestSubject(Message message) {
+    protected MessageStream.Single<Message> completedSingleStreamTestSubject(Message message) {
         Assumptions.abort("OnErrorContinueMessageStream doesn't support explicit single-value streams");
         return null;
     }
 
     @Override
-    MessageStream.Empty<Message> completedEmptyStreamTestSubject() {
+    protected MessageStream.Empty<Message> completedEmptyStreamTestSubject() {
         Assumptions.abort("OnErrorContinueMessageStream doesn't support explicitly empty streams");
         return null;
     }
 
     @Override
-    MessageStream<Message> failingTestSubject(List<Message> messages,
-                                              Exception failure) {
+    protected MessageStream<Message> failingTestSubject(List<Message> messages,
+                                                        RuntimeException failure) {
         return new OnErrorContinueMessageStream<>(MessageStream.fromIterable(messages)
                                                                .concatWith(MessageStream.failed(new RuntimeException(
                                                                        "Wrong failure"))),
@@ -57,7 +57,7 @@ class OnErrorContinueMessageStreamTest extends MessageStreamTest<Message> {
     }
 
     @Override
-    Message createRandomMessage() {
+    protected Message createRandomMessage() {
         return new GenericMessage(new MessageType("message"),
                                     "test-" + ThreadLocalRandom.current().nextInt(10000));
     }

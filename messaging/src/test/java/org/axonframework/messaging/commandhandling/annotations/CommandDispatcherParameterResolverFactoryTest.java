@@ -53,7 +53,7 @@ class CommandDispatcherParameterResolverFactoryTest {
         Method method = getClass().getMethod("methodWithCommandDispatcherParameter", CommandDispatcher.class);
         ParameterResolver<?> instance = testSubject.createInstance(method, method.getParameters(), 0);
         assertNotNull(instance);
-        Object injectedParameter = instance.resolveParameterValue(processingContext);
+        Object injectedParameter = instance.resolveParameterValue(processingContext).join();
         assertInstanceOf(ContextAwareCommandDispatcher.class, injectedParameter);
     }
 

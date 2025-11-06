@@ -25,6 +25,7 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
+import java.util.concurrent.CompletableFuture;
 
 import static org.axonframework.messaging.core.NoScopeDescriptor.INSTANCE;
 
@@ -49,12 +50,14 @@ public class ScopeDescriptorParameterResolverFactory implements ParameterResolve
 
     private static class ScopeDescriptorParameterResolver implements ParameterResolver<ScopeDescriptor> {
 
+        @Nonnull
         @Override
-        public ScopeDescriptor resolveParameterValue(@Nonnull ProcessingContext context) {
+        public CompletableFuture<ScopeDescriptor> resolveParameterValue(@Nonnull ProcessingContext context) {
             try {
-                return Scope.describeCurrentScope();
+                var scope = Scope.describeCurrentScope();
+                return CompletableFuture.completedFuture(scope);
             } catch (IllegalStateException e) {
-                return INSTANCE;
+                return CompletableFuture.completedFuture(INSTANCE);
             }
         }
 

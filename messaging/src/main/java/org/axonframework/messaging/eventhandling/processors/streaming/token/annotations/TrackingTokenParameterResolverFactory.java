@@ -27,6 +27,7 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Implementation of a {@link ParameterResolverFactory} that resolves the {@link TrackingToken} from the
@@ -52,12 +53,14 @@ public class TrackingTokenParameterResolverFactory implements ParameterResolverF
 
     private static class TrackingTokenParameterResolver implements ParameterResolver<TrackingToken> {
 
-        @Nullable
+        @Nonnull
         @Override
-        public TrackingToken resolveParameterValue(@Nonnull ProcessingContext context) {
-            return TrackingToken.fromContext(context)
-                                .map(this::unwrap)
-                                .orElse(null);
+        public CompletableFuture<TrackingToken> resolveParameterValue(@Nonnull ProcessingContext context) {
+            return CompletableFuture.completedFuture(
+                    TrackingToken.fromContext(context)
+                                 .map(this::unwrap)
+                                 .orElse(null)
+            );
         }
 
         private TrackingToken unwrap(TrackingToken trackingToken) {

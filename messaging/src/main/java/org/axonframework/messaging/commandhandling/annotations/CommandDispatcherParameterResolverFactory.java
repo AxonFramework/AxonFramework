@@ -26,6 +26,7 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * {@link ParameterResolverFactory} that ensures the {@link CommandDispatcher} is resolved in the context of the current
@@ -50,10 +51,10 @@ public class CommandDispatcherParameterResolverFactory implements ParameterResol
         }
 
         return new ParameterResolver<>() {
-            @Nullable
+            @Nonnull
             @Override
-            public CommandDispatcher resolveParameterValue(@Nonnull ProcessingContext context) {
-                return CommandDispatcher.forContext(context);
+            public CompletableFuture<CommandDispatcher> resolveParameterValue(@Nonnull ProcessingContext context) {
+                return CompletableFuture.completedFuture(CommandDispatcher.forContext(context));
             }
 
             @Override

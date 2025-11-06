@@ -18,9 +18,12 @@ package org.axonframework.messaging.core.annotations;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Priority;
 import org.axonframework.messaging.core.LegacyResources;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+
+import java.util.concurrent.CompletableFuture;
 
 /**
  * An extension of the AbstractAnnotatedParameterResolverFactory that accepts parameters of a {@link String} type that
@@ -54,14 +57,14 @@ public final class AggregateTypeParameterResolverFactory
      */
     static class AggregateTypeParameterResolver implements ParameterResolver<String> {
 
-        @Nullable
+        @Nonnull
         @Override
-        public String resolveParameterValue(@Nonnull ProcessingContext context) {
+        public CompletableFuture<String> resolveParameterValue(@Nonnull ProcessingContext context) {
             var aggregateType = context.getResource(LegacyResources.AGGREGATE_TYPE_KEY);
             if (aggregateType != null) {
-                return aggregateType;
+                return CompletableFuture.completedFuture(aggregateType);
             }
-            return null;
+            return FutureUtils.emptyCompletedFuture();
         }
 
         @Override

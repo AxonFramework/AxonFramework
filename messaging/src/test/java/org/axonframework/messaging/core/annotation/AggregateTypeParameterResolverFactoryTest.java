@@ -69,7 +69,7 @@ class AggregateTypeParameterResolverFactoryTest {
         EventMessage eventMessage = EventTestUtils.createEvent(0);
         ProcessingContext context = StubProcessingContext.forMessage(eventMessage, "id", 0L, "aggregateType");
         assertTrue(resolver.matches(context));
-        assertEquals("aggregateType", resolver.resolveParameterValue(context));
+        assertEquals("aggregateType", resolver.resolveParameterValue(context).join());
     }
 
     @Test
