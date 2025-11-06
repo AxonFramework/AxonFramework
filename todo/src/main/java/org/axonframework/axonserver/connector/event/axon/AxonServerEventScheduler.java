@@ -28,11 +28,11 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.StringUtils;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.scheduling.EventScheduler;
-import org.axonframework.eventhandling.scheduling.ScheduleToken;
-import org.axonframework.eventhandling.scheduling.java.SimpleScheduleToken;
-import org.axonframework.messaging.Metadata;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.scheduling.EventScheduler;
+import org.axonframework.messaging.eventhandling.scheduling.ScheduleToken;
+import org.axonframework.messaging.eventhandling.scheduling.java.SimpleScheduleToken;
+import org.axonframework.messaging.core.Metadata;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 

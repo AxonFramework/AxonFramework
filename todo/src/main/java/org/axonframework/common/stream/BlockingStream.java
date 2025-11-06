@@ -16,6 +16,8 @@
 
 package org.axonframework.common.stream;
 
+import org.axonframework.messaging.core.Message;
+
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
@@ -23,7 +25,7 @@ import java.util.stream.Stream;
 /**
  * Interface for a stream that can be polled for information using (optionally blocking) pull operations.
  *
- * @param <M> the type of {@link org.axonframework.messaging.Message} contained in this stream
+ * @param <M> the type of {@link Message} contained in this stream
  * @author Rene de Waele
  * @author Allard Buijze
  * @since 3.0

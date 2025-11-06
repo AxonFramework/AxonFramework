@@ -17,7 +17,11 @@
 package org.axonframework.tracing;
 
 import org.axonframework.common.IdentifierFactory;
-import org.axonframework.messaging.Message;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.tracing.Span;
+import org.axonframework.messaging.tracing.SpanAttributesProvider;
+import org.axonframework.messaging.tracing.SpanFactory;
+import org.axonframework.messaging.tracing.SpanScope;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.slf4j.Logger;

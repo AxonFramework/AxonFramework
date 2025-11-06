@@ -25,7 +25,7 @@ import org.axonframework.common.configuration.ComponentFactory;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.InstantiatedComponentDefinition;
 import org.axonframework.common.configuration.LifecycleRegistry;
-import org.axonframework.eventhandling.conversion.EventConverter;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 
 import java.util.Optional;
 

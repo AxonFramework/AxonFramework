@@ -16,11 +16,11 @@
 
 package org.axonframework.test.saga;
 
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventMessageHandler;
-import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.processors.errorhandling.ListenerInvocationErrorHandler;
-import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.EventMessageHandler;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.eventhandling.processors.errorhandling.ListenerInvocationErrorHandler;
+import org.axonframework.messaging.core.MessageType;
 import jakarta.annotation.Nonnull;
 import org.junit.jupiter.api.*;
 

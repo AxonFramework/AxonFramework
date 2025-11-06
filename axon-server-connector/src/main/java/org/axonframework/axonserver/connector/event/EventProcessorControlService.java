@@ -28,12 +28,12 @@ import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.annotations.Internal;
 import org.axonframework.common.configuration.Configuration;
-import org.axonframework.eventhandling.processors.EventProcessor;
-import org.axonframework.eventhandling.processors.streaming.StreamingEventProcessor;
-import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
-import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessor;
+import org.axonframework.messaging.eventhandling.processors.EventProcessor;
+import org.axonframework.messaging.eventhandling.processors.streaming.StreamingEventProcessor;
+import org.axonframework.messaging.eventhandling.processors.streaming.token.store.TokenStore;
+import org.axonframework.messaging.eventhandling.processors.subscribing.SubscribingEventProcessor;
 import org.axonframework.common.lifecycle.Phase;
-import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
+import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

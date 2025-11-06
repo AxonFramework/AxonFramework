@@ -22,13 +22,14 @@ import org.axonframework.common.lock.Lock;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.NoOpLock;
 import org.axonframework.common.lock.PessimisticLockFactory;
-import org.axonframework.messaging.annotations.HandlerDefinition;
-import org.axonframework.messaging.annotations.ParameterResolverFactory;
+import org.axonframework.messaging.core.annotations.HandlerDefinition;
+import org.axonframework.messaging.core.annotations.ParameterResolverFactory;
+import org.axonframework.messaging.tracing.NoOpSpanFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.ConcurrencyException;
 import org.axonframework.modelling.command.inspection.AggregateModel;
-import org.axonframework.tracing.SpanFactory;
+import org.axonframework.messaging.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,7 +71,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
      * <p>
      * A goal of the provided Builder is to create an {@link AggregateModel} specifying generic {@code T} as the
      * aggregate type to be stored. The {@link SpanFactory} is defaulted to a
-     * {@link org.axonframework.tracing.NoOpSpanFactory}. All aggregates in this repository must be {@code instanceOf}
+     * {@link NoOpSpanFactory}. All aggregates in this repository must be {@code instanceOf}
      * this aggregate type. To instantiate this AggregateModel, either an {@link AggregateModel} can be provided
      * directly or an {@code aggregateType} of type {@link Class} can be used. The latter will internally resolve to an
      * AggregateModel. Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided. An
@@ -254,7 +255,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
      * <p>
      * The {@link LockFactory} is defaulted to a pessimistic locking strategy, implemented in the
      * {@link PessimisticLockFactory}. The {@link SpanFactory} is defaulted to a
-     * {@link org.axonframework.tracing.NoOpSpanFactory}. A goal of this Builder goal is to create an
+     * {@link NoOpSpanFactory}. A goal of this Builder goal is to create an
      * {@link AggregateModel} specifying generic {@code T} as the aggregate type to be stored. All aggregates in this
      * repository must be {@code instanceOf} this aggregate type. To instantiate this AggregateModel, either an
      * {@link AggregateModel} can be provided directly or an {@code aggregateType} of type {@link Class} can be used.

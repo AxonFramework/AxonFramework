@@ -17,10 +17,10 @@
 package org.axonframework.deadline.jobrunr;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.messaging.unitofwork.transaction.TransactionManager;
+import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
 import org.axonframework.deadline.TestScopeDescriptor;
-import org.axonframework.messaging.ScopeAwareProvider;
-import org.axonframework.messaging.ScopeDescriptor;
+import org.axonframework.messaging.core.ScopeAwareProvider;
+import org.axonframework.messaging.core.ScopeDescriptor;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.jobrunr.scheduling.JobScheduler;
 import org.junit.jupiter.api.*;

@@ -17,7 +17,7 @@
 package org.axonframework.modelling.entity.annotations;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.commandhandling.annotations.RoutingKey;
+import org.axonframework.messaging.commandhandling.annotations.RoutingKey;
 import org.axonframework.common.annotations.AnnotationUtils;
 import org.axonframework.common.annotations.Internal;
 

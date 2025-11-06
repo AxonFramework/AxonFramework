@@ -17,17 +17,19 @@
 package org.axonframework.extension.tracing.opentelemetry;
 
 import io.opentelemetry.context.propagation.TextMapGetter;
-import org.axonframework.messaging.Message;
+import org.axonframework.messaging.core.Message;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.tracing.SpanFactory;
 
 /**
  * This {@link TextMapGetter} implementation is able to extract the parent OpenTelemetry span context from a
  * {@link Message}.
  * <p>
- * The trace parent is part of the message's {@link org.axonframework.messaging.Metadata}, if it was set when
+ * The trace parent is part of the message's {@link Metadata}, if it was set when
  * dispatching by the {@link MetadataContextSetter}. This is done using the
- * {@link org.axonframework.tracing.SpanFactory#propagateContext(Message)} method for the message.
+ * {@link SpanFactory#propagateContext(Message)} method for the message.
  *
  * @author Mitchell Herrijgers
  * @since 4.6.0

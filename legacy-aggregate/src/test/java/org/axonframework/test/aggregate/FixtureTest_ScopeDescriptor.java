@@ -16,9 +16,9 @@
 
 package org.axonframework.test.aggregate;
 
-import org.axonframework.commandhandling.annotations.CommandHandler;
+import org.axonframework.messaging.commandhandling.annotations.CommandHandler;
 import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
-import org.axonframework.messaging.ScopeDescriptor;
+import org.axonframework.messaging.core.ScopeDescriptor;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateScopeDescriptor;
@@ -29,7 +29,7 @@ import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.axonframework.test.matchers.Matchers.*;
 
 /**
- * Test class validating a {@link org.axonframework.messaging.ScopeDescriptor}, specifically an {@link
+ * Test class validating a {@link ScopeDescriptor}, specifically an {@link
  * org.axonframework.modelling.command.AggregateScopeDescriptor}, can be resolved on Aggregate's message handling
  * functions.
  *

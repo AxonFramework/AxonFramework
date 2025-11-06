@@ -16,15 +16,15 @@
 
 package org.axonframework.modelling.command.inspection;
 
-import org.axonframework.commandhandling.annotations.CommandHandler;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.annotations.EventHandler;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventTestUtils;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.commandhandling.annotations.CommandHandler;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.commandhandling.GenericCommandMessage;
+import org.axonframework.messaging.eventhandling.EventBus;
+import org.axonframework.messaging.eventhandling.annotations.EventHandler;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.EventTestUtils;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.modelling.command.AggregateMember;

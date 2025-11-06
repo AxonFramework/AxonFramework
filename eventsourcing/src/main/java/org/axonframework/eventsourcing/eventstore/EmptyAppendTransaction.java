@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nullable;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.util.concurrent.CompletableFuture;
 

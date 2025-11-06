@@ -21,13 +21,13 @@ import jakarta.annotation.Nullable;
 import org.axonframework.common.Registration;
 import org.axonframework.common.annotations.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
-import org.axonframework.eventstreaming.StreamingCondition;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventstreaming.StreamingCondition;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Instant;

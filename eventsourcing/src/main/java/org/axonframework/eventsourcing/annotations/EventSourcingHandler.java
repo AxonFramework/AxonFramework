@@ -16,9 +16,12 @@
 
 package org.axonframework.eventsourcing.annotations;
 
-import org.axonframework.eventhandling.annotations.EventHandler;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.Metadata;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.annotations.EventHandler;
+import org.axonframework.messaging.commandhandling.annotations.CommandHandler;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.Metadata;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -28,8 +31,8 @@ import java.lang.annotation.Target;
 
 /**
  * Annotation that marks a method in: - an Aggregate (either the root, or an entity) as a handler for Events generated
- * by that aggregate. - a State model needed for {@link org.axonframework.commandhandling.annotations.CommandHandler} as
- * a handler for Events sourced in order to handle given {@link org.axonframework.commandhandling.CommandMessage}. The
+ * by that aggregate. - a State model needed for {@link CommandHandler} as
+ * a handler for Events sourced in order to handle given {@link CommandMessage}. The
  * parameters of the annotated method are resolved using parameter resolvers.
  * <p/>
  * Axon provides a number of parameter resolvers that allow you to use the following parameter types:<ul>
@@ -44,7 +47,7 @@ import java.lang.annotation.Target;
  * <li>Parameters of type {@link java.time.Instant} will resolve to the timestamp of the EventMessage. This is the
  * time at which the Event was generated.</li>
  * <li>Parameters assignable to {@link Message} will have the entire {@link
- * org.axonframework.eventhandling.EventMessage} injected (if the message is assignable to that parameter). If the first
+ * EventMessage} injected (if the message is assignable to that parameter). If the first
  * parameter is of type message, it effectively matches an Event of any type, even if generic parameters would suggest
  * otherwise. Due to type erasure, Axon cannot detect what parameter is expected. In such case, it is best to declare a
  * parameter of the payload type, followed by a parameter of type Message.</li>

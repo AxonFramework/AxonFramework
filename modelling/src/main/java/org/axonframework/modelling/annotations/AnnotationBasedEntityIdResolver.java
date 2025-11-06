@@ -18,8 +18,8 @@ package org.axonframework.modelling.annotations;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.modelling.EntityIdResolutionException;
 import org.axonframework.modelling.EntityIdResolver;
 

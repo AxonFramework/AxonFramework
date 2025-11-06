@@ -16,13 +16,13 @@
 
 package org.axonframework.test.utils;
 
-import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.commandhandling.CommandHandler;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.commandhandling.CommandResultMessage;
+import org.axonframework.messaging.commandhandling.GenericCommandMessage;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.QualifiedName;
 import org.junit.jupiter.api.*;
 
 import java.util.List;

@@ -17,9 +17,10 @@
 package org.axonframework.spring.eventhandling.scheduling.java;
 
 import org.axonframework.common.AxonThreadFactory;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.scheduling.java.SimpleEventScheduler;
+import org.axonframework.messaging.eventhandling.EventBus;
+import org.axonframework.messaging.eventhandling.scheduling.java.SimpleEventScheduler;
 import org.axonframework.extension.spring.messaging.unitofwork.SpringTransactionManager;
+import org.axonframework.messaging.eventhandling.scheduling.quartz.QuartzEventScheduler;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.FactoryBean;
@@ -40,7 +41,7 @@ import jakarta.annotation.Nonnull;
  * <p/>
  * Note that this mechanism is non-persistent. Scheduled tasks will be lost when the JVM is shut down, unless special
  * measures have been taken to prevent that. For more flexible and powerful scheduling options, see {@link
- * org.axonframework.eventhandling.scheduling.quartz.QuartzEventScheduler}.
+ * QuartzEventScheduler}.
  *
  * @author Allard Buijze
  * @since 1.1

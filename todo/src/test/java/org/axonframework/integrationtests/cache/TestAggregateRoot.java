@@ -16,12 +16,12 @@
 
 package org.axonframework.integrationtests.cache;
 
-import org.axonframework.commandhandling.annotations.CommandHandler;
+import org.axonframework.messaging.commandhandling.annotations.CommandHandler;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.axonframework.modelling.command.AggregateIdentifier;
-import org.axonframework.eventhandling.annotations.EventHandler;
+import org.axonframework.messaging.eventhandling.annotations.EventHandler;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 

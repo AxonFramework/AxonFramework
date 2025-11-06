@@ -16,11 +16,11 @@
 
 package org.axonframework.test.fixture;
 
-import org.axonframework.commandhandling.annotations.Command;
-import org.axonframework.commandhandling.annotations.CommandHandler;
-import org.axonframework.commandhandling.configuration.CommandHandlingModule;
-import org.axonframework.eventhandling.annotations.Event;
-import org.axonframework.eventhandling.gateway.EventAppender;
+import org.axonframework.messaging.commandhandling.annotations.Command;
+import org.axonframework.messaging.commandhandling.annotations.CommandHandler;
+import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
+import org.axonframework.messaging.eventhandling.annotations.Event;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.annotations.EventSourcedEntity;
 import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
 import org.axonframework.eventsourcing.annotations.EventTag;

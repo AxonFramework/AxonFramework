@@ -17,11 +17,11 @@
 package org.axonframework.modelling.command;
 
 import org.axonframework.common.lock.Lock;
-import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.GenericMessage;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.atomic.AtomicBoolean;

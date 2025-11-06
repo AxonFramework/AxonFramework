@@ -16,37 +16,37 @@
 
 package org.axonframework.integrationtests.queryhandling;
 
-import org.axonframework.messaging.ClassBasedMessageTypeResolver;
-import org.axonframework.messaging.FluxUtils;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.annotations.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.annotations.MultiParameterResolverFactory;
-import org.axonframework.messaging.annotations.ParameterResolverFactory;
-import org.axonframework.messaging.conversion.DelegatingMessageConverter;
-import org.axonframework.messaging.conversion.MessageConverter;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
-import org.axonframework.queryhandling.GenericQueryMessage;
-import org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage;
-import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryExecutionException;
-import org.axonframework.queryhandling.QueryHandlingComponent;
-import org.axonframework.queryhandling.QueryPriorityCalculator;
-import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.queryhandling.QueryUpdateEmitter;
-import org.axonframework.queryhandling.QueryUpdateEmitterParameterResolverFactory;
-import org.axonframework.queryhandling.SubscriptionQueryAlreadyRegisteredException;
-import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
-import org.axonframework.queryhandling.annotations.AnnotatedQueryHandlingComponent;
-import org.axonframework.queryhandling.annotations.QueryHandler;
+import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.core.FluxUtils;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.annotations.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.core.annotations.MultiParameterResolverFactory;
+import org.axonframework.messaging.core.annotations.ParameterResolverFactory;
+import org.axonframework.messaging.core.conversion.DelegatingMessageConverter;
+import org.axonframework.messaging.core.conversion.MessageConverter;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.UnitOfWork;
+import org.axonframework.messaging.core.unitofwork.UnitOfWorkTestUtils;
+import org.axonframework.messaging.queryhandling.GenericQueryMessage;
+import org.axonframework.messaging.queryhandling.GenericSubscriptionQueryUpdateMessage;
+import org.axonframework.messaging.queryhandling.QueryBus;
+import org.axonframework.messaging.queryhandling.QueryExecutionException;
+import org.axonframework.messaging.queryhandling.QueryHandlingComponent;
+import org.axonframework.messaging.queryhandling.QueryPriorityCalculator;
+import org.axonframework.messaging.queryhandling.QueryResponseMessage;
+import org.axonframework.messaging.queryhandling.QueryUpdateEmitter;
+import org.axonframework.messaging.queryhandling.QueryUpdateEmitterParameterResolverFactory;
+import org.axonframework.messaging.queryhandling.SubscriptionQueryAlreadyRegisteredException;
+import org.axonframework.messaging.queryhandling.QueryMessage;
+import org.axonframework.messaging.queryhandling.SubscriptionQueryUpdateMessage;
+import org.axonframework.messaging.queryhandling.annotations.AnnotatedQueryHandlingComponent;
+import org.axonframework.messaging.queryhandling.annotations.QueryHandler;
 import org.axonframework.conversion.json.JacksonConverter;
-import org.axonframework.queryhandling.gateway.DefaultQueryGateway;
-import org.axonframework.queryhandling.gateway.QueryGateway;
+import org.axonframework.messaging.queryhandling.gateway.DefaultQueryGateway;
+import org.axonframework.messaging.queryhandling.gateway.QueryGateway;
 import org.junit.jupiter.api.*;
 import reactor.core.Exceptions;
 import reactor.core.publisher.Flux;
@@ -80,7 +80,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Abstract test suite for the
- * {@link QueryBus#subscriptionQuery(QueryMessage, org.axonframework.messaging.unitofwork.ProcessingContext, int)}
+ * {@link QueryBus#subscriptionQuery(QueryMessage, ProcessingContext, int)}
  * functionality.
  *
  * @author Milan Savic

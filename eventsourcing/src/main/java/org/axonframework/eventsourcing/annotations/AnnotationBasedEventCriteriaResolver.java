@@ -23,9 +23,9 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.eventsourcing.CriteriaResolver;
-import org.axonframework.eventstreaming.EventCriteria;
-import org.axonframework.eventstreaming.Tag;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.axonframework.messaging.eventstreaming.Tag;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

@@ -16,8 +16,8 @@
 
 package org.axonframework.integrationtests.testsuite.administration.state.mutable;
 
-import org.axonframework.commandhandling.annotations.CommandHandler;
-import org.axonframework.eventhandling.gateway.EventAppender;
+import org.axonframework.messaging.commandhandling.annotations.CommandHandler;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
 import org.axonframework.integrationtests.testsuite.administration.commands.CreateCustomer;
 import org.axonframework.integrationtests.testsuite.administration.events.CustomerCreated;

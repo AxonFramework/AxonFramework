@@ -30,7 +30,7 @@ import jakarta.annotation.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.conversion.json.*;
-import org.axonframework.messaging.Metadata;
+import org.axonframework.messaging.core.Metadata;
 import org.axonframework.conversion.ChainingContentTypeConverter;
 import org.axonframework.conversion.Converter;
 import org.axonframework.serialization.SerializationException;

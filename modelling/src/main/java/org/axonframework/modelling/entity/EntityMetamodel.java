@@ -17,12 +17,12 @@
 package org.axonframework.modelling.entity;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.commandhandling.CommandResultMessage;
 import org.axonframework.common.infra.DescribableComponent;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.modelling.EntityEvolver;
 
 import java.util.Set;

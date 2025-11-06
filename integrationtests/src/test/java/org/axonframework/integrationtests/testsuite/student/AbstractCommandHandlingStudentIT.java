@@ -17,16 +17,16 @@
 package org.axonframework.integrationtests.testsuite.student;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.configuration.CommandHandlingModule;
-import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.messaging.configuration.MessagingConfigurer;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
+import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.integrationtests.testsuite.student.commands.ChangeStudentNameCommand;
 import org.axonframework.integrationtests.testsuite.student.commands.EnrollStudentToCourseCommand;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageDispatchInterceptor;
+import org.axonframework.messaging.core.MessageHandlerInterceptor;
 import org.junit.jupiter.api.BeforeEach;
 
 import java.util.ArrayList;

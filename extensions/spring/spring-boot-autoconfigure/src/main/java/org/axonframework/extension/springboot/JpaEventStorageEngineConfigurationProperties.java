@@ -16,7 +16,7 @@
 
 package org.axonframework.extension.springboot;
 
-import org.axonframework.eventhandling.processors.streaming.token.GapAwareTrackingToken;
+import org.axonframework.messaging.eventhandling.processors.streaming.token.GapAwareTrackingToken;
 import org.axonframework.eventsourcing.eventstore.jpa.AggregateEventEntry;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

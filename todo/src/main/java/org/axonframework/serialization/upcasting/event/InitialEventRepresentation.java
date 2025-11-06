@@ -16,11 +16,11 @@
 
 package org.axonframework.serialization.upcasting.event;
 
-import org.axonframework.eventhandling.DomainEventData;
-import org.axonframework.eventhandling.EventData;
-import org.axonframework.eventhandling.TrackedEventData;
-import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
-import org.axonframework.messaging.Metadata;
+import org.axonframework.messaging.eventhandling.DomainEventData;
+import org.axonframework.messaging.eventhandling.EventData;
+import org.axonframework.messaging.eventhandling.TrackedEventData;
+import org.axonframework.messaging.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.messaging.core.Metadata;
 import org.axonframework.conversion.CachingSupplier;
 import org.axonframework.conversion.Converter;
 import org.axonframework.serialization.LazyDeserializingObject;

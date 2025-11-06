@@ -17,12 +17,12 @@
 package org.axonframework.integrationtests.testsuite.administration;
 
 import org.axonframework.common.configuration.Configuration;
-import org.axonframework.eventhandling.conversion.EventConverter;
-import org.axonframework.eventhandling.gateway.EventAppender;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.eventstreaming.EventCriteria;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.integrationtests.testsuite.administration.commands.AssignTaskCommand;
 import org.axonframework.integrationtests.testsuite.administration.commands.ChangeEmailAddress;
 import org.axonframework.integrationtests.testsuite.administration.commands.CompleteTaskCommand;
@@ -37,9 +37,9 @@ import org.axonframework.integrationtests.testsuite.administration.state.mutable
 import org.axonframework.integrationtests.testsuite.administration.state.mutable.MutablePerson;
 import org.axonframework.integrationtests.testsuite.administration.state.mutable.MutableSalaryInformation;
 import org.axonframework.integrationtests.testsuite.administration.state.mutable.MutableTask;
-import org.axonframework.messaging.conversion.MessageConverter;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageTypeResolver;
+import org.axonframework.messaging.core.conversion.MessageConverter;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.modelling.annotations.AnnotationBasedEntityEvolvingComponent;
 import org.axonframework.modelling.entity.ConcreteEntityMetamodel;
 import org.axonframework.modelling.entity.EntityMetamodel;

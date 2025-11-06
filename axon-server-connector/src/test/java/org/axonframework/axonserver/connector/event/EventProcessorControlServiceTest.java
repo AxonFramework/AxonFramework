@@ -22,10 +22,10 @@ import io.axoniq.axonserver.connector.control.ControlChannel;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.common.configuration.Configuration;
-import org.axonframework.eventhandling.processors.EventProcessor;
-import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
+import org.axonframework.messaging.eventhandling.processors.EventProcessor;
+import org.axonframework.messaging.eventhandling.processors.streaming.token.store.TokenStore;
+import org.axonframework.messaging.core.unitofwork.UnitOfWork;
+import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.junit.jupiter.api.*;
 
 import java.util.HashMap;

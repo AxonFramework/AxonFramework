@@ -35,12 +35,12 @@ import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.AxonServerException;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.scheduling.java.SimpleScheduleToken;
-import org.axonframework.eventhandling.scheduling.quartz.QuartzScheduleToken;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.Metadata;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.eventhandling.scheduling.java.SimpleScheduleToken;
+import org.axonframework.messaging.eventhandling.scheduling.quartz.QuartzScheduleToken;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.Metadata;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
 
@@ -177,7 +177,7 @@ public class AxonServerEventSchedulerTest {
 
     @Test
     void schedule() {
-        org.axonframework.eventhandling.scheduling.ScheduleToken token =
+        org.axonframework.messaging.eventhandling.scheduling.ScheduleToken token =
                 testSubject.schedule(Instant.now().plus(Duration.ofMinutes(5)), "TestEvent");
         assertInstanceOf(SimpleScheduleToken.class, token);
         SimpleScheduleToken simpleScheduleToken = (SimpleScheduleToken) token;
@@ -203,7 +203,7 @@ public class AxonServerEventSchedulerTest {
                                               .build();
         testSubject.start();
 
-        org.axonframework.eventhandling.scheduling.ScheduleToken token =
+        org.axonframework.messaging.eventhandling.scheduling.ScheduleToken token =
                 testSubject.schedule(Instant.now().plus(Duration.ofMinutes(5)), "TestEvent");
         assertInstanceOf(SimpleScheduleToken.class, token);
         SimpleScheduleToken simpleScheduleToken = (SimpleScheduleToken) token;
@@ -232,7 +232,7 @@ public class AxonServerEventSchedulerTest {
 
     @Test
     void scheduleWithDuration() {
-        org.axonframework.eventhandling.scheduling.ScheduleToken token =
+        org.axonframework.messaging.eventhandling.scheduling.ScheduleToken token =
                 testSubject.schedule(Duration.ofMinutes(5), "TestEvent");
         assertInstanceOf(SimpleScheduleToken.class, token);
         SimpleScheduleToken simpleScheduleToken = (SimpleScheduleToken) token;
@@ -278,7 +278,7 @@ public class AxonServerEventSchedulerTest {
         EventMessage testEvent = new GenericEventMessage(
                 new MessageType("event"), "Updated", Metadata.with("updated", "true")
         );
-        org.axonframework.eventhandling.scheduling.ScheduleToken token =
+        org.axonframework.messaging.eventhandling.scheduling.ScheduleToken token =
                 testSubject.reschedule(null, Duration.ofDays(1), testEvent);
 
         assertInstanceOf(SimpleScheduleToken.class, token);

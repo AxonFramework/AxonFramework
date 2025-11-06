@@ -16,9 +16,9 @@
 
 package org.axonframework.modelling.annotations;
 
-import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.commandhandling.GenericCommandMessage;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.modelling.EntityIdResolutionException;
 import org.junit.jupiter.api.*;
 

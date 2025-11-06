@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.tracing.Span;
+import org.axonframework.messaging.tracing.Span;
 
 /**
  * Span factory that creates spans for the {@link Repository}. You can customize the spans of the bus by creating

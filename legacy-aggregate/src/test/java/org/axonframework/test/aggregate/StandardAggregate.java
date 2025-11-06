@@ -17,8 +17,8 @@
 package org.axonframework.test.aggregate;
 
 import org.axonframework.modelling.command.AggregateIdentifier;
-import org.axonframework.eventhandling.DomainEventMessage;
-import org.axonframework.eventsourcing.AbstractAggregateFactory;
+import org.axonframework.messaging.eventhandling.DomainEventMessage;
+import org.axonframework.messaging.eventsourcing.AbstractAggregateFactory;
 import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
 
 import java.util.UUID;

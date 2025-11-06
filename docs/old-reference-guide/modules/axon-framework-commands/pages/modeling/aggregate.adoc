@@ -43,7 +43,7 @@ Henceforth, our basic `GiftCard` Aggregate structure will focus on the Event Sou
 
 [source,java]
 ----
-import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.messaging.commandhandling.CommandHandler;
 import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
 import org.axonframework.modelling.command.AggregateIdentifier;
 

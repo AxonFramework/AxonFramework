@@ -18,7 +18,7 @@ package org.axonframework.axonserver.connector.util;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.axoniq.axonserver.grpc.MetaDataValue;
-import org.axonframework.eventhandling.annotations.Event;
+import org.axonframework.messaging.eventhandling.annotations.Event;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.jupiter.api.*;

@@ -14,7 +14,7 @@ Let us assume we have a `ParentAggregate`, that upon handling a certain command 
 
 [source,java]
 ----
-import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.messaging.commandhandling.CommandHandler;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.createNew;
 
@@ -23,9 +23,9 @@ public class ParentAggregate {
     @CommandHandler
     public void handle(SomeParentCommand command) {
         createNew(
-            ChildAggregate.class, 
+            ChildAggregate.class,
             () -> new ChildAggregate(/* provide required constructor parameters if applicable */)
-        ); 
+        );
     }
     // omitted no-op constructor, event sourcing handlers and other command handlers
 }

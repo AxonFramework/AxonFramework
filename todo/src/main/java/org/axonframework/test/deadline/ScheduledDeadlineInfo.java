@@ -17,7 +17,8 @@
 package org.axonframework.test.deadline;
 
 import org.axonframework.deadline.DeadlineMessage;
-import org.axonframework.messaging.ScopeDescriptor;
+import org.axonframework.messaging.core.ScopeDescriptor;
+import org.axonframework.messaging.core.Scope;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -48,7 +49,7 @@ public class ScheduledDeadlineInfo implements Comparable<ScheduledDeadlineInfo> 
      *                        with the {@code deadlineName} to cancel the deadline
      * @param counter         Used to differentiate two deadlines scheduled at the same time
      * @param deadlineMessage The deadline message of the scheduled deadline.
-     * @param deadlineScope   A description of the {@link org.axonframework.messaging.Scope} in which the deadline is
+     * @param deadlineScope   A description of the {@link Scope} in which the deadline is
      *                        scheduled
      */
     public ScheduledDeadlineInfo(Instant scheduleTime,
@@ -122,9 +123,9 @@ public class ScheduledDeadlineInfo implements Comparable<ScheduledDeadlineInfo> 
     }
 
     /**
-     * Retrieve a description of the {@link org.axonframework.messaging.Scope} in which the deadline is scheduled.
+     * Retrieve a description of the {@link Scope} in which the deadline is scheduled.
      *
-     * @return a description of the {@link org.axonframework.messaging.Scope} in which the deadline is scheduled
+     * @return a description of the {@link Scope} in which the deadline is scheduled
      */
     public ScopeDescriptor getDeadlineScope() {
         return deadlineScope;

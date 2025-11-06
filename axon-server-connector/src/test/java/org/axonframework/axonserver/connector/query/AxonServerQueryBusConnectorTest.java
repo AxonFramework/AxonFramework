@@ -28,14 +28,14 @@ import io.axoniq.axonserver.grpc.query.QueryResponse;
 import io.axoniq.axonserver.grpc.query.QueryUpdate;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.utils.StubResultStream;
-import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.Metadata;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.queryhandling.GenericQueryMessage;
-import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.queryhandling.QueryResponseMessage;
+import org.axonframework.messaging.core.GenericMessage;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.queryhandling.GenericQueryMessage;
+import org.axonframework.messaging.queryhandling.QueryMessage;
+import org.axonframework.messaging.queryhandling.QueryResponseMessage;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;
@@ -205,7 +205,7 @@ class AxonServerQueryBusConnectorTest {
                                        "payload".getBytes(),
                                        Metadata.emptyInstance())
             );
-            QueryMessage sqm = new org.axonframework.queryhandling.GenericQueryMessage(
+            QueryMessage sqm = new GenericQueryMessage(
                     query,
                     1
             );

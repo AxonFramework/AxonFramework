@@ -19,7 +19,7 @@
              xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
              version="3.0">
     <persistence-unit name="tokenstore" transaction-type="RESOURCE_LOCAL">
-        <class>org.axonframework.eventhandling.processors.streaming.token.store.jpa.TokenEntry</class>
+        <class>org.axonframework.messaging.eventhandling.processors.streaming.token.store.jpa.TokenEntry</class>
         <properties>
             <property name="jakarta.persistence.jdbc.driver" value="org.hsqldb.jdbcDriver"/>
             <property name="jakarta.persistence.jdbc.url" value="jdbc:hsqldb:mem:axontest"/>
@@ -31,8 +31,8 @@
     </persistence-unit>
 
     <persistence-unit name="dlq" transaction-type="RESOURCE_LOCAL">
-        <class>org.axonframework.eventhandling.deadletter.jpa.DeadLetterEntry</class>
-        <class>org.axonframework.eventhandling.deadletter.jpa.DeadLetterEventEntry</class>
+        <class>org.axonframework.messaging.eventhandling.deadletter.jpa.DeadLetterEntry</class>
+        <class>org.axonframework.messaging.eventhandling.deadletter.jpa.DeadLetterEventEntry</class>
         <exclude-unlisted-classes>true</exclude-unlisted-classes>
         <properties>
             <property name="jakarta.persistence.jdbc.driver" value="org.hsqldb.jdbcDriver"/>
@@ -45,7 +45,7 @@
     </persistence-unit>
 
     <persistence-unit name="jpatest" transaction-type="RESOURCE_LOCAL">
-        <class>org.axonframework.eventhandling.deadletter.jpa.TestJpaEntry</class>
+        <class>org.axonframework.messaging.eventhandling.deadletter.jpa.TestJpaEntry</class>
         <exclude-unlisted-classes>true</exclude-unlisted-classes>
         <properties>
             <property name="jakarta.persistence.jdbc.driver" value="org.hsqldb.jdbcDriver"/>

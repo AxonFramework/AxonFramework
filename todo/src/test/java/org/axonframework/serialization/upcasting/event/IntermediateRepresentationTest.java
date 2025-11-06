@@ -16,10 +16,10 @@
 
 package org.axonframework.serialization.upcasting.event;
 
-import org.axonframework.eventhandling.DomainEventMessage;
-import org.axonframework.eventhandling.EventData;
-import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.eventhandling.DomainEventMessage;
+import org.axonframework.messaging.eventhandling.EventData;
+import org.axonframework.messaging.eventhandling.GenericDomainEventMessage;
+import org.axonframework.messaging.core.MessageType;
 import org.axonframework.conversion.Converter;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.TestSerializer;

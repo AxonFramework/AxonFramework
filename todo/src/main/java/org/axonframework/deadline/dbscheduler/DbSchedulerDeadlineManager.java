@@ -27,8 +27,9 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.IdentifierFactory;
-import org.axonframework.messaging.unitofwork.transaction.NoTransactionManager;
-import org.axonframework.messaging.unitofwork.transaction.TransactionManager;
+import org.axonframework.messaging.core.*;
+import org.axonframework.messaging.core.unitofwork.transaction.NoTransactionManager;
+import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
 import org.axonframework.deadline.AbstractDeadlineManager;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineManagerSpanFactory;
@@ -36,22 +37,17 @@ import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.DefaultDeadlineManagerSpanFactory;
 import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.deadline.jobrunr.DeadlineDetails;
-import org.axonframework.eventhandling.scheduling.dbscheduler.DbSchedulerBinaryEventData;
-import org.axonframework.eventhandling.scheduling.dbscheduler.DbSchedulerEventScheduler;
-import org.axonframework.messaging.ClassBasedMessageTypeResolver;
-import org.axonframework.messaging.ExecutionException;
-import org.axonframework.messaging.MessageTypeResolver;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.ScopeAwareProvider;
-import org.axonframework.messaging.ScopeDescriptor;
+import org.axonframework.messaging.eventhandling.scheduling.dbscheduler.DbSchedulerBinaryEventData;
+import org.axonframework.messaging.eventhandling.scheduling.dbscheduler.DbSchedulerEventScheduler;
+import org.axonframework.messaging.core.ScopeAwareProvider;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.tracing.NoOpSpanFactory;
-import org.axonframework.tracing.Span;
-import org.axonframework.tracing.SpanScope;
+import org.axonframework.messaging.tracing.NoOpSpanFactory;
+import org.axonframework.messaging.tracing.Span;
+import org.axonframework.messaging.tracing.SpanScope;
 import org.jobrunr.scheduling.JobScheduler;
 import org.slf4j.Logger;
 
@@ -455,11 +451,11 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
 
         /**
          * Sets the {@link ScopeAwareProvider} which is capable of providing a stream of
-         * {@link org.axonframework.messaging.Scope} instances for a given {@link ScopeDescriptor}. Used to return the
+         * {@link Scope} instances for a given {@link ScopeDescriptor}. Used to return the
          * right Scope to trigger a deadline in.
          *
          * @param scopeAwareProvider a {@link ScopeAwareProvider} used to find the right
-         *                           {@link org.axonframework.messaging.Scope} to trigger a deadline in
+         *                           {@link Scope} to trigger a deadline in
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder scopeAwareProvider(ScopeAwareProvider scopeAwareProvider) {
@@ -470,11 +466,11 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
 
         /**
          * Sets the {@link Serializer} used to de-/serialize the {@code payload},
-         * {@link org.axonframework.messaging.Metadata} and the {@link ScopeDescriptor} into the {@link DeadlineDetails}
+         * {@link Metadata} and the {@link ScopeDescriptor} into the {@link DeadlineDetails}
          * as well as the whole {@link DeadlineDetails} itself.
          *
          * @param serializer a {@link Serializer} used to de-/serialize the {@code payload},
-         *                   {@link org.axonframework.messaging.Metadata} and the {@link ScopeDescriptor} into the
+         *                   {@link Metadata} and the {@link ScopeDescriptor} into the
          *                   {@link DeadlineDetails}, as well as the whole {@link DeadlineDetails} itself.
          * @return the current Builder instance, for fluent interfacing
          */

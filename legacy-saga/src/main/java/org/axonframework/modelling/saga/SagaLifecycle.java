@@ -16,8 +16,8 @@
 
 package org.axonframework.modelling.saga;
 
-import org.axonframework.messaging.Scope;
-import org.axonframework.messaging.ScopeDescriptor;
+import org.axonframework.messaging.core.Scope;
+import org.axonframework.messaging.core.ScopeDescriptor;
 
 import java.util.Set;
 

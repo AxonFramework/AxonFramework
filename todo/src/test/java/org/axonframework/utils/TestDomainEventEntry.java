@@ -19,8 +19,8 @@ package org.axonframework.utils;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
-import org.axonframework.eventhandling.AbstractSequencedDomainEventEntry;
-import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.messaging.eventhandling.AbstractSequencedDomainEventEntry;
+import org.axonframework.messaging.eventhandling.DomainEventMessage;
 import org.axonframework.serialization.Serializer;
 
 /**

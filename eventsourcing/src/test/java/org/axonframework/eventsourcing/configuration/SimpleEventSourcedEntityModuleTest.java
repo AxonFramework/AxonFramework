@@ -16,17 +16,17 @@
 
 package org.axonframework.eventsourcing.configuration;
 
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandHandlingComponent;
+import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.commandhandling.CommandHandlingComponent;
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.eventstreaming.EventCriteria;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.correlation.CorrelationDataProviderRegistry;
-import org.axonframework.messaging.correlation.DefaultCorrelationDataProviderRegistry;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.correlation.CorrelationDataProviderRegistry;
+import org.axonframework.messaging.core.correlation.DefaultCorrelationDataProviderRegistry;
 import org.axonframework.modelling.EntityIdResolver;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.entity.EntityCommandHandlingComponent;

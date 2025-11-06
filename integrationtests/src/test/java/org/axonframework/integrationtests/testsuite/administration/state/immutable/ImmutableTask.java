@@ -16,9 +16,9 @@
 
 package org.axonframework.integrationtests.testsuite.administration.state.immutable;
 
-import org.axonframework.commandhandling.annotations.CommandHandler;
-import org.axonframework.commandhandling.annotations.RoutingKey;
-import org.axonframework.eventhandling.gateway.EventAppender;
+import org.axonframework.messaging.commandhandling.annotations.CommandHandler;
+import org.axonframework.messaging.commandhandling.annotations.RoutingKey;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
 import org.axonframework.integrationtests.testsuite.administration.commands.CompleteTaskCommand;
 import org.axonframework.integrationtests.testsuite.administration.events.TaskCompleted;

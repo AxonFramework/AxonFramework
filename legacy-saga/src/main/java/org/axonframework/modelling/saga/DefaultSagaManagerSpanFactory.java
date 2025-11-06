@@ -17,9 +17,9 @@
 package org.axonframework.modelling.saga;
 
 import org.axonframework.common.BuilderUtils;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.tracing.Span;
-import org.axonframework.tracing.SpanFactory;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.tracing.Span;
+import org.axonframework.messaging.tracing.SpanFactory;
 
 /**
  * Default implementation of the {@link SagaManagerSpanFactory}. The attribute used for the saga identifier can be

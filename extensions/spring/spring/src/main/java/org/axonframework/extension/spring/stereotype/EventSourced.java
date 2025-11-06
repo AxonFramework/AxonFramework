@@ -25,7 +25,8 @@ import org.axonframework.eventsourcing.annotations.EventCriteriaBuilder;
 import org.axonframework.eventsourcing.annotations.EventSourcedEntity;
 import org.axonframework.eventsourcing.annotations.EventSourcedEntityFactoryDefinition;
 import org.axonframework.eventsourcing.annotations.reflection.AnnotationBasedEventSourcedEntityFactoryDefinition;
-import org.axonframework.eventstreaming.EventCriteria;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.modelling.annotations.EntityIdResolverDefinition;
 import org.axonframework.modelling.entity.annotations.AnnotatedEntityIdResolverDefinition;
 import org.springframework.context.annotation.Scope;
@@ -112,7 +113,7 @@ public @interface EventSourced {
 
     /**
      * The definition of the {@link EntityIdResolverDefinition} to use to resolve the entity id from a
-     * {@link org.axonframework.commandhandling.CommandMessage command message}. Defaults to the
+     * {@link CommandMessage command message}. Defaults to the
      * {@link AnnotatedEntityIdResolverDefinition}, which resolves the entity id based on the
      * {@link org.axonframework.modelling.annotations.TargetEntityId} annotation on a payload field or method, after
      * converting the payload to the representation wanted by the entity.

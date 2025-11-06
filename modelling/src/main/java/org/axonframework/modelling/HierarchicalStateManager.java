@@ -18,7 +18,7 @@ package org.axonframework.modelling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.configuration.Module;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.modelling.repository.ManagedEntity;
 import org.axonframework.modelling.repository.Repository;
 

@@ -16,8 +16,8 @@
 
 package org.axonframework.integrationtests.eventsourcing.eventstore.jdbc;
 
-import org.axonframework.eventsourcing.eventstore.jdbc.EventSchema;
-import org.axonframework.eventsourcing.eventstore.jdbc.Oracle11EventTableFactory;
+import org.axonframework.messaging.eventsourcing.eventstore.jdbc.EventSchema;
+import org.axonframework.messaging.eventsourcing.eventstore.jdbc.Oracle11EventTableFactory;
 import org.junit.jupiter.api.*;
 import org.testcontainers.containers.OracleContainer;
 import org.testcontainers.junit.jupiter.Container;

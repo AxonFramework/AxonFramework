@@ -33,15 +33,16 @@ import org.axonframework.axonserver.connector.MetadataConverter;
 import org.axonframework.axonserver.connector.util.ExceptionConverter;
 import org.axonframework.axonserver.connector.util.ProcessingInstructionUtils;
 import org.axonframework.common.annotations.Internal;
-import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.queryhandling.GenericQueryMessage;
-import org.axonframework.queryhandling.GenericQueryResponseMessage;
-import org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage;
-import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
+import org.axonframework.messaging.core.GenericMessage;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.queryhandling.GenericQueryMessage;
+import org.axonframework.messaging.queryhandling.GenericQueryResponseMessage;
+import org.axonframework.messaging.queryhandling.GenericSubscriptionQueryUpdateMessage;
+import org.axonframework.messaging.queryhandling.QueryMessage;
+import org.axonframework.messaging.queryhandling.QueryResponseMessage;
+import org.axonframework.messaging.queryhandling.SubscriptionQueryUpdateMessage;
 
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -51,7 +52,7 @@ import static org.axonframework.axonserver.connector.util.ProcessingInstructionU
 /**
  * Utility class to convert queries during
  * {@link AxonServerQueryBusConnector#query(QueryMessage, ProcessingContext) dispatching} and handling of
- * {@link AxonServerQueryBusConnector#subscribe(org.axonframework.messaging.QualifiedName) subscribed} query
+ * {@link AxonServerQueryBusConnector#subscribe(QualifiedName) subscribed} query
  * handlers in the {@link AxonServerQueryBusConnector}.
  * <p>
  * This utility class is marked as {@link Internal} as it is specific for the {@link AxonServerQueryBusConnector}.

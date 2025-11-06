@@ -16,9 +16,8 @@
 
 package org.axonframework.extension.spring.messaging;
 
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.SimpleEventBus;
-import org.axonframework.extension.spring.messaging.ApplicationContextEventPublisher;
+import org.axonframework.messaging.eventhandling.EventBus;
+import org.axonframework.messaging.eventhandling.SimpleEventBus;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,7 +33,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.axonframework.eventhandling.EventTestUtils.asEventMessage;
+import static org.axonframework.messaging.eventhandling.EventTestUtils.asEventMessage;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(SpringExtension.class)

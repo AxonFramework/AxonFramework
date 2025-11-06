@@ -16,9 +16,9 @@
 
 package org.axonframework.messaging.deadletter;
 
-import org.axonframework.eventhandling.EventTestUtils;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.Metadata;
+import org.axonframework.messaging.eventhandling.EventTestUtils;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.Metadata;
 import org.junit.jupiter.api.*;
 
 import java.time.Clock;

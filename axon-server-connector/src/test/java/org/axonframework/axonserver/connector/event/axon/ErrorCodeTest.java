@@ -21,9 +21,9 @@ import org.axonframework.axonserver.connector.AxonServerException;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.command.AxonServerNonTransientRemoteCommandHandlingException;
 import org.axonframework.axonserver.connector.query.AxonServerNonTransientRemoteQueryHandlingException;
-import org.axonframework.commandhandling.CommandExecutionException;
+import org.axonframework.messaging.commandhandling.CommandExecutionException;
 import org.axonframework.common.AxonException;
-import org.axonframework.queryhandling.QueryExecutionException;
+import org.axonframework.messaging.queryhandling.QueryExecutionException;
 import org.axonframework.conversion.ConversionException;
 import org.junit.jupiter.api.*;
 

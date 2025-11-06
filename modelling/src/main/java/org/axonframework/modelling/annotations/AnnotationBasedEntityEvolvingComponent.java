@@ -17,16 +17,17 @@
 package org.axonframework.modelling.annotations;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.eventhandling.conversion.EventConverter;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageTypeResolver;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.annotations.AnnotatedHandlerInspector;
-import org.axonframework.messaging.annotations.ClasspathHandlerDefinition;
-import org.axonframework.messaging.annotations.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.annotations.MessageHandlingMember;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.MessageTypeResolver;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.annotations.AnnotatedHandlerInspector;
+import org.axonframework.messaging.core.annotations.ClasspathHandlerDefinition;
+import org.axonframework.messaging.core.annotations.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.core.annotations.MessageHandlingMember;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.annotations.EventHandler;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.EntityEvolvingComponent;
 import org.axonframework.modelling.StateEvolvingException;
@@ -39,7 +40,7 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * Implementation of the {@link EntityEvolvingComponent} that applies state changes through
- * {@link org.axonframework.eventhandling.annotations.EventHandler}(-meta)-annotated methods using the
+ * {@link EventHandler}(-meta)-annotated methods using the
  * {@link AnnotatedHandlerInspector}.
  *
  * @param <E> The entity type to evolve.

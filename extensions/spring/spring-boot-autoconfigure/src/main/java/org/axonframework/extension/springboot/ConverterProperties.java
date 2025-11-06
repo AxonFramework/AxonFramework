@@ -19,10 +19,12 @@ package org.axonframework.extension.springboot;
 import jakarta.annotation.Nonnull;
 import org.axonframework.conversion.Converter;
 import org.axonframework.conversion.json.JacksonConverter;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.conversion.DelegatingEventConverter;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.conversion.DelegatingMessageConverter;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.commandhandling.CommandResultMessage;
+import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.conversion.DelegatingMessageConverter;
+import org.axonframework.messaging.queryhandling.QueryResponseMessage;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
@@ -36,18 +38,18 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * {@link JacksonConverter}.
  * <p>
  * The <b>messages</b> {@code Converter}, if specified, takes precedence over the general converter for all
- * {@link org.axonframework.messaging.Message Messages} and, where relevant, their return values. This includes
+ * {@link org.axonframework.messaging.core.Message Messages} and, where relevant, their return values. This includes
  * commands, queries, and events, as well as
- * {@link org.axonframework.commandhandling.CommandResultMessage CommandResultMessages} and
- * {@link org.axonframework.queryhandling.QueryResponseMessage QueryResponseMessages}. To ensure the messages
+ * {@link CommandResultMessage CommandResultMessages} and
+ * {@link QueryResponseMessage QueryResponseMessages}. To ensure the messages
  * {@code Converter} only applies to messages, it is wrapped in a
- * {@link org.axonframework.messaging.conversion.DelegatingMessageConverter DelegatingMessageConverter}. When no message
+ * {@link DelegatingMessageConverter DelegatingMessageConverter}. When no message
  * {@code Converter} is specified, it defaults back to the general converter.
  * <p>
  * The <b>events</b> {@code Converter}, if specified, takes precedence over both the messages and general converters,
- * but applies <i>only</i> to the {@link org.axonframework.eventhandling.EventMessage EventMessages} stored in the event
+ * but applies <i>only</i> to the {@link EventMessage EventMessages} stored in the event
  * store and published on the event bus. To ensure it only applies to event messages, it is wrapped in a
- * {@link org.axonframework.eventhandling.conversion.DelegatingEventConverter DelegatingEventConverter}. When no event
+ * {@link DelegatingEventConverter DelegatingEventConverter}. When no event
  * {@code Converter} is specified, it defaults back to the <b>messages</b> converter.
  *
  * @author Allard Buijze
@@ -67,7 +69,7 @@ public class ConverterProperties {
 
     /**
      * The type of {@link Converter} to use to convert the {@link Message#payload()} of
-     * any type of {@link org.axonframework.messaging.Message}.
+     * any type of {@link org.axonframework.messaging.core.Message}.
      * <p>
      * The constructed {@code Converter} will <b>always</b> be wrapped in a {@link DelegatingMessageConverter}, ensuring
      * the {@code Converter}
@@ -79,7 +81,7 @@ public class ConverterProperties {
 
     /**
      * The type of {@link Converter} to use to convert the
-     * {@link EventMessage#payload()} of {@link org.axonframework.eventhandling.EventMessage EventMessages}.
+     * {@link EventMessage#payload()} of {@link EventMessage EventMessages}.
      * <p>
      * The constructed {@code Converter} will <b>always</b> be wrapped in a {@link DelegatingEventConverter}, ensuring
      * the {@code Converter}
@@ -117,7 +119,7 @@ public class ConverterProperties {
 
     /**
      * The type of {@link Converter} to use to convert the {@link Message#payload()} of
-     * any type of {@link org.axonframework.messaging.Message}.
+     * any type of {@link org.axonframework.messaging.core.Message}.
      * <p>
      * The constructed {@code Converter} will <b>always</b> be wrapped in a {@link DelegatingMessageConverter}, ensuring
      * the {@code Converter}
@@ -135,7 +137,7 @@ public class ConverterProperties {
 
     /**
      * Sets the type of {@link Converter} to use to convert the
-     * {@link Message#payload()} of any type of {@link org.axonframework.messaging.Message}.
+     * {@link Message#payload()} of any type of {@link org.axonframework.messaging.core.Message}.
      * <p>
      * The constructed {@code Converter} will <b>always</b> be wrapped in a {@link DelegatingMessageConverter}, ensuring
      * the {@code Converter}
@@ -143,7 +145,7 @@ public class ConverterProperties {
      * <p>
      * Defaults to the <b>general</b> {@code Converter}.
      *
-     * @param converterType The converter type to use for converting any {@link org.axonframework.messaging.Message}
+     * @param converterType The converter type to use for converting any {@link org.axonframework.messaging.core.Message}
      *                      {@link Message#payload()}.
      */
     public void setMessages(@Nonnull ConverterType converterType) {
@@ -152,7 +154,7 @@ public class ConverterProperties {
 
     /**
      * The type of {@link Converter} to use to convert the
-     * {@link EventMessage#payload()} of {@link org.axonframework.eventhandling.EventMessage EventMessages}.
+     * {@link EventMessage#payload()} of {@link EventMessage EventMessages}.
      * <p>
      * The constructed {@code Converter} will <b>always</b> be wrapped in a {@link DelegatingEventConverter}, ensuring
      * the {@code Converter}
@@ -170,7 +172,7 @@ public class ConverterProperties {
 
     /**
      * Sets the type of {@link Converter} to use to convert the
-     * {@link EventMessage#payload()} of {@link org.axonframework.eventhandling.EventMessage EventMessages}.
+     * {@link EventMessage#payload()} of {@link EventMessage EventMessages}.
      * <p>
      * The constructed {@code Converter} will <b>always</b> be wrapped in a {@link DelegatingEventConverter}, ensuring
      * the {@code Converter}
@@ -179,7 +181,7 @@ public class ConverterProperties {
      * Defaults to the <b>messages</b> {@code Converter} when set, or otherwise the <b>general</b> {@code Converter}.
      *
      * @param converterType The converter type to use for converting any
-     *                      {@link org.axonframework.eventhandling.EventMessage} {@link EventMessage#payload()}.
+     *                      {@link EventMessage} {@link EventMessage#payload()}.
      */
     public void setEvents(@Nonnull ConverterType converterType) {
         this.events = converterType;

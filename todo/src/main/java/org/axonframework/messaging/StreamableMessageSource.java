@@ -19,9 +19,10 @@ package org.axonframework.messaging;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.stream.BlockingStream;
-import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
-import org.axonframework.eventstreaming.TrackingTokenSource;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.messaging.eventstreaming.TrackingTokenSource;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.time.Duration;
 import java.time.Instant;

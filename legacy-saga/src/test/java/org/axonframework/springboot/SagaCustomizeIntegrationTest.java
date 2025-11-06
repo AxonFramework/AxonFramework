@@ -16,12 +16,12 @@
 
 package org.axonframework.springboot;
 
-import org.axonframework.messaging.unitofwork.transaction.Transaction;
-import org.axonframework.messaging.unitofwork.transaction.TransactionManager;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.core.unitofwork.transaction.Transaction;
+import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
+import org.axonframework.messaging.eventhandling.EventBus;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.modelling.saga.SagaEventHandler;

@@ -20,9 +20,9 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.annotations.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventSink;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.EventSink;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.util.List;
 import java.util.Objects;

@@ -16,7 +16,7 @@
 
 package org.axonframework.config;
 
-import org.axonframework.eventhandling.processors.errorhandling.ListenerInvocationErrorHandler;
+import org.axonframework.messaging.eventhandling.processors.errorhandling.ListenerInvocationErrorHandler;
 import org.axonframework.modelling.saga.AbstractSagaManager;
 import org.axonframework.modelling.saga.SagaRepository;
 import org.axonframework.modelling.saga.repository.SagaStore;

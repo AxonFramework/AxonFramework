@@ -18,8 +18,8 @@ package org.axonframework.deadline.dbscheduler;
 
 import com.github.kagkarlsson.scheduler.Scheduler;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.messaging.unitofwork.transaction.TransactionManager;
-import org.axonframework.messaging.ScopeAwareProvider;
+import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
+import org.axonframework.messaging.core.ScopeAwareProvider;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
 

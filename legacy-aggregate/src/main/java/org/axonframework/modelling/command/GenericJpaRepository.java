@@ -22,10 +22,11 @@ import jakarta.persistence.LockModeType;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.NullLockFactory;
-import org.axonframework.eventhandling.DomainEventSequenceAware;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.messaging.annotations.HandlerDefinition;
-import org.axonframework.messaging.annotations.ParameterResolverFactory;
+import org.axonframework.messaging.eventhandling.DomainEventSequenceAware;
+import org.axonframework.messaging.eventhandling.EventBus;
+import org.axonframework.messaging.core.annotations.HandlerDefinition;
+import org.axonframework.messaging.core.annotations.ParameterResolverFactory;
+import org.axonframework.messaging.tracing.NoOpSpanFactory;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 
@@ -78,7 +79,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      * The {@link LockFactory} is defaulted to an {@link NullLockFactory}, thus providing no additional locking, the
      * {@code identifierConverter} to {@link Function#identity()}, the {@link RepositorySpanFactory} is defaulted to a
      * {@link org.axonframework.modelling.command.DefaultRepositorySpanFactory} backed by a
-     * {@link org.axonframework.tracing.NoOpSpanFactory}, and sequence number generation is <b>enabled</b>.
+     * {@link NoOpSpanFactory}, and sequence number generation is <b>enabled</b>.
      * <p>
      * A goal of this Builder goal is to create an {@link AggregateModel} specifying generic {@code T} as the aggregate
      * type to be stored. All aggregates in this repository must be {@code instanceOf} this aggregate type. To
@@ -195,7 +196,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      * <p>
      * The {@link LockFactory} is defaulted to an {@link NullLockFactory}, thus providing no additional locking, the
      * {@code identifierConverter} to {@link Function#identity()}, the {@link RepositorySpanFactory} defaults to a
-     * {@link DefaultRepositorySpanFactory} backed by a {@link org.axonframework.tracing.NoOpSpanFactory}, and sequence
+     * {@link DefaultRepositorySpanFactory} backed by a {@link NoOpSpanFactory}, and sequence
      * number generation is <b>enabled</b>.
      * <p>
      * A goal of this Builder goal is to create an {@link AggregateModel} specifying generic {@code T} as the aggregate

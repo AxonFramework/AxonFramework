@@ -17,9 +17,9 @@
 package org.axonframework.messaging.unitofwork;
 
 import org.axonframework.common.Assert;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.Metadata;
-import org.axonframework.messaging.correlation.CorrelationDataProvider;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.core.correlation.CorrelationDataProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -16,14 +16,14 @@
 
 package org.axonframework.integrationtests.testsuite.administration.state.mutable;
 
-import org.axonframework.commandhandling.annotations.CommandHandler;
-import org.axonframework.eventhandling.gateway.EventAppender;
+import org.axonframework.messaging.commandhandling.annotations.CommandHandler;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.annotations.EventCriteriaBuilder;
 import org.axonframework.eventsourcing.annotations.EventSourcedEntity;
 import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
 import org.axonframework.eventsourcing.annotations.reflection.EntityCreator;
 import org.axonframework.eventsourcing.annotations.reflection.InjectEntityId;
-import org.axonframework.eventstreaming.EventCriteria;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.integrationtests.testsuite.administration.commands.ChangeEmailAddress;
 import org.axonframework.integrationtests.testsuite.administration.common.PersonIdentifier;
 import org.axonframework.integrationtests.testsuite.administration.common.PersonType;

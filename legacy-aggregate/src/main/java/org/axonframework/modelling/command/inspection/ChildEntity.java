@@ -16,8 +16,8 @@
 
 package org.axonframework.modelling.command.inspection;
 
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.annotations.MessageHandlingMember;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.core.annotations.MessageHandlingMember;
 
 import java.util.List;
 

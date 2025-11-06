@@ -16,9 +16,9 @@
 
 package org.axonframework.common.jdbc;
 
-import org.axonframework.messaging.ExecutionException;
-import org.axonframework.messaging.GenericResultMessage;
-import org.axonframework.messaging.Message;
+import org.axonframework.messaging.core.ExecutionException;
+import org.axonframework.messaging.core.GenericResultMessage;
+import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.ExecutionResult;

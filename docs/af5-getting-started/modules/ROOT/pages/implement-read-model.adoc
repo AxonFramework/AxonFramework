@@ -200,7 +200,7 @@ public record GetCourseStatsById(CourseId courseId) { // <1>
 ----
 package io.axoniq.demo.university.faculty.read.coursestats;
 
-import org.axonframework.queryhandling.annotations.QueryHandler;
+import org.axonframework.messaging.core.annotations.queryhandling.QueryHandler;
 
 public record GetCourseStatsByIdQueryHandler(
         CourseStatsRepository repository // <1>

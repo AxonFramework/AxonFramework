@@ -16,12 +16,13 @@
 
 package org.axonframework.test.utils;
 
-import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.messaging.Metadata;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.commandhandling.CommandResultMessage;
+import org.axonframework.messaging.core.Metadata;
 
 /**
  * Default implementation of the CallbackBehavior interface. This implementation always returns {@code null}, which
- * results in the {@link org.axonframework.commandhandling.CommandCallback#onResult(org.axonframework.commandhandling.CommandMessage,
+ * results in the {@link org.axonframework.commandhandling.CommandCallback#onResult(CommandMessage,
  * CommandResultMessage)} method to be invoked with a {@code null} result
  * parameter.
  *

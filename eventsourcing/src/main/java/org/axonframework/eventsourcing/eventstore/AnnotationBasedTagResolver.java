@@ -18,10 +18,10 @@ package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.annotations.EventTag;
 import org.axonframework.eventsourcing.annotations.EventTags;
-import org.axonframework.eventstreaming.Tag;
+import org.axonframework.messaging.eventstreaming.Tag;
 
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;

@@ -16,7 +16,8 @@
 
 package org.axonframework.modelling.annotations;
 
-import org.axonframework.commandhandling.annotations.RoutingKey;
+import org.axonframework.messaging.commandhandling.annotations.RoutingKey;
+import org.axonframework.messaging.core.Message;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -26,7 +27,7 @@ import java.lang.annotation.Target;
 
 /**
  * Annotation to be placed on a parameter of a field or method of the payload of a
- * {@link org.axonframework.messaging.Message}, which provides the identifier of the target entity when using the
+ * {@link Message}, which provides the identifier of the target entity when using the
  * {@link AnnotationBasedEntityIdResolver}.
  * <p>
  * See the {@link InjectEntity} annotation for more information about the different ways to resolve the entity id when

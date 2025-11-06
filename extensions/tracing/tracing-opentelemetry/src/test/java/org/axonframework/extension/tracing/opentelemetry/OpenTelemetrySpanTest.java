@@ -20,9 +20,8 @@ import io.opentelemetry.api.trace.SpanBuilder;
 import io.opentelemetry.api.trace.SpanContext;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.context.Scope;
-import org.axonframework.extension.tracing.opentelemetry.OpenTelemetrySpan;
-import org.axonframework.tracing.Span;
-import org.axonframework.tracing.SpanScope;
+import org.axonframework.messaging.tracing.Span;
+import org.axonframework.messaging.tracing.SpanScope;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 

@@ -17,7 +17,7 @@
 package org.axonframework.deadline.annotations;
 
 import org.axonframework.deadline.DeadlineMessage;
-import org.axonframework.messaging.annotations.MessageHandler;
+import org.axonframework.messaging.core.annotations.MessageHandler;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

@@ -16,8 +16,9 @@
 
 package org.axonframework.modelling.entity.annotations;
 
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.annotations.RoutingKey;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.commandhandling.annotations.RoutingKey;
+import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.modelling.entity.child.CommandTargetResolver;
 import org.axonframework.modelling.entity.child.EventTargetMatcher;
 
@@ -63,7 +64,7 @@ public @interface EntityMember {
 
     /**
      * The {@link EventTargetMatcher} is used to determine which entity should be evolved by the
-     * {@link org.axonframework.eventhandling.EventMessage}. The forwarding mode can match 0, 1, or multiple child
+     * {@link EventMessage}. The forwarding mode can match 0, 1, or multiple child
      * entities, and as such functions like a predicate or filter.
      * <p>
      * Defaults to using the {@link RoutingKeyEventTargetMatcher}, which matches messages based on the routing key.

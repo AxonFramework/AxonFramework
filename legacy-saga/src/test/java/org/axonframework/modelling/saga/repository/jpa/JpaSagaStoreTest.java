@@ -25,7 +25,7 @@ import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.TypeReference;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
-import org.axonframework.messaging.Message;
+import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.modelling.saga.AssociationValue;

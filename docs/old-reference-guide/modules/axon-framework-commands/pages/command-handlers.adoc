@@ -28,7 +28,7 @@ Taking the `GiftCard` Aggregate as an example, we can identify two Command Handl
 
 [source,java]
 ----
-import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.messaging.commandhandling.CommandHandler;
 import org.axonframework.modelling.command.AggregateIdentifier;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
@@ -166,7 +166,7 @@ This can be achieved by adding the `@CreationPolicy` annotation to a command han
 
 [source,java]
 ----
-import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.messaging.commandhandling.CommandHandler;
 import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 
@@ -179,7 +179,7 @@ public class GiftCard {
     @CommandHandler
     @CreationPolicy(AggregateCreationPolicy.ALWAYS)
     public void handle(IssueCardCommand cmd) {
-        // An `IssueCardCommand`-handler which will create a `GiftCard` aggregate 
+        // An `IssueCardCommand`-handler which will create a `GiftCard` aggregate
     }
 
     @CommandHandler
@@ -219,7 +219,7 @@ Unlike with Aggregates, there is only a _single_ instance of a Command Handling 
 
 [source,java]
 ----
-import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.messaging.commandhandling.CommandHandler;
 import org.axonframework.modelling.command.Repository;
 
 public class GiftCardCommandHandler {

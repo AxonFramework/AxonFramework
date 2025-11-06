@@ -16,10 +16,10 @@
 
 package org.axonframework.deadline;
 
-import org.axonframework.messaging.ScopeDescriptor;
-import org.axonframework.tracing.IntermediateSpanFactoryTest;
-import org.axonframework.tracing.SpanFactory;
-import org.axonframework.tracing.TestSpanFactory;
+import org.axonframework.messaging.core.ScopeDescriptor;
+import org.axonframework.messaging.tracing.IntermediateSpanFactoryTest;
+import org.axonframework.messaging.tracing.SpanFactory;
+import org.axonframework.messaging.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 

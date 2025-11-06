@@ -15,7 +15,7 @@
  */
 package org.axonframework.eventsourcing.annotations;
 
-import org.axonframework.eventstreaming.Tag;
+import org.axonframework.messaging.eventstreaming.Tag;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Repeatable;

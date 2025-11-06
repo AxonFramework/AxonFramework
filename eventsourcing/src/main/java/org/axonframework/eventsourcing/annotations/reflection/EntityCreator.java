@@ -16,11 +16,13 @@
 
 package org.axonframework.eventsourcing.annotations.reflection;
 
-import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.messaging.commandhandling.CommandHandler;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.annotations.ParameterResolverFactory;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.MessageTypeResolver;
+import org.axonframework.messaging.core.annotations.ParameterResolverFactory;
+import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.modelling.entity.EntityMetamodelBuilder;
 
 import java.lang.annotation.ElementType;
@@ -38,7 +40,7 @@ import java.lang.annotation.Target;
  * There are two main ways to create an entity.
  * <p>
  * First, a constructor or factory method with a payload parameter (or
- * {@link org.axonframework.eventhandling.EventMessage} parameter) can be defined, which will be called when the entity
+ * {@link EventMessage} parameter) can be defined, which will be called when the entity
  * is sourced and at least one event is found in the stream. This allows the entity to be created with non-nullable
  * properties, based on the origin event. If no event is found, the entity will be {@code null} until the first event is
  * published and the entity is created using this method. This means that, for commands that target an entity that might
@@ -58,9 +60,9 @@ import java.lang.annotation.Target;
  * entity as a parameter.
  * <p>
  * The declared payload parameter is the wanted represented type, and will be injected if the
- * {@link #payloadQualifiedNames()} matches with the {@link org.axonframework.eventhandling.EventMessage}. If a payload
+ * {@link #payloadQualifiedNames()} matches with the {@link EventMessage}. If a payload
  * parameter is declared, and the {@link #payloadQualifiedNames()} is empty, it will be determined based on the
- * {@link org.axonframework.messaging.MessageTypeResolver}.
+ * {@link MessageTypeResolver}.
  * <p>
  * You can inject the entity identifier by declaring a parameter with the {@link InjectEntityId} annotation. This
  * annotation is necessary to disambiguate the entity identifier from the payload, as the first parameter without an
@@ -165,7 +167,7 @@ public @interface EntityCreator {
     /**
      * The qualified names of the payload types that this factory method can handle. If a payload parameter is declared,
      * and this value is left at default, the payload's qualified name will be determined based on the
-     * {@link org.axonframework.messaging.MessageTypeResolver}.
+     * {@link MessageTypeResolver}.
      *
      * @return The qualified names of the payload types that this factory method can handle.
      */

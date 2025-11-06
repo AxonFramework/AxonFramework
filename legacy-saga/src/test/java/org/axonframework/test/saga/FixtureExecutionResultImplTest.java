@@ -16,40 +16,10 @@
 
 package org.axonframework.test.saga;
 
-import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventMessageHandler;
-import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.SimpleEventBus;
-import org.axonframework.eventhandling.processors.errorhandling.LoggingErrorHandler;
-import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.modelling.saga.AssociationValue;
-import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
-import org.axonframework.test.AxonAssertionError;
-import org.axonframework.test.matchers.AllFieldsFilter;
-import org.axonframework.test.utils.RecordingCommandBus;
-import org.hamcrest.BaseMatcher;
-import org.hamcrest.Description;
-import org.hamcrest.Matchers;
-import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
-import org.mockito.*;
 import org.mockito.junit.jupiter.*;
 
-import java.time.Duration;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.axonframework.test.matchers.Matchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 /**
  * Test class to verify correct execution of the {@link FixtureExecutionResultImpl}.

@@ -17,14 +17,19 @@
 package org.axonframework.extension.springboot.autoconfig;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
-import org.axonframework.messaging.interceptors.HandlerInterceptorRegistry;
-import org.axonframework.messaging.timeout.HandlerTimeoutHandlerEnhancerDefinition;
-import org.axonframework.messaging.timeout.TaskTimeoutSettings;
-import org.axonframework.messaging.timeout.UnitOfWorkTimeoutInterceptorBuilder;
-import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageHandlerInterceptor;
+import org.axonframework.messaging.core.interceptors.HandlerInterceptorRegistry;
+import org.axonframework.messaging.core.timeout.HandlerTimeoutHandlerEnhancerDefinition;
+import org.axonframework.messaging.core.timeout.TaskTimeoutSettings;
+import org.axonframework.messaging.core.timeout.UnitOfWorkTimeoutInterceptorBuilder;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.queryhandling.QueryMessage;
+import org.axonframework.messaging.queryhandling.QueryBus;
 import org.axonframework.extension.springboot.TimeoutProperties;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -55,16 +60,16 @@ public class AxonTimeoutAutoConfiguration {
 
     /**
      * Bean creation method for a {@link ConfigurationEnhancer} adding the {@link UnitOfWorkTimeoutInterceptorBuilder}
-     * for {@link org.axonframework.commandhandling.CommandMessage CommandMessages},
-     * {@link org.axonframework.eventhandling.EventMessage EventMessages}, and
-     * {@link org.axonframework.queryhandling.QueryMessage QueryMessages} as
-     * {@link org.axonframework.messaging.MessageHandlerInterceptor MessageHandlerInterceptors}.
+     * for {@link CommandMessage CommandMessages},
+     * {@link EventMessage EventMessages}, and
+     * {@link QueryMessage QueryMessages} as
+     * {@link MessageHandlerInterceptor MessageHandlerInterceptors}.
      *
      * @param properties The timeout properties influencing the configured
-     *                   {@link org.axonframework.messaging.MessageHandlerInterceptor MessageHandlerInterceptors}.
+     *                   {@link MessageHandlerInterceptor MessageHandlerInterceptors}.
      * @return A {@link ConfigurationEnhancer} adding
-     * {@link org.axonframework.messaging.MessageHandlerInterceptor MessageHandlerInterceptors} to introduce timeout
-     * behavior for every type of {@link org.axonframework.messaging.Message}.
+     * {@link MessageHandlerInterceptor MessageHandlerInterceptors} to introduce timeout
+     * behavior for every type of {@link Message}.
      */
     @Bean
     public ConfigurationEnhancer axonTimeoutConfigurationEnhancer(@Nonnull TimeoutProperties properties) {

@@ -16,6 +16,8 @@
 
 package org.axonframework.modelling.entity.annotations;
 
+import org.axonframework.messaging.commandhandling.annotations.RoutingKey;
+
 /**
  * Exception indicating that a child entity indicated a routing key that is not known on the incoming message. As such,
  * a child entity could not be resolved to handle the message.
@@ -23,7 +25,7 @@ package org.axonframework.modelling.entity.annotations;
  * This issue can be resolved by ensuring the routing key specified on the child entity matches the routing key
  * specified on the incoming message. Ensure that the {@link EntityMember#routingKey} points to a valid member of the
  * message, or in its absence that the name of the
- * {@link org.axonframework.commandhandling.annotations.RoutingKey}-annotated member on the child entity does.
+ * {@link RoutingKey}-annotated member on the child entity does.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0

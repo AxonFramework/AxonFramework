@@ -16,8 +16,8 @@
 
 package org.axonframework.extension.spring.messaging;
 
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.SubscribableEventSource;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.core.SubscribableEventSource;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;

@@ -19,7 +19,7 @@ package org.axonframework.modelling.saga.repository;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.caching.Cache;
-import org.axonframework.messaging.Message;
+import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.saga.AssociationValue;

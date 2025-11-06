@@ -16,8 +16,8 @@
 
 package org.axonframework.modelling.saga.metamodel;
 
-import org.axonframework.messaging.interceptors.annotations.MessageHandlerInterceptorMemberChain;
-import org.axonframework.messaging.interceptors.annotations.NoMoreInterceptors;
+import org.axonframework.messaging.core.interceptors.annotations.MessageHandlerInterceptorMemberChain;
+import org.axonframework.messaging.core.interceptors.annotations.NoMoreInterceptors;
 
 /**
  * Interface of a factory for a {@link SagaModel} for any given saga type.

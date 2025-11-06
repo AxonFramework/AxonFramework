@@ -18,13 +18,13 @@ package org.axonframework.messaging.deadletter.annotations;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.annotations.ParameterResolver;
-import org.axonframework.messaging.annotations.ParameterResolverFactory;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.annotations.ParameterResolver;
+import org.axonframework.messaging.core.annotations.ParameterResolverFactory;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;

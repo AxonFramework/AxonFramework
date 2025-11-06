@@ -17,18 +17,18 @@
 package org.axonframework.extension.metrics.dropwizard;
 
 import com.codahale.metrics.MetricRegistry;
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.processors.EventProcessor;
-import org.axonframework.messaging.Message;
-import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.monitoring.MultiMessageMonitor;
-import org.axonframework.monitoring.NoOpMessageMonitor;
-import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.queryhandling.QueryUpdateEmitter;
+import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.eventhandling.EventBus;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.processors.EventProcessor;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.monitoring.MessageMonitor;
+import org.axonframework.messaging.monitoring.MultiMessageMonitor;
+import org.axonframework.messaging.monitoring.NoOpMessageMonitor;
+import org.axonframework.messaging.queryhandling.QueryBus;
+import org.axonframework.messaging.queryhandling.QueryMessage;
+import org.axonframework.messaging.queryhandling.QueryUpdateEmitter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

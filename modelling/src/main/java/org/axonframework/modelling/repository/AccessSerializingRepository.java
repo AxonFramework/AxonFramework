@@ -19,8 +19,8 @@ package org.axonframework.modelling.repository;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
-import org.axonframework.messaging.Context.ResourceKey;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.Context.ResourceKey;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

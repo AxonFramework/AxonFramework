@@ -17,14 +17,14 @@
 package org.axonframework.serialization.upcasting.event;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.axonframework.eventhandling.DomainEventMessage;
-import org.axonframework.eventhandling.EventData;
-import org.axonframework.eventhandling.GenericDomainEventEntry;
-import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
-import org.axonframework.eventhandling.TrackedDomainEventData;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.Metadata;
+import org.axonframework.messaging.eventhandling.DomainEventMessage;
+import org.axonframework.messaging.eventhandling.EventData;
+import org.axonframework.messaging.eventhandling.GenericDomainEventEntry;
+import org.axonframework.messaging.eventhandling.GenericDomainEventMessage;
+import org.axonframework.messaging.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
+import org.axonframework.messaging.eventhandling.TrackedDomainEventData;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.Metadata;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;

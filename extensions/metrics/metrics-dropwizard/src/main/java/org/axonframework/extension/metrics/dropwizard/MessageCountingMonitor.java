@@ -20,8 +20,8 @@ import com.codahale.metrics.Counter;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricSet;
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.Message;
-import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.monitoring.MessageMonitor;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -21,13 +21,14 @@ import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.extension.springboot.EventProcessorProperties;
+import org.axonframework.messaging.eventhandling.configuration.EventProcessingConfigurer;
 
 import java.util.Map;
 import java.util.Optional;
 
 /**
  * A {@link ConfigurationEnhancer} implementation dedicated towards registering a {@link SequencedDeadLetterQueue}
- * provider with the {@link org.axonframework.eventhandling.configuration.EventProcessingConfigurer}.
+ * provider with the {@link EventProcessingConfigurer}.
  * <p>
  * Does so through invoking the {@code EventProcessingConfigurer#registerDeadLetterQueueProvider(Function)} operation,
  * utilizing the given {@code deadLetterQueueProvider}. Only processing groups for which the dead-letter queue is

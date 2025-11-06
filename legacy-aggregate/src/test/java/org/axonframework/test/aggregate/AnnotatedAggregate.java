@@ -16,9 +16,9 @@
 
 package org.axonframework.test.aggregate;
 
-import org.axonframework.commandhandling.annotations.CommandHandler;
-import org.axonframework.eventhandling.DomainEventMessage;
-import org.axonframework.eventhandling.EventBus;
+import org.axonframework.messaging.commandhandling.annotations.CommandHandler;
+import org.axonframework.messaging.eventhandling.DomainEventMessage;
+import org.axonframework.messaging.eventhandling.EventBus;
 import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;

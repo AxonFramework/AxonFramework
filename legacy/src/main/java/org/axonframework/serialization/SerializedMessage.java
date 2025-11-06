@@ -19,10 +19,10 @@ package org.axonframework.serialization;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.conversion.Converter;
-import org.axonframework.messaging.AbstractMessage;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.Metadata;
+import org.axonframework.messaging.core.AbstractMessage;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.Metadata;
 
 import java.lang.reflect.Type;
 import java.util.Map;
@@ -74,7 +74,7 @@ public class SerializedMessage<P> extends AbstractMessage {
      * Constructs a {@code SerializedMessage} with given {@code identifier}, {@code type}, and lazily deserialized
      * {@code payload} and {@code metadata}.
      * <p>
-     * The {@code identifier} originates from the {@link org.axonframework.messaging.Message} where the lazily
+     * The {@code identifier} originates from the {@link Message} where the lazily
      * deserialized {@code payload} and {@code metadata} originate from.
      *
      * @param identifier The identifier of this {@code SerializedMessage}.

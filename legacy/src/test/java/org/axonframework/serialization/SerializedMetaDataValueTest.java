@@ -16,7 +16,7 @@
 
 package org.axonframework.serialization;
 
-import org.axonframework.messaging.Metadata;
+import org.axonframework.messaging.core.Metadata;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

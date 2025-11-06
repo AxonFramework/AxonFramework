@@ -16,10 +16,10 @@
 
 package org.axonframework.modelling.entity.domain.development;
 
-import org.axonframework.commandhandling.annotations.CommandHandler;
+import org.axonframework.messaging.commandhandling.annotations.CommandHandler;
 import org.axonframework.common.IdentifierFactory;
-import org.axonframework.eventhandling.annotations.EventHandler;
-import org.axonframework.eventhandling.gateway.EventAppender;
+import org.axonframework.messaging.eventhandling.annotations.EventHandler;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 import org.axonframework.modelling.entity.annotations.AnnotatedEntityMetamodel;
 import org.axonframework.modelling.entity.annotations.EntityMember;
 import org.axonframework.modelling.entity.domain.development.commands.AssignDeveloperAsLeadDeveloper;

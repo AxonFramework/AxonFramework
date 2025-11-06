@@ -16,13 +16,14 @@
 
 package org.axonframework.integrationtests.testsuite.student;
 
-import org.axonframework.commandhandling.annotations.CommandHandler;
-import org.axonframework.commandhandling.configuration.CommandHandlingModule;
-import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.eventhandling.annotations.EventHandler;
-import org.axonframework.eventhandling.configuration.EventProcessorModule;
-import org.axonframework.eventhandling.gateway.EventAppender;
-import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.commandhandling.annotations.CommandHandler;
+import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
+import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
+import org.axonframework.messaging.eventhandling.annotations.EventHandler;
+import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
+import org.axonframework.messaging.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
 import org.axonframework.eventsourcing.annotations.EventSourcedEntity;
 import org.axonframework.eventsourcing.annotations.reflection.EntityCreator;
@@ -32,9 +33,9 @@ import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.integrationtests.testsuite.student.commands.SendMaxCoursesNotificationCommand;
 import org.axonframework.integrationtests.testsuite.student.events.MaxCoursesNotificationSentEvent;
 import org.axonframework.integrationtests.testsuite.student.events.StudentEnrolledEvent;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.UnitOfWork;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.annotations.InjectEntity;
 import org.axonframework.modelling.configuration.EntityModule;
@@ -51,7 +52,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Test class validating the annotated {@link PooledStreamingEventProcessor}
  * used as an automation (a kind of Saga) that keeps the process state using {@link EventSourcedEntityModule} and sends
- * a {@link org.axonframework.commandhandling.CommandMessage} if certain business rules are met.
+ * a {@link CommandMessage} if certain business rules are met.
  *
  * @author Mateusz Nowak
  * @since 5.0.0

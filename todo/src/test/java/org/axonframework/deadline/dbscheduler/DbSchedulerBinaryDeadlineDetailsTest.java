@@ -23,7 +23,10 @@ import com.github.kagkarlsson.scheduler.serializer.Serializer;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.deadline.TestScopeDescriptor;
-import org.axonframework.messaging.*;
+import org.axonframework.messaging.core.GenericMessage;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.core.ScopeDescriptor;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 

@@ -18,12 +18,12 @@ package org.axonframework.eventsourcing.annotations.reflection;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.configuration.Configuration;
-import org.axonframework.eventhandling.conversion.EventConverter;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.annotations.EventSourcedEntity;
 import org.axonframework.eventsourcing.annotations.EventSourcedEntityFactoryDefinition;
-import org.axonframework.messaging.MessageTypeResolver;
-import org.axonframework.messaging.annotations.ParameterResolverFactory;
+import org.axonframework.messaging.core.MessageTypeResolver;
+import org.axonframework.messaging.core.annotations.ParameterResolverFactory;
 
 import java.util.Set;
 

@@ -16,13 +16,13 @@
 
 package org.axonframework.eventsourcing.annotations;
 
-import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
 import org.axonframework.common.configuration.Configuration;
-import org.axonframework.eventhandling.EventSink;
-import org.axonframework.eventstreaming.EventCriteria;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MessageTypeResolver;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.eventhandling.EventSink;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.MessageTypeResolver;
+import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;

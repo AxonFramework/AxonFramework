@@ -18,8 +18,8 @@ package org.axonframework.modelling.command;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.lock.Lock;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.util.function.Consumer;
 import java.util.function.Function;

@@ -18,26 +18,26 @@ package org.axonframework.modelling.entity.annotations;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.commandhandling.GenericCommandResultMessage;
-import org.axonframework.commandhandling.annotations.CommandHandlingMember;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.commandhandling.CommandResultMessage;
+import org.axonframework.messaging.commandhandling.GenericCommandResultMessage;
+import org.axonframework.messaging.commandhandling.annotations.CommandHandlingMember;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.conversion.EventConverter;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MessageTypeResolver;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.annotations.AnnotatedHandlerInspector;
-import org.axonframework.messaging.annotations.MessageHandlingMember;
-import org.axonframework.messaging.annotations.ParameterResolverFactory;
-import org.axonframework.messaging.conversion.MessageConverter;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.MessageTypeResolver;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.annotations.AnnotatedHandlerInspector;
+import org.axonframework.messaging.core.annotations.MessageHandlingMember;
+import org.axonframework.messaging.core.annotations.ParameterResolverFactory;
+import org.axonframework.messaging.core.conversion.MessageConverter;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.modelling.annotations.AnnotationBasedEntityEvolvingComponent;
 import org.axonframework.modelling.entity.ConcreteEntityMetamodel;
 import org.axonframework.modelling.entity.EntityMetamodel;
@@ -63,7 +63,7 @@ import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.StreamSupport.stream;
-import static org.axonframework.messaging.annotations.AnnotatedHandlerInspector.inspectType;
+import static org.axonframework.messaging.core.annotations.AnnotatedHandlerInspector.inspectType;
 
 /**
  * An {@link EntityMetamodel} implementation that uses reflection to inspect the entity. It will detect annotated

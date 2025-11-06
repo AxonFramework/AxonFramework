@@ -16,7 +16,7 @@
 
 package org.axonframework.extension.springboot.fixture.event.test1;
 
-import org.axonframework.eventhandling.annotations.EventHandler;
+import org.axonframework.messaging.eventhandling.annotations.EventHandler;
 import org.springframework.stereotype.Component;
 
 @Component

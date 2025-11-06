@@ -19,7 +19,7 @@ package org.axonframework.eventsourcing.annotations;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.eventsourcing.CriteriaResolver;
-import org.axonframework.messaging.MessageTypeResolver;
+import org.axonframework.messaging.core.MessageTypeResolver;
 
 /**
  * Defines how a {@link CriteriaResolver} should be constructed for an {@link EventSourcedEntity} annotated class. The

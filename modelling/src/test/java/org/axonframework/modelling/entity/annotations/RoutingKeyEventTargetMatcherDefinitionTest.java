@@ -16,11 +16,11 @@
 
 package org.axonframework.modelling.entity.annotations;
 
-import org.axonframework.commandhandling.annotations.RoutingKey;
+import org.axonframework.messaging.commandhandling.annotations.RoutingKey;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.modelling.entity.child.EventTargetMatcher;
 import org.junit.jupiter.api.*;
 

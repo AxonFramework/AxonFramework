@@ -17,11 +17,11 @@
 package org.axonframework.deadline.annotations;
 
 import org.axonframework.deadline.GenericDeadlineMessage;
-import org.axonframework.eventhandling.annotations.AnnotationEventHandlerAdapter;
-import org.axonframework.eventhandling.annotations.EventHandler;
-import org.axonframework.messaging.ClassBasedMessageTypeResolver;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.eventhandling.annotations.AnnotationEventHandlerAdapter;
+import org.axonframework.messaging.eventhandling.annotations.EventHandler;
+import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.atomic.AtomicInteger;

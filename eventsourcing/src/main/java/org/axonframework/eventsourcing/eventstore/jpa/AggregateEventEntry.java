@@ -29,8 +29,8 @@ import jakarta.persistence.Lob;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import org.axonframework.common.DateTimeUtils;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.core.MessageType;
 
 import java.time.Instant;
 import java.time.temporal.TemporalAccessor;

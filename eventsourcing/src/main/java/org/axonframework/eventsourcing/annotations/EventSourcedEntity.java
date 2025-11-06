@@ -16,15 +16,17 @@
 
 package org.axonframework.eventsourcing.annotations;
 
-import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.messaging.commandhandling.CommandHandler;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.annotations.reflection.AnnotationBasedEventSourcedEntityFactoryDefinition;
 import org.axonframework.eventsourcing.annotations.reflection.EntityCreator;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
-import org.axonframework.eventstreaming.EventCriteria;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.core.MessageTypeResolver;
+import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.modelling.annotations.AnnotationBasedEntityIdResolver;
 import org.axonframework.modelling.annotations.EntityIdResolverDefinition;
 import org.axonframework.modelling.entity.EntityCommandHandler;
@@ -52,7 +54,7 @@ import java.lang.annotation.Target;
  *         By defining a static method in the entity class annotated with {@link EventCriteriaBuilder} which returns an
  *         {@link EventCriteria} and accepts the {@code id} as a parameter. This method should be static and return an
  *         {@link EventCriteria}. Multiple methods can be defined with different id types, and the first matching method
- *         will be used. Optionally, you can define {@link org.axonframework.messaging.MessageTypeResolver} as a second
+ *         will be used. Optionally, you can define {@link MessageTypeResolver} as a second
  *         parameter to resolve the type of the message. Other arguments are not supported.
  *     </li>
  *     <li>
@@ -73,7 +75,7 @@ import java.lang.annotation.Target;
  * For more information, see the examples in the Javadoc of the annotation.
  *
  * <h2>Command handling</h2>
- * Entities can declare {@link org.axonframework.commandhandling.annotations.CommandHandler}-annotated methods
+ * Entities can declare {@link org.axonframework.messaging.commandhandling.annotations.CommandHandler}-annotated methods
  * to execute a command on the entity. When a command targets an entity, the following steps are taken:
  * <ol>
  *     <li>The {@link org.axonframework.modelling.entity.EntityCommandHandlingComponent} will use the
@@ -150,7 +152,7 @@ public @interface EventSourcedEntity {
 
     /**
      * The definition of the {@link EntityIdResolverDefinition} to use to resolve the entity id from a
-     * {@link org.axonframework.commandhandling.CommandMessage command message}. Defaults to the
+     * {@link CommandMessage command message}. Defaults to the
      * {@link AnnotatedEntityIdResolverDefinition}, which resolves the entity id based on the
      * {@link org.axonframework.modelling.annotations.TargetEntityId} annotation on a payload field or method, after
      * converting the payload to the representation wanted by the entity.

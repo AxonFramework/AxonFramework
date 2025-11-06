@@ -17,12 +17,12 @@
 package org.axonframework.test.aggregate;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.HandlerExecutionException;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.ResultMessage;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.commandhandling.CommandResultMessage;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.core.HandlerExecutionException;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.ResultMessage;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.test.FixtureExecutionException;

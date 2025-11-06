@@ -17,13 +17,15 @@
 package org.axonframework.extension.springboot;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.processors.EventProcessor;
-import org.axonframework.eventhandling.processors.streaming.StreamingEventProcessor;
-import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
-import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
-import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessor;
+import org.axonframework.messaging.eventhandling.EventBus;
+import org.axonframework.messaging.eventhandling.processors.EventProcessor;
+import org.axonframework.messaging.eventhandling.processors.streaming.StreamingEventProcessor;
+import org.axonframework.messaging.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
+import org.axonframework.messaging.eventhandling.processors.streaming.token.store.TokenStore;
+import org.axonframework.messaging.eventhandling.processors.subscribing.SubscribingEventProcessor;
 import org.axonframework.extension.spring.config.EventProcessorSettings;
+import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
+import org.axonframework.messaging.eventhandling.sequencing.SequentialPerAggregatePolicy;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.util.HashMap;
@@ -128,7 +130,7 @@ public class EventProcessorProperties {
         private String tokenStore = "tokenStore";
         /**
          * The name of the bean that represents the sequencing policy for processing events. If no name is specified,
-         * the processor defaults to a {@link org.axonframework.eventhandling.sequencing.SequentialPerAggregatePolicy},
+         * the processor defaults to a {@link SequentialPerAggregatePolicy},
          * which guarantees to process events originating from the same Aggregate instance sequentially, while events
          * from different Aggregate instances may be processed concurrently.
          */
@@ -327,10 +329,10 @@ public class EventProcessorProperties {
 
         /**
          * Returns the name of the bean that defines the
-         * {@link org.axonframework.eventhandling.sequencing.SequencingPolicy} for this processor.
+         * {@link SequencingPolicy} for this processor.
          *
          * @return the name of the bean that defines the
-         * {@link org.axonframework.eventhandling.sequencing.SequencingPolicy} for this processor.
+         * {@link SequencingPolicy} for this processor.
          */
         public String sequencingPolicy() {
             return sequencingPolicy;
@@ -338,12 +340,12 @@ public class EventProcessorProperties {
 
         /**
          * Sets the name of the bean that defines the
-         * {@link org.axonframework.eventhandling.sequencing.SequencingPolicy} for this processor. The
+         * {@link SequencingPolicy} for this processor. The
          * {@code SequencingPolicy} describes which Events must be handled sequentially, and which can be handled
-         * concurrently. Defaults to a {@link org.axonframework.eventhandling.sequencing.SequentialPerAggregatePolicy}.
+         * concurrently. Defaults to a {@link SequentialPerAggregatePolicy}.
          *
          * @param sequencingPolicy the name of the bean that defines the
-         *                         {@link org.axonframework.eventhandling.sequencing.SequencingPolicy} for this
+         *                         {@link SequencingPolicy} for this
          *                         processor.
          */
         public void setSequencingPolicy(String sequencingPolicy) {

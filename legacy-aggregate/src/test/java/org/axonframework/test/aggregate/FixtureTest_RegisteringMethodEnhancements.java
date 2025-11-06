@@ -17,14 +17,14 @@
 package org.axonframework.test.aggregate;
 
 import jakarta.annotation.Nullable;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.annotations.HandlerDefinition;
-import org.axonframework.messaging.annotations.HandlerEnhancerDefinition;
-import org.axonframework.messaging.annotations.MessageHandlingMember;
-import org.axonframework.messaging.annotations.ParameterResolver;
-import org.axonframework.messaging.annotations.ParameterResolverFactory;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.annotations.HandlerDefinition;
+import org.axonframework.messaging.core.annotations.HandlerEnhancerDefinition;
+import org.axonframework.messaging.core.annotations.MessageHandlingMember;
+import org.axonframework.messaging.core.annotations.ParameterResolver;
+import org.axonframework.messaging.core.annotations.ParameterResolverFactory;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;

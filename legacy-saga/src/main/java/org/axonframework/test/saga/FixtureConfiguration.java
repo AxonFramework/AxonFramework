@@ -16,20 +16,20 @@
 
 package org.axonframework.test.saga;
 
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.processors.errorhandling.ListenerInvocationErrorHandler;
-import org.axonframework.eventhandling.processors.errorhandling.LoggingErrorHandler;
-import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.annotations.ClasspathHandlerDefinition;
-import org.axonframework.messaging.annotations.ClasspathHandlerEnhancerDefinition;
-import org.axonframework.messaging.annotations.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.annotations.HandlerDefinition;
-import org.axonframework.messaging.annotations.HandlerEnhancerDefinition;
-import org.axonframework.messaging.annotations.ParameterResolver;
-import org.axonframework.messaging.annotations.ParameterResolverFactory;
-import org.axonframework.messaging.annotations.SimpleResourceParameterResolverFactory;
+import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.eventhandling.EventBus;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.processors.errorhandling.ListenerInvocationErrorHandler;
+import org.axonframework.messaging.eventhandling.processors.errorhandling.LoggingErrorHandler;
+import org.axonframework.messaging.core.MessageHandlerInterceptor;
+import org.axonframework.messaging.core.annotations.ClasspathHandlerDefinition;
+import org.axonframework.messaging.core.annotations.ClasspathHandlerEnhancerDefinition;
+import org.axonframework.messaging.core.annotations.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.core.annotations.HandlerDefinition;
+import org.axonframework.messaging.core.annotations.HandlerEnhancerDefinition;
+import org.axonframework.messaging.core.annotations.ParameterResolver;
+import org.axonframework.messaging.core.annotations.ParameterResolverFactory;
+import org.axonframework.messaging.core.annotations.SimpleResourceParameterResolverFactory;
 import org.axonframework.modelling.saga.ResourceInjector;
 import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.matchers.FieldFilter;

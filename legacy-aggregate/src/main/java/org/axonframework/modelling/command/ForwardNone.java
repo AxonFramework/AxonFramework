@@ -16,15 +16,16 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.messaging.Message;
+import org.axonframework.messaging.core.Message;
 
 import java.util.stream.Stream;
 import jakarta.annotation.Nonnull;
+import org.axonframework.messaging.core.Message;
 
 /**
  * Forward no messages {@code T} regardless of their set up.
  *
- * @param <T> the implementation {@code T} of the {@link org.axonframework.messaging.Message} being filtered.
+ * @param <T> the implementation {@code T} of the {@link org.axonframework.messaging.core.Message} being filtered.
  * @author Steven van Beelen
  * @since 3.1
  */

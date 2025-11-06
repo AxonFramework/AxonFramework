@@ -17,8 +17,8 @@
 package org.axonframework.test.utils;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.Message;
-import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.monitoring.MessageMonitor;
 import org.axonframework.test.utils.MessageMonitorReport.Report.Success;
 import org.jetbrains.annotations.NotNull;
 

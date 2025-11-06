@@ -18,12 +18,12 @@ package org.axonframework.extension.metrics.dropwizard;
 
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricSet;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.commandhandling.GenericCommandMessage;
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.monitoring.MessageMonitor;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.junit.jupiter.*;

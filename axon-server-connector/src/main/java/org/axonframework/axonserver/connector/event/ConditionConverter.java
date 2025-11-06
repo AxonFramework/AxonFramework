@@ -29,10 +29,10 @@ import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.GlobalIndexConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.GlobalIndexPosition;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
-import org.axonframework.eventstreaming.EventCriteria;
-import org.axonframework.eventstreaming.EventCriterion;
-import org.axonframework.eventstreaming.StreamingCondition;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.axonframework.messaging.eventstreaming.EventCriterion;
+import org.axonframework.messaging.eventstreaming.StreamingCondition;
+import org.axonframework.messaging.core.QualifiedName;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -118,13 +118,13 @@ public final class ConditionConverter {
                         .build();
     }
 
-    private static List<Tag> convertTags(Set<org.axonframework.eventstreaming.Tag> tags) {
+    private static List<Tag> convertTags(Set<org.axonframework.messaging.eventstreaming.Tag> tags) {
         return tags.stream()
                    .map(ConditionConverter::convertTag)
                    .toList();
     }
 
-    private static Tag convertTag(org.axonframework.eventstreaming.Tag tag) {
+    private static Tag convertTag(org.axonframework.messaging.eventstreaming.Tag tag) {
         return Tag.newBuilder()
                   .setKey(ByteString.copyFrom(tag.key(), StandardCharsets.UTF_8))
                   .setValue(ByteString.copyFrom(tag.value(), StandardCharsets.UTF_8))

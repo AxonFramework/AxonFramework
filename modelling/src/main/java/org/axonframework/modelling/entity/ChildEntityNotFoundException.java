@@ -17,8 +17,8 @@
 package org.axonframework.modelling.entity;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.modelling.entity.child.EntityChildMetamodel;
 
 /**

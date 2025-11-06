@@ -16,10 +16,11 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
-import org.axonframework.eventhandling.annotations.EventHandler;
-import org.axonframework.eventhandling.gateway.EventGateway;
-import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
-import org.axonframework.eventhandling.processors.streaming.token.store.inmemory.InMemoryTokenStore;
+import org.axonframework.messaging.eventhandling.annotations.EventHandler;
+import org.axonframework.messaging.eventhandling.gateway.EventGateway;
+import org.axonframework.messaging.eventhandling.processors.streaming.StreamingEventProcessor;
+import org.axonframework.messaging.eventhandling.processors.streaming.token.store.TokenStore;
+import org.axonframework.messaging.eventhandling.processors.streaming.token.store.inmemory.InMemoryTokenStore;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -35,7 +36,7 @@ import static org.awaitility.Awaitility.await;
 
 /**
  * Test class validating whether a Spring {@link Component} with an {@link EventHandler} results in a working
- * {@link org.axonframework.eventhandling.processors.streaming.StreamingEventProcessor} that is invoked when an event is
+ * {@link StreamingEventProcessor} that is invoked when an event is
  * published.
  *
  * @author Mateusz Nowak

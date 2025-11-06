@@ -18,10 +18,10 @@ package org.axonframework.modelling.saga;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.interceptors.annotations.MessageHandlerInterceptorMemberChain;
-import org.axonframework.messaging.annotations.MessageHandlingMember;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.core.interceptors.annotations.MessageHandlerInterceptorMemberChain;
+import org.axonframework.messaging.core.annotations.MessageHandlingMember;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.modelling.saga.metamodel.SagaModel;
 
 import java.util.Set;

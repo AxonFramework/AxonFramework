@@ -16,15 +16,15 @@
 
 package org.axonframework.integrationtests.modelling.command;
 
-import org.axonframework.commandhandling.annotations.CommandHandler;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.messaging.commandhandling.annotations.CommandHandler;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.commandhandling.GenericCommandMessage;
 import org.axonframework.common.Assert;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.SimpleEventBus;
+import org.axonframework.messaging.eventhandling.EventBus;
+import org.axonframework.messaging.eventhandling.SimpleEventBus;
 import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateMember;

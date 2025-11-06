@@ -21,17 +21,17 @@ import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.PersistenceContext;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
-import org.axonframework.messaging.unitofwork.transaction.TransactionManager;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.deadletter.DeadLetteringEventHandlerInvoker;
-import org.axonframework.eventhandling.deadletter.DeadLetteringEventIntegrationTest;
-import org.axonframework.eventhandling.deadletter.jpa.DeadLetterEntry;
-import org.axonframework.eventhandling.deadletter.jpa.DeadLetterEventEntry;
-import org.axonframework.eventhandling.deadletter.jpa.DeadLetterJpaConverter;
-import org.axonframework.eventhandling.deadletter.jpa.EventMessageDeadLetterJpaConverter;
-import org.axonframework.eventhandling.deadletter.jpa.JpaDeadLetter;
-import org.axonframework.eventhandling.deadletter.jpa.JpaSequencedDeadLetterQueue;
-import org.axonframework.eventhandling.processors.EventProcessor;
+import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.deadletter.DeadLetteringEventHandlerInvoker;
+import org.axonframework.messaging.eventhandling.deadletter.DeadLetteringEventIntegrationTest;
+import org.axonframework.messaging.eventhandling.deadletter.jpa.DeadLetterEntry;
+import org.axonframework.messaging.eventhandling.deadletter.jpa.DeadLetterEventEntry;
+import org.axonframework.messaging.eventhandling.deadletter.jpa.DeadLetterJpaConverter;
+import org.axonframework.messaging.eventhandling.deadletter.jpa.EventMessageDeadLetterJpaConverter;
+import org.axonframework.messaging.eventhandling.deadletter.jpa.JpaDeadLetter;
+import org.axonframework.messaging.eventhandling.deadletter.jpa.JpaSequencedDeadLetterQueue;
+import org.axonframework.messaging.eventhandling.processors.EventProcessor;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
@@ -63,7 +63,7 @@ import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import javax.sql.DataSource;
 
-import static org.axonframework.eventhandling.EventTestUtils.asEventMessage;
+import static org.axonframework.messaging.eventhandling.EventTestUtils.asEventMessage;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**

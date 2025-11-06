@@ -17,15 +17,15 @@
 package org.axonframework.test.saga;
 
 import jakarta.inject.Inject;
-import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.annotations.Timestamp;
-import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.annotations.MetadataValue;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
+import org.axonframework.messaging.eventhandling.EventBus;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.eventhandling.annotations.Timestamp;
+import org.axonframework.messaging.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.annotations.MetadataValue;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.modelling.saga.EndSaga;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.SagaLifecycle;

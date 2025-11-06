@@ -17,7 +17,7 @@
 package org.axonframework.axonserver.connector;
 
 import org.axonframework.common.ObjectUtils;
-import org.axonframework.messaging.Message;
+import org.axonframework.messaging.core.Message;
 
 /**
  * Interface towards a mechanism that is capable of resolving the context name to which a {@link Message} should be

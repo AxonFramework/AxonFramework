@@ -18,7 +18,7 @@ package org.axonframework.extension.metrics.micrometer;
 
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
-import org.axonframework.messaging.Message;
+import org.axonframework.messaging.core.Message;
 
 import java.util.function.Function;
 import java.util.stream.Collectors;

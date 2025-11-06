@@ -17,7 +17,7 @@
 package org.axonframework.modelling.configuration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.commandhandling.configuration.CommandHandlingModule;
+import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.common.configuration.*;
 import org.axonframework.common.configuration.Module;
 import org.axonframework.common.configuration.ApplicationConfigurer;
@@ -25,8 +25,8 @@ import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.common.configuration.ComponentDecorator;
 import org.axonframework.common.configuration.LifecycleRegistry;
 import org.axonframework.common.configuration.ModuleBuilder;
-import org.axonframework.messaging.configuration.MessagingConfigurer;
-import org.axonframework.queryhandling.configuration.QueryHandlingModule;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.queryhandling.configuration.QueryHandlingModule;
 
 import java.util.Objects;
 import java.util.function.Consumer;

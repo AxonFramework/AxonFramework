@@ -23,8 +23,8 @@ import io.axoniq.axonserver.grpc.query.QueryResponse;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.util.ExceptionConverter;
 import org.axonframework.common.annotations.Internal;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.queryhandling.QueryResponseMessage;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.queryhandling.QueryResponseMessage;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;

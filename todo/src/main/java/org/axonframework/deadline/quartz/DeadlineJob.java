@@ -16,24 +16,19 @@
 
 package org.axonframework.deadline.quartz;
 
-import org.axonframework.messaging.unitofwork.transaction.TransactionManager;
+import org.axonframework.messaging.core.*;
+import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
 import org.axonframework.deadline.DeadlineManagerSpanFactory;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
-import org.axonframework.messaging.ExecutionException;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.Metadata;
-import org.axonframework.messaging.ScopeAware;
-import org.axonframework.messaging.ScopeAwareProvider;
-import org.axonframework.messaging.ScopeDescriptor;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.ScopeAware;
+import org.axonframework.messaging.core.ScopeDescriptor;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
-import org.axonframework.tracing.Span;
-import org.axonframework.tracing.SpanScope;
+import org.axonframework.messaging.tracing.Span;
+import org.axonframework.messaging.tracing.SpanScope;
 import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
@@ -249,7 +244,7 @@ public class DeadlineJob implements Job {
          * @param serializer      the {@link Serializer} used to serialize the given {@code deadlineMessage} and
          *                        {@code deadlineScope}
          * @param deadlineMessage the {@link DeadlineMessage} to be handled
-         * @param deadlineScope   the {@link ScopeDescriptor} of the {@link org.axonframework.messaging.Scope} the
+         * @param deadlineScope   the {@link ScopeDescriptor} of the {@link Scope} the
          *                        {@code deadlineMessage} should go to.
          * @return a {@link JobDataMap} containing the {@code deadlineMessage} and {@code deadlineScope}
          */
@@ -333,13 +328,13 @@ public class DeadlineJob implements Job {
         }
 
         /**
-         * Extracts a {@link ScopeDescriptor} describing the deadline {@link org.axonframework.messaging.Scope}, pulled
+         * Extracts a {@link ScopeDescriptor} describing the deadline {@link Scope}, pulled
          * from provided {@code jobDataMap}.
          *
          * @param serializer the {@link Serializer} used to deserialize the contents of the given {@code} jobDataMap}
          *                   into a {@link ScopeDescriptor}
          * @param jobDataMap the {@link JobDataMap} which should contain a {@link ScopeDescriptor}
-         * @return the {@link ScopeDescriptor} describing the deadline {@link org.axonframework.messaging.Scope}, pulled
+         * @return the {@link ScopeDescriptor} describing the deadline {@link Scope}, pulled
          * from provided {@code jobDataMap}
          */
         public static ScopeDescriptor deadlineScope(Serializer serializer, JobDataMap jobDataMap) {

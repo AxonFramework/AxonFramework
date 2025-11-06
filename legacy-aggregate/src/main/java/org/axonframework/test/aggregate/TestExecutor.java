@@ -16,8 +16,9 @@
 
 package org.axonframework.test.aggregate;
 
-import org.axonframework.commandhandling.annotations.CommandHandler;
-import org.axonframework.messaging.Message;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.commandhandling.annotations.CommandHandler;
+import org.axonframework.messaging.core.Message;
 import org.axonframework.modelling.command.Repository;
 
 import java.time.Duration;
@@ -42,7 +43,7 @@ public interface TestExecutor<T> {
     /**
      * Dispatches the given command to the appropriate command handler and records all activity in the fixture for
      * result validation. If the given {@code command} is a {@link
-     * org.axonframework.commandhandling.CommandMessage} instance, it will be dispatched as-is. Any other object will
+     * CommandMessage} instance, it will be dispatched as-is. Any other object will
      * cause the given {@code command} to be wrapped in a {@code CommandMessage} as its payload.
      *
      * @param command The command to execute
@@ -53,7 +54,7 @@ public interface TestExecutor<T> {
     /**
      * Dispatches the given command and meta-data to the appropriate command handler and records all
      * activity in the fixture for result validation. If the given {@code command} is a {@link
-     * org.axonframework.commandhandling.CommandMessage} instance, it will be dispatched as-is, with given
+     * CommandMessage} instance, it will be dispatched as-is, with given
      * additional {@code metadata}. Any other object will cause the given {@code command} to be wrapped in a
      * {@code CommandMessage} as its payload.
      *

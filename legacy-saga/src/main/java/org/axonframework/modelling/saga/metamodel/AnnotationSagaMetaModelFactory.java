@@ -16,15 +16,15 @@
 
 package org.axonframework.modelling.saga.metamodel;
 
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.annotations.AnnotatedHandlerInspector;
-import org.axonframework.messaging.annotations.ClasspathHandlerDefinition;
-import org.axonframework.messaging.annotations.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.annotations.HandlerDefinition;
-import org.axonframework.messaging.interceptors.annotations.MessageHandlerInterceptorMemberChain;
-import org.axonframework.messaging.annotations.MessageHandlingMember;
-import org.axonframework.messaging.annotations.ParameterResolverFactory;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.core.annotations.AnnotatedHandlerInspector;
+import org.axonframework.messaging.core.annotations.ClasspathHandlerDefinition;
+import org.axonframework.messaging.core.annotations.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.core.annotations.HandlerDefinition;
+import org.axonframework.messaging.core.interceptors.annotations.MessageHandlerInterceptorMemberChain;
+import org.axonframework.messaging.core.annotations.MessageHandlingMember;
+import org.axonframework.messaging.core.annotations.ParameterResolverFactory;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.modelling.saga.AssociationValue;
 import org.axonframework.modelling.saga.SagaMethodMessageHandlingMember;
 

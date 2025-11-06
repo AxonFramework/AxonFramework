@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.eventhandling.annotations.EventHandler;
+import org.axonframework.messaging.eventhandling.annotations.EventHandler;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.junit.jupiter.api.*;
 
@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.axonframework.eventhandling.EventTestUtils.asEventMessage;
+import static org.axonframework.messaging.eventhandling.EventTestUtils.asEventMessage;
 import static org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory.inspectAggregate;
 import static org.junit.jupiter.api.Assertions.*;
 

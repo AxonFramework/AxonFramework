@@ -22,12 +22,12 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
 import jakarta.annotation.Nonnull;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.processors.EventProcessor;
-import org.axonframework.eventhandling.processors.streaming.StreamingEventProcessor;
-import org.axonframework.messaging.Message;
-import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.monitoring.NoOpMessageMonitorCallback;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.processors.EventProcessor;
+import org.axonframework.messaging.eventhandling.processors.streaming.StreamingEventProcessor;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.monitoring.MessageMonitor;
+import org.axonframework.messaging.monitoring.NoOpMessageMonitorCallback;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;

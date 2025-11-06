@@ -17,8 +17,8 @@
 package org.axonframework.axonserver.connector.query;
 
 import io.axoniq.axonserver.grpc.ErrorMessage;
-import org.axonframework.messaging.RemoteExceptionDescription;
-import org.axonframework.messaging.RemoteNonTransientHandlingException;
+import org.axonframework.messaging.core.RemoteExceptionDescription;
+import org.axonframework.messaging.core.RemoteNonTransientHandlingException;
 
 /**
  * Exception indicating a non-transient problem that was reported during query handling by the remote end of a connection.

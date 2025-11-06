@@ -17,8 +17,8 @@
 package org.axonframework.serialization;
 
 import org.axonframework.conversion.ChainingContentTypeConverter;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.Metadata;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.Metadata;
 import org.junit.jupiter.api.*;
 
 import java.util.Collections;

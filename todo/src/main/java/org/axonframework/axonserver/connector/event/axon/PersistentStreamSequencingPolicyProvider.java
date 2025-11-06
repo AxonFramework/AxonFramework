@@ -16,9 +16,9 @@
 package org.axonframework.axonserver.connector.event.axon;
 
 import org.axonframework.common.configuration.Configuration;
-import org.axonframework.eventhandling.DomainEventMessage;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.sequencing.SequencingPolicy;
+import org.axonframework.messaging.eventhandling.DomainEventMessage;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.sequencing.*;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -43,7 +43,7 @@ public class PersistentStreamSequencingPolicyProvider
     /**
      * A {@link String} constant representing the "sequential per aggregate" sequencing policy. This means all events
      * belonging to the same aggregate are handled sequentially. The behavior of this policy resembles the
-     * {@link org.axonframework.eventhandling.sequencing.SequentialPerAggregatePolicy}.
+     * {@link SequentialPerAggregatePolicy}.
      */
     public static final String SEQUENTIAL_PER_AGGREGATE_POLICY = "SequentialPerAggregatePolicy";
 
@@ -55,21 +55,21 @@ public class PersistentStreamSequencingPolicyProvider
 
     /**
      * A {@link String} constant representing the sequential policy. This means all events are handled sequentially. The
-     * behavior of this policy resembles the {@link org.axonframework.eventhandling.sequencing.SequentialPolicy}.
+     * behavior of this policy resembles the {@link SequentialPolicy}.
      */
     public static final String SEQUENTIAL_POLICY = "SequentialPolicy";
 
     /**
      * A {@link String} constant representing the full concurrency policy. This means all events are spread out over the
      * available segments, regardless of the sequence identifier. The behavior of this policy resembles the
-     * {@link org.axonframework.eventhandling.sequencing.FullConcurrencyPolicy}.
+     * {@link FullConcurrencyPolicy}.
      */
     public static final String FULL_CONCURRENCY_POLICY = "FullConcurrencyPolicy";
 
     /**
      * A {@link String} constant representing the property sequencing policy. This policy retrieves a value from the
      * event's payload to decide the sequence identifier of the event. The behavior of this policy resembles the
-     * {@link org.axonframework.eventhandling.sequencing.PropertySequencingPolicy}.
+     * {@link PropertySequencingPolicy}.
      */
     public static final String PROPERTY_SEQUENCING_POLICY = "PropertySequencingPolicy";
 

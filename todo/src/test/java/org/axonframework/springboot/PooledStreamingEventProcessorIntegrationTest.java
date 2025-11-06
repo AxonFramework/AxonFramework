@@ -18,10 +18,10 @@ package org.axonframework.springboot;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.axonframework.config.ProcessingGroup;
-import org.axonframework.eventhandling.annotations.EventHandler;
-import org.axonframework.eventhandling.processors.errorhandling.ListenerInvocationErrorHandler;
-import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
-import org.axonframework.messaging.annotations.MessageIdentifier;
+import org.axonframework.messaging.eventhandling.annotations.EventHandler;
+import org.axonframework.messaging.eventhandling.processors.errorhandling.ListenerInvocationErrorHandler;
+import org.axonframework.messaging.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
+import org.axonframework.messaging.core.annotations.MessageIdentifier;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedType;
 import org.axonframework.serialization.json.JacksonSerializer;

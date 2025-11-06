@@ -16,9 +16,13 @@
 
 package org.axonframework.springboot;
 
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.eventhandling.processors.EventProcessor;
-import org.axonframework.eventhandling.processors.streaming.StreamingEventProcessor;
+import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.eventhandling.processors.EventProcessor;
+import org.axonframework.messaging.eventhandling.processors.streaming.StreamingEventProcessor;
+import org.axonframework.messaging.eventsourcing.snapshotting.Snapshotter;
+import org.axonframework.messaging.queryhandling.QueryBus;
+import org.axonframework.messaging.tracing.SpanAttributesProvider;
+import org.axonframework.messaging.tracing.attributes.*;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.time.Duration;
@@ -34,7 +38,7 @@ public class TracingProperties {
 
     /**
      * Properties describing the tracing settings for the
-     * {@link org.axonframework.eventsourcing.snapshotting.Snapshotter}.
+     * {@link Snapshotter}.
      */
     private SnapshotterProperties snapshotter = new SnapshotterProperties();
 
@@ -44,7 +48,7 @@ public class TracingProperties {
     private CommandBusProperties commandBus = new CommandBusProperties();
 
     /**
-     * Properties describing the tracing settings for the {@link org.axonframework.queryhandling.QueryBus}.
+     * Properties describing the tracing settings for the {@link QueryBus}.
      */
     private QueryBusProperties queryBus = new QueryBusProperties();
 
@@ -75,17 +79,17 @@ public class TracingProperties {
     private boolean showEventSourcingHandlers = false;
 
     /**
-     * Defines which {@link org.axonframework.tracing.SpanAttributesProvider SpanAttributesProviders}, provided by
+     * Defines which {@link SpanAttributesProvider SpanAttributesProviders}, provided by
      * default by Axon Framework, are active.
      */
     private AttributeProviders attributeProviders;
 
     /**
      * Returns the properties describing the tracing settings for the
-     * {@link org.axonframework.eventsourcing.snapshotting.Snapshotter}.
+     * {@link Snapshotter}.
      *
      * @return the properties describing the tracing settings for the
-     * {@link org.axonframework.eventsourcing.snapshotting.Snapshotter}.
+     * {@link Snapshotter}.
      */
     public SnapshotterProperties getSnapshotter() {
         return snapshotter;
@@ -93,10 +97,10 @@ public class TracingProperties {
 
     /**
      * Sets the properties describing the tracing settings for the
-     * {@link org.axonframework.eventsourcing.snapshotting.Snapshotter}.
+     * {@link Snapshotter}.
      *
      * @param snapshotter the properties describing the tracing settings for the
-     *                    {@link org.axonframework.eventsourcing.snapshotting.Snapshotter}.
+     *                    {@link Snapshotter}.
      */
     public void setSnapshotter(SnapshotterProperties snapshotter) {
         this.snapshotter = snapshotter;
@@ -121,19 +125,19 @@ public class TracingProperties {
     }
 
     /**
-     * Returns the properties describing the tracing settings for the {@link org.axonframework.queryhandling.QueryBus}.
+     * Returns the properties describing the tracing settings for the {@link QueryBus}.
      *
-     * @return the properties describing the tracing settings for the {@link org.axonframework.queryhandling.QueryBus}.
+     * @return the properties describing the tracing settings for the {@link QueryBus}.
      */
     public QueryBusProperties getQueryBus() {
         return queryBus;
     }
 
     /**
-     * Sets the properties describing the tracing settings for the {@link org.axonframework.queryhandling.QueryBus}.
+     * Sets the properties describing the tracing settings for the {@link QueryBus}.
      *
      * @param queryBus the properties describing the tracing settings for the
-     *                 {@link org.axonframework.queryhandling.QueryBus}.
+     *                 {@link QueryBus}.
      */
     public void setQueryBus(QueryBusProperties queryBus) {
         this.queryBus = queryBus;
@@ -241,7 +245,7 @@ public class TracingProperties {
     }
 
     /**
-     * The value for which {@link org.axonframework.tracing.SpanAttributesProvider}s are enabled.
+     * The value for which {@link SpanAttributesProvider}s are enabled.
      *
      * @return The {@link AttributeProviders} value.
      */
@@ -250,49 +254,49 @@ public class TracingProperties {
     }
 
     /**
-     * Sets the value for which {@link org.axonframework.tracing.SpanAttributesProvider SpanAttributesProviders} are
+     * Sets the value for which {@link SpanAttributesProvider SpanAttributesProviders} are
      * enabled.
      *
      * @param attributeProviders The new list of
-     *                           {@link org.axonframework.tracing.SpanAttributesProvider SpanAttributesProviders}.
+     *                           {@link SpanAttributesProvider SpanAttributesProviders}.
      */
     public void setAttributeProviders(AttributeProviders attributeProviders) {
         this.attributeProviders = attributeProviders;
     }
 
     /**
-     * Defines which {@link org.axonframework.tracing.SpanAttributesProvider}s are enabled. By default they are all
+     * Defines which {@link SpanAttributesProvider}s are enabled. By default they are all
      * enabled.
      */
     public static class AttributeProviders {
 
         /**
-         * Enables the {@link org.axonframework.tracing.attributes.AggregateIdentifierSpanAttributesProvider}.
+         * Enables the {@link AggregateIdentifierSpanAttributesProvider}.
          */
         private boolean aggregateIdentifier = true;
         /**
-         * Enables the {@link org.axonframework.tracing.attributes.MessageIdSpanAttributesProvider}.
+         * Enables the {@link MessageIdSpanAttributesProvider}.
          */
         private boolean messageId = true;
         /**
-         * Enables the {@link org.axonframework.tracing.attributes.MessageNameSpanAttributesProvider}.
+         * Enables the {@link MessageNameSpanAttributesProvider}.
          */
         private boolean messageName = true;
         /**
-         * Enables the {@link org.axonframework.tracing.attributes.MessageTypeSpanAttributesProvider}.
+         * Enables the {@link MessageTypeSpanAttributesProvider}.
          */
         private boolean messageType = true;
         /**
-         * Enables the {@link org.axonframework.tracing.attributes.MetadataSpanAttributesProvider}.
+         * Enables the {@link MetadataSpanAttributesProvider}.
          */
         private boolean metadata = true;
         /**
-         * Enables the {@link org.axonframework.tracing.attributes.PayloadTypeSpanAttributesProvider}.
+         * Enables the {@link PayloadTypeSpanAttributesProvider}.
          */
         private boolean payloadType = true;
 
         /**
-         * Whether the {@link org.axonframework.tracing.attributes.AggregateIdentifierSpanAttributesProvider} is
+         * Whether the {@link AggregateIdentifierSpanAttributesProvider} is
          * enabled.
          *
          * @return Whether the attribute provider is enabled.
@@ -302,7 +306,7 @@ public class TracingProperties {
         }
 
         /**
-         * Sets whether the {@link org.axonframework.tracing.attributes.AggregateIdentifierSpanAttributesProvider} is
+         * Sets whether the {@link AggregateIdentifierSpanAttributesProvider} is
          * enabled.
          *
          * @param aggregateIdentifier Whether the provider is enabled.
@@ -312,7 +316,7 @@ public class TracingProperties {
         }
 
         /**
-         * Whether the {@link org.axonframework.tracing.attributes.MessageIdSpanAttributesProvider} is enabled.
+         * Whether the {@link MessageIdSpanAttributesProvider} is enabled.
          *
          * @return Whether the attribute provider is enabled.
          */
@@ -321,7 +325,7 @@ public class TracingProperties {
         }
 
         /**
-         * Sets whether the {@link org.axonframework.tracing.attributes.MessageIdSpanAttributesProvider} is enabled.
+         * Sets whether the {@link MessageIdSpanAttributesProvider} is enabled.
          *
          * @param messageId Whether the provider is enabled.
          */
@@ -330,7 +334,7 @@ public class TracingProperties {
         }
 
         /**
-         * Whether the {@link org.axonframework.tracing.attributes.MessageNameSpanAttributesProvider} is enabled.
+         * Whether the {@link MessageNameSpanAttributesProvider} is enabled.
          *
          * @return Whether the attribute provider is enabled.
          */
@@ -339,7 +343,7 @@ public class TracingProperties {
         }
 
         /**
-         * Sets whether the {@link org.axonframework.tracing.attributes.MessageNameSpanAttributesProvider} is enabled.
+         * Sets whether the {@link MessageNameSpanAttributesProvider} is enabled.
          *
          * @param messageName Whether the provider is enabled.
          */
@@ -348,7 +352,7 @@ public class TracingProperties {
         }
 
         /**
-         * Whether the {@link org.axonframework.tracing.attributes.MessageTypeSpanAttributesProvider} is enabled.
+         * Whether the {@link MessageTypeSpanAttributesProvider} is enabled.
          *
          * @return Whether the attribute provider is enabled.
          */
@@ -357,7 +361,7 @@ public class TracingProperties {
         }
 
         /**
-         * Sets whether the {@link org.axonframework.tracing.attributes.MessageTypeSpanAttributesProvider} is enabled.
+         * Sets whether the {@link MessageTypeSpanAttributesProvider} is enabled.
          *
          * @param messageType Whether the provider is enabled.
          */
@@ -366,7 +370,7 @@ public class TracingProperties {
         }
 
         /**
-         * Whether the {@link org.axonframework.tracing.attributes.MetadataSpanAttributesProvider} is enabled.
+         * Whether the {@link MetadataSpanAttributesProvider} is enabled.
          *
          * @return Whether the attribute provider is enabled.
          */
@@ -375,7 +379,7 @@ public class TracingProperties {
         }
 
         /**
-         * Sets whether the {@link org.axonframework.tracing.attributes.MetadataSpanAttributesProvider} is enabled.
+         * Sets whether the {@link MetadataSpanAttributesProvider} is enabled.
          *
          * @param metadata Whether the provider is enabled.
          */
@@ -384,7 +388,7 @@ public class TracingProperties {
         }
 
         /**
-         * Whether the {@link org.axonframework.tracing.attributes.PayloadTypeSpanAttributesProvider} is enabled.
+         * Whether the {@link PayloadTypeSpanAttributesProvider} is enabled.
          *
          * @return Whether the attribute provider is enabled.
          */
@@ -393,7 +397,7 @@ public class TracingProperties {
         }
 
         /**
-         * Sets whether the {@link org.axonframework.tracing.attributes.PayloadTypeSpanAttributesProvider} is enabled.
+         * Sets whether the {@link PayloadTypeSpanAttributesProvider} is enabled.
          *
          * @param payloadType Whether the provider is enabled.
          */
@@ -404,7 +408,7 @@ public class TracingProperties {
 
     /**
      * Configuration properties for the behavior of creating tracing spans for the
-     * {@link org.axonframework.eventsourcing.snapshotting.Snapshotter}.
+     * {@link Snapshotter}.
      */
     public static class SnapshotterProperties {
 
@@ -415,7 +419,7 @@ public class TracingProperties {
 
         /**
          * Wether the aggregate type should be included in the span names of the
-         * {@link org.axonframework.eventsourcing.snapshotting.Snapshotter} spans.
+         * {@link Snapshotter} spans.
          */
         private boolean aggregateTypeInSpanName = true;
 
@@ -439,10 +443,10 @@ public class TracingProperties {
 
         /**
          * Whether the aggregate type should be included in the span names of the
-         * {@link org.axonframework.eventsourcing.snapshotting.Snapshotter} spans.
+         * {@link Snapshotter} spans.
          *
          * @return whether the aggregate type should be included in the span names of the
-         * {@link org.axonframework.eventsourcing.snapshotting.Snapshotter} spans.
+         * {@link Snapshotter} spans.
          */
         public boolean isAggregateTypeInSpanName() {
             return aggregateTypeInSpanName;
@@ -450,10 +454,10 @@ public class TracingProperties {
 
         /**
          * Sets whether the aggregate type should be included in the span names of the
-         * {@link org.axonframework.eventsourcing.snapshotting.Snapshotter} spans.
+         * {@link Snapshotter} spans.
          *
          * @param aggregateTypeInSpanName whether the aggregate type should be included in the span names of the
-         *                                {@link org.axonframework.eventsourcing.snapshotting.Snapshotter} spans.
+         *                                {@link Snapshotter} spans.
          */
         public void setAggregateTypeInSpanName(boolean aggregateTypeInSpanName) {
             this.aggregateTypeInSpanName = aggregateTypeInSpanName;
@@ -462,7 +466,7 @@ public class TracingProperties {
 
     /**
      * Configuration properties for the behavior of creating tracing spans for the
-     * {@link org.axonframework.commandhandling.CommandBus}.
+     * {@link CommandBus}.
      *
      * @since 4.9.0
      */
@@ -494,7 +498,7 @@ public class TracingProperties {
 
     /**
      * Configuration properties for the behavior of creating tracing spans for the
-     * {@link org.axonframework.queryhandling.QueryBus}.
+     * {@link QueryBus}.
      *
      * @since 4.9.0
      */

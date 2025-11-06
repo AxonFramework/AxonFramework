@@ -16,8 +16,8 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 /**
  * Exception thrown by the {@link EventSourcedEntityFactory} when the entity returned by

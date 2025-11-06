@@ -17,11 +17,11 @@
 package org.axonframework.modelling.entity.annotations;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.messaging.conversion.DelegatingMessageConverter;
-import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.core.conversion.DelegatingMessageConverter;
+import org.axonframework.messaging.core.GenericMessage;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.modelling.EntityIdResolutionException;
 import org.axonframework.modelling.annotations.AnnotationBasedEntityIdResolver;
 import org.axonframework.modelling.annotations.TargetEntityId;

@@ -16,21 +16,21 @@
 
 package org.axonframework.modelling.command.inspection;
 
-import org.axonframework.commandhandling.annotations.CommandHandlingMember;
+import org.axonframework.messaging.commandhandling.annotations.CommandHandlingMember;
 import org.axonframework.common.IdentifierValidator;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotations.AnnotationUtils;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.annotations.AnnotatedHandlerInspector;
-import org.axonframework.messaging.annotations.ClasspathHandlerDefinition;
-import org.axonframework.messaging.annotations.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.annotations.HandlerDefinition;
-import org.axonframework.messaging.annotations.MessageHandlerInvocationException;
-import org.axonframework.messaging.annotations.MessageHandlingMember;
-import org.axonframework.messaging.annotations.ParameterResolverFactory;
-import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.annotations.AnnotatedHandlerInspector;
+import org.axonframework.messaging.core.annotations.ClasspathHandlerDefinition;
+import org.axonframework.messaging.core.annotations.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.core.annotations.HandlerDefinition;
+import org.axonframework.messaging.core.annotations.MessageHandlerInvocationException;
+import org.axonframework.messaging.core.annotations.MessageHandlingMember;
+import org.axonframework.messaging.core.annotations.ParameterResolverFactory;
+import org.axonframework.messaging.core.unitofwork.LegacyMessageSupportingContext;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.AggregateRoot;
 import org.axonframework.modelling.command.AggregateVersion;
 import org.axonframework.modelling.command.EntityId;

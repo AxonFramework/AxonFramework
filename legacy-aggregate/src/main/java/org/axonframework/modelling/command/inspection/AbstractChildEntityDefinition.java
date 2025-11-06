@@ -16,12 +16,12 @@
 
 package org.axonframework.modelling.command.inspection;
 
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.annotations.CommandHandlingMember;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.commandhandling.annotations.CommandHandlingMember;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.property.Property;
-import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.modelling.command.AggregateMember;
 import org.axonframework.modelling.command.ForwardingMode;
 

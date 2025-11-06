@@ -19,8 +19,8 @@ package org.axonframework.modelling.saga;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.property.Property;
 import org.axonframework.common.property.PropertyAccessStrategy;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.annotations.MessageHandlingMember;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.core.annotations.MessageHandlingMember;
 
 import java.lang.reflect.Executable;
 import java.util.Map;

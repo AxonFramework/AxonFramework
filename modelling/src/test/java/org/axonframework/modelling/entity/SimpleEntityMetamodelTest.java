@@ -16,20 +16,20 @@
 
 package org.axonframework.modelling.entity;
 
-import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.commandhandling.DuplicateCommandHandlerSubscriptionException;
-import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.GenericCommandResultMessage;
-import org.axonframework.commandhandling.NoHandlerForCommandException;
+import org.axonframework.messaging.commandhandling.CommandHandler;
+import org.axonframework.messaging.commandhandling.CommandResultMessage;
+import org.axonframework.messaging.commandhandling.DuplicateCommandHandlerSubscriptionException;
+import org.axonframework.messaging.commandhandling.GenericCommandMessage;
+import org.axonframework.messaging.commandhandling.GenericCommandResultMessage;
+import org.axonframework.messaging.commandhandling.NoHandlerForCommandException;
 import org.axonframework.common.infra.MockComponentDescriptor;
-import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageStreamTestUtils;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.MessageStreamTestUtils;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.entity.child.ChildAmbiguityException;
 import org.axonframework.modelling.entity.child.EntityChildMetamodel;

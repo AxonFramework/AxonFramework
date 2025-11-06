@@ -27,15 +27,12 @@ import io.opentelemetry.context.Context;
 import io.opentelemetry.context.ContextKey;
 import io.opentelemetry.context.propagation.TextMapPropagator;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.extension.tracing.opentelemetry.MetadataContextGetter;
-import org.axonframework.extension.tracing.opentelemetry.MetadataContextSetter;
-import org.axonframework.extension.tracing.opentelemetry.OpenTelemetrySpanFactory;
-import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.tracing.SpanAttributesProvider;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.core.GenericMessage;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.tracing.SpanAttributesProvider;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -105,7 +102,7 @@ class OpenTelemetrySpanFactoryTest {
     @Test
     void createRootTracesCreatesSpanWithNoParentLinkedToCurrent() {
         SpanContext spanContext = Span.current().getSpanContext();
-        org.axonframework.tracing.Span span = factory.createRootTrace(() -> "MyRootTrace");
+        org.axonframework.messaging.tracing.Span span = factory.createRootTrace(() -> "MyRootTrace");
 
         verify(spanBuilder).setNoParent();
         verify(spanBuilder).addLink(spanContext);

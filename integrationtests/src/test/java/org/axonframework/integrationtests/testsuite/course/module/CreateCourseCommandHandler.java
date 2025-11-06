@@ -16,8 +16,8 @@
 
 package org.axonframework.integrationtests.testsuite.course.module;
 
-import org.axonframework.commandhandling.annotations.CommandHandler;
-import org.axonframework.eventhandling.gateway.EventAppender;
+import org.axonframework.messaging.commandhandling.annotations.CommandHandler;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
 import org.axonframework.eventsourcing.annotations.EventSourcedEntity;
 import org.axonframework.eventsourcing.annotations.reflection.EntityCreator;

@@ -23,7 +23,7 @@ import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineManagerSpanFactory;
 import org.axonframework.deadline.quartz.QuartzDeadlineManager;
 import org.axonframework.integrationtests.deadline.AbstractDeadlineManagerTestSuite;
-import org.axonframework.messaging.ScopeAwareProvider;
+import org.axonframework.messaging.core.ScopeAwareProvider;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;

@@ -17,8 +17,8 @@
 package org.axonframework.serialization.upcasting.event;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.eventhandling.AbstractEventEntry;
-import org.axonframework.eventhandling.EventData;
+import org.axonframework.messaging.eventhandling.AbstractEventEntry;
+import org.axonframework.messaging.eventhandling.EventData;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedType;
