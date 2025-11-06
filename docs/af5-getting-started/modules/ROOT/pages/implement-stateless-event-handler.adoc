@@ -193,7 +193,7 @@ public class StudentSubscribedNotifierConfiguration {
         PooledStreamingEventProcessorModule automationProcessor = EventProcessorModule // <1>
                 .pooledStreaming("Automation_WhenStudentSubscribedThenSendNotification_Processor") // <2>
                 .eventHandlingComponents( // <3>
-                        c -> c.annotated(cfg -> new WhenStudentSubscribedThenSendNotification(cfg.getComponent(NotificationService.class))) // <4>
+                        c -> c.autodetected(cfg -> new WhenStudentSubscribedThenSendNotification(cfg.getComponent(NotificationService.class))) // <4>
                 ).notCustomized();
 
         return configurer

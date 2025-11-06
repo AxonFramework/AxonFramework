@@ -290,7 +290,7 @@ public record SubscribeStudentToCourse(StudentId studentId, CourseId courseId) {
 }
 ----
 <1> The `@TargetEntityId` annotated method/property can even be  private, because it's just for internal usage for the Axon Framework.
-Based on the `SubscriptionId` we can load the events to build the `State` object. 
+Based on the `SubscriptionId` we can load the events to build the `State` object.
 We will use the value to define the `EventCriteria` later in this section.
 
 As you can see, there are two parts left to implement in the `SubscribeStudentToCourseCommandHandler` code.
@@ -556,7 +556,7 @@ public class SubscribeStudentConfiguration {
 
     public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
         var stateEntity = EventSourcedEntityModule
-                .annotated(SubscriptionId.class, SubscribeStudentToCourseCommandHandler.State.class);
+                .autodetected(SubscriptionId.class, SubscribeStudentToCourseCommandHandler.State.class);
         var commandHandlingModule = CommandHandlingModule
                 .named("SubscribeStudent")
                 .commandHandlers()

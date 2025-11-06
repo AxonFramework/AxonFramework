@@ -235,7 +235,7 @@ public class CourseStatsConfiguration {
         PooledStreamingEventProcessorModule projectionProcessor = EventProcessorModule // <1>
                 .pooledStreaming("Projection_CourseStats_Processor")
                 .eventHandlingComponents(
-                        c -> c.annotated(cfg -> new CoursesStatsProjection(cfg.getComponent(CourseStatsRepository.class))) // <2>
+                        c -> c.autodetected(cfg -> new CoursesStatsProjection(cfg.getComponent(CourseStatsRepository.class))) // <2>
                 ).notCustomized();
 
         QueryHandlingModule getCourseStatsByIdQueryHandler = QueryHandlingModule.named("get-course-stats-by-id") // <3>

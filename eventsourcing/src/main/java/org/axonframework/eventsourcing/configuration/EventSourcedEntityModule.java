@@ -36,7 +36,7 @@ import org.axonframework.modelling.repository.Repository;
 
 /**
  * An expansion of the {@link EntityModule}, specifically for event-sourced entities. When constructed, either
- * {@link #annotated(Class, Class) annotated} or {@link #declarative(Class, Class) declarative}, it provides the
+ * {@link #autodetected(Class, Class) annotated} or {@link #declarative(Class, Class) declarative}, it provides the
  * resulting {@link Repository} with the nearest {@link StateManager} so the state can be loaded.
  *
  * <h2>Command Handling</h2>
@@ -46,7 +46,7 @@ import org.axonframework.modelling.repository.Repository;
  * entity will still be registered to the {@link StateManager} so it can be loaded in stateful command handlers.
  *
  * <h2>Annotation-based entities</h2>
- * Entities annotated with {@link EventSourcedEntity} can be built using {@link #annotated(Class, Class)}. This will
+ * Entities annotated with {@link EventSourcedEntity} can be built using {@link #autodetected(Class, Class)}. This will
  * automatically build all required components based on the {@link EventSourcedEntity} annotation present on the entity
  * type.
  *
@@ -93,7 +93,7 @@ public interface EventSourcedEntityModule<ID, E> extends EntityModule<ID, E> {
     }
 
     /**
-     * Creates the module for an annotated event-sourced entity with the given {@code entityType} and {@code idType}.
+     * Creates the module for an auto-detected event-sourced entity with the given {@code entityType} and {@code idType}.
      * The given {@code entityType} is expected to be annotated with {@link EventSourcedEntity}, which provides the
      * module with the necessary information to build the event-sourced entity.
      *
@@ -105,7 +105,7 @@ public interface EventSourcedEntityModule<ID, E> extends EntityModule<ID, E> {
      * @throws IllegalArgumentException When the given {@code entityType} is not annotated with
      *                                  {@link EventSourcedEntity}.
      */
-    static <ID, E> EventSourcedEntityModule<ID, E> annotated(@Nonnull Class<ID> idType, @Nonnull Class<E> entityType) {
+    static <ID, E> EventSourcedEntityModule<ID, E> autodetected(@Nonnull Class<ID> idType, @Nonnull Class<E> entityType) {
         return new AnnotatedEventSourcedEntityModule<>(idType, entityType);
     }
 

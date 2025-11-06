@@ -53,7 +53,7 @@ public class SpringEventSourcedEntityConfigurer<ID, T> implements ConfigurationE
 
     @Override
     public void enhance(@Nonnull ComponentRegistry registry) {
-        var eventSourcedEntityModule = EventSourcedEntityModule.annotated(this.idType, this.entityType);
+        var eventSourcedEntityModule = EventSourcedEntityModule.autodetected(this.idType, this.entityType);
         registry.registerModule(eventSourcedEntityModule);
     }
 }

@@ -58,7 +58,7 @@ public class AxonTestFixtureMonitoringTest {
 
             final var configurer = EventSourcingConfigurer.create();
 
-            final var entity = EventSourcedEntityModule.annotated(String.class,
+            final var entity = EventSourcedEntityModule.autodetected(String.class,
                                                                   Domain.CourseCreatedCommandHandler.State.class);
 
             configurer.messaging(mc -> mc.registerMessageMonitor(c -> new RecordingMessageMonitor(report)));
