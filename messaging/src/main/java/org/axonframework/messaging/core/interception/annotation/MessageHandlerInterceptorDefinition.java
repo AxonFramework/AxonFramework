@@ -36,10 +36,10 @@ import java.util.Optional;
 
 /**
  * {@link HandlerEnhancerDefinition} that marks methods (meta-)annotated with {@link MessageHandlerInterceptor} as
- * interception. These methods need to be given special treatment when invoking handlers. Matching interception need to
+ * interceptors. These methods need to be given special treatment when invoking handlers. Matching interceptors need to
  * be invoked first, allowing them to proceed the invocation chain.
  * <p>
- * This definition also recognizes interception only acting on the response. These must be meta-annotated with
+ * This definition also recognizes interceptors only acting on the response. These must be meta-annotated with
  * {@link ResultHandler}.
  *
  * @author Allard Buijze

@@ -84,7 +84,7 @@ import java.util.function.Supplier;
  * </pre>
  * </code>
  * <p/>
- * If you use {@code @CommandHandler} annotation on the aggregate, you do not need to configure any additional command
+ * If you use {@code @CommandHandler} annotations on the aggregate, you do not need to configure any additional command
  * handlers. In that case, no configuration is required:
  * <p/>
  * Providing the "given" events using the {@link #given(Object...)} or

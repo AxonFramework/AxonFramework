@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Implementation of a {@link ChildEntity} that uses annotation on a target entity to resolve event and command
+ * Implementation of a {@link ChildEntity} that uses annotations on a target entity to resolve event and command
  * handlers.
  *
  * @param <P> the parent entity type

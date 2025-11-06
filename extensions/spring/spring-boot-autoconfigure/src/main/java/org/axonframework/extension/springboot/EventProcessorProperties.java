@@ -58,7 +58,7 @@ public class EventProcessorProperties {
     }
 
     /**
-     * The processor modes of an {@link EventProcessor}.
+     * The processing modes of an {@link EventProcessor}.
      */
     public enum Mode {
         /**

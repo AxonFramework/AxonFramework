@@ -43,10 +43,10 @@ public class DefaultMessageDispatchInterceptorChain<M extends Message>
     private final BiFunction<? super M, ProcessingContext, MessageStream<?>> interceptingDispatcher;
 
     /**
-     * Constructs a {@code DefaultMessageDispatchInterceptorChain} from the given {@code interception} without a
+     * Constructs a {@code DefaultMessageDispatchInterceptorChain} from the given {@code interceptors} without a
      * terminal operation once the end of the interceptor chain has been reached.
      *
-     * @param interceptors The list of dispatch interceptors  that are part of this chain.
+     * @param interceptors The list of dispatch interceptors that are part of this chain.
      */
     public DefaultMessageDispatchInterceptorChain(
             @Nonnull Collection<MessageDispatchInterceptor<? super M>> interceptors
@@ -55,10 +55,10 @@ public class DefaultMessageDispatchInterceptorChain<M extends Message>
     }
 
     /**
-     * Constructs a {@code DefaultMessageDispatchInterceptorChain} from the given {@code interceptors }, invoking the
+     * Constructs a {@code DefaultMessageDispatchInterceptorChain} from the given {@code interceptors}, invoking the
      * given {@code terminal} operation when reaching the end of the interceptor chain.
      *
-     * @param interceptors The list of dispatch interceptors  that are part of this chain.
+     * @param interceptors The list of dispatch interceptors that are part of this chain.
      * @param terminal     function to be invoked after the chain processing.
      */
     public DefaultMessageDispatchInterceptorChain(

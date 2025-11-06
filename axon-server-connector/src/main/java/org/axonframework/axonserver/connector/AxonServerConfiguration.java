@@ -273,7 +273,7 @@ public class AxonServerConfiguration {
 //    private final Map<String, PersistentStreamSettings> persistentStreams = new HashMap<>();
 
     /**
-     * A toggle dictating whether to create persistent streams for all processors groups. Defaults to {@code false}.
+     * A toggle dictating whether to create persistent streams for all processing groups. Defaults to {@code false}.
      */
     private boolean autoPersistentStreamsEnable = false;
 
@@ -371,7 +371,7 @@ public class AxonServerConfiguration {
      * <p>
      * Each persistent stream will be named according to the following pattern:
      * <p>
-     * processorGroupName + "-stream"
+     * processingGroupName + "-stream"
      *
      * @return Return the settings for all persistent streams that will be created automatically.
      */
@@ -722,20 +722,20 @@ public class AxonServerConfiguration {
     }
 
     /**
-     * The interval (in ms.) application sends status update on event processor to Axon Server. Defaults to
+     * The interval (in ms.) application sends status update on event processors to Axon Server. Defaults to
      * {@code 500} milliseconds.
      *
-     * @return The interval (in ms.) application sends status update on event processor to Axon Server.
+     * @return The interval (in ms.) application sends status update on event processors to Axon Server.
      */
     public int getProcessorsNotificationRate() {
         return processorsNotificationRate;
     }
 
     /**
-     * Sets the interval (in ms.) application sends status update on event processor to Axon Server. Defaults to
+     * Sets the interval (in ms.) application sends status update on event processors to Axon Server. Defaults to
      * {@code 500} milliseconds.
      *
-     * @param processorsNotificationRate The interval (in ms.) application sends status update on event processor to
+     * @param processorsNotificationRate The interval (in ms.) application sends status update on event processors to
      *                                   Axon Server.
      */
     public void setProcessorsNotificationRate(int processorsNotificationRate) {
@@ -743,10 +743,10 @@ public class AxonServerConfiguration {
     }
 
     /**
-     * The initial delay (in ms.) before application sends first status update on event processor to Axon Server.
+     * The initial delay (in ms.) before application sends first status update on event processors to Axon Server.
      * Defaults to {@code 5000} milliseconds.
      *
-     * @return The initial delay (in ms.) before application sends first status update on event processor to Axon
+     * @return The initial delay (in ms.) before application sends first status update on event processors to Axon
      * Server.
      */
     public int getProcessorsNotificationInitialDelay() {
@@ -754,11 +754,11 @@ public class AxonServerConfiguration {
     }
 
     /**
-     * Sets the initial delay (in ms.) before application sends first status update on event processor to Axon Server.
+     * Sets the initial delay (in ms.) before application sends first status update on event processors to Axon Server.
      * Defaults to {@code 5000} milliseconds.
      *
      * @param processorsNotificationInitialDelay The initial delay (in ms.) before application sends first status update
-     *                                           on event processor to Axon Server.
+     *                                           on event processors to Axon Server.
      */
     public void setProcessorsNotificationInitialDelay(int processorsNotificationInitialDelay) {
         this.processorsNotificationInitialDelay = processorsNotificationInitialDelay;

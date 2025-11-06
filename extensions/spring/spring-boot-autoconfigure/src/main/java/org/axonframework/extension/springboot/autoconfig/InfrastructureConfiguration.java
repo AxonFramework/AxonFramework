@@ -37,7 +37,7 @@ public class InfrastructureConfiguration {
     /**
      * Provides Spring message handler lookup.
      *
-     * @return The lookup for annotation for later message handling registrations.
+     * @return The lookup for annotations for later message handling registrations.
      */
     @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
     @Bean
@@ -48,7 +48,7 @@ public class InfrastructureConfiguration {
     /**
      * Provides a Spring aggregate lookup.
      *
-     * @return The lookup scanning for annotation for later entity registrations.
+     * @return The lookup scanning for annotations for later entity registrations.
      */
     @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
     @Bean

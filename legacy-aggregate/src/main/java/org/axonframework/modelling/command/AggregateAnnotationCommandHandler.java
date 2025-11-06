@@ -64,8 +64,8 @@ import static org.axonframework.common.BuilderUtils.assertThat;
 import static org.axonframework.modelling.command.AggregateCreationPolicy.NEVER;
 
 /**
- * Command handler that registers a set of {@link CommandHandler} based on annotation of an aggregate. Those
- * annotation may appear on methods, in which case a specific aggregate instance needs to be targeted by the command,
+ * Command handler that registers a set of {@link CommandHandler} based on annotations of an aggregate. Those
+ * annotations may appear on methods, in which case a specific aggregate instance needs to be targeted by the command,
  * or on the constructor. The latter will create a new Aggregate instance, which is then stored in the repository.
  * <p>
  * Despite being an {@link CommandHandlingComponent} it does not actually handle the commands. During registration to

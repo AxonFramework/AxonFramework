@@ -22,7 +22,7 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 /**
  * An interceptor chain that manages the flow of a {@link Message} of type {@code M} through a chain of
- * {@link MessageDispatchInterceptor interceptors }.
+ * {@link MessageDispatchInterceptor interceptors}.
  * <p>
  * Interceptors may continue processing via this chain by calling the {@link #proceed(Message, ProcessingContext)}
  * method. Alternatively, they can block processing by returning without calling this method.

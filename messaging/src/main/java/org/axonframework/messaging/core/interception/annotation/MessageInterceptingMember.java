@@ -20,7 +20,7 @@ import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 
 /**
- * Marker interface for {@link MessageHandlingMember} instances that need to be treated as interception, rather than
+ * Marker interface for {@link MessageHandlingMember} instances that need to be treated as interceptors, rather than
  * regular members.
  *
  * @param <T> The type that the handler was declared on.

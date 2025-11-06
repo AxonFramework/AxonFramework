@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 
 
 /**
- * A {@link MessageHandlerInterceptor} that verifies authorization based on {@link Secured} annotation on the payload
+ * A {@link MessageHandlerInterceptor} that verifies authorization based on {@link Secured} annotations on the payload
  * of {@link Message Messages}.
  *
  * @param <T> The message type this interceptor can process

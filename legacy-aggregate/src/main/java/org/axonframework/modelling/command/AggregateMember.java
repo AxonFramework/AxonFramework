@@ -38,8 +38,8 @@ import java.lang.annotation.Target;
  * EntityId} annotated identifier field. Usually it is advantageous in terms of performance to store Entities in a Map
  * instead of Collection.
  * <p>
- * Note that if the designated Aggregate member has {@link CommandHandler} annotation to handle Command message, that
- * those may not be placed on an non-root Entity's constructor.
+ * Note that if the designated Aggregate member has {@link CommandHandler} annotations to handle Command message, that
+ * those may not be placed on a non-root Entity's constructor.
  *
  * @author Allard Buijze
  * @since 3.0

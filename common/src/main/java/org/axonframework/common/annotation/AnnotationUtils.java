@@ -40,12 +40,12 @@ public final class AnnotationUtils {
     /**
      * Boolean specifying that a {@link #findAnnotationAttributes(AnnotatedElement, String, boolean)} invocation should
      * only contain the exact attributes of the target annotation, overridden by identical attributes on meta-annotated
-     * annotation.
+     * annotations.
      */
     public static final boolean OVERRIDE_ONLY = true;
     /**
      * Boolean specifying that a {@link #findAnnotationAttributes(AnnotatedElement, String, boolean)} invocation should
-     * contain all attributes of the target annotation recursively taken into account attributes of other annotation
+     * contain all attributes of the target annotation recursively taken into account attributes of other annotations
      * the target is present on.
      */
     public static final boolean ADD_ALL = false;
@@ -82,10 +82,10 @@ public final class AnnotationUtils {
      * meta-annotation.
      * <p>
      * The map of attributes contains all the attributes found on the annotation, as well as attributes of any
-     * annotation on which the targeted annotation was placed (directly, or indirectly).
+     * annotations on which the targeted annotation was placed (directly, or indirectly).
      * <p>
-     * Note that the {@code value} property of annotation is reported as the simple class name (lowercase first
-     * character) of the annotation. This allows specific attribute overrides for annotation that have multiple
+     * Note that the {@code value} property of annotations is reported as the simple class name (lowercase first
+     * character) of the annotation. This allows specific attribute overrides for annotations that have multiple
      * meta-annotation with the {@code value} property.
      *
      * @param element        The element for find the annotation on
@@ -107,14 +107,14 @@ public final class AnnotationUtils {
      * indirectly) should be included. For {@link #OVERRIDE_ONLY}, only attribute overrides will be added on top of
      * that, whereas for {@link #ADD_ALL} all attributes on any meta-annotated level will be included in the result.
      * <p>
-     * Note that the {@code value} property of annotation is reported as the simple class name (lowercase first
-     * character) of the annotation. This allows specific attribute overrides for annotation that have multiple
+     * Note that the {@code value} property of annotations is reported as the simple class name (lowercase first
+     * character) of the annotation. This allows specific attribute overrides for annotations that have multiple
      * meta-annotation with the {@code value} property.
      *
      * @param element        the element for find the annotation on
      * @param annotationType the type of the annotation to find
      * @param overrideOnly   {@code boolean} defining whether or not to only take attribute overrides from
-     *                       meta-annotation into account for the result or to include all attributes from every level
+     *                       meta-annotations into account for the result or to include all attributes from every level
      * @return an optional that resolved to a map with attribute names and value, if the annotation is found
      */
     public static Optional<Map<String, Object>> findAnnotationAttributes(AnnotatedElement element,
@@ -129,7 +129,7 @@ public final class AnnotationUtils {
      * meta-annotation.
      * <p>
      * The map of attributes contains all the attributes found on the annotation, as well as attributes of any
-     * annotation on which the targeted annotation was placed (directly, or indirectly).
+     * annotations on which the targeted annotation was placed (directly, or indirectly).
      *
      * @param element        The element for find the annotation on
      * @param annotationName The name of the annotation to find
@@ -150,14 +150,14 @@ public final class AnnotationUtils {
      * indirectly) should be included. For {@link #OVERRIDE_ONLY}, only attribute overrides will be added on top of
      * that, whereas for {@link #ADD_ALL} all attributes on any meta-annotated level will be included in the result.
      * <p>
-     * Note that the {@code value} property of annotation is reported as the simple class name (lowercase first
-     * character) of the annotation. This allows specific attribute overrides for annotation that have multiple
+     * Note that the {@code value} property of annotations is reported as the simple class name (lowercase first
+     * character) of the annotation. This allows specific attribute overrides for annotations that have multiple
      * meta-annotation with the {@code value} property.
      *
      * @param element        the element for find the annotation on
      * @param annotationName the name of the annotation to find
      * @param overrideOnly   {@code boolean} defining whether or not to only take attribute overrides from
-     *                       meta-annotation into account for the result or to include all attributes from every level
+     *                       meta-annotations into account for the result or to include all attributes from every level
      * @return an optional that resolved to a map with attribute names and value, if the annotation is found
      */
     public static Optional<Map<String, Object>> findAnnotationAttributes(AnnotatedElement element,
@@ -277,17 +277,17 @@ public final class AnnotationUtils {
      * <p>
      * Any {@link Annotation} classes which are directly annotated or meta-annotated with the given {@code subject} will
      * be stored in the {@code annotatedWithSubject} {@link Set}. The {@code visited} {@code Set} is used to ignore
-     * annotation which have already been validated.
+     * annotations which have already been validated.
      *
      * @param target               the annotation {@link Class} to validate if it is annotated with the given {@code
      *                             subject}
      * @param subject              the annotation {@link Class} to check whether it is present on the given {@code
-     *                             target}, directly or through meta-annotation
+     *                             target}, directly or through meta-annotations
      * @param annotatedWithSubject a {@link Set} to store all class' in which are annotated with the {@code subject},
-     *                             either directly or through meta-annotation
+     *                             either directly or through meta-annotations
      * @param visited              a {@link Set} containing all annotation class' which have been visited in the process
      *                             to overcome an endless validation loop
-     * @return {@code true} if the {@code target} or any meta-annotation of the {@code target} are annotated with the
+     * @return {@code true} if the {@code target} or any meta-annotations of the {@code target} are annotated with the
      * {@code subject}, {@code false} otherwise
      */
     public static boolean isAnnotatedWith(Class<? extends Annotation> target,

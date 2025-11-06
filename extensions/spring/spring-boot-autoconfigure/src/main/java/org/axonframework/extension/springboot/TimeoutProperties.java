@@ -36,7 +36,7 @@ public class TimeoutProperties {
 
     /**
      * Whether timeouts are enabled. Defaults to {@code true}. Setting this to false disabled all timeouts, even the
-     * ones set through the {@link MessageHandlerTimeout} annotation.
+     * ones set through the {@link MessageHandlerTimeout} annotations.
      */
     private boolean enabled = true;
 
@@ -54,7 +54,7 @@ public class TimeoutProperties {
 
     /**
      * Whether timeouts are enabled. Defaults to {@code true}. Setting this to false disabled all timeouts, even the
-     * ones set through the {@link MessageHandlerTimeout} annotation.
+     * ones set through the {@link MessageHandlerTimeout} annotations.
      *
      * @return whether timeouts are enabled
      */

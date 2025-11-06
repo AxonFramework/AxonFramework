@@ -32,7 +32,7 @@ import static org.axonframework.common.annotation.AnnotationUtils.isAnnotatedWit
 
 /**
  * Container for message handler attributes, constructed through inspecting an {@link AnnotatedElement}. It does so by
- * validating all (meta-)annotation of the given element for the presence of the {@link HasHandlerAttributes}
+ * validating all (meta-)annotations of the given element for the presence of the {@link HasHandlerAttributes}
  * annotation. Each found (meta-)annotation's attributes will be included.
  * <p>
  * This implementation can discover several collections of attributes. All attributes are prefixed with the simple name
