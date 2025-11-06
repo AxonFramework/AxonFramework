@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core;
 
-import org.axonframework.messaging.core.annotations.HandlerAttributes;
+import org.axonframework.messaging.core.annotation.HandlerAttributes;
 import org.junit.jupiter.api.*;
 
 import java.util.Collections;

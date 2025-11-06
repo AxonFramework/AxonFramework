@@ -20,9 +20,9 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.common.configuration.Configuration;
-import org.axonframework.messaging.core.annotations.FixedValueParameterResolver;
-import org.axonframework.messaging.core.annotations.ParameterResolver;
-import org.axonframework.messaging.core.annotations.ParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.FixedValueParameterResolver;
+import org.axonframework.messaging.core.annotation.ParameterResolver;
+import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;

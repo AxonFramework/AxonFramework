@@ -34,10 +34,10 @@ import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.QualifiedName;
-import org.axonframework.messaging.core.annotations.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.core.annotations.MultiParameterResolverFactory;
-import org.axonframework.messaging.core.annotations.ParameterResolverFactory;
-import org.axonframework.messaging.core.annotations.SimpleResourceParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.MultiParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.SimpleResourceParameterResolverFactory;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.conversion.json.JacksonConverter;
 

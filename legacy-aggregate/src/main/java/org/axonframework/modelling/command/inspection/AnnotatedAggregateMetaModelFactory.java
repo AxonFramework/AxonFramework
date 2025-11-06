@@ -16,19 +16,19 @@
 
 package org.axonframework.modelling.command.inspection;
 
-import org.axonframework.messaging.commandhandling.annotations.CommandHandlingMember;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandlingMember;
 import org.axonframework.common.IdentifierValidator;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.Message;
-import org.axonframework.messaging.core.annotations.AnnotatedHandlerInspector;
-import org.axonframework.messaging.core.annotations.ClasspathHandlerDefinition;
-import org.axonframework.messaging.core.annotations.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.core.annotations.HandlerDefinition;
-import org.axonframework.messaging.core.annotations.MessageHandlerInvocationException;
-import org.axonframework.messaging.core.annotations.MessageHandlingMember;
-import org.axonframework.messaging.core.annotations.ParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.AnnotatedHandlerInspector;
+import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.HandlerDefinition;
+import org.axonframework.messaging.core.annotation.MessageHandlerInvocationException;
+import org.axonframework.messaging.core.annotation.MessageHandlingMember;
+import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.AggregateRoot;

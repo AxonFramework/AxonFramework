@@ -18,7 +18,7 @@ package org.axonframework.test.saga;
 
 import org.axonframework.messaging.eventhandling.DomainEventMessage;
 import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.core.annotations.MessageHandlingMember;
+import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.modelling.saga.AssociationResolver;
 import org.axonframework.modelling.saga.PayloadAssociationResolver;
 import jakarta.annotation.Nonnull;

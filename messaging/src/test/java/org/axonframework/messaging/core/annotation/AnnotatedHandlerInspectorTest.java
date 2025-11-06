@@ -17,19 +17,19 @@
 package org.axonframework.messaging.core.annotation;
 
 import org.axonframework.messaging.commandhandling.CommandMessage;
-import org.axonframework.messaging.commandhandling.annotations.CommandHandler;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
 import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.annotations.EventHandler;
+import org.axonframework.messaging.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.core.MessageHandlerInterceptorChain;
-import org.axonframework.messaging.core.annotations.AnnotatedHandlerInspector;
-import org.axonframework.messaging.core.annotations.ClasspathHandlerDefinition;
-import org.axonframework.messaging.core.annotations.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.core.annotations.MessageHandlingMember;
-import org.axonframework.messaging.core.annotations.MethodInvokingMessageHandlingMember;
-import org.axonframework.messaging.core.annotations.ParameterResolverFactory;
-import org.axonframework.messaging.core.interception.annotations.MessageHandlerInterceptor;
-import org.axonframework.messaging.core.interception.annotations.MessageHandlerInterceptorMemberChain;
+import org.axonframework.messaging.core.annotation.AnnotatedHandlerInspector;
+import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.MessageHandlingMember;
+import org.axonframework.messaging.core.annotation.MethodInvokingMessageHandlingMember;
+import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.core.interception.annotation.MessageHandlerInterceptor;
+import org.axonframework.messaging.core.interception.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.common.utils.MockException;
 import org.junit.jupiter.api.*;
 import org.mockito.internal.util.collections.*;
@@ -46,7 +46,7 @@ import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
 import static org.axonframework.messaging.eventhandling.EventTestUtils.asEventMessage;
-import static org.axonframework.messaging.core.annotations.MessageStreamResolverUtils.resolveToStream;
+import static org.axonframework.messaging.core.annotation.MessageStreamResolverUtils.resolveToStream;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**

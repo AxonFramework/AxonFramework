@@ -16,9 +16,9 @@
 
 package org.axonframework.modelling.entity.domain.development;
 
-import org.axonframework.messaging.commandhandling.annotations.CommandHandler;
-import org.axonframework.messaging.commandhandling.annotations.RoutingKey;
-import org.axonframework.messaging.eventhandling.annotations.EventHandler;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
+import org.axonframework.messaging.commandhandling.annotation.RoutingKey;
+import org.axonframework.messaging.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 import org.axonframework.modelling.entity.domain.development.commands.ChangeDeveloperGithubUsername;
 import org.axonframework.modelling.entity.domain.development.events.DeveloperGithubUsernameChanged;

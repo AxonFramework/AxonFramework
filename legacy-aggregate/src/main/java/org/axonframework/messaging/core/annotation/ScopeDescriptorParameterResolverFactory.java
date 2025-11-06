@@ -21,8 +21,8 @@ import jakarta.annotation.Nullable;
 import org.axonframework.messaging.core.NoScopeDescriptor;
 import org.axonframework.messaging.core.Scope;
 import org.axonframework.messaging.core.ScopeDescriptor;
-import org.axonframework.messaging.core.annotations.ParameterResolver;
-import org.axonframework.messaging.core.annotations.ParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.ParameterResolver;
+import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Executable;

@@ -18,7 +18,7 @@ package org.axonframework.modelling.saga;
 
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.Metadata;
-import org.axonframework.messaging.core.annotations.MessageHandlingMember;
+import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 
 import jakarta.annotation.Nonnull;
 

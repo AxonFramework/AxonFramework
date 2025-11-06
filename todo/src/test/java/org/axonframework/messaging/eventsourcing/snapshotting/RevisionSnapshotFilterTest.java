@@ -20,7 +20,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.eventhandling.DomainEventData;
 import org.axonframework.messaging.eventhandling.DomainEventMessage;
 import org.axonframework.messaging.eventhandling.GenericDomainEventMessage;
-import org.axonframework.messaging.eventhandling.annotations.Event;
+import org.axonframework.messaging.eventhandling.annotation.Event;
 import org.axonframework.messaging.eventsourcing.eventstore.jpa.SnapshotEventEntry;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.conversion.Serializer;

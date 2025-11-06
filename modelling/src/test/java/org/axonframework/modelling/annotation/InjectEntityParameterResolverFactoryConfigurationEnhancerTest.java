@@ -19,7 +19,7 @@ package org.axonframework.modelling.annotation;
 import org.axonframework.common.configuration.DefaultComponentRegistry;
 import org.axonframework.common.configuration.LifecycleRegistry;
 import org.axonframework.common.configuration.Configuration;
-import org.axonframework.messaging.core.annotations.ParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 

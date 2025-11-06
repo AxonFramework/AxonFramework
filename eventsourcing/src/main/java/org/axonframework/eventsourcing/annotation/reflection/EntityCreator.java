@@ -21,7 +21,7 @@ import org.axonframework.common.configuration.Configuration;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.MessageTypeResolver;
-import org.axonframework.messaging.core.annotations.ParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.modelling.entity.EntityMetamodelBuilder;
 

@@ -22,11 +22,11 @@ import org.axonframework.messaging.core.unitofwork.transaction.NoTransactionMana
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.eventsourcing.snapshotting.AggregateSnapshotter;
-import org.axonframework.messaging.core.annotations.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.core.annotations.HandlerDefinition;
-import org.axonframework.messaging.core.annotations.HandlerEnhancerDefinition;
-import org.axonframework.messaging.core.annotations.MultiParameterResolverFactory;
-import org.axonframework.messaging.core.annotations.ParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.HandlerDefinition;
+import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
+import org.axonframework.messaging.core.annotation.MultiParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.extension.spring.config.annotation.HandlerDefinitionFactoryBean;
 import org.axonframework.extension.spring.config.annotation.SpringBeanDependencyResolverFactory;

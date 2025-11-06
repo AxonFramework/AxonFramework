@@ -17,7 +17,7 @@
 package org.axonframework.modelling.entity.annotation;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.commandhandling.annotations.RoutingKey;
+import org.axonframework.messaging.commandhandling.annotation.RoutingKey;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.modelling.entity.child.EventTargetMatcher;
 

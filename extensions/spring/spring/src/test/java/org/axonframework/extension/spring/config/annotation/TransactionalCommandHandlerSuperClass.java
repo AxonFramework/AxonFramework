@@ -16,7 +16,7 @@
 
 package org.axonframework.extension.spring.config.annotation;
 
-import org.axonframework.messaging.commandhandling.annotations.CommandHandler;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
 import org.springframework.security.access.annotation.Secured;
 
 /**

@@ -17,8 +17,8 @@
 package org.axonframework.messaging.core.annotation;
 
 import org.axonframework.messaging.core.Message;
-import org.axonframework.messaging.core.annotations.ParameterResolver;
-import org.axonframework.messaging.core.annotations.SimpleResourceParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.ParameterResolver;
+import org.axonframework.messaging.core.annotation.SimpleResourceParameterResolverFactory;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;

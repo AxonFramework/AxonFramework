@@ -18,9 +18,9 @@ package org.axonframework.messaging.tracing;
 
 import org.axonframework.common.BuilderUtils;
 import org.axonframework.messaging.core.Message;
-import org.axonframework.messaging.core.annotations.HandlerEnhancerDefinition;
-import org.axonframework.messaging.core.annotations.MessageHandlingMember;
-import org.axonframework.messaging.core.annotations.WrappedMessageHandlingMember;
+import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
+import org.axonframework.messaging.core.annotation.MessageHandlingMember;
+import org.axonframework.messaging.core.annotation.WrappedMessageHandlingMember;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Executable;

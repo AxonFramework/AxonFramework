@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.annotation;
 
-import org.axonframework.messaging.core.annotations.MessageHandler;
+import org.axonframework.messaging.core.annotation.MessageHandler;
 import org.axonframework.modelling.EntityIdResolver;
 
 import java.lang.annotation.ElementType;

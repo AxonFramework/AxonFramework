@@ -20,8 +20,8 @@ import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.core.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.core.MessageHandlerInterceptor;
 import org.axonframework.messaging.core.MessageStream;
-import org.axonframework.messaging.core.annotations.InterceptorChainParameterResolverFactory;
-import org.axonframework.messaging.core.annotations.MessageHandlingMember;
+import org.axonframework.messaging.core.annotation.InterceptorChainParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import jakarta.annotation.Nonnull;

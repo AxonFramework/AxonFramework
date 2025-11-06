@@ -28,9 +28,9 @@ import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.QualifiedName;
-import org.axonframework.messaging.core.annotations.ParameterResolver;
-import org.axonframework.messaging.core.annotations.ParameterResolverFactory;
-import org.axonframework.messaging.core.annotations.PayloadParameterResolver;
+import org.axonframework.messaging.core.annotation.ParameterResolver;
+import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.PayloadParameterResolver;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Constructor;

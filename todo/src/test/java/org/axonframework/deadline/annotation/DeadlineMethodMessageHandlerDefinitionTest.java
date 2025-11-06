@@ -17,8 +17,8 @@
 package org.axonframework.deadline.annotation;
 
 import org.axonframework.deadline.GenericDeadlineMessage;
-import org.axonframework.messaging.eventhandling.annotations.AnnotationEventHandlerAdapter;
-import org.axonframework.messaging.eventhandling.annotations.EventHandler;
+import org.axonframework.messaging.eventhandling.annotation.AnnotationEventHandlerAdapter;
+import org.axonframework.messaging.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;

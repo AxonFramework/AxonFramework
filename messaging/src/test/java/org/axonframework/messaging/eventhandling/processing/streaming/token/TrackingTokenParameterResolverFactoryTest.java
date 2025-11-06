@@ -18,9 +18,9 @@ package org.axonframework.messaging.eventhandling.processing.streaming.token;
 
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.annotations.TrackingTokenParameterResolverFactory;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.annotation.TrackingTokenParameterResolverFactory;
 import org.axonframework.messaging.core.MessageType;
-import org.axonframework.messaging.core.annotations.ParameterResolver;
+import org.axonframework.messaging.core.annotation.ParameterResolver;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;

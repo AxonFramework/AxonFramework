@@ -22,7 +22,7 @@ import org.axonframework.messaging.eventhandling.processing.streaming.segmenting
 import org.axonframework.messaging.eventhandling.replay.ResetNotSupportedException;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.ResultMessage;
-import org.axonframework.messaging.core.annotations.MetadataValue;
+import org.axonframework.messaging.core.annotation.MetadataValue;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.modelling.saga.repository.AnnotatedSagaRepository;
 import org.axonframework.modelling.saga.repository.SagaStore;

@@ -17,7 +17,7 @@
 package org.axonframework.modelling.saga.metamodel;
 
 import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.core.annotations.MessageHandlingMember;
+import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.modelling.saga.AssociationValue;
 

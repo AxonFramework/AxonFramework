@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.entity.annotation;
 
-import org.axonframework.messaging.commandhandling.annotations.RoutingKey;
+import org.axonframework.messaging.commandhandling.annotation.RoutingKey;
 
 /**
  * Exception indicating that a child entity indicated a routing key that is not known on the incoming message. As such,

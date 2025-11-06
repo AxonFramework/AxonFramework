@@ -21,7 +21,7 @@ import jakarta.annotation.Nullable;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandResultMessage;
 import org.axonframework.messaging.commandhandling.GenericCommandResultMessage;
-import org.axonframework.messaging.commandhandling.annotations.CommandHandlingMember;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandlingMember;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
@@ -33,9 +33,9 @@ import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.QualifiedName;
-import org.axonframework.messaging.core.annotations.AnnotatedHandlerInspector;
-import org.axonframework.messaging.core.annotations.MessageHandlingMember;
-import org.axonframework.messaging.core.annotations.ParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.AnnotatedHandlerInspector;
+import org.axonframework.messaging.core.annotation.MessageHandlingMember;
+import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.conversion.MessageConverter;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.modelling.annotation.AnnotationBasedEntityEvolvingComponent;
@@ -63,7 +63,7 @@ import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.StreamSupport.stream;
-import static org.axonframework.messaging.core.annotations.AnnotatedHandlerInspector.inspectType;
+import static org.axonframework.messaging.core.annotation.AnnotatedHandlerInspector.inspectType;
 
 /**
  * An {@link EntityMetamodel} implementation that uses reflection to inspect the entity. It will detect annotated

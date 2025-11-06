@@ -16,14 +16,14 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import org.axonframework.messaging.commandhandling.annotations.Command;
-import org.axonframework.messaging.eventhandling.annotations.Event;
+import org.axonframework.messaging.commandhandling.annotation.Command;
+import org.axonframework.messaging.eventhandling.annotation.Event;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.MessageTypeResolver;
-import org.axonframework.messaging.core.annotations.AnnotationMessageTypeResolver;
-import org.axonframework.messaging.core.annotations.AnnotationMessageTypeResolver.AnnotationSpecification;
-import org.axonframework.messaging.core.annotations.Message;
-import org.axonframework.messaging.queryhandling.annotations.Query;
+import org.axonframework.messaging.core.annotation.AnnotationMessageTypeResolver;
+import org.axonframework.messaging.core.annotation.AnnotationMessageTypeResolver.AnnotationSpecification;
+import org.axonframework.messaging.core.annotation.Message;
+import org.axonframework.messaging.queryhandling.annotation.Query;
 import org.junit.jupiter.api.*;
 
 import java.lang.annotation.Retention;

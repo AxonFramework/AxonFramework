@@ -18,16 +18,16 @@ package org.axonframework.messaging.core.annotation;
 
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.annotations.EventHandler;
+import org.axonframework.messaging.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
-import org.axonframework.messaging.core.annotations.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.core.annotations.HandlerAttributes;
-import org.axonframework.messaging.core.annotations.MethodInvokingMessageHandlingMember;
+import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.HandlerAttributes;
+import org.axonframework.messaging.core.annotation.MethodInvokingMessageHandlingMember;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;
 
-import static org.axonframework.messaging.core.annotations.MessageStreamResolverUtils.resolveToStream;
+import static org.axonframework.messaging.core.annotation.MessageStreamResolverUtils.resolveToStream;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**

@@ -18,8 +18,8 @@ package org.axonframework.messaging.queryhandling;
 
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.conversion.DelegatingMessageConverter;
-import org.axonframework.messaging.queryhandling.annotations.AnnotatedQueryHandlingComponent;
-import org.axonframework.messaging.queryhandling.annotations.QueryHandler;
+import org.axonframework.messaging.queryhandling.annotation.AnnotatedQueryHandlingComponent;
+import org.axonframework.messaging.queryhandling.annotation.QueryHandler;
 import org.axonframework.conversion.PassThroughConverter;
 import org.junit.jupiter.api.*;
 import reactor.core.publisher.Flux;

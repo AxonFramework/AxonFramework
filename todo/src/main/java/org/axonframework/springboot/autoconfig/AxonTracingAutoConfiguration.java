@@ -28,7 +28,7 @@ import org.axonframework.messaging.eventhandling.tracing.EventProcessorSpanFacto
 import org.axonframework.messaging.eventsourcing.snapshotting.DefaultSnapshotterSpanFactory;
 import org.axonframework.messaging.eventsourcing.snapshotting.SnapshotterSpanFactory;
 import org.axonframework.extension.springboot.autoconfig.AxonServerAutoConfiguration;
-import org.axonframework.messaging.core.annotations.HandlerEnhancerDefinition;
+import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
 import org.axonframework.modelling.command.DefaultRepositorySpanFactory;
 import org.axonframework.modelling.command.RepositorySpanFactory;
 import org.axonframework.modelling.saga.DefaultSagaManagerSpanFactory;

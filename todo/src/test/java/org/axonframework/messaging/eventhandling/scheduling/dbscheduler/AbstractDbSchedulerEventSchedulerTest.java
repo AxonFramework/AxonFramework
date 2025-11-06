@@ -25,7 +25,7 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.eventhandling.EventBus;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.eventhandling.annotations.Event;
+import org.axonframework.messaging.eventhandling.annotation.Event;
 import org.axonframework.messaging.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.messaging.eventhandling.scheduling.java.SimpleScheduleToken;
 import org.axonframework.messaging.core.MessageType;
