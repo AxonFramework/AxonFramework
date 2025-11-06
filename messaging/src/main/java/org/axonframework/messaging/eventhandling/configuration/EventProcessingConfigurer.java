@@ -128,7 +128,7 @@ public class EventProcessingConfigurer {
      * {@link EventProcessorConfiguration}, allowing access to application-wide components when setting defaults.
      * <p>
      * Common use cases include setting default {@link UnitOfWorkFactory}, error
-     * handlers, or processors policies that should apply to all processors unless explicitly overridden.
+     * handlers, or processing policies that should apply to all processors unless explicitly overridden.
      *
      * @param configureDefaults A function that receives the Axon configuration and {@link EventProcessorConfiguration},
      *                          returning a modified {@link EventProcessorConfiguration} with the desired defaults
@@ -184,9 +184,9 @@ public class EventProcessingConfigurer {
      * Provides access to configure {@link SubscribingEventProcessor} instances through
      * the {@link SubscribingEventProcessorsConfigurer}.
      * <p>
-     * Use this method to define specific subscribing event processing, set their configurations, and register event
+     * Use this method to define specific subscribing event processors, set their configurations, and register event
      * handling components. The provided function receives the module for
-     * {@link SubscribingEventProcessor}s and can register individual processing or
+     * {@link SubscribingEventProcessor}s and can register individual processors or
      * configure module-wide settings.
      *
      * @param processorsModuleTask A function that configures the {@link SubscribingEventProcessorsConfigurer}.

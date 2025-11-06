@@ -54,7 +54,7 @@ import java.util.function.Supplier;
  * case to prepare the fixture for test execution.
  * <p/>
  * The fixture is initialized using a Command Handler that expects an {@code @CommandHandler} aggregate. If you have
- * implemented your own command handler (either using annotation, or by implementing the {@link LegacyMessageHandler}
+ * implemented your own command handler (either using annotations, or by implementing the {@link LegacyMessageHandler}
  * interface), you must register the command handler using {@link #registerAnnotatedCommandHandler(Object)} or
  * {@link #registerCommandHandler(Class, LegacyMessageHandler)}, respectively. A typical command handler will require a
  * repository. The test fixture initializes an Event Sourcing Repository, which can be obtained using

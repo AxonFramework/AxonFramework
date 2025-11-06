@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Description of an Exception received from a remote source. Allows for correct de-/conversion of the cause of
+ * Description of an Exception received from a remote source. Allows for correct conversion of the cause of
  * Exceptions without requiring any knowledge on the Exception classes.
  *
  * @author Steven van Beelen

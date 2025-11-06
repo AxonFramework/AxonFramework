@@ -36,7 +36,7 @@ import jakarta.annotation.Nonnull;
  * <p>
  * The {@link SequencingPolicy} annotation can be applied either directly to the handler method or to the declaring
  * class. When applied to the class, all handler methods in that class will inherit the sequencing policy. Method-level
- * annotation take precedence over class-level annotation.
+ * annotations take precedence over class-level annotations.
  *
  * @author Mateusz Nowak
  * @since 5.0.0

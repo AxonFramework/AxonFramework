@@ -36,7 +36,7 @@ public interface ForwardingMode<T extends Message> {
      * Initializes an instance of a {@link ForwardingMode}.
      *
      * @param member      The {@link java.lang.reflect.Member} to apply a ForwardingMode on. Provided to be able to
-     *                    check for annotation attributes which might assist in the forwarding process.
+     *                    check for annotations attributes which might assist in the forwarding process.
      * @param childEntity A {@link EntityModel} constructed from the given {@code field}.
      */
     default void initialize(@Nonnull Member member, @Nonnull EntityModel childEntity) {

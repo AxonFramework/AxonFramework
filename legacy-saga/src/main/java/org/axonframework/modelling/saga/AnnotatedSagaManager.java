@@ -37,7 +37,7 @@ import jakarta.annotation.Nonnull;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
- * Implementation of the SagaManager that uses annotation on the Sagas to describe the lifecycle management. This
+ * Implementation of the SagaManager that uses annotations on the Sagas to describe the lifecycle management. This
  * implementation can manage several types of Saga in a single AnnotatedSagaManager.
  *
  * @param <T> The type of Saga managed by this instance

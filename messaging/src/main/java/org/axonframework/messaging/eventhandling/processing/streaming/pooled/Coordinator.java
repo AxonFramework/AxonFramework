@@ -885,7 +885,7 @@ class Coordinator {
         /**
          * Compares the maximum number of segments that can be claimed by a node for a fair distribution of the segments
          * among available processor nodes. Releases extra segments claimed by this event processor instance to be
-         * available for claim by other processing.
+         * available for claim by other processors.
          *
          * @return {@code true} if segments were released, {@code false} otherwise.
          */
