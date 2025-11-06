@@ -245,7 +245,14 @@ class Coordinator {
      */
     public CompletableFuture<Boolean> splitSegment(int segmentId) {
         CompletableFuture<Boolean> result = new CompletableFuture<>();
-        coordinatorTasks.add(new SplitTask(result, name, segmentId, workPackages, tokenStore, unitOfWorkFactory));
+        coordinatorTasks.add(new SplitTask(result,
+                                           name,
+                                           segmentId,
+                                           workPackages,
+                                           releasesDeadlines,
+                                           tokenStore,
+                                           unitOfWorkFactory,
+                                           clock));
         scheduleCoordinator();
         return result;
     }
@@ -265,7 +272,14 @@ class Coordinator {
      */
     public CompletableFuture<Boolean> mergeSegment(int segmentId) {
         CompletableFuture<Boolean> result = new CompletableFuture<>();
-        coordinatorTasks.add(new MergeTask(result, name, segmentId, workPackages, tokenStore, unitOfWorkFactory));
+        coordinatorTasks.add(new MergeTask(result,
+                                           name,
+                                           segmentId,
+                                           workPackages,
+                                           releasesDeadlines,
+                                           tokenStore,
+                                           unitOfWorkFactory,
+                                           clock));
         scheduleCoordinator();
         return result;
     }
