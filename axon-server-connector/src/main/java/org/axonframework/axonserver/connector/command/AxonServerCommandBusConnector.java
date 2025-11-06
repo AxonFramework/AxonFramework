@@ -63,6 +63,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
     private Handler incomingHandler;
     private final Map<QualifiedName, Registration> subscriptions = new ConcurrentHashMap<>();
     private final ShutdownLatch shutdownLatch = new ShutdownLatch();
+    private final ConcurrentHashMap<String, CompletableFuture<?>> commandsInProgress = new ConcurrentHashMap<>();
 
     /**
      * Creates a new {@code AxonServerConnector} that communicate with Axon Server using the provided
@@ -131,12 +132,15 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
     private CompletableFuture<CommandResponse> handle(Command command) {
         logger.debug("Received incoming command [{}]", command.getName());
         try {
-            CompletableFuture<CommandResponse> result = new CompletableFuture<>();
+            CompletableFuture<CommandResponse> result = new CompletableFuture<CommandResponse>()
+                    .whenComplete((r, e) -> commandsInProgress.remove(command.getMessageIdentifier()));
+            commandsInProgress.put(command.getMessageIdentifier(), result);
             incomingHandler.handle(CommandConverter.convertCommand(command),
                                    new FutureResultCallback(result, command));
             return result;
         } catch (Exception e) {
             logger.error("Error processing incoming command: {}", command.getName(), e);
+            commandsInProgress.remove(command.getMessageIdentifier());
             CompletableFuture<CommandResponse> errorResult = new CompletableFuture<>();
             errorResult.completeExceptionally(e);
             return errorResult;
@@ -160,20 +164,27 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
 
     /**
      * Disconnect the command bus for receiving commands from Axon Server, by unsubscribing all registered command
-     * handlers.
+     * handlers and waiting for in-flight commands to complete.
      * <p>
      * This shutdown operation is performed in the {@link Phase#INBOUND_COMMAND_CONNECTOR}
      * phase.
      *
-     * @return A completable future that resolves once the {@link AxonServerConnection#commandChannel()} has prepared
-     * disconnecting.
+     * @return A completable future that completed once the {@link AxonServerConnection#commandChannel()} has prepared
+     * disconnected and handled all in-flight incoming messages.
      */
     public CompletableFuture<Void> disconnect() {
         if (!connection.isConnected()) {
             return CompletableFuture.completedFuture(null);
         }
         logger.trace("Disconnecting the AxonServerCommandBusConnector.");
-        return connection.commandChannel().prepareDisconnect();
+        return connection.commandChannel()
+                         .prepareDisconnect()
+                         .thenCompose(r -> commandsInProgress.values()
+                                                             .stream()
+                                                             .reduce(FutureUtils.emptyCompletedFuture(),
+                                                                     CompletableFuture::allOf))
+                         .thenRun(() -> {
+                         });
     }
 
     /**

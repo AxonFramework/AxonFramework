@@ -54,7 +54,7 @@ class RecordingCommandBusTest {
         var result = testSubject.dispatch(secondTestCommand, null);
 
         Message commandResultMessage = result.get();
-        if (commandResultMessage instanceof CommandResultMessage cmr && cmr.isExceptional()) {
+        if (commandResultMessage.payload() instanceof Exception) {
             fail("Didn't expect handling to fail");
         }
         assertNull(commandResultMessage.payload(),
@@ -74,7 +74,7 @@ class RecordingCommandBusTest {
         testSubject.dispatch(firstTestCommand, null);
 
         var commandResultMessage = testSubject.dispatch(secondTestCommand, null).get();
-        if (commandResultMessage instanceof CommandResultMessage cmr && cmr.isExceptional()) {
+        if (commandResultMessage.payload() instanceof Exception) {
             fail("Didn't expect handling to fail");
         }
         assertEquals("callbackResult", commandResultMessage.payload());

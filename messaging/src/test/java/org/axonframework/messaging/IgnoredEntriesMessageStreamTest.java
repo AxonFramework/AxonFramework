@@ -34,30 +34,30 @@ import static org.junit.jupiter.api.Assertions.*;
 class IgnoredEntriesMessageStreamTest extends MessageStreamTest<Message> {
 
     @Override
-    MessageStream<Message> completedTestSubject(List<Message> messages) {
+    protected MessageStream<Message> completedTestSubject(List<Message> messages) {
         Assumptions.assumeTrue(messages.isEmpty(), "EmptyMessageStream ignores entries");
         return MessageStream.fromIterable(messages).ignoreEntries();
     }
 
     @Override
-    MessageStream.Single<Message> completedSingleStreamTestSubject(Message message) {
+    protected MessageStream.Single<Message> completedSingleStreamTestSubject(Message message) {
         Assumptions.abort("IgnoredEntriesMessageStream ignores entries");
         return MessageStream.just(message).ignoreEntries();
     }
 
     @Override
-    MessageStream.Empty<Message> completedEmptyStreamTestSubject() {
+    protected MessageStream.Empty<Message> completedEmptyStreamTestSubject() {
         return MessageStream.empty().ignoreEntries().cast();
     }
 
     @Override
-    MessageStream<Message> failingTestSubject(List<Message> messages, Exception failure) {
+    protected MessageStream<Message> failingTestSubject(List<Message> messages, RuntimeException failure) {
         Assumptions.abort("IgnoredEntriesMessageStream ignores entries");
         return MessageStream.fromIterable(messages).concatWith(MessageStream.failed(failure)).ignoreEntries();
     }
 
     @Override
-    Message createRandomMessage() {
+    protected Message createRandomMessage() {
         return new GenericMessage(new MessageType("message"),
                                     "test-" + ThreadLocalRandom.current().nextInt(10000));
     }
@@ -76,6 +76,7 @@ class IgnoredEntriesMessageStreamTest extends MessageStreamTest<Message> {
         assertFalse(processed.get());
     }
 
+    @Override
     @Test
     void shouldEmitOriginalExceptionAsFailure() {
         var testSubject = MessageStream.failed(new MockException()).ignoreEntries();

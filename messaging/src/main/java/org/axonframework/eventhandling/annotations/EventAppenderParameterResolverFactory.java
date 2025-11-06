@@ -25,6 +25,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * {@link ParameterResolverFactory} that ensures the {@link EventAppender} is resolved in the context of the current
@@ -45,10 +46,10 @@ public class EventAppenderParameterResolverFactory implements ParameterResolverF
                                                            int parameterIndex) {
         if (EventAppender.class.isAssignableFrom(parameters[parameterIndex].getType())) {
             return new ParameterResolver<>() {
-                @Nullable
+                @Nonnull
                 @Override
-                public EventAppender resolveParameterValue(@Nonnull ProcessingContext context) {
-                    return EventAppender.forContext(context);
+                public CompletableFuture<EventAppender> resolveParameterValue(@Nonnull ProcessingContext context) {
+                    return CompletableFuture.completedFuture(EventAppender.forContext(context));
                 }
 
                 @Override

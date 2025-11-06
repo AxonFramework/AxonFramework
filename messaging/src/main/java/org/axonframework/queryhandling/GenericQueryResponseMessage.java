@@ -70,20 +70,6 @@ public class GenericQueryResponseMessage extends GenericResultMessage implements
     }
 
     /**
-     * Constructs a {@code GenericQueryResponseMessage} for the given {@code type} and {@code exception}.
-     *
-     * @param type               The {@link MessageType type} for this {@link QueryResponseMessage}.
-     * @param exception          The {@link Throwable} describing the error representing the response of this
-     *                           {@link QueryResponseMessage}.
-     * @param declaredResultType The declared result type of this {@link QueryResponseMessage}.
-     */
-    public GenericQueryResponseMessage(@Nonnull MessageType type,
-                                       @Nonnull Throwable exception,
-                                       @Nonnull Class<?> declaredResultType) {
-        this(type, exception, declaredResultType, Metadata.emptyInstance());
-    }
-
-    /**
      * Constructs a {@code GenericQueryResponseMessage} for the given {@code type}, {@code result}, and
      * {@code metadata}.
      * <p>
@@ -120,23 +106,6 @@ public class GenericQueryResponseMessage extends GenericResultMessage implements
     }
 
     /**
-     * Constructs a {@code GenericQueryResponseMessage} for the given {@code type}, {@code exception}, and
-     * {@code metadata}.
-     *
-     * @param type               The {@link MessageType type} for this {@link QueryResponseMessage}.
-     * @param exception          The {@link Throwable} describing the error representing the response of this
-     *                           {@link QueryResponseMessage}.
-     * @param declaredResultType The declared result type of this {@link QueryResponseMessage}.
-     * @param metadata           The metadata for this {@link QueryResponseMessage}.
-     */
-    public GenericQueryResponseMessage(@Nonnull MessageType type,
-                                       @Nonnull Throwable exception,
-                                       @Nonnull Class<?> declaredResultType,
-                                       @Nonnull Map<String, String> metadata) {
-        super(new GenericMessage(type, null, declaredResultType, metadata), exception);
-    }
-
-    /**
      * Constructs a {@code GenericQueryResponseMessage} for the given {@code delegate}, intended to reconstruct another
      * {@link QueryResponseMessage}.
      * <p>
@@ -149,24 +118,6 @@ public class GenericQueryResponseMessage extends GenericResultMessage implements
      */
     public GenericQueryResponseMessage(@Nonnull Message delegate) {
         super(delegate);
-    }
-
-    /**
-     * Constructs a {@code GenericQueryResponseMessage} for the given {@code delegate} and {@code exception} as a cause
-     * for the failure, intended to reconstruct another {@link QueryResponseMessage}.
-     * <p>
-     * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
-     * of Work.
-     *
-     * @param delegate  The {@link Message} containing {@link Message#payload() payload},
-     *                  {@link Message#type() type, {@link Message#identifier() identifier} and {@link
-     *                  Message#metadata() metadata} for the {@link QueryResponseMessage} to reconstruct.
-     * @param exception The {@link Throwable} describing the error representing the response of this
-     *                  {@link QueryResponseMessage}.
-     */
-    public GenericQueryResponseMessage(@Nonnull Message delegate,
-                                       @Nonnull Throwable exception) {
-        super(delegate, exception);
     }
 
     @Override
@@ -193,8 +144,6 @@ public class GenericQueryResponseMessage extends GenericResultMessage implements
                                                delegate.type(),
                                                convertedPayload,
                                                delegate.metadata());
-        return optionalExceptionResult().isPresent()
-                ? new GenericQueryResponseMessage(converted, optionalExceptionResult().get())
-                : new GenericQueryResponseMessage(converted);
+        return new GenericQueryResponseMessage(converted);
     }
 }

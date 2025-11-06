@@ -22,60 +22,14 @@ import org.axonframework.conversion.Converter;
 
 import java.lang.reflect.Type;
 import java.util.Map;
-import java.util.Optional;
 
 /**
- * A {@link Message} that represents a result of handling some form of request message.
+ * A {@link Message} that represents a result of handling some form of a request message.
  *
  * @author Milan Savic
  * @since 4.0.0
  */
 public interface ResultMessage extends Message {
-
-    /**
-     * Indicates whether the ResultMessage represents unsuccessful execution.
-     *
-     * @return {@code true} if execution was unsuccessful, {@code false} otherwise
-     * @deprecated Exceptional results will be reported as an exception or using a failed MessageStream
-     */
-    @Deprecated
-    boolean isExceptional();
-
-    /**
-     * Returns the Exception in case of exceptional result message or an empty {@link Optional} in case of successful
-     * execution.
-     *
-     * @return an {@link Optional} containing exception result or an empty Optional in case of a successful execution
-     * @deprecated Exceptional results will be reported as an exception or using a failed MessageStream
-     */
-    @Deprecated
-    Optional<Throwable> optionalExceptionResult();
-
-    /**
-     * Returns the exception result. This method is to be called if {@link #isExceptional()} returns {@code true}.
-     *
-     * @return a {@link Throwable} defining the exception result
-     * @throws IllegalStateException if this ResultMessage is not exceptional
-     * @deprecated Exceptional results will be reported as an exception or using a failed MessageStream
-     */
-    @Deprecated
-    default Throwable exceptionResult() throws IllegalStateException {
-        return optionalExceptionResult().orElseThrow(IllegalStateException::new);
-    }
-
-    /**
-     * If the this message contains an exception result, returns the details provided in the exception, if available. If
-     * this message does not carry an exception result, or the exception result doesn't provide any application-specific
-     * details, an empty optional is returned.
-     *
-     * @param <D> The type of application-specific details expected
-     * @return an optional containing application-specific error details, if present
-     * @deprecated Exceptional results will be reported as an exception or using a failed MessageStream
-     */
-    @Deprecated
-    default <D> Optional<D> exceptionDetails() {
-        return optionalExceptionResult().flatMap(HandlerExecutionException::resolveDetails);
-    }
 
     @Override
     @Nonnull

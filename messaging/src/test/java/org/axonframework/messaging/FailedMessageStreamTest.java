@@ -31,32 +31,32 @@ import static org.junit.jupiter.api.Assertions.*;
 class FailedMessageStreamTest extends MessageStreamTest<Message> {
 
     @Override
-    MessageStream<Message> completedTestSubject(List<Message> messages) {
+    protected MessageStream<Message> completedTestSubject(List<Message> messages) {
         Assumptions.abort("FailedMessageStream doesn't support successful streams");
         return null;
     }
 
     @Override
-    MessageStream.Single<Message> completedSingleStreamTestSubject(Message message) {
+    protected MessageStream.Single<Message> completedSingleStreamTestSubject(Message message) {
         Assumptions.abort("FailedMessageStream doesn't support successful streams");
         return null;
     }
 
     @Override
-    MessageStream.Empty<Message> completedEmptyStreamTestSubject() {
+    protected MessageStream.Empty<Message> completedEmptyStreamTestSubject() {
         Assumptions.abort("FailedMessageStream doesn't support successful streams");
         return null;
     }
 
     @Override
-    MessageStream<Message> failingTestSubject(List<Message> messages,
-                                                    Exception failure) {
+    protected MessageStream<Message> failingTestSubject(List<Message> messages,
+                                                        RuntimeException failure) {
         Assumptions.assumeTrue(messages.isEmpty(), "FailedMessageStream doesn't support content");
         return MessageStream.failed(failure);
     }
 
     @Override
-    Message createRandomMessage() {
+    protected Message createRandomMessage() {
         Assumptions.abort("FailedMessageStream doesn't support content");
         return null;
     }

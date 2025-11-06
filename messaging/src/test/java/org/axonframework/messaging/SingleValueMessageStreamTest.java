@@ -34,32 +34,32 @@ import static org.junit.jupiter.api.Assertions.*;
 class SingleValueMessageStreamTest extends MessageStreamTest<Message> {
 
     @Override
-    MessageStream<Message> completedTestSubject(List<Message> messages) {
+    protected MessageStream<Message> completedTestSubject(List<Message> messages) {
         Assumptions.assumeTrue(messages.size() == 1, "SingleValueMessageStream only supports a single value");
         return MessageStream.just(messages.getFirst());
     }
 
     @Override
-    MessageStream.Single<Message> completedSingleStreamTestSubject(Message message) {
+    protected MessageStream.Single<Message> completedSingleStreamTestSubject(Message message) {
         return MessageStream.just(message);
     }
 
     @Override
-    MessageStream.Empty<Message> completedEmptyStreamTestSubject() {
+    protected MessageStream.Empty<Message> completedEmptyStreamTestSubject() {
         Assumptions.abort("DelayedMessageStream does not support empty streams");
         return null;
     }
 
     @Override
-    MessageStream<Message> failingTestSubject(List<Message> messages,
-                                              Exception failure) {
+    protected MessageStream<Message> failingTestSubject(List<Message> messages,
+                                                        RuntimeException failure) {
         Assumptions.assumeTrue(messages.isEmpty(),
                                "SingleValueMessageStream only supports failures without regular values");
         return MessageStream.fromFuture(CompletableFuture.failedFuture(failure));
     }
 
     @Override
-    Message createRandomMessage() {
+    protected Message createRandomMessage() {
         return new GenericMessage(new MessageType("message"),
                                   "test-" + ThreadLocalRandom.current().nextInt(10000));
     }

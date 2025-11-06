@@ -35,9 +35,9 @@ import org.junit.jupiter.api.*;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
-import java.time.Duration;
 import java.util.Collections;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
@@ -137,10 +137,10 @@ public class FixtureTest_RegisteringMethodEnhancements {
             return AtomicBoolean.class.equals(parameters[parameterIndex].getType()) ? this : null;
         }
 
-        @Nullable
+        @Nonnull
         @Override
-        public AtomicBoolean resolveParameterValue(@Nonnull ProcessingContext context) {
-            return assertion;
+        public CompletableFuture<AtomicBoolean> resolveParameterValue(@Nonnull ProcessingContext context) {
+            return CompletableFuture.completedFuture(assertion);
         }
 
         @Override

@@ -29,6 +29,7 @@ import org.axonframework.messaging.unitofwork.ResourceOverridingProcessingContex
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 /**
@@ -109,9 +110,9 @@ public class InterceptorChainParameterResolverFactory
         return (MessageHandlerInterceptorChain<M>) processingContext.getResource(INTERCEPTOR_CHAIN_KEY);
     }
 
-    @Nullable
+    @Nonnull
     @Override
-    public MessageHandlerInterceptorChain<?> resolveParameterValue(@Nonnull ProcessingContext context) {
+    public CompletableFuture<MessageHandlerInterceptorChain<?>> resolveParameterValue(@Nonnull ProcessingContext context) {
         // TODO #3485 - The MessageHandlerInterceptorChain should be registered as a resource to the ProcessingContext
         //  and retrieved from the given context here upon resolution i.o. using a thread local.
         MessageHandlerInterceptorChain<?> interceptorChain =
@@ -120,9 +121,9 @@ public class InterceptorChainParameterResolverFactory
             interceptorChain = CURRENT.get();
         }
         if (interceptorChain != null) {
-            return interceptorChain;
+            return CompletableFuture.completedFuture(interceptorChain);
         }
-        throw new IllegalStateException("InterceptorChain should have been injected");
+        return CompletableFuture.failedFuture(new IllegalStateException("InterceptorChain should have been injected"));
     }
 
     @Override

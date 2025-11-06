@@ -38,9 +38,10 @@ import org.axonframework.eventsourcing.eventstore.AggregateBasedEventStorageEngi
 import org.axonframework.eventsourcing.eventstore.AggregateSequenceNumberPosition;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
+import org.axonframework.eventsourcing.eventstore.ContinuousMessageStream;
 import org.axonframework.eventsourcing.eventstore.EmptyAppendTransaction;
+import org.axonframework.eventsourcing.eventstore.EventCoordinator;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.messaging.LegacyResources;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventsourcing.eventstore.StreamSpliterator;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
@@ -48,8 +49,10 @@ import org.axonframework.eventstreaming.EventCriterion;
 import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.eventstreaming.Tag;
 import org.axonframework.messaging.Context;
+import org.axonframework.messaging.LegacyResources;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.SimpleEntry;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.conversion.Converter;
 import org.slf4j.Logger;
@@ -65,6 +68,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
@@ -95,14 +99,6 @@ import static org.axonframework.eventsourcing.eventstore.AggregateBasedEventStor
 public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
 
     private static final Logger logger = LoggerFactory.getLogger(AggregateBasedJpaEventStorageEngine.class);
-
-    /**
-     * The batch optimization is intended to *not* retrieve a second batch of events to cover for potential gaps in the
-     * first batch. This optimization is desirable for aggregate event streams, as these close once the end is reached.
-     * For token-based event reading the stream does not necessarily close once reaching the end, thus the optimization
-     * will block further event retrieval.
-     */
-    private static final boolean BATCH_OPTIMIZATION_DISABLED = false;
 
     private static final TypeReference<Map<String, String>> METADATA_MAP_TYPE_REF = new TypeReference<>() {
     };
@@ -151,6 +147,14 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     private final GapAwareTrackingTokenOperations tokenOperations;
 
     /**
+     * Tracks runnables for callbacks attached to streams for when new events may
+     * have become available.
+     */
+    private final Map<Object, Runnable> streamCallbacks = new ConcurrentHashMap<>();
+
+    private EventCoordinator.Handle eventCoordinatorHandle;
+
+    /**
      * Constructs an {@code AggregateBasedJpaEventStorageEngine} with the given parameters.
      *
      * @param entityManagerProvider The {@link jakarta.persistence.EntityManager} provided for this storage solution.
@@ -170,7 +174,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
         this.transactionManager = requireNonNull(transactionManager, "The transactionManager may not be null.");
         this.converter = requireNonNull(converter, "The converter may not be null.");
 
-        var config = requireNonNull(configurer, "the configurationOverride may not be null.")
+        var config = requireNonNull(configurer, "The configurer may not be null.")
                 .apply(AggregateBasedJpaEventStorageEngineConfiguration.DEFAULT);
         this.persistenceExceptionResolver = config.persistenceExceptionResolver();
         this.finalBatchPredicate = config.finalBatchPredicate();
@@ -180,6 +184,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
         this.maxGapOffset = config.maxGapOffset();
 
         this.tokenOperations = new GapAwareTrackingTokenOperations(config.gapTimeout(), logger);
+        this.eventCoordinatorHandle = config.eventCoordinator().startCoordination(this::onAppendDetected);
     }
 
     /**
@@ -226,6 +231,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
                 try {
                     entityManagerPersistEvents(aggregateSequencer, events);
                     tx.commit();
+                    eventCoordinatorHandle.onEventsAppended(events);
                     txResult.complete(null);
                 } catch (Exception e) {
                     tx.rollback();
@@ -367,14 +373,16 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     @Override
     public MessageStream<EventMessage> stream(@Nonnull StreamingCondition condition, @Nullable ProcessingContext processingContext) {
         GapAwareTrackingToken trackingToken = tokenOperations.assertGapAwareTrackingToken(condition.position());
-        StreamSpliterator<? extends TokenAndEvent> entrySpliterator = new StreamSpliterator<>(
-                lastItem -> queryTokensAndEventsBy(lastItem == null ? trackingToken : lastItem.token()),
-                batch -> BATCH_OPTIMIZATION_DISABLED
-        );
 
-        return MessageStream.fromStream(StreamSupport.stream(entrySpliterator, false),
-                                        tokenEntry -> convertToEventMessage(tokenEntry.event()),
-                                        AggregateBasedJpaEventStorageEngine::buildTrackedContext);
+        return new ContinuousMessageStream<TokenAndEvent>(
+            last -> queryTokensAndEventsBy(last == null ? trackingToken : last.token),
+            tae -> new SimpleEntry<>(convertToEventMessage(tae.event), buildTrackedContext(tae)),
+            (ms, r) -> {
+                streamCallbacks.put(ms, r);
+
+                return () -> streamCallbacks.remove(ms) != null;
+            }
+        );
     }
 
     private List<TokenAndEvent> queryTokensAndEventsBy(TrackingToken start) {
@@ -508,6 +516,22 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
         descriptor.describeProperty("converter", converter);
         descriptor.describeProperty("persistenceExceptionResolver", persistenceExceptionResolver);
         descriptor.describeProperty("tokenOperations", tokenOperations);
+    }
+
+    /**
+     * Releases any resources associated with this engine.
+     */
+    public void close() {
+        if (eventCoordinatorHandle != null) {
+            eventCoordinatorHandle.terminate();
+            eventCoordinatorHandle = null;
+        }
+    }
+
+    private void onAppendDetected() {
+        for (Runnable callback : streamCallbacks.values()) {
+            callback.run();
+        }
     }
 
     /**
