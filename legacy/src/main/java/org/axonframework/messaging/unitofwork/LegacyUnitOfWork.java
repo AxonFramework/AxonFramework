@@ -310,11 +310,11 @@ public interface LegacyUnitOfWork<T extends Message> {
             task.accept(ctx);
             return null;
         }, rollbackConfiguration);
-        if (resultMessage.isExceptional()) {
-            if (resultMessage.exceptionResult() instanceof RuntimeException exception) {
+        if (resultMessage.payload() instanceof Throwable e) {
+            if (e instanceof RuntimeException exception) {
                 throw exception;
             }
-            throw new RuntimeException(resultMessage.exceptionResult());
+            throw new RuntimeException(e);
         }
     }
 

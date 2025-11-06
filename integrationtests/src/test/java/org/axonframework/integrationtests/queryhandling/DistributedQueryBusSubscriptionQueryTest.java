@@ -44,7 +44,7 @@ public class DistributedQueryBusSubscriptionQueryTest extends AbstractSubscripti
     protected static final Logger logger = LoggerFactory.getLogger(DistributedQueryBusSubscriptionQueryTest.class);
 
     private static final AxonServerContainer container = new AxonServerContainer(
-            "docker.axoniq.io/axoniq/axonserver:2025.2.0-EAP2")
+            "docker.axoniq.io/axoniq/axonserver:2025.2.0")
             .withAxonServerHostname("localhost")
             .withDevMode(true)
             .withReuse(true);

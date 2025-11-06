@@ -17,8 +17,9 @@
 package org.axonframework.messaging.annotations;
 
 import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Interface for a mechanism that resolves handler method parameter values from a given {@link ProcessingContext}.
@@ -30,14 +31,14 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 public interface ParameterResolver<T> {
 
     /**
-     * Resolves the parameter value to for the {@code context}, or {@code null} if no suitable parameter value
-     * can be resolved.
+     * Asynchronously resolves the parameter value from the {@code context}.
      *
      * @param context The current processing context.
-     * @return The parameter value for the handler.
+     * @return A {@link CompletableFuture} that will complete with the parameter value, or completes with {@code null}.
+     * @since 5.0.0
      */
-    @Nullable
-    T resolveParameterValue(@Nonnull ProcessingContext context);
+    @Nonnull
+    CompletableFuture<T> resolveParameterValue(@Nonnull ProcessingContext context);
 
     /**
      * Indicates whether this resolver is capable of providing a value for the given {@code context}.

@@ -71,7 +71,7 @@ class ConfigurationParameterResolverFactoryTest {
         Message testMessage = new GenericMessage(new MessageType("message"), "test");
 
         assertNotNull(actual);
-        assertSame(commandBus, actual.resolveParameterValue(StubProcessingContext.forMessage(testMessage)));
+        assertSame(commandBus, actual.resolveParameterValue(StubProcessingContext.forMessage(testMessage)).join());
 
         verify(configuration).getOptionalComponent(CommandBus.class);
     }

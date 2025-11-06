@@ -90,7 +90,7 @@ class TimestampParameterResolverFactoryTest {
         final EventMessage message = EventTestUtils.asEventMessage("test");
         ProcessingContext context = StubProcessingContext.forMessage(message);
         assertTrue(resolver.matches(context));
-        assertEquals(message.timestamp(), resolver.resolveParameterValue(context));
+        assertEquals(message.timestamp(), resolver.resolveParameterValue(context).join());
     }
 
     @Test
@@ -101,7 +101,7 @@ class TimestampParameterResolverFactoryTest {
         final EventMessage message = EventTestUtils.asEventMessage("test");
         ProcessingContext context = StubProcessingContext.forMessage(message);
         assertTrue(resolver.matches(context));
-        assertEquals(message.timestamp(), resolver.resolveParameterValue(context));
+        assertEquals(message.timestamp(), resolver.resolveParameterValue(context).join());
     }
 
     @Test
@@ -124,7 +124,7 @@ class TimestampParameterResolverFactoryTest {
         final EventMessage message = EventTestUtils.asEventMessage("test");
         ProcessingContext context = StubProcessingContext.forMessage(message);
         assertTrue(resolver.matches(context), "Resolver should be a match for message " + message);
-        assertEquals(message.timestamp(), resolver.resolveParameterValue(context));
+        assertEquals(message.timestamp(), resolver.resolveParameterValue(context).join());
     }
 
     @Retention(RetentionPolicy.RUNTIME)

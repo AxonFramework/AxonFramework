@@ -29,28 +29,28 @@ import static org.junit.jupiter.api.Assertions.*;
 class CloseCallbackMessageStreamTest extends MessageStreamTest<Message> {
 
     @Override
-    MessageStream<Message> completedTestSubject(
+    protected MessageStream<Message> completedTestSubject(
             List<Message> messages) {
         return new CloseCallbackMessageStream<>(MessageStream.fromIterable(messages), () -> {
         });
     }
 
     @Override
-    MessageStream.Single<Message> completedSingleStreamTestSubject(
+    protected MessageStream.Single<Message> completedSingleStreamTestSubject(
             Message message) {
         return CloseCallbackMessageStream.single(MessageStream.just(message), () -> {
         });
     }
 
     @Override
-    MessageStream.Empty<Message> completedEmptyStreamTestSubject() {
+    protected MessageStream.Empty<Message> completedEmptyStreamTestSubject() {
         return CloseCallbackMessageStream.empty(MessageStream.empty(), () -> {
         });
     }
 
     @Override
-    MessageStream<Message> failingTestSubject(
-            List<Message> messages, Exception failure) {
+    protected MessageStream<Message> failingTestSubject(
+            List<Message> messages, RuntimeException failure) {
         return new CloseCallbackMessageStream<>(MessageStream.fromIterable(messages)
                                                              .concatWith(MessageStream.failed(failure)),
                                                 () -> {
@@ -58,7 +58,7 @@ class CloseCallbackMessageStreamTest extends MessageStreamTest<Message> {
     }
 
     @Override
-    Message createRandomMessage() {
+    protected Message createRandomMessage() {
             return new GenericMessage(new MessageType("message"),
                                       "test-" + ThreadLocalRandom.current().nextInt(10000));
     }

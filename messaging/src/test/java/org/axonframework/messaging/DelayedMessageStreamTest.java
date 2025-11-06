@@ -39,24 +39,24 @@ import static org.mockito.Mockito.*;
 class DelayedMessageStreamTest extends MessageStreamTest<Message> {
 
     @Override
-    MessageStream<Message> completedTestSubject(List<Message> messages) {
+    protected MessageStream<Message> completedTestSubject(List<Message> messages) {
         MessageStream<Message> testStream = MessageStream.fromIterable(messages);
         return DelayedMessageStream.create(CompletableFuture.completedFuture(testStream));
     }
 
     @Override
-    MessageStream.Single<Message> completedSingleStreamTestSubject(Message message) {
+    protected MessageStream.Single<Message> completedSingleStreamTestSubject(Message message) {
         return DelayedMessageStream.createSingle(CompletableFuture.completedFuture(MessageStream.just(message)));
     }
 
     @Override
-    MessageStream.Empty<Message> completedEmptyStreamTestSubject() {
+    protected MessageStream.Empty<Message> completedEmptyStreamTestSubject() {
         return new DelayedMessageStream.Empty<>(CompletableFuture.completedFuture(MessageStream.empty().cast()));
     }
 
     @Override
-    MessageStream<Message> failingTestSubject(List<Message> messages,
-                                                      Exception failure) {
+    protected MessageStream<Message> failingTestSubject(List<Message> messages,
+                                                        RuntimeException failure) {
         return DelayedMessageStream.create(CompletableFuture.completedFuture(
                 MessageStream.fromIterable(messages)
                              .concatWith(MessageStream.failed(failure)))
@@ -64,7 +64,7 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message> {
     }
 
     @Override
-    Message createRandomMessage() {
+    protected Message createRandomMessage() {
         return new GenericMessage(new MessageType("message"),
                                     "test-" + ThreadLocalRandom.current().nextInt(10000));
     }
