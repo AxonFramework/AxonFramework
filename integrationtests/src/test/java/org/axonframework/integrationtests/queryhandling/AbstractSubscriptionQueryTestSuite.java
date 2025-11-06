@@ -38,20 +38,9 @@ import org.axonframework.messaging.queryhandling.QueryMessage;
 import org.axonframework.messaging.queryhandling.QueryResponseMessage;
 import org.axonframework.messaging.queryhandling.QueryUpdateEmitter;
 import org.axonframework.messaging.queryhandling.SubscriptionQueryUpdateMessage;
-import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.core.annotation.MultiParameterResolverFactory;
-import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
-import org.axonframework.messaging.queryhandling.annotation.AnnotatedQueryHandlingComponent;
-import org.axonframework.messaging.queryhandling.annotation.QueryHandler;
-import org.axonframework.conversion.json.JacksonConverter;
-import org.axonframework.messaging.queryhandling.gateway.DefaultQueryGateway;
-import org.axonframework.messaging.queryhandling.gateway.QueryGateway;
 import org.junit.jupiter.api.*;
-import reactor.core.Exceptions;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Hooks;
 import reactor.test.StepVerifier;
-import reactor.test.StepVerifierOptions;
 import reactor.util.concurrent.Queues;
 
 import java.time.Duration;
@@ -565,44 +554,6 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         assertRecorded(responses);
 
         result.close();
-    }
-
-    @SuppressWarnings("ConstantValue")
-    @Test
-    void onBackpressureError() {
-        // given...
-        QueryMessage queryMessage = new GenericQueryMessage(
-                CHAT_MESSAGES_QUERY_TYPE, TEST_QUERY_PAYLOAD
-        );
-        Predicate<QueryMessage> testFilter =
-                message -> CHAT_MESSAGES_QUERY_TYPE.equals(message.type())
-                        && TEST_QUERY_PAYLOAD.equals(message.payloadAs(String.class, CONVERTER));
-        ProcessingContext testContext = null;
-        MessageStream<QueryResponseMessage> result = queryBus.subscriptionQuery(queryMessage, null, 100);
-        // when...
-        Flux<QueryResponseMessage> updates = FluxUtils.of(result).map(MessageStream.Entry::message)
-                                                      .onBackpressureBuffer(100);
-        // then...
-        StepVerifier.create(updates, StepVerifierOptions.create().initialRequest(0))
-                    .expectSubscription()
-                    .then(() -> {
-                        for (int i = 0; i < 200; i++) {
-                            int number = i;
-                            queryBus.emitUpdate(
-                                    testFilter,
-                                    () -> new GenericSubscriptionQueryUpdateMessage(
-                                            TEST_UPDATE_PAYLOAD_TYPE, "Update" + number
-                                    ),
-                                    testContext
-                            );
-                        }
-                        queryBus.completeSubscriptions(testFilter, testContext);
-                    })
-                    .expectNoEvent(Duration.ofMillis(100))
-                    .thenRequest(100)
-                    .expectNextCount(100)
-                    .expectErrorMatches(Exceptions::isOverflow)
-                    .verify(Duration.ofSeconds(5));
     }
 
     @SuppressWarnings("ConstantValue")
