@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.axonserver.connector.utils;
-
-import org.axonframework.axonserver.connector.util.Scheduler;
+package org.axonframework.axonserver.connector.util;
 
 import java.time.Instant;
 import java.util.LinkedList;

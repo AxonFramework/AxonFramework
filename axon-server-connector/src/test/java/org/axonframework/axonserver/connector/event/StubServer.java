@@ -18,8 +18,8 @@ package org.axonframework.axonserver.connector.event;
 
 import io.grpc.Server;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
-import org.axonframework.axonserver.connector.utils.ContextInterceptor;
-import org.axonframework.axonserver.connector.utils.PlatformService;
+import org.axonframework.axonserver.connector.util.ContextInterceptor;
+import org.axonframework.axonserver.connector.util.PlatformService;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;

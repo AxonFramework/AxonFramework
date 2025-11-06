@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.axonserver.connector.event.axon;
+package org.axonframework.axonserver.connector.util;
 
 import io.axoniq.axonserver.grpc.ErrorMessage;
 import org.axonframework.axonserver.connector.AxonServerException;

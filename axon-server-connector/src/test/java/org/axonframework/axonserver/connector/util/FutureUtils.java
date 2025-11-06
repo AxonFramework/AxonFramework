@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.axonserver.connector.utils;
+package org.axonframework.axonserver.connector.util;
 
 import java.util.concurrent.CompletableFuture;
 

@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package org.axonframework.axonserver.connector.event.axon;
+package org.axonframework.axonserver.connector.util;
 
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.event.StubServer;
-import org.axonframework.axonserver.connector.util.TcpUtils;
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.messaging.core.configuration.MessagingConfigurer;
 import org.junit.jupiter.api.*;
