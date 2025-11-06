@@ -21,7 +21,7 @@ import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
 import org.axonframework.eventsourcing.annotation.reflection.EntityCreator;
-import org.axonframework.modelling.annotations.InjectEntity;
+import org.axonframework.modelling.annotation.InjectEntity;
 
 import java.util.List;
 

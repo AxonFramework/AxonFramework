@@ -18,7 +18,7 @@ package org.axonframework.eventsourcing.annotation;
 
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.eventstreaming.EventCriteria;
-import org.axonframework.modelling.annotations.TargetEntityId;
+import org.axonframework.modelling.annotation.TargetEntityId;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

@@ -17,7 +17,7 @@
 package org.axonframework.integrationtests.testsuite.administration.commands;
 
 import org.axonframework.integrationtests.testsuite.administration.common.PersonIdentifier;
-import org.axonframework.modelling.annotations.TargetEntityId;
+import org.axonframework.modelling.annotation.TargetEntityId;
 
 public record CompleteTaskCommand(
         @TargetEntityId

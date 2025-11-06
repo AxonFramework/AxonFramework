@@ -29,7 +29,7 @@ import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.annotations.MetadataValue;
 import org.axonframework.messaging.core.annotations.SourceId;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
-import org.axonframework.modelling.annotations.AnnotationBasedEntityEvolvingComponent;
+import org.axonframework.modelling.annotation.AnnotationBasedEntityEvolvingComponent;
 import org.axonframework.conversion.json.JacksonConverter;
 import org.junit.jupiter.api.*;
 

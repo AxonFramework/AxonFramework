@@ -27,10 +27,12 @@ import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.QualifiedName;
-import org.axonframework.modelling.annotations.AnnotationBasedEntityIdResolver;
-import org.axonframework.modelling.annotations.EntityIdResolverDefinition;
+import org.axonframework.modelling.annotation.AnnotationBasedEntityIdResolver;
+import org.axonframework.modelling.annotation.TargetEntityId;
+import org.axonframework.modelling.annotation.EntityIdResolverDefinition;
 import org.axonframework.modelling.entity.EntityCommandHandler;
-import org.axonframework.modelling.entity.annotations.AnnotatedEntityIdResolverDefinition;
+import org.axonframework.modelling.entity.annotation.AnnotatedEntityIdResolverDefinition;
+import org.axonframework.modelling.entity.annotation.AnnotatedEntityMetamodel;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -91,7 +93,7 @@ import java.lang.annotation.Target;
  * </ol>
  * <p>
  * By default, the id is resolved using the {@link AnnotationBasedEntityIdResolver}, which resolves the
- * id based on the {@link org.axonframework.modelling.annotations.TargetEntityId} annotation on a field or method
+ * id based on the {@link TargetEntityId} annotation on a field or method
  * of the command payload. You can customize this behavior by providing a custom {@link #entityIdResolverDefinition()}.
  *
  * <h2>Polymorphic entities</h2>
@@ -128,7 +130,7 @@ public @interface EventSourcedEntity {
      * should be specified here. Classes that are not specified here will not be scanned.
      *
      * @return The concrete types of the entity that should be considered when building the
-     * {@link org.axonframework.modelling.entity.annotations.AnnotatedEntityMetamodel}.
+     * {@link AnnotatedEntityMetamodel}.
      */
     Class<?>[] concreteTypes() default {};
 
@@ -154,7 +156,7 @@ public @interface EventSourcedEntity {
      * The definition of the {@link EntityIdResolverDefinition} to use to resolve the entity id from a
      * {@link CommandMessage command message}. Defaults to the
      * {@link AnnotatedEntityIdResolverDefinition}, which resolves the entity id based on the
-     * {@link org.axonframework.modelling.annotations.TargetEntityId} annotation on a payload field or method, after
+     * {@link TargetEntityId} annotation on a payload field or method, after
      * converting the payload to the representation wanted by the entity.
      *
      * @return The definition to construct an {@link EntityIdResolverDefinition}.

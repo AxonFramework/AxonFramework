@@ -32,9 +32,9 @@ import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.annotations.ParameterResolverFactory;
 import org.axonframework.messaging.core.conversion.MessageConverter;
 import org.axonframework.modelling.EntityIdResolver;
-import org.axonframework.modelling.annotations.EntityIdResolverDefinition;
+import org.axonframework.modelling.annotation.EntityIdResolverDefinition;
 import org.axonframework.modelling.entity.EntityMetamodel;
-import org.axonframework.modelling.entity.annotations.AnnotatedEntityMetamodel;
+import org.axonframework.modelling.entity.annotation.AnnotatedEntityMetamodel;
 
 import java.util.Arrays;
 import java.util.Map;

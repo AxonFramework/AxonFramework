@@ -22,7 +22,7 @@ import org.axonframework.common.property.Property;
 import org.axonframework.common.property.PropertyAccessStrategy;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.modelling.annotations.TargetEntityIdMemberMismatchException;
+import org.axonframework.modelling.annotation.TargetEntityIdMemberMismatchException;
 
 import java.util.List;
 import java.util.Map;

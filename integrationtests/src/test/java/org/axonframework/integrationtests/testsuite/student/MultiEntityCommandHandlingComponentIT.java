@@ -34,7 +34,7 @@ import org.axonframework.messaging.core.unitofwork.UnitOfWork;
 import org.axonframework.modelling.EntityIdResolutionException;
 import org.axonframework.modelling.EntityIdResolver;
 import org.axonframework.modelling.StateManager;
-import org.axonframework.modelling.annotations.InjectEntity;
+import org.axonframework.modelling.annotation.InjectEntity;
 import org.axonframework.modelling.repository.ManagedEntity;
 import org.axonframework.conversion.Converter;
 import org.junit.jupiter.api.*;
