@@ -14,31 +14,35 @@
  * limitations under the License.
  */
 
-package org.axonframework.common.utils;
+package org.axonframework.common.util;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Mock exception that provides no stack trace.
+ * Stub Domain Event, used for testing purposes.
  *
  * @author Allard Buijze
- * @since 2.0
  */
-public class MockException extends RuntimeException {
+public class StubDomainEvent {
 
-    public MockException(String message) {
-        super(message);
+    private final String name;
+
+    public StubDomainEvent() {
+        this("name");
     }
 
-    public MockException() {
-        super("Mock");
+    @JsonCreator
+    public StubDomainEvent(@JsonProperty("name") String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
     }
 
     @Override
-    public synchronized Throwable fillInStackTrace() {
-        return this;
-    }
-
-    @Override
-    public StackTraceElement[] getStackTrace() {
-        return new StackTraceElement[]{};
+    public String toString() {
+        return "StubDomainEvent";
     }
 }

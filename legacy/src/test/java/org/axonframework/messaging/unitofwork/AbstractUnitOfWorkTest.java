@@ -24,7 +24,7 @@ import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.ResultMessage;
 import org.axonframework.messaging.core.correlation.ThrowingCorrelationDataProvider;
-import org.axonframework.common.utils.MockException;
+import org.axonframework.common.util.MockException;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -34,7 +34,6 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
-import static org.axonframework.messaging.core.GenericResultMessage.asResultMessage;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 

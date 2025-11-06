@@ -49,7 +49,7 @@ import java.util.concurrent.TimeUnit;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.axonframework.common.FutureUtils.emptyCompletedFuture;
-import static org.axonframework.common.utils.AssertUtils.assertWithin;
+import static org.axonframework.common.util.AssertUtils.assertWithin;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;

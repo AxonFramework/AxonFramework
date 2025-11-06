@@ -55,7 +55,7 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.axonframework.messaging.eventhandling.EventTestUtils.createEvent;
 import static org.axonframework.messaging.core.unitofwork.UnitOfWorkTestUtils.aUnitOfWork;
-import static org.axonframework.common.utils.AssertUtils.awaitSuccessfulCompletion;
+import static org.axonframework.common.util.AssertUtils.awaitSuccessfulCompletion;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 

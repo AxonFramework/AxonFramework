@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.common.utils;
+package org.axonframework.common.util;
 
 /**
  * Stub Domain Event, used for testing purposes.

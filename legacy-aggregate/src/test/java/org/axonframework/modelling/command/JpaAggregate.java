@@ -21,7 +21,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Version;
 import org.axonframework.common.IdentifierFactory;
-import org.axonframework.common.utils.StubDomainEvent;
+import org.axonframework.common.util.StubDomainEvent;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 

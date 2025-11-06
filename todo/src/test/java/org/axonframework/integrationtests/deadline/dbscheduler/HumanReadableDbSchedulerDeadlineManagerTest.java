@@ -37,8 +37,8 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import java.util.Objects;
 import javax.sql.DataSource;
 
-import static org.axonframework.common.utils.DbSchedulerTestUtil.getScheduler;
-import static org.axonframework.common.utils.DbSchedulerTestUtil.reCreateTable;
+import static org.axonframework.common.util.DbSchedulerTestUtil.getScheduler;
+import static org.axonframework.common.util.DbSchedulerTestUtil.reCreateTable;
 
 @Disabled("TODO #3065 - Revisit Deadline support")
 @ContextConfiguration

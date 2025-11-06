@@ -21,7 +21,6 @@ import org.axonframework.messaging.commandhandling.CommandHandler;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.GenericCommandMessage;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.commandhandling.retry.RetryingCommandBus;
 import org.axonframework.messaging.core.GenericMessage;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
@@ -29,7 +28,7 @@ import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.retry.RetryScheduler;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.common.utils.MockException;
+import org.axonframework.common.util.MockException;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 

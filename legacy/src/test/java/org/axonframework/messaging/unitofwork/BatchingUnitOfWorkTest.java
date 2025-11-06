@@ -22,7 +22,7 @@ import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.ResultMessage;
-import org.axonframework.common.utils.MockException;
+import org.axonframework.common.util.MockException;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -36,7 +36,6 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import static org.axonframework.messaging.core.GenericResultMessage.asResultMessage;
 import static org.axonframework.messaging.unitofwork.LegacyUnitOfWork.Phase.*;
 import static org.junit.jupiter.api.Assertions.*;
 

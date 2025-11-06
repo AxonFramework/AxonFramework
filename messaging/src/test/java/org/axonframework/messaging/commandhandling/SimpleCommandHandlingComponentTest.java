@@ -16,12 +16,11 @@
 
 package org.axonframework.messaging.commandhandling;
 
-import org.axonframework.messaging.commandhandling.*;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
-import org.axonframework.common.utils.MockException;
+import org.axonframework.common.util.MockException;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;

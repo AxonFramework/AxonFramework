@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.common.utils;
+package org.axonframework.common.util;
 
 import org.axonframework.messaging.eventhandling.AsyncInMemoryStreamableEventSource;
 import org.axonframework.messaging.eventhandling.EventMessage;

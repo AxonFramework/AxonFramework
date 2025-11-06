@@ -19,11 +19,8 @@ package org.axonframework.messaging.eventsourcing;
 import org.axonframework.messaging.eventhandling.DomainEventMessage;
 import org.axonframework.messaging.eventhandling.GenericDomainEventMessage;
 import org.axonframework.messaging.core.MessageType;
-import org.axonframework.messaging.eventsourcing.AggregateFactory;
-import org.axonframework.messaging.eventsourcing.GenericAggregateFactory;
-import org.axonframework.messaging.eventsourcing.IncompatibleAggregateException;
 import org.axonframework.modelling.command.StubAggregate;
-import org.axonframework.common.utils.MockException;
+import org.axonframework.common.util.MockException;
 import org.junit.jupiter.api.*;
 
 import java.util.UUID;

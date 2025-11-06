@@ -18,7 +18,7 @@ package org.axonframework.common.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.common.utils.StubLifecycleRegistry;
+import org.axonframework.common.util.StubLifecycleRegistry;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.common.utils;
+package org.axonframework.common.util;
 
 import com.github.kagkarlsson.scheduler.Scheduler;
 import com.github.kagkarlsson.scheduler.SchedulerBuilder;

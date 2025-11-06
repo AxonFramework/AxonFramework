@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core;
 
-import org.axonframework.common.utils.MockException;
+import org.axonframework.common.util.MockException;
 import org.junit.jupiter.api.*;
 
 import java.util.List;

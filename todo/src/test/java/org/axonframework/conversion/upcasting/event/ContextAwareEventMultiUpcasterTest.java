@@ -34,10 +34,10 @@ import org.axonframework.conversion.Serializer;
 import org.axonframework.conversion.SimpleSerializedType;
 import org.axonframework.conversion.json.JacksonSerializer;
 import org.axonframework.conversion.upcasting.Upcaster;
-import org.axonframework.common.utils.SecondStubEvent;
-import org.axonframework.common.utils.StubDomainEvent;
+import org.axonframework.common.util.SecondStubEvent;
+import org.axonframework.common.util.StubDomainEvent;
 import org.axonframework.utils.TestDomainEventEntry;
-import org.axonframework.common.utils.ThirdStubEvent;
+import org.axonframework.common.util.ThirdStubEvent;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;

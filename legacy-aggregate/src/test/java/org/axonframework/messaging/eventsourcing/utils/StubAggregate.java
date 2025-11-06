@@ -21,7 +21,7 @@ import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateLifecycle;
-import org.axonframework.common.utils.StubDomainEvent;
+import org.axonframework.common.util.StubDomainEvent;
 
 /**
  * @author Allard Buijze
