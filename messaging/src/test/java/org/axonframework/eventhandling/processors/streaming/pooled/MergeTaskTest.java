@@ -68,6 +68,9 @@ class MergeTaskTest {
     private CompletableFuture<Boolean> result;
     private MergeTask testSubject;
 
+    private final Map<Integer, java.time.Instant> releasesDeadlines = new HashMap<>();
+    private final java.time.Clock clock = java.time.Clock.systemUTC();
+
     @BeforeEach
     void setUp() {
         result = new CompletableFuture<>();
@@ -77,9 +80,11 @@ class MergeTaskTest {
         when(tokenStore.fetchSegment(eq(PROCESSOR_NAME), eq(SEGMENT_ONE.getSegmentId()), any()))
             .thenReturn(completedFuture(SEGMENT_ONE));
 
+        releasesDeadlines.clear();
+
         testSubject = new MergeTask(
-                result, PROCESSOR_NAME, SEGMENT_TO_MERGE, workPackages, tokenStore,
-                new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE)
+                result, PROCESSOR_NAME, SEGMENT_TO_MERGE, workPackages, releasesDeadlines, tokenStore,
+                new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE), clock
         );
     }
 
