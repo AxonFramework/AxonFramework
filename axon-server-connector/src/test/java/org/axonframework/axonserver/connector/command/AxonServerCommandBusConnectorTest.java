@@ -341,6 +341,7 @@ class AxonServerCommandBusConnectorTest {
 
     @Test
     void disconnectInvokesPrepareDisconnectOnCommandChannel() {
+        when(commandChannel.prepareDisconnect()).thenReturn(CompletableFuture.completedFuture(null));
         when(connection.isConnected()).thenReturn(true);
 
         testSubject.disconnect();
