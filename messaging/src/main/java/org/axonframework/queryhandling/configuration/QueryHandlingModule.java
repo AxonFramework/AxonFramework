@@ -17,10 +17,11 @@
 package org.axonframework.queryhandling.configuration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.configuration.ComponentBuilder;
-import org.axonframework.configuration.Configuration;
-import org.axonframework.configuration.Module;
-import org.axonframework.configuration.ModuleBuilder;
+import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.common.configuration.ComponentBuilder;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.configuration.Module;
+import org.axonframework.common.configuration.ModuleBuilder;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotations.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotations.ParameterResolverFactory;
@@ -56,7 +57,7 @@ import static java.util.Objects.requireNonNull;
  * </pre>
  * <p>
  * Note that users do not have to invoke {@link #build()} themselves when using this interface, as the
- * {@link org.axonframework.configuration.ApplicationConfigurer} takes care of that.
+ * {@link ApplicationConfigurer} takes care of that.
  *
  * @author Steven van Beelen
  * @since 5.0.0
@@ -110,7 +111,7 @@ public interface QueryHandlingModule extends Module, ModuleBuilder<QueryHandling
      * <p>
      * Every registered {@link QueryHandler} will be subscribed with the
      * {@link org.axonframework.queryhandling.QueryBus} of the
-     * {@link org.axonframework.configuration.ApplicationConfigurer} this module is given to.
+     * {@link ApplicationConfigurer} this module is given to.
      * <p>
      * Provides roughly two options for configuring query handlers. Firstly, a query handler can be registered as is,
      * through the {@link #queryHandler(QualifiedName, QueryHandler)} method. Secondly, if the query
@@ -129,7 +130,7 @@ public interface QueryHandlingModule extends Module, ModuleBuilder<QueryHandling
          * <p>
          * Once this module is finalized, the query handler will be subscribed with the
          * {@link org.axonframework.queryhandling.QueryBus} of the
-         * {@link org.axonframework.configuration.ApplicationConfigurer} the module is registered on.
+         * {@link ApplicationConfigurer} the module is registered on.
          *
          * @param queryName    The qualified name of the query the given {@code queryHandler} can handle.
          * @param queryHandler The query handler to register with this module.
@@ -146,7 +147,7 @@ public interface QueryHandlingModule extends Module, ModuleBuilder<QueryHandling
          * <p>
          * Once this module is finalized, the query handler from the {@code queryHandlerBuilder} will be subscribed with
          * the {@link org.axonframework.queryhandling.QueryBus} of the
-         * {@link org.axonframework.configuration.ApplicationConfigurer} the module is registered on.
+         * {@link ApplicationConfigurer} the module is registered on.
          *
          * @param queryName           The qualified name of the query the {@link QueryHandler} created by the given
          *                            {@code queryHandlerBuilder}.
@@ -167,7 +168,7 @@ public interface QueryHandlingModule extends Module, ModuleBuilder<QueryHandling
          * <p>
          * Once this module is finalized, the resulting {@link QueryHandlingComponent} from the
          * {@code handlingComponentBuilder} will be subscribed with the {@link org.axonframework.queryhandling.QueryBus}
-         * of the {@link org.axonframework.configuration.ApplicationConfigurer} the module is registered on.
+         * of the {@link ApplicationConfigurer} the module is registered on.
          *
          * @param handlingComponentBuilder A builder of a {@link QueryHandlingComponent}. Provides the
          *                                 {@link Configuration} to retrieve components from to use during construction
@@ -184,7 +185,7 @@ public interface QueryHandlingModule extends Module, ModuleBuilder<QueryHandling
          * <p>
          * This will scan the given {@code handlingComponentBuilder} for methods annotated with {@link QueryHandler} and
          * register them as query handlers for the {@link org.axonframework.queryhandling.QueryBus} of the
-         * {@link org.axonframework.configuration.ApplicationConfigurer}.
+         * {@link ApplicationConfigurer}.
          *
          * @param handlingComponentBuilder A builder of a {@link QueryHandlingComponent}. Provides the
          *                                 {@link Configuration} to retrieve components from to use during construction

@@ -18,6 +18,7 @@ package org.axonframework.extension.spring.config;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotations.Internal;
+import org.axonframework.common.configuration.LifecycleHandler;
 import org.springframework.context.SmartLifecycle;
 
 import java.util.concurrent.CompletableFuture;
@@ -28,7 +29,7 @@ import java.util.function.Supplier;
 
 /**
  * A {@link SmartLifecycle} implementation wrapping a
- * {@link org.axonframework.configuration.LifecycleHandler start-specific lifecycle handler} to allow it to be managed
+ * {@link LifecycleHandler start-specific lifecycle handler} to allow it to be managed
  * by Spring.
  *
  * @author Allard Buijze

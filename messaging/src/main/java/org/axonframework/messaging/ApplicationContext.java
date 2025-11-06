@@ -18,17 +18,19 @@ package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.configuration.ComponentNotFoundException;
+import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.ComponentNotFoundException;
 
 /**
  * An {@code ApplicationContext} is a container for components that are registered in the
- * {@link org.axonframework.configuration.ComponentRegistry} of the
- * {@link org.axonframework.configuration.ApplicationConfigurer}. It allows retrieval of components by their type and
+ * {@link ComponentRegistry} of the
+ * {@link ApplicationConfigurer}. It allows retrieval of components by their type and
  * optionally by their name.
  * <p>
  * This interface is typically used to retrieve components that are registered in the
- * {@link org.axonframework.configuration.ApplicationConfigurer}'s
- * {@link org.axonframework.configuration.ComponentRegistry}. It is designed to be used in places where you have access
+ * {@link ApplicationConfigurer}'s
+ * {@link ComponentRegistry}. It is designed to be used in places where you have access
  * to the {@link org.axonframework.messaging.unitofwork.ProcessingContext}.
  *
  * @author Mateusz Nowak

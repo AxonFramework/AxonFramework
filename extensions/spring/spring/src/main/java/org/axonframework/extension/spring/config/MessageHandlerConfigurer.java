@@ -20,12 +20,12 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.common.annotations.Internal;
-import org.axonframework.configuration.ComponentBuilder;
-import org.axonframework.configuration.ComponentRegistry;
-import org.axonframework.configuration.Configuration;
-import org.axonframework.configuration.ConfigurationEnhancer;
-import org.axonframework.configuration.Module;
-import org.axonframework.configuration.ModuleBuilder;
+import org.axonframework.common.configuration.ComponentBuilder;
+import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.configuration.ConfigurationEnhancer;
+import org.axonframework.common.configuration.Module;
+import org.axonframework.common.configuration.ModuleBuilder;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer.AdditionalComponentPhase;
 import org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer.CompletePhase;
@@ -56,7 +56,7 @@ import java.util.stream.Collectors;
  * type of message.
  * <p>
  * The beans will be lazily resolved to avoid circular dependencies if any these beans relies on the Axon
- * {@link org.axonframework.configuration.Configuration} to be available in the Application Context.
+ * {@link Configuration} to be available in the Application Context.
  * <p>
  * Typically, an application context would have an instance of this class registered for each type of message to
  * register.
@@ -73,7 +73,7 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
 
     /**
      * Registers the beans identified in given {@code beanRefs} as the given {@code type} of handler with the Axon
-     * {@link org.axonframework.configuration.Configuration}.
+     * {@link Configuration}.
      *
      * @param type     The type of handler to register the beans as.
      * @param beanRefs A list of bean identifiers to register.

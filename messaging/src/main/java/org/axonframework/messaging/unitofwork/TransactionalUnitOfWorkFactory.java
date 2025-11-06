@@ -17,8 +17,8 @@
 package org.axonframework.messaging.unitofwork;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.transaction.Transaction;
-import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.messaging.unitofwork.transaction.Transaction;
+import org.axonframework.messaging.unitofwork.transaction.TransactionManager;
 import org.axonframework.messaging.Context;
 
 import java.util.Objects;

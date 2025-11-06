@@ -16,7 +16,7 @@
 package org.axonframework.extension.springboot.autoconfig;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.configuration.DecoratorDefinition;
+import org.axonframework.common.configuration.DecoratorDefinition;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;

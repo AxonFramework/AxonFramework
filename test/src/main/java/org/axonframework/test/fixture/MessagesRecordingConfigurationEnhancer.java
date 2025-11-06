@@ -18,10 +18,9 @@ package org.axonframework.test.fixture;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.configuration.ComponentRegistry;
-import org.axonframework.configuration.ConfigurationEnhancer;
+import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 
 import java.util.Objects;

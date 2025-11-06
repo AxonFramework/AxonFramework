@@ -33,7 +33,8 @@ import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.lifecycle.ShutdownLatch;
+import org.axonframework.common.lifecycle.Phase;
+import org.axonframework.common.lifecycle.ShutdownLatch;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -195,7 +196,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
     /**
      * Disconnect the query bus for receiving queries from Axon Server, by unsubscribing all registered query handlers.
      * <p>
-     * This shutdown operation is performed in the {@link org.axonframework.lifecycle.Phase#INBOUND_QUERY_CONNECTOR}
+     * This shutdown operation is performed in the {@link Phase#INBOUND_QUERY_CONNECTOR}
      * phase.
      *
      * @return A completable future that resolves once the {@link AxonServerConnection#queryChannel()} has prepared
@@ -218,7 +219,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
      * Shutdown the query bus asynchronously for dispatching query to Axon Server.
      * <p>
      * This process will wait for dispatched queries which have not received a response yet. This shutdown operation is
-     * performed in the {@link org.axonframework.lifecycle.Phase#OUTBOUND_QUERY_CONNECTORS} phase.
+     * performed in the {@link Phase#OUTBOUND_QUERY_CONNECTORS} phase.
      *
      * @return A completable future which is resolved once all query dispatching activities are completed.
      */

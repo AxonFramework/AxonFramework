@@ -18,15 +18,15 @@ package org.axonframework.updates;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotations.Internal;
-import org.axonframework.configuration.ComponentRegistry;
-import org.axonframework.configuration.ConfigurationEnhancer;
-import org.axonframework.lifecycle.Phase;
+import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.ConfigurationEnhancer;
+import org.axonframework.common.lifecycle.Phase;
 import org.axonframework.updates.configuration.UsagePropertyProvider;
 import org.axonframework.updates.detection.TestEnvironmentDetector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.axonframework.configuration.ComponentDefinition.ofType;
+import static org.axonframework.common.configuration.ComponentDefinition.ofType;
 
 /**
  * A {@link ConfigurationEnhancer} that registers the {@link UpdateChecker} component. This component is responsible for

@@ -17,7 +17,7 @@
 package org.axonframework.eventhandling.deadletter;
 
 import org.axonframework.common.ObjectUtils;
-import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.messaging.unitofwork.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;

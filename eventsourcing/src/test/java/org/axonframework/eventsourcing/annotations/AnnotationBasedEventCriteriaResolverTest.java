@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing.annotations;
 
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.configuration.Configuration;
+import org.axonframework.common.configuration.Configuration;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.messaging.MessageType;

@@ -24,7 +24,7 @@ import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.matchers.AllFieldsFilter;
 import org.axonframework.test.matchers.Matchers;
-import org.axonframework.utils.StubDomainEvent;
+import org.axonframework.common.utils.StubDomainEvent;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;

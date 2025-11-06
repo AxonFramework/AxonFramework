@@ -16,7 +16,7 @@
 
 package org.axonframework.extension.spring.messaging.unitofwork;
 
-import org.axonframework.common.transaction.Transaction;
+import org.axonframework.messaging.unitofwork.transaction.Transaction;
 import org.axonframework.extension.spring.messaging.unitofwork.SpringTransactionManager;
 import org.junit.jupiter.api.*;
 import org.springframework.transaction.PlatformTransactionManager;

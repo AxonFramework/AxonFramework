@@ -17,8 +17,8 @@
 package org.axonframework.modelling.annotations;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.configuration.ComponentRegistry;
-import org.axonframework.configuration.ConfigurationEnhancer;
+import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.messaging.configuration.reflection.ParameterResolverFactoryUtils;
 
 /**

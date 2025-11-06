@@ -16,7 +16,7 @@
 
 package org.axonframework.test.fixture;
 
-import org.axonframework.configuration.MessagingConfigurer;
+import org.axonframework.common.configuration.MessagingConfigurer;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.junit.jupiter.api.*;
 

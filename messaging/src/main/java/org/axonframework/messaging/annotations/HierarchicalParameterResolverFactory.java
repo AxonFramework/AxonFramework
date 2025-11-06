@@ -19,6 +19,7 @@ package org.axonframework.messaging.annotations;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.Priority;
+import org.axonframework.common.configuration.Module;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
@@ -28,7 +29,7 @@ import static org.axonframework.common.Priority.LOW;
 /**
  * {@link ParameterResolverFactory} that first tries to resolve a parameter using the child factory. If that fails, it
  * tries the parent factory. This is useful to encapsulate a set of parameter resolvers that are only relevant in a
- * specific context, such as a specific {@link org.axonframework.configuration.Module}.
+ * specific context, such as a specific {@link Module}.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0

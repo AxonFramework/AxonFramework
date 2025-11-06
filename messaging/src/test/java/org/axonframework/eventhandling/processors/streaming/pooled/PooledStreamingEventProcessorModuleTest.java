@@ -18,9 +18,9 @@ package org.axonframework.eventhandling.processors.streaming.pooled;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.common.transaction.NoOpTransactionManager;
-import org.axonframework.configuration.AxonConfiguration;
-import org.axonframework.configuration.MessagingConfigurer;
+import org.axonframework.messaging.unitofwork.transaction.NoOpTransactionManager;
+import org.axonframework.common.configuration.AxonConfiguration;
+import org.axonframework.common.configuration.MessagingConfigurer;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.RecordingEventHandlingComponent;
@@ -41,7 +41,7 @@ import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
-import org.axonframework.utils.AsyncInMemoryStreamableEventSource;
+import org.axonframework.common.utils.AsyncInMemoryStreamableEventSource;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;

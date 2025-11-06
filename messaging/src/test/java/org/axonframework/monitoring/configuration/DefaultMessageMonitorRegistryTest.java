@@ -17,7 +17,7 @@
 package org.axonframework.monitoring.configuration;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.configuration.Configuration;
+import org.axonframework.common.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.monitoring.MessageMonitor;

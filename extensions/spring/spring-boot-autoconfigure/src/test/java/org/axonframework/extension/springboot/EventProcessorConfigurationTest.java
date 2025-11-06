@@ -18,8 +18,8 @@ package org.axonframework.extension.springboot;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.configuration.Configuration;
-import org.axonframework.configuration.Module;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.configuration.Module;
 import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessorModule;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.eventhandling.processors.streaming.token.store.inmemory.InMemoryTokenStore;

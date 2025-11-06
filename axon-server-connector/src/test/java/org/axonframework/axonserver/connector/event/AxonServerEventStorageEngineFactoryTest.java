@@ -17,8 +17,8 @@
 package org.axonframework.axonserver.connector.event;
 
 import org.axonframework.common.infra.MockComponentDescriptor;
-import org.axonframework.configuration.Component;
-import org.axonframework.configuration.Configuration;
+import org.axonframework.common.configuration.Component;
+import org.axonframework.common.configuration.Configuration;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.serialization.ChainingContentTypeConverter;
 import org.axonframework.serialization.Converter;

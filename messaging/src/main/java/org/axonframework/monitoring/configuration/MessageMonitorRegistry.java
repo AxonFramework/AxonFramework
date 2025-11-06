@@ -18,10 +18,12 @@ package org.axonframework.monitoring.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.MessagingConfigurationDefaults;
 import org.axonframework.common.infra.DescribableComponent;
-import org.axonframework.configuration.ComponentBuilder;
-import org.axonframework.configuration.ComponentDefinition;
-import org.axonframework.configuration.Configuration;
+import org.axonframework.common.configuration.ComponentBuilder;
+import org.axonframework.common.configuration.ComponentDefinition;
+import org.axonframework.common.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.monitoring.MessageMonitor;
@@ -32,7 +34,7 @@ import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 
 /**
  * A registry of {@link MessageMonitor MessageMonitors}, acting as a collection of
- * {@link org.axonframework.configuration.ComponentRegistry#registerComponent(ComponentDefinition) registered
+ * {@link ComponentRegistry#registerComponent(ComponentDefinition) registered
  * MessageMonitor components}.
  * <p>
  * Provides operations to register generic {@link Message}, {@link CommandMessage}-specific,
@@ -41,7 +43,7 @@ import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
  * Multiple {@code MessageMonitor}s will be combined to a single {@link MultiMessageMonitor}.
  * <p>
  * Ingesting and reporting of messages is done via monitoring interceptors which wrap the monitor.
- * These interceptors are registered through the {@link org.axonframework.configuration.MessagingConfigurationDefaults} dispatcher
+ * These interceptors are registered through the {@link MessagingConfigurationDefaults} dispatcher
  * registry factory methods.
  *
  * @author Jan Galinski

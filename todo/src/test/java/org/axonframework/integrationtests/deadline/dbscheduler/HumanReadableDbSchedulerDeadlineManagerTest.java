@@ -17,14 +17,13 @@
 package org.axonframework.integrationtests.deadline.dbscheduler;
 
 import com.github.kagkarlsson.scheduler.Scheduler;
-import org.axonframework.common.transaction.NoTransactionManager;
-import org.axonframework.configuration.Configuration;
+import org.axonframework.messaging.unitofwork.transaction.NoTransactionManager;
+import org.axonframework.common.configuration.Configuration;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineManagerSpanFactory;
 import org.axonframework.deadline.dbscheduler.DbSchedulerDeadlineManager;
 import org.axonframework.deadline.dbscheduler.DbSchedulerDeadlineManagerSupplier;
 import org.axonframework.integrationtests.deadline.AbstractDeadlineManagerTestSuite;
-import org.axonframework.serialization.TestConverter;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.hsqldb.jdbc.JDBCDataSource;
 import org.junit.jupiter.api.*;
@@ -38,8 +37,8 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import java.util.Objects;
 import javax.sql.DataSource;
 
-import static org.axonframework.utils.DbSchedulerTestUtil.getScheduler;
-import static org.axonframework.utils.DbSchedulerTestUtil.reCreateTable;
+import static org.axonframework.common.utils.DbSchedulerTestUtil.getScheduler;
+import static org.axonframework.common.utils.DbSchedulerTestUtil.reCreateTable;
 
 @Disabled("TODO #3065 - Revisit Deadline support")
 @ContextConfiguration

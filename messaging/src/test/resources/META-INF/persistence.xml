@@ -45,7 +45,7 @@
     </persistence-unit>
 
     <persistence-unit name="jpatest" transaction-type="RESOURCE_LOCAL">
-        <class>org.axonframework.common.jpa.TestJpaEntry</class>
+        <class>org.axonframework.eventhandling.deadletter.jpa.TestJpaEntry</class>
         <exclude-unlisted-classes>true</exclude-unlisted-classes>
         <properties>
             <property name="jakarta.persistence.jdbc.driver" value="org.hsqldb.jdbcDriver"/>

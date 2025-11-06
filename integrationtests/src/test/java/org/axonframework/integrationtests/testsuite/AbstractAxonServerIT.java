@@ -18,8 +18,8 @@ package org.axonframework.integrationtests.testsuite;
 
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.configuration.ApplicationConfigurer;
-import org.axonframework.configuration.AxonConfiguration;
+import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.test.server.AxonServerContainer;
 import org.axonframework.test.server.AxonServerContainerUtils;
 import org.junit.jupiter.api.*;

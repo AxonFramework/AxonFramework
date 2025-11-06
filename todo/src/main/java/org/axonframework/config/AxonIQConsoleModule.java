@@ -18,10 +18,10 @@ package org.axonframework.config;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.configuration.Configuration;
-import org.axonframework.configuration.LifecycleRegistry;
-import org.axonframework.configuration.Module;
-import org.axonframework.util.MavenArtifactVersionResolver;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.configuration.LifecycleRegistry;
+import org.axonframework.common.configuration.Module;
+import org.axonframework.common.util.MavenArtifactVersionResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -19,7 +19,7 @@ package org.axonframework.test.fixture;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.configuration.AxonConfiguration;
+import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.messaging.Message;
 import org.axonframework.test.matchers.PayloadMatcher;
 import org.hamcrest.CoreMatchers;

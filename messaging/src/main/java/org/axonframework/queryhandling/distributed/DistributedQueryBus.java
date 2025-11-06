@@ -30,7 +30,7 @@ import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
-import org.axonframework.util.PriorityRunnable;
+import org.axonframework.common.util.PriorityRunnable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

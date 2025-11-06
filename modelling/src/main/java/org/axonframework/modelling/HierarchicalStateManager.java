@@ -17,6 +17,7 @@
 package org.axonframework.modelling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.configuration.Module;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.repository.ManagedEntity;
 import org.axonframework.modelling.repository.Repository;
@@ -29,7 +30,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * {@link StateManager} that can load an entity from two delegates, giving preference to the child delegate and then the
  * parent. This is useful to encapsulate a set of repositories that are only relevant in a specific context, such as a
- * specific {@link org.axonframework.configuration.Module}.
+ * specific {@link Module}.
  * <p>
  * Any registrations of {@link Repository} will be done on the child {@link StateManager}.
  *

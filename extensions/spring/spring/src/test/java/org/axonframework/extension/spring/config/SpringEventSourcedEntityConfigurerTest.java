@@ -16,13 +16,12 @@
 
 package org.axonframework.extension.spring.config;
 
-import org.axonframework.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.eventsourcing.annotations.EventSourcedEntity;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
-import org.axonframework.extension.spring.config.SpringEventSourcedEntityConfigurer;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
-import org.axonframework.configuration.Module;
+import org.axonframework.common.configuration.Module;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;

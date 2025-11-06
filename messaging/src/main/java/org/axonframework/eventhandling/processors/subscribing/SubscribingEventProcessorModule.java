@@ -17,11 +17,11 @@
 package org.axonframework.eventhandling.processors.subscribing;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.configuration.BaseModule;
-import org.axonframework.configuration.ComponentBuilder;
-import org.axonframework.configuration.ComponentDefinition;
-import org.axonframework.configuration.Configuration;
-import org.axonframework.configuration.ModuleBuilder;
+import org.axonframework.common.configuration.BaseModule;
+import org.axonframework.common.configuration.ComponentBuilder;
+import org.axonframework.common.configuration.ComponentDefinition;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.configuration.ModuleBuilder;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.configuration.DefaultEventHandlingComponentsConfigurer;
 import org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer;
@@ -31,7 +31,7 @@ import org.axonframework.eventhandling.configuration.EventProcessorCustomization
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
 import org.axonframework.eventhandling.processors.streaming.segmenting.SequenceCachingEventHandlingComponent;
-import org.axonframework.lifecycle.Phase;
+import org.axonframework.common.lifecycle.Phase;
 
 import java.util.List;
 import java.util.Objects;

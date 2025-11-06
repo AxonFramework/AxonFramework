@@ -17,7 +17,7 @@
 package org.axonframework.modelling.annotations;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.configuration.Configuration;
+import org.axonframework.common.configuration.Configuration;
 import org.axonframework.modelling.EntityIdResolver;
 import org.axonframework.modelling.entity.annotations.AnnotatedEntityMetamodel;
 

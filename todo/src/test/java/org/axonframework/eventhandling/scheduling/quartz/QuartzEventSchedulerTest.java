@@ -17,8 +17,8 @@
 package org.axonframework.eventhandling.scheduling.quartz;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.transaction.Transaction;
-import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.messaging.unitofwork.transaction.Transaction;
+import org.axonframework.messaging.unitofwork.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -28,10 +28,8 @@ import org.axonframework.eventhandling.scheduling.SchedulingException;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.serialization.json.JacksonSerializer;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.serialization.TestSerializer;
-import org.axonframework.utils.AssertUtils;
-import org.axonframework.utils.MockException;
+import org.axonframework.common.utils.AssertUtils;
+import org.axonframework.common.utils.MockException;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 import org.quartz.Scheduler;

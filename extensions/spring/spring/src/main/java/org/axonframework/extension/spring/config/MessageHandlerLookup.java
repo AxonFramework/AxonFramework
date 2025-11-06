@@ -21,6 +21,7 @@ import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotations.AnnotationUtils;
 import org.axonframework.common.annotations.Internal;
+import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotations.MessageHandler;
 import org.slf4j.Logger;
@@ -46,7 +47,7 @@ import java.util.stream.Collectors;
 /**
  * A {@link BeanDefinitionRegistryPostProcessor} implementation that detects beans with Axon Message handlers and
  * registers an {@link MessageHandlerConfigurer} to have these handlers registered in the Axon
- * {@link org.axonframework.configuration.Configuration}.
+ * {@link Configuration}.
  *
  * @author Allard Buijze
  * @since 4.6.0

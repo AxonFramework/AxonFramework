@@ -17,7 +17,7 @@
 package org.axonframework.integrationtests.queryhandling;
 
 import org.awaitility.Awaitility;
-import org.axonframework.configuration.AxonConfiguration;
+import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.messaging.FluxUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
@@ -38,7 +38,7 @@ import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.serialization.json.JacksonConverter;
-import org.axonframework.utils.MockException;
+import org.axonframework.common.utils.MockException;
 import org.junit.jupiter.api.*;
 import reactor.test.StepVerifier;
 

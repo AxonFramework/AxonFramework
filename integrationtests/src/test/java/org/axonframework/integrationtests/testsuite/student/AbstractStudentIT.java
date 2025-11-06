@@ -18,8 +18,8 @@ package org.axonframework.integrationtests.testsuite.student;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
-import org.axonframework.configuration.ApplicationConfigurer;
-import org.axonframework.configuration.Configuration;
+import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.common.configuration.Configuration;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.eventhandling.gateway.EventGateway;

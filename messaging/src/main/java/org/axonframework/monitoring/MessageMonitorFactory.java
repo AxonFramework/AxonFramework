@@ -16,7 +16,7 @@
 
 package org.axonframework.monitoring;
 
-import org.axonframework.configuration.Configuration;
+import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.Message;
 
 /**

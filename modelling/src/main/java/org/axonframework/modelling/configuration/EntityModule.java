@@ -16,7 +16,8 @@
 
 package org.axonframework.modelling.configuration;
 
-import org.axonframework.configuration.Module;
+import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.Module;
 import org.axonframework.modelling.repository.Repository;
 
 /**
@@ -41,7 +42,7 @@ public interface EntityModule<ID, E> extends Module {
      * and the identifier type's simple name.
      * <p>
      * The module should use this name for the components they register to the
-     * {@link org.axonframework.configuration.ComponentRegistry}.
+     * {@link ComponentRegistry}.
      *
      * @return The name of the entity.
      */

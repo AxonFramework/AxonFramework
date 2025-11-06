@@ -20,12 +20,12 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.interceptors.InterceptingCommandBus;
 import org.axonframework.common.annotations.Internal;
-import org.axonframework.configuration.ComponentDecorator;
-import org.axonframework.configuration.ComponentRegistry;
-import org.axonframework.configuration.ConfigurationEnhancer;
-import org.axonframework.configuration.SearchScope;
+import org.axonframework.common.configuration.ComponentDecorator;
+import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.ConfigurationEnhancer;
+import org.axonframework.common.configuration.SearchScope;
 
-import static org.axonframework.configuration.DecoratorDefinition.forType;
+import static org.axonframework.common.configuration.DecoratorDefinition.forType;
 
 /**
  * Configuration enhancer for the {@link DistributedCommandBus}, which upon detection of a {@link CommandBusConnector}

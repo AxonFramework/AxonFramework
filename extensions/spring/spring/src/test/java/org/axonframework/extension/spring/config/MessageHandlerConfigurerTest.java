@@ -17,11 +17,8 @@
 package org.axonframework.extension.spring.config;
 
 import org.axonframework.commandhandling.configuration.CommandHandlingModule;
-import org.axonframework.configuration.ComponentRegistry;
-import org.axonframework.configuration.Module;
-import org.axonframework.extension.spring.config.EventProcessorSettings;
-import org.axonframework.extension.spring.config.MessageHandlerConfigurer;
-import org.axonframework.extension.spring.config.SpringLazyCreatingModule;
+import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.Module;
 import org.axonframework.queryhandling.configuration.QueryHandlingModule;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -66,7 +63,7 @@ class MessageHandlerConfigurerTest {
         configurer.setApplicationContext(applicationContext);
         configurer.enhance(registry);
 
-        var moduleCaptor = ArgumentCaptor.forClass(org.axonframework.configuration.Module.class);
+        var moduleCaptor = ArgumentCaptor.forClass(Module.class);
         Mockito.verify(registry, times(3)).registerModule(moduleCaptor.capture());
 
         var registeredModules = moduleCaptor.getAllValues();
@@ -140,7 +137,7 @@ class MessageHandlerConfigurerTest {
         configurer.setApplicationContext(applicationContext);
         configurer.enhance(registry);
 
-        var moduleCaptor = ArgumentCaptor.forClass(org.axonframework.configuration.Module.class);
+        var moduleCaptor = ArgumentCaptor.forClass(Module.class);
         Mockito.verify(registry, times(3)).registerModule(moduleCaptor.capture());
 
         var registeredModules = moduleCaptor.getAllValues();
@@ -179,7 +176,7 @@ class MessageHandlerConfigurerTest {
         configurer.setApplicationContext(applicationContext);
         configurer.enhance(registry);
 
-        var moduleCaptor = ArgumentCaptor.forClass(org.axonframework.configuration.Module.class);
+        var moduleCaptor = ArgumentCaptor.forClass(Module.class);
         Mockito.verify(registry, times(3)).registerModule(moduleCaptor.capture());
 
         var registeredModules = moduleCaptor.getAllValues();

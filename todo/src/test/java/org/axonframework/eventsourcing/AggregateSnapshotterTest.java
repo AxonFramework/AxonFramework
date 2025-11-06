@@ -25,7 +25,7 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.snapshotting.AggregateSnapshotter;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.modelling.command.AggregateIdentifier;
-import org.axonframework.utils.StubDomainEvent;
+import org.axonframework.common.utils.StubDomainEvent;
 import org.junit.jupiter.api.*;
 
 import java.util.UUID;

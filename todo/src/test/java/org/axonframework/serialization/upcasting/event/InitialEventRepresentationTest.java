@@ -22,7 +22,7 @@ import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.TestSerializer;
-import org.axonframework.utils.StubDomainEvent;
+import org.axonframework.common.utils.StubDomainEvent;
 import org.axonframework.utils.TestDomainEventEntry;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;

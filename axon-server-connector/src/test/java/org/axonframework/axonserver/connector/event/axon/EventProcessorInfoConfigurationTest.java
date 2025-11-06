@@ -19,8 +19,8 @@ package org.axonframework.axonserver.connector.event.axon;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.event.StubServer;
 import org.axonframework.axonserver.connector.util.TcpUtils;
-import org.axonframework.configuration.AxonConfiguration;
-import org.axonframework.configuration.MessagingConfigurer;
+import org.axonframework.common.configuration.AxonConfiguration;
+import org.axonframework.common.configuration.MessagingConfigurer;
 import org.junit.jupiter.api.*;
 
 import java.io.IOException;

@@ -30,7 +30,7 @@ import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.eventhandling.processors.ProcessorEventHandlingComponents;
 import org.axonframework.eventhandling.processors.errorhandling.ErrorContext;
 import org.axonframework.eventhandling.processors.errorhandling.ErrorHandler;
-import org.axonframework.lifecycle.Phase;
+import org.axonframework.common.lifecycle.Phase;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.SubscribableEventSource;

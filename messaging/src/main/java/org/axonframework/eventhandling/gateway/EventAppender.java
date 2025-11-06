@@ -18,7 +18,7 @@ package org.axonframework.eventhandling.gateway;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.DescribableComponent;
-import org.axonframework.configuration.Configuration;
+import org.axonframework.common.configuration.Configuration;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.annotations.EventAppenderParameterResolverFactory;
 import org.axonframework.messaging.Context;

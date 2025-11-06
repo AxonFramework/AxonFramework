@@ -18,10 +18,10 @@ package org.axonframework.queryhandling.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.FutureUtils;
-import org.axonframework.configuration.BaseModule;
-import org.axonframework.configuration.ComponentBuilder;
-import org.axonframework.configuration.ComponentDefinition;
-import org.axonframework.lifecycle.Phase;
+import org.axonframework.common.configuration.BaseModule;
+import org.axonframework.common.configuration.ComponentBuilder;
+import org.axonframework.common.configuration.ComponentDefinition;
+import org.axonframework.common.lifecycle.Phase;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryHandler;
@@ -34,7 +34,7 @@ import java.util.List;
 import java.util.Map;
 
 import static java.util.Objects.requireNonNull;
-import static org.axonframework.configuration.ComponentDefinition.ofTypeAndName;
+import static org.axonframework.common.configuration.ComponentDefinition.ofTypeAndName;
 
 /**
  * Simple implementation of the {@link SimpleQueryHandlingModule}.

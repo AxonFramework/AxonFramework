@@ -17,8 +17,8 @@
 package org.axonframework.modelling.configuration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.configuration.ComponentBuilder;
-import org.axonframework.configuration.ModuleBuilder;
+import org.axonframework.common.configuration.ComponentBuilder;
+import org.axonframework.common.configuration.ModuleBuilder;
 import org.axonframework.modelling.EntityIdResolver;
 import org.axonframework.modelling.repository.SimpleRepositoryEntityLoader;
 import org.axonframework.modelling.repository.SimpleRepositoryEntityPersister;

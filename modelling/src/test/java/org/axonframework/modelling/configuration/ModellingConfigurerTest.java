@@ -17,9 +17,9 @@
 package org.axonframework.modelling.configuration;
 
 import org.axonframework.commandhandling.configuration.CommandHandlingModule;
-import org.axonframework.configuration.ApplicationConfigurerTestSuite;
-import org.axonframework.configuration.Configuration;
-import org.axonframework.configuration.ModuleBuilder;
+import org.axonframework.common.configuration.ApplicationConfigurerTestSuite;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.configuration.ModuleBuilder;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.queryhandling.configuration.QueryHandlingModule;

@@ -17,13 +17,14 @@
 package org.axonframework.commandhandling.annotations;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.configuration.ComponentRegistry;
-import org.axonframework.configuration.ConfigurationEnhancer;
+import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.messaging.configuration.reflection.ParameterResolverFactoryUtils;
 
 /**
  * Configuration enhancer that registers the {@link CommandDispatcherParameterResolverFactory} to the
- * {@link ComponentRegistry} of the {@link org.axonframework.configuration.Configuration}.
+ * {@link ComponentRegistry} of the {@link Configuration}.
  *
  * @author Steven van Beelen
  * @since 5.0.0

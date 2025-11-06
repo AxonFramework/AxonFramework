@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing.eventstore.jdbc;
 
 import com.mysql.cj.jdbc.MysqlDataSource;
-import org.axonframework.common.transaction.NoTransactionManager;
+import org.axonframework.messaging.unitofwork.transaction.NoTransactionManager;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.jupiter.api.*;

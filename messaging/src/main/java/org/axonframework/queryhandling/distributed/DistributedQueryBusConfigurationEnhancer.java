@@ -18,14 +18,14 @@ package org.axonframework.queryhandling.distributed;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotations.Internal;
-import org.axonframework.configuration.ComponentDecorator;
-import org.axonframework.configuration.ComponentRegistry;
-import org.axonframework.configuration.ConfigurationEnhancer;
-import org.axonframework.configuration.SearchScope;
+import org.axonframework.common.configuration.ComponentDecorator;
+import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.ConfigurationEnhancer;
+import org.axonframework.common.configuration.SearchScope;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.interceptors.InterceptingQueryBus;
 
-import static org.axonframework.configuration.DecoratorDefinition.forType;
+import static org.axonframework.common.configuration.DecoratorDefinition.forType;
 
 /**
  * Configuration enhancer for the {@link DistributedQueryBus}, which upon detection of a {@link QueryBusConnector} in

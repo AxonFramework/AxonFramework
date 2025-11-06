@@ -18,17 +18,17 @@ package org.axonframework.messaging.unitofwork;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.configuration.ComponentDefinition;
-import org.axonframework.configuration.ComponentRegistry;
-import org.axonframework.configuration.Configuration;
-import org.axonframework.configuration.DefaultComponentRegistry;
+import org.axonframework.common.configuration.ComponentDefinition;
+import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.configuration.DefaultComponentRegistry;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.ApplicationContext;
 import org.axonframework.messaging.ConfigurationApplicationContext;
 import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.LegacyResources;
 import org.axonframework.messaging.Message;
-import org.axonframework.utils.StubLifecycleRegistry;
+import org.axonframework.common.utils.StubLifecycleRegistry;
 import org.slf4j.Logger;
 
 import java.util.Comparator;

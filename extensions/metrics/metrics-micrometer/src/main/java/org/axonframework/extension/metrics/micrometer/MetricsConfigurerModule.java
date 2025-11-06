@@ -17,8 +17,8 @@
 package org.axonframework.extension.metrics.micrometer;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.configuration.ComponentRegistry;
-import org.axonframework.configuration.ConfigurationEnhancer;
+import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.ConfigurationEnhancer;
 
 /**
  * Implementation of the {@link ConfigurationEnhancer} which uses the {@link GlobalMetricRegistry} to register several

@@ -18,7 +18,7 @@ package org.axonframework.commandhandling.distributed;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonThreadFactory;
-import org.axonframework.util.ExecutorServiceFactory;
+import org.axonframework.common.util.ExecutorServiceFactory;
 
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;

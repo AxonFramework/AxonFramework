@@ -32,8 +32,8 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedType;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.upcasting.Upcaster;
-import org.axonframework.utils.SecondStubEvent;
-import org.axonframework.utils.StubDomainEvent;
+import org.axonframework.common.utils.SecondStubEvent;
+import org.axonframework.common.utils.StubDomainEvent;
 import org.axonframework.utils.TestDomainEventEntry;
 import org.junit.jupiter.api.*;
 

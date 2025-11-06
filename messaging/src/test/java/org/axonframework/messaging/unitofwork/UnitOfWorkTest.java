@@ -18,7 +18,7 @@ package org.axonframework.messaging.unitofwork;
 
 import org.axonframework.common.DirectExecutor;
 import org.axonframework.messaging.EmptyApplicationContext;
-import org.axonframework.utils.MockException;
+import org.axonframework.common.utils.MockException;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.CompletableFuture;

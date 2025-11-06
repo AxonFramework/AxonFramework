@@ -20,10 +20,8 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.interceptors.InterceptingCommandBus;
 import org.axonframework.common.annotations.Internal;
+import org.axonframework.common.configuration.*;
 import org.axonframework.common.infra.DescribableComponent;
-import org.axonframework.configuration.ComponentBuilder;
-import org.axonframework.configuration.ComponentDefinition;
-import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
@@ -34,7 +32,7 @@ import java.util.List;
 
 /**
  * A registry of {@link MessageDispatchInterceptor MessageDispatchInterceptors}, acting as a collection of
- * {@link org.axonframework.configuration.ComponentRegistry#registerComponent(ComponentDefinition) registered
+ * {@link ComponentRegistry#registerComponent(ComponentDefinition) registered
  * MessageDispatchInterceptors components}.
  * <p>
  * Provides operations to register generic {@link Message}, {@link CommandMessage}-specific,
@@ -43,7 +41,7 @@ import java.util.List;
  * through {@link #commandInterceptors(Configuration)}, {@link #eventInterceptors(Configuration)},
  * {@link #queryInterceptors(Configuration)}, and {@link #subscriptionQueryUpdateInterceptors(Configuration)}.
  * <p>
- * These operations are expected to be invoked within a {@link org.axonframework.configuration.DecoratorDefinition}. As
+ * These operations are expected to be invoked within a {@link DecoratorDefinition}. As
  * such, <b>any</b> registered interceptors are <b>only</b> applied when the infrastructure component requiring them is
  * constructed. When, for example, an {@link InterceptingCommandBus} is constructed,
  * this registry is invoked to retrieve interceptors. Interceptors that are registered once the

@@ -15,7 +15,7 @@
  */
 package org.axonframework.axonserver.connector.event.axon;
 
-import org.axonframework.configuration.Configuration;
+import org.axonframework.common.configuration.Configuration;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.sequencing.SequencingPolicy;

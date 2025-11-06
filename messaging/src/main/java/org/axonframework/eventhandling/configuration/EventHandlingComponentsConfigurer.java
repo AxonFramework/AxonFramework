@@ -17,8 +17,8 @@
 package org.axonframework.eventhandling.configuration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.configuration.ComponentBuilder;
-import org.axonframework.configuration.Configuration;
+import org.axonframework.common.configuration.ComponentBuilder;
+import org.axonframework.common.configuration.Configuration;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.annotations.AnnotatedEventHandlingComponent;
 import org.axonframework.messaging.annotations.ParameterResolverFactory;

@@ -18,21 +18,19 @@ package org.axonframework.messaging.correlation;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotations.Internal;
-import org.axonframework.configuration.ComponentBuilder;
-import org.axonframework.configuration.ComponentDefinition;
-import org.axonframework.configuration.Configuration;
+import org.axonframework.common.configuration.*;
 
 import java.util.List;
 
 /**
  * A registry of {@link CorrelationDataProvider CorrelationDataProviders}, acting as a collection of
- * {@link org.axonframework.configuration.ComponentRegistry#registerComponent(ComponentDefinition) registered
+ * {@link ComponentRegistry#registerComponent(ComponentDefinition) registered
  * CorrelationDataProvider components}.
  * <p>
  * Provides operations to register {@code CorrelationDataProviders} one by one. Registered providers can be retrieved
  * through {@link #correlationDataProviders(Configuration)}.
  * <p>
- * These operations are expected to be invoked within a {@link org.axonframework.configuration.DecoratorDefinition}. As
+ * These operations are expected to be invoked within a {@link DecoratorDefinition}. As
  * such, <b>any</b> registered correlation data providers are <b>only</b> applied when the infrastructure component
  * requiring them is constructed. When, for example, a
  * {@link org.axonframework.messaging.interceptors.CorrelationDataInterceptor} is constructed, this registry is invoked

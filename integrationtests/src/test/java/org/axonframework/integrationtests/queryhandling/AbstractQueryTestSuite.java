@@ -17,7 +17,7 @@
 package org.axonframework.integrationtests.queryhandling;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.configuration.MessagingConfigurer;
+import org.axonframework.common.configuration.MessagingConfigurer;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageDispatchInterceptorChain;
@@ -31,7 +31,6 @@ import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;

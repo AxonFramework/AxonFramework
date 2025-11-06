@@ -22,19 +22,18 @@ import org.axonframework.commandhandling.interceptors.InterceptingCommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.common.TypeReference;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.configuration.AxonConfiguration;
-import org.axonframework.configuration.BaseModule;
-import org.axonframework.configuration.Component;
-import org.axonframework.configuration.ComponentDecorator;
-import org.axonframework.configuration.ComponentDefinition;
-import org.axonframework.configuration.ComponentFactory;
-import org.axonframework.configuration.ComponentRegistry;
-import org.axonframework.configuration.ConfigurationEnhancer;
-import org.axonframework.configuration.DecoratorDefinition;
-import org.axonframework.configuration.InstantiatedComponentDefinition;
-import org.axonframework.configuration.LifecycleRegistry;
-import org.axonframework.configuration.Module;
-import org.axonframework.extension.springboot.autoconfig.AxonAutoConfiguration;
+import org.axonframework.common.configuration.AxonConfiguration;
+import org.axonframework.common.configuration.BaseModule;
+import org.axonframework.common.configuration.Component;
+import org.axonframework.common.configuration.ComponentDecorator;
+import org.axonframework.common.configuration.ComponentDefinition;
+import org.axonframework.common.configuration.ComponentFactory;
+import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.ConfigurationEnhancer;
+import org.axonframework.common.configuration.DecoratorDefinition;
+import org.axonframework.common.configuration.InstantiatedComponentDefinition;
+import org.axonframework.common.configuration.LifecycleRegistry;
+import org.axonframework.common.configuration.Module;
 import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.extension.spring.config.SpringAxonApplication;
@@ -197,7 +196,7 @@ public class AxonAutoConfigurationTest {
 
             AxonConfiguration axonConfiguration = context.getBean(AxonConfiguration.class);
             assertThat(axonConfiguration.getModuleConfigurations()).hasSize(1);
-            Optional<org.axonframework.configuration.Configuration> testModuleConfig =
+            Optional<org.axonframework.common.configuration.Configuration> testModuleConfig =
                     axonConfiguration.getModuleConfiguration("testModule");
             assertThat(testModuleConfig).isNotEmpty();
             // Validate if the MODULE_SPECIFIC_STRING, that is only registered by the TestModule internally,
@@ -428,8 +427,8 @@ public class AxonAutoConfigurationTest {
             //noinspection rawtypes
             return new BaseModule("testModule") {
                 @Override
-                public org.axonframework.configuration.Configuration build(
-                        @NotNull org.axonframework.configuration.Configuration parent,
+                public org.axonframework.common.configuration.Configuration build(
+                        @NotNull org.axonframework.common.configuration.Configuration parent,
                         @NotNull LifecycleRegistry lifecycleRegistry
                 ) {
                     lifecycleRegistry.onStart(1337, () -> moduleSpecificStartHandlerInvoked.set(true));
@@ -471,7 +470,7 @@ public class AxonAutoConfigurationTest {
                 @Override
                 public Optional<Component<String>> construct(
                         @NotNull String name,
-                        @NotNull org.axonframework.configuration.Configuration config
+                        @NotNull org.axonframework.common.configuration.Configuration config
                 ) {
                     return Optional.of(new InstantiatedComponentDefinition<>(
                             new Component.Identifier<>(forType(), name),
