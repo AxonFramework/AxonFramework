@@ -135,7 +135,7 @@ class FunctionalCommandMessageHandlingMember<T : Any>(
   private fun resolveParameterValues(context: ProcessingContext): Array<Any?> {
     val params = arrayOfNulls<Any>(parameterCount)
     for (i in 0..<parameterCount) {
-      params[i] = resolvers[i].resolveParameterValue(context)
+      params[i] = resolvers[i].resolveParameterValue(context).get()
     }
     return params
   }
