@@ -168,7 +168,7 @@ Note that the `@CommandHandlerInterceptor` is essentially a more specific implem
 
 Similar to command messages, event messages can also be intercepted prior to publishing and handling to perform additional actions on all events.
 
-This is simplfied to the same two types of interceptors for messages: the dispatch interceptor and the handler interceptor.
+This is simplified to the same two types of interceptors for messages: the dispatch interceptor and the handler interceptor.
 
 === Event dispatch interceptors
 

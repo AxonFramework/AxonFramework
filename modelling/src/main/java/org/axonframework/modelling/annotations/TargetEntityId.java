@@ -30,7 +30,7 @@ import java.lang.annotation.Target;
  * {@link AnnotationBasedEntityIdResolver}.
  * <p>
  * See the {@link InjectEntity} annotation for more information about the different ways to resolve the entity id when
- * injecting entities into messsage handlers.
+ * injecting entities into message handlers.
  * <p>
  * Multiple parameters annotated with {@link TargetEntityId} are allowed, but only one distinct non-null value may be
  * returned. If multiple non-null values are found that don't match, or no non-null values were found, a
