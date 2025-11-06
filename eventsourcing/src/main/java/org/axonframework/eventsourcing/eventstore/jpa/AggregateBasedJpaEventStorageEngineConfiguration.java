@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.eventhandling.processors.streaming.token.GapAwareTrackingToken;
+import org.axonframework.eventsourcing.eventstore.EventCoordinator;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 
 import java.util.List;
@@ -41,6 +42,7 @@ import static org.axonframework.common.BuilderUtils.assertStrictPositive;
  *                                     {@link
  *                                     org.axonframework.eventsourcing.eventstore.EventStorageEngine#source(SourcingCondition)
  *                                     sourcing} events. Defaults to the first empty batch.
+ * @param eventCoordinator             The {@link EventCoordinator} to use. Defaults to {@link EventCoordinator#SIMPLE}.
  * @param batchSize                    The batch size used to retrieve events from the storage layer. Defaults to
  *                                     {@code 100}.
  * @param gapCleaningThreshold         The threshold of the number of gaps in a {@link GapAwareTrackingToken} before an
@@ -59,6 +61,7 @@ import static org.axonframework.common.BuilderUtils.assertStrictPositive;
 public record AggregateBasedJpaEventStorageEngineConfiguration(
         @Nullable PersistenceExceptionResolver persistenceExceptionResolver,
         @Nonnull Predicate<List<? extends AggregateEventEntry>> finalBatchPredicate,
+        @Nonnull EventCoordinator eventCoordinator,
         int batchSize,
         int gapCleaningThreshold,
         int maxGapOffset,
@@ -67,6 +70,7 @@ public record AggregateBasedJpaEventStorageEngineConfiguration(
 ) {
 
     private static final Predicate<List<? extends AggregateEventEntry>> DEFAULT_BATCH_PREDICATE = List::isEmpty;
+    private static final EventCoordinator DEFAULT_EVENT_COORDINATOR = EventCoordinator.SIMPLE;
     private static final int DEFAULT_BATCH_SIZE = 100;
     private static final int DEFAULT_GAP_CLEANING_THRESHOLD = 250;
     private static final int DEFAULT_MAX_GAP_OFFSET = 10000;
@@ -79,6 +83,7 @@ public record AggregateBasedJpaEventStorageEngineConfiguration(
     public static final AggregateBasedJpaEventStorageEngineConfiguration DEFAULT =
             new AggregateBasedJpaEventStorageEngineConfiguration(null,
                                                                  DEFAULT_BATCH_PREDICATE,
+                                                                 DEFAULT_EVENT_COORDINATOR,
                                                                  DEFAULT_BATCH_SIZE,
                                                                  DEFAULT_GAP_CLEANING_THRESHOLD,
                                                                  DEFAULT_MAX_GAP_OFFSET,
@@ -91,6 +96,7 @@ public record AggregateBasedJpaEventStorageEngineConfiguration(
     @SuppressWarnings("MissingJavadoc")
     public AggregateBasedJpaEventStorageEngineConfiguration {
         requireNonNull(finalBatchPredicate, "The finalBatchPredicate must not be null.");
+        requireNonNull(eventCoordinator, "The eventCoordinator must not be null.");
         assertStrictPositive(batchSize, "The batchSize must be a positive number.");
         assertPositive(gapCleaningThreshold, "gapCleaningThreshold");
         assertPositive(maxGapOffset, "The maxGapOffset must be a positive number.");
@@ -115,6 +121,7 @@ public record AggregateBasedJpaEventStorageEngineConfiguration(
     ) {
         return new AggregateBasedJpaEventStorageEngineConfiguration(persistenceExceptionResolver,
                                                                     this.finalBatchPredicate,
+                                                                    this.eventCoordinator,
                                                                     this.batchSize,
                                                                     this.gapCleaningThreshold,
                                                                     this.maxGapOffset,
@@ -137,6 +144,26 @@ public record AggregateBasedJpaEventStorageEngineConfiguration(
     ) {
         return new AggregateBasedJpaEventStorageEngineConfiguration(this.persistenceExceptionResolver,
                                                                     finalBatchPredicate,
+                                                                    this.eventCoordinator,
+                                                                    this.batchSize,
+                                                                    this.gapCleaningThreshold,
+                                                                    this.maxGapOffset,
+                                                                    this.lowestGlobalSequence,
+                                                                    this.gapTimeout);
+    }
+
+    /**
+     * Defines the {@link EventCoordinator} to use.
+     * <p>
+     * Defaults to {@link EventCoordinator#SIMPLE}.
+     *
+     * @param eventCoordinator The {@link EventCoordinator} to use, cannot be {@code null}.
+     * @return A new configuration instance, for fluent interfacing.
+     */
+    public AggregateBasedJpaEventStorageEngineConfiguration eventCoordinator(@Nonnull EventCoordinator eventCoordinator) {
+        return new AggregateBasedJpaEventStorageEngineConfiguration(this.persistenceExceptionResolver,
+                                                                    this.finalBatchPredicate,
+                                                                    eventCoordinator,
                                                                     this.batchSize,
                                                                     this.gapCleaningThreshold,
                                                                     this.maxGapOffset,
@@ -160,6 +187,7 @@ public record AggregateBasedJpaEventStorageEngineConfiguration(
     public AggregateBasedJpaEventStorageEngineConfiguration batchSize(int batchSize) {
         return new AggregateBasedJpaEventStorageEngineConfiguration(this.persistenceExceptionResolver,
                                                                     this.finalBatchPredicate,
+                                                                    this.eventCoordinator,
                                                                     batchSize,
                                                                     this.gapCleaningThreshold,
                                                                     this.maxGapOffset,
@@ -179,6 +207,7 @@ public record AggregateBasedJpaEventStorageEngineConfiguration(
     public AggregateBasedJpaEventStorageEngineConfiguration gapCleaningThreshold(int gapCleaningThreshold) {
         return new AggregateBasedJpaEventStorageEngineConfiguration(this.persistenceExceptionResolver,
                                                                     this.finalBatchPredicate,
+                                                                    this.eventCoordinator,
                                                                     this.batchSize,
                                                                     gapCleaningThreshold,
                                                                     this.maxGapOffset,
@@ -202,6 +231,7 @@ public record AggregateBasedJpaEventStorageEngineConfiguration(
     public AggregateBasedJpaEventStorageEngineConfiguration maxGapOffset(int maxGapOffset) {
         return new AggregateBasedJpaEventStorageEngineConfiguration(this.persistenceExceptionResolver,
                                                                     this.finalBatchPredicate,
+                                                                    this.eventCoordinator,
                                                                     this.batchSize,
                                                                     this.gapCleaningThreshold,
                                                                     maxGapOffset,
@@ -221,6 +251,7 @@ public record AggregateBasedJpaEventStorageEngineConfiguration(
     public AggregateBasedJpaEventStorageEngineConfiguration lowestGlobalSequence(long lowestGlobalSequence) {
         return new AggregateBasedJpaEventStorageEngineConfiguration(this.persistenceExceptionResolver,
                                                                     this.finalBatchPredicate,
+                                                                    this.eventCoordinator,
                                                                     this.batchSize,
                                                                     this.gapCleaningThreshold,
                                                                     this.maxGapOffset,
@@ -244,6 +275,7 @@ public record AggregateBasedJpaEventStorageEngineConfiguration(
     public AggregateBasedJpaEventStorageEngineConfiguration gapTimeout(int gapTimeout) {
         return new AggregateBasedJpaEventStorageEngineConfiguration(this.persistenceExceptionResolver,
                                                                     this.finalBatchPredicate,
+                                                                    this.eventCoordinator,
                                                                     this.batchSize,
                                                                     this.gapCleaningThreshold,
                                                                     this.maxGapOffset,

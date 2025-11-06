@@ -33,28 +33,28 @@ import static org.assertj.core.api.Assertions.assertThat;
 class FilteringMessageStreamTest extends MessageStreamTest<Message> {
 
     @Override
-    MessageStream<Message> completedTestSubject(List<Message> messages) {
+    protected MessageStream<Message> completedTestSubject(List<Message> messages) {
         return new FilteringMessageStream<>(MessageStream.fromIterable(messages), entry -> true);
     }
 
     @Override
-    MessageStream.Single<Message> completedSingleStreamTestSubject(Message message) {
+    protected MessageStream.Single<Message> completedSingleStreamTestSubject(Message message) {
         return new FilteringMessageStream.Single<>(MessageStream.just(message), entry -> true);
     }
 
     @Override
-    MessageStream.Empty<Message> completedEmptyStreamTestSubject() {
+    protected MessageStream.Empty<Message> completedEmptyStreamTestSubject() {
         Assumptions.abort("ConcatenatingMessageStream doesn't support explicitly empty streams");
         return null;
     }
 
     @Override
-    MessageStream<Message> failingTestSubject(List<Message> messages, Exception failure) {
+    protected MessageStream<Message> failingTestSubject(List<Message> messages, RuntimeException failure) {
         return completedTestSubject(messages).concatWith(MessageStream.failed(failure));
     }
 
     @Override
-    Message createRandomMessage() {
+    protected Message createRandomMessage() {
         return new GenericMessage(new MessageType("message"),
                                     "test-" + ThreadLocalRandom.current().nextInt(10000));
     }
