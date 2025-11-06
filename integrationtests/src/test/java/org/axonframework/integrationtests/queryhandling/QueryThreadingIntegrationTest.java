@@ -38,7 +38,7 @@ import org.axonframework.messaging.queryhandling.distributed.DistributedQueryBus
 import org.axonframework.messaging.queryhandling.distributed.PayloadConvertingQueryBusConnector;
 import org.axonframework.conversion.json.JacksonConverter;
 import org.axonframework.test.server.AxonServerContainer;
-import org.axonframework.common.utils.MockException;
+import org.axonframework.common.util.MockException;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

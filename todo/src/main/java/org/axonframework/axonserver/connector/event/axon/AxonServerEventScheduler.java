@@ -22,7 +22,7 @@ import io.axoniq.axonserver.grpc.InstructionAck;
 import io.axoniq.axonserver.grpc.event.Event;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.axonserver.connector.event.util.GrpcExceptionParser;
+import org.axonframework.axonserver.connector.util.GrpcExceptionParser;
 import org.axonframework.axonserver.connector.util.GrpcMetadataConverter;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;

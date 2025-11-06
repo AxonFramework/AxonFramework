@@ -17,7 +17,7 @@
 package org.axonframework.modelling.command;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.axonframework.modelling.command.utils.OnlyAcceptConstructorPropertiesAnnotation;
+import org.axonframework.modelling.command.util.OnlyAcceptConstructorPropertiesAnnotation;
 import org.axonframework.conversion.SerializedObject;
 import org.axonframework.conversion.json.JacksonSerializer;
 import org.junit.jupiter.api.*;

@@ -57,8 +57,8 @@ import jakarta.annotation.Nonnull;
 import javax.sql.DataSource;
 
 import static org.awaitility.Awaitility.await;
-import static org.axonframework.common.utils.DbSchedulerTestUtil.getScheduler;
-import static org.axonframework.common.utils.DbSchedulerTestUtil.reCreateTable;
+import static org.axonframework.common.util.DbSchedulerTestUtil.getScheduler;
+import static org.axonframework.common.util.DbSchedulerTestUtil.reCreateTable;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 

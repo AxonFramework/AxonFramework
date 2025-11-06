@@ -33,7 +33,7 @@ import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.SimpleEntry;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkTestUtils;
-import org.axonframework.common.utils.DelegateScheduledExecutorService;
+import org.axonframework.common.util.DelegateScheduledExecutorService;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -50,7 +50,7 @@ import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.axonframework.common.utils.AssertUtils.assertWithin;
+import static org.axonframework.common.util.AssertUtils.assertWithin;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 

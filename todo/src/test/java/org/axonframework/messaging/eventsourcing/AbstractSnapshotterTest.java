@@ -28,7 +28,7 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.eventsourcing.snapshotting.AbstractSnapshotter;
 import org.axonframework.messaging.eventsourcing.snapshotting.DefaultSnapshotterSpanFactory;
 import org.axonframework.messaging.eventsourcing.snapshotting.SnapshotterSpanFactory;
-import org.axonframework.messaging.eventsourcing.utils.RecordingAppender;
+import org.axonframework.messaging.eventsourcing.util.RecordingAppender;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;

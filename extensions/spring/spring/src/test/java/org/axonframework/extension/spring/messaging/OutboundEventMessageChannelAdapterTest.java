@@ -21,7 +21,7 @@ import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.extension.spring.utils.StubDomainEvent;
+import org.axonframework.extension.spring.util.StubDomainEvent;
 import org.junit.jupiter.api.*;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;

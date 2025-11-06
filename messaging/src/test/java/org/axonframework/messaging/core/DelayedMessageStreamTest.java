@@ -17,7 +17,7 @@
 package org.axonframework.messaging.core;
 
 import org.axonframework.messaging.core.MessageStream.Entry;
-import org.axonframework.common.utils.MockException;
+import org.axonframework.common.util.MockException;
 import org.junit.jupiter.api.*;
 import reactor.test.StepVerifier;
 

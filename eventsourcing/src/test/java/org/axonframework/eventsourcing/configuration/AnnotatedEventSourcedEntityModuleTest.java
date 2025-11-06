@@ -32,7 +32,7 @@ import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.repository.Repository;
-import org.axonframework.common.utils.StubLifecycleRegistry;
+import org.axonframework.common.util.StubLifecycleRegistry;
 import org.junit.jupiter.api.*;
 
 import java.lang.annotation.ElementType;

@@ -17,8 +17,8 @@
 package org.axonframework.extension.springboot;
 
 import org.axonframework.axonserver.connector.TagsConfiguration;
-import org.axonframework.extension.springboot.utils.GrpcServerStub;
-import org.axonframework.extension.springboot.utils.TcpUtils;
+import org.axonframework.extension.springboot.util.GrpcServerStub;
+import org.axonframework.extension.springboot.util.TcpUtils;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;

@@ -38,7 +38,7 @@ import org.axonframework.messaging.queryhandling.QueryMessage;
 import org.axonframework.messaging.queryhandling.QueryResponseMessage;
 import org.axonframework.messaging.queryhandling.SimpleQueryBus;
 import org.axonframework.messaging.queryhandling.SubscriptionQueryUpdateMessage;
-import org.axonframework.common.utils.MockException;
+import org.axonframework.common.util.MockException;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;

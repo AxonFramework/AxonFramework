@@ -73,7 +73,7 @@ import java.util.function.Predicate;
 
 import static org.awaitility.Awaitility.await;
 import static org.axonframework.messaging.eventhandling.EventTestUtils.asEventMessage;
-import static org.axonframework.common.utils.AssertUtils.assertWithin;
+import static org.axonframework.common.util.AssertUtils.assertWithin;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**

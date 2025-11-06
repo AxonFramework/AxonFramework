@@ -60,8 +60,8 @@ import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.matchers.FieldFilter;
 import org.axonframework.test.matchers.IgnoreField;
-import org.axonframework.test.utils.CallbackBehavior;
-import org.axonframework.test.utils.RecordingCommandBus;
+import org.axonframework.test.util.CallbackBehavior;
+import org.axonframework.test.util.RecordingCommandBus;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;

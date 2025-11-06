@@ -36,7 +36,7 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
-import org.axonframework.common.utils.StubDomainEvent;
+import org.axonframework.common.util.StubDomainEvent;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.*;

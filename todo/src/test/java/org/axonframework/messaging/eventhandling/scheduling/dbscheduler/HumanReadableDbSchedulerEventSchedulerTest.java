@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 import static org.awaitility.Awaitility.await;
-import static org.axonframework.common.utils.DbSchedulerTestUtil.getScheduler;
+import static org.axonframework.common.util.DbSchedulerTestUtil.getScheduler;
 import static org.junit.jupiter.api.Assertions.*;
 
 class HumanReadableDbSchedulerEventSchedulerTest extends AbstractDbSchedulerEventSchedulerTest {

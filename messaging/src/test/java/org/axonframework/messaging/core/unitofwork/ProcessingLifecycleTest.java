@@ -18,9 +18,7 @@ package org.axonframework.messaging.core.unitofwork;
 
 import org.axonframework.common.FutureUtils;
 import org.axonframework.messaging.core.Context;
-import org.axonframework.common.utils.MockException;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.messaging.core.unitofwork.ProcessingLifecycle;
+import org.axonframework.common.util.MockException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

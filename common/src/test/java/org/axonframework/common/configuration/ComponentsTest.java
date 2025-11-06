@@ -18,7 +18,7 @@ package org.axonframework.common.configuration;
 
 import org.axonframework.common.configuration.Component.Identifier;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.common.utils.MockException;
+import org.axonframework.common.util.MockException;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.*;

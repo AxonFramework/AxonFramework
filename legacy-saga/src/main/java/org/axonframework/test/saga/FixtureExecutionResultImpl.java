@@ -25,7 +25,7 @@ import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.fixture.CommandValidator;
 import org.axonframework.test.matchers.FieldFilter;
 import org.axonframework.test.matchers.Matchers;
-import org.axonframework.test.utils.RecordingCommandBus;
+import org.axonframework.test.util.RecordingCommandBus;
 import org.hamcrest.Matcher;
 
 import java.util.List;

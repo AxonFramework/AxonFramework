@@ -29,7 +29,7 @@ import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.correlation.CorrelationDataProviderRegistry;
 import org.axonframework.messaging.core.correlation.DefaultCorrelationDataProviderRegistry;
 import org.axonframework.modelling.StateManager;
-import org.axonframework.common.utils.StubLifecycleRegistry;
+import org.axonframework.common.util.StubLifecycleRegistry;
 import org.junit.jupiter.api.*;
 
 import java.util.Map;

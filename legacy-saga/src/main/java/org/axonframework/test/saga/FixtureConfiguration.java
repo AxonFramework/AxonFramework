@@ -33,7 +33,7 @@ import org.axonframework.messaging.core.annotation.SimpleResourceParameterResolv
 import org.axonframework.modelling.saga.ResourceInjector;
 import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.matchers.FieldFilter;
-import org.axonframework.test.utils.CallbackBehavior;
+import org.axonframework.test.util.CallbackBehavior;
 
 import java.time.Instant;
 import java.util.Map;

@@ -19,7 +19,6 @@ package org.axonframework.messaging.commandhandling;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.StubExecutor;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.commandhandling.*;
 import org.axonframework.messaging.core.EmptyApplicationContext;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
@@ -30,7 +29,7 @@ import org.axonframework.messaging.core.unitofwork.ProcessingLifecycleHandlerReg
 import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
-import org.axonframework.common.utils.MockException;
+import org.axonframework.common.util.MockException;
 import org.junit.jupiter.api.*;
 
 import java.util.Collections;

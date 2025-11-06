@@ -28,7 +28,7 @@ import org.axonframework.messaging.core.correlation.DefaultCorrelationDataProvid
 import org.axonframework.messaging.queryhandling.annotation.QueryHandler;
 import org.axonframework.messaging.queryhandling.QueryBus;
 import org.axonframework.messaging.queryhandling.QueryHandlingComponent;
-import org.axonframework.common.utils.StubLifecycleRegistry;
+import org.axonframework.common.util.StubLifecycleRegistry;
 import org.junit.jupiter.api.*;
 
 import java.util.Map;

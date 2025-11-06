@@ -43,7 +43,7 @@ import org.axonframework.messaging.core.SubscribableEventSource;
 import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.axonframework.conversion.json.JacksonConverter;
-import org.axonframework.common.utils.StubLifecycleRegistry;
+import org.axonframework.common.util.StubLifecycleRegistry;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;

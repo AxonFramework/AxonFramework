@@ -37,7 +37,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
-import static org.axonframework.common.utils.AssertUtils.assertWithin;
+import static org.axonframework.common.util.AssertUtils.assertWithin;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 

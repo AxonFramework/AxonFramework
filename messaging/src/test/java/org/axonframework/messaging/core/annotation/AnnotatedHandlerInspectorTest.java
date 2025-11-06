@@ -22,15 +22,9 @@ import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.core.MessageHandlerInterceptorChain;
-import org.axonframework.messaging.core.annotation.AnnotatedHandlerInspector;
-import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
-import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.core.annotation.MessageHandlingMember;
-import org.axonframework.messaging.core.annotation.MethodInvokingMessageHandlingMember;
-import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.interception.annotation.MessageHandlerInterceptor;
 import org.axonframework.messaging.core.interception.annotation.MessageHandlerInterceptorMemberChain;
-import org.axonframework.common.utils.MockException;
+import org.axonframework.common.util.MockException;
 import org.junit.jupiter.api.*;
 import org.mockito.internal.util.collections.*;
 

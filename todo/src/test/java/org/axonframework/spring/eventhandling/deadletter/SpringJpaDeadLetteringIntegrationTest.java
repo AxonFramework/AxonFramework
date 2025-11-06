@@ -38,7 +38,6 @@ import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.conversion.Serializer;
 import org.axonframework.conversion.json.JacksonSerializer;
 import org.axonframework.extension.spring.messaging.unitofwork.SpringTransactionManager;
-//import org.axonframework.extension.utils.spring.MysqlTestContainerExtension;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.springframework.beans.factory.annotation.Autowired;

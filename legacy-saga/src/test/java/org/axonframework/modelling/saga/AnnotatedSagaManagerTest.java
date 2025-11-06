@@ -27,7 +27,7 @@ import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.modelling.saga.repository.AnnotatedSagaRepository;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
-import org.axonframework.common.utils.StubDomainEvent;
+import org.axonframework.common.util.StubDomainEvent;
 import org.junit.jupiter.api.*;
 
 import java.util.Collection;

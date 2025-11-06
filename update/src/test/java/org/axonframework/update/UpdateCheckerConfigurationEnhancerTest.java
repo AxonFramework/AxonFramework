@@ -19,7 +19,7 @@ package org.axonframework.update;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.DefaultComponentRegistry;
 import org.axonframework.update.configuration.UsagePropertyProvider;
-import org.axonframework.common.utils.StubLifecycleRegistry;
+import org.axonframework.common.util.StubLifecycleRegistry;
 import org.junit.jupiter.api.*;
 
 import static org.axonframework.update.detection.TestEnvironmentDetector.AXONIQ_USAGE_FORCE_TEST_ENVIRONMENT;

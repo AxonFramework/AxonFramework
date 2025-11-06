@@ -14,8 +14,8 @@
 # limitations under the License.
 #
 
-org.axonframework.conversion.converters.ByteArrayToInputStreamConverter
-org.axonframework.conversion.converters.BlobToInputStreamConverter
-org.axonframework.conversion.converters.InputStreamToByteArrayConverter
-org.axonframework.conversion.converters.ByteArrayToStringConverter
-org.axonframework.conversion.converters.StringToByteArrayConverter
+org.axonframework.conversion.converter.ByteArrayToInputStreamConverter
+org.axonframework.conversion.converter.BlobToInputStreamConverter
+org.axonframework.conversion.converter.InputStreamToByteArrayConverter
+org.axonframework.conversion.converter.ByteArrayToStringConverter
+org.axonframework.conversion.converter.StringToByteArrayConverter

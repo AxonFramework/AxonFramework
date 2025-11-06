@@ -28,7 +28,7 @@ import org.axonframework.messaging.core.ConfigurationApplicationContext;
 import org.axonframework.messaging.core.EmptyApplicationContext;
 import org.axonframework.messaging.core.LegacyResources;
 import org.axonframework.messaging.core.Message;
-import org.axonframework.common.utils.StubLifecycleRegistry;
+import org.axonframework.common.util.StubLifecycleRegistry;
 import org.slf4j.Logger;
 
 import java.util.Comparator;

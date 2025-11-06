@@ -23,7 +23,7 @@ import org.axonframework.messaging.core.MessageType;
 import org.axonframework.conversion.Converter;
 import org.axonframework.conversion.Serializer;
 import org.axonframework.conversion.TestSerializer;
-import org.axonframework.utils.TestDomainEventEntry;
+import org.axonframework.util.TestDomainEventEntry;
 import org.junit.jupiter.api.*;
 
 import java.util.List;

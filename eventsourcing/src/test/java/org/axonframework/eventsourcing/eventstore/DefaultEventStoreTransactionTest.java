@@ -40,8 +40,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.axonframework.messaging.core.unitofwork.UnitOfWorkTestUtils.aUnitOfWork;
-import static org.axonframework.common.utils.AssertUtils.awaitExceptionalCompletion;
-import static org.axonframework.common.utils.AssertUtils.awaitSuccessfulCompletion;
+import static org.axonframework.common.util.AssertUtils.awaitExceptionalCompletion;
+import static org.axonframework.common.util.AssertUtils.awaitSuccessfulCompletion;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 

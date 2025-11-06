@@ -22,7 +22,7 @@ import org.axonframework.messaging.core.MessageType;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.fixture.CommandValidator;
 import org.axonframework.test.matchers.AllFieldsFilter;
-import org.axonframework.test.utils.RecordingCommandBus;
+import org.axonframework.test.util.RecordingCommandBus;
 import org.junit.jupiter.api.*;
 
 import java.util.Collections;

@@ -19,7 +19,7 @@ package org.axonframework.messaging.eventhandling.annotation;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.DefaultComponentRegistry;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
-import org.axonframework.common.utils.StubLifecycleRegistry;
+import org.axonframework.common.util.StubLifecycleRegistry;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
