@@ -234,7 +234,7 @@ public enum ErrorCode {
     }
 
     /**
-     * Returns an Query Execution ErrorCode variation based on the transiency of the given {@link Throwable}
+     * Returns a Query Execution ErrorCode variation based on the transiency of the given {@link Throwable}
      *
      * @param throwable The {@link Throwable} to inspect for transiency
      * @return {@link ErrorCode} variation

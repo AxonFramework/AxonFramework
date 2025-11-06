@@ -29,6 +29,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * An implementation of the {@link ParameterResolverFactory} which resolves the parameter annotated with
@@ -63,14 +64,16 @@ public class ReplayContextParameterResolverFactory implements ParameterResolverF
             this.type = type;
         }
 
-        @Nullable
+        @Nonnull
         @Override
-        public Object resolveParameterValue(@Nonnull ProcessingContext context) {
+        public CompletableFuture<Object> resolveParameterValue(@Nonnull ProcessingContext context) {
             Optional<TrackingToken> token = TrackingToken.fromContext(context);
             if (token.isPresent()) {
-                return ReplayToken.replayContext(token.get(), this.type).orElse(null);
+                return CompletableFuture.completedFuture(
+                        ReplayToken.replayContext(token.get(), this.type).orElse(null)
+                );
             }
-            return false;
+            return CompletableFuture.completedFuture(false);
         }
 
         @Override

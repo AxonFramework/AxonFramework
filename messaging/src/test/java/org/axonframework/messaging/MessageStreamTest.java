@@ -21,6 +21,7 @@ import org.axonframework.messaging.MessageStream.Entry;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 import reactor.test.StepVerifier;
+import reactor.test.StepVerifier.Step;
 
 import java.util.Collections;
 import java.util.List;
@@ -29,6 +30,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -52,27 +54,27 @@ public abstract class MessageStreamTest<M extends Message> {
      *                 {@link MessageStream stream} under construction.
      * @return A {@link MessageStream stream} to use for testing.
      */
-    abstract MessageStream<M> completedTestSubject(List<M> messages);
+    protected abstract MessageStream<M> completedTestSubject(List<M> messages);
 
     /**
      * Construct a test subject with a {@link MessageStream.Single single} entry using the given {@code message} as the
      * source.
      * <p>
-     * It is the task of the implementer of this method to map th {@code messages} to an {@link Entry} for the
+     * It is the task of the implementer of this method to map the {@code messages} to an {@link Entry} for the
      * {@link MessageStream.Single stream} under test.
      *
      * @param message The {@link Message} of type {@code M} acting as the source for the
      *                {@link MessageStream.Single single-entry-stream} under construction.
      * @return A {@link MessageStream.Single single-entry-stream} to use for testing.
      */
-    abstract MessageStream.Single<M> completedSingleStreamTestSubject(M message);
+    protected abstract MessageStream.Single<M> completedSingleStreamTestSubject(M message);
 
     /**
      * Construct an {@link MessageStream.Empty empty} test subject.
      *
      * @return An {@link MessageStream.Empty empty stream} to use for testing.
      */
-    abstract MessageStream.Empty<M> completedEmptyStreamTestSubject();
+    protected abstract MessageStream.Empty<M> completedEmptyStreamTestSubject();
 
     /**
      * Construct a test subject using the given {@code messages} as the source. The resulting stream must not report as
@@ -86,6 +88,8 @@ public abstract class MessageStreamTest<M extends Message> {
      * @return A {@link MessageStream stream} to use for testing.
      */
     protected MessageStream<M> uncompletedTestSubject(List<M> messages, CompletableFuture<Void> completionMarker) {
+        Assumptions.assumeTrue(isBoundedStream());
+
         return completedTestSubject(messages)
                 .concatWith(
                         DelayedMessageStream.create(completionMarker.thenApply(e -> MessageStream.empty())
@@ -106,8 +110,8 @@ public abstract class MessageStreamTest<M extends Message> {
      * @param failure  The {@link Exception} causing the {@link MessageStream stream} under construction to fail.
      * @return A {@link MessageStream stream} that will complete exceptionally to use for testing.
      */
-    abstract MessageStream<M> failingTestSubject(List<M> messages,
-                                                 Exception failure);
+    protected abstract MessageStream<M> failingTestSubject(List<M> messages,
+                                                           RuntimeException failure);
 
     protected void publishAdditionalMessage(MessageStream<M> testSubject, M randomMessage) {
         Assumptions.abort("This implementation doesn't support delayed publishing");
@@ -118,7 +122,17 @@ public abstract class MessageStreamTest<M extends Message> {
      *
      * @return A random {@link Message} of type {@code M} to be used during testing.
      */
-    abstract M createRandomMessage();
+    protected abstract M createRandomMessage();
+
+    /**
+     * Indicates whether the stream under test is a bounded stream. Tests that require
+     * a bounded stream to work will be disabled.
+     *
+     * @return {@code true} if the stream is bounded, {@code false} otherwise
+     */
+    protected boolean isBoundedStream() {
+        return true;
+    }
 
     @Test
     void shouldInvokeSetCallback() {
@@ -167,6 +181,18 @@ public abstract class MessageStreamTest<M extends Message> {
         testSubject.setCallback(() -> invoked.set(true));
 
         assertFalse(invoked.get());
+    }
+
+    @Test
+    @Disabled("Doesn't work for all streams, but probably should")  // TODO #3853 - Setting a callback on a MessageStream which throws an error during callback should result in the stream completing with that error
+    void shouldCloseStreamWithErrorIfCallbackFails() {
+        MessageStream<M> testSubject = completedTestSubject(List.of(createRandomMessage()));
+
+        testSubject.setCallback(() -> { throw new RuntimeException("Callback failed"); });
+
+        StepVerifier.create(FluxUtils.of(testSubject))
+                    .expectErrorMatches(e -> e instanceof RuntimeException && e.getMessage().equals("Callback failed"))
+                    .verify();
     }
 
     @Test
@@ -304,6 +330,8 @@ public abstract class MessageStreamTest<M extends Message> {
 
     @Test
     void shouldCompleteWithNullOnEmptyList() {
+        Assumptions.assumeTrue(isBoundedStream());
+
         MessageStream<M> testSubject = completedTestSubject(Collections.emptyList());
 
         CompletableFuture<Entry<M>> actual = testSubject.first().asCompletableFuture();
@@ -387,9 +415,10 @@ public abstract class MessageStreamTest<M extends Message> {
 
         MessageStream<M> testSubject = completedTestSubject(List.of(in));
 
-        StepVerifier.create(FluxUtils.of(testSubject.map(entry -> entry.map(input -> out))))
-                    .expectNextMatches(entry -> entry.message().equals(out))
-                    .verifyComplete();
+        verifyComplete(
+            StepVerifier.create(FluxUtils.of(testSubject.map(entry -> entry.map(input -> out))))
+                .expectNextMatches(entry -> entry.message().equals(out))
+        );
     }
 
     @Test
@@ -411,9 +440,10 @@ public abstract class MessageStreamTest<M extends Message> {
 
         MessageStream<M> testSubject = completedTestSubject(List.of(in));
 
-        StepVerifier.create(FluxUtils.of(testSubject.mapMessage(input -> out)))
-                    .expectNextMatches(entry -> entry.message().equals(out))
-                    .verifyComplete();
+        verifyComplete(
+            StepVerifier.create(FluxUtils.of(testSubject.mapMessage(input -> out)))
+                .expectNextMatches(entry -> entry.message().equals(out))
+        );
     }
 
     @Test
@@ -437,10 +467,11 @@ public abstract class MessageStreamTest<M extends Message> {
 
         MessageStream<M> testSubject = completedTestSubject(List.of(in1, in2));
 
-        StepVerifier.create(FluxUtils.of(testSubject.map(entry -> entry.map(input -> input == in1 ? out1 : out2))))
-                    .expectNextMatches(entry -> entry.message().equals(out1))
-                    .expectNextMatches(entry -> entry.message().equals(out2))
-                    .verifyComplete();
+        verifyComplete(
+            StepVerifier.create(FluxUtils.of(testSubject.map(entry -> entry.map(input -> input == in1 ? out1 : out2))))
+                .expectNextMatches(entry -> entry.message().equals(out1))
+                .expectNextMatches(entry -> entry.message().equals(out2))
+        );
     }
 
     @Test
@@ -452,10 +483,11 @@ public abstract class MessageStreamTest<M extends Message> {
 
         MessageStream<M> testSubject = completedTestSubject(List.of(in1, in2));
 
-        StepVerifier.create(FluxUtils.of(testSubject.mapMessage(input -> input == in1 ? out1 : out2)))
-                    .expectNextMatches(entry -> entry.message().equals(out1))
-                    .expectNextMatches(entry -> entry.message().equals(out2))
-                    .verifyComplete();
+        verifyComplete(
+            StepVerifier.create(FluxUtils.of(testSubject.mapMessage(input -> input == in1 ? out1 : out2)))
+                .expectNextMatches(entry -> entry.message().equals(out1))
+                .expectNextMatches(entry -> entry.message().equals(out2))
+        );
     }
 
     @Test
@@ -490,6 +522,8 @@ public abstract class MessageStreamTest<M extends Message> {
 
     @Test
     void shouldNotCallMapperForEmptyStream_asCompletableFuture() {
+        Assumptions.assumeTrue(isBoundedStream());
+
         AtomicBoolean invoked = new AtomicBoolean();
 
         MessageStream<M> testSubject = completedTestSubject(List.of())
@@ -506,6 +540,8 @@ public abstract class MessageStreamTest<M extends Message> {
 
     @Test
     void shouldNotCallMessageMapperForEmptyStream_asCompletableFuture() {
+        Assumptions.assumeTrue(isBoundedStream());
+
         AtomicBoolean invoked = new AtomicBoolean();
 
         MessageStream<M> testSubject = completedTestSubject(List.of())
@@ -546,8 +582,8 @@ public abstract class MessageStreamTest<M extends Message> {
                     return entry;
                 });
 
-        StepVerifier.create(FluxUtils.of(testSubject))
-                    .verifyComplete();
+        verifyComplete(StepVerifier.create(FluxUtils.of(testSubject)));
+
         assertFalse(invoked.get(), "Mapper function should not be invoked for empty streams");
     }
 
@@ -591,8 +627,8 @@ public abstract class MessageStreamTest<M extends Message> {
                     return message;
                 });
 
-        StepVerifier.create(FluxUtils.of(testSubject))
-                    .verifyComplete();
+        verifyComplete(StepVerifier.create(FluxUtils.of(testSubject)));
+
         assertFalse(invoked.get(), "Mapper function should not be invoked for empty streams");
     }
 
@@ -656,6 +692,8 @@ public abstract class MessageStreamTest<M extends Message> {
 
     @Test
     void shouldReduceToExpectedResult() {
+        Assumptions.assumeTrue(isBoundedStream());
+
         M randomMessage = createRandomMessage();
         String expected = randomMessage.payload().toString() + randomMessage.payload().toString();
 
@@ -692,6 +730,8 @@ public abstract class MessageStreamTest<M extends Message> {
 
     @Test
     void shouldReturnIdentityWhenReducingEmptyStream() {
+        Assumptions.assumeTrue(isBoundedStream());
+
         String expected = "42";
         AtomicBoolean invoked = new AtomicBoolean();
 
@@ -712,6 +752,8 @@ public abstract class MessageStreamTest<M extends Message> {
 
     @Test
     void shouldNotReduceForEmptyFailingStream() {
+        Assumptions.assumeTrue(isBoundedStream());
+
         AtomicBoolean invoked = new AtomicBoolean();
         RuntimeException expected = new RuntimeException("oops");
 
@@ -772,15 +814,19 @@ public abstract class MessageStreamTest<M extends Message> {
 
         MessageStream<M> testSubject = completedTestSubject(List.of(expected));
 
-        StepVerifier.create(FluxUtils.of(testSubject.onNext(entry -> invoked.set(true))))
-                    .expectNextMatches(entry -> entry.message().equals(expected))
-                    .verifyComplete();
+        verifyComplete(
+            StepVerifier.create(FluxUtils.of(testSubject.onNext(entry -> invoked.set(true))))
+                .expectNextMatches(entry -> entry.message().equals(expected))
+        );
+
         assertTrue(invoked.get());
     }
 
     @Test
     void shouldReturnFirstEntryFromOnErrorStream_asCompletableFuture() {
-        Exception expectedError = new RuntimeException("oops");
+        Assumptions.assumeTrue(isBoundedStream());
+
+        RuntimeException expectedError = new RuntimeException("oops");
         M expected = createRandomMessage();
         MessageStream<M> onErrorStream = completedTestSubject(List.of(expected));
 
@@ -799,22 +845,23 @@ public abstract class MessageStreamTest<M extends Message> {
 
     @Test
     void shouldContinueOnSecondStreamOnError_asFlux() {
-        Exception expectedError = new RuntimeException("oops");
+        RuntimeException expectedError = new RuntimeException("oops");
         M expectedFirst = createRandomMessage();
         M expectedSecond = createRandomMessage();
         MessageStream<M> onErrorStream = completedTestSubject(List.of(expectedSecond));
 
         MessageStream<M> testSubject = failingTestSubject(List.of(expectedFirst), expectedError);
 
-        StepVerifier.create(
-            FluxUtils.of(testSubject.onErrorContinue(error -> {
-                assertEquals(expectedError, FutureUtils.unwrap(error));
-                return onErrorStream;
-            })
-        ))
-        .expectNextMatches(entry -> entry.message().equals(expectedFirst))
-        .expectNextMatches(entry -> entry.message().equals(expectedSecond))
-        .verifyComplete();
+        verifyComplete(
+            StepVerifier.create(
+                FluxUtils.of(testSubject.onErrorContinue(error -> {
+                    assertEquals(expectedError, FutureUtils.unwrap(error));
+                    return onErrorStream;
+                }))
+            )
+            .expectNextMatches(entry -> entry.message().equals(expectedFirst))
+            .expectNextMatches(entry -> entry.message().equals(expectedSecond))
+        );
     }
 
     @Test
@@ -832,6 +879,8 @@ public abstract class MessageStreamTest<M extends Message> {
 
     @Test
     void shouldMoveToConcatWithStream_asCompletableFuture_returnFirstEntryFromSecondStream() {
+        Assumptions.assumeTrue(isBoundedStream());
+
         M expected = createRandomMessage();
         MessageStream<M> secondStream = completedTestSubject(List.of(expected));
 
@@ -845,6 +894,8 @@ public abstract class MessageStreamTest<M extends Message> {
 
     @Test
     void shouldMoveToConcatWithStream_asFlux() {
+        Assumptions.assumeTrue(isBoundedStream());
+
         M expectedFirst = createRandomMessage();
         M expectedSecond = createRandomMessage();
         MessageStream<M> secondStream = completedTestSubject(List.of(expectedSecond));
@@ -859,6 +910,8 @@ public abstract class MessageStreamTest<M extends Message> {
 
     @Test
     void shouldConcatWithMultipleStreamsSequentially() {
+        Assumptions.assumeTrue(isBoundedStream());
+
         M first = createRandomMessage();
         M second = createRandomMessage();
         M third = createRandomMessage();
@@ -891,6 +944,8 @@ public abstract class MessageStreamTest<M extends Message> {
 
     @Test
     void shouldFailConcatWithIfSecondStreamFails() {
+        Assumptions.assumeTrue(isBoundedStream());
+
         RuntimeException testException = new RuntimeException("Second stream failed");
         M firstMessage = createRandomMessage();
         MessageStream<M> firstStream = completedTestSubject(List.of(firstMessage));
@@ -906,6 +961,8 @@ public abstract class MessageStreamTest<M extends Message> {
 
     @Test
     void shouldPreserveOrderInConcatWithStreams() {
+        Assumptions.assumeTrue(isBoundedStream());
+
         M first1 = createRandomMessage();
         M first2 = createRandomMessage();
         M second1 = createRandomMessage();
@@ -926,6 +983,8 @@ public abstract class MessageStreamTest<M extends Message> {
 
     @Test
     void shouldInvokeCompletionCallback_asCompletableFuture() {
+        Assumptions.assumeTrue(isBoundedStream());
+
         AtomicBoolean invoked = new AtomicBoolean();
 
         MessageStream<M> testSubject = completedTestSubject(List.of());
@@ -953,6 +1012,8 @@ public abstract class MessageStreamTest<M extends Message> {
 
     @Test
     void shouldInvokeCompletionCallback_asFlux() {
+        Assumptions.assumeTrue(isBoundedStream());
+
         AtomicBoolean invoked = new AtomicBoolean();
 
         MessageStream<M> testSubject = completedTestSubject(List.of());
@@ -1005,6 +1066,8 @@ public abstract class MessageStreamTest<M extends Message> {
 
     @Test
     void shouldResultInFailedStreamWhenCompletionCallbackThrowsAnException_asFlux() {
+        Assumptions.assumeTrue(isBoundedStream());
+
         RuntimeException expected = new RuntimeException("oops");
         M expectedMessage = createRandomMessage();
 
@@ -1021,6 +1084,8 @@ public abstract class MessageStreamTest<M extends Message> {
 
     @Test
     void shouldExecuteOnCompleteCallbackOnlyAfterAllMessagesProcessed() {
+        Assumptions.assumeTrue(isBoundedStream());
+
         AtomicBoolean callbackExecuted = new AtomicBoolean(false);
         AtomicInteger processedCount = new AtomicInteger(0);
 
@@ -1057,6 +1122,8 @@ public abstract class MessageStreamTest<M extends Message> {
 
     @Test
     void shouldNotChangeStreamContentWithOnComplete() {
+        Assumptions.assumeTrue(isBoundedStream());
+
         List<M> originalMessages = List.of(createRandomMessage(), createRandomMessage(), createRandomMessage());
         AtomicBoolean callbackExecuted = new AtomicBoolean(false);
 
@@ -1074,6 +1141,8 @@ public abstract class MessageStreamTest<M extends Message> {
 
     @Test
     void shouldChainMultipleOnCompleteCallbacks() {
+        Assumptions.assumeTrue(isBoundedStream());
+
         AtomicInteger callbackCount = new AtomicInteger(0);
 
         MessageStream<M> testSubject = completedTestSubject(List.of(createRandomMessage()))
@@ -1090,6 +1159,8 @@ public abstract class MessageStreamTest<M extends Message> {
 
     @Test
     void shouldShowDifferentPurposesOfConcatWithAndOnComplete() {
+        Assumptions.assumeTrue(isBoundedStream());
+
         AtomicBoolean stream1Completed = new AtomicBoolean(false);
         AtomicBoolean stream2Completed = new AtomicBoolean(false);
 
@@ -1102,7 +1173,8 @@ public abstract class MessageStreamTest<M extends Message> {
         MessageStream<M> concatenated = stream1.concatWith(stream2);
 
         StepVerifier.create(FluxUtils.of(concatenated))
-                    .expectNextCount(2)
+                    .expectNextCount(1)
+                    .expectNextCount(1)
                     .verifyComplete();
 
         assertTrue(stream1Completed.get());
@@ -1167,7 +1239,7 @@ public abstract class MessageStreamTest<M extends Message> {
             assertTrue(next.isPresent());
             assertEquals(firstMessage, next.get().message());
             assertFalse(result.next().isPresent());
-            assertTrue(result.isCompleted());
+            assertThat(result.isCompleted()).isEqualTo(isBoundedStream());
         }
 
         @Test
@@ -1182,7 +1254,7 @@ public abstract class MessageStreamTest<M extends Message> {
             assertTrue(next.isPresent());
             assertEquals(firstMessage, next.get().message());
             assertFalse(result.next().isPresent());
-            assertTrue(result.isCompleted());
+            assertThat(result.isCompleted()).isEqualTo(isBoundedStream());
         }
     }
 
@@ -1325,6 +1397,15 @@ public abstract class MessageStreamTest<M extends Message> {
             assertTrue(peeked.isEmpty());
             assertTrue(stream.isCompleted());
             assertFalse(stream.hasNextAvailable());
+        }
+    }
+
+    private void verifyComplete(Step<Entry<M>> step) {
+        if (isBoundedStream()) {
+            step.verifyComplete();
+        }
+        else {
+            step.thenCancel().verify();
         }
     }
 }

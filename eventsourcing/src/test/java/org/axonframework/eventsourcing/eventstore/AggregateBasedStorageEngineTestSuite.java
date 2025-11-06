@@ -39,6 +39,7 @@ import org.junit.jupiter.api.*;
 import org.opentest4j.TestAbortedException;
 import reactor.test.StepVerifier;
 
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -51,10 +52,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import static java.util.Collections.emptySet;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -574,6 +578,45 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
         } else {
             fail("Unexpected exception", actualException);
         }
+    }
+
+    @Test
+    void firstTokenShouldReturnNonNullForEmptyStore() throws InterruptedException, ExecutionException {
+        assertThat(testSubject.firstToken(processingContext()).get()).isNotNull();
+    }
+
+    @Test
+    void latestTokenShouldReturnNonNullForEmptyStore() throws InterruptedException, ExecutionException {
+        assertThat(testSubject.latestToken(processingContext()).get()).isNotNull();
+    }
+
+    @Test
+    void firstTokenAndLatestTokenShouldBeEqualForEmptyStore() throws InterruptedException, ExecutionException {
+        assertThat(testSubject.latestToken(processingContext()).get())
+            .isEqualTo(testSubject.firstToken(processingContext()).get());
+    }
+
+    @Test
+    void tokenAtShouldReturnNonNullForEmptyStore() throws InterruptedException, ExecutionException {
+        assertThat(testSubject.tokenAt(Instant.now(), processingContext()).get()).isNotNull();
+    }
+
+    @Test
+    @Disabled("Fails for both JPA and Axon on the last await")  // TODO #3855 - When a sourcing completes, the callback should be called per MessageStream contract
+    void callbackShouldBeCalledWhenSourcingCompletes() {
+        AtomicBoolean called = new AtomicBoolean();
+        MessageStream<EventMessage> stream = testSubject.source(SourcingCondition.conditionFor(EventCriteria.havingTags("unknown", "non-existing")), processingContext());
+
+        stream.setCallback(() -> called.set(true));
+
+        called.set(false);  // on set, it is called immediately, so clear flag again
+
+        assertThat(stream.isCompleted()).isFalse();
+
+        stream.next();  // this seems required
+
+        await().untilAsserted(() -> assertThat(stream.isCompleted()).isTrue());
+        await().untilAsserted(() -> assertThat(called).isTrue());
     }
 
     private void assertTrackedEntry(Entry<EventMessage> actual, EventMessage expected, long eventNumber) {

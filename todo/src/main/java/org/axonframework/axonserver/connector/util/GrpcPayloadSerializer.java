@@ -28,6 +28,7 @@ import java.util.function.Function;
  * @author Sara Pellegrini
  * @since 4.0
  */
+@Deprecated(forRemoval = true, since = "5.0.0")
 public class GrpcPayloadSerializer implements Function<Message, io.axoniq.axonserver.grpc.SerializedObject> {
 
     private final GrpcObjectSerializer<Message> delegate;

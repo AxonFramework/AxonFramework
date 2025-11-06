@@ -21,6 +21,8 @@ import org.axonframework.common.Priority;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
  * An extension of the AbstractAnnotatedParameterResolverFactory that accepts parameters of a {@link String} type that
  * are annotated with the {@link MessageIdentifier} annotation and assigns the identifier of the Message.
@@ -52,9 +54,10 @@ public final class MessageIdentifierParameterResolverFactory
      */
     static class MessageIdentifierParameterResolver implements ParameterResolver<String> {
 
+        @Nonnull
         @Override
-        public String resolveParameterValue(@Nonnull ProcessingContext context) {
-            return Message.fromContext(context).identifier();
+        public CompletableFuture<String> resolveParameterValue(@Nonnull ProcessingContext context) {
+            return CompletableFuture.completedFuture(Message.fromContext(context).identifier());
         }
 
         @Override

@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.axonframework.messaging.Metadata;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 
@@ -28,8 +29,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.stream.Stream;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class MetadataDeserializerTest {
 
@@ -60,8 +59,8 @@ class MetadataDeserializerTest {
         String serializedString = objectMapper.writeValueAsString(metadata);
 
         Metadata deserialized = objectMapper.readValue(serializedString, Metadata.class);
-        assertEquals("two", deserialized.get("one"));
-        assertEquals(serializedString, objectMapper.writeValueAsString(deserialized));
+        Assertions.assertEquals("two", deserialized.get("one"));
+        Assertions.assertEquals(serializedString, objectMapper.writeValueAsString(deserialized));
     }
 
     @MethodSource("objectMappers")
@@ -71,9 +70,9 @@ class MetadataDeserializerTest {
         String emptySerializedString = objectMapper.writeValueAsString(metadata1);
 
         Metadata deserialized = objectMapper.readValue(emptySerializedString, Metadata.class);
-        assertTrue(deserialized.entrySet().isEmpty());
+        Assertions.assertTrue(deserialized.entrySet().isEmpty());
 
-        assertEquals(emptySerializedString, objectMapper.writeValueAsString(deserialized));
+        Assertions.assertEquals(emptySerializedString, objectMapper.writeValueAsString(deserialized));
     }
 
     @MethodSource("objectMappers")
@@ -85,9 +84,9 @@ class MetadataDeserializerTest {
         String serializedContainerString = objectMapper.writeValueAsString(container);
 
         Container deserialized = objectMapper.readValue(serializedContainerString, Container.class);
-        assertEquals("two", deserialized.b.get("one"));
+        Assertions.assertEquals("two", deserialized.b.get("one"));
 
-        assertEquals(serializedContainerString, objectMapper.writeValueAsString(deserialized));
+        Assertions.assertEquals(serializedContainerString, objectMapper.writeValueAsString(deserialized));
     }
 
     public static class Container {

@@ -297,8 +297,7 @@ public class StubDeadlineManager implements DeadlineManager {
             return processingResult;
         });
         if (resultMessage != null) {
-            if (resultMessage.isExceptional()) {
-                Throwable e = resultMessage.exceptionResult();
+            if (resultMessage.payload() instanceof Throwable e) {
                 throw new FixtureExecutionException("Exception occurred while handling the deadline", e);
             }
             return (DeadlineMessage) resultMessage.payload();

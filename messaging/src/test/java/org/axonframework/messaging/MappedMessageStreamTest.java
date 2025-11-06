@@ -34,7 +34,7 @@ class MappedMessageStreamTest extends MessageStreamTest<Message> {
     private static final Function<Entry<Message>, Entry<Message>> NO_OP_MAPPER = entry -> entry;
 
     @Override
-    MessageStream<Message> completedTestSubject(List<Message> messages) {
+    protected MessageStream<Message> completedTestSubject(List<Message> messages) {
         if (messages.size() == 1) {
             return new MappedMessageStream.Single<>(MessageStream.just(messages.getFirst()), NO_OP_MAPPER);
         }
@@ -42,24 +42,24 @@ class MappedMessageStreamTest extends MessageStreamTest<Message> {
     }
 
     @Override
-    MessageStream.Single<Message> completedSingleStreamTestSubject(Message message) {
+    protected MessageStream.Single<Message> completedSingleStreamTestSubject(Message message) {
         return new MappedMessageStream.Single<>(MessageStream.just(message), NO_OP_MAPPER);
     }
 
     @Override
-    MessageStream.Empty<Message> completedEmptyStreamTestSubject() {
+    protected MessageStream.Empty<Message> completedEmptyStreamTestSubject() {
         Assumptions.abort("MappedMessageStream does not support empty streams");
         return null;
     }
 
     @Override
-    MessageStream<Message> failingTestSubject(List<Message> entries, Exception failure) {
+    protected MessageStream<Message> failingTestSubject(List<Message> entries, RuntimeException failure) {
         return new MappedMessageStream<>(MessageStream.fromIterable(entries)
                                                       .concatWith(MessageStream.failed(failure)), NO_OP_MAPPER);
     }
 
     @Override
-    Message createRandomMessage() {
+    protected Message createRandomMessage() {
         return new GenericMessage(new MessageType("message"),
                                     "test-" + ThreadLocalRandom.current().nextInt(10000));
     }
