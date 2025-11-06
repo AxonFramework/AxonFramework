@@ -16,10 +16,10 @@
 
 package org.axonframework.modelling.command.inspection;
 
-import org.axonframework.messaging.annotations.HandlerAttributes;
-import org.axonframework.messaging.annotations.HandlerEnhancerDefinition;
-import org.axonframework.messaging.annotations.MessageHandlingMember;
-import org.axonframework.messaging.annotations.WrappedMessageHandlingMember;
+import org.axonframework.messaging.core.annotation.HandlerAttributes;
+import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
+import org.axonframework.messaging.core.annotation.MessageHandlingMember;
+import org.axonframework.messaging.core.annotation.WrappedMessageHandlingMember;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.CreationPolicy;
 

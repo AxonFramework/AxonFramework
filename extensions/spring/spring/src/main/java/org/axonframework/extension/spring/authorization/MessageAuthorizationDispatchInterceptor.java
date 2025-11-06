@@ -18,11 +18,12 @@ package org.axonframework.extension.spring.authorization;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.MessageDispatchInterceptorChain;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageDispatchInterceptor;
+import org.axonframework.messaging.core.MessageDispatchInterceptorChain;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.conversion.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,11 +52,11 @@ public class MessageAuthorizationDispatchInterceptor<T extends Message> implemen
     /**
      * Construct a {@code MessageAuthorizationDispatchInterceptor} using the given {@code converter} to convert the
      * {@link Authentication#getPrincipal() principal} and {@link Authentication#getAuthorities()} before they are
-     * stored in the {@link org.axonframework.messaging.Metadata} of the outgoing {@link Message} of type {@code T}.
+     * stored in the {@link Metadata} of the outgoing {@link Message} of type {@code T}.
      *
      * @param converter The {@code Converter} converting the {@link Authentication#getPrincipal() principal} and
      *                  {@link Authentication#getAuthorities()} before they go into the
-     *                  {@link org.axonframework.messaging.Metadata} of the outgoing {@link Message} of type {@code T}.
+     *                  {@link Metadata} of the outgoing {@link Message} of type {@code T}.
      */
     public MessageAuthorizationDispatchInterceptor(@Nonnull Converter converter) {
         this.converter = Objects.requireNonNull(converter, "Converter must not be null.");

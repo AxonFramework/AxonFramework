@@ -17,12 +17,12 @@
 package org.axonframework.test.saga;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventMessageHandler;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventBus;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.EventMessageHandler;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.unitofwork.LegacyMessageSupportingContext;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.matchers.FieldFilter;
 import org.hamcrest.Matcher;

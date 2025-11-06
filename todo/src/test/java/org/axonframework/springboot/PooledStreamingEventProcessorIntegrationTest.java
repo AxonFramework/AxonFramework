@@ -18,15 +18,15 @@ package org.axonframework.springboot;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.axonframework.config.ProcessingGroup;
-import org.axonframework.eventhandling.annotations.EventHandler;
-import org.axonframework.eventhandling.processors.errorhandling.ListenerInvocationErrorHandler;
-import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
-import org.axonframework.messaging.annotations.MessageIdentifier;
-import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.SimpleSerializedType;
-import org.axonframework.serialization.json.JacksonSerializer;
-import org.axonframework.serialization.upcasting.event.ContextAwareEventMultiUpcaster;
-import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
+import org.axonframework.messaging.eventhandling.annotation.EventHandler;
+import org.axonframework.messaging.eventhandling.processing.errorhandling.ListenerInvocationErrorHandler;
+import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessor;
+import org.axonframework.messaging.core.annotation.MessageIdentifier;
+import org.axonframework.conversion.Serializer;
+import org.axonframework.conversion.SimpleSerializedType;
+import org.axonframework.conversion.json.JacksonSerializer;
+import org.axonframework.conversion.upcasting.event.ContextAwareEventMultiUpcaster;
+import org.axonframework.conversion.upcasting.event.IntermediateEventRepresentation;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -50,7 +50,7 @@ import java.util.stream.Stream;
 
 /**
  * Integration test for the {@link PooledStreamingEventProcessor}. Tests, for example, that all events from an
- * {@link org.axonframework.serialization.upcasting.event.EventMultiUpcaster} are read.
+ * {@link org.axonframework.conversion.upcasting.event.EventMultiUpcaster} are read.
  *
  * @author Steven van Beelen
  */

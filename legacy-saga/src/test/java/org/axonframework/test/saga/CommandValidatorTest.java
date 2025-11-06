@@ -16,9 +16,9 @@
 
 package org.axonframework.test.saga;
 
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.commandhandling.GenericCommandMessage;
+import org.axonframework.messaging.core.MessageType;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.fixture.CommandValidator;
 import org.axonframework.test.matchers.AllFieldsFilter;

@@ -16,8 +16,8 @@
 
 package org.axonframework.test.saga;
 
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.eventhandling.EventMessage;
 import org.hamcrest.Matcher;
 
 import java.util.List;

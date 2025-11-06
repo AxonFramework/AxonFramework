@@ -15,15 +15,15 @@
  */
 package org.axonframework.extension.springboot.autoconfig;
 
-import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.common.configuration.DecoratorDefinition;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.interceptors.DispatchInterceptorRegistry;
-import org.axonframework.messaging.interceptors.HandlerInterceptorRegistry;
-import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageDispatchInterceptor;
+import org.axonframework.messaging.core.MessageHandlerInterceptor;
+import org.axonframework.messaging.core.interception.DispatchInterceptorRegistry;
+import org.axonframework.messaging.core.interception.HandlerInterceptorRegistry;
+import org.axonframework.messaging.queryhandling.QueryMessage;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;

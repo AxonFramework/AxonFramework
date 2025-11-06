@@ -16,10 +16,10 @@
 
 package org.axonframework.extension.spring.config;
 
-import org.axonframework.commandhandling.configuration.CommandHandlingModule;
+import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.Module;
-import org.axonframework.queryhandling.configuration.QueryHandlingModule;
+import org.axonframework.messaging.queryhandling.configuration.QueryHandlingModule;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;

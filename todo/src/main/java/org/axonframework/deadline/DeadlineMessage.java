@@ -18,7 +18,7 @@ package org.axonframework.deadline;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.TypeReference;
-import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.conversion.Converter;
 
 import java.lang.reflect.Type;

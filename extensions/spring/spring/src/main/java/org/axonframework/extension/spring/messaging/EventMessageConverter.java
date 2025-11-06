@@ -16,7 +16,7 @@
 
 package org.axonframework.extension.spring.messaging;
 
-import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.EventMessage;
 import org.springframework.messaging.Message;
 
 /**

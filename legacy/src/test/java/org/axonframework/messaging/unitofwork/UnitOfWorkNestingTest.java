@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.unitofwork;
 
-import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.core.MessageType;
 import org.axonframework.common.utils.MockException;
 import org.junit.jupiter.api.*;
 

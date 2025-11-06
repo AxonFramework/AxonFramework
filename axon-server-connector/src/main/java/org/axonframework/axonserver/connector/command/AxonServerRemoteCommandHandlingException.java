@@ -17,8 +17,8 @@
 package org.axonframework.axonserver.connector.command;
 
 import io.axoniq.axonserver.grpc.ErrorMessage;
-import org.axonframework.messaging.RemoteExceptionDescription;
-import org.axonframework.messaging.RemoteHandlingException;
+import org.axonframework.messaging.core.RemoteExceptionDescription;
+import org.axonframework.messaging.core.RemoteHandlingException;
 
 /**
  * Exception indicating a problem that was reported by the remote end of a connection.

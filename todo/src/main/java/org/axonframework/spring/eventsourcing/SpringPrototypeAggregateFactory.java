@@ -18,12 +18,12 @@ package org.axonframework.spring.eventsourcing;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.configuration.Configuration;
-import org.axonframework.eventhandling.DomainEventMessage;
-import org.axonframework.eventsourcing.AbstractAggregateFactory;
-import org.axonframework.eventsourcing.AggregateFactory;
-import org.axonframework.eventsourcing.IncompatibleAggregateException;
-import org.axonframework.messaging.annotations.HandlerDefinition;
-import org.axonframework.messaging.annotations.ParameterResolverFactory;
+import org.axonframework.messaging.eventhandling.DomainEventMessage;
+import org.axonframework.messaging.eventsourcing.AbstractAggregateFactory;
+import org.axonframework.messaging.eventsourcing.AggregateFactory;
+import org.axonframework.messaging.eventsourcing.IncompatibleAggregateException;
+import org.axonframework.messaging.core.annotation.HandlerDefinition;
+import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 import org.springframework.beans.factory.BeanNameAware;

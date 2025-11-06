@@ -16,12 +16,12 @@
 
 package org.axonframework.test.aggregate;
 
-import org.axonframework.eventhandling.DomainEventMessage;
-import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.axonframework.eventsourcing.AggregateFactory;
-import org.axonframework.eventsourcing.IncompatibleAggregateException;
+import org.axonframework.messaging.eventhandling.DomainEventMessage;
+import org.axonframework.messaging.eventhandling.GenericDomainEventMessage;
+import org.axonframework.messaging.eventsourcing.AggregateFactory;
+import org.axonframework.messaging.eventsourcing.IncompatibleAggregateException;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
-import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.test.FixtureExecutionException;
 import org.junit.jupiter.api.*;

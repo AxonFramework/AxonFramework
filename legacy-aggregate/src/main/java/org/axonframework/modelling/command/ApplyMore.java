@@ -16,6 +16,8 @@
 
 package org.axonframework.modelling.command;
 
+import org.axonframework.messaging.core.Message;
+
 import java.util.function.Supplier;
 
 /**
@@ -39,7 +41,7 @@ public interface ApplyMore {
      * payloadOrMessageSupplier} is asked to provide the subsequent event the initial event has been fully processed by
      * the aggregate.
      * <p>
-     * If the given supplier passes an object that is an instance of a {@link org.axonframework.messaging.Message} the
+     * If the given supplier passes an object that is an instance of a {@link Message} the
      * event is applied with the metadata from the message. If the supplied event is not a Message instance it will be
      * applied as an event without additional metadata.
      *
@@ -53,7 +55,7 @@ public interface ApplyMore {
      * payloadOrMessageSupplier} is asked to provide the subsequent event the initial event has been fully processed by
      * the aggregate.
      * <p>
-     * If the given supplier passes an object that is an instance of a {@link org.axonframework.messaging.Message} the
+     * If the given supplier passes an object that is an instance of a {@link Message} the
      * event is applied with the metadata from the message. If the supplied event is not a Message instance it will be
      * applied as an event without additional metadata.
      *

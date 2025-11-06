@@ -16,7 +16,7 @@
 
 package org.axonframework.test.aggregate;
 
-import org.axonframework.messaging.annotations.ParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 
 /**

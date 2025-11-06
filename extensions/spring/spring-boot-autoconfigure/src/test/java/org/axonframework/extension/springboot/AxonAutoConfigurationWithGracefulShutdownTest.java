@@ -17,8 +17,8 @@
 package org.axonframework.extension.springboot;
 
 import org.axonframework.common.configuration.AxonConfiguration;
-import org.axonframework.queryhandling.gateway.QueryGateway;
-import org.axonframework.queryhandling.annotations.QueryHandler;
+import org.axonframework.messaging.queryhandling.gateway.QueryGateway;
+import org.axonframework.messaging.queryhandling.annotation.QueryHandler;
 import org.axonframework.extension.springboot.autoconfig.AxonServerActuatorAutoConfiguration;
 import org.axonframework.extension.springboot.autoconfig.AxonServerAutoConfiguration;
 import org.junit.jupiter.api.*;

@@ -16,28 +16,29 @@
 
 package org.axonframework.test.aggregate;
 
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.commandhandling.annotations.CommandHandler;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.annotations.EventHandler;
-import org.axonframework.eventsourcing.AggregateFactory;
-import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
+import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.commandhandling.CommandResultMessage;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
+import org.axonframework.messaging.eventhandling.DomainEventMessage;
+import org.axonframework.messaging.eventhandling.EventBus;
+import org.axonframework.messaging.eventhandling.annotation.EventHandler;
+import org.axonframework.messaging.eventsourcing.AggregateFactory;
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.LegacyMessageHandler;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.Metadata;
-import org.axonframework.messaging.annotations.ClasspathHandlerDefinition;
-import org.axonframework.messaging.annotations.ClasspathHandlerEnhancerDefinition;
-import org.axonframework.messaging.annotations.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.annotations.HandlerDefinition;
-import org.axonframework.messaging.annotations.HandlerEnhancerDefinition;
-import org.axonframework.messaging.annotations.ParameterResolver;
-import org.axonframework.messaging.annotations.ParameterResolverFactory;
-import org.axonframework.messaging.annotations.SimpleResourceParameterResolverFactory;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageDispatchInterceptor;
+import org.axonframework.messaging.core.MessageHandlerInterceptor;
+import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.core.annotation.ClasspathHandlerEnhancerDefinition;
+import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.HandlerDefinition;
+import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
+import org.axonframework.messaging.core.annotation.ParameterResolver;
+import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.SimpleResourceParameterResolverFactory;
 import org.axonframework.modelling.command.CommandTargetResolver;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.RepositoryProvider;
@@ -124,7 +125,7 @@ public interface FixtureConfiguration<T> {
      * with the Event Store of this test fixture.
      * <p/>
      * Should not be used in combination with {@link
-     * #registerAggregateFactory(org.axonframework.eventsourcing.AggregateFactory)}, as that will overwrite any
+     * #registerAggregateFactory(AggregateFactory)}, as that will overwrite any
      * repository previously registered.
      *
      * @param repository The repository to use in the test case
@@ -333,7 +334,7 @@ public interface FixtureConfiguration<T> {
      * when an aggregate is loaded.
      * <p/>
      * If an item in the given {@code domainEvents} implements {@link Message}, the payload and {@link Metadata} from
-     * that {@code Message} are copied into a newly created {@link org.axonframework.eventhandling.DomainEventMessage}.
+     * that {@code Message} are copied into a newly created {@link DomainEventMessage}.
      * Otherwise, a {@code DomainEventMessage} with the item as payload and empty {@code Metadata} is created.
      * <p>
      * Note that transitioning to the returned {@link TestExecutor} will clear any previously defined "given" state to
@@ -371,7 +372,7 @@ public interface FixtureConfiguration<T> {
      * when an aggregate is loaded.
      * <p/>
      * If an item in the list implements {@link Message}, the payload and {@link Metadata} from that {@code Message} are
-     * copied into a newly created {@link org.axonframework.eventhandling.DomainEventMessage}. Otherwise, a
+     * copied into a newly created {@link DomainEventMessage}. Otherwise, a
      * {@code DomainEventMessage} with the item as payload and empty {@code Metadata} is created.
      * <p>
      * Note that transitioning to the returned {@link TestExecutor} will clear any previously defined "given" state to

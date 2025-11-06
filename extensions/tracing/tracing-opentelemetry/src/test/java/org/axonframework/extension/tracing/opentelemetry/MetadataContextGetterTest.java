@@ -16,11 +16,10 @@
 
 package org.axonframework.extension.tracing.opentelemetry;
 
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.extension.tracing.opentelemetry.MetadataContextGetter;
-import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.core.GenericMessage;
+import org.axonframework.messaging.core.MessageType;
 import org.junit.jupiter.api.*;
 
 import java.util.Collections;

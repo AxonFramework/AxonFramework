@@ -20,11 +20,11 @@
              version="3.0">
     <persistence-unit name="axonSpringTest" transaction-type="RESOURCE_LOCAL">
         <class>org.axonframework.eventsourcing.eventstore.jpa.AggregateEventEntry</class>
-        <class>org.axonframework.eventsourcing.eventstore.jpa.SnapshotEventEntry</class>
+        <class>org.axonframework.messaging.jpa.eventstore.eventsourcing.SnapshotEventEntry</class>
         <class>org.axonframework.modelling.saga.repository.jpa.AssociationValueEntry</class>
         <class>org.axonframework.modelling.saga.repository.jpa.SagaEntry</class>
-        <class>org.axonframework.eventhandling.deadletter.jpa.DeadLetterEntry</class>
-        <class>org.axonframework.eventhandling.deadletter.jpa.DeadLetterEventEntry</class>
+        <class>org.axonframework.messaging.jpa.deadletter.eventhandling.DeadLetterEntry</class>
+        <class>org.axonframework.messaging.jpa.deadletter.eventhandling.DeadLetterEventEntry</class>
         <class>org.axonframework.spring.modeling.command.JpaAggregate</class>
         <properties>
             <property name="hibernate.archive.autodetection" value="class"/>

@@ -18,7 +18,7 @@ package org.axonframework.integrationtests.polymorphic;
 
 import jakarta.annotation.Nonnull;
 import jakarta.persistence.EntityManager;
-import org.axonframework.eventhandling.EventBus;
+import org.axonframework.messaging.eventhandling.EventBus;
 import org.axonframework.modelling.command.GenericJpaRepository;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.RepositoryProvider;

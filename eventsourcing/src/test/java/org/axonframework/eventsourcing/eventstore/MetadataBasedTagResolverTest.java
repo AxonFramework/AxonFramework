@@ -16,9 +16,9 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventstreaming.Tag;
-import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.eventstreaming.Tag;
+import org.axonframework.messaging.core.MessageType;
 import org.junit.jupiter.api.*;
 
 import java.util.Map;

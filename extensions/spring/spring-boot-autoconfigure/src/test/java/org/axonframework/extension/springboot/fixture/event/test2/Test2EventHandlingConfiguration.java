@@ -16,7 +16,7 @@
 
 package org.axonframework.extension.springboot.fixture.event.test2;
 
-import org.axonframework.eventhandling.annotations.EventHandler;
+import org.axonframework.messaging.eventhandling.annotation.EventHandler;
 import org.springframework.context.annotation.Bean;
 
 public class Test2EventHandlingConfiguration {

@@ -18,8 +18,10 @@ package org.axonframework.deadline;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.messaging.Scope;
-import org.axonframework.messaging.ScopeDescriptor;
+import org.axonframework.messaging.core.Scope;
+import org.axonframework.messaging.core.ScopeDescriptor;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.Metadata;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -53,14 +55,14 @@ public interface DeadlineManager {
      * The scope within which this call is made will be retrieved by the DeadlineManager itself.
      * <p>
      * The given {@code messageOrPayload} may be any object, as well as a DeadlineMessage. In the latter case, the
-     * instance provided is the donor for the payload and {@link org.axonframework.messaging.Metadata} of the actual
+     * instance provided is the donor for the payload and {@link Metadata} of the actual
      * deadline being used. In the former case, the given {@code messageOrPayload} will be wrapped as the payload of a
      * {@link DeadlineMessage}.
      * </p>
      *
      * @param triggerDateTime  A {@link java.time.Instant} denoting the moment to trigger the deadline handling
      * @param deadlineName     A {@link String} representing the name of the deadline to schedule
-     * @param messageOrPayload A {@link org.axonframework.messaging.Message} or payload for a message as an
+     * @param messageOrPayload A {@link Message} or payload for a message as an
      *                         {@link Object}
      * @return the {@code scheduleId} as a {@link String} to use when cancelling the schedule
      */
@@ -74,14 +76,14 @@ public interface DeadlineManager {
      * provided {@code deadlineName} combination can be used to cancel the scheduled deadline.
      * <p>
      * The given {@code messageOrPayload} may be any object, as well as a DeadlineMessage. In the latter case, the
-     * instance provided is the donor for the payload and {@link org.axonframework.messaging.Metadata} of the actual
+     * instance provided is the donor for the payload and {@link Metadata} of the actual
      * deadline being used. In the former case, the given {@code messageOrPayload} will be wrapped as the payload of a
      * {@link DeadlineMessage}.
      * </p>
      *
      * @param triggerDateTime  A {@link Instant} denoting the moment to trigger the deadline handling
      * @param deadlineName     A {@link String} representing the name of the deadline to schedule
-     * @param messageOrPayload A {@link org.axonframework.messaging.Message} or payload for a message as an
+     * @param messageOrPayload A {@link Message} or payload for a message as an
      *                         {@link Object}
      * @param deadlineScope    A {@link ScopeDescriptor} describing the scope within which the deadline was scheduled
      * @return the {@code scheduleId} as a {@link String} to use when cancelling the schedule
@@ -112,14 +114,14 @@ public interface DeadlineManager {
      * itself.
      * <p>
      * The given {@code messageOrPayload} may be any object, as well as a DeadlineMessage. In the latter case, the
-     * instance provided is the donor for the payload and {@link org.axonframework.messaging.Metadata} of the actual
+     * instance provided is the donor for the payload and {@link Metadata} of the actual
      * deadline being used. In the former case, the given {@code messageOrPayload} will be wrapped as the payload of a
      * {@link DeadlineMessage}.
      * </p>
      *
      * @param triggerDuration  A {@link java.time.Duration} describing the waiting period before handling the deadline
      * @param deadlineName     A {@link String} representing the name of the deadline to schedule
-     * @param messageOrPayload A {@link org.axonframework.messaging.Message} or payload for a message as an
+     * @param messageOrPayload A {@link Message} or payload for a message as an
      *                         {@link Object}
      * @return the {@code scheduleId} as a {@link String} to use when cancelling the schedule
      */
@@ -133,14 +135,14 @@ public interface DeadlineManager {
      * {@code deadlineName} / {@code scheduleId} combination can be used to cancel the scheduled deadline.
      * <p>
      * The given {@code messageOrPayload} may be any object, as well as a DeadlineMessage. In the latter case, the
-     * instance provided is the donor for the payload and {@link org.axonframework.messaging.Metadata} of the actual
+     * instance provided is the donor for the payload and {@link Metadata} of the actual
      * deadline being used. In the former case, the given {@code messageOrPayload} will be wrapped as the payload of a
      * {@link DeadlineMessage}.
      * </p>
      *
      * @param triggerDuration  A {@link Duration} describing the waiting period before handling the deadline
      * @param deadlineName     A {@link String} representing the name of the deadline to schedule
-     * @param messageOrPayload A {@link org.axonframework.messaging.Message} or payload for a message as an
+     * @param messageOrPayload A {@link Message} or payload for a message as an
      *                         {@link Object}
      * @param deadlineScope    A {@link ScopeDescriptor} describing the scope within which the deadline was scheduled
      * @return the {@code scheduleId} as a {@link String} to use when cancelling the schedule

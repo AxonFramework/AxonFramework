@@ -22,26 +22,26 @@ import jakarta.persistence.PersistenceContext;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
-import org.axonframework.messaging.unitofwork.transaction.Transaction;
-import org.axonframework.messaging.unitofwork.transaction.TransactionManager;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.processors.streaming.token.GapAwareTrackingToken;
-import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
-import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedStorageEngineTestSuite;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedJpaEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaPollingEventCoordinator;
-import org.axonframework.eventstreaming.EventCriteria;
-import org.axonframework.eventstreaming.StreamingCondition;
-import org.axonframework.eventstreaming.Tag;
 import org.axonframework.extension.spring.messaging.unitofwork.SpringTransactionManager;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageStream.Entry;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.MessageStream.Entry;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.transaction.Transaction;
+import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.GapAwareTrackingToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.axonframework.messaging.eventstreaming.StreamingCondition;
+import org.axonframework.messaging.eventstreaming.Tag;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -70,16 +70,14 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.LongStream;
-
 import javax.sql.DataSource;
 
 import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link AggregateBasedJpaEventStorageEngine}.
@@ -110,18 +108,19 @@ class AggregateBasedJpaEventStorageEngineIT
                 transactionManager,
                 converter,
                 config -> config
-                    .eventCoordinator(new JpaPollingEventCoordinator(entityManagerProvider, Duration.ofMillis(500)))
-                    .persistenceExceptionResolver(new PersistenceExceptionResolver() {
-                        @Override
-                        public boolean isDuplicateKeyViolation(Exception exception) {
-                            return causeIsEntityExistsException(exception);
-                        }
+                        .eventCoordinator(new JpaPollingEventCoordinator(entityManagerProvider, Duration.ofMillis(500)))
+                        .persistenceExceptionResolver(new PersistenceExceptionResolver() {
+                            @Override
+                            public boolean isDuplicateKeyViolation(Exception exception) {
+                                return causeIsEntityExistsException(exception);
+                            }
 
-                        private boolean causeIsEntityExistsException(Throwable exception) {
-                            return exception instanceof java.sql.SQLIntegrityConstraintViolationException
-                                    || (exception.getCause() != null && causeIsEntityExistsException(exception.getCause()));
-                        }
-                    })
+                            private boolean causeIsEntityExistsException(Throwable exception) {
+                                return exception instanceof java.sql.SQLIntegrityConstraintViolationException
+                                        || (exception.getCause() != null
+                                        && causeIsEntityExistsException(exception.getCause()));
+                            }
+                        })
         );
 
         return engine;
@@ -158,7 +157,8 @@ class AggregateBasedJpaEventStorageEngineIT
     @Test
     void closedStreamingShouldReturnEmptyResults() throws InterruptedException, ExecutionException {
         TrackingToken position = testSubject.firstToken(processingContext()).get();
-        MessageStream<EventMessage> stream = testSubject.stream(StreamingCondition.startingFrom(position), processingContext());
+        MessageStream<EventMessage> stream = testSubject.stream(StreamingCondition.startingFrom(position),
+                                                                processingContext());
 
         stream.close();
 
@@ -183,7 +183,8 @@ class AggregateBasedJpaEventStorageEngineIT
         TrackingToken position = testSubject.firstToken(processingContext()).get();
 
         // Create stream that should get new events as they arrive:
-        MessageStream<EventMessage> stream = testSubject.stream(StreamingCondition.startingFrom(position), processingContext());
+        MessageStream<EventMessage> stream = testSubject.stream(StreamingCondition.startingFrom(position),
+                                                                processingContext());
 
         stream.setCallback(() -> called.set(true));
 
@@ -199,20 +200,22 @@ class AggregateBasedJpaEventStorageEngineIT
         await().during(Duration.ofSeconds(1)).untilAsserted(() -> assertThat(called).isFalse());
 
         // Add a new message:
-        testSubject.appendEvents(AppendCondition.none(), processingContext(), taggedEventMessage("event", Set.of(new Tag("k", "v"))))
-            .get()
-            .commit(processingContext());
+        testSubject.appendEvents(AppendCondition.none(),
+                                 processingContext(),
+                                 taggedEventMessage("event", Set.of(new Tag("k", "v"))))
+                   .get()
+                   .commit(processingContext());
 
         // Expect to see a new message arrive:
         await().untilAsserted(() -> assertThat(called).isTrue());
 
         // Verify there indeed is a new message:
         assertThat(stream.next())
-            .isNotEmpty()
-            .map(e -> e.map(this::convertPayload))
-            .map(Entry::message)
-            .map(m -> m.payloadAs(String.class))
-            .contains("event");
+                .isNotEmpty()
+                .map(e -> e.map(this::convertPayload))
+                .map(Entry::message)
+                .map(m -> m.payloadAs(String.class))
+                .contains("event");
     }
 
     @Test
@@ -226,7 +229,9 @@ class AggregateBasedJpaEventStorageEngineIT
 
     @Test
     void appendEventsIsPerformedInATransaction() {
-        appendCommitAndWait(testSubject, AppendCondition.none(), AggregateBasedStorageEngineTestSuite.taggedEventMessage("event-2", emptySet()));
+        appendCommitAndWait(testSubject,
+                            AppendCondition.none(),
+                            AggregateBasedStorageEngineTestSuite.taggedEventMessage("event-2", emptySet()));
 
         verify(transactionManager).startTransaction();
     }
@@ -265,8 +270,8 @@ class AggregateBasedJpaEventStorageEngineIT
         transaction.commit();
 
         MessageStream<EventMessage> stream = testSubject.stream(
-            StreamingCondition.startingFrom(new GapAwareTrackingToken(0, Collections.emptySet())),
-            processingContext()
+                StreamingCondition.startingFrom(new GapAwareTrackingToken(0, Collections.emptySet())),
+                processingContext()
         );
 
         List<GapAwareTrackingToken> tokens = new ArrayList<>();
@@ -274,8 +279,8 @@ class AggregateBasedJpaEventStorageEngineIT
         // Grab the messages without using reduce on an infinite stream:
         await().until(() -> {
             stream.next().flatMap(e -> TrackingToken.fromContext(e))
-                .map(GapAwareTrackingToken.class::cast)
-                .ifPresent(tokens::add);
+                  .map(GapAwareTrackingToken.class::cast)
+                  .ifPresent(tokens::add);
 
             return tokens.size() == 8;
         });
@@ -451,7 +456,7 @@ class AggregateBasedJpaEventStorageEngineIT
         }
 
         @Bean
-        public static  PersistenceAnnotationBeanPostProcessor persistenceAnnotationBeanPostProcessor() {
+        public static PersistenceAnnotationBeanPostProcessor persistenceAnnotationBeanPostProcessor() {
             return new PersistenceAnnotationBeanPostProcessor();
         }
     }

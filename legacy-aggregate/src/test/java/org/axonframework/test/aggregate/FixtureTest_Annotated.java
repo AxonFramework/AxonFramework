@@ -16,11 +16,11 @@
 
 package org.axonframework.test.aggregate;
 
-import org.axonframework.eventhandling.DomainEventMessage;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericDomainEventMessage;
+import org.axonframework.messaging.eventhandling.DomainEventMessage;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
-import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.modelling.command.CommandTargetResolver;
 import org.axonframework.test.AxonAssertionError;

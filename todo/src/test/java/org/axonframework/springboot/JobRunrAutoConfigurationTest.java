@@ -18,8 +18,8 @@ package org.axonframework.springboot;
 
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.jobrunr.JobRunrDeadlineManager;
-import org.axonframework.eventhandling.scheduling.EventScheduler;
-import org.axonframework.eventhandling.scheduling.jobrunr.JobRunrEventScheduler;
+import org.axonframework.messaging.eventhandling.scheduling.EventScheduler;
+import org.axonframework.messaging.eventhandling.scheduling.jobrunr.JobRunrEventScheduler;
 import org.jobrunr.scheduling.JobScheduler;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;

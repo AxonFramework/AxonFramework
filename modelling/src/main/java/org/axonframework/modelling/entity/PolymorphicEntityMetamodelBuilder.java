@@ -18,8 +18,8 @@ package org.axonframework.modelling.entity;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.commandhandling.CommandHandler;
+import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.entity.child.EntityChildMetamodel;
 

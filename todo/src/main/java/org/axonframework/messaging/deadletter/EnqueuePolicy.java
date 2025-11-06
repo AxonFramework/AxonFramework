@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.deadletter;
 
-import org.axonframework.messaging.Message;
+import org.axonframework.messaging.core.Message;
 
 /**
  * A functional interface constructing an {@link EnqueueDecision} based on a {@link DeadLetter dead letter} and

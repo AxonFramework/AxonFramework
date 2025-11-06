@@ -17,9 +17,9 @@
 package org.axonframework.deadline.jobrunr;
 
 import org.axonframework.deadline.TestScopeDescriptor;
-import org.axonframework.messaging.ScopeDescriptor;
-import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.json.JacksonSerializer;
+import org.axonframework.messaging.core.ScopeDescriptor;
+import org.axonframework.conversion.Serializer;
+import org.axonframework.conversion.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;

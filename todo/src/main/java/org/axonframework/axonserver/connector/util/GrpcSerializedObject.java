@@ -17,9 +17,9 @@
 package org.axonframework.axonserver.connector.util;
 
 import org.axonframework.conversion.Converter;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.SerializedType;
-import org.axonframework.serialization.Serializer;
+import org.axonframework.conversion.SerializedObject;
+import org.axonframework.conversion.SerializedType;
+import org.axonframework.conversion.Serializer;
 
 /**
  * Wrapper that allows clients to access a gRPC {@link io.axoniq.axonserver.grpc.SerializedObject} message as a {@link

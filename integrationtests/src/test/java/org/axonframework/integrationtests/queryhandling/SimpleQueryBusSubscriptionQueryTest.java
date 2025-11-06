@@ -18,15 +18,14 @@ package org.axonframework.integrationtests.queryhandling;
 
 import org.axonframework.axonserver.connector.AxonServerConfigurationEnhancer;
 import org.axonframework.common.configuration.Configuration;
-import org.axonframework.messaging.configuration.MessagingConfigurer;
-import org.axonframework.common.configuration.MessagingConfigurer;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.queryhandling.GenericQueryMessage;
-import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.queryhandling.SimpleQueryBus;
-import org.axonframework.queryhandling.SubscriptionQueryAlreadyRegisteredException;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.queryhandling.GenericQueryMessage;
+import org.axonframework.messaging.queryhandling.QueryBus;
+import org.axonframework.messaging.queryhandling.QueryMessage;
+import org.axonframework.messaging.queryhandling.QueryResponseMessage;
+import org.axonframework.messaging.queryhandling.SimpleQueryBus;
+import org.axonframework.messaging.queryhandling.SubscriptionQueryAlreadyRegisteredException;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;

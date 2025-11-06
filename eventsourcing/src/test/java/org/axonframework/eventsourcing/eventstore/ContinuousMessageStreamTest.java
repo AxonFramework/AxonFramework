@@ -16,14 +16,14 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageStream.Empty;
-import org.axonframework.messaging.MessageStream.Single;
-import org.axonframework.messaging.MessageStreamTest;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.SimpleEntry;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.MessageStream.Empty;
+import org.axonframework.messaging.core.MessageStream.Single;
+import org.axonframework.messaging.core.MessageStreamTest;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.SimpleEntry;
 import org.junit.jupiter.api.Assumptions;
 
 import java.util.List;

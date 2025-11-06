@@ -18,17 +18,18 @@ package org.axonframework.spring.eventsourcing;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.messaging.unitofwork.transaction.TransactionManager;
-import org.axonframework.eventsourcing.AggregateFactory;
+import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
+import org.axonframework.messaging.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.eventsourcing.snapshotting.AggregateSnapshotter;
-import org.axonframework.eventsourcing.snapshotting.SnapshotterSpanFactory;
-import org.axonframework.messaging.annotations.ClasspathHandlerDefinition;
-import org.axonframework.messaging.annotations.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.annotations.HandlerDefinition;
-import org.axonframework.messaging.annotations.ParameterResolverFactory;
-import org.axonframework.messaging.unitofwork.transaction.NoTransactionManager;
-import org.axonframework.tracing.SpanFactory;
+import org.axonframework.messaging.eventsourcing.snapshotting.AggregateSnapshotter;
+import org.axonframework.messaging.eventsourcing.snapshotting.SnapshotterSpanFactory;
+import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.HandlerDefinition;
+import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.core.unitofwork.transaction.NoTransactionManager;
+import org.axonframework.messaging.tracing.NoOpSpanFactory;
+import org.axonframework.messaging.tracing.SpanFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -70,7 +71,7 @@ public class SpringAggregateSnapshotter extends AggregateSnapshotter implements 
      * <p>
      * The {@link Executor} is defaulted to an {@link org.axonframework.common.DirectExecutor#INSTANCE}, the
      * {@link TransactionManager} defaults to a {@link NoTransactionManager} and
-     * the {@link SpanFactory} defaults to a {@link org.axonframework.tracing.NoOpSpanFactory}. Additionally, this
+     * the {@link SpanFactory} defaults to a {@link NoOpSpanFactory}. Additionally, this
      * Builder has convenience functions to default the {@link ParameterResolverFactory} and {@link HandlerDefinition}
      * based on instances of these available on the classpath in case these are not provided (respectively
      * {@code Builder#buildParameterResolverFactory()} and {@code Builder#buildHandlerDefinition()}). Upon instantiation
@@ -126,7 +127,7 @@ public class SpringAggregateSnapshotter extends AggregateSnapshotter implements 
      * <p>
      * The {@link Executor} is defaulted to an {@link org.axonframework.common.DirectExecutor#INSTANCE}, the
      * {@link TransactionManager} defaults to a {@link NoTransactionManager} and
-     * the {@link SpanFactory} defaults to a {@link org.axonframework.tracing.NoOpSpanFactory}. Additionally, this
+     * the {@link SpanFactory} defaults to a {@link NoOpSpanFactory}. Additionally, this
      * Builder has convenience functions to default the {@link ParameterResolverFactory} and {@link HandlerDefinition}
      * based on instances of these available on the classpath in case these are not provided (respectively
      * {@link Builder#buildParameterResolverFactory()} and {@link Builder#buildHandlerDefinition()}). Upon instantiation

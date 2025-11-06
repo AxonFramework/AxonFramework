@@ -17,8 +17,11 @@
 package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.annotations.Internal;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.common.annotation.Internal;
+import org.axonframework.messaging.core.GenericResultMessage;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 /**
  * Interface for a component that processes Messages.

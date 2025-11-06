@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.messaging.annotations.HasHandlerAttributes;
+import org.axonframework.messaging.core.annotation.HasHandlerAttributes;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;

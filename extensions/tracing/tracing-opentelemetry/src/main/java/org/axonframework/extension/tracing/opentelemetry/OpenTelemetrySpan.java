@@ -19,8 +19,8 @@ package org.axonframework.extension.tracing.opentelemetry;
 import io.opentelemetry.api.trace.SpanBuilder;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.context.Scope;
-import org.axonframework.tracing.Span;
-import org.axonframework.tracing.SpanScope;
+import org.axonframework.messaging.tracing.Span;
+import org.axonframework.messaging.tracing.SpanScope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
