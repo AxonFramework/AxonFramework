@@ -19,7 +19,7 @@ jobs:
     strategy:
       matrix:
         axon-framework:
-          - version: 5.0.0-preview
+          - version: 5.0.0-RC3
           - version: 5.0.0-SNAPSHOT
       fail-fast: false
 
