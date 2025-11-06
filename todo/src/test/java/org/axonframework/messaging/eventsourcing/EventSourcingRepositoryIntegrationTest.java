@@ -24,7 +24,7 @@ import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
+import org.axonframework.eventsourcing.eventstore.StorageEngineBackedEventStore;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
@@ -79,7 +79,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
         EventStorageEngine eventStorageEngine = new InMemoryEventStorageEngine();
         TagResolver tagResolver = new AnnotationBasedTagResolver();
         EventBus eventBus = new SimpleEventBus();
-        eventStore = new SimpleEventStore(eventStorageEngine, eventBus, tagResolver);
+        eventStore = new StorageEngineBackedEventStore(eventStorageEngine, eventBus, tagResolver);
         repository = LegacyEventSourcingRepository.builder(SimpleAggregateRoot.class)
                                                   .aggregateFactory(new SimpleAggregateFactory())
 //                                                  .eventStore(eventStore)

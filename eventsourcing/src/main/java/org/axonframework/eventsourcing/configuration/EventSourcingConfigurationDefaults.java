@@ -29,7 +29,7 @@ import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.InterceptingEventStore;
-import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
+import org.axonframework.eventsourcing.eventstore.StorageEngineBackedEventStore;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.core.MessageDispatchInterceptor;
@@ -47,7 +47,7 @@ import java.util.List;
  * <ul>
  *     <li>Registers a {@link AnnotationBasedTagResolver} for class {@link TagResolver}</li>
  *     <li>Registers a {@link InMemoryEventStorageEngine} for class {@link EventStorageEngine}</li>
- *     <li>Registers a {@link SimpleEventStore} for class {@link EventStore}</li>
+ *     <li>Registers a {@link StorageEngineBackedEventStore} for class {@link EventStore}</li>
  * </ul>
  * Furthermore, this enhancer will decorate the:
  * <ul>
@@ -100,8 +100,8 @@ public class EventSourcingConfigurationDefaults implements ConfigurationEnhancer
         return new InMemoryEventStorageEngine();
     }
 
-    private static SimpleEventStore simpleEventStore(Configuration config) {
-        return new SimpleEventStore(
+    private static StorageEngineBackedEventStore simpleEventStore(Configuration config) {
+        return new StorageEngineBackedEventStore(
                 config.getComponent(EventStorageEngine.class),
                 new SimpleEventBus(),
                 config.getComponent(TagResolver.class)

@@ -29,7 +29,7 @@ import org.axonframework.messaging.eventhandling.processing.streaming.token.Glob
 import org.axonframework.messaging.eventhandling.processing.streaming.token.MultiSourceTrackingToken;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
+import org.axonframework.eventsourcing.eventstore.StorageEngineBackedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageType;
@@ -67,8 +67,8 @@ class MultiStreamableMessageSourceTest {
 
     @BeforeEach
     void setUp() {
-        eventStoreA = new SimpleEventStore(new InMemoryEventStorageEngine(), new SimpleEventBus(), new AnnotationBasedTagResolver());
-        eventStoreB = new SimpleEventStore(new InMemoryEventStorageEngine(), new SimpleEventBus(), new AnnotationBasedTagResolver());
+        eventStoreA = new StorageEngineBackedEventStore(new InMemoryEventStorageEngine(), new SimpleEventBus(), new AnnotationBasedTagResolver());
+        eventStoreB = new StorageEngineBackedEventStore(new InMemoryEventStorageEngine(), new SimpleEventBus(), new AnnotationBasedTagResolver());
 
         testSubject = MultiStreamableMessageSource.builder()
 //                                                  .addMessageSource("eventStoreA", eventStoreA)
@@ -368,7 +368,7 @@ class MultiStreamableMessageSourceTest {
                 Comparator.comparing((Map.Entry<String, TrackedEventMessage> e) -> !e.getKey().equals("eventStoreA"))
                           .thenComparing(e -> e.getValue().timestamp());
 
-        EventStore eventStoreC = new SimpleEventStore(new InMemoryEventStorageEngine(),
+        EventStore eventStoreC = new StorageEngineBackedEventStore(new InMemoryEventStorageEngine(),
                                                       new SimpleEventBus(),
                                                       new AnnotationBasedTagResolver());
 

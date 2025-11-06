@@ -37,14 +37,14 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 
 /**
- * Simple implementation of the {@link EventStore}.
+ * An {@link EventStore} implementation which uses an {@link EventStorageEngine} as its storage solution.
  *
  * @author Allard Buijze
  * @author Rene de Waele
  * @author Steven van Beelen
  * @since 3.0.0
  */
-public class SimpleEventStore implements EventStore {
+public class StorageEngineBackedEventStore implements EventStore {
 
     private final EventStorageEngine eventStorageEngine;
     private final EventBus eventBus;
@@ -64,7 +64,7 @@ public class SimpleEventStore implements EventStore {
      * @param tagResolver        The {@link TagResolver} used to resolve tags during appending events in the
      *                           {@link EventStoreTransaction}.
      */
-    public SimpleEventStore(
+    public StorageEngineBackedEventStore(
             @Nonnull EventStorageEngine eventStorageEngine,
             @Nonnull EventBus eventBus,
             @Nonnull TagResolver tagResolver
@@ -98,7 +98,7 @@ public class SimpleEventStore implements EventStore {
                 taggedEvents.add(tagEvents(event));
             }
             return eventStorageEngine.appendEvents(none, context, taggedEvents)
-                                     .thenApply(SimpleEventStore::castTransaction)
+                                     .thenApply(StorageEngineBackedEventStore::castTransaction)
                                      .thenApply(tx -> tx.commit(context).thenApply(v -> tx.afterCommit(v, context)))
                                      .thenApply(marker -> null)
                                      .thenCompose(r -> eventBus.publish(context, events));

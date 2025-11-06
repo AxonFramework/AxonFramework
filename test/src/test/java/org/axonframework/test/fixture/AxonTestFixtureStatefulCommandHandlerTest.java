@@ -27,7 +27,7 @@ import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
+import org.axonframework.eventsourcing.eventstore.StorageEngineBackedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.messaging.core.MessageStream;
@@ -261,7 +261,7 @@ class AxonTestFixtureStatefulCommandHandlerTest {
                                                      .register(repository);
                         })
                 .registerComponent(EventStore.class,
-                                   c -> new SimpleEventStore(new InMemoryEventStorageEngine(),
+                                   c -> new StorageEngineBackedEventStore(new InMemoryEventStorageEngine(),
                                                              new SimpleEventBus(),
                                                              new AnnotationBasedTagResolver()))
                 .registerComponent(EventSink.class,

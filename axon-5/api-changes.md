@@ -559,7 +559,8 @@ public void streamingEvents(
 
 #### Generic `EventStorageEngine` changes
 
-The `EventStorageEngine` aligns with the changes made to the `EventStore` and `StreamableMessageSource` to service both
+The `EventStorageEngine` is now specific to the `StorageEngineBackedEventStore` and 
+aligns with the changes made to this store and `StreamableMessageSource` to service both
 interfaces correctly.
 
 As such, it's API now uses asynchronous operations throughout - all methods now return
@@ -2045,6 +2046,7 @@ This section contains five tables:
 | org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException                                 | org.axonframework.messaging.store.token.streaming.processors.eventhandling.UnableToClaimTokenException          | No                             |
 | org.axonframework.eventhandling.tokenstore.UnableToInitializeTokenException                            | org.axonframework.messaging.store.token.streaming.processors.eventhandling.UnableToInitializeTokenException     | No                             |
 | org.axonframework.eventhandling.tokenstore.UnableToRetrieveIdentifierException                         | org.axonframework.messaging.store.token.streaming.processors.eventhandling.UnableToRetrieveIdentifierException  | No                             |
+| org.axonframework.eventsourcing.eventstore.EmbeddedEventStore                                          | org.axonframework.eventsourcing.eventstore.StorageEngineBackedEventStore                              | No                             |
 
 ### Removed Classes
 

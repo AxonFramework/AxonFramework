@@ -36,6 +36,8 @@ import java.util.concurrent.CompletableFuture;
 import static java.util.Arrays.asList;
 
 /**
+ * Interface for providing storage engines for the {@link StorageEngineBackedEventStore}.
+ * <p>
  * Provides a mechanism to {@link #appendEvents(AppendCondition, TaggedEventMessage[])}  append} as well as retrieve
  * {@link EventMessage events} from an underlying storage mechanism.
  * <p>
