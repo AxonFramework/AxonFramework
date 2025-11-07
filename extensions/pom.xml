@@ -26,8 +26,10 @@
     <groupId>org.axonframework.extensions</groupId>
     <artifactId>axon-extensions</artifactId>
 
-    <name>Axon Framework - Extensions Parent</name>
-    <description>Module providing root for Axon Framework Extensions.</description>
+    <name>Axon Extension - Parent</name>
+    <description>
+        Module providing parent for Axon Framework Extensions.
+    </description>
 
     <packaging>pom</packaging>
     <modules>

@@ -25,11 +25,13 @@
 
     <groupId>org.axonframework.extensions.metrics</groupId>
     <artifactId>axon-metrics-extension</artifactId>
+
+    <name>Axon Extension - Metrics - Parent</name>
+    <description>
+        Module providing parent for Axon Framework Metrics Extension.
+    </description>
+
     <packaging>pom</packaging>
-
-    <name>Axon Framework - Metrics Extension Parent</name>
-    <description>Module providing parent for Axon Framework Metrics Extension.</description>
-
     <modules>
         <module>metrics-dropwizard</module>
         <module>metrics-micrometer</module>
