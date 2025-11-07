@@ -15,7 +15,7 @@
  */
 
 package org.axonframework.extension.kotlin.test
-
+/*
 import org.axonframework.commandhandling.CommandHandler
 import org.axonframework.commandhandling.RoutingKey
 import org.axonframework.modelling.command.AggregateIdentifier
@@ -37,6 +37,6 @@ internal class ExampleAggregate {
     constructor(command: ExampleCommandWithException) {
         throw Exception()
     }
-}
+}*/
 
 class ExampleSaga

@@ -16,7 +16,8 @@
 
 package org.axonframework.extensions.kotlin
 
-import org.axonframework.queryhandling.QueryUpdateEmitter
+import org.axonframework.messaging.queryhandling.QueryUpdateEmitter
+
 
 /**
  * Reified version of [org.axonframework.queryhandling.QueryUpdateEmitter.emit] which uses generics
@@ -35,6 +36,6 @@ import org.axonframework.queryhandling.QueryUpdateEmitter
  * @since 0.1.0
  */
 inline fun <reified Q, reified U : Any> QueryUpdateEmitter.emit(update: U, noinline filter: (Q) -> Boolean) =
-        this.emit(Q::class.java, filter, update)
+    this.emit(Q::class.java, filter, update)
 
 

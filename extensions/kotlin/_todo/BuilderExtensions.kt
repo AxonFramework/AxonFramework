@@ -16,7 +16,7 @@
 package org.axonframework.extensions.kotlin
 
 import org.axonframework.eventsourcing.EventSourcingRepository
-import org.axonframework.modelling.command.GenericJpaRepository
+
 
 /**
  * Reified version of the static builder for event souring repository.
@@ -24,7 +24,7 @@ import org.axonframework.modelling.command.GenericJpaRepository
  * @return event sourcing repository builder for aggregate [T]
  * @since 0.2.0
  */
-inline fun <reified T : Any> eventSourcingRepositoryBuilder() = EventSourcingRepository.builder(T::class.java)
+inline fun <reified T : Any> eventSourcingRepositoryBuilder() = EventSourcingRepository(T::class.java)
 
 
 /**

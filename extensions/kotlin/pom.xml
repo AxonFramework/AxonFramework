@@ -15,72 +15,36 @@
   ~ limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <name>Axon Framework - Kotlin Extension</name>
-    <description>Extension for Axon Framework that provides Kotlin utilities.</description>
+    <parent>
+        <groupId>org.axonframework.extensions</groupId>
+        <artifactId>axon-extensions</artifactId>
+        <version>5.0.0-SNAPSHOT</version>
+    </parent>
 
     <groupId>org.axonframework.extensions.kotlin</groupId>
-    <artifactId>axon-kotlin-parent</artifactId>
-    <version>4.12.1-SNAPSHOT</version>
-    <packaging>pom</packaging>
+    <artifactId>axon-kotlin-extension</artifactId>
 
+    <name>Axon Extension - Kotlin - Parent</name>
+    <description>
+        Module providing parent for Axon Framework Kotlin Extension.
+    </description>
+
+    <packaging>pom</packaging>
     <modules>
         <module>kotlin</module>
         <module>kotlin-test</module>
     </modules>
 
-    <inceptionYear>2019</inceptionYear>
-    <url>https://axoniq.io</url>
-    <licenses>
-        <license>
-            <name>Apache 2.0</name>
-            <url>https://www.apache.org/licenses/LICENSE-2.0</url>
-        </license>
-    </licenses>
-    <organization>
-        <name>AxonIQ</name>
-    </organization>
-
-    <issueManagement>
-        <system>GitHub</system>
-        <url>https://github.com/AxonFramework/extension-kotlin/issues</url>
-    </issueManagement>
-
     <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <sonar.coverage.jacoco.xmlReportPaths>
-            ${project.basedir}/coverage-report/target/site/jacoco-aggregate/jacoco.xml,
-            ${project.basedir}/../coverage-report/target/site/jacoco-aggregate/jacoco.xml
-        </sonar.coverage.jacoco.xmlReportPaths>
-        <!-- Main -->
-        <axon.version>4.12.0</axon.version>
-        <kotlin.version>2.2.0</kotlin.version>
-        <!-- Serialization -->
-        <jackson-kotlin.version>2.19.2</jackson-kotlin.version>
-        <kotlin-serialization.version>1.6.3</kotlin-serialization.version>
+        <kotlin.version>2.2.21</kotlin.version>
+        <kotlin-serialization.version>1.9.0</kotlin-serialization.version>
         <!-- Logging -->
-        <slf4j.version>2.0.17</slf4j.version>
-        <log4j.version>2.13.3</log4j.version>
-        <!-- Testing -->
-        <junit.jupiter.version>5.13.3</junit.jupiter.version>
         <mockk.version>1.12.4</mockk.version>
-        <!-- Build -->
-        <central-publishing-maven-plugin.version>0.8.0</central-publishing-maven-plugin.version>
         <dokka.version>2.0.0</dokka.version>
-        <jacoco-maven.version>0.8.13</jacoco-maven.version>
-        <maven-assembly.version>3.7.1</maven-assembly.version>
-        <maven-clean.version>3.5.0</maven-clean.version>
-        <maven-compiler.version>3.14.0</maven-compiler.version>
-        <maven-enforcer.version>3.6.1</maven-enforcer.version>
-        <maven-gpg.version>3.2.8</maven-gpg.version>
-        <maven-install.version>3.1.4</maven-install.version>
-        <maven-jar.version>3.4.2</maven-jar.version>
-        <maven-javadoc.version>3.5.0</maven-javadoc.version>
-        <maven-release.version>3.1.1</maven-release.version>
-        <maven-source.version>3.3.1</maven-source.version>
-        <maven-surefire.version>3.5.3</maven-surefire.version>
-        <maven-resources.version>3.3.1</maven-resources.version>
+
         <!--
         Deactivate dokka by default, and make the build faster for all projects.
         The dokka.skip will be set to true on relevant projects only containing Kotlin code
@@ -99,42 +63,12 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            <!-- Axon -->
             <dependency>
-                <groupId>org.axonframework</groupId>
-                <artifactId>axon-configuration</artifactId>
-                <version>${axon.version}</version>
+                <groupId>org.jetbrains.kotlinx</groupId>
+                <artifactId>kotlinx-serialization-core</artifactId>
+                <version>${kotlin-serialization.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.axonframework</groupId>
-                <artifactId>axon-test</artifactId>
-                <version>${axon.version}</version>
-            </dependency>
-            <!-- Serialization -->
-            <dependency>
-                <groupId>com.fasterxml.jackson.module</groupId>
-                <artifactId>jackson-module-kotlin</artifactId>
-                <version>${jackson-kotlin.version}</version>
-            </dependency>
-            <dependency>
-              <groupId>org.jetbrains.kotlinx</groupId>
-              <artifactId>kotlinx-serialization-core</artifactId>
-              <version>${kotlin-serialization.version}</version>
-            </dependency>
-            <!-- Testing -->
-            <dependency>
-                <groupId>org.junit</groupId>
-                <artifactId>junit-bom</artifactId>
-                <version>${junit.jupiter.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.jetbrains.kotlin</groupId>
-                <artifactId>kotlin-test-junit5</artifactId>
-                <version>${kotlin.version}</version>
-                <scope>test</scope>
-            </dependency>
+
             <dependency>
                 <groupId>io.mockk</groupId>
                 <artifactId>mockk</artifactId>
@@ -148,21 +82,42 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-              <groupId>org.jetbrains.kotlinx</groupId>
-              <artifactId>kotlinx-serialization-json</artifactId>
-              <version>${kotlin-serialization.version}</version>
+                <groupId>org.jetbrains.kotlinx</groupId>
+                <artifactId>kotlinx-serialization-json</artifactId>
+                <version>${kotlin-serialization.version}</version>
             </dependency>
             <dependency>
-              <groupId>org.jetbrains.kotlinx</groupId>
-              <artifactId>kotlinx-serialization-cbor</artifactId>
-              <version>${kotlin-serialization.version}</version>
-              <scope>test</scope>
+                <groupId>org.jetbrains.kotlinx</groupId>
+                <artifactId>kotlinx-serialization-cbor</artifactId>
+                <version>${kotlin-serialization.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
-              <groupId>org.jetbrains.kotlinx</groupId>
-              <artifactId>kotlinx-serialization-protobuf</artifactId>
-              <version>${kotlin-serialization.version}</version>
-              <scope>test</scope>
+                <groupId>org.jetbrains.kotlinx</groupId>
+                <artifactId>kotlinx-serialization-protobuf</artifactId>
+                <version>${kotlin-serialization.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.axonframework</groupId>
+                <artifactId>axon-eventsourcing</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.axonframework</groupId>
+                <artifactId>axon-messaging</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.axonframework</groupId>
+                <artifactId>axon-modelling</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.axonframework</groupId>
+                <artifactId>axon-test</artifactId>
+                <version>${project.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -187,11 +142,7 @@
             <artifactId>kotlinx-serialization-core</artifactId>
         </dependency>
         <!-- Testing -->
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <scope>test</scope>
-        </dependency>
+
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-test-junit5</artifactId>
@@ -208,18 +159,18 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-          <groupId>org.jetbrains.kotlinx</groupId>
-          <artifactId>kotlinx-serialization-json</artifactId>
+            <groupId>org.jetbrains.kotlinx</groupId>
+            <artifactId>kotlinx-serialization-json</artifactId>
         </dependency>
         <dependency>
-          <groupId>org.jetbrains.kotlinx</groupId>
-          <artifactId>kotlinx-serialization-cbor</artifactId>
-          <scope>test</scope>
+            <groupId>org.jetbrains.kotlinx</groupId>
+            <artifactId>kotlinx-serialization-cbor</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
-          <groupId>org.jetbrains.kotlinx</groupId>
-          <artifactId>kotlinx-serialization-protobuf</artifactId>
-          <scope>test</scope>
+            <groupId>org.jetbrains.kotlinx</groupId>
+            <artifactId>kotlinx-serialization-protobuf</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <!-- Not part of Java 8 by default. Adding it as a dependency makes it compatible with Java 8 -->
@@ -231,34 +182,8 @@
     </dependencies>
 
     <build>
-        <defaultGoal>clean install</defaultGoal>
         <sourceDirectory>${project.basedir}/src/main/kotlin</sourceDirectory>
         <testSourceDirectory>${project.basedir}/src/test/kotlin</testSourceDirectory>
-
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-clean-plugin</artifactId>
-                    <version>${maven-clean.version}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-install-plugin</artifactId>
-                    <version>${maven-install.version}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-surefire-plugin</artifactId>
-                    <version>${maven-surefire.version}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.jacoco</groupId>
-                    <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>${jacoco-maven.version}</version>
-                </plugin>
-            </plugins>
-        </pluginManagement>
 
         <plugins>
             <!-- compile -->
@@ -268,7 +193,7 @@
                 <artifactId>kotlin-maven-plugin</artifactId>
                 <version>${kotlin.version}</version>
                 <configuration>
-                    <jvmTarget>1.8</jvmTarget>
+                    <jvmTarget>21</jvmTarget>
                     <args>
                         <arg>-Xjsr305=strict</arg>
                     </args>
@@ -320,20 +245,15 @@
                         <version>${kotlin.version}</version>
                     </dependency>
                     <dependency>
-                      <groupId>org.jetbrains.kotlin</groupId>
-                      <artifactId>kotlin-maven-serialization</artifactId>
-                      <version>${kotlin.version}</version>
+                        <groupId>org.jetbrains.kotlin</groupId>
+                        <artifactId>kotlin-maven-serialization</artifactId>
+                        <version>${kotlin.version}</version>
                     </dependency>
                 </dependencies>
             </plugin>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven-compiler.version}</version>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                    <encoding>UTF-8</encoding>
-                </configuration>
                 <executions>
                     <!-- Replacing default-compile as it is treated specially by maven -->
                     <execution>
@@ -361,26 +281,6 @@
                     </execution>
                 </executions>
             </plugin>
-            <!-- test -->
-            <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <includes>
-                        <include>**/*Test.java</include>
-                        <include>**/*Tests.java</include>
-                        <include>**/*Test_*.java</include>
-                        <include>**/*Tests_*.java</include>
-                    </includes>
-                    <systemPropertyVariables>
-                        <slf4j.version>${slf4j.version}</slf4j.version>
-                        <log4j.version>${log4j.version}</log4j.version>
-                    </systemPropertyVariables>
-                </configuration>
-            </plugin>
             <!-- prepare package -->
             <plugin>
                 <groupId>org.jetbrains.dokka</groupId>
@@ -400,249 +300,6 @@
                     </execution>
                 </executions>
             </plugin>
-            <!-- package -->
-            <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>${maven-assembly.version}</version>
-                <configuration>
-                    <descriptorSourceDirectory>assembly</descriptorSourceDirectory>
-                    <archiverConfig>
-                        <duplicateBehavior>skip</duplicateBehavior>
-                    </archiverConfig>
-                </configuration>
-            </plugin>
-            <plugin>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>${maven-jar.version}</version>
-                <configuration>
-                    <archive>
-                        <manifest>
-                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-                        </manifest>
-                    </archive>
-                </configuration>
-            </plugin>
-            <!-- deploy -->
-            <plugin>
-              <groupId>org.sonatype.central</groupId>
-              <artifactId>central-publishing-maven-plugin</artifactId>
-              <version>${central-publishing-maven-plugin.version}</version>
-              <extensions>true</extensions>
-              <configuration>
-                <publishingServerId>central</publishingServerId>
-              </configuration>
-            </plugin>
-            <plugin>
-                <!-- just to make sure deployed artifacts are always built (and tested) using JDK 8+ -->
-                <artifactId>maven-enforcer-plugin</artifactId>
-                <version>${maven-enforcer.version}</version>
-                <executions>
-                    <execution>
-                        <id>enforce-java</id>
-                        <phase>deploy</phase>
-                        <goals>
-                            <goal>enforce</goal>
-                        </goals>
-                        <configuration>
-                            <rules>
-                                <requireJavaVersion>
-                                    <version>1.8</version>
-                                </requireJavaVersion>
-                                <requireMavenVersion>
-                                    <version>3.5</version>
-                                </requireMavenVersion>
-                            </rules>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <artifactId>maven-release-plugin</artifactId>
-                <version>${maven-release.version}</version>
-                <configuration>
-                    <!-- prepare goal configuration -->
-                    <mavenExecutorId>forked-path</mavenExecutorId>
-                    <pushChanges>false</pushChanges>
-                    <autoVersionSubmodules>true</autoVersionSubmodules>
-                    <!-- perform goal configuration -->
-                    <mavenExecutorId>forked-path</mavenExecutorId>
-                    <localCheckout>true</localCheckout>
-                    <releaseProfiles>sources,sign,docs-and-sources</releaseProfiles>
-                    <tagNameFormat>axon-kotlin-@{project.version}</tagNameFormat>
-                </configuration>
-            </plugin>
         </plugins>
     </build>
-
-    <profiles>
-        <profile>
-            <id>coverage</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-                <property>
-                    <name>coverage</name>
-                </property>
-            </activation>
-            <modules>
-                <module>coverage-report</module>
-            </modules>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <!--suppress MavenModelInspection -->
-                            <argLine>-Djava.awt.headless=true ${surefireArgLine}</argLine>
-                        </configuration>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.jacoco</groupId>
-                        <artifactId>jacoco-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>prepare-agent-for-unit-tests</id>
-                                <phase>initialize</phase>
-                                <goals>
-                                    <goal>prepare-agent</goal>
-                                </goals>
-                                <configuration>
-                                    <propertyName>surefireArgLine</propertyName>
-                                    <destFile>${project.build.directory}/jacoco-ut.exec</destFile>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-        <profile>
-          <id>sources</id>
-          <build>
-            <plugins>
-              <plugin>
-                <artifactId>maven-source-plugin</artifactId>
-                <version>${maven-source.version}</version>
-                <executions>
-                  <execution>
-                    <id>attach-sources</id>
-                    <phase>package</phase>
-                    <goals>
-                      <goal>jar-no-fork</goal>
-                    </goals>
-                  </execution>
-                </executions>
-              </plugin>
-            </plugins>
-          </build>
-        </profile>
-
-        <profile>
-            <id>docs-and-sources</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.jetbrains.dokka</groupId>
-                        <artifactId>dokka-maven-plugin</artifactId>
-                    </plugin>
-                    <plugin>
-                        <artifactId>maven-source-plugin</artifactId>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-        <profile>
-            <id>sign</id>
-            <activation>
-                <property>
-                    <name>performRelease</name>
-                    <value>true</value>
-                </property>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-gpg-plugin</artifactId>
-                        <version>${maven-gpg.version}</version>
-                        <executions>
-                            <execution>
-                                <id>sign-artifacts</id>
-                                <phase>verify</phase>
-                                <goals>
-                                    <!--suppress MavenModelInspection -->
-                                    <goal>sign</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
-
-    <pluginRepositories>
-        <pluginRepository>
-            <id>jcenter</id>
-            <name>JCenter</name>
-            <url>https://jcenter.bintray.com/</url>
-        </pluginRepository>
-    </pluginRepositories>
-
-
-    <scm>
-        <connection>scm:git:git://github.com/AxonFramework/extension-kotlin.git</connection>
-        <developerConnection>scm:git:git@github.com:AxonFramework/extension-kotlin.git
-        </developerConnection>
-        <url>https://github.com/AxonFramework/extension-kotlin</url>
-        <tag>HEAD</tag>
-    </scm>
-
-    <developers>
-        <developer>
-            <name>Allard Buijze</name>
-            <email>allard.buijze@axoniq.io</email>
-            <organization>AxonIQ</organization>
-            <organizationUrl>https://axoniq.io</organizationUrl>
-            <roles>
-                <role>Project Owner</role>
-            </roles>
-        </developer>
-        <developer>
-            <name>Steven van Beelen</name>
-            <email>steven.vanbeelen@axoniq.io</email>
-            <organization>AxonIQ</organization>
-            <organizationUrl>https://axoniq.io</organizationUrl>
-            <roles>
-                <role>Lead Developer</role>
-            </roles>
-        </developer>
-        <developer>
-            <name>Mitchell Herrijgers</name>
-            <email>mitchell.herrijgers@axoniq.io</email>
-            <organization>AxonIQ</organization>
-            <organizationUrl>https://axoniq.io</organizationUrl>
-            <roles>
-                <role>Developer</role>
-            </roles>
-        </developer>
-        <developer>
-          <name>Mateusz Nowak</name>
-          <email>mateusz.nowak@axoniq.io</email>
-          <organization>AxonIQ</organization>
-          <organizationUrl>https://axoniq.io</organizationUrl>
-          <roles>
-            <role>Developer</role>
-          </roles>
-        </developer>
-        <developer>
-            <name>Simon Zambrovski</name>
-            <email>simon.zambrovski@holisticon.de</email>
-            <organization>Holisticon AG</organization>
-            <organizationUrl>https://holisticon.de</organizationUrl>
-            <roles>
-                <role>Developer</role>
-            </roles>
-        </developer>
-    </developers>
 </project>

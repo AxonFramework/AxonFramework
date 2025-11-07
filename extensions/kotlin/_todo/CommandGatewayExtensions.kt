@@ -16,9 +16,10 @@
 
 package org.axonframework.extensions.kotlin
 
-import org.axonframework.commandhandling.CommandMessage
-import org.axonframework.commandhandling.gateway.CommandGateway
-import org.axonframework.messaging.MetaData
+import org.axonframework.messaging.commandhandling.CommandMessage
+import org.axonframework.messaging.commandhandling.gateway.CommandGateway
+import org.axonframework.messaging.core.Metadata
+
 
 /**
  * Callback-style [CommandGateway.send] with dedicated on-success and on-error functions
@@ -32,6 +33,6 @@ import org.axonframework.messaging.MetaData
  */
 inline fun <reified C : Any, reified R : Any?> CommandGateway.send(
     command: C,
-    noinline onSuccess: (commandMessage: CommandMessage<out C>, result: R, metaData: MetaData) -> Unit = { _, _, _ -> },
-    noinline onError: (commandMessage: CommandMessage<out C>, exception: Throwable, metaData: MetaData) -> Unit = { _, _, _ -> }
+    noinline onSuccess: (commandMessage: CommandMessage, result: R, metadata: Metadata) -> Unit = { _, _, _ -> },
+    noinline onError: (commandMessage: CommandMessage, exception: Throwable, metadata: Metadata) -> Unit = { _, _, _ -> }
 ): Unit = this.send(command, ResultDiscriminatorCommandCallback<C, R>(onSuccess, onError))

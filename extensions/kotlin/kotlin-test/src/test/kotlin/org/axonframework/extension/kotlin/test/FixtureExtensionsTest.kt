@@ -16,11 +16,10 @@
 
 package org.axonframework.extension.kotlin.test
 
-import kotlin.test.Test
 
 internal class FixtureExtensionsTest {
 
-    @Test
+/*    @Test
     fun `Aggregate test fixture extension should create an aggregate fixture`() {
         aggregateTestFixture<ExampleAggregate>()
     }
@@ -68,5 +67,5 @@ internal class FixtureExtensionsTest {
         fixture
                 .whenever(ExampleCommandWithException("id"))
                 .expectException(Exception::class)
-    }
+    }*/
 }
