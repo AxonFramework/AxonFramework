@@ -25,11 +25,13 @@
 
     <groupId>org.axonframework.extensions.tracing</groupId>
     <artifactId>axon-tracing-extension</artifactId>
+
+    <name>Axon Extension - Tracing - Parent</name>
+    <description>
+        Module providing parent for Axon Framework Tracing Extension.
+    </description>
+
     <packaging>pom</packaging>
-
-    <name>Axon Framework - Tracing Extension Parent</name>
-    <description>Module providing parent for Axon Framework Tracing Extension.</description>
-
     <modules>
         <module>tracing-opentelemetry</module>
     </modules>

@@ -42,8 +42,7 @@
     </modules>
     <packaging>pom</packaging>
 
-
-    <name>Axon Framework</name>
+    <name>Axon Framework - Parent</name>
     <description>
         The Axon framework supports developers with the plumbing and wiring required to build a CQRS architecture, by
         providing (abstract) implementations of common CQRS building blocks.
