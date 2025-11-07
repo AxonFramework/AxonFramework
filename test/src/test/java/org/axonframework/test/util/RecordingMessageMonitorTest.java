@@ -17,12 +17,12 @@
 package org.axonframework.test.util;
 
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageType;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
-import org.testcontainers.shaded.org.apache.commons.lang3.tuple.Pair;
 
 import java.util.concurrent.atomic.AtomicReference;
 
