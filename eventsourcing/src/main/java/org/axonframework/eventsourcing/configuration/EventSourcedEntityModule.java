@@ -36,7 +36,7 @@ import org.axonframework.modelling.repository.Repository;
 
 /**
  * An expansion of the {@link EntityModule}, specifically for event-sourced entities. When constructed, either
- * {@link #autodetected(Class, Class) annotated} or {@link #declarative(Class, Class) declarative}, it provides the
+ * {@link #autodetected(Class, Class) autodetected} or {@link #declarative(Class, Class) declarative}, it provides the
  * resulting {@link Repository} with the nearest {@link StateManager} so the state can be loaded.
  *
  * <h2>Command Handling</h2>

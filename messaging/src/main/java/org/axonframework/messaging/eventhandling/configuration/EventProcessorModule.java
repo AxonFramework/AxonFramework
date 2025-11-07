@@ -94,7 +94,7 @@ public interface EventProcessorModule extends Module {
         /**
          * Configures event handling components using a configurer function.
          *
-         * @param eventHandlingComponentsConfigurer The configurer function.
+         * @param configurerTask The configurer function.
          * @return The customization phase for further configuration.
          */
         CustomizationPhase<P, C> eventHandlingComponents(
