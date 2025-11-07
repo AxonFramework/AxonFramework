@@ -20,25 +20,25 @@ import io.grpc.ManagedChannelBuilder;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.query.AxonServerQueryBusConnector;
-import org.axonframework.messaging.Context;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.QueueMessageStream;
-import org.axonframework.messaging.conversion.DelegatingMessageConverter;
-import org.axonframework.queryhandling.GenericQueryMessage;
-import org.axonframework.queryhandling.GenericQueryResponseMessage;
-import org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage;
-import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryBusTestUtils;
-import org.axonframework.queryhandling.QueryExecutionException;
-import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.queryhandling.distributed.DistributedQueryBus;
-import org.axonframework.queryhandling.distributed.DistributedQueryBusConfiguration;
-import org.axonframework.queryhandling.distributed.PayloadConvertingQueryBusConnector;
-import org.axonframework.serialization.json.JacksonConverter;
+import org.axonframework.messaging.core.Context;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.QueueMessageStream;
+import org.axonframework.messaging.core.conversion.DelegatingMessageConverter;
+import org.axonframework.messaging.queryhandling.GenericQueryMessage;
+import org.axonframework.messaging.queryhandling.GenericQueryResponseMessage;
+import org.axonframework.messaging.queryhandling.GenericSubscriptionQueryUpdateMessage;
+import org.axonframework.messaging.queryhandling.QueryBus;
+import org.axonframework.messaging.queryhandling.QueryBusTestUtils;
+import org.axonframework.messaging.queryhandling.QueryExecutionException;
+import org.axonframework.messaging.queryhandling.QueryMessage;
+import org.axonframework.messaging.queryhandling.QueryResponseMessage;
+import org.axonframework.messaging.queryhandling.distributed.DistributedQueryBus;
+import org.axonframework.messaging.queryhandling.distributed.DistributedQueryBusConfiguration;
+import org.axonframework.messaging.queryhandling.distributed.PayloadConvertingQueryBusConnector;
+import org.axonframework.conversion.json.JacksonConverter;
 import org.axonframework.test.server.AxonServerContainer;
-import org.axonframework.utils.MockException;
+import org.axonframework.common.util.MockException;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -185,13 +185,13 @@ class QueryThreadingIntegrationTest {
                                  .extracting(this::messagePayloadAsString)
                                  .isEqualTo("a");
 
-        // this means we have the initial result. Let's send some updates
+        // this means we have the initial result. Let's send some update
         queryBus1.emitUpdate(m -> true,
                              () -> new GenericSubscriptionQueryUpdateMessage(MESSAGE_TYPE_STRING, "u1"),
                              null);
         queryBus1.completeSubscriptions(m -> true, null);
 
-        // and check for these updates to arrive
+        // and check for these update to arrive
         await().atMost(Duration.ofSeconds(1)).until(result::hasNextAvailable);
         assertThat(result.next()).isPresent()
                                  .get()
@@ -231,7 +231,7 @@ class QueryThreadingIntegrationTest {
                                  .get()
                                  .extracting(this::messagePayloadAsString)
                                  .isEqualTo("a1");
-        // this means we have the first initial result. Let's send some updates
+        // this means we have the first initial result. Let's send some update
         queryBus1.emitUpdate(m -> true,
                              () -> new GenericSubscriptionQueryUpdateMessage(MESSAGE_TYPE_STRING, "u1"),
                              null);
@@ -240,13 +240,13 @@ class QueryThreadingIntegrationTest {
                                  .get()
                                  .extracting(this::messagePayloadAsString)
                                  .isEqualTo("a2");
-        // this means we have all the initial results. Let's send some more updates
+        // this means we have all the initial results. Let's send some more update
         queryBus1.emitUpdate(m -> true,
                              () -> new GenericSubscriptionQueryUpdateMessage(MESSAGE_TYPE_STRING, "u2"),
                              null);
         queryBus1.completeSubscriptions(m -> true, null);
 
-        // and check for these updates to arrive
+        // and check for these update to arrive
         await().atMost(Duration.ofSeconds(1)).until(result::hasNextAvailable);
         assertThat(result.next()).isPresent()
                                  .get()

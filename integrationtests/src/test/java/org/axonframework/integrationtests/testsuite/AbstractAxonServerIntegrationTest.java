@@ -17,9 +17,9 @@
 package org.axonframework.integrationtests.testsuite;
 
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
-import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.configuration.ApplicationConfigurer;
-import org.axonframework.configuration.AxonConfiguration;
+import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
+import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.test.server.AxonServerContainer;
 import org.axonframework.test.server.AxonServerContainerUtils;
 import org.junit.jupiter.api.*;
@@ -40,7 +40,7 @@ public abstract class AbstractAxonServerIntegrationTest {
 
     protected static final Logger logger = LoggerFactory.getLogger(AbstractAxonServerIntegrationTest.class);
 
-    private static final AxonServerContainer container = new AxonServerContainer("docker.axoniq.io/axoniq/axonserver:2025.2.0-EAP2")
+    private static final AxonServerContainer container = new AxonServerContainer("docker.axoniq.io/axoniq/axonserver:2025.2.0")
             .withAxonServerHostname("localhost")
             .withDevMode(true)
             .withReuse(true);

@@ -18,15 +18,14 @@ package org.axonframework.test.fixture;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.configuration.AxonConfiguration;
-import org.axonframework.messaging.MessageStream;
-import org.hamcrest.StringDescription;
-
-import java.util.function.Consumer;
+import org.axonframework.common.configuration.AxonConfiguration;
+import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.EventSink;
 
 /**
  * Implementation of the {@link AxonTestThenMessage then-message-phase} for
- * {@link org.axonframework.eventhandling.EventMessage EventMessages} of the {@link AxonTestFixture}.
+ * {@link EventMessage EventMessages} of the {@link AxonTestFixture}.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
@@ -40,9 +39,9 @@ class AxonTestThenNothing
      *
      * @param configuration   The configuration which this test fixture phase is based on.
      * @param customization   Collection of customizations made for this test fixture.
-     * @param commandBus      The recording {@link org.axonframework.commandhandling.CommandBus}, used to capture and
+     * @param commandBus      The recording {@link CommandBus}, used to capture and
      *                        validate any commands that have been sent.
-     * @param eventSink       The recording {@link org.axonframework.eventhandling.EventSink}, used to capture and
+     * @param eventSink       The recording {@link EventSink}, used to capture and
      *                        validate any events that have been sent.
      * @param actualException The exception thrown during the when-phase, potentially {@code null}.
      */

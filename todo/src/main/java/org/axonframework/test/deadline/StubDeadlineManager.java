@@ -23,18 +23,18 @@ import org.axonframework.common.Registration;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
-import org.axonframework.messaging.DefaultMessageDispatchInterceptorChain;
-import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.MessageHandlerInterceptorChain;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.ResultMessage;
-import org.axonframework.messaging.ScopeDescriptor;
+import org.axonframework.messaging.core.DefaultMessageDispatchInterceptorChain;
+import org.axonframework.messaging.core.GenericMessage;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageDispatchInterceptor;
+import org.axonframework.messaging.core.MessageHandlerInterceptor;
+import org.axonframework.messaging.core.MessageHandlerInterceptorChain;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.ResultMessage;
+import org.axonframework.messaging.core.ScopeDescriptor;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.test.FixtureExecutionException;
 import org.jetbrains.annotations.NotNull;
 
@@ -297,8 +297,7 @@ public class StubDeadlineManager implements DeadlineManager {
             return processingResult;
         });
         if (resultMessage != null) {
-            if (resultMessage.isExceptional()) {
-                Throwable e = resultMessage.exceptionResult();
+            if (resultMessage.payload() instanceof Throwable e) {
                 throw new FixtureExecutionException("Exception occurred while handling the deadline", e);
             }
             return (DeadlineMessage) resultMessage.payload();

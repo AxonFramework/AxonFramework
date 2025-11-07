@@ -19,10 +19,10 @@ package org.axonframework.extension.spring.config.annotation;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.Priority;
-import org.axonframework.common.annotations.AnnotationUtils;
-import org.axonframework.messaging.annotations.ParameterResolver;
-import org.axonframework.messaging.annotations.ParameterResolverFactory;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.common.annotation.AnnotationUtils;
+import org.axonframework.messaging.core.annotation.ParameterResolver;
+import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.extension.spring.SpringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +37,7 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * ParameterResolverFactory implementation that resolves parameters in the Spring Application Context. A parameter can
@@ -146,9 +147,10 @@ public class SpringBeanParameterResolverFactory implements ParameterResolverFact
             this.beanName = beanName;
         }
 
+        @Nonnull
         @Override
-        public Object resolveParameterValue(@Nonnull ProcessingContext context) {
-            return beanFactory.getBean(beanName);
+        public CompletableFuture<Object> resolveParameterValue(@Nonnull ProcessingContext context) {
+            return CompletableFuture.completedFuture(beanFactory.getBean(beanName));
         }
 
         @Override

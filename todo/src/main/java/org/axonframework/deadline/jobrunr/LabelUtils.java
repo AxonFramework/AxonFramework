@@ -17,8 +17,8 @@
 package org.axonframework.deadline.jobrunr;
 
 import org.axonframework.common.digest.Digester;
-import org.axonframework.messaging.ScopeDescriptor;
-import org.axonframework.serialization.Serializer;
+import org.axonframework.messaging.core.ScopeDescriptor;
+import org.axonframework.conversion.Serializer;
 
 import jakarta.annotation.Nonnull;
 

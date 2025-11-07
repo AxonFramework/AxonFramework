@@ -17,8 +17,8 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventstreaming.Tag;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventstreaming.Tag;
 
 import java.util.Set;
 

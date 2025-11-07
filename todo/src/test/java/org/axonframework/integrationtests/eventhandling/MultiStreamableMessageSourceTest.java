@@ -17,22 +17,22 @@
 package org.axonframework.integrationtests.eventhandling;
 
 import org.axonframework.common.stream.BlockingStream;
-import org.axonframework.eventhandling.DomainEventMessage;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventTestUtils;
-import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.axonframework.eventhandling.GenericTrackedEventMessage;
-import org.axonframework.eventhandling.SimpleEventBus;
-import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventhandling.processors.streaming.MultiStreamableMessageSource;
-import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
-import org.axonframework.eventhandling.processors.streaming.token.MultiSourceTrackingToken;
+import org.axonframework.messaging.eventhandling.DomainEventMessage;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.EventTestUtils;
+import org.axonframework.messaging.eventhandling.GenericDomainEventMessage;
+import org.axonframework.messaging.eventhandling.GenericTrackedEventMessage;
+import org.axonframework.messaging.eventhandling.SimpleEventBus;
+import org.axonframework.messaging.eventhandling.TrackedEventMessage;
+import org.axonframework.messaging.eventhandling.processing.streaming.MultiStreamableMessageSource;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.MultiSourceTrackingToken;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
+import org.axonframework.eventsourcing.eventstore.StorageEngineBackedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.junit.jupiter.api.*;
 
@@ -67,8 +67,8 @@ class MultiStreamableMessageSourceTest {
 
     @BeforeEach
     void setUp() {
-        eventStoreA = new SimpleEventStore(new InMemoryEventStorageEngine(), new SimpleEventBus(), new AnnotationBasedTagResolver());
-        eventStoreB = new SimpleEventStore(new InMemoryEventStorageEngine(), new SimpleEventBus(), new AnnotationBasedTagResolver());
+        eventStoreA = new StorageEngineBackedEventStore(new InMemoryEventStorageEngine(), new SimpleEventBus(), new AnnotationBasedTagResolver());
+        eventStoreB = new StorageEngineBackedEventStore(new InMemoryEventStorageEngine(), new SimpleEventBus(), new AnnotationBasedTagResolver());
 
         testSubject = MultiStreamableMessageSource.builder()
 //                                                  .addMessageSource("eventStoreA", eventStoreA)
@@ -368,7 +368,7 @@ class MultiStreamableMessageSourceTest {
                 Comparator.comparing((Map.Entry<String, TrackedEventMessage> e) -> !e.getKey().equals("eventStoreA"))
                           .thenComparing(e -> e.getValue().timestamp());
 
-        EventStore eventStoreC = new SimpleEventStore(new InMemoryEventStorageEngine(),
+        EventStore eventStoreC = new StorageEngineBackedEventStore(new InMemoryEventStorageEngine(),
                                                       new SimpleEventBus(),
                                                       new AnnotationBasedTagResolver());
 

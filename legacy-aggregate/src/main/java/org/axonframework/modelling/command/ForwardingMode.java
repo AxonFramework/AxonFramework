@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.messaging.Message;
+import org.axonframework.messaging.core.Message;
 import org.axonframework.modelling.command.inspection.EntityModel;
 
 import java.lang.reflect.Member;

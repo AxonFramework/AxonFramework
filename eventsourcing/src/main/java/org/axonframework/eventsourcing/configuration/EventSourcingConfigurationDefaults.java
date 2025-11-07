@@ -17,36 +17,37 @@
 package org.axonframework.eventsourcing.configuration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.configuration.ComponentRegistry;
-import org.axonframework.configuration.Configuration;
-import org.axonframework.configuration.ConfigurationEnhancer;
-import org.axonframework.configuration.MessagingConfigurationDefaults;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.SimpleEventBus;
-import org.axonframework.eventhandling.configuration.EventBusConfigurationDefaults;
+import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.configuration.ConfigurationEnhancer;
+import org.axonframework.messaging.core.configuration.MessagingConfigurationDefaults;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.SimpleEventBus;
+import org.axonframework.messaging.eventhandling.EventBus;
+import org.axonframework.messaging.eventhandling.configuration.EventBusConfigurationDefaults;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.InterceptingEventStore;
-import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
+import org.axonframework.eventsourcing.eventstore.StorageEngineBackedEventStore;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.interceptors.DispatchInterceptorRegistry;
+import org.axonframework.messaging.core.MessageDispatchInterceptor;
+import org.axonframework.messaging.core.interception.DispatchInterceptorRegistry;
 
 import java.util.List;
 
 /**
  * A {@link ConfigurationEnhancer} registering the default components of the {@link EventSourcingConfigurer}.
  * <p>
- * This enhancer disables the {@link EventBusConfigurationDefaults} to prevent duplicate {@link org.axonframework.eventhandling.EventBus}
+ * This enhancer disables the {@link EventBusConfigurationDefaults} to prevent duplicate {@link EventBus}
  * registration, as the {@link EventStore} implementation serves as the EventBus in event sourcing scenarios.
  * <p>
  * Will only register the following components <b>if</b> there is no component registered for the given class yet:
  * <ul>
  *     <li>Registers a {@link AnnotationBasedTagResolver} for class {@link TagResolver}</li>
  *     <li>Registers a {@link InMemoryEventStorageEngine} for class {@link EventStorageEngine}</li>
- *     <li>Registers a {@link SimpleEventStore} for class {@link EventStore}</li>
+ *     <li>Registers a {@link StorageEngineBackedEventStore} for class {@link EventStore}</li>
  * </ul>
  * Furthermore, this enhancer will decorate the:
  * <ul>
@@ -99,8 +100,8 @@ public class EventSourcingConfigurationDefaults implements ConfigurationEnhancer
         return new InMemoryEventStorageEngine();
     }
 
-    private static SimpleEventStore simpleEventStore(Configuration config) {
-        return new SimpleEventStore(
+    private static StorageEngineBackedEventStore simpleEventStore(Configuration config) {
+        return new StorageEngineBackedEventStore(
                 config.getComponent(EventStorageEngine.class),
                 new SimpleEventBus(),
                 config.getComponent(TagResolver.class)

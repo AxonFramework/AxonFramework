@@ -16,8 +16,8 @@
 
 package org.axonframework.springboot.integration;
 
-import org.axonframework.serialization.upcasting.event.EventUpcaster;
-import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
+import org.axonframework.conversion.upcasting.event.EventUpcaster;
+import org.axonframework.conversion.upcasting.event.IntermediateEventRepresentation;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -32,8 +32,8 @@ import static org.mockito.Mockito.*;
 
 /**
  * Test class validating that usage of the {@link org.springframework.core.annotation.Order} on
- * {@link org.axonframework.serialization.upcasting.event.EventUpcaster} beans is taken into account when constructing
- * an {@link org.axonframework.serialization.upcasting.event.EventUpcasterChain}.
+ * {@link org.axonframework.conversion.upcasting.event.EventUpcaster} beans is taken into account when constructing
+ * an {@link org.axonframework.conversion.upcasting.event.EventUpcasterChain}.
  *
  * @author Steven van Beelen
  */

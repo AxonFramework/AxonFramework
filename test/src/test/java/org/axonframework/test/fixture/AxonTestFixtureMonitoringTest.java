@@ -16,24 +16,24 @@
 
 package org.axonframework.test.fixture;
 
-import org.axonframework.commandhandling.annotations.Command;
-import org.axonframework.commandhandling.annotations.CommandHandler;
-import org.axonframework.commandhandling.configuration.CommandHandlingModule;
-import org.axonframework.eventhandling.annotations.Event;
-import org.axonframework.eventhandling.gateway.EventAppender;
-import org.axonframework.eventsourcing.annotations.EventSourcedEntity;
-import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
-import org.axonframework.eventsourcing.annotations.EventTag;
-import org.axonframework.eventsourcing.annotations.reflection.EntityCreator;
+import org.axonframework.messaging.commandhandling.annotation.Command;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
+import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
+import org.axonframework.messaging.eventhandling.annotation.Event;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
+import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
+import org.axonframework.eventsourcing.annotation.EventTag;
+import org.axonframework.eventsourcing.annotation.reflection.EntityCreator;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.modelling.annotations.InjectEntity;
+import org.axonframework.modelling.annotation.InjectEntity;
 import org.axonframework.test.fixture.AxonTestFixture.Customization;
 import org.axonframework.test.fixture.AxonTestFixtureMonitoringTest.Domain.CourseAlreadyExists;
 import org.axonframework.test.fixture.AxonTestFixtureMonitoringTest.Domain.CourseCreated;
 import org.axonframework.test.fixture.AxonTestFixtureMonitoringTest.Domain.CreateCourse;
-import org.axonframework.test.utils.MessageMonitorReport;
-import org.axonframework.test.utils.RecordingMessageMonitor;
+import org.axonframework.test.util.MessageMonitorReport;
+import org.axonframework.test.util.RecordingMessageMonitor;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

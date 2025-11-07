@@ -17,7 +17,7 @@
 package org.axonframework.modelling;
 
 import org.axonframework.common.FutureUtils;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.modelling.repository.Repository;
 import org.junit.jupiter.api.*;
 import org.mockito.*;

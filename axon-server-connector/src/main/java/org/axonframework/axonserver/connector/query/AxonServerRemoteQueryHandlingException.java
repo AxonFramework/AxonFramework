@@ -17,8 +17,8 @@
 package org.axonframework.axonserver.connector.query;
 
 import io.axoniq.axonserver.grpc.ErrorMessage;
-import org.axonframework.messaging.RemoteExceptionDescription;
-import org.axonframework.messaging.RemoteHandlingException;
+import org.axonframework.messaging.core.RemoteExceptionDescription;
+import org.axonframework.messaging.core.RemoteHandlingException;
 
 import java.io.Serial;
 

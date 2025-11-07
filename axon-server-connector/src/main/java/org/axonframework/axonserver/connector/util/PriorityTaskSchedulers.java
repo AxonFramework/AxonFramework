@@ -16,7 +16,7 @@
 
 package org.axonframework.axonserver.connector.util;
 
-import org.axonframework.util.PriorityTask;
+import org.axonframework.common.util.PriorityTask;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 

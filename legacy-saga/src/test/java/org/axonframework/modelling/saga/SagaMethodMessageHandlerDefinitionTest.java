@@ -16,15 +16,15 @@
 
 package org.axonframework.modelling.saga;
 
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
-import org.axonframework.messaging.annotations.MessageHandlingMember;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.modelling.saga.metamodel.AnnotationSagaMetaModelFactory;
 import org.axonframework.modelling.saga.metamodel.SagaModel;
 import org.junit.jupiter.api.*;
 
-import static org.axonframework.eventhandling.EventTestUtils.asEventMessage;
-import static org.axonframework.modelling.utils.ConcurrencyUtils.testConcurrent;
+import static org.axonframework.messaging.eventhandling.EventTestUtils.asEventMessage;
+import static org.axonframework.modelling.util.ConcurrencyUtils.testConcurrent;
 import static org.junit.jupiter.api.Assertions.*;
 
 class SagaMethodMessageHandlerDefinitionTest {

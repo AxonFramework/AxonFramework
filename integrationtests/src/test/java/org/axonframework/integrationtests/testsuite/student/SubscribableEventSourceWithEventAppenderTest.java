@@ -17,17 +17,14 @@
 package org.axonframework.integrationtests.testsuite.student;
 
 import org.axonframework.common.Registration;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.gateway.EventAppender;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 import org.axonframework.integrationtests.testsuite.student.events.StudentEnrolledEvent;
 import org.axonframework.integrationtests.testsuite.student.events.StudentNameChangedEvent;
-import org.axonframework.messaging.SubscribableEventSource;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.core.SubscribableEventSource;
+import org.axonframework.messaging.core.unitofwork.UnitOfWork;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;

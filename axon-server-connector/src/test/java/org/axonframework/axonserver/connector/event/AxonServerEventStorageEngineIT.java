@@ -20,11 +20,11 @@ import io.axoniq.axonserver.connector.AxonServerConnection;
 import io.axoniq.axonserver.connector.AxonServerConnectionFactory;
 import io.axoniq.axonserver.connector.impl.ServerAddress;
 import org.axonframework.common.infra.MockComponentDescriptor;
-import org.axonframework.eventhandling.conversion.DelegatingEventConverter;
-import org.axonframework.eventhandling.conversion.EventConverter;
+import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.eventsourcing.eventstore.StorageEngineTestSuite;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.serialization.ChainingContentTypeConverter;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.conversion.ChainingContentTypeConverter;
 import org.axonframework.test.server.AxonServerContainer;
 import org.axonframework.test.server.AxonServerContainerUtils;
 import org.junit.jupiter.api.*;
@@ -48,7 +48,7 @@ class AxonServerEventStorageEngineIT extends StorageEngineTestSuite<AxonServerEv
 
     @SuppressWarnings("resource")
     @Container
-    private static final AxonServerContainer container = new AxonServerContainer("docker.axoniq.io/axoniq/axonserver:2025.2.0-EAP2").withDevMode(true);
+    private static final AxonServerContainer container = new AxonServerContainer("docker.axoniq.io/axoniq/axonserver:2025.2.0").withDevMode(true);
 
     private static AxonServerConnection connection;
 

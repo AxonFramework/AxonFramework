@@ -16,19 +16,19 @@
 
 package org.axonframework.modelling.saga;
 
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.annotations.MessageHandlingMember;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.annotation.MessageHandlingMember;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 
-import static org.axonframework.eventhandling.EventTestUtils.asEventMessage;
-import static org.axonframework.modelling.utils.ConcurrencyUtils.testConcurrent;
+import static org.axonframework.messaging.eventhandling.EventTestUtils.asEventMessage;
+import static org.axonframework.modelling.util.ConcurrencyUtils.testConcurrent;
 import static org.junit.jupiter.api.Assertions.*;
 
 class PayloadAssociationResolverTest {

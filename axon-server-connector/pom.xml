@@ -140,6 +140,13 @@
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
+            <artifactId>axon-common</artifactId>
+            <version>${project.parent.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.axonframework</groupId>
             <artifactId>axon-eventsourcing</artifactId>
             <version>${project.parent.version}</version>
             <classifier>tests</classifier>
@@ -155,7 +162,7 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <Automatic-Module-Name>org.axonframework.connector.axonserver</Automatic-Module-Name>
+                            <Automatic-Module-Name>org.axonframework.axonserver.connector</Automatic-Module-Name>
                         </manifestEntries>
                     </archive>
                 </configuration>

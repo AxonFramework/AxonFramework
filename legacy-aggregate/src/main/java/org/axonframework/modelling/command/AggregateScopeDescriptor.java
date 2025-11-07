@@ -18,7 +18,7 @@ package org.axonframework.modelling.command;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.axonframework.messaging.ScopeDescriptor;
+import org.axonframework.messaging.core.ScopeDescriptor;
 
 import java.beans.ConstructorProperties;
 import java.util.Objects;

@@ -17,9 +17,9 @@
 package org.axonframework.extension.spring.messaging;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.SubscribableEventSource;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.core.SubscribableEventSource;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;

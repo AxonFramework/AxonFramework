@@ -18,9 +18,9 @@ package org.axonframework.integrationtests.cache;
 
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.caching.Cache;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventTestUtils;
-import org.axonframework.eventhandling.processors.streaming.StreamingEventProcessor;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.EventTestUtils;
+import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
 import org.axonframework.modelling.saga.repository.CachingSagaStore;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.junit.jupiter.api.*;

@@ -16,9 +16,11 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.messaging.Metadata;
-import org.axonframework.messaging.Scope;
-import org.axonframework.messaging.ScopeDescriptor;
+import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.core.Scope;
+import org.axonframework.messaging.core.ScopeDescriptor;
+import org.axonframework.messaging.eventhandling.DomainEventMessage;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -29,7 +31,7 @@ import java.util.concurrent.Callable;
 public abstract class AggregateLifecycle extends Scope {
 
     /**
-     * Apply a {@link org.axonframework.eventhandling.DomainEventMessage} with given payload and metadata (metadata from
+     * Apply a {@link DomainEventMessage} with given payload and metadata (metadata from
      * interceptors will be combined with the provided metadata). Applying events means they are immediately applied
      * (published) to the aggregate and scheduled for publication to other event handlers.
      * <p/>
@@ -41,7 +43,7 @@ public abstract class AggregateLifecycle extends Scope {
      * @param metadata any meta-data that must be registered with the Event
      * @return a gizmo to apply additional events after the given event has been processed by the entire aggregate
      * @see ApplyMore
-     * @deprecated In favor of {@link org.axonframework.eventhandling.gateway.EventAppender#append(List)}
+     * @deprecated In favor of {@link EventAppender#append(List)}
      */
     @Deprecated(since = "5.0.0", forRemoval = true)
     public static ApplyMore apply(Object payload, Metadata metadata) {
@@ -49,7 +51,7 @@ public abstract class AggregateLifecycle extends Scope {
     }
 
     /**
-     * Apply a {@link org.axonframework.eventhandling.DomainEventMessage} with given payload without metadata (though
+     * Apply a {@link DomainEventMessage} with given payload without metadata (though
      * interceptors can also be used to provide metadata). Applying events means they are immediately applied
      * (published) to the aggregate and scheduled for publication to other event handlers.
      * <p/>
@@ -60,7 +62,7 @@ public abstract class AggregateLifecycle extends Scope {
      * @param payload the payload of the event to apply
      * @return a gizmo to apply additional events after the given event has been processed by the entire aggregate
      * @see ApplyMore
-     * @deprecated In favor of {@link org.axonframework.eventhandling.gateway.EventAppender#append(List)}
+     * @deprecated In favor of {@link EventAppender#append(List)}
      */
     @Deprecated(since = "5.0.0", forRemoval = true)
     public static ApplyMore apply(Object payload) {
@@ -153,7 +155,7 @@ public abstract class AggregateLifecycle extends Scope {
     protected abstract void doMarkDeleted();
 
     /**
-     * Apply a {@link org.axonframework.eventhandling.DomainEventMessage} with given payload and metadata (metadata from
+     * Apply a {@link DomainEventMessage} with given payload and metadata (metadata from
      * interceptors will be combined with the provided metadata). The event should be applied to the aggregate
      * immediately and scheduled for publication to other event handlers.
      * <p/>

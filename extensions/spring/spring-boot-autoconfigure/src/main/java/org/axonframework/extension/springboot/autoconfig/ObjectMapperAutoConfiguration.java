@@ -17,6 +17,7 @@
 package org.axonframework.extension.springboot.autoconfig;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.axonframework.conversion.json.JacksonConverter;
 import org.axonframework.extension.springboot.ConverterProperties;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -31,7 +32,7 @@ import org.springframework.context.annotation.Conditional;
 
 /**
  * Autoconfiguration that constructs a default {@link ObjectMapper}, typically to be used by a
- * {@link org.axonframework.serialization.json.JacksonConverter}.
+ * {@link JacksonConverter}.
  *
  * @author Steven van Beelen
  * @since 3.4.0

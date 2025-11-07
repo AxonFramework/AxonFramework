@@ -16,8 +16,8 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
-import org.axonframework.common.transaction.NoTransactionManager;
-import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.messaging.core.unitofwork.transaction.NoTransactionManager;
+import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;

@@ -25,6 +25,8 @@
 
     <modules>
         <module>axon-server-connector</module>
+        <module>common</module>
+        <module>conversion</module>
         <module>eventsourcing</module>
         <module>extensions</module>
         <module>integrationtests</module>
@@ -36,6 +38,7 @@
         <module>modelling</module>
         <module>test</module>
         <module>todo</module>
+        <module>update</module>
     </modules>
     <packaging>pom</packaging>
 
@@ -893,7 +896,7 @@
         <connection>scm:git:git://github.com/AxonFramework/AxonFramework.git</connection>
         <developerConnection>scm:git:git@github.com:AxonFramework/AxonFramework.git</developerConnection>
         <url>https://github.com/AxonFramework/AxonFramework</url>
-        <tag>axon-5.0.0-RC1</tag>
+        <tag>axon-5.0.0-RC3</tag>
     </scm>
 
     <developers>

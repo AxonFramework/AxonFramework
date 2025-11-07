@@ -17,6 +17,7 @@
 package org.axonframework.extension.springboot.autoconfig;
 
 import com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper;
+import org.axonframework.conversion.json.JacksonConverter;
 import org.axonframework.extension.springboot.ConverterProperties;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
@@ -28,7 +29,7 @@ import org.springframework.context.annotation.Bean;
 
 /**
  * Autoconfiguration that constructs a default {@link CBORMapper}, typically to be used by a
- * {@link org.axonframework.serialization.json.JacksonConverter}.
+ * {@link JacksonConverter}.
  *
  * @author Mitchell Herrijgers
  * @since 4.9.0

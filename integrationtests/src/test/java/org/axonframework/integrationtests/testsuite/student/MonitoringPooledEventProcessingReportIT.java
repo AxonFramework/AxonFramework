@@ -16,16 +16,16 @@
 
 package org.axonframework.integrationtests.testsuite.student;
 
-import org.axonframework.eventhandling.SimpleEventHandlingComponent;
-import org.axonframework.eventhandling.configuration.EventProcessorModule;
-import org.axonframework.eventhandling.sequencing.SequentialPolicy;
+import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
+import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
+import org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.eventstreaming.EventCriteria;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.Metadata;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.test.utils.MessageMonitorReport;
-import org.axonframework.test.utils.RecordingMessageMonitor;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.test.util.MessageMonitorReport;
+import org.axonframework.test.util.RecordingMessageMonitor;
 import org.junit.jupiter.api.*;
 
 import java.util.UUID;

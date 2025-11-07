@@ -18,8 +18,8 @@ package org.axonframework.extension.metrics.dropwizard;
 
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Metric;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.monitoring.MessageMonitor;
 import org.junit.jupiter.api.*;
 
 import java.time.Instant;

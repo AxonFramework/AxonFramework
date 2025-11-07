@@ -19,10 +19,10 @@ package org.axonframework.extension.spring.config.annotation;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.Priority;
-import org.axonframework.common.annotations.AnnotationUtils;
-import org.axonframework.messaging.annotations.ParameterResolver;
-import org.axonframework.messaging.annotations.ParameterResolverFactory;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.common.annotation.AnnotationUtils;
+import org.axonframework.messaging.core.annotation.ParameterResolver;
+import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.beans.factory.config.DependencyDescriptor;
@@ -35,6 +35,7 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * ParameterResolverFactory implementation that resolves parameters using Spring dependency resolution. Mark a parameter
@@ -95,10 +96,10 @@ public class SpringBeanDependencyResolverFactory implements ParameterResolverFac
             this.dependencyDescriptor = dependencyDescriptor;
         }
 
-        @Nullable
+        @Nonnull
         @Override
-        public Object resolveParameterValue(@Nonnull ProcessingContext context) {
-            return beanFactory.resolveDependency(dependencyDescriptor, null);
+        public CompletableFuture<Object> resolveParameterValue(@Nonnull ProcessingContext context) {
+            return CompletableFuture.completedFuture(beanFactory.resolveDependency(dependencyDescriptor, null));
         }
 
         @Override

@@ -17,9 +17,10 @@
 package org.axonframework.modelling.command;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventsourcing.AggregateDeletedException;
 
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -111,7 +112,7 @@ public interface Aggregate<T> {
     /**
      * Check if this aggregate has been deleted. This is checked by aggregate repositories when an aggregate is loaded.
      * In case the repository is asked to load a deleted aggregate the repository will refuse by throwing an
-     * {@link org.axonframework.eventsourcing.AggregateDeletedException}.
+     * {@link AggregateDeletedException}.
      *
      * @return {@code true} in case the aggregate was deleted, {@code false} otherwise
      */

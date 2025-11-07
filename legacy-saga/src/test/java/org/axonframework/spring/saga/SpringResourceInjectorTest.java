@@ -16,8 +16,8 @@
 
 package org.axonframework.spring.saga;
 
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.eventhandling.EventBus;
+import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.eventhandling.EventBus;
 import org.axonframework.modelling.saga.ResourceInjector;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.BeanCreationException;
@@ -27,7 +27,7 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import static org.axonframework.commandhandling.CommandBusTestUtils.aCommandBus;
+import static org.axonframework.messaging.commandhandling.CommandBusTestUtils.aCommandBus;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**

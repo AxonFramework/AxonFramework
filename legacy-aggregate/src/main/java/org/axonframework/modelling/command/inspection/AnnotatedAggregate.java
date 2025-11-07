@@ -17,20 +17,20 @@
 package org.axonframework.modelling.command.inspection;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.NoHandlerForCommandException;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.commandhandling.NoHandlerForCommandException;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.eventhandling.DomainEventMessage;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.Metadata;
-import org.axonframework.messaging.annotations.MessageHandlingMember;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.DomainEventMessage;
+import org.axonframework.messaging.eventhandling.EventBus;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.GenericDomainEventMessage;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.core.annotation.MessageHandlingMember;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.AggregateInvocationException;
 import org.axonframework.modelling.command.AggregateLifecycle;
@@ -52,7 +52,7 @@ import java.util.stream.Collectors;
 import static java.lang.String.format;
 
 /**
- * Implementation of the {@link Aggregate} interface that allows for an aggregate root to be a POJO with annotations on
+ * Implementation of the {@link Aggregate} interface that allows for an aggregate root to be a POJO with annotation on
  * its Command and Event Handler methods.
  * <p>
  * This wrapper ensures that aggregate members can use the {@link AggregateLifecycle#apply(Object)} method in a static

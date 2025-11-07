@@ -16,13 +16,13 @@
 
 package org.axonframework.test.eventscheduler;
 
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.scheduling.EventScheduler;
-import org.axonframework.eventhandling.scheduling.ScheduleToken;
-import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.eventhandling.scheduling.EventScheduler;
+import org.axonframework.messaging.eventhandling.scheduling.ScheduleToken;
+import org.axonframework.messaging.core.GenericMessage;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageType;
 
 import java.time.Duration;
 import java.time.Instant;

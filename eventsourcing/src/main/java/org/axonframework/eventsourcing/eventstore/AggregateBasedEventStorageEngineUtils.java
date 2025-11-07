@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nullable;
-import org.axonframework.eventstreaming.Tag;
+import org.axonframework.messaging.eventstreaming.Tag;
 
 import java.util.HashMap;
 import java.util.List;

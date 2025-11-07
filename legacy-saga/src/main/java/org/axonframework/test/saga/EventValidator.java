@@ -17,12 +17,12 @@
 package org.axonframework.test.saga;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventMessageHandler;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventBus;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.EventMessageHandler;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.unitofwork.LegacyMessageSupportingContext;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.matchers.FieldFilter;
 import org.hamcrest.Matcher;
@@ -35,7 +35,7 @@ import java.util.concurrent.CompletableFuture;
 
 import static java.lang.String.format;
 import static org.axonframework.test.matchers.Matchers.*;
-import static org.axonframework.test.utils.DescriptionUtils.describe;
+import static org.axonframework.test.util.DescriptionUtils.describe;
 
 /**
  * Helper class for validating events published on a given EventBus.

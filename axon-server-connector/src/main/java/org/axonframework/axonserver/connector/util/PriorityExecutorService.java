@@ -17,9 +17,9 @@
 package org.axonframework.axonserver.connector.util;
 
 
-import org.axonframework.util.PriorityCallable;
-import org.axonframework.util.PriorityRunnable;
-import org.axonframework.util.PriorityTask;
+import org.axonframework.common.util.PriorityCallable;
+import org.axonframework.common.util.PriorityRunnable;
+import org.axonframework.common.util.PriorityTask;
 
 import java.util.Collection;
 import java.util.List;

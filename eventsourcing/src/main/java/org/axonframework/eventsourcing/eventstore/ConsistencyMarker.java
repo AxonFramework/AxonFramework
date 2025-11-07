@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.Context;
+import org.axonframework.messaging.core.Context;
 
 /**
  * Interface representing a point in an Event Stream up to where certain state has been made up-to-date. Typically,

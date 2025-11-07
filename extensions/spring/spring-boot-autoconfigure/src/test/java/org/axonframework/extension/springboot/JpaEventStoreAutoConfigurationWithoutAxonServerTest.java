@@ -19,7 +19,7 @@ package org.axonframework.extension.springboot;
 import jakarta.persistence.EntityManagerFactory;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
+import org.axonframework.eventsourcing.eventstore.StorageEngineBackedEventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedJpaEventStorageEngine;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -116,7 +116,7 @@ class JpaEventStoreAutoConfigurationWithoutAxonServerTest {
 
         @Bean(STORE_NAME)
         public EventStore eventStore() {
-            return new SimpleEventStore(mock(), mock(), mock());
+            return new StorageEngineBackedEventStore(mock(), mock(), mock());
         }
     }
 

@@ -28,7 +28,7 @@ As shown, we have a regular POJO that will fetch a `CardSummary` based on the `c
 
 [source,java]
 ----
-import org.axonframework.queryhandling.QueryHandler;
+import org.axonframework.messaging.queryhandling.QueryHandler;
 
 public class CardSummaryProjection {
 
@@ -68,7 +68,7 @@ Note that similar to command handling, and unlike event handling, query handling
 
 [source,java]
 ----
-// assume QueryB extends QueryA 
+// assume QueryB extends QueryA
 // and    QueryC extends QueryB
 // and    a single instance of SubHandler is registered
 
@@ -180,7 +180,7 @@ Among the usual Objects, it is also possible for queries to return primitive dat
 [source,java]
 ----
 public class QueryHandler {
- 
+
      @QueryHandler
      public float handle(QueryA query) {
      }

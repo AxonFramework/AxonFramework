@@ -29,10 +29,10 @@ import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.axonserver.connector.utils.PlatformService;
+import org.axonframework.axonserver.connector.util.PlatformService;
 import org.axonframework.axonserver.connector.event.EventStoreImpl;
 import org.axonframework.axonserver.connector.util.TcpUtils;
-import org.axonframework.axonserver.connector.utils.ContextInterceptor;
+import org.axonframework.axonserver.connector.util.ContextInterceptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

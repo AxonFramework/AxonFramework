@@ -21,8 +21,8 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Lob;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.Serializer;
+import org.axonframework.conversion.SerializedObject;
+import org.axonframework.conversion.Serializer;
 
 /**
  * Java Persistence Entity allowing sagas to be stored in a relational database.
@@ -50,7 +50,7 @@ public class SagaEntry<T> {
      *
      * @param saga           The saga to store
      * @param sagaIdentifier The saga identifier
-     * @param serializer     The serialization mechanism to convert the Saga to a byte stream
+     * @param serializer     The conversion mechanism to convert the Saga to a byte stream
      */
     public SagaEntry(T saga, String sagaIdentifier, Serializer serializer) {
         this.sagaId = sagaIdentifier;

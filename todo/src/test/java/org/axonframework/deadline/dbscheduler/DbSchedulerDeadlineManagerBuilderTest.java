@@ -18,9 +18,9 @@ package org.axonframework.deadline.dbscheduler;
 
 import com.github.kagkarlsson.scheduler.Scheduler;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.messaging.ScopeAwareProvider;
-import org.axonframework.serialization.json.JacksonSerializer;
+import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
+import org.axonframework.messaging.core.ScopeAwareProvider;
+import org.axonframework.conversion.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;

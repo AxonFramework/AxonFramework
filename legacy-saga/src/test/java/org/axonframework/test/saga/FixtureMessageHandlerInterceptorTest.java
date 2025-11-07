@@ -16,14 +16,14 @@
 
 package org.axonframework.test.saga;
 
-import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.MessageHandlerInterceptorChain;
-import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.Metadata;
-import org.axonframework.messaging.annotations.MetadataValue;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.core.MessageHandlerInterceptorChain;
+import org.axonframework.messaging.core.MessageHandlerInterceptor;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.core.annotation.MetadataValue;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.StartSaga;
 import jakarta.annotation.Nonnull;

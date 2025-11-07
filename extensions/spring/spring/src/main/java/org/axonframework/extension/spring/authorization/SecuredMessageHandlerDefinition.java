@@ -18,13 +18,13 @@ package org.axonframework.extension.spring.authorization;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.common.annotations.AnnotationUtils;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.annotations.HandlerEnhancerDefinition;
-import org.axonframework.messaging.annotations.MessageHandlingMember;
-import org.axonframework.messaging.annotations.WrappedMessageHandlingMember;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.common.annotation.AnnotationUtils;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
+import org.axonframework.messaging.core.annotation.MessageHandlingMember;
+import org.axonframework.messaging.core.annotation.WrappedMessageHandlingMember;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.springframework.security.access.annotation.Secured;
 
 import java.lang.reflect.Executable;
@@ -35,7 +35,7 @@ import java.util.Set;
 
 /**
  * MessageHandlerDefinition that verifies authorization based on
- * {@link org.springframework.security.access.annotation.Secured} annotations on the message handler.
+ * {@link org.springframework.security.access.annotation.Secured} annotation on the message handler.
  *
  * @author Roald Bankras
  * @since 4.11.0

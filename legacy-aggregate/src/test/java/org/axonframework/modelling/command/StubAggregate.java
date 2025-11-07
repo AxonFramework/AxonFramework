@@ -17,7 +17,7 @@
 package org.axonframework.modelling.command;
 
 
-import org.axonframework.utils.StubDomainEvent;
+import org.axonframework.common.util.StubDomainEvent;
 
 import java.util.UUID;
 

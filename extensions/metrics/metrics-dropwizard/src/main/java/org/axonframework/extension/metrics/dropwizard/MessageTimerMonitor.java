@@ -24,8 +24,8 @@ import com.codahale.metrics.Reservoir;
 import com.codahale.metrics.Timer;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.messaging.Message;
-import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.monitoring.MessageMonitor;
 
 import java.util.HashMap;
 import java.util.Map;

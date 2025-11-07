@@ -16,7 +16,7 @@
 
 package org.axonframework.extension.springboot;
 
-import org.axonframework.messaging.annotations.HandlerEnhancerDefinition;
+import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
 import org.axonframework.extension.spring.authorization.SecuredMessageHandlerDefinition;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;

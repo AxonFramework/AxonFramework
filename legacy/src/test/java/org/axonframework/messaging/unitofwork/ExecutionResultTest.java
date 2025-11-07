@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.unitofwork;
 
-import org.axonframework.messaging.GenericResultMessage;
-import org.axonframework.messaging.ResultMessage;
+import org.axonframework.messaging.core.GenericResultMessage;
+import org.axonframework.messaging.core.ResultMessage;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -44,7 +44,7 @@ class ExecutionResultTest {
         ExecutionResult subject = new ExecutionResult(resultMessage);
         assertTrue(subject.isExceptionResult());
         assertSame(mockException, subject.getExceptionResult());
-        assertSame(mockException, subject.getResult().exceptionResult());
+        assertSame(mockException, subject.getResult().payload());
     }
 
     @Test
@@ -54,6 +54,6 @@ class ExecutionResultTest {
         ExecutionResult subject = new ExecutionResult(resultMessage);
         assertTrue(subject.isExceptionResult());
         assertSame(mockException, subject.getExceptionResult());
-        assertSame(mockException, subject.getResult().exceptionResult());
+        assertSame(mockException, subject.getResult().payload());
     }
 }

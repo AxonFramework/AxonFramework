@@ -19,20 +19,16 @@ package org.axonframework.deadline;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
-import org.axonframework.common.transaction.NoTransactionManager;
-import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.ClassBasedMessageTypeResolver;
-import org.axonframework.messaging.ExecutionException;
-import org.axonframework.messaging.MessageTypeResolver;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.ScopeAwareProvider;
-import org.axonframework.messaging.ScopeDescriptor;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.tracing.NoOpSpanFactory;
-import org.axonframework.tracing.Span;
-import org.axonframework.tracing.SpanFactory;
-import org.axonframework.tracing.SpanScope;
+import org.axonframework.messaging.core.*;
+import org.axonframework.messaging.core.unitofwork.transaction.NoTransactionManager;
+import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.core.ScopeAwareProvider;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.tracing.NoOpSpanFactory;
+import org.axonframework.messaging.tracing.Span;
+import org.axonframework.messaging.tracing.SpanFactory;
+import org.axonframework.messaging.tracing.SpanScope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -251,11 +247,11 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
 
         /**
          * Sets the {@link ScopeAwareProvider} which is capable of providing a stream of
-         * {@link org.axonframework.messaging.Scope} instances for a given {@link ScopeDescriptor}. Used to return the
+         * {@link Scope} instances for a given {@link ScopeDescriptor}. Used to return the
          * right Scope to trigger a deadline in.
          *
          * @param scopeAwareProvider a {@link ScopeAwareProvider} used to find the right
-         *                           {@link org.axonframework.messaging.Scope} to trigger a deadline in
+         *                           {@link Scope} to trigger a deadline in
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder scopeAwareProvider(@Nonnull ScopeAwareProvider scopeAwareProvider) {

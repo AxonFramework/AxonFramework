@@ -33,12 +33,6 @@
 
     <packaging>jar</packaging>
 
-    <properties>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
-
     <dependencies>
         <!-- Axon dependencies -->
         <dependency>
@@ -59,6 +53,13 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>axon-messaging</artifactId>
+            <type>test-jar</type>
+            <scope>test</scope>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>axon-common</artifactId>
             <type>test-jar</type>
             <scope>test</scope>
             <version>${project.version}</version>
