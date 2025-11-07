@@ -27,7 +27,7 @@
     <artifactId>axon-spring-extension</artifactId>
     <packaging>pom</packaging>
 
-    <name>Axon Framework - Spring Extension Parent</name>
+    <name>Axon Extension - Spring - Parent</name>
     <description>Module providing parent for Axon Framework Spring Extension.</description>
 
     <modules>

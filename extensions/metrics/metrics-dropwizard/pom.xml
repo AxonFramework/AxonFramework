@@ -25,7 +25,7 @@
 
     <artifactId>axon-metrics-dropwizard</artifactId>
 
-    <name>Axon Framework - Dropwizard Metrics</name>
+    <name>Axon Extension - Metrics - Dropwizard</name>
     <description>
         This module contains components that provide metrics for standard Axon components using the Dropwizard metrics
         library.

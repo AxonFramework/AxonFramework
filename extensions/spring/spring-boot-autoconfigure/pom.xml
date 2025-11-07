@@ -24,12 +24,11 @@
     </parent>
 
     <artifactId>axon-spring-boot-autoconfigure</artifactId>
-    <name>Axon Framework - Spring Boot Support</name>
 
+    <name>Axon Extension - Spring - SpringBoot Autoconfigure</name>
     <description>
         Module providing support for autoconfiguration of Axon Framework through Spring Boot.
     </description>
-
 
     <dependencies>
 
