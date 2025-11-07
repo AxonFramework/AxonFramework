@@ -261,7 +261,7 @@
                         <Bundle-Description>${project.description}</Bundle-Description>
                         <Bundle-Version>${project.version}</Bundle-Version>
                         <Export-Package>
-                            org.axonframework.*
+                            org.axonframework.messaging.*
                         </Export-Package>
                         <Import-Package>
                             org.slf4j.*,

@@ -187,7 +187,7 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <Automatic-Module-Name>org.axonframework.messaging</Automatic-Module-Name>
+                            <Automatic-Module-Name>org.axonframework.common</Automatic-Module-Name>
                         </manifestEntries>
                     </archive>
                 </configuration>
@@ -211,7 +211,7 @@
                         <Bundle-Description>${project.description}</Bundle-Description>
                         <Bundle-Version>${project.version}</Bundle-Version>
                         <Export-Package>
-                            org.axonframework.*
+                            org.axonframework.common.*
                         </Export-Package>
                         <Import-Package>
                             org.slf4j.*,
