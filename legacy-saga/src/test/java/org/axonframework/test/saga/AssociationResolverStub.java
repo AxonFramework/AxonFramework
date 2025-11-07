@@ -23,7 +23,7 @@ import org.axonframework.modelling.saga.AssociationResolver;
 import org.axonframework.modelling.saga.PayloadAssociationResolver;
 import jakarta.annotation.Nonnull;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class AssociationResolverStub implements AssociationResolver {
 
