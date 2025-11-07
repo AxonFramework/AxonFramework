@@ -1,0 +1,24 @@
+' This is a fragment of a diagram
+' It is meant to be used together with generic_messaging_classes.puml
+
+package "query messages" <<Rectangle>> {
+
+  interface QueryMessage<T,R> {
+   	-queryName: String
+   	-responseType: ResponseType
+  }
+
+  interface QueryResponseMessage<T> {}
+
+  class GenericQueryMessage<T,R> {}
+
+  class GenericQueryResponseMessage{}
+
+}
+
+QueryMessage --|> Message
+GenericQueryMessage ..|> QueryMessage
+GenericQueryMessage --|> MessageDecorator
+QueryResponseMessage --|> ResultMessage
+GenericQueryResponseMessage ..|> QueryResponseMessage
+GenericQueryResponseMessage --|> GenericResultMessage

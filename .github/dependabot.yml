@@ -1,0 +1,39 @@
+version: 2
+
+updates:
+- package-ecosystem: github-actions
+  directory: "/"
+  schedule:
+    interval: weekly
+    day: "sunday"
+  open-pull-requests-limit: 5
+  labels:
+    - "Type: Dependency Upgrade"
+    - "Priority 1: Must"
+  milestone: 112
+  groups:
+    github-dependencies:
+      update-types:
+        - "patch"
+        - "minor"
+        - "major"
+
+- package-ecosystem: maven
+  directory: "/"
+  schedule:
+    interval: weekly
+    day: "sunday"
+  open-pull-requests-limit: 5
+  labels:
+    - "Type: Dependency Upgrade"
+    - "Priority 1: Must"
+  milestone: 112
+  groups:
+    maven-dependencies:
+      update-types:
+        - "patch"
+        - "minor"
+        - "major"
+  ignore:
+    - dependency-name: "com.github.kagkarlsson:db-scheduler"
+      versions: [ "[14.0.0,)" ] # TODO #3194 Remove ignore rule to auto-update to recent db-scheduler versions

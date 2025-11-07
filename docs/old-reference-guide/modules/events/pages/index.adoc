@@ -1,0 +1,18 @@
+= Events
+:page-aliases: README.adoc
+
+The second type of Message that an Axon application is associated with is the Event Message, or simply Events.
+These are messages that communicate that something has happened in the business domain or application.
+Other parts of the application, or event other applications, can react to these events.
+
+This section of the reference guide covers in detail the capabilities that Axon Framework provides for Event messages.
+A summary of the various sections is given below.
+
+[cols="<,<"]
+|===
+|Sub-Section |Purpose
+
+|xref:event-dispatchers.adoc[Event Dispatchers] / xref:event-handlers.adoc[Event Handlers] |Functional development for Event Messages using the Axon Framework
+|xref:event-processors/index.adoc[Event Processors] / xref:event-bus-and-event-store.adoc[Event Bus &amp; Event Store] |Non-Functional development for Event Messages using the Axon Framework
+|xref:event-versioning.adoc[Event Versioning] |Details on Event versioning capabilities provided by the Axon Framework
+|===

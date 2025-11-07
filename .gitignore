@@ -1,0 +1,36 @@
+# Maven build artifacts can be ignored
+target/
+# ...but keep the wrapper jar
+!.mvn/wrapper/maven-wrapper.jar
+
+axon.ipr
+axon.iws
+
+# IntelliJ project files
+*.iml
+.idea/
+
+# Eclipse project files
+.classpath
+.project
+.settings/
+.factorypath
+/.metadata/
+
+# MacOS makes this one
+.DS_Store
+
+# documentation's local bulid
+docs/_playbook/build
+
+# AI ASSISTANT - Claude Code
+CLAUDE.md
+.claude/
+.mcp.json
+
+# AI ASSISTANT - Kiro
+.kiro
+
+# AI ASSISTANT - Cursor
+.vscode
+.cursor

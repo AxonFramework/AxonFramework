@@ -1,0 +1,24 @@
+
+// tag::constructor[]
+[source,java]
+----
+GenericCommandMessage myCommandMessage =
+    new GenericCommandMessage( // <1>
+        myCommandPayload // <2>
+    )
+----
+<1> use the constructor
+<2> pass a serializable object
+// end::constructor[]
+
+// tag::static[]
+[source,java]
+----
+GenericCommandMessage myCommandMessage =
+    GenericCommandMessage.asCommandMessage( // <1>
+    myCommandPayload // <2>
+)
+----
+<1> use static method
+<2> pass a serializable object
+// end::static[]

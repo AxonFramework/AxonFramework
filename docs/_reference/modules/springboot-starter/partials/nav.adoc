@@ -1,0 +1,6 @@
+* xref:springboot-starter:index.adoc[]
+// ** Main Configuration
+// ** Module Configuration
+// ** Event Processing Configuration
+// ** Aggregate Configuration
+// ** Saga Configuration
