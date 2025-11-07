@@ -638,7 +638,7 @@ syntax:
 public void configurePSEP() {
     EventProcessorModule.pooledStreaming("when-student-enrolled-to-max-courses-then-send-notification")
                         .eventHandlingComponents(components -> components.declarative(eventHandler1)
-                                                                         .annotated(eventHandler2))
+                                                                         .autodetected(eventHandler2))
                         .notCustomized();
 }
 ```

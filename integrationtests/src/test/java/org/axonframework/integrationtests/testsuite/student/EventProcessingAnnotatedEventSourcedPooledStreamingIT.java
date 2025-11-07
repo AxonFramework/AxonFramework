@@ -152,7 +152,7 @@ public class EventProcessingAnnotatedEventSourcedPooledStreamingIT extends Abstr
             EventSourcingConfigurer configurer) {
         var studentRegisteredCoursesProcessor = EventProcessorModule
                 .pooledStreaming("when-student-enrolled-to-max-courses-then-send-notification")
-                .eventHandlingComponents(components -> components.annotated(
+                .eventHandlingComponents(components -> components.autodetected(
                         cfg -> new WhenStudentEnrolledToMaxCoursesThenSendNotificationAutomation()
                 )).notCustomized();
         return configurer.messaging(
@@ -166,7 +166,7 @@ public class EventProcessingAnnotatedEventSourcedPooledStreamingIT extends Abstr
 
     private static void configureEntityAndCommandHandler(EventSourcingConfigurer configurer) {
         EntityModule<String, StudentCoursesAutomationState> studentCoursesEntity =
-                EventSourcedEntityModule.annotated(String.class, StudentCoursesAutomationState.class);
+                EventSourcedEntityModule.autodetected(String.class, StudentCoursesAutomationState.class);
         configurer.componentRegistry(cr -> cr.registerModule(studentCoursesEntity));
 
         CommandHandlingModule sendMaxCoursesNotificationCommandHandler = CommandHandlingModule

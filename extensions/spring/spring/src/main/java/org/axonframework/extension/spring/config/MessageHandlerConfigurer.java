@@ -105,7 +105,7 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
             Function<RequiredComponentPhase, CompletePhase> componentRegistration = (RequiredComponentPhase phase) -> {
                 AdditionalComponentPhase resultOfRegistration = null;
                 for (NamedBeanDefinition namedBeanDefinition : beanDefs) {
-                    resultOfRegistration = phase.annotated(this.createComponentBuilder(namedBeanDefinition));
+                    resultOfRegistration = phase.autodetected(this.createComponentBuilder(namedBeanDefinition));
                 }
                 return resultOfRegistration;
             };

@@ -30,7 +30,7 @@ public class CreateCourseConfiguration {
 
     public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
         var stateEntity = EventSourcedEntityModule
-                .annotated(String.class, CreateCourseCommandHandler.State.class);
+                .autodetected(String.class, CreateCourseCommandHandler.State.class);
 
         var commandHandlingModule = CommandHandlingModule
                 .named("CreateCourse")

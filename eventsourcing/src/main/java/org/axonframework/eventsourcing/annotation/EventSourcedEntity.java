@@ -41,7 +41,7 @@ import java.lang.annotation.Target;
 
 /**
  * Annotation to configure several aspects of an event-sourced entity. This annotation is required to construct an
- * annotation-based entity through the {@link EventSourcedEntityModule#annotated(Class, Class)}.
+ * annotation-based entity through the {@link EventSourcedEntityModule#autodetected(Class, Class)}.
  *
  * <h2>Event Criteria</h2>
  * While loading the entity from the {@link EventSourcingRepository}, the provided {@code id} needs to be translated to

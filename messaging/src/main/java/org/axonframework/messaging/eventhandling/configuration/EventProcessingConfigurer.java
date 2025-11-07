@@ -69,7 +69,7 @@ import java.util.function.UnaryOperator;
  *             pooledStreaming.processor("calendar-processor", components -> components.declarative(cfg -> weekStartedEventHandler))
  *                        .processor("astrologers-week-symbol-processor", components -> components.declarative(cfg -> weekSymbolProclaimedEventHandler)))
  *         .subscribing(subscribing ->
- *             subscribing.processor("creatures-dwelling-readmodel", components -> components.annotated(cfg -> dwellingBuiltEventHandler)));
+ *             subscribing.processor("creatures-dwelling-readmodel", components -> components.autodetected(cfg -> dwellingBuiltEventHandler)));
  * }</pre>
  *
  * @author Mateusz Nowak

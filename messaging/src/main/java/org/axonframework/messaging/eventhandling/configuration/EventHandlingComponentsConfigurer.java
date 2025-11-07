@@ -61,20 +61,20 @@ public interface EventHandlingComponentsConfigurer {
         /**
          * Configures a single event handling component.
          *
-         * @param component The component to configure.
+         * @param handlingComponentBuilder The component to configure.
          * @return The complete phase for decoration and finalization.
          */
         @Nonnull
         AdditionalComponentPhase declarative(@Nonnull ComponentBuilder<EventHandlingComponent> handlingComponentBuilder);
 
         /**
-         * Configures an annotated event handling component.
+         * Configures an auto-detected event handling component.
          *
-         * @param handlingComponentBuilder The annotated component builder.
+         * @param handlingComponentBuilder The component builder.
          * @return The additional component phase for further configuration.
          */
         @Nonnull
-        default AdditionalComponentPhase annotated(@Nonnull ComponentBuilder<Object> handlingComponentBuilder) {
+        default AdditionalComponentPhase autodetected(@Nonnull ComponentBuilder<Object> handlingComponentBuilder) {
             requireNonNull(handlingComponentBuilder, "The handling component builder cannot be null.");
             return declarative(c -> new AnnotatedEventHandlingComponent<>(
                     handlingComponentBuilder.build(c),

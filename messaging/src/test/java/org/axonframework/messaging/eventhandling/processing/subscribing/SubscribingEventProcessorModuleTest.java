@@ -156,7 +156,7 @@ class SubscribingEventProcessorModuleTest {
                                     .defaultProcessor("test-processor",
                                                       components -> components.declarative(cfg -> component1)
                                                                               .declarative(cfg -> component2)
-                                                                              .annotated(cfg -> component3)
+                                                                              .autodetected(cfg -> component3)
                                     )
                     )
             );
@@ -200,7 +200,7 @@ class SubscribingEventProcessorModuleTest {
                                     .defaultProcessor("test-processor",
                                                       components -> components.declarative(cfg -> component1)
                                                                               .declarative(cfg -> component2)
-                                                                              .annotated(cfg -> component3)
+                                                                              .autodetected(cfg -> component3)
                                     )
                     )
             );
