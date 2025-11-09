@@ -106,14 +106,14 @@
         <micrometer.version>1.16.0</micrometer.version>
         <!-- Other -->
         <byte-buddy.version>1.17.8</byte-buddy.version>
-        <commons-io.version>2.20.0</commons-io.version>
+        <commons-io.version>2.21.0</commons-io.version>
         <disruptor.version>4.0.0</disruptor.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
         <javassist.version>3.30.2-GA</javassist.version>
         <eaio-uuid.version>3.2</eaio-uuid.version>
         <equalsverifier.version>4.2.1</equalsverifier.version>
         <!-- Reactive -->
-        <projectreactor.version>3.7.13</projectreactor.version>
+        <projectreactor.version>3.8.0</projectreactor.version>
         <reactive.streams.spec.version>1.0.4</reactive.streams.spec.version>
         <!-- Conversion -->
         <avro.version>1.12.1</avro.version>
@@ -136,7 +136,7 @@
         <testcontainers.version>2.0.1</testcontainers.version>
         <assertj.version>3.27.6</assertj.version>
         <!-- Validation -->
-        <hibernate-validator.version>9.0.1.Final</hibernate-validator.version>
+        <hibernate-validator.version>9.1.0.Final</hibernate-validator.version>
         <!-- Build / Plugin -->
         <central-publishing-maven-plugin.version>0.9.0</central-publishing-maven-plugin.version>
         <eclipse.transformer-maven-plugin.version>1.0.0</eclipse.transformer-maven-plugin.version>
@@ -151,7 +151,7 @@
         <maven-install.version>3.1.4</maven-install.version>
         <maven-jar.version>3.4.2</maven-jar.version>
         <maven-javadoc.version>3.12.0</maven-javadoc.version>
-        <maven-release.version>3.1.1</maven-release.version>
+        <maven-release.version>3.2.0</maven-release.version>
         <maven-source.version>3.3.1</maven-source.version>
         <maven-surefire.version>3.5.4</maven-surefire.version>
         <maven-resources.version>3.3.1</maven-resources.version>
