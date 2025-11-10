@@ -36,9 +36,9 @@ import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarker;
+import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarker.AggregateSequencer;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedEventStorageEngineUtils;
 import org.axonframework.eventsourcing.eventstore.AggregateSequenceNumberPosition;
-import org.axonframework.eventsourcing.eventstore.AggregateBasedEventStorageEngineUtils.AggregateSequencer;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.EmptyAppendTransaction;
@@ -106,7 +106,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
         }
 
         AggregateBasedConsistencyMarker consistencyMarker = AggregateBasedConsistencyMarker.from(condition);
-        AggregateSequencer aggregateSequencer = AggregateSequencer.with(consistencyMarker);
+        AggregateSequencer aggregateSequencer = consistencyMarker.createSequencer();
 
         AppendEventsTransaction tx = connection.eventChannel().startAppendEventsTransaction();
         try {
@@ -143,7 +143,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
             public CompletableFuture<AggregateBasedConsistencyMarker> commit(@Nullable ProcessingContext context) {
                 return tx.commit()
                          .exceptionallyCompose(e -> CompletableFuture.failedFuture(translateConflictException(e)))
-                         .thenApply(r -> aggregateSequencer.forwarded());
+                         .thenApply(r -> aggregateSequencer.toMarker());
             }
 
             @Override

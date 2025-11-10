@@ -530,8 +530,11 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
         assertDoesNotThrow(() -> firstCommit.get(1, TimeUnit.SECONDS));
         assertDoesNotThrow(() -> secondCommit.get(1, TimeUnit.SECONDS));
 
-        assertTrue(validConsistencyMarker(firstCommit.thenCompose(v -> firstTx.afterCommit(v, processingContext())).join(), TEST_AGGREGATE_ID, 0));
-        assertTrue(validConsistencyMarker(secondCommit.thenCompose(v -> secondTx.afterCommit(v, processingContext())).join(), OTHER_AGGREGATE_ID, 0));
+        ConsistencyMarker marker1 = firstCommit.thenCompose(v -> firstTx.afterCommit(v, processingContext())).join();
+        ConsistencyMarker marker2 = secondCommit.thenCompose(v -> secondTx.afterCommit(v, processingContext())).join();
+
+        assertThat(AggregateSequenceNumberPosition.toSequenceNumber(marker1.position())).isEqualTo(0);
+        assertThat(AggregateSequenceNumberPosition.toSequenceNumber(marker2.position())).isEqualTo(0);
     }
 
     @Test
@@ -659,13 +662,6 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
                 && TEST_AGGREGATE_ID.equals(e.getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY))
                 && e.getResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY) == expectedSequence
                 && TEST_AGGREGATE_TYPE.equals(e.getResource(LegacyResources.AGGREGATE_TYPE_KEY));
-    }
-
-    protected boolean validConsistencyMarker(ConsistencyMarker consistencyMarker,
-                                             String aggregateIdentifier,
-                                             int aggregateSequence) {
-        return consistencyMarker instanceof AggregateBasedConsistencyMarker cm
-                && cm.positionOf(aggregateIdentifier) == aggregateSequence;
     }
 
     private ConsistencyMarker appendEvents(AppendCondition condition, TaggedEventMessage<?>... events) {
