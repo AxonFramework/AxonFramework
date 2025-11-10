@@ -26,6 +26,7 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarker;
+import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarker.AggregateSequencer;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedEventStorageEngineUtils;
 import org.axonframework.conversion.Converter;
 import org.axonframework.eventsourcing.eventstore.AggregateSequenceNumberPosition;
@@ -220,7 +221,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
                             "Already committed or rolled back"
                     ));
                 }
-                var aggregateSequencer = AggregateSequencer.with(preCommitConsistencyMarker);
+                var aggregateSequencer = preCommitConsistencyMarker.createSequencer();
 
                 CompletableFuture<Void> txResult = new CompletableFuture<>();
                 var tx = transactionManager.startTransaction();
@@ -237,7 +238,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
                 return txResult.exceptionallyCompose(
                                        e -> CompletableFuture.failedFuture(translateConflictException(e))
                                )
-                               .thenApply(v -> aggregateSequencer.forwarded());
+                               .thenApply(v -> aggregateSequencer.toMarker());
             }
 
             @Override
