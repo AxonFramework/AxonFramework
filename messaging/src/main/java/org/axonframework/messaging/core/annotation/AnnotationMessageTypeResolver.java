@@ -18,6 +18,7 @@ package org.axonframework.messaging.core.annotation;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.core.MessageType;
@@ -90,8 +91,10 @@ public class AnnotationMessageTypeResolver implements MessageTypeResolver {
     public Optional<MessageType> resolve(@Nonnull Class<?> payloadType) {
         return AnnotationUtils.findAnnotationAttributes(payloadType, specification.annotation())
                               .map(attributes -> new MessageType(
-                                      (String) attributes.get(specification.namespaceAttribute()),
-                                      (String) attributes.get(specification.nameAttribute()),
+                                      ObjectUtils.getNonEmptyOrDefault((String) attributes.get(specification.namespaceAttribute()),
+                                                                       payloadType.getPackageName()),
+                                      ObjectUtils.getNonEmptyOrDefault((String) attributes.get(specification.nameAttribute()),
+                                                                       payloadType.getSimpleName()),
                                       (String) attributes.get(specification.versionAttribute())
                               ))
                               .or(() -> fallback != null ? fallback.resolve(payloadType) : Optional.empty());

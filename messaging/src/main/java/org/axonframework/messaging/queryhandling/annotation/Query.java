@@ -43,9 +43,9 @@ public @interface Query {
     /**
      * The namespace or (bounded) context of the query.
      * <p>
-     * Will typically be mapped to the {@link QualifiedName#namespace()}. Whenever this attribute is defined, the
-     * {@link #name()} will become the {@link QualifiedName#localName()}. Together they would form the
-     * {@link QualifiedName#name()}.
+     * Is used to define the {@link QualifiedName#namespace()} of a fully qualified name.
+     * <p>
+     * Defaults to the package name of the annotated class.
      *
      * @return The namespace or (bounded) context of the query.
      */
@@ -54,9 +54,10 @@ public @interface Query {
     /**
      * The business or domain name of the query.
      * <p>
-     * Will typically be mapped to a {@link QualifiedName#QualifiedName(String)} and inserted into a
-     * {@link MessageType}. By using the String-based constructor of the {@link QualifiedName}, this field  will
-     * represent the combination of the {@link QualifiedName#localName()} and {@link QualifiedName#namespace()},
+     * Is used to define the {@link QualifiedName#localName()} of a fully qualified name.
+     * <p>
+     * Defaults to the simple name of the annotated class. Note that when an inner class is annotated, the simple name
+     * does not include the names of the enclosing classes.
      *
      * @return The business or domain name of the query.
      */
