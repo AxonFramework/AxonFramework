@@ -187,15 +187,15 @@ Events with the same value for these fields are passed in the same segment.
 
 The `PropertySequencingPolicy` requires 4 values in the `sequencingPolicyParameters` list.
 
-1. The serialization type for the events.
+1. The conversion type for the events.
 Supported values are `JSON` or `XML`.
 2. The payload type to apply the policy on.
 3. An expression to extract the property value from the event payload.
-If the serialization type is `JSON` this must be a `JsonPath` expression.
+If the conversion type is `JSON` this must be a `JsonPath` expression.
 For `XML` this must be an `Xpath` expression.
 4. A fallback policy, the name of a sequencing policy to use if the payload type does not match the type specified in the second parameter.
 This may be `PropertySequencingPolicy` to specify an expression for another payload type.
-In this case add the serialization type, payload type, expression and fallback policy parameters for the alternative payload type.
+In this case add the conversion type, payload type, expression and fallback policy parameters for the alternative payload type.
 
 ==== Axon Configuration API
 

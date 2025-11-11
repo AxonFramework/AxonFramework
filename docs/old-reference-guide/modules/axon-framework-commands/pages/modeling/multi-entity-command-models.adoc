@@ -1,0 +1,227 @@
+= Multi-Entity Structures
+
+Complex business logic often requires more than what a single entity can provide. In that case, it is important that the complexity is spread over a number of child entities within the entity structure. In this chapter we will discuss the specifics around creating child entities and how they can handle messages.
+
+[TIP]
+.State among Entities
+====
+A common misinterpretation of the rule that entities should not expose state, is that none of the child entities should contain any property accessor methods. This is not the case. In fact, an entity structure will probably benefit a lot if the child entities _within_ the parent entity expose state to the other entities in that same structure. However, it is recommended not to expose the state _outside_ the entity.
+====
+
+Within the 'Gift Card' domain, the `GiftCard` entity was defined in xref:modeling/command-model.adoc[this] section. Let's leverage this domain to introduce child entities:
+
+[source,java]
+----
+import org.axonframework.modelling.entity.annotation.EntityMember;
+import org.axonframework.modelling.command.EntityId;
+
+public class GiftCard {
+
+    private final String id;
+
+    @EntityMember // <1>
+    private List<GiftCardTransaction> transactions = new ArrayList<>();
+
+    private int remainingValue;
+
+    // omitted constructors, command and event sourcing handlers
+}
+
+public class GiftCardTransaction {
+
+    @EntityId // <2>
+    private final String transactionId;
+
+    private int transactionValue;
+    private boolean reimbursed = false;
+
+    public GiftCardTransaction(String transactionId, int transactionValue) {
+        this.transactionId = transactionId;
+        this.transactionValue = transactionValue;
+    }
+
+    public String transactionId() {
+        return transactionId;
+    }
+
+    // omitted command handlers, event sourcing handlers and equals/hashCode
+}
+
+----
+
+Child entities are, just like the parent entity, simple objects, as is shown with the new `GiftCardTransaction` child entity. The snippet above shows two important concepts of multi-entity structures:
+
+<1> The field that declares the child entity/entities must be annotated with `@EntityMember`.
+ This annotation tells Axon that the annotated field contains a class that should be inspected for message handlers.
+ This example shows the annotation on an implementation of `Iterable`, but it can also be placed on a single Object or a `Map`.
+ In the latter case, the values of the `Map` are expected to contain the entities, while the key contains a value that is used as their reference.
+ Note that this annotation can be placed on a field and a method.
+
+<2> The `@EntityId` annotation specifying the identifying field of a child entity.
+ Required to be able to route a command (or <<Event Sourcing handlers in entities,event>>) message to the correct child entity instance.
+ The property on the payload that will be used to find the entity that the message should be routed to, defaults to the name of the `@EntityId` annotated field.
+ For example, when annotating the field `transactionId`, the command must define a property with that same name, which means either a `transactionId` or a `transactionId()` method must be present.
+ If the name of the field and the routing property differ, you may provide a value explicitly using `@EntityId(routingKey = "customRoutingProperty")`.
+ This annotation is *mandatory* on the child entity implementation if it will be part of a `Collection` or `Map` of child entities.
+ Note that this annotation can be placed on a field and a method.
+
+[NOTE]
+.Defining the Entity type
+====
+The field declaration for both the `Collection` or `Map` should contain proper generics to allow Axon to identify the type of child entity contained in the collection or map. If it is not possible to add the generics in the declaration (for example, because you're using a custom implementation which already defines generic types), you must specify the entity type by specifying the `type` field in the `@EntityMember` annotation:
+
+`@EntityMember(type = GiftCardTransaction.class)`
+====
+
+== Command handling in child entities
+
+`@CommandHandler` annotations are not limited to the parent entity. Placing all command handlers in the parent will sometimes lead to a large number of methods, while many of them simply forward the invocation to one of the child entities. If that is the case, you may place the `@CommandHandler` annotation on one of the child entities' methods. For Axon to find these annotated methods, the field declaring the child entity in the parent entity must be marked with `@EntityMember`:
+
+[source,java]
+----
+import org.axonframework.messaging.commandhandling.CommandHandler;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
+import org.axonframework.modelling.entity.annotation.EntityMember;
+import org.axonframework.modelling.command.EntityId;
+
+public class GiftCard {
+
+    private final String id;
+
+    @EntityMember
+    private List<GiftCardTransaction> transactions = new ArrayList<>();
+
+    private int remainingValue;
+
+    // omitted constructors, command and event sourcing handlers
+
+}
+
+public class GiftCardTransaction {
+
+    @EntityId
+    private final String transactionId;
+
+    private int transactionValue;
+    private boolean reimbursed = false;
+
+    public GiftCardTransaction(String transactionId, int transactionValue) {
+        this.transactionId = transactionId;
+        this.transactionValue = transactionValue;
+    }
+
+    @CommandHandler
+    public void handle(ReimburseCardCommand cmd, EventAppender appender) {
+        if (reimbursed) {
+            throw new IllegalStateException("Transaction already reimbursed");
+        }
+        appender.append(new CardReimbursedEvent(cmd.cardId(), transactionId, transactionValue));
+    }
+
+    // omitted event sourcing handler and equals/hashCode
+}
+----
+
+Note that only the declared type of the annotated field is inspected for command handlers. If a field value is null at the time an incoming command arrives for that entity, an exception is thrown. If there is a `Collection` or `Map` of child entities and no entity can be found which matches the routing key of the command, Axon throws an `IllegalStateException` as apparently the entity is not capable of processing the command at that point in time.
+
+[NOTE]
+.Command Handler considerations
+====
+Each command must have exactly one handler in the entity structure. This means that you cannot annotate multiple entities (either parent or child) with `@CommandHandler` that handle the same command type. In case you need to conditionally route a command to a child entity, the parent entity should handle the command and forward it based on the conditions that apply.
+
+The runtime type of the field does not have to be exactly the declared type. However, only the declared type of the `@EntityMember` annotated field is inspected for `@CommandHandler` methods.
+====
+
+== Event Sourcing handlers in child entities
+
+When using event sourcing as the mechanism to store entities, not only the parent entity needs to use events to trigger state transitions, but so does each of the child entities within that structure. Axon provides support for event sourcing complex entity structures like these out of the box.
+
+When an entity (including the parent) applies an event, it is handled by the parent entity first, and then bubbles down through every `@EntityMember` annotated field to *all* its containing child entities:
+
+[source,java]
+----
+import org.axonframework.messaging.commandhandling.CommandHandler;
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
+import org.axonframework.modelling.entity.annotation.EntityMember;
+import org.axonframework.modelling.command.EntityId;
+
+public class GiftCard {
+
+    private final String id;
+    @EntityMember
+    private List<GiftCardTransaction> transactions = new ArrayList<>();
+
+    @CommandHandler
+    public void handle(RedeemCardCommand cmd, EventAppender appender) {
+        // Some decision making logic
+        appender.append(new CardRedeemedEvent(id, cmd.transactionId(), cmd.amount()));
+    }
+
+    @EventSourcingHandler
+    public void on(CardRedeemedEvent evt) {
+        // 1.
+        transactions.add(new GiftCardTransaction(evt.transactionId(), evt.amount()));
+    }
+
+    // omitted constructors, command and event sourcing handlers
+}
+
+public class GiftCardTransaction {
+
+    @EntityId
+    private final String transactionId;
+
+    private int transactionValue;
+    private boolean reimbursed = false;
+
+    public GiftCardTransaction(String transactionId, int transactionValue) {
+        this.transactionId = transactionId;
+        this.transactionValue = transactionValue;
+    }
+
+    @CommandHandler
+    public void handle(ReimburseCardCommand cmd, EventAppender appender) {
+        if (reimbursed) {
+            throw new IllegalStateException("Transaction already reimbursed");
+        }
+        appender.append(new CardReimbursedEvent(cmd.cardId(), transactionId, transactionValue));
+    }
+
+    @EventSourcingHandler
+    public void on(CardReimbursedEvent event) {
+        // 2.
+        if (transactionId.equals(event.transactionId())) {
+            reimbursed = true;
+        }
+    }
+
+    // omitted equals/hashCode
+}
+----
+
+Two specifics are worth mentioning from the above snippet, pointed out with numbered Java comments:
+
+. The creation of the child entity takes place in an event sourcing handler of its parent.
+  It is thus not possible to have a 'creational command handler' (static `@CommandHandler` method) on the child entity class.
+
+. The event sourcing handler in the child entity performs a validation check whether the received event actually belongs to that specific child entity instance.
+  This is necessary as events applied by one child entity instance will also be handled by any other child entity instance of the same type.
+  The situation described in bullet point two is customizable, by changing the `eventForwardingMode` on the `@EntityMember` annotation:
+
+[source,java]
+----
+import org.axonframework.modelling.entity.annotation.EntityMember;
+import org.axonframework.modelling.command.ForwardMatchingInstances;
+
+public class GiftCard {
+
+    private final String id;
+    @EntityMember(eventForwardingMode = ForwardMatchingInstances.class)
+    private List<GiftCardTransaction> transactions = new ArrayList<>();
+
+    // omitted constructors, command and event sourcing handlers
+}
+----
+
+By setting the `eventForwardingMode` to `ForwardMatchingInstances` an Event Message will only be forwarded if it contains a field/accessor method which matches the name of the `@EntityId` annotated field on the child entity. This routing behaviour can be further specified with the `routingKey` field on the `@EntityId` annotation, mirroring that of <<Command handling in child entities,routing commands in child entities>>. Other forwarding modes which can be used are `ForwardAll` (the default) and `ForwardNone`, which respectively forward all events to all child entities or no events at all.

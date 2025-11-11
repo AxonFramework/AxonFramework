@@ -50,13 +50,13 @@ We'd like to thank all the contributors who worked on this release!
 - [#3202] Auto-register `MessageHandlerInterceptors` with Spring Boot link:https://github.com/AxonFramework/AxonFramework/pull/3203[#3203]
 - Autoregister MessageHandlerInterceptors with Spring Boot link:https://github.com/AxonFramework/AxonFramework/issues/3202[#3202]
 - [#3159] Support Apache Avro link:https://github.com/AxonFramework/AxonFramework/pull/3187[#3187]
-- Support Apache Avro as message serialization format link:https://github.com/AxonFramework/AxonFramework/issues/3159[#3159]
+- Support Apache Avro as message conversion format link:https://github.com/AxonFramework/AxonFramework/issues/3159[#3159]
 - Secure MessageHandlerDefinition link:https://github.com/AxonFramework/AxonFramework/pull/3057[#3057]
 - Interceptor list Spring auto configuration link:https://github.com/AxonFramework/AxonFramework/issues/1422[#1422]
 
 === _Enhancements_
 
-- [#3159] `AvroSerializer` - Documentation, code sample, and auto-config fix link:https://github.com/AxonFramework/AxonFramework/pull/3275[#3275]
+- [#3159] `AvroConverter` - Documentation, code sample, and auto-config fix link:https://github.com/AxonFramework/AxonFramework/pull/3275[#3275]
 - Catch `IllegalJobStateChangeException` in `JobRunrDeadlineManager` when the failed change is from `DELETED` to `DELETED` link:https://github.com/AxonFramework/AxonFramework/pull/3267[#3267]
 - Introduce gRPC message limit warning and prevention link:https://github.com/AxonFramework/AxonFramework/pull/3264[#3264]
 - [#3217] warn and document Persistent Stream uniqueness based on stream name link:https://github.com/AxonFramework/AxonFramework/pull/3262[#3262]
@@ -170,7 +170,7 @@ As such, the default `ReplayToken` should be regarded as a behavioral breaking c
 * Intermediate Span Factory pattern for buses https://github.com/AxonFramework/AxonFramework/pull/2826[#2826]
 * Intermediate Span Factory pattern for snapshotters https://github.com/AxonFramework/AxonFramework/pull/2824[#2824]
 * Dead-Letter Sequence Identifier Caching https://github.com/AxonFramework/AxonFramework/pull/2818[#2818]
-* Detect empty snapshots due to Serializer misconfiguration https://github.com/AxonFramework/AxonFramework/pull/2817[#2817]
+* Detect empty snapshots due to Converter misconfiguration https://github.com/AxonFramework/AxonFramework/pull/2817[#2817]
 * Improve Event Scheduler context configuration https://github.com/AxonFramework/AxonFramework/pull/2810[#2810]
 * Implement StreamingEventProcessor.claimSegment https://github.com/AxonFramework/AxonFramework/pull/2805[#2805]
 * Improve Spanfactory configurability https://github.com/AxonFramework/AxonFramework/issues/2780[#2780]
@@ -373,7 +373,7 @@ For a list that also contains the dependency upgrades we refer to https://github
 * Added AxonServerEEContainer and AxonServerSEContainer as an easier way for people to write tests https://github.com/AxonFramework/AxonFramework/pull/2020[#2020]
 * Streaming query https://github.com/AxonFramework/AxonFramework/pull/2001[#2001]
 * [#1967] Fetch available segements only from the TokenStore https://github.com/AxonFramework/AxonFramework/pull/1997[#1997]
-* [#1645] Introduce ObjectNode-to/from-JsonNode `ContentTypeConverter` for the `JacksonSerializer` https://github.com/AxonFramework/AxonFramework/pull/1995[#1995]
+* [#1645] Introduce ObjectNode-to/from-JsonNode `ContentTypeConverter` for the `JacksonConverter` https://github.com/AxonFramework/AxonFramework/pull/1995[#1995]
 * [#1490] Simplify LockFactory configuration for Aggregates https://github.com/AxonFramework/AxonFramework/pull/1992[#1992]
 * [#1986 Introduce `EventProcessingConfigurer#defaultTransactionManager` method https://github.com/AxonFramework/AxonFramework/pull/1989[#1989]
 * Register default Transaction Manager through Event Processing Configurer https://github.com/AxonFramework/AxonFramework/issues/1986[#1986]
@@ -399,7 +399,7 @@ For a list that also contains the dependency upgrades we refer to https://github
 * Catch exceptions from correlation data providers. https://github.com/AxonFramework/AxonFramework/pull/2345[#2345]
 * Throw exception on ambiguous dependencies https://github.com/AxonFramework/AxonFramework/pull/2344[#2344]
 * Integration Test for Command and Query Priority Calculations https://github.com/AxonFramework/AxonFramework/pull/2342[#2342]
-* Include message identifier in error message if de-serialization fails https://github.com/AxonFramework/AxonFramework/pull/2330[#2330]
+* Include message identifier in error message if de-conversion fails https://github.com/AxonFramework/AxonFramework/pull/2330[#2330]
 * Add CorrelationDataProvider error handling on rollback https://github.com/AxonFramework/AxonFramework/issues/2328[#2328]
 * Strip test prefix once required in JUnit 3 from test method names https://github.com/AxonFramework/AxonFramework/pull/2321[#2321]
 * Apache Maven Wrapper 3.8.6 https://github.com/AxonFramework/AxonFramework/pull/2320[#2320]
@@ -418,7 +418,7 @@ For a list that also contains the dependency upgrades we refer to https://github
 * Default snapshotfilter with revision null https://github.com/AxonFramework/AxonFramework/pull/2213[#2213]
 * Default snapshot filter with revision null https://github.com/AxonFramework/AxonFramework/pull/2212[#2212]
 * Creation policy factory for Aggregates https://github.com/AxonFramework/AxonFramework/pull/2209[#2209]
-* Removed deprecated code by updating the default serializer initialization https://github.com/AxonFramework/AxonFramework/pull/2206[#2206]
+* Removed deprecated code by updating the default converter initialization https://github.com/AxonFramework/AxonFramework/pull/2206[#2206]
 * Flux response type rank matching https://github.com/AxonFramework/AxonFramework/pull/2197[#2197]
 * Introduce conditional variants for `ApplyMore` https://github.com/AxonFramework/AxonFramework/pull/2174[#2174]
 * Conditional variant for the ApplyMore methods https://github.com/AxonFramework/AxonFramework/issues/2173[#2173]
@@ -494,7 +494,7 @@ For a list that also contains the dependency upgrades we refer to https://github
 * Fix `StreamingEventProcessor#maxCapacity` for the `TrackingEventProcessor` https://github.com/AxonFramework/AxonFramework/pull/2124[#2124]
 * Restore missing commit 6e531a6cf173243adf9519905f42cbec0a334238 https://github.com/AxonFramework/AxonFramework/pull/2116[#2116]
 * Wire eventSerializer into QuartzEventSchedulerFactoryBean https://github.com/AxonFramework/AxonFramework/pull/2115[#2115]
-* Wire the event `Serializer` into `QuartzEventSchedulerFactoryBean` https://github.com/AxonFramework/AxonFramework/issues/2088[#2088]
+* Wire the event `Converter` into `QuartzEventSchedulerFactoryBean` https://github.com/AxonFramework/AxonFramework/issues/2088[#2088]
 * Fix typo in pom.xml https://github.com/AxonFramework/AxonFramework/pull/2022[#2022]
 * Fix typos https://github.com/AxonFramework/AxonFramework/pull/2016[#2016]
 * Exponential Retry for Tracking event processor not happening for transient exceptions when using Postgres JdbcTokenStore https://github.com/AxonFramework/AxonFramework/issues/1920[#1920]
@@ -622,7 +622,7 @@ For a full list of all the feature request and enhancements done for release 4.4
 * Aggregate Polymorphism has been introduced, allowing for an aggregate hierarchy to come naturally from a domain model.
  To set this up, the `AggregateConfigurer#withSubtypes(Class... aggregates)` method can be used.
  In a Spring environment, an aggregate class hierarchy will be detected automatically.
- For more details on this feature, read up on it xref:axon-framework-reference:axon-framework-commands:modeling/aggregate-polymorphism.adoc[here].
+ For more details on this feature, read up on it xref:axon-framework-reference:axon-framework-commands:modeling/entity-polymorphism.adoc[here].
 
 * An Axon application will now shutdown more gracefully than it did in the previous releases.
  This is achieved by marking specific methods in Axon's infrastructure components as a `@StartHandler` or `@ShutdownHandler`.
@@ -633,7 +633,7 @@ For a full list of all the feature request and enhancements done for release 4.4
  Through this, it is possible to define if such a command handler should 'never', 'always' or 'create' an aggregate 'if-missing'.
  For further explanation read the xref:axon-framework-reference:axon-framework-commands:command-handlers.adoc#_aggregate_command_handler_creation_policy[Aggregate Command Handler Creation Policy] section.
 
-* Both the `XStreamSerializer` and `JacksonSerializer` provide a means to toggle on "lenient serialization" through their builders.
+* Both the XStreamSerializer (removed in Axon 5) and `JacksonConverter` provide a means to toggle on "lenient conversion" through their builders.
 
 * Various test fixture improvements have been made, such as options to register a `HandlerEnhancerDefinition`, a `ParameterResolverFactory` and a `ListenerInvocationErrorHandler`.
  Additional validations have been added too, revolving around asserting scheduled events and deadline message.
@@ -684,7 +684,7 @@ For a complete list of all the changes made in 4.3 you can check out https://git
 * The `CommandResultMessage` was returned as `null` when using the `DisruptorCommandBus`.
  This was solved in pull request https://github.com/AxonFramework/AxonFramework/pull/1169[#1169].
 
-* The `ScopeDescriptor` used by the `DeadlineManager` had serialization issue when a user would migrate from an Axon 3.x application to Axon 4.x.
+* The `ScopeDescriptor` used by the `DeadlineManager` had conversion issue when a user would migrate from an Axon 3.x application to Axon 4.x.
  The `axon-legacy` package has been expanded to contain legacy `ScopeDescriptor`s to resolve this problem.
 
 For a full list of all features, enhancements and bugs, check out the https://github.com/AxonFramework/AxonFramework/milestone/38?closed=1[issue tracker].

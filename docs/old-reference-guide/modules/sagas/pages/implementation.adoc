@@ -38,7 +38,7 @@ ____
 
 *Tip*
 
-Since resources should not be persisted with the saga, make sure to add the `transient` keyword to those fields. This will prevent the serialization mechanism to attempt to write the contents of these fields to the repository. The repository will automatically re-inject the required resources after a saga has been deserialized.
+Since resources should not be persisted with the saga, make sure to add the `transient` keyword to those fields. This will prevent the conversion mechanism to attempt to write the contents of these fields to the repository. The repository will automatically re-inject the required resources after a saga has been deserialized.
 
 ____
 
@@ -79,14 +79,14 @@ In some cases, applications benefit from caching saga instances. In that case, t
 [[JpaSagaStore]]
 ==== `JpaSagaStore`
 
-The `JpaSagaStore` uses JPA to store the state and association values of sagas. Sagas themselves do not need any JPA annotations; Axon will serialize the sagas using a `Serializer` (similar to event serialization, you can choose between an `XStreamSerializer` or `JacksonSerializer`, which can be set by configuring the default `Serializer` in your application. For more details, see xref:ROOT:serialization.adoc[Serializers].
+The `JpaSagaStore` uses JPA to store the state and association values of sagas. Sagas themselves do not need any JPA annotations; Axon will convert the sagas using a `Converter` (similar to event conversion, you can choose between an XStreamSerializer (removed in Axon 5) or `JacksonConverter`, which can be set by configuring the default `Converter` in your application. For more details, see xref:ROOT:conversion.adoc[Serializers].
 
-The `JpaSagaStore` is configured with an `EntityManagerProvider`, which provides access to an `EntityManager` instance to use. This abstraction allows for the use of both application managed and container managed `EntityManager`s. Optionally, you can define the serializer to serialize the Saga instances with. Axon defaults to the `XStreamSerializer`.
+The `JpaSagaStore` is configured with an `EntityManagerProvider`, which provides access to an `EntityManager` instance to use. This abstraction allows for the use of both application managed and container managed `EntityManager`s. Optionally, you can define the converter to convert the Saga instances with. Axon defaults to the XStreamSerializer (removed in Axon 5).
 
 [[JdbcSagaStore]]
 ==== `JdbcSagaStore`
 
-The `JdbcSagaStore` uses plain JDBC to store stage instances and their association values. Similar to the `JpaSagaStore`, saga instances do not need to be aware of how they are stored. They are serialized using a serializer.
+The `JdbcSagaStore` uses plain JDBC to store stage instances and their association values. Similar to the `JpaSagaStore`, saga instances do not need to be aware of how they are stored. They are serialized using a converter.
 
 The `JdbcSagaStore` is initialized with either a `DataSource` or a `ConnectionProvider`. While not required, when initializing with a `ConnectionProvider`, it is recommended to wrap the implementation in a `UnitOfWorkAwareConnectionProviderWrapper`. It will check the current Unit of Work for an already open database connection, to ensure that all activity within a unit of work is done on a single connection.
 
@@ -99,7 +99,7 @@ The `MongoSagaStore` stores the saga instances and their associations in a Mongo
 
 The `MongoSagaStore` also ensures that at any time, only a single Saga instance exists for any unique Saga in a single JVM. This ensures that no state changes are lost due to concurrency issues.
 
-The `MongoSagaStore` is initialized using a `MongoTemplate` and optionally a `Serializer`. The `MongoTemplate` provides a reference to the collection to store the sagas in. Axon provides the `DefaultMongoTemplate`, which takes a `MongoClient` instance as well as the database name and name of the collection to store the sagas in. The database name and collection name may be omitted. In that case, they default to `&quot;axonframework&quot;` and `&quot;sagas&quot;`, respectively.
+The `MongoSagaStore` is initialized using a `MongoTemplate` and optionally a `Converter`. The `MongoTemplate` provides a reference to the collection to store the sagas in. Axon provides the `DefaultMongoTemplate`, which takes a `MongoClient` instance as well as the database name and name of the collection to store the sagas in. The database name and collection name may be omitted. In that case, they default to `&quot;axonframework&quot;` and `&quot;sagas&quot;`, respectively.
 
 === Caching
 

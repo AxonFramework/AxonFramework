@@ -17,49 +17,87 @@ Changing the Meta Data of a message will not change this identifier.
 Meta Data of messages typically describe the context in which a Message was generated.
 For example, Meta Data might contain information about the message that caused this Message to be generated (for example, Command handlers generate Events based on an incoming Command).
 
-In Axon, Meta Data is represented as a Map of String to Object.
-While you are free to add any type of object as the Meta Data value, we strongly recommend sticking to primitives and Strings (or at most simple objects).
-Meta Data does not come with the same flexibility as the payload when it comes to structural changes.
+In Axon, Metadata is represented as a `Map<String, String>`.
+All metadata values must be strings, which simplifies conversion and aligns with how other services, libraries, and frameworks view metadata.
 
-Unlike a regular `Map<String,Object>`, `MetaData` in Axon is immutable.
+`Metadata` in Axon is immutable.
 Mutating methods will create and return a new instance, instead of modifying an existing one.
 
 [source,java]
 ----
-MetaData metaData = MetaData.with("myKey", 42) // <1>
+Metadata metadata = Metadata.with("myKey", "42") // <1>
                             .and("otherKey", "some value"); // <2>
 
 ----
 
-<1> Creates a `MetaData` instance with the indicated key-value pair
-<2> Adds a key-value pair, returning a new instance of `MetaData` with the additional entry.
+<1> Creates a `Metadata` instance with the indicated key-value pair
+<2> Adds a key-value pair, returning a new instance of `Metadata` with the additional entry.
 
-Meta Data in a message works similarly:
+Metadata in a message works similarly:
 
 [source,java]
 ----
-EventMessage eventMessage = GenericEventMessage
-    .asEventMessage("myPayload") // <1>
-    .withMetaData(singletonMap("myKey", 42)) // <2>
-    .andMetaData(singletonMap("otherKey", "some value")); // <3>
+EventMessage eventMessage = new GenericEventMessage<>(
+    MessageType.of("MyEvent", "1.0"), // <1>
+    "myPayload",
+    Metadata.with("myKey", "42") // <2>
+              .and("otherKey", "some value")
+);
 ----
 
-<1> Create an EventMessage with "myPayload" as the payload
-<2> `withMetaData` replaces any Meta Data in the message with the given Map.
-In this case `java.util.Collections.singletonMap()` is used to define a single entry.
-<3> `andMetaData` adds the entries from the given Map to the Message's metadata.
-Existing entries with equal keys are overwritten.
+<1> Create an EventMessage with a MessageType specifying the qualified name and version
+<2> Provide metadata as a Map with string values
 
+You can also modify metadata on an existing message:
+
+[source,java]
+----
+EventMessage updatedMessage = eventMessage
+    .withMetadata(Metadata.with("newKey", "newValue")) // <1>
+    .andMetadata(Metadata.with("additionalKey", "additionalValue")); // <2>
+----
+
+<1> `withMetadata` replaces any metadata in the message with the given Metadata
+<2> `andMetadata` adds the entries from the given Metadata to the message's metadata. Existing entries with equal keys are overwritten.
 
 [NOTE]
-.`MetaData` Implementation remark
+.`Metadata` Implementation remark
 ====
-`MetaData` also implements `Map<String, Object>`, meaning that instead of passing a `singletonMap` (or any other type of Map), you can also use `MetaData.with(key, value)`.
-As `MetaData` is immutable, all mutating operations of `Map` will throw an `UnsupportedOperationException`.
+`Metadata` also implements `Map<String, String>`, meaning that instead of passing a `singletonMap` (or any other type of Map), you can also use `Metadata.with(key, value)`.
+As `Metadata` is immutable, all mutating operations of `Map` will throw an `UnsupportedOperationException`.
 ====
+
+== Message Type and Qualified Name
+
+Every `Message` has a `MessageType`, which is a combination of a `QualifiedName` and a version (as a `String`).
+The `type()` method on any message returns its `MessageType`.
+
+The `MessageType` allows messages to clarify their version and qualified name within the domain they act in.
+This provides flexibility by allowing you to decouple your message class implementations from their definition within the application.
+
+For example, you can:
+
+* Define business names for your messages, improving communication between business stakeholders and developers
+* Create several unique message implementations per service that all map to the same `QualifiedName`, avoiding the need to share concrete message implementations between parties
+
+When you don't explicitly specify a `QualifiedName`, the framework uses the class's fully qualified class name (`Class#getName`) by default.
+
+[source,java]
+----
+// Explicitly specify MessageType
+MessageType myMessageType = MessageType.of("com.example.MyEvent", "1.0");
+
+// Or use QualifiedName directly
+QualifiedName qName = QualifiedName.of("com.example.MyEvent");
+MessageType myMessageType = MessageType.of(qName, "1.0");
+
+// Access message type from a message
+String qualifiedName = message.type().name().toString();
+String version = message.type().version();
+----
 
 == Message-specific data
 
 Certain types of messages provide extra information (on top of what the Message provides).
-For example, an `EventMessage` (an interface extending `Message`) also provides a timestamp, representing the time at which the event was generated.
-The `QueryMessage` carries, besides Payload and Meta Data, a description of the type of response that the requesting component expects.
+For example, an `EventMessage` (an interface extending `Message`) also provides a `timestamp()` method, representing the time at which the event was generated.
+The `QueryMessage` carries, besides Payload and Metadata, a description of the type of response that the requesting component expects.

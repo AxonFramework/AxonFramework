@@ -1,0 +1,236 @@
+= Command Model
+
+[NOTE]
+====
+In Axon Framework 5, the concept of "aggregates" has evolved into "command models" and "entities":
+
+* **Command Model** - The overall model that handles commands and maintains consistency
+* **Entity** - The technical implementation (Java class) of your command model
+
+This reflects the more flexible boundaries enabled by Dynamic Consistency Boundary (DCB).
+====
+
+The command model is an important concept in link:https://www.axoniq.io/concepts/domain-driven-design[Domain-Driven Design] and link:https://www.axoniq.io/concepts/cqrs-and-event-sourcing[CQRS].
+It represents the part of your system responsible for handling commands and maintaining business invariants.
+
+An **entity** is the technical implementation of your command model - a Java class containing command handlers and event sourcing handlers.
+Entities are clusters of related state and behavior acting as a single unit.
+They help maintain consistency and encapsulate domain logic within specific boundaries,
+ensuring changes to one part don't invalidate business rules.
+
+This chapter will cover the basics on how to implement a command model using entities in Axon Framework.
+
+== Entity identifiers
+
+Each entity has an identifier that uniquely identifies it within the context.
+Events published from this entity will contain this identifier,
+so that Axon Framework can later load the entity from its event stream.
+
+Commands that target entities contain a reference to this identifier.
+Axon Framework will load the events for the entity with this identifier,
+replay the events on an empty instance, and invoke the command. This is how the entity's state is reconstructed to support Event-Sourcing.
+
+[TIP]
+====
+The entity identifier has to be globally unique in your event store.
+This means that events are loaded based only on the identifier, and nothing else.
+The entity's type does not influence uniqueness at all.
+This means that if you have two entity types with the same identifier, Axon will
+load the events for both entities when handling a command.
+Mixing these events might lead to unexpected behavior, so we strongly recommend to design
+your entity identifiers with uniqueness in mind.
+====
+
+For creational commands that construct a new entity, the static `@CommandHandler` method returns the identifier.
+The identifier is then passed to the entity via the first event and stored in the `@EntityCreator` constructor.
+This approach allows the identifier field to be declared as `final`, ensuring immutability.
+
+[NOTE]
+.Routing commands in distributed environments
+====
+For command routing in distributed environments (e.g., through Axon Server), use the `@RoutingKey` annotation on the command field that should be used for routing.
+
+If this annotation doesn't work for your use case, a different `RoutingStrategy` can be configured, as explained in the xref:infrastructure.adoc#routing-strategy[Routing Strategy] section.
+====
+
+== Basic entity structure
+
+An Entity is a regular Java object that contains state and methods to alter that state.
+When creating the Entity object, you are effectively creating the 'Entity Root', typically carrying the name of the entire Entity.
+For the purpose of this description the 'Gift Card' domain will be used, which brings us the `GiftCard` as the Entity (Root).
+By default, Axon will configure your Entity as an 'Event Sourced' Entity. You can read more about Event-Sourcing link:https://www.axoniq.io/concepts/cqrs-and-event-sourcing[here].
+Our basic `GiftCard` Entity structure will focus on the Event Sourcing approach:
+
+[source,java]
+----
+import org.axonframework.messaging.commandhandling.CommandHandler;
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
+import org.axonframework.eventsourcing.annotation.reflection.EntityCreator;
+
+public class GiftCard {
+
+    private final String id; // <1>
+    private int remainingValue;
+
+    @EntityCreator // <2>
+    public GiftCard(CardIssuedEvent event) {
+        this.id = event.cardId(); // <3>
+        this.remainingValue = event.amount();
+    }
+
+    @CommandHandler // <4>
+    public static String handle(IssueCardCommand cmd, EventAppender appender) {
+        if (cmd.amount() <= 0) {
+            throw new IllegalArgumentException("amount must be positive");
+        }
+        appender.append(new CardIssuedEvent(cmd.cardId(), cmd.amount())); // <5>
+        return cmd.cardId(); // <6>
+    }
+
+    @CommandHandler // <7>
+    public void handle(RedeemCardCommand cmd, EventAppender appender) {
+        if (cmd.amount() <= 0) {
+            throw new IllegalArgumentException("amount <= 0");
+        }
+        if (cmd.amount() > remainingValue) {
+            throw new IllegalStateException("amount > remaining value");
+        }
+        appender.append(new CardRedeemedEvent(id, cmd.transactionId(), cmd.amount()));
+    }
+
+    @EventSourcingHandler // <8>
+    public void on(CardRedeemedEvent event) {
+        this.remainingValue -= event.amount();
+    }
+    // omitted other command handlers and event sourcing handlers
+}
+----
+There are several noteworthy concepts from the given code snippet, marked with numbered Java comments:
+
+<1> The entity identifier field. Note that this can be declared as `final`, ensuring immutability.
+The identifier is set in the `@EntityCreator` constructor and never changes.
+
+<2> The `@EntityCreator` annotated constructor receives the first event published for this entity.
+This constructor is called after the creational command handler publishes the first event.
+All initial state is set from the first event, allowing fields to be `final`.
+
+<3> The entity identifier is extracted from the first event and stored in the `final` field.
+This ensures the identifier is immutable throughout the entity's lifecycle.
+
+<4> A static `@CommandHandler` method for entity creation (creational command handler).
+This annotation tells the framework that the given method is capable of handling the `IssueCardCommand`.
+The `@CommandHandler` annotated functions are where you put your _decision-making/business logic_.
+
+<5> The `EventAppender` parameter is used to publish events.
+This parameter is injected by the framework and publishes events within the scope of the entity.
+
+<6> The creational command handler returns the entity identifier.
+This tells Axon which identifier to use for the new entity instance.
+
+<7> An instance `@CommandHandler` method that operates on an existing entity.
+This method is called on a loaded entity instance and can access the entity's state.
+
+<8> Using the `@EventSourcingHandler` annotation tells the framework that the annotated function should be called when the Entity is 'sourced from its events'.
+As all the Event Sourcing Handlers combined will form the Entity, this is where all the _state changes_ happen.
+`@EventSourcingHandler` annotated functions are resolved using specific rules.
+These rules are the same for the `@EventHandler` annotated methods, and are thoroughly explained in xref:events:event-handlers.adoc[Annotated Event Handler.]
+
+[NOTE]
+.Modifiers for Message Handling functions
+====
+Event Handler methods may be private, as long as the security settings of the JVM allow the Axon Framework to change the accessibility of the method.
+This allows you to clearly separate the public API of your Entity, which exposes the methods that generate events, from the internal logic, which processes the events.
+
+Most IDE's have an option to ignore "unused private method" warnings for methods with a specific annotation.
+Alternatively, you can add an `@SuppressWarnings("UnusedDeclaration")` annotation to the method to make sure you do not accidentally delete an event handler method.
+====
+
+[TIP]
+.Immutable entities with Java records
+====
+Axon Framework 5 fully supports immutable entities using Java records or Kotlin data classes.
+Simply declare all fields as `final` and set them from the events in the `@EntityCreator` constructor and `@EventSourcingHandler` methods:
+
+[source,java]
+----
+public record GiftCard(String id, int remainingValue) {
+    @EntityCreator
+    public GiftCard(CardIssuedEvent event) {
+        this(event.cardId(), event.amount());
+    }
+
+    @CommandHandler
+    public static String handle(IssueCardCommand cmd, EventAppender appender) {
+        appender.append(new CardIssuedEvent(cmd.cardId(), cmd.amount()));
+        return cmd.cardId();
+    }
+
+    @CommandHandler
+    public GiftCard handle(RedeemCardCommand cmd, EventAppender appender) {
+        if (cmd.amount() > remainingValue) {
+            throw new IllegalStateException("Insufficient balance");
+        }
+        appender.append(new CardRedeemedEvent(id, cmd.transactionId(), cmd.amount()));
+        return this; // Return current state
+    }
+
+    @EventSourcingHandler
+    public GiftCard on(CardRedeemedEvent event) {
+        return new GiftCard(id, remainingValue - event.amount());
+    }
+}
+----
+
+With immutable entities, `@EventSourcingHandler` methods return a new instance rather than modifying state.
+====
+
+== Entity lifecycle operations
+
+There are several operations that can be performed during the lifecycle of an Entity.
+
+=== Publishing events
+
+Events are published using the `EventAppender` parameter that is injected into command handlers:
+
+[source,java]
+----
+@CommandHandler
+public void handle(UpdateCardCommand cmd, EventAppender appender) {
+    // Validate business rules
+    if (cmd.newAmount() > maximumAllowed) {
+        throw new IllegalArgumentException("Amount exceeds maximum");
+    }
+
+    // Publish event
+    appender.append(new CardUpdatedEvent(id, cmd.newAmount()));
+}
+----
+
+The `EventAppender` publishes events within the scope of the entity executing the operation.
+Events can be published with additional metadata using `appender.append(event, metadata)`.
+
+=== Entity state lifecycle
+
+Entity lifecycle management in Axon 5 is handled through the processing context and entity state:
+
+. **Detecting replay vs live events**: Check whether the Entity is processing live events or being reconstructed from history.
+Use the `ProcessingContext` parameter to determine if an event is being replayed.
+This allows you to perform operations that should only occur when handling newly generated events (e.g., sending external notifications).
+
+. **Marking entity as deleted**: Entity deletion is managed through the entity's lifecycle.
+When an entity should no longer accept commands, publish a deletion event and the framework will handle the entity's lifecycle accordingly.
+
+[source,java]
+----
+@CommandHandler
+public void handle(CloseAccountCommand cmd, EventAppender appender) {
+    appender.append(new AccountClosedEvent(id));
+}
+
+@EventSourcingHandler
+public void on(AccountClosedEvent event) {
+    // Entity is marked as deleted by the framework when appropriate
+    // No explicit markDeleted() call needed in Axon 5
+}
+----

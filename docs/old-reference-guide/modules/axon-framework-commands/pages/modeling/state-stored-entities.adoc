@@ -1,0 +1,117 @@
+= State Stored Entities
+
+In the xref:modeling/command-model.adoc[Entity] main page we have seen how to create an Entity backed by Event Sourcing.
+In other words, the storage method for an Event Sourced Entity is by replaying the events which constitute the changes on the Entity.
+
+An Entity can, however, be stored as-is too using JPA or other persistence mechanisms.
+The structure of a state-stored Entity is a little different from an Event Sourced Entity:
+
+[source,java]
+----
+import org.axonframework.messaging.commandhandling.CommandHandler;
+import org.axonframework.messaging.eventhandling.EventHandler;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
+import org.axonframework.modelling.entity.annotation.EntityMember;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
+
+@Entity // <1>
+public class GiftCard {
+
+    @Id // <2>
+    private String id;
+
+    // <3>
+    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @JoinColumn(name = "giftCardId")
+    @EntityMember
+    private List<GiftCardTransaction> transactions = new ArrayList<>();
+
+    private int remainingValue;
+
+    @CommandHandler  // <4>
+    public static String handle(IssueCardCommand cmd, EventAppender appender) {
+        if (cmd.amount() <= 0) {
+            throw new IllegalArgumentException("amount <= 0");
+        }
+
+        // Create and persist the entity
+        GiftCard card = new GiftCard();
+        card.id = cmd.cardId();
+        card.remainingValue = cmd.amount();
+
+        // <5>
+        appender.append(new CardIssuedEvent(cmd.cardId(), cmd.amount()));
+        return cmd.cardId();
+    }
+
+    @CommandHandler
+    public void handle(RedeemCardCommand cmd, EventAppender appender) {
+         // <6>
+        if (cmd.amount() <= 0) {
+            throw new IllegalArgumentException("amount <= 0");
+        }
+        if (cmd.amount() > remainingValue) {
+            throw new IllegalStateException("amount > remaining value");
+        }
+        if (transactions.stream().map(GiftCardTransaction::transactionId).anyMatch(cmd.transactionId()::equals)) {
+            throw new IllegalStateException("TransactionId must be unique");
+        }
+
+         // <7>
+        remainingValue -= cmd.amount();
+        transactions.add(new GiftCardTransaction(id, cmd.transactionId(), cmd.amount()));
+
+        appender.append(new CardRedeemedEvent(id, cmd.transactionId(), cmd.amount()));
+    }
+
+    @EventHandler  // <8>
+    protected void on(CardReimbursedEvent event) {
+        this.remainingValue += event.amount();
+    }
+
+    protected GiftCard() { }  // <9>
+}
+----
+
+The above code shows a state-stored Entity from a 'Gift Card Service'.
+The numbered comments in the snippet point out Axon specifics which are explained here:
+
+<1> As the Entity is stored in a JPA repository, it is required to annotate the class with `@Entity`.
+
+<2> The Entity must declare a field that contains the Entity Identifier.
+This identifier must be initialized when the entity is created (typically in the creational command handler).
+When using JPA to store the Entity, the `@Id` annotation provided by JPA is required.
+
+<3> This Entity has several 'xref:modeling/multi-entity-command-models.adoc[Entity Members]'.
+Since the Entity is stored as-is, the correct JPA mapping of the child entities should be taken into account.
+
+<4> A static `@CommandHandler` method for entity creation (creational command handler).
+This annotation tells the framework that the given method is capable of handling the `IssueCardCommand`.
+The method creates a new entity instance and returns its identifier.
+
+<5> The `EventAppender` parameter is used to publish an Event Message.
+Upon calling `appender.append()` the provided `Object` will be published as an `EventMessage` to external subscribers.
+
+<6> The Command Handling method will first decide whether the incoming Command is valid to handle at this point.
+
+<7> After the business logic has been validated, the state of the Entity may be adjusted directly.
+This is different from event-sourced entities where state changes only occur in event sourcing handlers.
+
+<8> Child entities within an Entity can listen to the events the Entity publishes by defining an `@EventHandler` annotated method.
+These methods will be invoked when an Event Message is published prior to being handled by any external handlers.
+
+<9> A no-arg constructor, which is required by JPA.
+Failure to provide this constructor will result in an exception when loading the Entity.
+
+[NOTE]
+.Adjusting state in Command Handlers
+====
+Differently from xref:modeling/command-model.adoc[Event Sourced Entities], State-Stored Entities can pair the decision making logic and state changes in a Command Handler.
+There are no consequences for State-Stored Entities in following this paradigm as there are no Event Sourcing Handlers which drive its state.
+====

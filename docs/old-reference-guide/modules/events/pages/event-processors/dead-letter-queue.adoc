@@ -92,7 +92,7 @@ public class AxonConfig {
                                                      .maxSequenceSize(256)
                                                      .entityManagerProvider(config.getComponent(EntityManagerProvider.class))
                                                      .transactionManager(config.getComponent(TransactionManager.class))
-                                                     .serializer(config.serializer())
+                                                     .converter(config.converter())
                                                      .build()
         );
     }
@@ -119,7 +119,7 @@ public class AxonConfig {
                                                      .maxSequenceSize(256)
                                                      .entityManagerProvider(config.getComponent(EntityManagerProvider.class))
                                                      .transactionManager(config.getComponent(TransactionManager.class))
-                                                     .serializer(config.serializer())
+                                                     .converter(config.converter())
                                                      .build()
         );
     }
@@ -162,7 +162,7 @@ public class AxonConfig {
                                                              .transactionManager(config.getComponent(
                                                                      TransactionManager.class
                                                              ))
-                                                             .serializer(config.serializer())
+                                                             .converter(config.converter())
                                                              .build();
                     } else {
                         return null;
@@ -196,7 +196,7 @@ public class AxonConfig {
                                                              .transactionManager(config.getComponent(
                                                                      TransactionManager.class
                                                              ))
-                                                             .serializer(config.serializer())
+                                                             .converter(config.converter())
                                                              .build();
                     } else {
                         return null;

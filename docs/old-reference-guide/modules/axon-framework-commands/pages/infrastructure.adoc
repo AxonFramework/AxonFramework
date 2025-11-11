@@ -380,10 +380,10 @@ Optionally, you can provide a `DisruptorConfiguration` instance, which allows yo
  A good starting point is half the number of cores in the machine.
 * `PublisherThreadCount` - the number of threads to use to publish events.
  A good starting point is half the number of cores, and could be increased if a lot of time is spent on I/O.
-* `SerializerThreadCount` - the number of threads to use to pre-serialize events.
- This defaults to `1`, but is ignored if no serializer is configured.
-* `Serializer` - the serializer to perform pre-serialization with.
- When a serializer is configured, the `DisruptorCommandBus` will wrap all generated events in a `SerializationAware` message.
+* `SerializerThreadCount` - the number of threads to use to pre-convert events.
+ This defaults to `1`, but is ignored if no converter is configured.
+* `Converter` - the converter to perform pre-conversion with.
+ When a converter is configured, the `DisruptorCommandBus` will wrap all generated events in a `SerializationAware` message.
  The serialized form of the payload and metadata is attached before they are published to the Event Store.
 
 [tabs]

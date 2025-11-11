@@ -9,7 +9,7 @@ A summary of the various sub-sections is given below.
 |===
 |Sub-Section |Purpose 
 
-|xref:implementation.adoc[​Implementation​] |Implementing Sagas using the Axon Framework
-|xref:associations.adoc[​Associations​] |Managing Saga associations using the Axon Framework
-|xref:infrastructure.adoc[​Infrastructure​] |Non-Functional Development concerns for Sagas using the Axon Framework
+|xref:implementation.adoc[Implementation] |Implementing Sagas using the Axon Framework
+|xref:associations.adoc[Associations] |Managing Saga associations using the Axon Framework
+|xref:infrastructure.adoc[Infrastructure] |Non-Functional Development concerns for Sagas using the Axon Framework
 |===

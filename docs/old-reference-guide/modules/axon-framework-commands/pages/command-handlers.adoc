@@ -1,153 +1,215 @@
 = Command Handlers
 :navtitle: Handling
 
-== Aggregate command handlers
+== Entity command handlers
 
-Although Command Handlers can be placed in regular components, it is recommended to define the Command Handlers directly on the Aggregate that contains the state to process this command.
+Although Command Handlers can be placed in regular components, it is recommended to define the Command Handlers directly on the Entity that contains the state to process this command.
 
-To define a Command Handler in an Aggregate, simply annotate the method which should handle the command with `@CommandHandler`.
+[NOTE]
+====
+In Axon Framework 5, the concept of "aggregates" has been replaced with "entities" to reflect the more flexible boundaries enabled by Dynamic Consistency Boundary (DCB).
+The terminology has changed throughout the framework, but the core concepts remain similar.
+====
+
+To define a Command Handler in an Entity, simply annotate the method which should handle the command with `@CommandHandler`.
 The `@CommandHandler` annotated method will become a Command Handler for Command Messages where the _command name_ matches fully qualified class name of the first parameter of that method.
-Thus, a method signature of `void handle(RedeemCardCommand cmd)` annotated with `@CommandHandler`, will be the Command Handler of the `RedeemCardCommand` Command Messages.
+Thus, a method signature of `void handle(RedeemCardCommand cmd, EventAppender appender)` annotated with `@CommandHandler`, will be the Command Handler of the `RedeemCardCommand` Command Messages.
 
 Command Messages can also be xref:command-dispatchers.adoc[dispatched] with different _command names_.
 To be able to handle those correctly, the `String commandName` value can be specified in the `@CommandHandler` annotation.
-
-In order for Axon to know which instance of an Aggregate type should handle the Command Message, the property carrying the Aggregate Identifier in the command object *must* be annotated with `@TargetAggregateIdentifier`.
-The annotation may be placed on either the field or an accessor method (for example, a getter) in the Command object.
 
 [NOTE]
 .Routing in a distributed environment
 ====
 Regardless of the type of command, as soon as you start distributing your application (through Axon Server, for example), it is recommended to specify a routing key on the command.
-This is the job of the `@TargetAggregateIdentifier`, but in absence of a field worthy of the annotation, the `@RoutingKey` annotation should be added to ensure the command can be routed.
+This can be done using the `@RoutingKey` annotation on the command field that should be used for routing.
 
-If neither annotation works for your use case, a different `RoutingStrategy` can be configured, as is explained in the xref:infrastructure.adoc#routing-strategy[Routing Strategy] section.
+If this annotation doesn't work for your use case, a different `RoutingStrategy` can be configured, as is explained in the xref:infrastructure.adoc#routing-strategy[Routing Strategy] section.
 ====
 
-Taking the `GiftCard` Aggregate as an example, we can identify two Command Handlers on the Aggregate:
+=== Creational vs Instance Command Handlers
+
+Axon Framework 5 distinguishes between two types of command handlers:
+
+1. **Creational Command Handlers** - Static methods that create new entity instances
+2. **Instance Command Handlers** - Instance methods that operate on existing entities
+
+Taking the `GiftCard` entity as an example, we can identify both types of Command Handlers:
 
 [source,java]
 ----
 import org.axonframework.messaging.commandhandling.CommandHandler;
-import org.axonframework.modelling.command.AggregateIdentifier;
-
-import static org.axonframework.modelling.command.AggregateLifecycle.apply;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
+import org.axonframework.eventsourcing.annotation.reflection.EntityCreator;
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 
 public class GiftCard {
 
-    @AggregateIdentifier
-    private String id;
+    private final String id;
     private int remainingValue;
 
-    @CommandHandler
-    public GiftCard(IssueCardCommand cmd) {
-        apply(new CardIssuedEvent(cmd.getCardId(), cmd.getAmount()));
+    // Constructor that receives the first event
+    @EntityCreator
+    public GiftCard(CardIssuedEvent event) {
+        this.id = event.cardId();
+        this.remainingValue = event.amount();
     }
 
+    // Creational command handler (static method)
     @CommandHandler
-    public void handle(RedeemCardCommand cmd) {
-        if (cmd.getAmount() <= 0) {
+    public static String handle(IssueCardCommand cmd, EventAppender appender) {
+        if (cmd.amount() <= 0) {
+            throw new IllegalArgumentException("amount must be positive");
+        }
+        appender.append(new CardIssuedEvent(cmd.cardId(), cmd.amount()));
+        return cmd.cardId();
+    }
+
+    // Instance command handler
+    @CommandHandler
+    public void handle(RedeemCardCommand cmd, EventAppender appender) {
+        if (cmd.amount() <= 0) {
             throw new IllegalArgumentException("amount <= 0");
         }
-        if (cmd.getAmount() > remainingValue) {
+        if (cmd.amount() > remainingValue) {
             throw new IllegalStateException("amount > remaining value");
         }
-        apply(new CardRedeemedEvent(id, cmd.getTransactionId(), cmd.getAmount()));
+        appender.append(new CardRedeemedEvent(id, cmd.transactionId(), cmd.amount()));
     }
-    // omitted event sourcing handlers
+
+    // Event sourcing handler to update state
+    @EventSourcingHandler
+    public void on(CardRedeemedEvent event) {
+        this.remainingValue -= event.amount();
+    }
 }
 
 ----
 
-The Command objects, `IssueCardCommand` and `RedeemCardCommand`, which `GiftCard` handles have the following format:
+The Command objects, `IssueCardCommand` and `RedeemCardCommand`, which `GiftCard` handles can be defined as simple records (Java 16+) or traditional classes:
 
 [source,java]
 ----
-import org.axonframework.modelling.command.TargetAggregateIdentifier;
+// Using Java records (Java 16+)
+public record IssueCardCommand(
+    String cardId,
+    int amount
+) {}
 
+public record RedeemCardCommand(
+    String cardId,
+    String transactionId,
+    int amount
+) {}
+
+// Or using traditional classes
 public class IssueCardCommand {
 
-    @TargetAggregateIdentifier
     private final String cardId;
-    private final Integer amount;
+    private final int amount;
 
-    public IssueCardCommand(String cardId, Integer amount) {
+    public IssueCardCommand(String cardId, int amount) {
         this.cardId = cardId;
         this.amount = amount;
     }
-    // omitted getters, equals/hashCode, toString functions
+
+    public String cardId() { return cardId; }
+    public int amount() { return amount; }
 }
-
-public class RedeemCardCommand {
-
-    @TargetAggregateIdentifier
-    private final String cardId;
-    private final String transactionId;
-    private final Integer amount;
-
-    public RedeemCardCommand(String cardId, String transactionId, Integer amount) {
-        this.cardId = cardId;
-        this.transactionId = transactionId;
-        this.amount = amount;
-    }
-    // omitted getters, equals/hashCode, toString functions
-}
-
 ----
 
-The `cardId` present in both commands is the reference to a `GiftCard` instance and thus is annotated with the `@TargetAggregateIdentifier` annotation.
-Commands that create an Aggregate instance do not need to identify the target aggregate identifier, as there is no Aggregate in existence yet.
-It is nonetheless recommended for consistency to annotate the Aggregate Identifier on them as well.
+[NOTE]
+====
+The `cardId` present in both commands is the identifier that will be used to route the command to the correct entity instance.
+For command routing in distributed environments, use the `@RoutingKey` annotation on the field that should be used for routing.
+====
 
 If you prefer to use another mechanism for routing commands, the behavior can be overridden by supplying a custom `CommandTargetResolver`.
-This class should return the Aggregate Identifier and expected version (if any) based on a given command.
+This class should return the entity identifier based on a given command.
 
 [TIP]
-.Aggregate Creation Command Handlers
+.Entity Creation Command Handlers
 ====
-When the `@CommandHandler` annotation is placed on an aggregate's constructor, the respective command will create a new instance of that aggregate and add it to the repository.
-Those commands do not require targeting a specific aggregate instance.
-Therefore, those commands need neither the `@TargetAggregateIdentifier` nor the `@TargetAggregateVersion` annotation.
-Furthermore, a custom `CommandTargetResolver` will not be invoked for these commands.
+Creational command handlers are **static methods** on the entity class that create new entity instances.
+These commands will invoke the static `@CommandHandler` method, which is responsible for publishing the first event.
+The entity is then constructed using a constructor annotated with `@EntityCreator` that receives the first event.
+
+This approach allows for final/immutable fields and better null-safety guarantees.
 ====
 
 === Business logic and state changes
 
-Within an Aggregate there is a specific location to perform business logic validation and Aggregate state changes.
-The Command Handlers should _decide_ whether the Aggregate is in the correct state.
-If yes, an Event is published.
+Within an Entity there is a specific location to perform business logic validation and Entity state changes.
+The Command Handlers should _decide_ whether the Entity is in the correct state.
+If yes, an Event is published using the `EventAppender`.
 If not, the Command might be ignored or an exception could be thrown, depending on the needs of the domain.
 
 State changes should *not* occur in _any_ Command Handling function.
-The Event Sourcing Handlers should be the only methods where the Aggregate's state is updated.
-Failing to do so means the Aggregate would miss state changes when it is being sourced from its events.
+The Event Sourcing Handlers (methods annotated with `@EventSourcingHandler`) should be the only methods where the Entity's state is updated.
+Failing to do so means the Entity would miss state changes when it is being sourced from its events.
 
-The xref:testing:commands-events.adoc[Aggregate Test Fixture] will guard against unintentional state changes in Command Handling functions.
-It is thus advised to provide thorough test cases for _any_ Aggregate implementation.
+The xref:testing:commands-events.adoc[Test Fixture] will guard against unintentional state changes in Command Handling functions.
+It is thus advised to provide thorough test cases for _any_ Entity implementation.
 
 [TIP]
 .Only handle the necessary events
 ====
-The only state an Aggregate requires is the state it needs to make a decision.
-Handling an Event published by the Aggregate is thus only required if the state change is necessary for future validation of other commands.
+The only state an Entity requires is the state it needs to make a decision.
+Handling an Event published by the Entity is thus only required if the state change is necessary for future validation of other commands.
 ====
 
-=== Applying events from event-sourcing handlers
+=== Publishing events with EventAppender
 
-In some cases, especially when the Aggregate structure grows beyond just a couple of Entities, it is cleaner to react on events being published in other Entities of the same Aggregate (multi-entity Aggregates are explained in more detail xref:modeling/multi-entity-aggregates.adoc[here]).
-However, since the Event Handling methods are also invoked when reconstructing Aggregate state, special precautions must be taken.
+In Axon Framework 5, events are published using the `EventAppender` parameter that can be injected into command handlers:
 
-It is possible to `apply()` new events inside an Event Sourcing Handler method.
-This makes it possible for an Entity 'B' to apply an event in reaction to Entity 'A' doing something.
-Axon will ignore the `apply()`invocation when replaying historic events upon sourcing the given Aggregate. Do note that in the scenario where Event Messages are published from an Event Sourcing Handler, the Event of the inner `apply()` invocation is only published to the entities after all entities have received the first event.
-If more events need to be published, based on the state of an entity after applying an inner event, use `apply(...).andThenApply(...)`.
+[source,java]
+----
+@CommandHandler
+public void handle(UpdateCardCommand cmd, EventAppender appender) {
+    // Validate business rules
+    if (cmd.newAmount() > maximumAllowed) {
+        throw new IllegalArgumentException("Amount exceeds maximum");
+    }
+
+    // Publish event
+    appender.append(new CardUpdatedEvent(id, cmd.newAmount()));
+}
+----
+
+The `EventAppender` provides a clean API for publishing events without relying on static methods or thread-local storage.
+
+=== Entity member relationships
+
+In some cases, especially when the entity structure grows beyond a single entity, it is useful to compose entities with child entities.
+Child entities can handle commands and events just like root entities (multi-entity structures are explained in more detail xref:modeling/multi-entity-command-models.adoc[here]).
+
+Child entities are annotated with `@EntityMember`:
+
+[source,java]
+----
+import org.axonframework.modelling.entity.annotation.EntityMember;
+
+public class Project {
+
+    private final String projectId;
+
+    @EntityMember
+    private List<Developer> developers = new ArrayList<>();
+
+    @EntityMember
+    private List<Milestone> milestones = new ArrayList<>();
+
+    // command handlers and event sourcing handlers
+}
+----
 
 [NOTE]
-.Reacting to external events
+.Event sourcing scope
 ====
-An Aggregate *cannot* handle events from other sources then itself.
-This is intentional as the Event Sourcing Handlers are used to recreate the state of the Aggregate.
-For this, it only needs its own events as those represent its state changes.
+An Entity processes events that belong to its consistency boundary.
+With the introduction of Dynamic Consistency Boundary (DCB), this boundary can span multiple event streams.
+Event sourcing handlers are used to recreate the state of the Entity from its events.
+====
 
 To make an Aggregate react to events from other Aggregate instances, xref:sagas:index.adoc[Sagas] or xref:events:event-handlers.adoc[Event Handling Components] should be leveraged
 ====
@@ -220,7 +282,7 @@ Unlike with Aggregates, there is only a _single_ instance of a Command Handling 
 [source,java]
 ----
 import org.axonframework.messaging.commandhandling.CommandHandler;
-import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.repository.Repository;
 
 public class GiftCardCommandHandler {
     private final Repository<GiftCard> giftCardRepository; // <1>

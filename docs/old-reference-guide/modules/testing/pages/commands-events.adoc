@@ -16,56 +16,61 @@ Although being more complex, the API of a command handling component is fairly e
 * When executing this command,
 * Expect these events to be published and/or stored
 
-Axon Framework provides a test fixture that allows you to do exactly that. The `AggregateTestFixture` allows you to configure a certain infrastructure, composed of the necessary command handler and repository, and express your scenario in terms of "given-when-then" events and commands.
+Axon Framework provides a test fixture that allows you to do exactly that. The `AxonTestFixture` uses your `ApplicationConfigurer` to ensure your tests use the same configuration as your production application. This eliminates the risk of configuration mismatches between your tests and production code.
 
-____
-
-*Focus of a Test Fixture*
-
-Since the unit of testing here is the aggregate, `AggregateTestFixture` is meant to test one aggregate only. So, all commands in the `when` (or `given`) clause are meant to target the aggregate under test fixture. Also, all `given` and `expected` events are meant to be triggered from the aggregate under test fixture.
-
-____
-
-The following example shows the usage of the "given-when-then" test fixture with JUnit 4 on the `GiftCard` aggregate (as defined xref:axon-framework-commands:modeling/aggregate.adoc#_basic_aggregate_structure[earlier]):
+The following example shows the usage of the "given-when-then" test fixture with JUnit 5:
 
 [source,java]
 ----
-import org.axonframework.test.aggregate.AggregateTestFixture;
-import org.axonframework.test.aggregate.FixtureConfiguration;
+import org.axonframework.test.fixture.AxonTestFixture;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
 
 public class GiftCardTest {
 
-    private FixtureConfiguration<GiftCard> fixture;
+    private AxonTestFixture fixture;
 
-    @Before
+    @BeforeEach
     public void setUp() {
-        fixture = new AggregateTestFixture<>(GiftCard.class);
+        // Create your configurer with all necessary components
+        MessagingConfigurer configurer = MessagingConfigurer.create()
+            .configureAggregate(GiftCard.class)
+            // Add other configuration as needed
+            ;
+
+        // Create the fixture from the configurer
+        fixture = AxonTestFixture.with(configurer);
     }
 
     @Test
     public void testRedeemCardCommand() {
-        fixture.given(new CardIssuedEvent("cardId", 100))
-               .when(new RedeemCardCommand("cardId", "transactionId", 20))
-               .expectSuccessfulHandlerExecution()
-               .expectEvents(new CardRedeemedEvent("cardId", "transactionId", 20));
+        fixture.given()
+               .event(new CardIssuedEvent("cardId", 100))
+               .when()
+               .command(new RedeemCardCommand("cardId", "transactionId", 20))
+               .then()
+               .events(new CardRedeemedEvent("cardId", "transactionId", 20));
         /*
-        These four lines define the actual scenario and its expected result. 
-        The first line defines the events that happened in the past. 
-        These events define the state of the aggregate under test.
-        In practical terms, these are the events that the event store returns
-         when an aggregate is loaded. 
+        These lines define the actual scenario and its expected result.
 
-        The second line defines the command that we wish to execute against our system. 
+        The given() phase defines events that happened in the past.
+        These events define the state of the system before testing.
 
-        Finally, we have two more methods that define expected behavior. 
-        In the example, we use the recommended void return type. 
-        The last method defines that we expect a single event as result
-         of the command execution.
+        The when() phase defines the action being tested -
+        in this case, dispatching a command.
+
+        The then() phase validates the results.
+        The events() method verifies the expected events were published.
         */
     }
 }
 
 ----
+
+[NOTE]
+====
+The `AggregateTestFixture` from Axon Framework 4 has been replaced by the `AxonTestFixture` in Axon Framework 5.
+The new fixture is based on your `ApplicationConfigurer`, ensuring that your tests use the same configuration as your production application.
+====
 
 ____
 
@@ -94,7 +99,7 @@ static StubAggregateLifecycleExtension testSubject = new StubAggregateLifecycleE
 
 ____
 
-The "given-when-then" test fixture defines three stages: configuration, execution and validation. Each of these stages is represented by a different interface: `FixtureConfiguration`, `TestExecutor` and `ResultValidator`, respectively.
+The "given-when-then" test fixture defines three stages: configuration, execution and validation.
 
 ____
 
@@ -107,217 +112,275 @@ ____
 [[test-setup]]
 === Test setup
 
-During the configuration phase (that is,  before the first "given" is provided), you provide the building blocks required to execute the test. Specialized versions of the event bus, command bus and event store are provided as part of the fixture by default. There are accessor methods in place to obtain references to them. Any command handlers not registered directly on the aggregate need to be explicitly configured using the `registerAnnotatedCommandHandler` method. Besides an Annotated Command Handler, you can register a wide variety of components and settings that define how the infrastructure around the Aggregate's test should be set up, consisting out of the following:
+The `AxonTestFixture` is created from your `ApplicationConfigurer` using the static `with()` method. This means the fixture automatically includes all the configuration you've defined for your production application:
 
-* `registerRepository`:
+* Aggregates and their command handlers
+* Event handlers and projections
+* Sagas
+* Command bus, event bus, and event store configurations
+* Any custom components you've registered
 
-Registers a custom Aggregate `Repository`.
+This approach ensures that your tests accurately reflect your production configuration, eliminating the common issue of forgetting to configure something in your tests that exists in production.
 
-* `registerRepositoryProvider`:
+[source,java]
+----
+import org.axonframework.test.fixture.AxonTestFixture;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
 
-Registers a `RepositoryProvider` used to xref:axon-framework-commands:modeling/aggregate-creation-from-another-aggregate.adoc[spawn new Aggregates].
+// Create your configurer with all necessary components
+MessagingConfigurer configurer = MessagingConfigurer.create()
+    .configureAggregate(GiftCard.class)
+    .configureEventHandler(configuration -> new GiftCardProjection())
+    // Add other configuration as needed
+    ;
 
-* `registerAggregateFactory`:
+// Create the fixture from the configurer
+AxonTestFixture fixture = AxonTestFixture.with(configurer);
+----
 
-Registers a custom `AggregateFactory`.
+=== Customizing the Fixture
 
-* `registerAnnotatedCommandHandler`:
+You can customize the fixture behavior using the customization parameter:
 
-Registers a xref:axon-framework-commands:command-handlers.adoc#external_command_handlers[Annotated Command Handler object] that interacts with the aggregate.
- Use this method to register components containing `@CommandHandler` annotated methods that invoke the `Repository` to execute operation on an aggregate.
- You may end up in such a scenario when you prefer that command handlers and/or command messages are not contained inside the domain model (that is, the aggregate).
+[source,java]
+----
+AxonTestFixture fixture = AxonTestFixture.with(
+    configurer,
+    customization -> customization
+        .disableAxonServer()  // Disable Axon Server for testing
+        .registerFieldFilter(myFieldFilter)  // Custom field filter for comparisons
+        .registerIgnoredField(MyClass.class, "timestamp")  // Ignore specific fields
+);
+----
 
-* `registerCommandHandler`:
+[NOTE]
+====
+Since the `AxonTestFixture` uses your `ApplicationConfigurer`, the individual registration methods from the old `AggregateTestFixture` (like `registerAnnotatedCommandHandler`, `registerRepository`, etc.) are no longer needed. All components are automatically configured through your `ApplicationConfigurer`.
+====
 
-Registers a `MessageHandler` of `CommandMessage`.
+The following components from Axon Framework 4's `AggregateTestFixture` are now configured through your `ApplicationConfigurer` instead:
 
-* `registerInjectableResource`:
+* Repositories, aggregate factories, and repository providers
+* Command handlers (both aggregate-based and external)
+* Message interceptors (dispatch and handler interceptors)
+* Parameter resolvers and handler definitions
+* Injectable resources
+* Custom command target resolvers
 
-Registers a resource which can be injected in to message handling members.
-
-* `registerParameterResolverFactory`:
-
-Registers a `ParameterResolverFactory` to the test fixture.
-
-This method is used to complement the default `ParameterResolvers` with custom `ParameterResolver`.
-
-* `registerCommandDispatchInterceptor`:
-
-Registers a command `MessageDispatchInterceptor`.
-
-* `registerCommandHandlerInterceptor`:
-
-Registers a command `MessageHandlerInterceptor`.
-
-* `registerDeadlineDispatchInterceptor`:
-
-Registers a `DeadlineMessage` `MessageDispatchInterceptor`.
-
-* `registerDeadlineHandlerInterceptor`:
-
-Registers a `DeadlineMessage` `MessageHandlerInterceptor`.
-
-* `registerFieldFilter`:
-
-Registers a `Field` filter used when comparing objects in the "then" phase.
-
-* `registerIgnoredField`:
-
-Registers a field that should be ignored for a given class when state equality is performed.
-
-* `registerHandlerDefinition`:
-
-Registers a custom `HandlerDefinition` to the test fixture.
-
-* `registerHandlerEnhancerDefinition`:
-
-Registers a custom `HandlerEnhancerDefinition` to the test fixture.
-
-This method is used to complement the default `HandlerEnhancerDefinition` with a custom `HandlerEnhancerDefinition`.
-
-* `registerCommandTargetResolver`:
-
-Registers a `CommandTargetResolver` to the test fixture.
+All these components are configured through your `ApplicationConfigurer` and automatically available in the test fixture.
 
 [[given-phase]]
 === Given phase
 
-Once you have configured the fixture, you can start the given phase.
-Axon's test fixtures provide several given methods aligning with the modeling options of an aggregate.
-Below is a list of all the operations of the given phase:
+Once you have configured the fixture, you can start the given phase by calling `given()`.
+The given phase allows you to set up the initial state of your test scenario.
 
-* `givenNoPriorActivity`:
- Start the given phase without any prior activity.
- Use this method to reflect the initialization of an aggregate.
-* `given(Object...)`:
- Use the `given` method to provide several events to initiate the state of an event-sourced aggregate.
- May be followed up by invocations of `andGiven` to separate events of the given phase for readability.
- The fixture wraps any events given in `DomainEventMessages`. When the given event implements `Message`, the fixture will include the payload and metadata of that message in the `DomainEventMessage`.
- Otherwise, the fixture uses the given event as the message's payload.
-* `givenCommands(Object ..)`:
- Use the `givenCommands` method to provide several commands to initiate the state of an event-sourced aggregate.
- When using `givenCommands`, the fixture uses the events generated by those commands to event source the aggregate.
- May be followed up by invocations of `andGivenCommands` to separate commands of the given phase for readability.
- The fixture wraps any commands given in `CommandMessages`. When the given commands implement `Message`, the fixture includes the payload and metadata of that message in the `CommandMessage`.
- Otherwise, the fixture uses the given command as the message's payload.
-* `givenCurrentTime(Instant)`:
- Use `givenCurrenTime` to simulate the current time the test fixture initiates testing.
- The fixture uses the given `Instant` as the timestamp for generated events in the <<test-execution-phase,when-phase>>.
- Additionally, the fixtures will use the given current time to validate when to trigger xref:deadlines:deadline-managers.adoc[deadlines] within the aggregate.
-* `givenState(Supplier&lt;T&gt;)`:
- Use the `givenState` method to provide the aggregate instance in its entirety when testing a xref:axon-framework-commands:modeling/state-stored-aggregates.adoc[State-Stored Aggregate].
- Note that it is _not_ recommended to use this operation when you are testing an event-sourced aggregate.
+The given phase provides several methods to define the initial state:
+
+* **`noPriorActivity()`** - Explicitly indicates no prior events or commands
+* **`event(Object payload)`** - Publishes a single event with the given payload
+* **`event(Object payload, Metadata metadata)`** - Publishes a single event with metadata
+* **`events(Object... events)`** - Publishes multiple events (processed in single Unit of Work)
+* **`events(EventMessage... messages)`** - Publishes multiple event messages
+* **`command(Object payload)`** - Dispatches a single command
+* **`command(Object payload, Metadata metadata)`** - Dispatches a command with metadata
+* **`commands(Object... commands)`** - Dispatches multiple commands (each in separate Unit of Work)
+* **`commands(CommandMessage... messages)`** - Dispatches multiple command messages
+* **`execute(Function<Configuration, ?>)`** - Executes custom setup logic
+* **`executeAsync(Function<Configuration, CompletableFuture<?>>)`** - Executes async custom setup logic
+
+Example usage:
+
+[source,java]
+----
+fixture.given()
+       .event(new CardIssuedEvent("cardId", 100))
+       .event(new MoneyAddedEvent("cardId", 50))
+       .when()
+       .command(new RedeemCardCommand("cardId", "txn1", 75))
+       .then()
+       .events(new CardRedeemedEvent("cardId", "txn1", 75));
+----
+
+Or using multiple events at once:
+
+[source,java]
+----
+fixture.given()
+       .events(
+           new CardIssuedEvent("cardId", 100),
+           new MoneyAddedEvent("cardId", 50)
+       )
+       .when()
+       .command(new RedeemCardCommand("cardId", "txn1", 75))
+       .then()
+       .events(new CardRedeemedEvent("cardId", "txn1", 75));
+----
+
+[NOTE]
+====
+When using `events()`, all events are processed within a single Unit of Work, meaning event handlers won't see changes from earlier events in the same batch.
+When using `commands()`, each command is processed in its own Unit of Work, so later commands can see the effects of earlier commands.
+====
 
 [[test-execution-phase]]
 === Test execution phase
 
-The execution phase, or "when phase," allows you several entry points towards the <<validation-phase,validation phase>>.
-Note that the test fixture only monitors activities that occur during the test _execution_ phase.
-The fixture does not consider any events or side effects generated during the <<given-phase,given phase>> in the validation phase.
+The execution phase, or "when phase," specifies the action being tested.
+Access the when phase by calling `when()` on either the fixture directly or on the given phase.
 
-____
+The when phase provides methods to execute different types of actions:
 
-*Illegal State Change Detection*
+* **`command(Object payload)`** - Dispatches a command with the given payload
+* **`command(Object payload, Metadata metadata)`** - Dispatches a command with metadata
+* **`command(CommandMessage message)`** - Dispatches a command message
+* **`event(Object payload)`** - Publishes an event with the given payload
+* **`event(Object payload, Metadata metadata)`** - Publishes an event with metadata
+* **`event(EventMessage message)`** - Publishes an event message
+* **`execute(Function<Configuration, ?>)`** - Executes custom test logic
 
-During the execution of the test, Axon attempts to detect any illegal state changes in the aggregate under test.
-It does so by comparing the aggregate's state after command execution to the aggregate's state when event sourced from all given and stored events.
-If that state is not identical, a state change occurred outside an aggregate's event handler method.
-Static and transient fields are ignored in the comparison, as they typically contain references to resources.
+Example of executing a command:
 
-You can switch detection in the configuration of the fixture with the `setReportIllegalStateChange()` method.
+[source,java]
+----
+fixture.given()
+       .event(new CardIssuedEvent("cardId", 100))
+       .when()
+       .command(new RedeemCardCommand("cardId", "transactionId", 20))
+       .then()
+       .events(new CardRedeemedEvent("cardId", "transactionId", 20));
+----
 
-____
+Example with metadata:
 
-We can separate the execution phase options into roughly three variants:
+[source,java]
+----
+fixture.given()
+       .event(new CardIssuedEvent("cardId", 100))
+       .when()
+       .command(
+           new RedeemCardCommand("cardId", "transactionId", 20),
+           Metadata.with("userId", "user-123")
+       )
+       .then()
+       .events(new CardRedeemedEvent("cardId", "transactionId", 20));
+----
 
-. Execute a command,
-. time progresses, and
-. invoking a method on the aggregate.
+You can also skip the given phase if there's no prior state:
 
-Below is a list of all the operations you can use in the execution phase:
+[source,java]
+----
+fixture.when()
+       .command(new CreateCardCommand("cardId", 100))
+       .then()
+       .events(new CardIssuedEvent("cardId", 100));
+----
 
-* `when(Object)`:
- Using the `when` method, you can provide a command for the fixture to execute against the aggregate under test.
- Similar to the given events, if the provided command is of type `CommandMessage`, the fixture dispatches it as is.
- The fixture monitors the behavior of the invoked handler (either on the aggregate or as an external handler) and compares it to the expectations you register in the <<validation-phase,validation phase>>.
-* `when(Object, Map&lt;String, ?&gt;)`:
- This `when` method provides a simpler notation to provide both the command and the metadata.
- When the given command implements `Message`, the fixture will combine the command's metadata with the additional metadata provided separately.
-* `whenTimeElapses(Duration)`:
- Use `whenTimeElapses` to simulate time moving on based on the given `Duration`.
- You should use this method to <<validating-deadlines,validate>> the behavior around xref:deadlines:deadline-managers.adoc[deadlines].
-* `whenTimeAdvancesTo(Instant)`:
- Use `whenTimeAdvancesTo` to simulate time moving towards the given `Instant`.
- You should use this method to <<validating-deadlines,validate>> the behavior around xref:deadlines:deadline-managers.adoc[deadlines].
-* `whenConstructing(Callable&lt;T&gt;)`:
- This test execution phase operation allows you to invoke the constructor of the aggregate under test.
- Use this method whenever you (1) do not have `@CommandHandler` annotations inside the command model and (2) have not <<test-setup,registered an external command handler>> with the fixture.
- Note that `whenConstructing` should only ever follow up the `givenNoPriorActity` operation of the <<given-phase,given phase>>.
-* `whenInvoking(String, Consumer&lt;T&gt;)`:
- This test execution phase operation allows you to invoke methods of the aggregate under test.
- The fixture expects you to provide an aggregate identifier matching the given phase's aggregate identifier. Otherwise, the fixture throws an `AssertionError`.
- Use this method whenever you (1) do not have `@CommandHandler` annotations inside the command model and (2) have not <<test-setup,registered an external command handler>> with the fixture.
+[NOTE]
+====
+In the `AxonTestFixture`, metadata is represented as `Metadata` (with string values only) instead of `Map<String, ?>`.
+====
 
 [[validation-phase]]
 === Validation phase
 
-The last phase is the validation phase, which allows you to check on the activities of the aggregate.
-This is generally done purely in terms of return values and events.
+The last phase is the validation phase, which allows you to check on the activities of the test.
+Access the then phase by calling `then()` on the when phase.
+
+The validation phase provides methods to validate:
+
+* **Published events** - `events(Object...)`, `events(EventMessage...)`, `noEvents()`
+* **Dispatched commands** - `commands(Object...)`, `commands(CommandMessage...)`, `noCommands()`
+* **Command results** (when command was executed) - `success()`, `resultMessagePayload(Object)`, `exception(Class<?>)`
+* **Custom assertions** - `eventsSatisfy(Consumer)`, `eventsMatch(Predicate)`, `commandsSatisfy(Consumer)`, `commandsMatch(Predicate)`
+* **Async operations** - `await(Consumer<T>)`, `await(Consumer<T>, Duration)`
+
+==== Validating events
+
+The most common validation is checking which events were published:
+
+[source,java]
+----
+fixture.given()
+       .event(new CardIssuedEvent("cardId", 100))
+       .when()
+       .command(new RedeemCardCommand("cardId", "txn1", 20))
+       .then()
+       .events(new CardRedeemedEvent("cardId", "txn1", 20));
+----
+
+Or verify no events were published:
+
+[source,java]
+----
+fixture.given()
+       .event(new CardIssuedEvent("cardId", 100))
+       .when()
+       .command(new RedeemCardCommand("cardId", "txn1", 0))
+       .then()
+       .noEvents();
+----
+
+Custom event assertions:
+
+[source,java]
+----
+fixture.when()
+       .command(new CreateCardCommand("cardId", 100))
+       .then()
+       .eventsSatisfy(events -> {
+           assertEquals(1, events.size());
+           CardIssuedEvent event = (CardIssuedEvent) events.get(0).payload();
+           assertEquals("cardId", event.getCardId());
+           assertEquals(100, event.getAmount());
+       });
+----
 
 ==== Validating command result
 
-The test fixture allows you to validate return values of your command handlers. You can explicitly define the expected return value, or simply require that the method successfully returned. You may also express any exceptions you expect the CommandHandler to throw.
+When testing commands, you can validate the command execution result. The following methods are available:
 
-The following methods are available for validating Command Results:
+* **`success()`** - Validates successful command execution
+* **`resultMessagePayload(Object)`** - Validates the command result payload equals the expected value
+* **`resultMessagePayloadSatisfies(Consumer)`** - Custom assertions on the result payload
+* **`resultMessageSatisfies(Consumer<CommandResultMessage>)`** - Custom assertions on the full result message
+* **`exception(Class<?>)`** - Validates an exception of the specified type was thrown
+* **`exception(Predicate<Throwable>)`** - Validates the exception matches a predicate
 
-* `fixture.expectSuccessfulHandlerExecution()`:
+Examples:
 
-Validates that the handler returned a regular response, which was not marked as an exceptional response.
+[source,java]
+----
+// Validate successful command execution
+fixture.when()
+       .command(new CreateCardCommand("cardId", 100))
+       .then()
+       .success()
+       .events(new CardIssuedEvent("cardId", 100));
 
-The exact response is not evaluated.
+// Validate command result payload
+fixture.when()
+       .command(new GetCardBalanceCommand("cardId"))
+       .then()
+       .resultMessagePayload(100)
+       .success();
 
-* `fixture.expectResultMessagePayload(Object)`:
+// Validate exception
+fixture.when()
+       .command(new RedeemCardCommand("cardId", "txn1", 200))
+       .then()
+       .exception(InsufficientBalanceException.class)
+       .noEvents();
 
-Validates that the handler returned a successful response, with a payload equal to the given payload.
-
-* `fixture.expectResultMessagePayloadMatching(Matcher)`:
-
-Validates that the handler returned a successful response, with a payload matching the given Matcher
-
-* `fixture.expectResultMessage(CommandResultMessage)`:
-
-Validates that the `CommandResultMessage` received has equal payload and meta data to that of given message.
-
-* `fixture.expectResultMessageMatching(Matcher)`:
-
-Validates that the `CommandResultMessage` matches the given Matcher.
-
-* `fixture.expectException(Matcher)`:
-
-Validates that the command handling result is an exceptional result, and that the exception matches the given `Matcher`.
-
-* `fixture.expectException(Class)`:
-
-Validates that the command handling result is an exceptional result with the given type of exception.
-
-* `fixture.expectExceptionMessage(String)`:
-
-Validates that the command handling result is an exceptional result and the exception message is equal to the given message.
-
-* `fixture.expectExceptionMessage(Matcher)`:
-
-Validates that the command handling result is an exceptional result and the exception message matches the given Matcher.
-* `fixture.expectExceptionDetails(Object)`:
-
-Validates that the command handling result is an exceptional result and the exception details equal the given exception details. 
-
-* `fixture.expectExceptionDetails(Class)`:
-
-Validates that the command handling result is an exceptional result with the given type of exception details.
-
-* `fixture.expectExceptionDetails(Matcher)`:
-
-Validates that the command handling result is an exceptional result and the exception details match the given `Matcher`.
+// Custom result assertions
+fixture.when()
+       .command(new CreateCardCommand("cardId", 100))
+       .then()
+       .resultMessageSatisfies(result -> {
+           assertFalse(result.isExceptional());
+           assertEquals("cardId", result.payload());
+       });
+----
 
 ==== Validating published events
 
@@ -442,7 +505,7 @@ class MyCommandModelTest {
 
 ==== Validating aggregate state
 
-In certain circumstances, it may be desirable to validate the state in which an Aggregate was left after a test. This is especially the case in given-when-then scenario's where the _given_ represents an initial state as well, as is regular when using a xref:axon-framework-commands:modeling/state-stored-aggregates.adoc[State-Stored Aggregate].
+In certain circumstances, it may be desirable to validate the state in which an Aggregate was left after a test. This is especially the case in given-when-then scenario's where the _given_ represents an initial state as well, as is regular when using a xref:axon-framework-commands:modeling/state-stored-entities.adoc[State-Stored Aggregate].
 
 The fixture provides a method that allows verification of the state of the aggregate, as it is left after the <<test-execution-phase,Execution Phase>> (for example, the _when_ state), to be validated.
 

@@ -1,0 +1,76 @@
+= Entity Creation Patterns
+
+With Axon Framework 5's Dynamic Consistency Boundary (DCB) model, entities are more loosely coupled, and there's no special mechanism needed to "create an entity from another entity."
+
+== Creating entities through events and commands
+
+When one entity needs to trigger the creation of another entity, follow this pattern:
+
+1. **The entity publishes an event** indicating that something should be created
+2. **An event handler** (in another entity or external component) reacts to this event
+3. **The handler dispatches a creation command** using `CommandDispatcher`
+
+=== Example
+
+[source,java]
+----
+import org.axonframework.messaging.commandhandling.CommandHandler;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
+import org.axonframework.messaging.commandhandling.gateway.CommandDispatcher;
+import org.axonframework.messaging.eventhandling.EventHandler;
+import org.axonframework.eventsourcing.annotation.reflection.EntityCreator;
+
+// Parent entity publishes an event
+public class Order {
+
+    @CommandHandler
+    public void handle(PlaceOrderCommand cmd, EventAppender appender) {
+        // Business logic validation
+        appender.append(new OrderPlacedEvent(cmd.orderId(), cmd.customerId()));
+    }
+}
+
+// Event handler creates shipment entity
+public class ShipmentCoordinator {
+
+    @EventHandler
+    public void on(OrderPlacedEvent event, CommandDispatcher dispatcher) {
+        // React to the event by creating a shipment
+        dispatcher.send(new CreateShipmentCommand(event.orderId(), event.customerId()));
+    }
+}
+
+// Shipment entity is created via its static command handler
+public class Shipment {
+
+    @CommandHandler
+    public static String handle(CreateShipmentCommand cmd, EventAppender appender) {
+        String shipmentId = generateShipmentId();
+        appender.append(new ShipmentCreatedEvent(shipmentId, cmd.orderId()));
+        return shipmentId;
+    }
+
+    @EntityCreator
+    public Shipment(ShipmentCreatedEvent event) {
+        // Initialize state
+    }
+}
+----
+
+[TIP]
+====
+This pattern provides:
+
+* **Loose coupling** - Entities don't need to know about each other
+* **Flexibility** - The coordinator can apply additional business logic
+* **Testability** - Each component can be tested independently
+* **Consistency** - Commands ensure proper routing and lifecycle management
+
+For complex coordination scenarios, consider using xref:sagas:index.adoc[Sagas] instead of simple event handlers.
+====
+
+== See also
+
+* xref:command-dispatchers.adoc#command-dispatcher[CommandDispatcher] - Dispatching commands from within handlers
+* xref:sagas:index.adoc[Sagas] - Coordinating complex business processes
+* xref:events:event-handlers.adoc[Event Handlers] - Reacting to events

@@ -1,14 +1,31 @@
 = Testing
 :page-aliases: README.adoc
 
-The Axon Framework provides a complete test module to help unit test your Axon application. This includes capabilities test your Commands/Events and Sagas. This section of the reference guide intends to cover in detail the capabilities that the Axon Framework provides to help facilitate testing.‌
+The Axon Framework provides a complete test module to help test your Axon application.
+In Axon Framework 5, the testing approach has been redesigned to use the `AxonTestFixture`, which is based on your `ApplicationConfigurer`.
+This ensures your tests use the same configuration as your production application, reducing the risk of configuration mismatches.
+
+The `AxonTestFixture` supports testing all types of message handling components:
+* Aggregates/Entities
+* Event Handlers (Projections)
+* Sagas
+* Command Handlers
+* Query Handlers
+
+This section of the reference guide covers the capabilities that Axon Framework provides to facilitate testing.
 
 A summary of the various sub-sections is given below.
 
 [cols="<,<"]
 |===
-|Sub-Section |Purpose 
+|Sub-Section |Purpose
 
-|​xref:commands-events.adoc[Commands / Events​] |Capabilities provided by the Axon Framework to test Commands/Events
-|​xref:sagas-1.adoc[Sagas​] |Capabilities provided by the Axon Framework to test Sagas
+|xref:commands-events.adoc[Commands / Events] |Testing commands, events, and aggregates with the AxonTestFixture
+|xref:sagas-1.adoc[Sagas] |Testing sagas with the AxonTestFixture
 |===
+
+[NOTE]
+====
+The `AggregateTestFixture` and `SagaTestFixture` from Axon Framework 4 have been replaced by the `AxonTestFixture` in Axon Framework 5.
+The new fixture uses your `ApplicationConfigurer` to ensure tests reflect your actual application configuration.
+====

@@ -32,7 +32,7 @@ Maintaining the progress through tokens makes a Streaming Processor
 
 All combined, the Streaming Processor allows for decoupling, parallelization, resiliency, and replay-ability.
 It is these features that make the Streaming Processor the logical choice for the majority of applications.
-Due to this, the "Tracking Event Processor," a type of Streaming Processor, is the default Event Processor.
+Due to this, the "Pooled Streaming Event Processor" is the default Event Processor.
 
 
 [NOTE]
@@ -40,68 +40,36 @@ Due to this, the "Tracking Event Processor," a type of Streaming Processor, is t
 ====
 Which `EventProcessor` type becomes the default processor depends on the event message source available in your application.
 In the majority of use cases, an Event Store is present.
-As the Event Store is a type of `StreamableMessageSource`, the default will switch to the Tracking Event Processor.
+As the Event Store is a type of `StreamableMessageSource`, the default will be the Pooled Streaming Event Processor.
 
 If the application only has an Event Bus configured, the framework will lack a `StreamableMessageSource`.
 It will fall back to the xref:event-processors/subscribing.adoc[Subscribing Event Processor] as the default in these scenarios.
 This implementation will use the configured `EventBus` as its `SubscribableMessageSource`.
 ====
 
-There are two implementations of Streaming Processor available in Axon Framework:
+The Pooled Streaming Event Processor (PSEP) is the primary implementation of Streaming Processor in Axon Framework 5.
+It provides enhanced performance and better resource utilization compared to previous implementations.
 
-. the Tracking Event Processor (TEP for short), and
-. the Pooled Streaming Event Processor (PSEP for short).
-
-Both implementations support the same set of operations.
+The PSEP supports all standard streaming operations:
 Operations like replaying events through a <<replaying-events,reset>>, <<parallel-processing,parallelism>> and tracking the progress with <<tracking-tokens,tokens>>.
-They diverge on their threading approach and work separation, as discussed in more detail in <<Thread configuration,this>> section.
 
 [[configuring]]
 == Configuring
 
 The Streaming Processors have several additional components that you can configure, next to the xref:event-processors/index.adoc#general_processor_configuration[base options].
 For other streaming processor features that are configurable, we refer to their respective sections for more details.
-This chapter will cover how to configure a <<Configuring a tracking processor,Tracking>> or <<Configuring a pooled streaming processor,Pooled Streaming>> Processor respectively.
 
-=== Configuring a tracking processor
+=== Configuring a Pooled Streaming Event Processor
 
-Firstly, to specify that new event processors should default to a `TrackingEventProcessor`, you can invoke the `usingTrackingEventProcessors` method:
+The Pooled Streaming Event Processor is the default and recommended streaming processor implementation.
 
-[tabs]
+// TODO: Add configuration examples for PooledStreamingEventProcessor in Axon 5
+
+[NOTE]
 ====
-Configuration API::
-+
---
-[source,java]
-----
-public class AxonConfig {
-    // omitting other configuration methods...
-    public void configureProcessorDefault(EventProcessingConfigurer processingConfigurer) {
-        processingConfigurer.usingTrackingEventProcessors();
-    }
-}
-----
---
-
-Spring Boot::
-+
---
-[source,java]
-----
-@Configuration
-public class AxonConfig {
-    // omitting other configuration methods...
-    @Bean
-    public ConfigurerModule processorDefaultConfigurerModule() {
-        return configurer -> configurer
-            .eventProcessing(EventProcessingConfigurer::usingTrackingEventProcessors);
-    }
-}
-----
---
+The `TrackingEventProcessor` from Axon Framework 4 has been removed in Axon Framework 5.
+The `PooledStreamingEventProcessor` is now the default and recommended streaming event processor, providing enhanced performance and better resource utilization.
 ====
-
-For a specific Event Processor to be a Tracking instance, `registerTrackingEventProcessor` is used:
 
 
 [tabs]

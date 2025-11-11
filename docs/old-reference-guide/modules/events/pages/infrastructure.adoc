@@ -247,15 +247,15 @@ public class AxonConfig {
     // The JpaEventStorageEngine stores events in a JPA-compatible data source.
     @Bean
     public EventStorageEngine eventStorageEngine(
-            Serializer serializer,
+            Converter converter,
             PersistenceExceptionResolver persistenceExceptionResolver,
-            @Qualifier("eventSerializer") Serializer eventSerializer,
+            @Qualifier("eventSerializer") Converter eventSerializer,
             EntityManagerProvider entityManagerProvider,
             TransactionManager transactionManager
     ) {
          return JpaEventStorageEngine
              .builder()
-             .snapshotSerializer(serializer)
+             .snapshotSerializer(converter)
              .persistenceExceptionResolver(persistenceExceptionResolver)
              .eventSerializer(eventSerializer)
              .entityManagerProvider(entityManagerProvider)
@@ -302,7 +302,7 @@ public class AxonConfig {
         configurer.configureEmbeddedEventStore(config -> {
             JdbcEventStorageEngine storageEngine = JdbcEventStorageEngine
                 .builder()
-                .snapshotSerializer(config.serializer())
+                .snapshotSerializer(config.converter())
                 .connectionProvider(connectionProvider)
                 .transactionManager(config.getComponent(TransactionManager.class))
                 .eventSerializer(config.eventSerializer())
@@ -349,15 +349,15 @@ public class AxonConfig {
     // The JdbcEventStorageEngine stores events in a JDBC-compatible data source.
     @Bean
     public EventStorageEngine storageEngine(
-            Serializer serializer,
+            Converter converter,
             ConnectionProvider connectionProvider,
-            @Qualifier("eventSerializer") Serializer eventSerializer,
+            @Qualifier("eventSerializer") Converter eventSerializer,
             TransactionManager transactionManager,
             EventTableFactory tableFactory
     ) {
         JdbcEventStorageEngine storageEngine = JdbcEventStorageEngine
             .builder()
-            .snapshotSerializer(serializer)
+            .snapshotSerializer(converter)
             .connectionProvider(connectionProvider)
             .eventSerializer(eventSerializer)
             .transactionManager(transactionManager)
@@ -413,7 +413,7 @@ The `MongoEventStorageEngine` does not require a lot of configuration.
 All it needs is a reference to the collections to store the events in, and you're set to go.
 For production environments, you may want to double check the indexes on your collections.
 If you want transactions to be handled correctly, it's important to set a `TransactionManager`.
-Please note that there are several other optional configuration properties, like the serializers and an (optional) upcaster chain.
+Please note that there are several other optional configuration properties, like the converters and an (optional) upcaster chain.
 
 [tabs]
 ====
@@ -547,23 +547,23 @@ The `FilteringEventStorageEngine` allows events to be filtered based on a predic
 Only events that match the given predicate will be stored.
 Note that event processors that use the event store as a source of events may not receive these events because they are not being stored.
 
-=== Influencing the serialization process
+=== Influencing the conversion process
 
-Event stores need a way to serialize the event to prepare it for storage.
-By default, Axon uses the `XStreamSerializer`, which uses http://x-stream.github.io/[XStream] to serialize events into XML.
-XStream is reasonably fast and is more flexible than Java Serialization.
-Furthermore, the result of XStream serialization is human-readable.
+Event stores need a way to convert the event to prepare it for storage.
+By default, Axon uses the XStreamSerializer (removed in Axon 5), which uses http://x-stream.github.io/[XStream] to convert events into XML.
+XStream is reasonably fast and is more flexible than Java Conversion.
+Furthermore, the result of XStream conversion is human-readable.
 This makes it quite useful for logging and debugging purposes.
 
-The `XStreamSerializer` can be configured.
+The XStreamSerializer (removed in Axon 5) can be configured.
 You can define aliases it should use for certain packages, classes or even fields.
 Besides being a nice way to shorten potentially long names, aliases can also be used when class definitions of events change.
 For more information about aliases, visit the http://x-stream.github.io/[XStream website].
 
-Alternatively, Axon also provides the `JacksonSerializer`, which uses https://github.com/FasterXML/jackson[Jackson] to serialize events into JSON.
+Alternatively, Axon also provides the `JacksonConverter`, which uses https://github.com/FasterXML/jackson[Jackson] to convert events into JSON.
 While it produces a more compact serialized form, it does require that classes stick to the conventions (or configuration) required by Jackson.
 
-You may also implement your own serializer, simply by creating a class that implements `Serializer`, and configuring the event store to use that implementation instead of the default.
+You may also implement your own converter, simply by creating a class that implements `Converter`, and configuring the event store to use that implementation instead of the default.
 
 [tabs]
 ====
@@ -574,34 +574,34 @@ Configuration API::
 [source,java]
 ----
 // Returns a Configurer instance with default components configured.
-// We explicitly set `JacksonSerializer` as desired event serializer.
+// We explicitly set `JacksonConverter` as desired event converter.
 Configurer configurer = DefaultConfigurer.defaultConfiguration()
-      .configureEventSerializer(c -> JacksonSerializer.builder().build());
+      .configureEventSerializer(c -> JacksonConverter.builder().build());
 ----
 --
 
 Spring Boot::
 +
 --
-You can specify a serializer in your `application.properties`:
+You can specify a converter in your `application.properties`:
 
 [source,properties]
 ----
 # somewhere in your `application.properties`
 
-axon.serializer.events=jackson
+axon.converter.events=jackson
 # possible values: java, xstream, jackson
 ----
 
-Alternatively, you can explicitly define your Serializer in the Spring context:
+Alternatively, you can explicitly define your Converter in the Spring context:
 
 [source,java]
 ----
 // somewhere in your `@Configuration` class
 @Qualifier("eventSerializer")
 @Bean
-public Serializer eventSerializer() {
-    return JacksonSerializer.builder().build();
+public Converter eventSerializer() {
+    return JacksonConverter.builder().build();
 }
 ----
 --
@@ -609,11 +609,11 @@ public Serializer eventSerializer() {
 
 ==== Serializing events vs 'the others'
 
-It is possible to use a different serializer for the storage of events, than all other objects that Axon needs to serialize (such as commands, snapshots, sagas, etc).
-While the `XStreamSerializer`'s capability to serialize virtually anything makes it a  decent default, its output is not always a form that makes it nice to share with other applications. The `JacksonSerializer` creates much nicer output, but requires a certain structure in the objects to serialize.
-This structure is typically present in events, making it a suitable event serializer.
+It is possible to use a different converter for the storage of events, than all other objects that Axon needs to convert (such as commands, snapshots, sagas, etc).
+While the XStreamSerializer (removed in Axon 5)'s capability to convert virtually anything makes it a  decent default, its output is not always a form that makes it nice to share with other applications. The `JacksonConverter` creates much nicer output, but requires a certain structure in the objects to convert.
+This structure is typically present in events, making it a suitable event converter.
 
-If no explicit `eventSerializer` is configured, events are serialized using the main serializer that has been configured (which defaults to the `XStreamSerializer`).
+If no explicit `eventSerializer` is configured, events are serialized using the main converter that has been configured (which defaults to the XStreamSerializer (removed in Axon 5)).
 
 == Distributing events
 

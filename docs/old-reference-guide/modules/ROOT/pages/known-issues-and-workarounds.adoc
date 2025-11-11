@@ -16,7 +16,7 @@ This documentation, just as the framework, is open source.
 Hence, if you have found something problematic that you think should be added to the list, be sure to file an issue and (ideally!) a pull request.
 
 You can make an enhancement request by clicking link:https://github.com/AxonFramework/AxonFramework/issues/new?assignees=&labels=Type%3A+Enhancement&projects=&template=2_enhancement_request.md[here].
-When looking to provide a pull request, be sure to adjust link:https://github.com/AxonFramework/AxonFramework/blob/master/docs/old-reference-guide/modules/ROOT/pages/serialization.adochttps://github.com/AxonFramework/AxonFramework/blob/master/docs/old-reference-guide/modules/ROOT/pages/known-issues-and-workarounds.adoc[this file].
+When looking to provide a pull request, be sure to adjust link:https://github.com/AxonFramework/AxonFramework/blob/master/docs/old-reference-guide/modules/ROOT/pages/conversion.adochttps://github.com/AxonFramework/AxonFramework/blob/master/docs/old-reference-guide/modules/ROOT/pages/known-issues-and-workarounds.adoc[this file].
 ====
 
 == PostgreSQL and large object storage

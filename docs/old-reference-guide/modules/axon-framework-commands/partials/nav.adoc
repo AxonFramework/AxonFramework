@@ -2,11 +2,11 @@
 
 ** xref:axon-framework-commands:command-handlers.adoc[]
 ** xref:axon-framework-commands:command-dispatchers.adoc[]
-** xref:axon-framework-commands:modeling/aggregate.adoc[]
-*** xref:axon-framework-commands:modeling/multi-entity-aggregates.adoc[]
-*** xref:axon-framework-commands:modeling/state-stored-aggregates.adoc[]
-*** xref:axon-framework-commands:modeling/aggregate-creation-from-another-aggregate.adoc[]
-*** xref:axon-framework-commands:modeling/aggregate-polymorphism.adoc[]
+** xref:axon-framework-commands:modeling/command-model.adoc[]
+*** xref:axon-framework-commands:modeling/multi-entity-command-models.adoc[]
+*** xref:axon-framework-commands:modeling/state-stored-entities.adoc[]
+*** xref:axon-framework-commands:modeling/entity-creation-patterns.adoc[]
+*** xref:axon-framework-commands:modeling/entity-polymorphism.adoc[]
 
 ** xref:axon-framework-commands:infrastructure.adoc[]
 ** xref:axon-framework-commands:configuration.adoc[]
