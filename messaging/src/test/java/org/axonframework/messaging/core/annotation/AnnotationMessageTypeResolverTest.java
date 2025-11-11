@@ -17,12 +17,10 @@
 package org.axonframework.messaging.core.annotation;
 
 import org.axonframework.messaging.commandhandling.annotation.Command;
-import org.axonframework.messaging.eventhandling.annotation.Event;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.MessageTypeResolver;
-import org.axonframework.messaging.core.annotation.AnnotationMessageTypeResolver;
 import org.axonframework.messaging.core.annotation.AnnotationMessageTypeResolver.AnnotationSpecification;
-import org.axonframework.messaging.core.annotation.Message;
+import org.axonframework.messaging.eventhandling.annotation.Event;
 import org.axonframework.messaging.queryhandling.annotation.Query;
 import org.junit.jupiter.api.*;
 
@@ -56,7 +54,7 @@ class AnnotationMessageTypeResolverTest {
 
         @Test
         void classAnnotatedWithCommandReturnsExpectedMessageType() {
-            MessageType expectedType = new MessageType("test-command-domain-name", "1.33.7");
+            MessageType expectedType = new MessageType("org.axonframework.messaging.core.annotation.test-command-domain-name", "1.33.7");
 
             Optional<MessageType> result = testSubject.resolve(TestCommand.class);
 
@@ -90,7 +88,7 @@ class AnnotationMessageTypeResolverTest {
 
         @Test
         void classAnnotatedWithEventReturnsExpectedMessageType() {
-            MessageType expectedType = new MessageType("event-business-name", "42");
+            MessageType expectedType = new MessageType("org.axonframework.messaging.core.annotation", "event-business-name", "42");
 
             Optional<MessageType> result = testSubject.resolve(TestEvent.class);
 
@@ -124,7 +122,7 @@ class AnnotationMessageTypeResolverTest {
 
         @Test
         void classAnnotatedWithQueryReturnsExpectedMessageType() {
-            MessageType expectedType = new MessageType("non-of-your-business-query-name", "9001");
+            MessageType expectedType = new MessageType("org.axonframework.messaging.core.annotation", "non-of-your-business-query-name", "9001");
 
             Optional<MessageType> result = testSubject.resolve(TestQuery.class);
 
@@ -158,7 +156,7 @@ class AnnotationMessageTypeResolverTest {
 
         @Test
         void classAnnotatedWithQueryResponseReturnsExpectedMessageType() {
-            MessageType expectedType = new MessageType("non-of-your-business-query-response-name", "9002");
+            MessageType expectedType = new MessageType("org.axonframework.messaging.core.annotation", "non-of-your-business-query-response-name", "9002");
 
             Optional<MessageType> result = testSubject.resolve(TestQueryResponse.class);
 
@@ -192,7 +190,7 @@ class AnnotationMessageTypeResolverTest {
 
         @Test
         void classAnnotatedWithMetaAnnotatedMessageReturnsExpectedMessageType() {
-            MessageType expectedType = new MessageType("meta-annotated", "-1");
+            MessageType expectedType = new MessageType("org.axonframework.messaging.core.annotation", "meta-annotated", "-1");
 
             Optional<MessageType> result = testSubject.resolve(MetaAnnotatedMessage.class);
 
@@ -224,7 +222,7 @@ class AnnotationMessageTypeResolverTest {
             AnnotationMessageTypeResolver customAnnotationTestSubject =
                     new AnnotationMessageTypeResolver(null, specification);
 
-            MessageType expectedType = new MessageType("customName", "customVersion");
+            MessageType expectedType = new MessageType("org.axonframework.messaging.core.annotation", "customName", "customVersion");
 
             Optional<MessageType> result = customAnnotationTestSubject.resolve(CustomAnnotatedMessage.class);
 
@@ -262,5 +260,64 @@ class AnnotationMessageTypeResolverTest {
             assertThat(result).isPresent();
             assertThat(result.get()).isEqualTo(expectedType);
         }
+
+        @Test
+        void fallbackIsNotInvokedInPresenceOfSpecificAnnotationWithoutParameters() {
+            MessageType expectedType = new MessageType("org.axonframework.messaging.core.annotation.EventWithDefaultParameters");
+            Optional<MessageType> actual = testSubject.resolve(EventWithDefaultParameters.class);
+
+            assertThat(actual).isPresent();
+            assertThat(actual).contains(expectedType);
+            verify(fallback, never()).resolve(any());
+        }
+
+        @Test
+        void fallbackIsNotInvokedInPresenceOfSpecificAnnotationWithOnlyVersionSpecified() {
+            MessageType expectedType = new MessageType("org.axonframework.messaging.core.annotation.EventWithVersionParameter", "42");
+            Optional<MessageType> actual = testSubject.resolve(EventWithVersionParameter.class);
+
+            assertThat(actual).isPresent();
+            assertThat(actual).contains(expectedType);
+            verify(fallback, never()).resolve(any());
+        }
+
+        @Test
+        void fallbackIsNotInvokedInPresenceOfSpecificAnnotationWithOnlyNameSpecified() {
+            MessageType expectedType = new MessageType("org.axonframework.messaging.core.annotation.MyName");
+            Optional<MessageType> actual = testSubject.resolve(EventWithNameParameter.class);
+
+            assertThat(actual).isPresent();
+            assertThat(actual).contains(expectedType);
+            verify(fallback, never()).resolve(any());
+        }
+
+        @Test
+        void fallbackIsNotInvokedInPresenceOfSpecificAnnotationWithOnlyNamespaceSpecified() {
+            MessageType expectedType = new MessageType("custom.namespace.EventWithNamespaceParameter");
+            Optional<MessageType> actual = testSubject.resolve(EventWithNamespaceParameter.class);
+
+            assertThat(actual).isPresent();
+            assertThat(actual).contains(expectedType);
+            verify(fallback, never()).resolve(any());
+        }
+
+        @Event
+        private record EventWithDefaultParameters(String id) {
+
+        }
+        @Event(version = "42")
+        private record EventWithVersionParameter(String id) {
+
+        }
+
+        @Event(name = "MyName")
+        private record EventWithNameParameter(String id) {
+
+        }
+        @Event(namespace = "custom.namespace")
+        private record EventWithNamespaceParameter(String id) {
+
+        }
+
     }
 }
