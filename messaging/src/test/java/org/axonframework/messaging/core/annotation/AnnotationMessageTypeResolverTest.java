@@ -17,12 +17,10 @@
 package org.axonframework.messaging.core.annotation;
 
 import org.axonframework.messaging.commandhandling.annotation.Command;
-import org.axonframework.messaging.eventhandling.annotation.Event;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.MessageTypeResolver;
-import org.axonframework.messaging.core.annotation.AnnotationMessageTypeResolver;
 import org.axonframework.messaging.core.annotation.AnnotationMessageTypeResolver.AnnotationSpecification;
-import org.axonframework.messaging.core.annotation.Message;
+import org.axonframework.messaging.eventhandling.annotation.Event;
 import org.axonframework.messaging.queryhandling.annotation.Query;
 import org.junit.jupiter.api.*;
 
@@ -262,5 +260,64 @@ class AnnotationMessageTypeResolverTest {
             assertThat(result).isPresent();
             assertThat(result.get()).isEqualTo(expectedType);
         }
+
+        @Test
+        void fallbackIsNotInvokedInPresenceOfSpecificAnnotationWithoutParameters() {
+            MessageType expectedType = new MessageType("org.axonframework.messaging.core.annotation.EventWithDefaultParameters");
+            Optional<MessageType> actual = testSubject.resolve(EventWithDefaultParameters.class);
+
+            assertThat(actual).isPresent();
+            assertThat(actual).contains(expectedType);
+            verify(fallback, never()).resolve(any());
+        }
+
+        @Test
+        void fallbackIsNotInvokedInPresenceOfSpecificAnnotationWithOnlyVersionSpecified() {
+            MessageType expectedType = new MessageType("org.axonframework.messaging.core.annotation.EventWithVersionParameter", "42");
+            Optional<MessageType> actual = testSubject.resolve(EventWithVersionParameter.class);
+
+            assertThat(actual).isPresent();
+            assertThat(actual).contains(expectedType);
+            verify(fallback, never()).resolve(any());
+        }
+
+        @Test
+        void fallbackIsNotInvokedInPresenceOfSpecificAnnotationWithOnlyNameSpecified() {
+            MessageType expectedType = new MessageType("org.axonframework.messaging.core.annotation.MyName");
+            Optional<MessageType> actual = testSubject.resolve(EventWithNameParameter.class);
+
+            assertThat(actual).isPresent();
+            assertThat(actual).contains(expectedType);
+            verify(fallback, never()).resolve(any());
+        }
+
+        @Test
+        void fallbackIsNotInvokedInPresenceOfSpecificAnnotationWithOnlyNamespaceSpecified() {
+            MessageType expectedType = new MessageType("custom.namespace.EventWithNamespaceParameter");
+            Optional<MessageType> actual = testSubject.resolve(EventWithNamespaceParameter.class);
+
+            assertThat(actual).isPresent();
+            assertThat(actual).contains(expectedType);
+            verify(fallback, never()).resolve(any());
+        }
+
+        @Event
+        private record EventWithDefaultParameters(String id) {
+
+        }
+        @Event(version = "42")
+        private record EventWithVersionParameter(String id) {
+
+        }
+
+        @Event(name = "MyName")
+        private record EventWithNameParameter(String id) {
+
+        }
+        @Event(namespace = "custom.namespace")
+        private record EventWithNamespaceParameter(String id) {
+
+        }
+
     }
 }
