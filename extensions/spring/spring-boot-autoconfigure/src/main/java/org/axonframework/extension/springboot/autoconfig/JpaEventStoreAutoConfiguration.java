@@ -18,13 +18,11 @@ package org.axonframework.extension.springboot.autoconfig;
 
 import jakarta.annotation.Nonnull;
 import jakarta.persistence.EntityManagerFactory;
-import org.axonframework.common.jdbc.PersistenceExceptionResolver;
-import org.axonframework.common.jpa.EntityManagerProvider;
-import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.common.configuration.SearchScope;
-import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.axonframework.common.jdbc.PersistenceExceptionResolver;
+import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurationDefaults;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -33,6 +31,8 @@ import org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedJpaEventStor
 import org.axonframework.eventsourcing.eventstore.jpa.JpaPollingEventCoordinator;
 import org.axonframework.extension.springboot.JpaEventStorageEngineConfigurationProperties;
 import org.axonframework.extension.springboot.util.RegisterDefaultEntities;
+import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -50,7 +50,10 @@ import java.util.function.UnaryOperator;
  * @author Simon Zambrovski
  * @since 4.0
  */
-@AutoConfiguration
+@AutoConfiguration(after = {
+        org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration.class,
+        org.axonframework.extension.springboot.autoconfig.AxonServerAutoConfiguration.class,
+        JpaAutoConfiguration.class})
 @ConditionalOnBean({EntityManagerFactory.class, PlatformTransactionManager.class})
 @ConditionalOnMissingBean(value = {EventStore.class, EventStorageEngine.class})
 @RegisterDefaultEntities(packages = {
@@ -63,8 +66,6 @@ public class JpaEventStoreAutoConfiguration {
      * Creates an aggregate-based JPA event storage engine enhancer.
      *
      * @param entityManagerProvider                        An entity manager provide to access the underlying DB.
-     * @param transactionManager                           A transaction manager to run safe transaction operations.
-     * @param eventConverter                               A converter to use for event conversion.
      * @param persistenceExceptionResolver                 A persistence exception resolver on duplicate errors.
      * @param jpaEventStorageEngineConfigurationProperties Spring properties to configure the JPA Event store Engine.
      * @return A configuration enhancer registering JPA Storage Engine ordered between Axon Server and In-Memory Storage
@@ -73,16 +74,12 @@ public class JpaEventStoreAutoConfiguration {
     @Bean
     public ConfigurationEnhancer aggregateBasedJpaEventStorageEngine(
             EntityManagerProvider entityManagerProvider,
-            TransactionManager transactionManager,
-            EventConverter eventConverter,
             PersistenceExceptionResolver persistenceExceptionResolver,
             JpaEventStorageEngineConfigurationProperties jpaEventStorageEngineConfigurationProperties
     ) {
-        return new AggregateBasedJpaEventStorageEngineConfigrationEnhancer(
+        return new AggregateBasedJpaEventStorageEngineConfigurationEnhancer(
                 jpaEventStorageEngineConfigurationProperties,
                 entityManagerProvider,
-                transactionManager,
-                eventConverter,
                 persistenceExceptionResolver
         );
     }
@@ -90,11 +87,9 @@ public class JpaEventStoreAutoConfiguration {
     /**
      * Enhancer for registration of a bean definition creating a JPA Storage Engine.
      */
-    public record AggregateBasedJpaEventStorageEngineConfigrationEnhancer(
+    public record AggregateBasedJpaEventStorageEngineConfigurationEnhancer(
             JpaEventStorageEngineConfigurationProperties properties,
             EntityManagerProvider entityManagerProvider,
-            TransactionManager transactionManager,
-            EventConverter eventConverter,
             PersistenceExceptionResolver persistenceExceptionResolver
     ) implements ConfigurationEnhancer {
 
@@ -119,8 +114,8 @@ public class JpaEventStoreAutoConfiguration {
                                           (configuration)
                                                   -> new AggregateBasedJpaEventStorageEngine(
                                                   entityManagerProvider,
-                                                  transactionManager,
-                                                  eventConverter,
+                                                  configuration.getComponent(TransactionManager.class),
+                                                  configuration.getComponent(EventConverter.class),
                                                   configurer
                                           ),
                                           SearchScope.ALL);

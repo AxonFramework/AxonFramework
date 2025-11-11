@@ -20,14 +20,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManagerFactory;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.store.jpa.JpaTokenStore;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.store.jpa.JpaTokenStoreConfiguration;
-import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.axonframework.conversion.json.JacksonConverter;
+import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.axonframework.extension.springboot.TokenStoreProperties;
 import org.axonframework.extension.springboot.util.RegisterDefaultEntities;
 import org.axonframework.extension.springboot.util.jpa.ContainerManagedEntityManagerProvider;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.store.jpa.JpaTokenStore;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.store.jpa.JpaTokenStoreConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -45,12 +45,12 @@ import javax.sql.DataSource;
  * @author Simon Zambrovski
  * @since 3.0.3
  */
-@AutoConfiguration
+@AutoConfiguration(afterName = {"org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration"})
 @ConditionalOnClass(EntityManagerFactory.class)
 @ConditionalOnBean(EntityManagerFactory.class)
 @EnableConfigurationProperties(TokenStoreProperties.class)
 @RegisterDefaultEntities(packages = {
-        "org.axonframework.eventhandling.tokenstore",
+        "org.axonframework.messaging.eventhandling.processing.streaming.token.store.jpa",
         //  "org.axonframework.eventhandling.deadletter.jpa", // TODO re-enable as part of #3097
         // "org.axonframework.modelling.saga.repository.jpa", // TODO re-enable as part of #3517
 })
