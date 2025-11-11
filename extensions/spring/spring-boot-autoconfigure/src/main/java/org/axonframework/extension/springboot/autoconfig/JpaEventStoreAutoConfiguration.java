@@ -16,14 +16,9 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
-import jakarta.annotation.Nonnull;
 import jakarta.persistence.EntityManagerFactory;
-import org.axonframework.common.configuration.ComponentRegistry;
-import org.axonframework.common.configuration.ConfigurationEnhancer;
-import org.axonframework.common.configuration.SearchScope;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
-import org.axonframework.eventsourcing.configuration.EventSourcingConfigurationDefaults;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedJpaEventStorageEngine;
@@ -63,76 +58,55 @@ import java.util.function.UnaryOperator;
 public class JpaEventStoreAutoConfiguration {
 
     /**
-     * Creates an aggregate-based JPA event storage engine enhancer.
-     *
-     * @param entityManagerProvider                        An entity manager provide to access the underlying DB.
-     * @param transactionManager                           A transaction manager to run safe transaction operations.
-     * @param eventConverter                               A converter to use for event conversion.
-     * @param persistenceExceptionResolver                 A persistence exception resolver on duplicate errors.
-     * @param jpaEventStorageEngineConfigurationProperties Spring properties to configure the JPA Event store Engine.
-     * @return A configuration enhancer registering JPA Storage Engine ordered between Axon Server and In-Memory Storage
-     * Engine.
+     * Defines the default configuration for the {@link AggregateBasedJpaEventStorageEngine}.
+     * @param entityManagerProvider  The provider for the EntityManager to use
+     * @param persistenceExceptionResolver The resolver to convert exceptions from the underlying persistence layer
+     * @param properties properties defining the configuration of the event storage engine
+     * @return a unary operator adding the defined properties to the configuration
      */
+    @ConditionalOnMissingBean
     @Bean
-    public ConfigurationEnhancer aggregateBasedJpaEventStorageEngine(
+    public UnaryOperator<AggregateBasedJpaEventStorageEngineConfiguration> jpaEventStorageEngineConfigurationCustomizer(
             EntityManagerProvider entityManagerProvider,
-            TransactionManager transactionManager,
-            EventConverter eventConverter,
             PersistenceExceptionResolver persistenceExceptionResolver,
-            JpaEventStorageEngineConfigurationProperties jpaEventStorageEngineConfigurationProperties
+            JpaEventStorageEngineConfigurationProperties properties
     ) {
-        return new AggregateBasedJpaEventStorageEngineConfigrationEnhancer(
-                jpaEventStorageEngineConfigurationProperties,
-                entityManagerProvider,
-                transactionManager,
-                eventConverter,
-                persistenceExceptionResolver
-        );
+        return config ->
+                config
+                        .batchSize(properties.batchSize())
+                        .gapCleaningThreshold(properties.gapCleaningThreshold())
+                        .gapTimeout(properties.gapTimeout())
+                        .lowestGlobalSequence(properties.lowestGlobalSequence())
+                        .maxGapOffset(properties.maxGapOffset())
+                        .persistenceExceptionResolver(persistenceExceptionResolver)
+                        .eventCoordinator(
+                                new JpaPollingEventCoordinator(
+                                        entityManagerProvider,
+                                        Duration.ofMillis(properties.pollingInterval())
+                                )
+                        );
     }
 
     /**
-     * Enhancer for registration of a bean definition creating a JPA Storage Engine.
+     * Defines an AggregateBasedJpaEventStorageEngine bean.
+     *
+     * @param entityManagerProvider The provider for the EntityManager to use
+     * @param transactionManager    The transaction manager that manages the database transactions
+     * @param eventConverter        The converter to convert events to persistence format
+     * @param configurer            The operator setting required configuration
+     * @return an AggregateBasedJpaEventStorageEngine bean
      */
-    public record AggregateBasedJpaEventStorageEngineConfigrationEnhancer(
-            JpaEventStorageEngineConfigurationProperties properties,
-            EntityManagerProvider entityManagerProvider,
-            TransactionManager transactionManager,
-            EventConverter eventConverter,
-            PersistenceExceptionResolver persistenceExceptionResolver
-    ) implements ConfigurationEnhancer {
-
-        @Override
-        public void enhance(@Nonnull ComponentRegistry registry) {
-            UnaryOperator<AggregateBasedJpaEventStorageEngineConfiguration> configurer = config ->
-                    config
-                            .batchSize(properties.batchSize())
-                            .gapCleaningThreshold(properties.gapCleaningThreshold())
-                            .gapTimeout(properties.gapTimeout())
-                            .lowestGlobalSequence(properties.lowestGlobalSequence())
-                            .maxGapOffset(properties.maxGapOffset())
-                            .persistenceExceptionResolver(persistenceExceptionResolver)
-                            .eventCoordinator(
-                                new JpaPollingEventCoordinator(
-                                    entityManagerProvider,
-                                    Duration.ofMillis(properties.pollingInterval())
-                                )
-                            );
-
-            registry.registerIfNotPresent(EventStorageEngine.class,
-                                          (configuration)
-                                                  -> new AggregateBasedJpaEventStorageEngine(
-                                                  entityManagerProvider,
-                                                  transactionManager,
-                                                  eventConverter,
-                                                  configurer
-                                          ),
-                                          SearchScope.ALL);
-        }
-
-        @Override
-        public int order() {
-            // we must be lower than the defaults in order to win.
-            return EventSourcingConfigurationDefaults.ENHANCER_ORDER - 500;
-        }
+    @ConditionalOnMissingBean
+    @Bean
+    public EventStorageEngine jpaEventStorageEngine(EntityManagerProvider entityManagerProvider,
+                                                    TransactionManager transactionManager,
+                                                    EventConverter eventConverter,
+                                                    UnaryOperator<AggregateBasedJpaEventStorageEngineConfiguration> configurer) {
+        return new AggregateBasedJpaEventStorageEngine(
+                entityManagerProvider,
+                transactionManager,
+                eventConverter,
+                configurer
+        );
     }
 }
