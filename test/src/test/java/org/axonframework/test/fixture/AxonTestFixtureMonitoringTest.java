@@ -72,12 +72,12 @@ public class AxonTestFixtureMonitoringTest {
 
         public static final String COURSE_ID = "courseId";
 
-        @Command(name = "CreateCourse")
+        @Command
         public record CreateCourse(String courseId, String name) {
             // empty
         }
 
-        @Event(name = "CourseCreated")
+        @Event
         public record CourseCreated(@EventTag(key = COURSE_ID) String courseId, String name) {
             // empty
         }
@@ -95,7 +95,7 @@ public class AxonTestFixtureMonitoringTest {
 
         static class CourseCreatedCommandHandler {
 
-            @CommandHandler(commandName = "CreateCourse")
+            @CommandHandler(commandName = "org.axonframework.test.fixture.CreateCourse")
             void handle(CreateCourse cmd, @InjectEntity(idProperty = COURSE_ID) CourseCreatedCommandHandler.State state,
                         EventAppender eventAppender) {
                 eventAppender.append(state.decide(cmd));
