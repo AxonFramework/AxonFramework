@@ -58,8 +58,8 @@ public @interface Event {
      * <p>
      * Is used to define the {@link QualifiedName#localName()} of a fully qualified name.
      * <p>
-     * Defaults to the simple name of the annotated class. Note that when an inner class is annotated, the simple name
-     * does not include the names of the parent classes.
+     * Defaults to the simple name of the annotated class. Note that when a nested class is annotated, the simple name
+     * does not include the names of the enclosing classes.
      *
      * @return The business or domain name of the event.
      * @see QualifiedName#localName()
