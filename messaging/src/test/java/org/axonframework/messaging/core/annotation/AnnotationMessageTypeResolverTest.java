@@ -54,7 +54,7 @@ class AnnotationMessageTypeResolverTest {
 
         @Test
         void classAnnotatedWithCommandReturnsExpectedMessageType() {
-            MessageType expectedType = new MessageType("test-command-domain-name", "1.33.7");
+            MessageType expectedType = new MessageType("org.axonframework.messaging.core.annotation.test-command-domain-name", "1.33.7");
 
             Optional<MessageType> result = testSubject.resolve(TestCommand.class);
 
@@ -88,7 +88,7 @@ class AnnotationMessageTypeResolverTest {
 
         @Test
         void classAnnotatedWithEventReturnsExpectedMessageType() {
-            MessageType expectedType = new MessageType("event-business-name", "42");
+            MessageType expectedType = new MessageType("org.axonframework.messaging.core.annotation", "event-business-name", "42");
 
             Optional<MessageType> result = testSubject.resolve(TestEvent.class);
 
@@ -122,7 +122,7 @@ class AnnotationMessageTypeResolverTest {
 
         @Test
         void classAnnotatedWithQueryReturnsExpectedMessageType() {
-            MessageType expectedType = new MessageType("non-of-your-business-query-name", "9001");
+            MessageType expectedType = new MessageType("org.axonframework.messaging.core.annotation", "non-of-your-business-query-name", "9001");
 
             Optional<MessageType> result = testSubject.resolve(TestQuery.class);
 
@@ -156,7 +156,7 @@ class AnnotationMessageTypeResolverTest {
 
         @Test
         void classAnnotatedWithQueryResponseReturnsExpectedMessageType() {
-            MessageType expectedType = new MessageType("non-of-your-business-query-response-name", "9002");
+            MessageType expectedType = new MessageType("org.axonframework.messaging.core.annotation", "non-of-your-business-query-response-name", "9002");
 
             Optional<MessageType> result = testSubject.resolve(TestQueryResponse.class);
 
@@ -190,7 +190,7 @@ class AnnotationMessageTypeResolverTest {
 
         @Test
         void classAnnotatedWithMetaAnnotatedMessageReturnsExpectedMessageType() {
-            MessageType expectedType = new MessageType("meta-annotated", "-1");
+            MessageType expectedType = new MessageType("org.axonframework.messaging.core.annotation", "meta-annotated", "-1");
 
             Optional<MessageType> result = testSubject.resolve(MetaAnnotatedMessage.class);
 
@@ -222,7 +222,7 @@ class AnnotationMessageTypeResolverTest {
             AnnotationMessageTypeResolver customAnnotationTestSubject =
                     new AnnotationMessageTypeResolver(null, specification);
 
-            MessageType expectedType = new MessageType("customName", "customVersion");
+            MessageType expectedType = new MessageType("org.axonframework.messaging.core.annotation", "customName", "customVersion");
 
             Optional<MessageType> result = customAnnotationTestSubject.resolve(CustomAnnotatedMessage.class);
 
