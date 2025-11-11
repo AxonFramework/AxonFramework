@@ -20,7 +20,6 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.Assert;
 import org.axonframework.common.annotation.Internal;
-import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.configuration.Component;
 import org.axonframework.common.configuration.ComponentDefinition;
 import org.axonframework.common.configuration.ComponentFactory;
@@ -36,6 +35,7 @@ import org.axonframework.common.configuration.LifecycleRegistry;
 import org.axonframework.common.configuration.Module;
 import org.axonframework.common.configuration.OverridePolicy;
 import org.axonframework.common.configuration.SearchScope;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -100,6 +100,7 @@ public class SpringComponentRegistry implements
 
     private final Components components = new Components();
     private final List<DecoratorDefinition.CompletedDecoratorDefinition<?, ?>> decorators = new CopyOnWriteArrayList<>();
+    private final ListableBeanFactory listableBeanFactory;
     private final Map<String, ConfigurationEnhancer> enhancers = new ConcurrentHashMap<>();
     private final Map<String, Module> modules = new ConcurrentHashMap<>();
     private final List<ComponentFactory<?>> factories = new ArrayList<>();
@@ -125,8 +126,7 @@ public class SpringComponentRegistry implements
     @Internal
     public SpringComponentRegistry(@Nonnull ListableBeanFactory listableBeanFactory,
                                    @Nonnull SpringLifecycleRegistry lifecycleRegistry) {
-        Objects.requireNonNull(listableBeanFactory, "The ListableBeanFactory may not be null.");
-        this.enhancers.putAll(listableBeanFactory.getBeansOfType(ConfigurationEnhancer.class));
+        this.listableBeanFactory = Objects.requireNonNull(listableBeanFactory, "The ListableBeanFactory may not be null.");
         this.lifecycleRegistry =
                 Objects.requireNonNull(lifecycleRegistry, "The Lifecycle Registry may not be null.");
     }
@@ -189,12 +189,17 @@ public class SpringComponentRegistry implements
     @Override
     public ComponentRegistry registerEnhancer(@Nonnull ConfigurationEnhancer enhancer) {
         logger.debug("Registering enhancer [{}].", enhancer.getClass().getSimpleName());
-        ConfigurationEnhancer previous = this.enhancers.put(enhancer.getClass().getName(), enhancer);
+        doRegisterEnhancer(enhancer.getClass().getName(), enhancer);
+        return this;
+    }
+
+    private void doRegisterEnhancer(@Nonnull String name, @Nonnull ConfigurationEnhancer enhancer) {
+        ConfigurationEnhancer previous = this.enhancers.put(name, enhancer);
         if (previous != null) {
-            logger.warn("Duplicate Configuration Enhancer registration dedicated. Replaced enhancer of type [{}].",
+            logger.warn("Duplicate Configuration Enhancer registration detected. Replaced enhancer of type [{}].",
                         enhancer.getClass().getSimpleName());
         }
-        return this;
+
     }
 
     @Override
@@ -431,12 +436,14 @@ public class SpringComponentRegistry implements
      * dynamically.
      */
     private void invokeEnhancers() {
+        // last-minute registration of enhancers from Spring context
+        listableBeanFactory.getBeansOfType(ConfigurationEnhancer.class).forEach(this::doRegisterEnhancer);
         Set<String> processedEnhancerKeys = new HashSet<>();
 
         while (processedEnhancerKeys.size() < enhancers.size()) {
             // Find the next unprocessed enhancer with the lowest order value
             Optional<Map.Entry<String, ConfigurationEnhancer>> nextEnhancer =
-                enhancers.entrySet()
+                    enhancers.entrySet()
                         .stream()
                         .filter(entry -> !processedEnhancerKeys.contains(entry.getKey()))
                         .min(Comparator.comparingInt(entry -> entry.getValue().order()));
