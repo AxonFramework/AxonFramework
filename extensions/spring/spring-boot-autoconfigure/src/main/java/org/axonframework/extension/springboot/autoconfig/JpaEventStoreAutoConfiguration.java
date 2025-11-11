@@ -18,13 +18,11 @@ package org.axonframework.extension.springboot.autoconfig;
 
 import jakarta.annotation.Nonnull;
 import jakarta.persistence.EntityManagerFactory;
-import org.axonframework.common.jdbc.PersistenceExceptionResolver;
-import org.axonframework.common.jpa.EntityManagerProvider;
-import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.common.configuration.SearchScope;
-import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.axonframework.common.jdbc.PersistenceExceptionResolver;
+import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurationDefaults;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -33,6 +31,8 @@ import org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedJpaEventStor
 import org.axonframework.eventsourcing.eventstore.jpa.JpaPollingEventCoordinator;
 import org.axonframework.extension.springboot.JpaEventStorageEngineConfigurationProperties;
 import org.axonframework.extension.springboot.util.RegisterDefaultEntities;
+import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -50,7 +50,10 @@ import java.util.function.UnaryOperator;
  * @author Simon Zambrovski
  * @since 4.0
  */
-@AutoConfiguration
+@AutoConfiguration(after = {
+        org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration.class,
+        org.axonframework.extension.springboot.autoconfig.AxonServerAutoConfiguration.class,
+        JpaAutoConfiguration.class})
 @ConditionalOnBean({EntityManagerFactory.class, PlatformTransactionManager.class})
 @ConditionalOnMissingBean(value = {EventStore.class, EventStorageEngine.class})
 @RegisterDefaultEntities(packages = {
