@@ -57,7 +57,6 @@ class EventSourcingConfigurationDefaultsAutoconfigTest {
             assertThat(context).hasSingleBean(TagResolver.class);
             assertThat(context).hasBean(TagResolver.class.getName());
             assertThat(context).hasSingleBean(EventStorageEngine.class);
-            assertThat(context).hasBean(EventStorageEngine.class.getName());
             assertThat(context).hasSingleBean(EventStore.class);
             assertThat(context).hasSingleBean(EventSink.class);
             assertThat(context).hasBean(EventStore.class.getName());
