@@ -20,6 +20,10 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
@@ -37,10 +41,6 @@ import org.axonframework.messaging.eventhandling.replay.ResetNotSupportedExcepti
 import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.messaging.eventstreaming.StreamableEventSource;
 import org.axonframework.messaging.eventstreaming.TrackingTokenSource;
-import org.axonframework.messaging.core.Message;
-import org.axonframework.messaging.core.MessageStream;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -174,14 +174,14 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
 
     @Override
     public CompletableFuture<Void> start() {
-        logger.info("Starting PooledStreamingEventProcessor [{}].", name);
+        logger.debug("Starting PooledStreamingEventProcessor [{}].", name);
         coordinator.start();
         return FutureUtils.emptyCompletedFuture();
     }
 
     @Override
     public CompletableFuture<Void> shutdown() {
-        logger.info("Stopping PooledStreamingEventProcessor [{}]", name);
+        logger.debug("Stopping PooledStreamingEventProcessor [{}]", name);
         return coordinator.stop();
     }
 
@@ -299,7 +299,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
 //                             getName(),
 //                             segments[i]
 //                     ));
-//            logger.info("Processor [{}] successfully reset tokens for segments [{}].", name, segments);
+//            logger.debug("Processor [{}] successfully reset tokens for segments [{}].", name, segments);
 //            return CompletableFuture.completedFuture(null);
 //        });
 //        joinAndUnwrap(resetTokensFuture);
