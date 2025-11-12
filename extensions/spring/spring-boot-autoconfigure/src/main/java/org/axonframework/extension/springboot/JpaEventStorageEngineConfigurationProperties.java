@@ -16,25 +16,43 @@
 
 package org.axonframework.extension.springboot;
 
-import org.axonframework.messaging.eventhandling.processing.streaming.token.GapAwareTrackingToken;
-import org.axonframework.eventsourcing.eventstore.jpa.AggregateEventEntry;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.bind.ConstructorBinding;
+import org.springframework.boot.context.properties.bind.DefaultValue;
 
 /**
  * Properties describing configuration of Aggregate-based JPA Event Storage engine.
  *
  * @since 5.0.0
  * @author Simon Zambrovski
+ * @author John Hendrikx
  */
 @ConfigurationProperties("axon.eventstorage.jpa")
 public class JpaEventStorageEngineConfigurationProperties {
 
-    private int batchSize = 100;
-    private int gapCleaningThreshold = 250;
-    private int gapTimeout = 10_000;
-    private long lowestGlobalSequence = 1;
-    private int maxGapOffset = 60_000;
-    private long pollingInterval = 1000;
+    private final int batchSize;
+    private final int gapCleaningThreshold;
+    private final int gapTimeout;
+    private final long lowestGlobalSequence;
+    private final int maxGapOffset;
+    private final long pollingInterval;
+
+    @ConstructorBinding
+    public JpaEventStorageEngineConfigurationProperties(
+        @DefaultValue("100") int batchSize,
+        @DefaultValue("250") int gapCleaningThreshold,
+        @DefaultValue("10000") int gapTimeout,
+        @DefaultValue("1") long lowestGlobalSequence,
+        @DefaultValue("60000") int maxGapOffset,
+        @DefaultValue("1000") long pollingInterval
+    ) {
+        this.batchSize = batchSize;
+        this.gapCleaningThreshold = gapCleaningThreshold;
+        this.gapTimeout = gapTimeout;
+        this.lowestGlobalSequence = lowestGlobalSequence;
+        this.maxGapOffset = maxGapOffset;
+        this.pollingInterval = pollingInterval;
+    }
 
     /**
      * Batch size to retrieve events from the storage.
@@ -88,65 +106,6 @@ public class JpaEventStorageEngineConfigurationProperties {
      */
     public long pollingInterval() {
         return pollingInterval;
-    }
-
-    /**
-     * Sets batch size to retrieve events from the storage.
-     *
-     * @param batchSize The batch size used to retrieve events from the storage layer. Defaults to {@code 100}.
-     */
-    public void batchSize(int batchSize) {
-        this.batchSize = batchSize;
-    }
-
-    /**
-     * Sets the threshold for number of gaps in a gap-aware token before a cleanup takes place.
-     *
-     * @param gapCleaningThreshold The threshold of the number of gaps in a {@link GapAwareTrackingToken} before an
-     *                             attempt to clean them up. Defaults to an integer of {@code 250}.
-     */
-    public void gapCleaningThreshold(int gapCleaningThreshold) {
-        this.gapCleaningThreshold = gapCleaningThreshold;
-    }
-
-    /**
-     * Sets the time until a gap in global index is considered as timed out.
-     *
-     * @param gapTimeout The amount of time until a gap in a {@link GapAwareTrackingToken} may be considered timed out
-     *                   and thus ready for removal. Defaults to {@code 60000}ms.
-     */
-    public void gapTimeout(int gapTimeout) {
-        this.gapTimeout = gapTimeout;
-    }
-
-    /**
-     * Sets the minimum value for the global index auto generation.
-     *
-     * @param lowestGlobalSequence Value the first expected (auto generated)
-     *                             {@link AggregateEventEntry#globalIndex() global index} of an
-     *                             {@link AggregateEventEntry}. Defaults to {@code 1}.
-     */
-    public void lowestGlobalSequence(long lowestGlobalSequence) {
-        this.lowestGlobalSequence = lowestGlobalSequence;
-    }
-
-    /**
-     * Sets maximum distance in sequence numbers between a gap and the event with the highest known index.
-     *
-     * @param maxGapOffset The maximum distance in sequence numbers between a gap and the event with the highest known
-     *                     index. Defaults to an integer of {@code 10000}.
-     */
-    public void maxGapOffset(int maxGapOffset) {
-        this.maxGapOffset = maxGapOffset;
-    }
-
-    /**
-     * Sets the polling interval to detect new appended events.
-     *
-     * @param pollingInterval The polling interval in milliseconds.
-     */
-    public void pollingInterval(long pollingInterval) {
-        this.pollingInterval = pollingInterval;
     }
 }
 
