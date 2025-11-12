@@ -45,7 +45,7 @@ class JpaEventStoreAutoConfigurationWithoutAxonServerTest {
     @Test
     void construct() {
         new ApplicationContextRunner()
-                .withPropertyValues("axon.axonserver.enabled=false")
+                .withPropertyValues("axon.axonserver.enabled=false", "axon.eventstorage.jpa.polling-interval=0")
                 .withUserConfiguration(EmptyTestContext.class)
                 .run(context -> {
                     assertThat(context).hasSingleBean(EventStore.class);
