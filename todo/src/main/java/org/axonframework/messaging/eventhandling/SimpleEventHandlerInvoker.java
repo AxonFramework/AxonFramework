@@ -19,19 +19,20 @@ package org.axonframework.messaging.eventhandling;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.messaging.eventhandling.annotation.AnnotationEventHandlerAdapter;
-import org.axonframework.messaging.eventhandling.processing.errorhandling.ListenerInvocationErrorHandler;
-import org.axonframework.messaging.eventhandling.processing.errorhandling.LoggingErrorHandler;
-import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
-import org.axonframework.messaging.eventhandling.sequencing.SequentialPerAggregatePolicy;
-import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
-import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SegmentMatcher;
 import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.annotation.AnnotationMessageTypeResolver;
 import org.axonframework.messaging.core.annotation.HandlerDefinition;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.annotation.AnnotationEventHandlerAdapter;
+import org.axonframework.messaging.eventhandling.processing.errorhandling.ListenerInvocationErrorHandler;
+import org.axonframework.messaging.eventhandling.processing.errorhandling.LoggingErrorHandler;
+import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
+import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SegmentMatcher;
+import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
+import org.axonframework.messaging.eventhandling.sequencing.SequentialPerAggregatePolicy;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -220,7 +221,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
         private HandlerDefinition handlerDefinition;
         private ListenerInvocationErrorHandler listenerInvocationErrorHandler = new LoggingErrorHandler();
         private SequencingPolicy sequencingPolicy = SequentialPerAggregatePolicy.instance();
-        private MessageTypeResolver messageTypeResolver = new ClassBasedMessageTypeResolver();
+        private MessageTypeResolver messageTypeResolver = new AnnotationMessageTypeResolver();
 
         /**
          * Sets the {@code eventHandlers} this {@link EventHandlerInvoker} will forward all its events to. If an event
