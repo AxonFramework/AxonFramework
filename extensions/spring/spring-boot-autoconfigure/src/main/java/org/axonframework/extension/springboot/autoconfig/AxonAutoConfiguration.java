@@ -17,10 +17,10 @@
 package org.axonframework.extension.springboot.autoconfig;
 
 import org.axonframework.common.configuration.ApplicationConfigurer;
-import org.axonframework.common.configuration.ComponentRegistry;
-import org.axonframework.common.configuration.LifecycleRegistry;
 import org.axonframework.common.configuration.AxonConfiguration;
+import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.configuration.LifecycleRegistry;
 import org.axonframework.extension.spring.config.SpringAxonApplication;
 import org.axonframework.extension.spring.config.SpringComponentRegistry;
 import org.axonframework.extension.spring.config.SpringLifecycleRegistry;
@@ -28,7 +28,6 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.SearchStrategy;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 
 /**
@@ -58,9 +57,8 @@ public class AxonAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean(search = SearchStrategy.CURRENT)
-    SpringComponentRegistry springComponentRegistry(ApplicationContext applicationContext,
-                                                    SpringLifecycleRegistry springLifecycleRegistry) {
-        return new SpringComponentRegistry(applicationContext, springLifecycleRegistry);
+    SpringComponentRegistry springComponentRegistry(SpringLifecycleRegistry springLifecycleRegistry) {
+        return new SpringComponentRegistry(springLifecycleRegistry);
     }
 
     /**

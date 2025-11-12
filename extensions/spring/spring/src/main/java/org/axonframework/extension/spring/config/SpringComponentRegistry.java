@@ -41,7 +41,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.NoUniqueBeanDefinitionException;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.BeanPostProcessor;
@@ -100,7 +99,6 @@ public class SpringComponentRegistry implements
 
     private final Components components = new Components();
     private final List<DecoratorDefinition.CompletedDecoratorDefinition<?, ?>> decorators = new CopyOnWriteArrayList<>();
-    private final ListableBeanFactory listableBeanFactory;
     private final Map<String, ConfigurationEnhancer> enhancers = new ConcurrentHashMap<>();
     private final Map<String, Module> modules = new ConcurrentHashMap<>();
     private final List<ComponentFactory<?>> factories = new ArrayList<>();
@@ -116,17 +114,14 @@ public class SpringComponentRegistry implements
     private ConfigurableListableBeanFactory beanFactory;
 
     /**
-     * Constructs a {@code SpringComponentRegistry} with the given {@code listableBeanFactory}. The
-     * {@code listableBeanFactory} is used to discover all beans of type {@link ConfigurationEnhancer}.
+     * Constructs a {@code SpringComponentRegistry}.
+     * The {@link #postProcessBeanFactory} is used to {@link #scanForConfigurationEnhancers}.
      *
-     * @param listableBeanFactory The bean factory used to discover all beans of type {@link ConfigurationEnhancer}.
      * @param lifecycleRegistry   The {@link LifecycleRegistry} used to initializes
      *                            {@link #registerModule(Module) registered modules}.
      */
     @Internal
-    public SpringComponentRegistry(@Nonnull ListableBeanFactory listableBeanFactory,
-                                   @Nonnull SpringLifecycleRegistry lifecycleRegistry) {
-        this.listableBeanFactory = Objects.requireNonNull(listableBeanFactory, "The ListableBeanFactory may not be null.");
+    public SpringComponentRegistry(@Nonnull SpringLifecycleRegistry lifecycleRegistry) {
         this.lifecycleRegistry =
                 Objects.requireNonNull(lifecycleRegistry, "The Lifecycle Registry may not be null.");
     }
@@ -401,12 +396,13 @@ public class SpringComponentRegistry implements
     }
 
     /**
-     * Scans for additional {@link ConfigurationEnhancer ConfigurationEnhancers} through means of a
+     * Scans for {@link ConfigurationEnhancer ConfigurationEnhancers} through a {@link BeanFactory} and a
      * {@link ServiceLoader}.
      * <p>
      * If {@link #disabledEnhancers disabled}, no {@code ServiceLoader} will be invoked.
      */
     private void scanForConfigurationEnhancers() {
+        enhancers.putAll(beanFactory.getBeansOfType(ConfigurationEnhancer.class));
         if (disableEnhancerScanning) {
             return;
         }
@@ -436,8 +432,6 @@ public class SpringComponentRegistry implements
      * dynamically.
      */
     private void invokeEnhancers() {
-        // last-minute registration of enhancers from Spring context
-        listableBeanFactory.getBeansOfType(ConfigurationEnhancer.class).forEach(this::doRegisterEnhancer);
         Set<String> processedEnhancerKeys = new HashSet<>();
 
         while (processedEnhancerKeys.size() < enhancers.size()) {
