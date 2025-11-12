@@ -18,6 +18,10 @@ package org.axonframework.modelling.command;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.ObjectUtils;
+import org.axonframework.common.ReflectionUtils;
+import org.axonframework.messaging.LegacyMessageHandler;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.CommandHandler;
 import org.axonframework.messaging.commandhandling.CommandHandlingComponent;
@@ -27,16 +31,13 @@ import org.axonframework.messaging.commandhandling.GenericCommandResultMessage;
 import org.axonframework.messaging.commandhandling.NoHandlerForCommandException;
 import org.axonframework.messaging.commandhandling.annotation.AnnotatedCommandHandlingComponent;
 import org.axonframework.messaging.commandhandling.annotation.CommandHandlingMember;
-import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.ObjectUtils;
-import org.axonframework.common.ReflectionUtils;
 import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
-import org.axonframework.messaging.LegacyMessageHandler;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.annotation.AnnotationMessageTypeResolver;
 import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.core.annotation.HandlerDefinition;
 import org.axonframework.messaging.core.annotation.MessageHandlingMember;
@@ -289,7 +290,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
         private HandlerDefinition handlerDefinition;
         private AggregateModel<T> aggregateModel;
         private CreationPolicyAggregateFactory<T> creationPolicyAggregateFactory;
-        private MessageTypeResolver messageTypeResolver = new ClassBasedMessageTypeResolver();
+        private MessageTypeResolver messageTypeResolver = new AnnotationMessageTypeResolver();
 
         /**
          * Sets the {@link Repository} used to add and load Aggregate instances of generic type {@code T} upon
