@@ -72,7 +72,7 @@ internal class SubscribeStudentToCourseFModelCommandHandler {
 
 fun EventSourcingConfigurer.registerSubscribeStudentToCourseFModel() = apply {
   registerEntity(
-    EventSourcedEntityModule.annotated(
+    EventSourcedEntityModule.autodetected(
       SubscriptionId::class.java,
       StateEntity::class.java
     )

@@ -19,7 +19,7 @@ internal fun handle(command: CreateCourse, @InjectEntity(idProperty = CreateCour
 
 fun EventSourcingConfigurer.registerCreateCourseFunctional() = apply {
   registerEntity(
-    EventSourcedEntityModule.annotated(
+    EventSourcedEntityModule.autodetected(
       CourseId::class.java,
       CreateCourseState::class.java
     )

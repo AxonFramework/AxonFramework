@@ -17,7 +17,7 @@ class SubscribeStudentToCourseCommandHandler {
 
 fun EventSourcingConfigurer.registerSubscribeStudentToCourse() = apply {
   registerEntity(
-    EventSourcedEntityModule.annotated(
+    EventSourcedEntityModule.autodetected(
       SubscriptionId::class.java, State::class.java
     )
   )

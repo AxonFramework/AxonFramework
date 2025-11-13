@@ -19,7 +19,7 @@ class CreateCourseCommandHandler {
 
 fun EventSourcingConfigurer.registerCreateCourse() = apply {
   registerEntity(
-    EventSourcedEntityModule.annotated(
+    EventSourcedEntityModule.autodetected(
       CourseId::class.java,
       CreateCourseState::class.java
     )

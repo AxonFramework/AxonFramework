@@ -17,7 +17,7 @@ class SubscribeStudentToCoursePolymorphCommandHandler {
 
 fun EventSourcingConfigurer.registerSubscribeStudentToCoursePolymorph() = apply {
   registerEntity(
-    EventSourcedEntityModule.annotated(
+    EventSourcedEntityModule.autodetected(
       SubscriptionId::class.java, State::class.java
     )
   )

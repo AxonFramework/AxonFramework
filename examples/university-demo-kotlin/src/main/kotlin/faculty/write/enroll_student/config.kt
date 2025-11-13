@@ -18,7 +18,7 @@ class EnrollStudentCommandHandler {
 
 fun EventSourcingConfigurer.registerEnrollStudent() = apply {
   registerEntity(
-    EventSourcedEntityModule.annotated(
+    EventSourcedEntityModule.autodetected(
       StudentId::class.java,
       EnrollStudentState::class.java
     )
