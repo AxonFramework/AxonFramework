@@ -1,0 +1,9 @@
+spring:
+  docker:
+    compose:
+      file: file:extensions/spring/spring-boot-autoconfigure/test-docker-compose.yml
+      lifecycle-management: start_only
+
+axon:
+  server:
+    enabled: true

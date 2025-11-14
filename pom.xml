@@ -610,7 +610,7 @@
                 <configuration>
                     <publishingServerId>central</publishingServerId>
                     <excludeArtifacts>
-                        axon-integrationtests,axon-legacy,axon-legacy-aggregate,axon-legacy-saga,axon-metrics,axon-micrometer,axon-migration,axon-tracing-opentelemetry,axon-todo
+                        axon-integrationtests,axon-legacy,axon-legacy-aggregate,axon-legacy-saga,axon-metrics,axon-micrometer,axon-migration,axon-tracing-opentelemetry,axon-todo,university-example-java-springboot
                     </excludeArtifacts>
                 </configuration>
             </plugin>
