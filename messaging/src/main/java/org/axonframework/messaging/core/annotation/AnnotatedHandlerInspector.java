@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.core.annotation;
 
+import org.axonframework.common.ClassUtils;
 import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.core.interception.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.core.interception.annotation.MessageInterceptingMember;
@@ -147,11 +148,12 @@ public class AnnotatedHandlerInspector<T> {
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> AnnotatedHandlerInspector<T> createInspector(Class<T> inspectedType,
+    private static <T> AnnotatedHandlerInspector<T> createInspector(Class<T> givenInspectedType,
                                                                     ParameterResolverFactory parameterResolverFactory,
                                                                     HandlerDefinition handlerDefinition,
                                                                     Map<Class<?>, AnnotatedHandlerInspector<?>> registry,
                                                                     Set<Class<? extends T>> declaredSubtypes) {
+        Class<T> inspectedType = unwrapSpringProxy(givenInspectedType);
         if (!registry.containsKey(inspectedType)) {
             registry.put(inspectedType,
                          AnnotatedHandlerInspector.initialize(inspectedType,
@@ -162,6 +164,18 @@ public class AnnotatedHandlerInspector<T> {
         }
         //noinspection unchecked
         return (AnnotatedHandlerInspector<T>) registry.get(inspectedType);
+    }
+
+    // adapted from org.springframework.aop.support.AopUtils.getTargetClass
+    @SuppressWarnings("unchecked")
+    private static <T> Class<T> unwrapSpringProxy(Class<?> candidate) {
+        try {
+            Class<T> springProxy = ClassUtils.loadClass("org.springframework.aop.SpringProxy");
+            if (springProxy.isAssignableFrom(candidate) && candidate.getName().contains("$$")) {
+                return ((Class<T>) candidate.getSuperclass());
+            }
+        } catch (RuntimeException ignored) {}
+        return ((Class<T>) candidate);
     }
 
     private static <T> AnnotatedHandlerInspector<T> initialize(Class<T> inspectedType,
