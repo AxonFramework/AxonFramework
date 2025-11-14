@@ -77,7 +77,7 @@ public class AxonAutoConfigurationTest {
     void setUp() {
         testContext = new ApplicationContextRunner()
                 .withUserConfiguration(TestContext.class)
-                .withPropertyValues("axon.axonserver.enabled=false");
+                .withPropertyValues("axon.axonserver.enabled=false", "axon.eventstorage.jpa.polling-interval=0");
     }
 
     @Test
@@ -265,7 +265,8 @@ public class AxonAutoConfigurationTest {
     void configurationEnhancerRegisteredGenericComponentsAreCorrectlyRegisteredInApplicationContext() {
         testContext.withUserConfiguration(GenericComponentRegistrationContext.class).run(context -> {
             assertThat(context).hasBean("myDependentBean");
-            //noinspection unchecked
+
+            @SuppressWarnings("unchecked")
             MyDependentBean<String, Long> myDependentBean = context.getBean("myDependentBean", MyDependentBean.class);
 
             assertThat(myDependentBean.beanOne().field()).isEqualTo("helloWorld");

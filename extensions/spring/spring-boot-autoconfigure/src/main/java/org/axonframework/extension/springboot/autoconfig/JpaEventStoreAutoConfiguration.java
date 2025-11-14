@@ -24,6 +24,7 @@ import org.axonframework.common.configuration.SearchScope;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurationDefaults;
+import org.axonframework.eventsourcing.eventstore.EventCoordinator;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedJpaEventStorageEngine;
@@ -104,10 +105,12 @@ public class JpaEventStoreAutoConfiguration {
                             .maxGapOffset(properties.maxGapOffset())
                             .persistenceExceptionResolver(persistenceExceptionResolver)
                             .eventCoordinator(
-                                new JpaPollingEventCoordinator(
-                                    entityManagerProvider,
-                                    Duration.ofMillis(properties.pollingInterval())
-                                )
+                                properties.pollingInterval() == 0 ?
+                                    EventCoordinator.SIMPLE :
+                                    new JpaPollingEventCoordinator(
+                                        entityManagerProvider,
+                                        Duration.ofMillis(properties.pollingInterval())
+                                    )
                             );
 
             registry.registerIfNotPresent(EventStorageEngine.class,
