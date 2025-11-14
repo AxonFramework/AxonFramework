@@ -16,9 +16,12 @@
 
 package org.axonframework.messaging.commandhandling.annotation;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.messaging.core.annotation.HandlerAttributes;
+import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.annotation.AbstractAnnotatedMessageHandlerEnhancerDefinition;
+import org.axonframework.messaging.core.annotation.HandlerAttributes;
 import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.messaging.core.annotation.WrappedMessageHandlingMember;
@@ -28,8 +31,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.Optional;
-import jakarta.annotation.Nonnull;
 
 /**
  * Implementation of a {@link HandlerEnhancerDefinition} that is used for {@link CommandHandler} annotated methods.
@@ -37,17 +38,16 @@ import jakarta.annotation.Nonnull;
  * @author Allard Buijze
  * @since 3.0.0
  */
-public class MethodCommandHandlerDefinition implements HandlerEnhancerDefinition {
+public class MethodCommandHandlerDefinition extends AbstractAnnotatedMessageHandlerEnhancerDefinition {
 
     @Override
     public <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
-        Optional<String> optionalRoutingKey = original.attribute(HandlerAttributes.COMMAND_ROUTING_KEY);
-        Optional<String> optionalCommandName = original.attribute(HandlerAttributes.COMMAND_NAME);
-        return optionalRoutingKey.isPresent() && optionalCommandName.isPresent()
-                ? new MethodCommandHandlingMember<>(original,
-                                                    optionalRoutingKey.get(),
-                                                    optionalCommandName.get())
-                : original;
+        String routingKey = original.<String>attribute(HandlerAttributes.COMMAND_ROUTING_KEY)
+                                    .filter(s -> !s.isEmpty())
+                                    .orElse(null);
+        return resolveMessageNameFromPayloadType(original, HandlerAttributes.COMMAND_NAME, CommandMessage.class)
+                .<MessageHandlingMember<T>>map(name -> new MethodCommandHandlingMember<>(original, routingKey, name))
+                .orElse(original);
     }
 
     private static class MethodCommandHandlingMember<T>

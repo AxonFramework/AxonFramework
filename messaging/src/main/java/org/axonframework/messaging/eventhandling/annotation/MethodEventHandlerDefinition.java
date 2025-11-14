@@ -16,21 +16,19 @@
 
 package org.axonframework.messaging.eventhandling.annotation;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.core.annotation.HandlerAttributes;
 import org.axonframework.messaging.core.Message;
-import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
+import org.axonframework.messaging.core.annotation.AbstractAnnotatedMessageHandlerEnhancerDefinition;
+import org.axonframework.messaging.core.annotation.HandlerAttributes;
 import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.messaging.core.annotation.UnsupportedHandlerException;
 import org.axonframework.messaging.core.annotation.WrappedMessageHandlingMember;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
 
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
-import java.util.Optional;
-
-import jakarta.annotation.Nonnull;
 
 /**
  * Definition of handlers that can handle {@link EventMessage}s. These handlers are wrapped with an
@@ -39,21 +37,17 @@ import jakarta.annotation.Nonnull;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class MethodEventHandlerDefinition implements HandlerEnhancerDefinition {
+public class MethodEventHandlerDefinition extends AbstractAnnotatedMessageHandlerEnhancerDefinition {
 
     @Override
     public @Nonnull <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
-        Optional<String> optionalEventName = original.attribute(HandlerAttributes.EVENT_NAME);
-        return original.unwrap(Method.class)
-                       .filter(method -> method.isAnnotationPresent(EventHandler.class))
-                       .filter(method -> optionalEventName.isPresent())
-                       .map(method -> (MessageHandlingMember<T>)
-                               new MethodEventHandlerDefinition.MethodEventMessageHandlingMember<>(
-                                       original,
-                                       optionalEventName.get()
-                               )
-                       )
-                       .orElse(original);
+        return original
+                .unwrap(Method.class)
+                .flatMap(method -> resolveMessageNameFromPayloadType(
+                        original, HandlerAttributes.EVENT_NAME, EventMessage.class
+                ))
+                .<MessageHandlingMember<T>>map(name -> new MethodEventMessageHandlingMember<>(original, name))
+                .orElse(original);
     }
 
     /**
