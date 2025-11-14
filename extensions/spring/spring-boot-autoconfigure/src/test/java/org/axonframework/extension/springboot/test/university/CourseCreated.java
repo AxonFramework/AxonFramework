@@ -17,10 +17,10 @@
 package org.axonframework.extension.springboot.test.university;
 
 import jakarta.validation.constraints.NotEmpty;
-import org.axonframework.messaging.commandhandling.annotation.Command;
+import org.axonframework.messaging.eventhandling.annotation.Event;
 
-@Command(name = "CreateCourse")
-record CreateCourse(
+@Event(name = "CourseCreated")
+record CourseCreated(
         @NotEmpty
         String id,
         @NotEmpty
