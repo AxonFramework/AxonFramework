@@ -1,0 +1,10 @@
+spring:
+  docker:
+    compose:
+      enabled: false
+axon:
+  axonserver:
+    enabled: false
+
+logging.level:
+  org.axonframework.messaging.eventhandling.processing.streaming.pooled.Coordinator: off

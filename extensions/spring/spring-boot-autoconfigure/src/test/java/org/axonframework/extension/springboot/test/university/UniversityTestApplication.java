@@ -16,17 +16,27 @@
 
 package org.axonframework.extension.springboot.test.university;
 
+import jakarta.annotation.Nonnull;
 import jakarta.validation.Valid;
 import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
 import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
+import org.axonframework.messaging.eventhandling.annotation.EventHandler;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
+import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.validation.annotation.Validated;
 
 import java.util.Map;
@@ -39,32 +49,30 @@ public class UniversityTestApplication {
     static Logger logger = getLogger(UniversityTestApplication.class);
 
     public static void main(String[] args) {
-        SpringApplication app = new SpringApplication(UniversityTestApplication.class);
-        //SpringApplication.run(UniversityTestApplication.class, args);
-        app.setDefaultProperties(Map.of(
-                "spring.config.location", "classpath:university/application.yml"
-        ));
-        app.setResourceLoader(new DefaultResourceLoader() {
-            @Override
-            public Resource getResource(String location) {
-                if (!location.contains(":")) {
-                    // no prefix -> resolve under university/
-                    return super.getResource("classpath:/university/" + location);
-                }
-                return super.getResource(location);
-            }
-        });
-
-        app.run(args);
+        new SpringApplicationBuilder(UniversityTestApplication.class)
+                .initializers(new UniversityContextInitializer())
+                .run(args);
     }
+
+    // TODO: if command is declared like this then getting this error - only works if defined in a dedicated .java file
+    //  NoHandlerForCommandException: No handler was subscribed for command [org.axonframework.extension.springboot.test.university.CreateCourse#0.0.1].
+    // @Command(name = "CreateCourse") record CreateCourse(@NotEmpty String id, @NotEmpty String name) { }
+
+    public static final String TAG_COURSE_ID = "courseId";
 
     @Service
     @Validated
     class MyHandler {
 
         @CommandHandler
-        public void handle(@Valid CreateCourse cmd) {
+        public void handle(@Valid CreateCourse cmd, EventAppender eventAppender) {
             logger.info("Received command: {}", cmd);
+            eventAppender.append(new CourseCreated(cmd.id(), cmd.name()));
+        }
+
+        @EventHandler
+        public void handle(CourseCreated event) {
+            logger.info("Received event: {}", event);
         }
     }
 
@@ -79,9 +87,25 @@ public class UniversityTestApplication {
     }
 
     @Bean
+    @ConditionalOnBean(CommandGateway.class)
     ApplicationRunner runner(CommandGateway gateway) {
         return args -> {
-            gateway.sendAndWait(new CreateCourse("1", "Foo"));
+            gateway.sendAndWait(new CreateCourse("1", "Hello World ... 1"));
         };
+    }
+}
+
+@SpringBootTest(classes = UniversityTestApplication.class)
+@ContextConfiguration(initializers = UniversityContextInitializer.class)
+class UniversityTestApplicationTest {
+
+    @Nested
+    @ActiveProfiles("noserver")
+    class NoServerTests {
+
+        @Test
+        void name() {
+            // just run
+        }
     }
 }
