@@ -48,7 +48,7 @@ This approach allows the identifier field to be declared as `final`, ensuring im
 [NOTE]
 .Routing commands in distributed environments
 ====
-For command routing in distributed environments (e.g., through Axon Server), use the `@RoutingKey` annotation on the command field that should be used for routing.
+For command routing in distributed environments (for example, through Axon Server), use the `@RoutingKey` annotation on the command field that should be used for routing.
 
 If this annotation doesn't work for your use case, a different `RoutingStrategy` can be configured, as explained in the xref:infrastructure.adoc#routing-strategy[Routing Strategy] section.
 ====
@@ -216,7 +216,7 @@ Entity lifecycle management in Axon 5 is handled through the processing context 
 
 . **Detecting replay vs live events**: Check whether the Entity is processing live events or being reconstructed from history.
 Use the `ProcessingContext` parameter to determine if an event is being replayed.
-This allows you to perform operations that should only occur when handling newly generated events (e.g., sending external notifications).
+This allows you to perform operations that should only occur when handling newly generated events (for example, sending external notifications).
 
 . **Marking entity as deleted**: Entity deletion is managed through the entity's lifecycle.
 When an entity should no longer accept commands, publish a deletion event and the framework will handle the entity's lifecycle accordingly.

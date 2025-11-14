@@ -4,8 +4,6 @@ The processing of a message is seen as a single unit in Axon Framework.
 The `ProcessingContext` and `ProcessingLifecycle` interfaces coordinate actions performed during the processing of a message (command, event or query).
 Although in most cases you are unlikely to interact with these directly, they are fundamental concepts used by the building blocks that Axon Framework provides.
 
-== ProcessingLifecycle and ProcessingContext
-
 The `ProcessingLifecycle` interface describes methods to register actions into distinct phases of processing.
 The `ProcessingContext` extends `ProcessingLifecycle` and adds resource management capabilities.
 
@@ -23,7 +21,7 @@ public void handle(MyCommand command, ProcessingContext context) {
 }
 ----
 
-== Resource Management
+== Resource management
 
 The `ProcessingContext` provides resource management capabilities for attaching resources that need to be reused during the course of message processing.
 Resources can be registered and retrieved using the context's resource management methods.
@@ -41,7 +39,7 @@ public void handle(MyEvent event, ProcessingContext context) {
 ----
 
 
-== Processing Phases
+== Processing phases
 
 The `ProcessingLifecycle` defines several phases during message processing:
 
@@ -67,7 +65,7 @@ If you have more actions in your processing, then you could consider attaching a
 Use `context.onCommit(..)` to register actions that need to be taken during the commit phase.
 ====
 
-== Error Handling
+== Error handling
 
 Your handlers may throw an Exception as a result of processing a message.
 The `ProcessingLifecycle` provides methods to register error handling actions:
@@ -81,7 +79,7 @@ The `ProcessingLifecycle` provides methods to register error handling actions:
 @CommandHandler
 public void handle(MyCommand command, ProcessingContext context) {
     context.onError(throwable -> {
-        // Handle error, e.g., cleanup or logging
+        // Handle error, for example, cleanup or logging
     });
 
     context.whenComplete(result -> {
@@ -98,7 +96,7 @@ public void handle(MyCommand command, ProcessingContext context) {
 
 By default, unchecked exceptions will cause processing to fail and scheduled side effects are cancelled.
 
-== Automatic Lifecycle Management
+== Automatic lifecycle management
 
 When using framework components to process messages, the processing lifecycle is automatically managed for you.
 The `ProcessingContext` is created, passed to your handlers, and properly completed by the framework.
@@ -107,7 +105,7 @@ The message handling process can be considered an atomic procedure; it should ei
 Axon Framework uses the processing lifecycle to track actions performed by message handlers.
 After the handler has completed, Axon will try to commit the actions registered with the context.
 
-== Transaction Management
+== Transaction management
 
 It is possible to bind a transaction to the processing lifecycle.
 Many components, such as the `CommandBus` and `QueryBus` implementations and all asynchronously processing `EventProcessor`s, allow you to configure a `TransactionManager`.

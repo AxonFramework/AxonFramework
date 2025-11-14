@@ -64,7 +64,7 @@ The `CommandMessage` also allows the addition of xref:messaging-concepts:anatomy
 
 <4> The `CommandBus#dispatch(CommandMessage, ProcessingContext)` method dispatches the command and returns a `CompletableFuture<CommandResultMessage<?>>`.
 The `ProcessingContext` parameter allows you to pass along the current processing context when dispatching from within another message handler.
-Use `ProcessingContext.empty()` when dispatching from outside a message handling context (e.g., from a REST endpoint).
+Use `ProcessingContext.empty()` when dispatching from outside a message handling context (for example, from a REST endpoint).
 
 <5> Use the `CompletableFuture` API to handle command results asynchronously.
 The `CommandResultMessage` provides the API to verify whether command execution was exceptional or successful.
@@ -161,7 +161,7 @@ This ensures that correlation data (important for distributed tracing) is preser
 The `CommandDispatcher` uses a `CommandGateway` internally but removes the need to explicitly pass the `ProcessingContext`:
 
 * *Use `CommandBus`* - When you need the lowest-level control over command dispatching
-* *Use `CommandGateway`* - When dispatching commands from outside a message handling context (e.g., REST endpoints)
+* *Use `CommandGateway`* - When dispatching commands from outside a message handling context (for example, REST endpoints)
 * *Use `CommandDispatcher`* - When dispatching commands from within message handlers (event handlers, command handlers, saga handlers)
 
 [NOTE]

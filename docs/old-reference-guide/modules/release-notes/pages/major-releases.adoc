@@ -622,7 +622,7 @@ For a full list of all the feature request and enhancements done for release 4.4
 * Aggregate Polymorphism has been introduced, allowing for an aggregate hierarchy to come naturally from a domain model.
  To set this up, the `AggregateConfigurer#withSubtypes(Class... aggregates)` method can be used.
  In a Spring environment, an aggregate class hierarchy will be detected automatically.
- For more details on this feature, read up on it xref:axon-framework-reference:axon-framework-commands:modeling/entity-polymorphism.adoc[here].
+ For more details on this feature, read up on it xref:4.12@axon-framework-reference:axon-framework-commands:modeling/aggregate-polymorphism.adoc[here].
 
 * An Axon application will now shutdown more gracefully than it did in the previous releases.
  This is achieved by marking specific methods in Axon's infrastructure components as a `@StartHandler` or `@ShutdownHandler`.

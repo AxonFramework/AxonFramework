@@ -67,7 +67,7 @@ EventMessage updatedMessage = eventMessage
 As `Metadata` is immutable, all mutating operations of `Map` will throw an `UnsupportedOperationException`.
 ====
 
-== Message Type and Qualified Name
+== Message type and qualified name
 
 Every `Message` has a `MessageType`, which is a combination of a `QualifiedName` and a version (as a `String`).
 The `type()` method on any message returns its `MessageType`.

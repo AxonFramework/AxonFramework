@@ -27,7 +27,7 @@ This can be done using the `@RoutingKey` annotation on the command field that sh
 If this annotation doesn't work for your use case, a different `RoutingStrategy` can be configured, as is explained in the xref:infrastructure.adoc#routing-strategy[Routing Strategy] section.
 ====
 
-=== Creational vs Instance Command Handlers
+=== Creational vs instance command handlers
 
 Axon Framework 5 distinguishes between two types of command handlers:
 
@@ -158,7 +158,7 @@ The only state an Entity requires is the state it needs to make a decision.
 Handling an Event published by the Entity is thus only required if the state change is necessary for future validation of other commands.
 ====
 
-=== Publishing events with EventAppender
+=== Publishing events with `EventAppender`
 
 In Axon Framework 5, events are published using the `EventAppender` parameter that can be injected into command handlers:
 

@@ -138,7 +138,7 @@ MessagingConfigurer configurer = MessagingConfigurer.create()
 AxonTestFixture fixture = AxonTestFixture.with(configurer);
 ----
 
-=== Customizing the Fixture
+=== Customizing the fixture
 
 You can customize the fixture behavior using the customization parameter:
 

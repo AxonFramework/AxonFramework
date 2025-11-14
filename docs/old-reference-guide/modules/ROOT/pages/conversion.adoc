@@ -1,7 +1,7 @@
 = Conversion
 
 The flow of messages between (micro)services and storage of events requires the ability to convert message payloads between different technical representations.
-Axon Framework uses **Converters** to transform the payload of messages from one format to another (e.g., from Java objects to JSON, or from JSON to byte arrays).
+Axon Framework uses **Converters** to transform the payload of messages from one format to another (for example, from Java objects to JSON, or from JSON to byte arrays).
 
 [NOTE]
 ====
@@ -50,7 +50,7 @@ public class ConverterConfiguration {
 }
 ----
 
-=== AvroConverter
+=== `AvroConverter`
 
 The `AvroConverter` uses https://avro.apache.org/[Apache Avro] to convert objects to and from https://avro.apache.org/docs/1.12.0/specification/#binary-encoding[binary single-object-encoded format].
 
@@ -83,13 +83,13 @@ public class ConverterConfiguration {
 The `AvroConverter` is designed primarily for message payloads and requires a delegate converter (typically `JacksonConverter`) to handle metadata and other non-Avro types.
 ====
 
-=== PassThroughConverter
+=== `PassThroughConverter`
 
 When no conversion is desired, the `PassThroughConverter` can be used. This converter simply returns the input object without any transformation, keeping message payloads in their original Java object form.
 
-== Configuring Converters
+== Configuring converters
 
-=== Default Behavior
+=== Default behavior
 
 **Without Spring Boot:**
 - No converter is configured by default
@@ -99,7 +99,7 @@ When no conversion is desired, the `PassThroughConverter` can be used. This conv
 - If Jackson is on the classpath, `JacksonConverter` is automatically configured
 - No additional configuration needed for JSON conversion
 
-=== Spring Boot Configuration
+=== Spring Boot configuration
 
 Override the default converter by defining a `Converter` bean:
 
@@ -128,7 +128,7 @@ public class ConverterConfiguration {
 }
 ----
 
-=== Programmatic Configuration (Non-Spring Boot)
+=== Programmatic configuration (non Spring Boot)
 
 Register a converter through the `ComponentRegistry`:
 
@@ -151,7 +151,7 @@ public class AxonConfiguration {
 }
 ----
 
-=== Spring Boot - Properties File
+=== Spring Boot - properties file
 
 [source,properties]
 ----
@@ -167,9 +167,9 @@ When using properties, if `messages` or `events` are not specified, they will us
 If `general` is not specified, it defaults to `jackson` when Jackson is on the classpath.
 ====
 
-== Converter Tuning
+== Converter tuning
 
-=== JacksonConverter Customization
+=== JacksonConverter customization
 
 The `JacksonConverter` can be customized through Jackson's `ObjectMapper`:
 
@@ -198,7 +198,7 @@ public class ConverterConfiguration {
 }
 ----
 
-=== AvroConverter Schema Management
+=== `AvroConverter` schema management
 
 The `AvroConverter` requires a `SchemaStore` to resolve Avro schemas:
 
@@ -227,7 +227,7 @@ public class ConverterConfiguration {
 }
 ----
 
-==== Spring Boot - Avro Schema Scanning
+==== Spring Boot - Avro schema scanning
 
 When using Spring Boot, you can use the `@AvroSchemaScan` annotation to automatically detect Avro schemas on the classpath:
 
@@ -249,14 +249,14 @@ public class AvroConfiguration {
 
 For production use with a central Schema Registry, provide your own `SchemaStore` implementation that accesses the remote registry. Consider implementing a caching strategy for performance.
 
-=== Preventing Duplicate Conversion
+=== Preventing duplicate conversion
 
 In distributed systems, message payloads may need to be converted multiple times.
 Axon's components are aware of this and optimize conversion when possible.
 
 When working with message conversion directly, consider caching converted representations to avoid redundant conversions.
 
-== Conversion for Event Storage
+== Conversion for event storage
 
 When using event sourcing, converted event payloads can remain in storage for a long time.
 Therefore, carefully consider the format to which they are converted.
@@ -273,7 +273,7 @@ JSON is generally more suitable for long-term storage than binary formats becaus
 
 If you want to enforce structural definitions of events, Avro is an excellent choice due to its schema evolution capabilities.
 
-== Lenient Conversion
+== Lenient conversion
 
 Some converters support "lenient" conversion, meaning they can ignore unknown properties during conversion.
 This is helpful when:
@@ -282,7 +282,7 @@ This is helpful when:
 - Event formats evolve over time in an event store
 - Performing rolling upgrades
 
-=== JacksonConverter Lenient Mode
+=== JacksonConverter lenient mode
 
 The `JacksonConverter` can be configured to ignore unknown properties:
 
@@ -303,18 +303,18 @@ public class ConverterConfiguration {
 }
 ----
 
-=== AvroConverter Schema Compatibility
+=== `AvroConverter` schema compatibility
 
 Apache Avro addresses version compatibility through schema evolution.
 By its nature, Avro's binary format is designed to be highly permissive to schema additions, so no additional configuration is required for lenient conversion.
 
 Avro checks compatibility between reader and writer schemas automatically.
 
-== Generic Types and Collections
+== Generic types and collections
 
 When converting objects that contain lists, collections, or other generic types, special consideration is needed.
 
-=== Jackson Type Information
+=== Jackson type information
 
 For Jackson-based conversion, use the `@JsonTypeInfo` annotation to include type information:
 
@@ -357,7 +357,7 @@ public class ConverterConfiguration {
 Enabling default typing can have security implications. Only enable it if you trust the source of your serialized data, and consider using a more restrictive `PolymorphicTypeValidator`.
 ====
 
-== ContentTypeConverters for Upcasting
+== Using `ContentTypeConverter` for upcasting
 
 An xref:events:event-versioning.adoc#event-upcasting[upcaster] works on a given content type (for example, Jackson's `JsonNode`).
 To provide flexibility between upcasters, content types between chained upcasters may vary.

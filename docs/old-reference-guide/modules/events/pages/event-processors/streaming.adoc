@@ -59,7 +59,7 @@ Operations like replaying events through a <<replaying-events,reset>>, <<paralle
 The Streaming Processors have several additional components that you can configure, next to the xref:event-processors/index.adoc#general_processor_configuration[base options].
 For other streaming processor features that are configurable, we refer to their respective sections for more details.
 
-=== Configuring a Pooled Streaming Event Processor
+=== Configuring a pooled streaming event processor
 
 The Pooled Streaming Event Processor is the default and recommended streaming processor implementation.
 
