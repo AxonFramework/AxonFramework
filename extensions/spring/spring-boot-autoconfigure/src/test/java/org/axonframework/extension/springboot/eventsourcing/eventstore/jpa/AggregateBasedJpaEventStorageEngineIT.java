@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.integrationtests.eventsourcing.eventstore.jpa;
+package org.axonframework.extension.springboot.eventsourcing.eventstore.jpa;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
