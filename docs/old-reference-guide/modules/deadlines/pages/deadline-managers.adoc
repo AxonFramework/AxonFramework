@@ -64,7 +64,7 @@ The xref:jobrunr-pro-extension-reference:ROOT:index.adoc[JobRunr Pro extension] 
 *Caveats for the DbScheduler implementation.*
 
 Db-scheduler has no way to filter out tasks.
-This means that the `cancelAll` implementation will need to serialize all the task data, looping over it.
+This means that the `cancelAll` implementation will need to convert all the task data, looping over it.
 If you have many active deadlines, this might take noticeable time and resources.
 
 ____
@@ -163,7 +163,7 @@ Alternatively. the bean can be configured like this:
 ----
 @Bean
 public DeadlineManager deadlineManager(
-        @Qualifier("eventSerializer") final Serializer serializer,
+        @Qualifier("eventSerializer") final Converter converter,
         final JobScheduler jobScheduler,
         final ScopeAwareProvider scopeAwareProvider,
         final TransactionManager transactionManager,
@@ -172,7 +172,7 @@ public DeadlineManager deadlineManager(
     return JobRunrDeadlineManager.builder()
             .jobScheduler(jobScheduler)
             .scopeAwareProvider(scopeAwareProvider)
-            .serializer(serializer)
+            .converter(converter)
             .transactionManager(transactionManager)
             .spanFactory(spanfactory)
             .build();
@@ -189,14 +189,14 @@ Alternatively, the bean can be configured like this:
     public DeadlineManager deadlineManager(
             Scheduler scheduler,
             Configuration configuration,
-            @Qualifier("eventSerializer") Serializer serializer,
+            @Qualifier("eventSerializer") Converter converter,
             TransactionManager transactionManager,
             SpanFactory spanFactory) {
         ScopeAwareProvider scopeAwareProvider = new ConfigurationScopeAwareProvider(configuration);
         return DbSchedulerDeadlineManager.builder()
                                          .scheduler(scheduler)
                                          .scopeAwareProvider(scopeAwareProvider)
-                                         .serializer(serializer)
+                                         .converter(converter)
                                          .transactionManager(transactionManager)
                                          .spanFactory(DefaultDeadlineManagerSpanFactory.builder()
                                            .spanFactory(spanFactory)

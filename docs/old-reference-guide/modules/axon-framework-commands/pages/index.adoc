@@ -10,7 +10,7 @@ This section of the reference guide covers in detail the capabilities that Axon 
 |===
 |Sub-Section |Purpose 
 
-|xref:modeling/aggregate.adoc[Modeling] |Axon Framework provided components to address Aggregate Modeling concerns
+|xref:modeling/command-model.adoc[Modeling] |Axon Framework provided components to address Aggregate Modeling concerns
 |xref:command-dispatchers.adoc[Command Dispatchers]/ xref:command-handlers.adoc[Command Handlers] |Functional Development concerns for Command Messages using the Axon Framework
 |xref:infrastructure.adoc[Infrastructure] |Non-Functional Development concerns for Command Messages using the Axon Framework
 |xref:configuration.adoc[Configuration] |Configuration concerns for Command Messages using the Axon Framework

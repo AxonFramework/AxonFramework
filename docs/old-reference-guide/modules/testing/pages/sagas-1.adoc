@@ -1,6 +1,12 @@
 = Sagas
 
-Similar to command handling components, sagas have a clearly defined interface: they only respond to events. On the other hand, sagas often have a notion of time and may interact with other components as part of their event handling process. Axon Framework's test support module contains fixtures that help you write tests for sagas.
+Similar to command handling components, sagas have a clearly defined interface: they only respond to events. On the other hand, sagas often have a notion of time and may interact with other components as part of their event handling process. Axon Framework's test support module provides the `AxonTestFixture` to help you write tests for sagas.
+
+[NOTE]
+====
+The `SagaTestFixture` from Axon Framework 4 has been replaced by the `AxonTestFixture` in Axon Framework 5.
+The new fixture uses your `ApplicationConfigurer` to ensure tests reflect your actual application configuration.
+====
 
 Each test fixture contains three phases, similar to those of the command handling component fixture described in the previous section.
 
@@ -10,16 +16,37 @@ Each test fixture contains three phases, similar to those of the command handlin
 
 Both the "given" and the "when" phases accept events as part of their interaction. During the "given" phase, all side effects, such as generated commands are ignored, when possible. During the "when" phase, on the other hand, events and commands generated from the saga are recorded and can be verified.
 
-The following code sample shows an example of how the fixtures can be used to test a saga that sends a notification if an invoice is not paid within 30 days:
+The following code sample shows an example of how the fixture can be used to test a saga:
 
 [source,java]
 ----
-FixtureConfiguration<InvoicingSaga> fixture = new SagaTestFixture<>(InvoicingSaga.class);
-fixture.givenAggregate(invoiceId).published(new InvoiceCreatedEvent()) 
-       .whenTimeElapses(Duration.ofDays(31)) 
-       .expectDispatchedCommandsMatching(Matchers.listWithAllOf(aMarkAsOverdueCommand())); 
-       // or, to match against the payload of a Command Message only 
-       .expectDispatchedCommandsMatching(Matchers.payloadsMatching(Matchers.listWithAllOf(aMarkAsOverdueCommand())));
+import org.axonframework.test.fixture.AxonTestFixture;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+
+// Create your configurer with the saga configured
+MessagingConfigurer configurer = MessagingConfigurer.create()
+    .configureSaga(InvoicingSaga.class)
+    // Add other configuration as needed
+    ;
+
+// Create the fixture from the configurer
+AxonTestFixture fixture = AxonTestFixture.with(configurer);
+
+// Test the saga
+fixture.given()
+       .event(new InvoiceCreatedEvent(invoiceId, customerId, amount))
+       .when()
+       .event(new PaymentReceivedEvent(invoiceId, amount))
+       .then()
+       .commands(new MarkInvoiceAsPaidCommand(invoiceId));
+----
+
+For time-based saga testing, you can use the execute method to manipulate time:
+
+[source,java]
+----
+// TODO: Document time-based testing for sagas in AxonTestFixture
+// The specific API for time manipulation may differ from Axon 4
 ----
 
 Sagas can dispatch commands using a callback to be notified of command processing results. Since there is no actual command handling done in tests, the behavior is defined using a `CallbackBehavior` object. This object is registered using `setCallbackBehavior()` on the fixture and defines if and how the callback must be invoked when a command is dispatched.

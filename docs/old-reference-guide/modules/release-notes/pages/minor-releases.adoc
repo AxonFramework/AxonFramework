@@ -495,7 +495,7 @@ We'd like to thank all the contributors who worked on this release!
 ==== Enhancements
 
 * Proposed changes to caching saga fix https://github.com/AxonFramework/AxonFramework/pull/2532[#2532]
-* Allow usage of specific serializers for the JpaDLQ https://github.com/AxonFramework/AxonFramework/pull/2486[#2486]
+* Allow usage of specific converters for the JpaDLQ https://github.com/AxonFramework/AxonFramework/pull/2486[#2486]
 
 ==== Bug fixes
 
@@ -507,7 +507,7 @@ We'd like to thank all the contributors who worked on this release!
 * Wrong Spring repository bean name when using aggregate polymorphism https://github.com/AxonFramework/AxonFramework/issues/2514[#2514]
 * SpringAxonAutoConfigurer warns about multiple beans defined for polymorphic aggregates. https://github.com/AxonFramework/AxonFramework/issues/2512[#2512]
 * Roll back slf4j to major version 1 https://github.com/AxonFramework/AxonFramework/pull/2497[#2497]
-* DeadLetterQueue uses wrong Serializer to (de)serialize Tokens https://github.com/AxonFramework/AxonFramework/issues/2485[#2485]
+* DeadLetterQueue uses wrong Converter to (de)convert Tokens https://github.com/AxonFramework/AxonFramework/issues/2485[#2485]
 * Adhere to expected Exception Handler invocation order https://github.com/AxonFramework/AxonFramework/pull/2483[#2483]
 * [#2481] Check `MessageHandlerRegistrar` registration to be non-null https://github.com/AxonFramework/AxonFramework/pull/2482[#2482]
 * NullPointerException on Shutdown without Start https://github.com/AxonFramework/AxonFramework/issues/2481[#2481]
@@ -554,7 +554,7 @@ We'd like to thank all the contributors who worked on this release!
 * Axon Spring Boot application fails to start when multiple EventUpcasterChain spring beans are defined https://github.com/AxonFramework/AxonFramework/issues/2445[#2445]
 * Added Spring Resource Injector to Application Context https://github.com/AxonFramework/AxonFramework/pull/2441[#2441]
 * Add test scope to `mysql-connector-java` dependency https://github.com/AxonFramework/AxonFramework/pull/2436[#2436]
-* [#2431] Use `XStreamSerializer#defaultSerializer` to mitigate XStream exclusion issues https://github.com/AxonFramework/AxonFramework/pull/2434[#2434]
+* [#2431] Use `XStreamSerializer (removed in Axon 5)#defaultSerializer` to mitigate XStream exclusion issues https://github.com/AxonFramework/AxonFramework/pull/2434[#2434]
 * Fix regression for GenericJpaRepository autoconfig https://github.com/AxonFramework/AxonFramework/pull/2433[#2433]
 * JpaSagaStore cannot be used without XStream https://github.com/AxonFramework/AxonFramework/issues/2431[#2431]
 
@@ -624,7 +624,7 @@ We'd like to thank all the contributors who worked on this release!
 ==== Bug fixes
 
 * TrackingEventProcessors shutdown is not working correctly in 4.5.13 https://github.com/AxonFramework/AxonFramework/issues/2287[#2287]
-* Snapshots are not read with snapshot filter and same serializer for events and snapshots https://github.com/AxonFramework/AxonFramework/pull/2286[#2286]
+* Snapshots are not read with snapshot filter and same converter for events and snapshots https://github.com/AxonFramework/AxonFramework/pull/2286[#2286]
 * Snapshots are not considered during loading of an Aggregate using Axon-Server-Connector https://github.com/AxonFramework/AxonFramework/issues/2285[#2285]
 
 === Release 4.5.13
@@ -761,8 +761,8 @@ For an exhaustive list of all the changes, check out the https://github.com/Axon
 
 * Firstly, we updated the XStream version to 1.4.18. This upgrade was a requirement since several https://x-stream.github.io/changes.html[CVE's] were noted for XStream version 1.4.17.
  As a consequence of XStream's solution imposed through the CVE's, everybody is required to specify the security context of an `XStream` instance.
- This change also has an impact on Axon Framework since the `XStreamSerializer` is the default serializer.
- So as of this release, any usages of the default `XStreamSerializer` will come with warnings, stating it is highly recommended to use an `XStream` instance for which the security context is set through types or wildcards.
+ This change also has an impact on Axon Framework since the XStreamSerializer (removed in Axon 5) is the default converter.
+ So as of this release, any usages of the default XStreamSerializer (removed in Axon 5) will come with warnings, stating it is highly recommended to use an `XStream` instance for which the security context is set through types or wildcards.
  When your application uses Spring Boot, Axon will default to selecting the secured types based on your `@ComponentScan` annotated beans (for example, like the `@SpringBootApplication` annotation).
  For those interested in the details of the solution, check out https://github.com/AxonFramework/AxonFramework/pull/1917[this] pull request.
 
@@ -902,9 +902,9 @@ For a complete overview of all the changes you can check the release notes https
  Instead, the token closests to the provided timestamp should be returned, was equals the head token.
  This discrepancy between documentation and implementation was marked by `mbreevoort` and resolved in pull request https://github.com/AxonFramework/AxonFramework/pull/1607[#1607].
 
-* A certain path within the `AxonServerEventStore` allowed for event retrieval without correctly deserializing the `MetaData` of the events.
+* A certain path within the `AxonServerEventStore` allowed for event retrieval without correctly converting from the `MetaData` of the events.
  If someone tried to access the `MetaData`, a `CannotConvertBetweenTypesException` was being thrown.
- This problem, among others, was remedied in pull request https://github.com/AxonFramework/AxonFramework/pull/1612[#1612], by ensuring the correct `Serializer` taking gRPC message types into account is consistently used. 
+ This problem, among others, was remedied in pull request https://github.com/AxonFramework/AxonFramework/pull/1612[#1612], by ensuring the correct `Converter` taking gRPC message types into account is consistently used. 
 
 For a complete set of the release notes, please check https://github.com/AxonFramework/AxonFramework/releases/tag/axon-4.4.5[here].
 
@@ -944,7 +944,7 @@ To check out all fixes introduced in 4.4.3, you can check them out on https://gi
  Credits go to Damir Murat who has spotted the https://github.com/AxonFramework/AxonFramework/issues/1481[issue].
  With his help the issue was found quickly and eventually resolved in pull request https://github.com/AxonFramework/AxonFramework/pull/1484[#1484].
 
-* A serialization issue was found when working with the `ConfigToken` and de-/serialize it through the `JacksonSerializer`.
+* A conversion issue was found when working with the `ConfigToken` and de-/convert it through the `JacksonConverter`.
  This problem was uncovered in issue https://github.com/AxonFramework/AxonFramework/issues/1482[#1482] and resolved in pull request https://github.com/AxonFramework/AxonFramework/pull/1485[#1485].
 
 * The introduction of the https://github.com/AxonIQ/axonserver-connector-java[AxonServer Connector for Java] to simplify the framework's integration with Axon Server introduced some configuration issues.
@@ -1098,7 +1098,7 @@ For a complete list of all resolved bugs we refer to the https://github.com/Axon
 
 * A dependency on `XStream` was enforced undesirably through the Builder pattern introduced in 4.0.
 
-This has been resolved by using a `Supplier` of a `Serializer` in the Builders instead, as described under https://github.com/AxonFramework/AxonFramework/issues/1054[this] issue.
+This has been resolved by using a `Supplier` of a `Converter` in the Builders instead, as described under https://github.com/AxonFramework/AxonFramework/issues/1054[this] issue.
 
 * Due to a hierarchy issue in the Spring Boot auto configuration, the `JdbcTokenStore` was not always used as expected.
 

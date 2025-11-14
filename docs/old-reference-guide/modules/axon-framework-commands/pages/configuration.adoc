@@ -4,7 +4,7 @@ This page describes how you can configure your Aggregate model.
 
 == Aggregate configuration
 
-Core concepts within the Command Model are the xref:modeling/aggregate.adoc[Aggregates] that are implemented.
+Core concepts within the Command Model are the xref:modeling/command-model.adoc[Aggregates] that are implemented.
 To instantiate a default Aggregate configuration, you do the following:
 
 [tabs]
@@ -47,7 +47,7 @@ public class GiftCard {
 [[registering-a-command-handler]]
 == Registering a command handler
 
-Often the command handler functions are placed directly on the xref:modeling/aggregate.adoc[aggregate]. When this approach is taken, simply registering the Aggregate as described above is sufficient for all its command handler methods to be registered too.
+Often the command handler functions are placed directly on the xref:modeling/command-model.adoc[aggregate]. When this approach is taken, simply registering the Aggregate as described above is sufficient for all its command handler methods to be registered too.
 
 xref:command-handlers.adoc#external_command_handlers[External Command Handlers] however do require direct registration as being a command handler, which is shown in the following sample:
 

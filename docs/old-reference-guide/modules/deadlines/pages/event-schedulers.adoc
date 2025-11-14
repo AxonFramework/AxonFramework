@@ -25,9 +25,9 @@ Axon provides four `EventScheduler` implementations:
 . <<Axon Server event scheduler,Axon Server>>
 . <<Quartz event scheduler,Quartz>>
 
-It is important to note that the `JubRunrEventScheduler`, `QuartzEventScheduler`, `AxonServerEventScheduler` and `DbSchedulerEventSerializer` all should use the xref:ROOT:serialization.adoc#different-serializer-for-events[event Serializer] to serialize and deserialize the scheduled event.
-If the `Serializer` used by the scheduler does not align with the `Seralizer` used by the event store, exceptional scenarios should be expected.
-The Quartz implementation's `Serializer` can be set by defining a different `EventJobDataBinder`, whereas the JobRunr, Axon Server and db-scheduler implementations allows defining the used `Serializer` directly through the builder.
+It is important to note that the `JubRunrEventScheduler`, `QuartzEventScheduler`, `AxonServerEventScheduler` and `DbSchedulerEventSerializer` all should use the xref:ROOT:conversion.adoc#different-converter-for-events[event Converter] to convert and convert from the scheduled event.
+If the `Converter` used by the scheduler does not align with the `Seralizer` used by the event store, exceptional scenarios should be expected.
+The Quartz implementation's `Converter` can be set by defining a different `EventJobDataBinder`, whereas the JobRunr, Axon Server and db-scheduler implementations allows defining the used `Converter` directly through the builder.
 
 One or more components will be listening for scheduled Events.
 These components might rely on a transaction bound to the thread that invokes them.
@@ -50,7 +50,7 @@ Using JobRunr as underlying scheduling mechanism, it provides more powerful feat
 This means event publication is guaranteed.
 It might be a little late, but it will be published.
 JobRunr supports https://www.jobrunr.io/en/documentation/installation/storage/[both SQL and some NoSQL databases].
-It needs to be configured with a JobRunr `JobScheduler`, an `EventBus` and a `Serializer`.
+It needs to be configured with a JobRunr `JobScheduler`, an `EventBus` and a `Converter`.
 
 === Db-scheduler event scheduler
 
@@ -62,7 +62,7 @@ For most sql databases the sql to set the table is https://github.com/kagkarlsso
 Compared to JobRunr, it lets you set a poll interval for new tasks more freely.
 Another advantage compared to JobRunr is that adding a task will become part of the current transaction when a `TransactionManager` is set.
 The biggest things missing compared to JobRunr are a dashboard, and support for multiple NoSQL databases.
-The `DbSchedulerEventScheduler` needs to be configured with a db-scheduler `Scheduler`, an `EventBus`, and a `Serializer`.
+The `DbSchedulerEventScheduler` needs to be configured with a db-scheduler `Scheduler`, an `EventBus`, and a `Converter`.
 
 The data for an event can be serialized in either a binary format or in a human-readable format.
 Switching between these formats is done via the `useBinaryPojo` property on the scheduler's builder.
@@ -98,7 +98,7 @@ This should look like:
 ----
 @Bean
 public EventScheduler eventScheduler(
-        @Qualifier("eventSerializer") final Serializer serializer,
+        @Qualifier("eventSerializer") final Converter converter,
         final JobScheduler jobScheduler,
         final EventBus eventBus,
         final TransactionManager transactionManager,
@@ -106,7 +106,7 @@ public EventScheduler eventScheduler(
 ) {
     return JobRunrEventScheduler.builder()
             .jobScheduler(jobScheduler)
-            .serializer(serializer)
+            .converter(converter)
             .eventBus(eventBus)
             .transactionManager(transactionManager)
             .spanFactory(spanfactory)

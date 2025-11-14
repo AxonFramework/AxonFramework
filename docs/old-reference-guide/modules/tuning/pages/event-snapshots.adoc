@@ -33,8 +33,8 @@ ____
 
 *Serializing a Snapshot Event*
 
-Do make sure the `Serializer` instance you use (which defaults to the `XStreamSerializer`) is capable of serializing your aggregate.
-The `XStreamSerializer` requires you to use either a Hotspot JVM, or your aggregate must either have an accessible default constructor or implement the `Serializable` interface.
+Do make sure the `Converter` instance you use (which defaults to the XStreamSerializer (removed in Axon 5)) is capable of converting your aggregate.
+The XStreamSerializer (removed in Axon 5) requires you to use either a Hotspot JVM, or your aggregate must either have an accessible default constructor or implement the `Serializable` interface.
 
 ____
 
@@ -126,7 +126,7 @@ However, if you want to be able to reconstruct an aggregate state prior to the m
 
 ____
 
-Axon provides a special type of snapshot event: the `AggregateSnapshot`, which stores an entire aggregate as a snapshot. The motivation is simple: your aggregate should only contain the state relevant to take business decisions. This is exactly the information you want captured in a snapshot. All event sourcing repositories provided by Axon recognize the `AggregateSnapshot`, and will extract the aggregate from it. Beware that using this snapshot event requires that the event serialization mechanism needs to be able to serialize the aggregate.
+Axon provides a special type of snapshot event: the `AggregateSnapshot`, which stores an entire aggregate as a snapshot. The motivation is simple: your aggregate should only contain the state relevant to take business decisions. This is exactly the information you want captured in a snapshot. All event sourcing repositories provided by Axon recognize the `AggregateSnapshot`, and will extract the aggregate from it. Beware that using this snapshot event requires that the event conversion mechanism needs to be able to convert the aggregate.
 
 [#_filtering_snapshot_events]
 === Filtering snapshot events
@@ -288,7 +288,7 @@ They will help you get the most out of your caching solution:
 
 * *Cache data in-memory.*
  For proper optimization, caches should keep data in-memory (and preferably on-heap) for best performance.
- This approach prevents the need to (re)serialize aggregates when storing to disk and even off-heap.
+ This approach prevents the need to (re)convert aggregates when storing to disk and even off-heap.
 
 To configure a cache for your Aggregates, consider the following snippet:
 
