@@ -33,8 +33,9 @@
 
     <packaging>pom</packaging>
     <modules>
-        <module>spring</module>
+        <module>kotlin</module>
         <module>metrics</module>
+        <module>spring</module>
         <module>tracing</module>
     </modules>
 
