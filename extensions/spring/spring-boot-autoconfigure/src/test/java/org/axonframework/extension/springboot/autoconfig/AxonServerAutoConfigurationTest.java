@@ -69,7 +69,7 @@ class AxonServerAutoConfigurationTest {
 
     @Test
     void disablingAxonServerDisabledAllAxonServerComponents() {
-        testContext.withPropertyValues("axon.axonserver.enabled=false").run(context -> {
+        testContext.withPropertyValues("axon.axonserver.enabled=false", "axon.eventstorage.jpa.polling-interval=0").run(context -> {
             assertThat(context).doesNotHaveBean(AxonServerConnectionManager.class);
             assertThat(context).doesNotHaveBean(ManagedChannelCustomizer.class);
             assertThat(context).doesNotHaveBean(AxonServerEventStorageEngine.class);

@@ -68,6 +68,7 @@ class EventProcessorConfigurationTest {
             classes = {EventProcessorConfigurationTest.MyCustomContext.class},
             properties = {
                     "axon.axonserver.enabled=false",
+                    "axon.eventstorage.jpa.polling-interval=0",
                     "axon.eventhandling.processors[org.axonframework.extension.springboot.fixture.event.test1].mode=pooled",
                     "axon.eventhandling.processors[org.axonframework.extension.springboot.fixture.event.test1].initialSegmentCount=73",
                     "axon.eventhandling.processors[org.axonframework.extension.springboot.fixture.event.test1].tokenClaimInterval=7",
@@ -114,6 +115,7 @@ class EventProcessorConfigurationTest {
             classes = {EventProcessorConfigurationTest.MyCustomContext.class},
             properties = {
                     "axon.axonserver.enabled=false",
+                    "axon.eventstorage.jpa.polling-interval=0",
                     "axon.eventhandling.processors[org.axonframework.extension.springboot.fixture.event.test1].mode=subscribing",
             },
             webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT

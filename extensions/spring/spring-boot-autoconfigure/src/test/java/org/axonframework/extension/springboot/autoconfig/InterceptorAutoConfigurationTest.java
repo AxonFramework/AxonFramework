@@ -67,7 +67,7 @@ class InterceptorAutoConfigurationTest {
     void setUp() {
         testApplicationContext = new ApplicationContextRunner()
                 .withUserConfiguration(DefaultContext.class)
-                .withPropertyValues("axon.axonserver.enabled:false");
+                .withPropertyValues("axon.axonserver.enabled:false", "axon.eventstorage.jpa.polling-interval:0");
     }
 
     @Test
