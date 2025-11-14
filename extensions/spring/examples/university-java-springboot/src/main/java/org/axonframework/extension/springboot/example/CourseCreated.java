@@ -14,18 +14,16 @@
  * limitations under the License.
  */
 
-package org.axonframework.extension.springboot.test.university;
+package org.axonframework.extension.springboot.example;
 
 import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.Size;
-import org.axonframework.messaging.commandhandling.annotation.Command;
+import org.axonframework.messaging.eventhandling.annotation.Event;
 
-@Command(name = "CreateCourse")
-record CreateCourse(
+@Event(name = "CourseCreated")
+record CourseCreated(
         @NotEmpty
         String id,
         @NotEmpty
-        @Size(min = 10)
         String name
 ) {
 

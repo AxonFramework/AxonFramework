@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.extension.springboot.test.university;
+package org.axonframework.extension.springboot.example;
 
 
 import jakarta.validation.constraints.Min;

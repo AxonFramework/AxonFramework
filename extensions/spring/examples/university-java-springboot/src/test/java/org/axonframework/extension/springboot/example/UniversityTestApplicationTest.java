@@ -14,17 +14,23 @@
  * limitations under the License.
  */
 
-package org.axonframework.extension.springboot.test.university;
+package org.axonframework.extension.springboot.example;
 
-import jakarta.validation.constraints.NotEmpty;
-import org.axonframework.messaging.eventhandling.annotation.Event;
+import org.junit.jupiter.api.*;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
-@Event(name = "CourseCreated")
-record CourseCreated(
-        @NotEmpty
-        String id,
-        @NotEmpty
-        String name
-) {
+@SpringBootTest(classes = UniversityExampleApplication.class)
+//@ContextConfiguration(initializers = UniversityContextInitializer.class)
+class UniversityTestApplicationTest {
 
+    @Nested
+    @ActiveProfiles("noserver")
+    class NoServerTests {
+
+        @Test
+        void name() {
+            // just run
+        }
+    }
 }

@@ -34,6 +34,8 @@
         <module>spring</module>
         <module>spring-boot-autoconfigure</module>
         <module>spring-boot-starter</module>
+
+        <module>examples/university-java-springboot</module>
     </modules>
 
 </project>
