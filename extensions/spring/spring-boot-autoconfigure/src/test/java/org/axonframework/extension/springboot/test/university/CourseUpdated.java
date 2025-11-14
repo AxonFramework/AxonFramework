@@ -22,8 +22,8 @@ import org.axonframework.messaging.eventhandling.annotation.Event;
 
 import static org.axonframework.extension.springboot.test.university.UniversityTestApplication.TAG_COURSE_ID;
 
-@Event(name = "CourseCreated")
-record CourseCreated(
+@Event(name = "CourseUpdated")
+record CourseUpdated(
         @NotEmpty
         @EventTag(key = TAG_COURSE_ID)
         String id,
