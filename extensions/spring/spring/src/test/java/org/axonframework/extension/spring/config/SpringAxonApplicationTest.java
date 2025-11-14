@@ -39,7 +39,7 @@ class SpringAxonApplicationTest extends ApplicationConfigurerTestSuite<SpringAxo
         ConfigurableListableBeanFactory beanFactory = new DefaultListableBeanFactory();
         SpringLifecycleRegistry lifecycleRegistry = new SpringLifecycleRegistry();
         lifecycleRegistry.setBeanFactory(beanFactory);
-        componentRegistry = new SpringComponentRegistry(beanFactory, lifecycleRegistry);
+        componentRegistry = new SpringComponentRegistry(lifecycleRegistry);
         componentRegistry.postProcessBeanFactory(beanFactory);
         return new SpringAxonApplication(componentRegistry, lifecycleRegistry);
     }
