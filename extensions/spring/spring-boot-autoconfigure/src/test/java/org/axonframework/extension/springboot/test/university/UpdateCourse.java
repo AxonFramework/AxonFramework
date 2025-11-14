@@ -17,15 +17,11 @@
 package org.axonframework.extension.springboot.test.university;
 
 import jakarta.validation.constraints.NotEmpty;
-import org.axonframework.eventsourcing.annotation.EventTag;
-import org.axonframework.messaging.eventhandling.annotation.Event;
+import org.axonframework.messaging.commandhandling.annotation.Command;
 
-import static org.axonframework.extension.springboot.test.university.UniversityTestApplication.TAG_COURSE_ID;
-
-@Event(name = "CourseCreated")
-record CourseCreated(
+@Command(name = "UpdateCourse")
+record UpdateCourse(
         @NotEmpty
-        @EventTag(key = TAG_COURSE_ID)
         String id,
         @NotEmpty
         String name

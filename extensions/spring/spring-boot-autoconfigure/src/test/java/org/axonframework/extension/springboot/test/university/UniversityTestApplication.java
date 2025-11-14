@@ -21,6 +21,7 @@ import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
 import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
 import org.axonframework.messaging.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.eventhandling.gateway.EventAppender;
+import org.axonframework.modelling.annotation.InjectEntity;
 import org.slf4j.Logger;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
@@ -60,10 +61,6 @@ public class UniversityTestApplication {
         app.run(args);
     }
 
-    // TODO: if command is declared like this then getting this error - only works if defined in a dedicated .java file
-    //  NoHandlerForCommandException: No handler was subscribed for command [org.axonframework.extension.springboot.test.university.CreateCourse#0.0.1].
-    // @Command(name = "CreateCourse") record CreateCourse(@NotEmpty String id, @NotEmpty String name) { }
-
     public static final String TAG_COURSE_ID = "courseId";
 
     @Service
@@ -78,6 +75,21 @@ public class UniversityTestApplication {
 
         @EventHandler
         public void handle(CourseCreated event) {
+            logger.info("Received event: {}", event);
+        }
+
+        @CommandHandler
+        public void handle(
+                @Valid UpdateCourse cmd,
+                EventAppender eventAppender,
+                @InjectEntity(idProperty = "id") Course course
+        ) {
+            logger.info("Received command: {}", cmd);
+            eventAppender.append(new CourseUpdated(cmd.id(), cmd.name()));
+        }
+
+        @EventHandler
+        public void handle(CourseUpdated event) {
             logger.info("Received event: {}", event);
         }
     }
@@ -96,6 +108,7 @@ public class UniversityTestApplication {
     ApplicationRunner runner(CommandGateway gateway) {
         return args -> {
             gateway.sendAndWait(new CreateCourse("1", "Foo"));
+            gateway.sendAndWait(new UpdateCourse("1", "Bar"));
         };
     }
 }

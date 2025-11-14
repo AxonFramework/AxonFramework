@@ -16,19 +16,31 @@
 
 package org.axonframework.extension.springboot.test.university;
 
-import jakarta.validation.constraints.NotEmpty;
-import org.axonframework.eventsourcing.annotation.EventTag;
-import org.axonframework.messaging.eventhandling.annotation.Event;
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
+import org.axonframework.eventsourcing.annotation.reflection.EntityCreator;
+import org.axonframework.extension.spring.stereotype.EventSourced;
+import org.slf4j.Logger;
 
 import static org.axonframework.extension.springboot.test.university.UniversityTestApplication.TAG_COURSE_ID;
+import static org.slf4j.LoggerFactory.getLogger;
 
-@Event(name = "CourseCreated")
-record CourseCreated(
-        @NotEmpty
-        @EventTag(key = TAG_COURSE_ID)
-        String id,
-        @NotEmpty
-        String name
-) {
+@EventSourced(tagKey = TAG_COURSE_ID)
+class Course {
+    private static final Logger logger = getLogger(Course.class);
 
+    private final String id;
+    private String name;
+
+    @EntityCreator
+    Course(CourseCreated event) {
+        logger.info("created course");
+        this.id = event.id();
+        this.name = event.name();
+    }
+
+    @EventSourcingHandler
+    void handle(CourseUpdated event) {
+        logger.info("updated course");
+        name = event.name();
+    }
 }
