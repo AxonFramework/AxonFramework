@@ -17,10 +17,14 @@
 package org.axonframework.extension.springboot.test.university;
 
 import jakarta.validation.Valid;
+import org.axonframework.eventsourcing.annotation.EventTag;
+import org.axonframework.eventsourcing.annotation.EventTags;
 import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
 import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
 import org.axonframework.messaging.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.eventhandling.gateway.EventAppender;
+import org.axonframework.messaging.eventhandling.gateway.EventGateway;
+import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.annotation.InjectEntity;
 import org.slf4j.Logger;
 import org.springframework.boot.ApplicationRunner;
@@ -32,6 +36,11 @@ import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Repeatable;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.util.Map;
 
 import static org.slf4j.LoggerFactory.getLogger;
@@ -67,6 +76,11 @@ public class UniversityTestApplication {
 
     public static final String TAG_COURSE_ID = "courseId";
 
+    @Target({ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE})
+    @Retention(RetentionPolicy.RUNTIME)
+    @EventTag(key = TAG_COURSE_ID)
+    public @interface CourseIdTag { }
+
     @Service
     @Validated
     class MyHandler {
@@ -78,7 +92,7 @@ public class UniversityTestApplication {
         }
 
         @EventHandler
-        public void handle(CourseCreated event) {
+        public void handle(CourseCreated event, @InjectEntity(idProperty = "id") Course course) {
             logger.info("Received event: {}", event);
         }
 
@@ -110,10 +124,10 @@ public class UniversityTestApplication {
     }
 
     @Bean
-    ApplicationRunner runner(CommandGateway gateway) {
+    ApplicationRunner runner(EventGateway gateway) {
         return args -> {
-            gateway.sendAndWait(new CreateCourse("1", "Foo"));
-            gateway.sendAndWait(new UpdateCourse("1", "Bar"));
+            gateway.publish(null, new CourseCreated("1", "Foo"));
+            //gateway.sendAndWait(new UpdateCourse("1", "Bar"));
         };
     }
 }
