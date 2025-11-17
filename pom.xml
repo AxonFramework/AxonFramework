@@ -15,7 +15,8 @@
   ~ limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.axonframework</groupId>
@@ -100,16 +101,88 @@
     </properties>
 
     <!-- Framework dependencies are managed in axon-parent -->
-    <dependencyManagement />
+    <dependencyManagement/>
 
     <!-- Framework dependencies are managed in axon-parent -->
-    <dependencies />
+    <dependencies/>
 
     <build>
         <defaultGoal>clean package</defaultGoal>
 
         <pluginManagement>
             <plugins>
+                <plugin>
+                    <artifactId>maven-clean-plugin</artifactId>
+                    <version>${maven-clean.version}</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-enforcer-plugin</artifactId>
+                    <version>${maven-enforcer.version}</version>
+                    <executions>
+                        <execution>
+                            <id>enforce-java</id>
+                            <phase>deploy</phase>
+                            <goals>
+                                <goal>enforce</goal>
+                            </goals>
+                            <configuration>
+                                <rules>
+                                    <requireJavaVersion>
+                                        <version>21</version>
+                                    </requireJavaVersion>
+                                    <requireMavenVersion>
+                                        <version>3.9</version>
+                                    </requireMavenVersion>
+                                </rules>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.jacoco</groupId>
+                    <artifactId>jacoco-maven-plugin</artifactId>
+                    <version>${jacoco-maven.version}</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${maven-surefire.version}</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <version>${maven-failsafe.version}</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>${maven-compiler.version}</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-install-plugin</artifactId>
+                    <version>${maven-install.version}</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-assembly-plugin</artifactId>
+                    <version>${maven-assembly.version}</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>${maven-jar.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.sonatype.central</groupId>
+                    <artifactId>central-publishing-maven-plugin</artifactId>
+                    <version>${central-publishing-maven-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-release-plugin</artifactId>
+                    <version>${maven-release.version}</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <version>${maven-resources.version}</version>
+                    <configuration>
+                        <encoding>UTF-8</encoding>
+                    </configuration>
+                </plugin>
                 <plugin>
                     <groupId>org.eclipse.transformer</groupId>
                     <artifactId>transformer-maven-plugin</artifactId>
@@ -122,34 +195,22 @@
                     </configuration>
                 </plugin>
                 <plugin>
-                    <groupId>org.jacoco</groupId>
-                    <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>${jacoco-maven.version}</version>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-clean-plugin</artifactId>
-                    <version>${maven-clean.version}</version>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-enforcer-plugin</artifactId>
-                    <version>${maven-enforcer.version}</version>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-install-plugin</artifactId>
-                    <version>${maven-install.version}</version>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-surefire-plugin</artifactId>
-                    <version>${maven-surefire.version}</version>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-failsafe-plugin</artifactId>
-                    <version>${maven-failsafe.version}</version>
+                    <artifactId>maven-gpg-plugin</artifactId>
+                    <version>${maven-gpg.version}</version>
+                    <executions>
+                        <execution>
+                            <id>sign-artifacts</id>
+                            <phase>verify</phase>
+                            <goals>
+                                <goal>sign</goal>
+                            </goals>
+                        </execution>
+                    </executions>
                 </plugin>
             </plugins>
         </pluginManagement>
 
-        <plugins />
+        <plugins/>
     </build>
 
     <profiles>
@@ -161,210 +222,19 @@
                     <name>coverage</name>
                 </property>
             </activation>
-
             <modules>
-                <module>coverage-report</module>
+                <module>build/coverage-report</module>
             </modules>
-
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <!--suppress MavenModelInspection -->
-                            <argLine>-Djava.awt.headless=true ${surefireArgLine}</argLine>
-                        </configuration>
-                    </plugin>
-
-                    <plugin>
-                        <groupId>org.jacoco</groupId>
-                        <artifactId>jacoco-maven-plugin</artifactId>
-
-                        <executions>
-                            <execution>
-                                <id>prepare-agent-for-unit-tests</id>
-                                <phase>initialize</phase>
-                                <goals>
-                                    <goal>prepare-agent</goal>
-                                </goals>
-                                <configuration>
-                                    <propertyName>surefireArgLine</propertyName>
-                                    <destFile>${project.build.directory}/jacoco-ut.exec</destFile>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
         </profile>
-
-        <profile>
-            <id>integration-test</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-                <property>
-                    <name>coverage</name>
-                </property>
-            </activation>
-
-            <build>
-                <defaultGoal>verify</defaultGoal>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-failsafe-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>run-integration-tests</id>
-                                <goals>
-                                    <goal>integration-test</goal>
-                                </goals>
-                                <configuration>
-                                    <!--suppress MavenModelInspection -->
-                                    <argLine>-Djava.awt.headless=true ${failsafeArgLine}</argLine>
-                                    <systemPropertyVariables>
-                                        <test.forkNumber>${surefire.forkNumber}</test.forkNumber>
-                                    </systemPropertyVariables>
-                                    <includes>
-                                        <include>**/*IntegrationTest.java</include>
-                                        <include>**/*IntegrationTests.java</include>
-                                        <include>**/*IntegrationTest_*.java</include>
-                                        <include>**/*IntegrationTests_*.java</include>
-                                        <!-- these are the defaults -->
-                                        <include>**/IT*.java</include>
-                                        <include>**/*IT.java</include>
-                                        <include>**/*ITCase.java</include>
-                                    </includes>
-                                    <excludes>
-                                        <exclude>**/*Test.java</exclude>
-                                        <exclude>**/*Tests.java</exclude>
-                                        <exclude>**/*Test_*.java</exclude>
-                                        <exclude>**/*Tests_*.java</exclude>
-                                    </excludes>
-                                </configuration>
-                            </execution>
-
-                            <execution>
-                                <id>verify-integration-tests</id>
-                                <goals>
-                                    <goal>verify</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-
-                    <plugin>
-                        <groupId>org.jacoco</groupId>
-                        <artifactId>jacoco-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>prepare-agent-for-integration-test</id>
-                                <phase>pre-integration-test</phase>
-                                <goals>
-                                    <goal>prepare-agent</goal>
-                                </goals>
-                                <configuration>
-                                    <propertyName>failsafeArgLine</propertyName>
-                                    <destFile>${project.build.directory}/jacoco-it.exec</destFile>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-        <profile>
-            <id>sources</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-source-plugin</artifactId>
-                        <version>${maven-source.version}</version>
-                        <executions>
-                            <execution>
-                                <id>attach-sources</id>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>jar-no-fork</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-        <profile>
-            <id>javadoc</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>${maven-javadoc.version}</version>
-                        <executions>
-                            <execution>
-                                <id>attach-javadoc</id>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>jar</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                        <configuration>
-                            <doclint>none</doclint>
-                            <!-- These parameters are in preparation for resolution of this issue: -->
-                            <!-- https://bugs.openjdk.java.net/browse/JDK-8068562 -->
-                            <tags>
-                                <tag>
-                                    <name>apiNote</name>
-                                    <placement>a</placement>
-                                    <head>API Note:</head>
-                                </tag>
-                                <tag>
-                                    <name>implSpec</name>
-                                    <placement>a</placement>
-                                    <head>Implementation Requirements:</head>
-                                </tag>
-                                <tag>
-                                    <name>implNote</name>
-                                    <placement>a</placement>
-                                    <head>Implementation Note:</head>
-                                </tag>
-                            </tags>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
         <profile>
             <id>sign</id>
             <build>
                 <plugins>
                     <plugin>
                         <artifactId>maven-gpg-plugin</artifactId>
-                        <version>${maven-gpg.version}</version>
-                        <executions>
-                            <execution>
-                                <id>sign-artifacts</id>
-                                <phase>verify</phase>
-                                <goals>
-                                    <goal>sign</goal>
-                                </goals>
-                            </execution>
-                        </executions>
                     </plugin>
                 </plugins>
             </build>
-        </profile>
-
-        <profile>
-            <id>quick-install</id>
-            <properties>
-                <!-- Test classes are shared between modules, so we should build these modules, but don't run them.-->
-                <skipTests>true</skipTests>
-            </properties>
         </profile>
     </profiles>
 
@@ -430,6 +300,16 @@
             <id>zambrovski</id>
             <name>Simon Zambrovski</name>
             <email>simon.zambrovski@holisticon.de</email>
+            <organization>Holisticon AG</organization>
+            <organizationUrl>https://holisticon.de</organizationUrl>
+            <roles>
+                <role>Developer</role>
+            </roles>
+        </developer>
+        <developer>
+            <id>jangalinski</id>
+            <name>Jan Galinski</name>
+            <email>jan.galinski@holisticon.de</email>
             <organization>Holisticon AG</organization>
             <organizationUrl>https://holisticon.de</organizationUrl>
             <roles>
