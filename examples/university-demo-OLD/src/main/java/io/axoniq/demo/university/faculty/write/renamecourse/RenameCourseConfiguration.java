@@ -9,7 +9,7 @@ public class RenameCourseConfiguration {
 
     public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
         var stateEntity = EventSourcedEntityModule
-                .annotated(CourseId.class, RenameCourseCommandHandler.State.class);
+                .autodetected(CourseId.class, RenameCourseCommandHandler.State.class);
 
         var commandHandlingModule = CommandHandlingModule
                 .named("RenameCourse")

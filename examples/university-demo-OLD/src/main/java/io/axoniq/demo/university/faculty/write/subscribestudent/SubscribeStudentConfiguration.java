@@ -8,7 +8,7 @@ public class SubscribeStudentConfiguration {
 
     public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
         var stateEntity = EventSourcedEntityModule
-                .annotated(SubscriptionId.class, SubscribeStudentToCourseCommandHandler.State.class);
+                .autodetected(SubscriptionId.class, SubscribeStudentToCourseCommandHandler.State.class);
         var commandHandlingModule = CommandHandlingModule
                 .named("SubscribeStudent")
                 .commandHandlers()
