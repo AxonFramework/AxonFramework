@@ -33,13 +33,6 @@
 
     <dependencies>
 
-        <!-- Annotation -->
-        <dependency>
-            <groupId>jakarta.inject</groupId>
-            <artifactId>jakarta.inject-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-
         <!-- Caching -->
         <dependency>
             <groupId>javax.cache</groupId>
@@ -50,11 +43,6 @@
             <groupId>org.ehcache</groupId>
             <artifactId>ehcache</artifactId>
             <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.glassfish.expressly</groupId>
-            <artifactId>expressly</artifactId>
-            <scope>test</scope>
         </dependency>
 
         <!-- Jakarta -->
@@ -100,11 +88,6 @@
             <groupId>org.reactivestreams</groupId>
             <artifactId>reactive-streams</artifactId>
         </dependency>
-        <dependency>
-            <groupId>io.projectreactor</groupId>
-            <artifactId>reactor-test</artifactId>
-            <scope>test</scope>
-        </dependency>
 
         <!-- Persistence -->
         <dependency>
@@ -116,6 +99,13 @@
             <groupId>org.hibernate.orm</groupId>
             <artifactId>hibernate-core</artifactId>
             <optional>true</optional>
+        </dependency>
+
+        <!-- Other -->
+        <dependency>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <!-- Spring - used for testing only! -->
@@ -145,13 +135,6 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Testing -->
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest</artifactId>
-            <scope>test</scope>
-        </dependency>
-
         <!-- Validation -->
         <dependency>
             <groupId>org.hibernate.validator</groupId>
@@ -159,13 +142,17 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Other -->
+        <!-- Testing other -->
         <dependency>
-            <groupId>com.google.code.findbugs</groupId>
-            <artifactId>jsr305</artifactId>
-            <scope>provided</scope>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-test</artifactId>
+            <scope>test</scope>
         </dependency>
-
+        <dependency>
+            <groupId>org.glassfish.expressly</groupId>
+            <artifactId>expressly</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>com.tngtech.archunit</groupId>
             <artifactId>archunit-junit5</artifactId>
