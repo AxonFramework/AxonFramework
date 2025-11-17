@@ -1,13 +1,14 @@
 services:
   axon-server:
-    image: docker.axoniq.io/axoniq/axonserver:2025.2.0
+    image: axoniq/axonserver:2025.2.0
+    hostname: axon-server
     ports:
       - "8024:8024"
       - "8124:8124"
     environment:
-      axoniq_axonserver_hostname: axon-server
-      axoniq_axonserver_autocluster_first: axon-server
-      axoniq_axonserver_autocluster_contexts: _admin
+      AXONIQ_AXONSERVER_HOSTNAME: axon-server
+      AXONIQ_AXONSERVER_STANDALONE_DCB: true
+      AXONIQ_AXONSERVER_DEVMODE_ENABLED: true
     volumes:
       - data:/axonserver/data
       - events:/axonserver/events
