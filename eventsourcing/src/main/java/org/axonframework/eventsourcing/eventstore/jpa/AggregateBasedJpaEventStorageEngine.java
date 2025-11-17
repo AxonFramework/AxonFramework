@@ -25,10 +25,10 @@ import org.axonframework.common.TypeReference;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
+import org.axonframework.conversion.Converter;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarker.AggregateSequencer;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedEventStorageEngineUtils;
-import org.axonframework.conversion.Converter;
 import org.axonframework.eventsourcing.eventstore.AggregateSequenceNumberPosition;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
@@ -52,6 +52,7 @@ import org.axonframework.messaging.eventhandling.TerminalEventMessage;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.GapAwareTrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.messaging.eventstreaming.EventCriterion;
 import org.axonframework.messaging.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.eventstreaming.Tag;
@@ -372,6 +373,11 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     @Override
     public MessageStream<EventMessage> stream(@Nonnull StreamingCondition condition,
                                               @Nullable ProcessingContext processingContext) {
+        EventCriteria criteria = condition.criteria();
+        if (criteria.hasCriteria()) {
+            logger.warn("Ignoring streaming criteria. Reason: unsupported by this aggregate-based event store."
+                                + "Ignored criteria are: {}", criteria);
+        }
         GapAwareTrackingToken trackingToken = tokenOperations.assertGapAwareTrackingToken(condition.position());
 
         return new ContinuousMessageStream<TokenAndEvent>(
