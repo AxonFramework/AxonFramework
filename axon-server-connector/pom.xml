@@ -78,12 +78,14 @@
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-messaging</artifactId>
+            <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
 
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-eventsourcing</artifactId>
+            <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
 
@@ -91,6 +93,7 @@
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-test</artifactId>
+            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -132,16 +135,19 @@
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-messaging</artifactId>
+            <version>${project.version}</version>
             <type>test-jar</type>
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-common</artifactId>
+            <version>${project.version}</version>
             <type>test-jar</type>
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-eventsourcing</artifactId>
+            <version>${project.version}</version>
             <type>test-jar</type>
         </dependency>
     </dependencies>

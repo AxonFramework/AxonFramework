@@ -38,18 +38,22 @@
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-messaging</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-modelling</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-eventsourcing</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-server-connector</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
@@ -87,28 +91,32 @@
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-messaging</artifactId>
+            <version>${project.version}</version>
             <type>test-jar</type>
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-common</artifactId>
+            <version>${project.version}</version>
             <type>test-jar</type>
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-conversion</artifactId>
+            <version>${project.version}</version>
             <type>test-jar</type>
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-legacy</artifactId>
+            <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-test</artifactId>
+            <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
         <!-- Cache -->

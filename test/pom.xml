@@ -42,6 +42,7 @@
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-eventsourcing</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <!-- Database -->
         <dependency>

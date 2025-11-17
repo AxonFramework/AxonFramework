@@ -107,90 +107,6 @@
 
     <dependencyManagement>
         <dependencies>
-            <!-- region [Axon Framework] -->
-            <dependency>
-                <groupId>org.axonframework</groupId>
-                <artifactId>axon-server-connector</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.axonframework</groupId>
-                <artifactId>axon-common</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.axonframework</groupId>
-                <artifactId>axon-common</artifactId>
-                <type>test-jar</type>
-                <version>${project.version}</version>
-                <scope>test</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>org.axonframework</groupId>
-                <artifactId>axon-conversion</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.axonframework</groupId>
-                <artifactId>axon-conversion</artifactId>
-                <type>test-jar</type>
-                <version>${project.version}</version>
-                <scope>test</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>org.axonframework</groupId>
-                <artifactId>axon-eventsourcing</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.axonframework</groupId>
-                <artifactId>axon-eventsourcing</artifactId>
-                <type>test-jar</type>
-                <version>${project.version}</version>
-                <scope>test</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>org.axonframework</groupId>
-                <artifactId>axon-messaging</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.axonframework</groupId>
-                <artifactId>axon-messaging</artifactId>
-                <type>test-jar</type>
-                <version>${project.version}</version>
-                <scope>test</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>org.axonframework</groupId>
-                <artifactId>axon-modelling</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.axonframework</groupId>
-                <artifactId>axon-test</artifactId>
-                <version>${project.version}</version>
-                <scope>test</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>org.axonframework</groupId>
-                <artifactId>axon-update</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- endregion [Axon Framework] -->
-
             <!-- Caching -->
             <dependency>
                 <groupId>javax.cache</groupId>
@@ -524,10 +440,42 @@
     </dependencies>
 
     <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.jacoco</groupId>
+                    <artifactId>jacoco-maven-plugin</artifactId>
+                    <version>${jacoco-maven.version}</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>${maven-jar.version}</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <version>${maven-resources.version}</version>
+                    <configuration>
+                        <encoding>UTF-8</encoding>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.eclipse.transformer</groupId>
+                    <artifactId>transformer-maven-plugin</artifactId>
+                    <version>${eclipse.transformer-maven-plugin.version}</version>
+                    <extensions>true</extensions>
+                    <configuration>
+                        <rules>
+                            <jakartaDefaults>true</jakartaDefaults>
+                        </rules>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <!-- compile -->
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven-compiler.version}</version>
                 <configuration>
                     <source>${maven.compiler.source}</source>
                     <target>${maven.compiler.target}</target>
@@ -540,6 +488,7 @@
             <!-- test -->
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven-surefire.version}</version>
                 <configuration>
                     <argLine>${mockito.agent.argLine} -Djava.awt.headless=true</argLine>
                     <systemPropertyVariables>
@@ -564,6 +513,7 @@
             <!-- package -->
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
+                <version>${maven-assembly.version}</version>
                 <configuration>
                     <descriptorSourceDirectory>assembly</descriptorSourceDirectory>
                     <archiverConfig>
@@ -579,35 +529,6 @@
                             <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                         </manifest>
                     </archive>
-                </configuration>
-            </plugin>
-            <!-- deploy -->
-            <plugin>
-                <groupId>org.sonatype.central</groupId>
-                <artifactId>central-publishing-maven-plugin</artifactId>
-                <extensions>true</extensions>
-                <configuration>
-                    <publishingServerId>central</publishingServerId>
-                    <excludeArtifacts>
-                        axon-integrationtests,axon-legacy,axon-legacy-aggregate,axon-legacy-saga,axon-metrics,axon-micrometer,axon-migration,axon-tracing-opentelemetry,axon-todo
-                    </excludeArtifacts>
-                </configuration>
-            </plugin>
-            <plugin>
-                <!-- just to make sure deployed artifacts are always built (and tested) using JDK 8+ -->
-                <artifactId>maven-enforcer-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <artifactId>maven-release-plugin</artifactId>
-                <configuration>
-                    <!-- prepare goal configuration -->
-                    <mavenExecutorId>forked-path</mavenExecutorId>
-                    <pushChanges>false</pushChanges>
-                    <autoVersionSubmodules>true</autoVersionSubmodules>
-                    <!-- perform goal configuration -->
-                    <mavenExecutorId>forked-path</mavenExecutorId>
-                    <localCheckout>true</localCheckout>
-                    <releaseProfiles>javadoc,sources,sign</releaseProfiles>
                 </configuration>
             </plugin>
         </plugins>
@@ -694,6 +615,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-failsafe-plugin</artifactId>
+                        <version>${maven-failsafe.version}</version>
                         <executions>
                             <execution>
                                 <id>run-integration-tests</id>

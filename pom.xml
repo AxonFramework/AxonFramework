@@ -108,7 +108,6 @@
 
     <build>
         <defaultGoal>clean package</defaultGoal>
-
         <pluginManagement>
             <plugins>
                 <plugin>
@@ -116,101 +115,66 @@
                     <version>${maven-clean.version}</version>
                 </plugin>
                 <plugin>
-                    <artifactId>maven-enforcer-plugin</artifactId>
-                    <version>${maven-enforcer.version}</version>
-                    <executions>
-                        <execution>
-                            <id>enforce-java</id>
-                            <phase>deploy</phase>
-                            <goals>
-                                <goal>enforce</goal>
-                            </goals>
-                            <configuration>
-                                <rules>
-                                    <requireJavaVersion>
-                                        <version>21</version>
-                                    </requireJavaVersion>
-                                    <requireMavenVersion>
-                                        <version>3.9</version>
-                                    </requireMavenVersion>
-                                </rules>
-                            </configuration>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
-                    <groupId>org.jacoco</groupId>
-                    <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>${jacoco-maven.version}</version>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-surefire-plugin</artifactId>
-                    <version>${maven-surefire.version}</version>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-failsafe-plugin</artifactId>
-                    <version>${maven-failsafe.version}</version>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-compiler-plugin</artifactId>
-                    <version>${maven-compiler.version}</version>
-                </plugin>
-                <plugin>
                     <artifactId>maven-install-plugin</artifactId>
                     <version>${maven-install.version}</version>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-assembly-plugin</artifactId>
-                    <version>${maven-assembly.version}</version>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-jar-plugin</artifactId>
-                    <version>${maven-jar.version}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.sonatype.central</groupId>
-                    <artifactId>central-publishing-maven-plugin</artifactId>
-                    <version>${central-publishing-maven-plugin.version}</version>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-release-plugin</artifactId>
-                    <version>${maven-release.version}</version>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-resources-plugin</artifactId>
-                    <version>${maven-resources.version}</version>
-                    <configuration>
-                        <encoding>UTF-8</encoding>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>org.eclipse.transformer</groupId>
-                    <artifactId>transformer-maven-plugin</artifactId>
-                    <version>${eclipse.transformer-maven-plugin.version}</version>
-                    <extensions>true</extensions>
-                    <configuration>
-                        <rules>
-                            <jakartaDefaults>true</jakartaDefaults>
-                        </rules>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-gpg-plugin</artifactId>
-                    <version>${maven-gpg.version}</version>
-                    <executions>
-                        <execution>
-                            <id>sign-artifacts</id>
-                            <phase>verify</phase>
-                            <goals>
-                                <goal>sign</goal>
-                            </goals>
-                        </execution>
-                    </executions>
                 </plugin>
             </plugins>
         </pluginManagement>
 
-        <plugins/>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>${maven-enforcer.version}</version>
+                <executions>
+                    <execution>
+                        <id>enforce-java</id>
+                        <phase>deploy</phase>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireJavaVersion>
+                                    <version>21</version>
+                                </requireJavaVersion>
+                                <requireMavenVersion>
+                                    <version>3.9</version>
+                                </requireMavenVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- deploy -->
+            <plugin>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>${maven-release.version}</version>
+                <configuration>
+                    <!-- prepare goal configuration -->
+                    <mavenExecutorId>forked-path</mavenExecutorId>
+                    <pushChanges>false</pushChanges>
+                    <autoVersionSubmodules>true</autoVersionSubmodules>
+                    <!-- perform goal configuration -->
+                    <mavenExecutorId>forked-path</mavenExecutorId>
+                    <localCheckout>true</localCheckout>
+                    <releaseProfiles>javadoc,sources,sign</releaseProfiles>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <version>${central-publishing-maven-plugin.version}</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <publishingServerId>central</publishingServerId>
+                    <excludeArtifacts>
+                        axon-integrationtests,axon-legacy,axon-legacy-aggregate,axon-legacy-saga,axon-metrics,axon-micrometer,axon-migration,axon-tracing-opentelemetry,axon-todo
+                    </excludeArtifacts>
+                </configuration>
+            </plugin>
+
+        </plugins>
     </build>
 
     <profiles>
@@ -226,12 +190,23 @@
                 <module>build/coverage-report</module>
             </modules>
         </profile>
+
         <profile>
             <id>sign</id>
             <build>
                 <plugins>
                     <plugin>
                         <artifactId>maven-gpg-plugin</artifactId>
+                        <version>${maven-gpg.version}</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>
