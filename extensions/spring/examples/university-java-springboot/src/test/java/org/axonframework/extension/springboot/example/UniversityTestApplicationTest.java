@@ -21,7 +21,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest(classes = UniversityExampleApplication.class)
-//@ContextConfiguration(initializers = UniversityContextInitializer.class)
 class UniversityTestApplicationTest {
 
     @Nested
@@ -29,7 +28,16 @@ class UniversityTestApplicationTest {
     class NoServerTests {
 
         @Test
-        void name() {
+        void applicationStarts() {
+            // just run
+        }
+    }
+
+    @Nested
+    class DefaultTests {
+
+        @Test
+        void applicationStarts() {
             // just run
         }
     }

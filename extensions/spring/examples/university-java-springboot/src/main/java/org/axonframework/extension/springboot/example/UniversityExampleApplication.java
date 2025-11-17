@@ -32,6 +32,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
+import java.util.UUID;
+
 import static org.slf4j.LoggerFactory.getLogger;
 
 @SpringBootApplication
@@ -81,7 +83,7 @@ public class UniversityExampleApplication {
     //@ConditionalOnBean(CommandGateway.class)
     ApplicationRunner runner(CommandGateway gateway) {
         return args -> {
-            gateway.sendAndWait(new CreateCourse("1", "Hello World ... 1"));
+            gateway.sendAndWait(new CreateCourse("1", "Hello World ... " + UUID.randomUUID()));
         };
     }
 
