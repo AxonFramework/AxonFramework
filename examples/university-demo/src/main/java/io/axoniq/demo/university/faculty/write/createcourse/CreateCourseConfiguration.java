@@ -10,7 +10,7 @@ public class CreateCourseConfiguration {
 
     public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
         var stateEntity = EventSourcedEntityModule
-                .annotated(CourseId.class, CreateCourseCommandHandler.State.class);
+                .autodetected(CourseId.class, CreateCourseCommandHandler.State.class);
 
         var commandHandlingModule = CommandHandlingModule
                 .named("CreateCourse")
@@ -19,7 +19,7 @@ public class CreateCourseConfiguration {
 
         var courseNameUniqueNameSetValidation = EventProcessorModule
                 .subscribing("CourseNameUniqueNameSetValidation")
-                .eventHandlingComponents(eh -> eh.annotated(cfg -> new CourseUniqueNameSetValidation()))
+                .eventHandlingComponents(eh -> eh.autodetected(cfg -> new CourseUniqueNameSetValidation()))
                 .notCustomized();
 
         return configurer

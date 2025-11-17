@@ -11,7 +11,7 @@
     <properties>
         <assertj.version>3.27.3</assertj.version>
         <awaitility.version>4.3.0</awaitility.version>
-        <axon.version>5.0.0-RC3</axon.version>
+        <axon.version>5.0.0-SNAPSHOT</axon.version>
         <hamcrest.version>3.0</hamcrest.version>
         <junit.version>5.12.1</junit.version>
         <jackson.version>2.20.0</jackson.version>
@@ -23,6 +23,17 @@
         <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
     </properties>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>${jackson.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
     <dependencies>
         <!-- Axon Framework Dependencies -->
         <dependency>
@@ -62,14 +73,6 @@
         </dependency>
 
         <!-- Serialization Dependencies -->
-
-        <dependency>
-            <groupId>com.fasterxml.jackson</groupId>
-            <artifactId>jackson-bom</artifactId>
-            <version>${jackson.version}</version>
-            <type>pom</type>
-            <scope>import</scope>
-        </dependency>
 
         <!-- Log4j Dependencies -->
         <dependency>

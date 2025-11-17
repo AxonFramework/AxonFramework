@@ -9,7 +9,7 @@ public class ChangeCourseCapacityConfiguration {
 
     public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
         var stateEntity = EventSourcedEntityModule
-                .annotated(CourseId.class, ChangeCourseCapacityCommandHandler.State.class);
+                .autodetected(CourseId.class, ChangeCourseCapacityCommandHandler.State.class);
 
         var commandHandlingModule = CommandHandlingModule
                 .named("ChangeCourseCapacity")

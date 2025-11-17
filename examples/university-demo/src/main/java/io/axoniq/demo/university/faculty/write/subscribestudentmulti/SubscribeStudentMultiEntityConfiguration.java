@@ -10,9 +10,9 @@ public class SubscribeStudentMultiEntityConfiguration {
 
     public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
         var courseEntity = EventSourcedEntityModule
-                .annotated(CourseId.class, Course.class);
+                .autodetected(CourseId.class, Course.class);
         var studentEntity = EventSourcedEntityModule
-                .annotated(StudentId.class, Student.class);
+                .autodetected(StudentId.class, Student.class);
 
         var commandHandlingModule = CommandHandlingModule
                 .named("SubscribeStudentMulti")

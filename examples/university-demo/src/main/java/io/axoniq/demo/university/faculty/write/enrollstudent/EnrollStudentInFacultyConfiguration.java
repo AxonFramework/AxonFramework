@@ -9,7 +9,7 @@ public class EnrollStudentInFacultyConfiguration {
 
     public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
         return configurer
-                .registerEntity(EventSourcedEntityModule.annotated(StudentId.class, EnrollStudentInFacultyCommandHandler.Student.class))
+                .registerEntity(EventSourcedEntityModule.autodetected(StudentId.class, EnrollStudentInFacultyCommandHandler.Student.class))
                 .registerCommandHandlingModule(CommandHandlingModule.named("EnrollStudentInFaculty")
                         .commandHandlers()
                         .annotatedCommandHandlingComponent(c -> new EnrollStudentInFacultyCommandHandler())
