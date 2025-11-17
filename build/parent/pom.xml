@@ -38,6 +38,7 @@
         <sonar.coverage.jacoco.xmlReportPaths>
             ${project.basedir}/build/coverage-report/target/site/jacoco-aggregate/jacoco.xml,
             ${project.basedir}/../build/coverage-report/target/site/jacoco-aggregate/jacoco.xml,
+            ${project.basedir}/../../build/coverage-report/target/site/jacoco-aggregate/jacoco.xml,
             ${project.basedir}/../../../build/coverage-report/target/site/jacoco-aggregate/jacoco.xml
         </sonar.coverage.jacoco.xmlReportPaths>
 
