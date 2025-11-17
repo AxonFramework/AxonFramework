@@ -20,7 +20,6 @@ import com.google.protobuf.ByteString;
 import io.axoniq.axonserver.connector.AxonServerConnection;
 import io.axoniq.axonserver.connector.Registration;
 import io.axoniq.axonserver.connector.command.CommandChannel;
-import io.axoniq.axonserver.connector.impl.AsyncRegistration;
 import io.axoniq.axonserver.grpc.ErrorMessage;
 import io.axoniq.axonserver.grpc.MetaDataValue;
 import io.axoniq.axonserver.grpc.ProcessingKey;
@@ -46,8 +45,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -255,9 +252,9 @@ class AxonServerCommandBusConnectorTest {
     }
 
     @Test
-    void subscribeWithAsyncRegistrationWaitsForAcknowledgment() throws Exception {
+    void subscribeWithAsyncRegistrationWaitsForAcknowledgment() {
         // Arrange
-        AsyncRegistration asyncRegistration = mock(AsyncRegistration.class);
+        Registration asyncRegistration = mock(Registration.class);
         when(commandChannel.registerCommandHandler(any(), eq(ANY_TEST_LOAD_FACTOR), eq(ANY_TEST_COMMAND_NAME.name())))
                 .thenReturn(asyncRegistration);
 
@@ -265,36 +262,7 @@ class AxonServerCommandBusConnectorTest {
         testSubject.subscribe(ANY_TEST_COMMAND_NAME, ANY_TEST_LOAD_FACTOR);
 
         // Assert
-        verify(asyncRegistration).awaitAck(anyLong(), eq(TimeUnit.MILLISECONDS));
-    }
-
-    @Test
-    void subscribeWithAsyncRegistrationTimeoutThrowsException() throws Exception {
-        // Arrange
-        AsyncRegistration asyncRegistration = mock(AsyncRegistration.class);
-        when(commandChannel.registerCommandHandler(any(), eq(ANY_TEST_LOAD_FACTOR), eq(ANY_TEST_COMMAND_NAME.name())))
-                .thenReturn(asyncRegistration);
-        doThrow(new TimeoutException("Test timeout"))
-                .when(asyncRegistration).awaitAck(anyLong(), eq(TimeUnit.MILLISECONDS));
-
-        // Act & Assert
-        assertThrows(RuntimeException.class,
-                     () -> testSubject.subscribe(ANY_TEST_COMMAND_NAME, ANY_TEST_LOAD_FACTOR));
-    }
-
-    @Test
-    void subscribeWithAsyncRegistrationInterruptedThrowsException() throws Exception {
-        // Arrange
-        AsyncRegistration asyncRegistration = mock(AsyncRegistration.class);
-        when(commandChannel.registerCommandHandler(any(), eq(ANY_TEST_LOAD_FACTOR), eq(ANY_TEST_COMMAND_NAME.name())))
-                .thenReturn(asyncRegistration);
-        doThrow(new InterruptedException("Test interruption"))
-                .when(asyncRegistration).awaitAck(anyLong(), eq(TimeUnit.MILLISECONDS));
-
-        // Act & Assert
-        assertThrows(RuntimeException.class,
-                     () -> testSubject.subscribe(ANY_TEST_COMMAND_NAME, ANY_TEST_LOAD_FACTOR));
-        assertTrue(Thread.currentThread().isInterrupted());
+        verify(asyncRegistration).onAck(any());
     }
 
     @Test
