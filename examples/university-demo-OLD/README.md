@@ -23,17 +23,8 @@ To run the app with Axon Server, you need to have an instance of Axon Server run
 docker compose up
 ```
 
-#### Axon Server Context
-
-Then you need to open the Axon Server UI at [http://localhost:8024](http://localhost:8024) and create a new context named `university`.
-What is essential, you need also check the `DCB context (beta)` checkbox in the `General` settings tab.
-![AxonServer_DCBContext_Creation.png](docs/images/AxonServer_DCBContext_Creation.png)
-
-If you did not create the context, the command execution will fail with the following error:
-```
-org.axonframework.commandhandling.CommandExecutionException: Exception while handling command
-Caused by: java.util.concurrent.ExecutionException: io.grpc.StatusRuntimeException: UNAVAILABLE
-```
+This `docker-compose.yaml` file uses the latest official Axon Server Docker image configured to use the `default` context 
+with dynamic consistency boundary enabled.
 
 #### The app configuration
 
