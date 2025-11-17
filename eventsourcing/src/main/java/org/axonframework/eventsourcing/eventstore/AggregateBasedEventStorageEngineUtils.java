@@ -43,9 +43,10 @@ public final class AggregateBasedEventStorageEngineUtils {
      */
     public static void assertValidTags(List<TaggedEventMessage<?>> events) {
         for (TaggedEventMessage<?> taggedEvent : events) {
-            if (taggedEvent.tags().size() > 1) {
+            if (!taggedEvent.tags().isEmpty()) {
                 throw new TooManyTagsOnEventMessageException(
-                        "An Event Storage engine in Aggregate mode does not support multiple tags per event",
+                        "An Event Storage engine in Aggregate mode does not support tags "
+                                + "https://github.com/AxonFramework/AxonFramework/issues/3907#issuecomment-3542360055",
                         taggedEvent.event(),
                         taggedEvent.tags());
             }
