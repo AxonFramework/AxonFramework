@@ -18,8 +18,6 @@ package org.axonframework.springboot;
 
 import com.codahale.metrics.MetricRegistry;
 import org.axonframework.extension.metrics.dropwizard.GlobalMetricRegistry;
-import org.axonframework.messaging.monitoring.MessageMonitorFactory;
-import org.axonframework.messaging.monitoring.NoOpMessageMonitor;
 import org.axonframework.springboot.autoconfig.MicrometerMetricsAutoConfiguration;
 import org.axonframework.springboot.util.GrpcServerStub;
 import org.axonframework.springboot.util.TcpUtils;
@@ -42,8 +40,6 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
@@ -91,18 +87,6 @@ class AxonAutoConfigurationWithMetricsWithoutConfigurerTest {
 
     @Configuration
     public static class Context {
-
-//        @Autowired
-//        public void configure(LegacyConfigurer configurer) {
-//            configurer.configureMessageMonitor(EventBus.class, mockMessageMonitorFactory());
-//        }
-
-        @Bean
-        public MessageMonitorFactory mockMessageMonitorFactory() {
-            MessageMonitorFactory mock = mock(MessageMonitorFactory.class);
-            when(mock.create(any(), any(), any())).thenReturn(NoOpMessageMonitor.instance());
-            return mock;
-        }
 
         @Bean(initMethod = "start", destroyMethod = "shutdown")
         public GrpcServerStub grpcServerStub(@Value("${axon.axonserver.servers}") String servers) {
