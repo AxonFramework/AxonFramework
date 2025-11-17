@@ -29,6 +29,7 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -158,5 +159,24 @@ class SimpleCommandHandlingComponentTest {
         Optional<Throwable> resultError = result.error();
         assertThat(resultError).isPresent();
         assertThat(resultError.get()).isInstanceOf(MockException.class);
+    }
+
+    @Test
+    void rejectsDuplicateCommandHandler() {
+        assertThatThrownBy(() -> SimpleCommandHandlingComponent
+            .create("MySuperComponent")
+            .subscribe(
+                    new QualifiedName("Command1"),
+                    (command, context) -> {
+                        return MessageStream.empty().cast();
+                    }
+            )
+            .subscribe(
+                    new QualifiedName("Command1"),
+                    (command, context) -> {
+                        return MessageStream.empty().cast();
+                    }
+            )
+        ).isInstanceOf(DuplicateCommandHandlerSubscriptionException.class);
     }
 }
