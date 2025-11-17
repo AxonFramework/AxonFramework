@@ -143,7 +143,7 @@
         <dependency>
             <groupId>com.oracle.database.jdbc</groupId>
             <artifactId>ojdbc8</artifactId>
-            <version>23.26.0.0.0</version>
+            <version>${ojdbc.version}</version>
             <scope>test</scope>
         </dependency>
 

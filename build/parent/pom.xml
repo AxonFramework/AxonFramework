@@ -59,6 +59,7 @@
         <hibernate-core.version>7.1.7.Final</hibernate-core.version>
         <mysql-connector-java.version>9.5.0</mysql-connector-java.version>
         <postgresql.version>42.7.8</postgresql.version>
+        <ojdbc.version>23.26.0.0.0</ojdbc.version>
         <!-- Jakarta -->
         <jakarta.annotation.version>3.0.0</jakarta.annotation.version>
         <jakarta.el.version>6.0.1</jakarta.el.version>
@@ -103,6 +104,7 @@
         <mockito.version>5.20.0</mockito.version>
         <testcontainers.version>2.0.1</testcontainers.version>
         <assertj.version>3.27.6</assertj.version>
+        <archunit.version>1.4.1</archunit.version>
         <!-- Validation -->
         <hibernate-validator.version>9.1.0.Final</hibernate-validator.version>
     </properties>
