@@ -41,7 +41,6 @@
         <dependency>
             <groupId>org.axonframework.extensions.spring</groupId>
             <artifactId>axon-spring</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <dependency>
@@ -131,15 +130,13 @@
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-test</artifactId>
-            <version>${project.version}</version>
             <optional>true</optional>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-eventsourcing</artifactId>
-            <version>${project.version}</version>
-            <classifier>tests</classifier>
-            <scope>test</scope>
+            <type>test-jar</type>
         </dependency>
 
         <dependency>

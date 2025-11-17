@@ -19,8 +19,9 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.axonframework</groupId>
-        <artifactId>axon</artifactId>
+        <artifactId>axon-parent</artifactId>
         <version>5.0.0-SNAPSHOT</version>
+        <relativePath>../build/parent/pom.xml</relativePath>
     </parent>
 
     <artifactId>axon-conversion</artifactId>
@@ -34,14 +35,11 @@
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-common</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-common</artifactId>
-            <version>${project.version}</version>
             <type>test-jar</type>
-            <scope>test</scope>
         </dependency>
 
         <dependency>

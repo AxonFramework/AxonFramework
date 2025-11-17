@@ -16,104 +16,63 @@
   -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.axonframework</groupId>
-        <artifactId>axon</artifactId>
+        <artifactId>axon-parent</artifactId>
         <version>5.0.0-SNAPSHOT</version>
+        <relativePath>../../build/parent/pom.xml</relativePath>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>axon-todo</artifactId>
+    <artifactId>axon-legacy-aggregate</artifactId>
 
-    <name>Axon Framework - TODO</name>
+    <name>Axon Framework - Legacy Aggregate</name>
     <description>
-        Package containing not to be released code that should be upgraded to current standards.
+        This module contains the legacy Aggregate solution of Axon Framework 4. Use this dependency to ease a migration
+        period for a projects aggregates.
     </description>
 
     <packaging>jar</packaging>
 
     <dependencies>
-        <!-- Axon -->
+        <!-- Axon dependencies -->
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-messaging</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.axonframework</groupId>
-            <artifactId>axon-modelling</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-eventsourcing</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
-            <artifactId>axon-server-connector</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.axonframework</groupId>
-            <artifactId>axon-legacy-aggregate</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.axonframework</groupId>
-            <artifactId>axon-legacy-saga</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.axonframework.extensions.tracing</groupId>
-            <artifactId>axon-tracing-opentelemetry</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.axonframework.extensions.metrics</groupId>
-            <artifactId>axon-metrics-dropwizard</artifactId>
-            <version>${project.version}</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.axonframework.extensions.metrics</groupId>
-            <artifactId>axon-metrics-micrometer</artifactId>
-            <version>${project.version}</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.axonframework.extensions.spring</groupId>
-            <artifactId>axon-spring-boot-autoconfigure</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.axonframework</groupId>
-            <artifactId>axon-messaging</artifactId>
-            <type>test-jar</type>
-            <scope>test</scope>
-            <version>${project.version}</version>
+            <artifactId>axon-test</artifactId>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-common</artifactId>
             <type>test-jar</type>
-            <scope>test</scope>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
-            <artifactId>axon-conversion</artifactId>
+            <artifactId>axon-messaging</artifactId>
             <type>test-jar</type>
-            <scope>test</scope>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-legacy</artifactId>
-            <type>test-jar</type>
-            <scope>test</scope>
             <version>${project.version}</version>
+        </dependency>
+        <!-- Annotation -->
+        <dependency>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.inject</groupId>
+            <artifactId>jakarta.inject-api</artifactId>
+            <scope>test</scope>
         </dependency>
         <!-- Cache -->
         <dependency>
@@ -126,51 +85,7 @@
             <artifactId>ehcache</artifactId>
             <optional>true</optional>
         </dependency>
-        <!-- Conversion -->
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.dataformat</groupId>
-            <artifactId>jackson-dataformat-cbor</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-jsr310</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.module</groupId>
-            <artifactId>jackson-module-parameter-names</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.avro</groupId>
-            <artifactId>avro</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.dom4j</groupId>
-            <artifactId>dom4j</artifactId>
-            <optional>true</optional>
-        </dependency>
         <!-- Database -->
-        <dependency>
-            <groupId>com.mysql</groupId>
-            <artifactId>mysql-connector-j</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.el</groupId>
-            <artifactId>jakarta.el-api</artifactId>
-            <scope>test</scope>
-        </dependency>
         <dependency>
             <groupId>jakarta.persistence</groupId>
             <artifactId>jakarta.persistence-api</artifactId>
@@ -192,53 +107,20 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.oracle.database.jdbc</groupId>
-            <artifactId>ojdbc8</artifactId>
-            <version>23.26.0.0.0</version>
-            <scope>test</scope>
-        </dependency>
-        <!-- Scheduling -->
-        <dependency>
-            <groupId>org.quartz-scheduler</groupId>
-            <artifactId>quartz</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.jobrunr</groupId>
-            <artifactId>jobrunr</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>com.github.kagkarlsson</groupId>
-            <artifactId>db-scheduler</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <!-- Spring -->
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-messaging</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-context-support</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.security</groupId>
-            <artifactId>spring-security-config</artifactId>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.springframework.security</groupId>
-            <artifactId>spring-security-test</artifactId>
-            <optional>true</optional>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <!-- Logging -->
         <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-test</artifactId>
-            <scope>test</scope>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
         </dependency>
         <!-- Spring Boot dependencies -->
         <dependency>
@@ -295,7 +177,6 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-orm</artifactId>
             <scope>test</scope>
-            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -311,19 +192,17 @@
         </dependency>
         <!-- Testing -->
         <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>testcontainers-junit-jupiter</artifactId>
-            <scope>test</scope>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
-            <artifactId>testcontainers-oracle-xe</artifactId>
-            <scope>test</scope>
+            <artifactId>testcontainers</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>testcontainers-mysql</artifactId>
-            <scope>test</scope>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
         </dependency>
     </dependencies>
 

@@ -36,52 +36,40 @@
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-messaging</artifactId>
-            <version>${project.version}</version>
             <type>test-jar</type>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-common</artifactId>
-            <version>${project.version}</version>
             <type>test-jar</type>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-conversion</artifactId>
-            <version>${project.version}</version>
             <type>test-jar</type>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-eventsourcing</artifactId>
-            <version>${project.version}</version>
             <type>test-jar</type>
-            <scope>test</scope>
         </dependency>
         <!-- explicitly define transitive dependencies to increase version priority -->
         <!-- see https://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html#Transitive_Dependencies -->
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-eventsourcing</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-modelling</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-messaging</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-test</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <!-- Spring -->

@@ -19,8 +19,9 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.axonframework</groupId>
-        <artifactId>axon</artifactId>
+        <artifactId>axon-parent</artifactId>
         <version>5.0.0-SNAPSHOT</version>
+        <relativePath>../build/parent/pom.xml</relativePath>
     </parent>
 
     <artifactId>axon-eventsourcing</artifactId>
@@ -33,30 +34,24 @@
     <dependencies>
         <!-- Axon -->
         <dependency>
-            <groupId>${project.groupId}</groupId>
+            <groupId>org.axonframework</groupId>
             <artifactId>axon-modelling</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <!-- explicitly define transitive dependencies to increase version priority -->
         <!-- see https://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html#Transitive_Dependencies -->
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-messaging</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-messaging</artifactId>
-            <version>${project.version}</version>
-            <classifier>tests</classifier>
-            <scope>test</scope>
+            <type>test-jar</type>
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-common</artifactId>
-            <version>${project.version}</version>
             <type>test-jar</type>
-            <scope>test</scope>
         </dependency>
 
         <!-- Annotations -->
