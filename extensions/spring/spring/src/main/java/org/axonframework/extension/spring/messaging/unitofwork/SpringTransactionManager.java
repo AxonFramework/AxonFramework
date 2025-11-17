@@ -76,6 +76,11 @@ public class SpringTransactionManager implements TransactionManager {
         };
     }
 
+    @Override
+    public boolean requiresSameThreadInvocations() {
+        return true;
+    }
+
     /**
      * Commits the transaction with given {@code status} if the transaction is new and not completed.
      *

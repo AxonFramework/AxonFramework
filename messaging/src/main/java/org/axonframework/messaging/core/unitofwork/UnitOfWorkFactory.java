@@ -19,6 +19,7 @@ package org.axonframework.messaging.core.unitofwork;
 import jakarta.annotation.Nonnull;
 
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 /**
@@ -57,9 +58,22 @@ public interface UnitOfWorkFactory {
      * configuration.
      *
      * @param identifier    The identifier for the unit of work.
-     * @param customization A function to customize the unit of work's configuration
+     * @param customization A function to customize the unit of work's configuration.
      * @return A new {@link UnitOfWork} instance.
      */
     @Nonnull
-    UnitOfWork create(@Nonnull String identifier, @Nonnull UnaryOperator<UnitOfWorkConfiguration> customization);
+    UnitOfWork create(@Nonnull String identifier,
+                      @Nonnull Function<UnitOfWorkConfiguration, UnitOfWorkConfiguration> customization);
+
+    /**
+     * Creates a new {@link UnitOfWork} with a random identifier and applies the provided customization to its
+     * configuration.
+     *
+     * @param customization A function to customize the unit of work's configuration.
+     * @return A new {@link UnitOfWork} instance.
+     */
+    @Nonnull
+    default UnitOfWork create(@Nonnull Function<UnitOfWorkConfiguration, UnitOfWorkConfiguration> customization) {
+        return create(UUID.randomUUID().toString(), customization);
+    }
 }

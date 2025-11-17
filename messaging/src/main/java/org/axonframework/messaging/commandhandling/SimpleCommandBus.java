@@ -24,6 +24,7 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.ProcessingLifecycle;
 import org.axonframework.messaging.core.unitofwork.ProcessingLifecycleHandlerRegistrar;
 import org.axonframework.messaging.core.unitofwork.UnitOfWork;
+import org.axonframework.messaging.core.unitofwork.UnitOfWorkConfiguration;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +36,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.UnaryOperator;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
@@ -120,7 +122,13 @@ public class SimpleCommandBus implements CommandBus {
             logger.debug("Handling command [{} ({})]", command.identifier(), command.type());
         }
 
-        UnitOfWork unitOfWork = unitOfWorkFactory.create(command.identifier());
+        boolean requiresSameThreadInvocation = processingLifecycleHandlerRegistrars
+                .stream()
+                .anyMatch(ProcessingLifecycleHandlerRegistrar::requiresSameThreadInvocations);
+        UnitOfWork unitOfWork = unitOfWorkFactory.create(command.identifier(),
+                                                         requiresSameThreadInvocation
+                                                                 ? UnitOfWorkConfiguration::forcedSameThreadInvocation
+                                                                 : UnaryOperator.identity());
         processingLifecycleHandlerRegistrars.forEach(it -> it.registerHandlers(unitOfWork));
 
         var result = unitOfWork.executeWithResult(c -> handler.handle(command, c).first().asCompletableFuture());

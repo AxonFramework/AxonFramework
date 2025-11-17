@@ -17,12 +17,12 @@
 package org.axonframework.messaging.core.unitofwork;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.unitofwork.transaction.Transaction;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
-import org.axonframework.messaging.core.Context;
 
 import java.util.Objects;
-import java.util.function.UnaryOperator;
+import java.util.function.Function;
 
 /**
  * Factory for creating {@link UnitOfWork} instances that are bound to a transaction.
@@ -75,8 +75,11 @@ public class TransactionalUnitOfWorkFactory implements UnitOfWorkFactory {
     @Override
     public UnitOfWork create(
             @Nonnull String identifier,
-            @Nonnull UnaryOperator<UnitOfWorkConfiguration> customization
+            @Nonnull Function<UnitOfWorkConfiguration, UnitOfWorkConfiguration> customization
     ) {
+        if (transactionManager.requiresSameThreadInvocations()) {
+            customization = customization.andThen(UnitOfWorkConfiguration::forcedSameThreadInvocation);
+        }
         var unitOfWork = delegate.create(identifier, customization);
         Context.ResourceKey<Transaction> transactionResourceKey = Context.ResourceKey.withLabel("transaction");
         unitOfWork.runOnPreInvocation(ctx -> {
