@@ -30,8 +30,6 @@
         This module contains components that provide tracing support specifically for OpenTelemetry.
     </description>
 
-    <packaging>bundle</packaging>
-
     <properties>
         <opentelemetry-api.version>1.56.0</opentelemetry-api.version>
     </properties>
@@ -69,34 +67,6 @@
                         </manifestEntries>
                     </archive>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-                <version>${felix.maven-bundle-plugin.version}</version>
-                <extensions>true</extensions>
-                <configuration>
-                    <instructions>
-                        <Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
-                        <Bundle-Name>${project.artifactId}</Bundle-Name>
-                        <Bundle-Description>${project.description}</Bundle-Description>
-                        <Bundle-Version>${project.version}</Bundle-Version>
-                        <Export-Package>
-                            org.axonframework.extension.tracing.opentelemetry.*
-                        </Export-Package>
-                        <Import-Package>
-                            *;resolution:=optional
-                        </Import-Package>
-                    </instructions>
-                </configuration>
-                <executions>
-                    <!-- This execution makes sure that the manifest is available when the tests are executed -->
-                    <execution>
-                        <goals>
-                            <goal>manifest</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>
