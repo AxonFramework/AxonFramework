@@ -28,10 +28,11 @@ import java.util.concurrent.Executor;
  * Defines the work scheduler used during unit of work processing.
  *
  * @param workScheduler The {@link Executor} for processing unit of work actions.
+ * @param allowAsyncProcessing Whether the unit of work should allow fully asynchronous processing.
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public record UnitOfWorkConfiguration(@Nonnull Executor workScheduler) {
+public record UnitOfWorkConfiguration(@Nonnull Executor workScheduler, boolean allowAsyncProcessing) {
 
     /**
      * Creates default configuration with direct execution.
@@ -40,7 +41,7 @@ public record UnitOfWorkConfiguration(@Nonnull Executor workScheduler) {
      */
     @Nonnull
     public static UnitOfWorkConfiguration defaultValues() {
-        return new UnitOfWorkConfiguration(DirectExecutor.instance());
+        return new UnitOfWorkConfiguration(DirectExecutor.instance(), true);
     }
 
     /**
@@ -52,6 +53,17 @@ public record UnitOfWorkConfiguration(@Nonnull Executor workScheduler) {
     @Nonnull
     public UnitOfWorkConfiguration workScheduler(@Nonnull Executor workScheduler) {
         Objects.requireNonNull(workScheduler, "workScheduler may not be null");
-        return new UnitOfWorkConfiguration(workScheduler);
+        return new UnitOfWorkConfiguration(workScheduler, true);
+    }
+
+    /**
+     * Creates a new {@link UnitOfWorkConfiguration} that forces all handlers to be invoked by the same thread.
+     * The configuration uses a direct execution model where all tasks are run immediately on the
+     * calling thread, and the coordinating thread will wait for any asynchronous processing to complete.
+     *
+     * @return A new {@link UnitOfWorkConfiguration} instance configured to enforce same-thread invocation.
+     */
+    public UnitOfWorkConfiguration forcedSameThreadInvocation() {
+        return new UnitOfWorkConfiguration(Runnable::run, false);
     }
 }
