@@ -16,31 +16,32 @@
 
 package org.axonframework.messaging.core.unitofwork.transaction;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.unitofwork.ProcessingLifecycle;
 
 /**
- * TransactionManager implementation that does nothing. It's a placeholder implementation for the cases where no
- * special transaction management is required.
+ * A {@link TransactionManager} implementation that does nothing.
+ * <p>
+ * It's a placeholder implementation for the cases where no special transaction management is required.
  *
  * @author Allard Buijze
- * @since 2.0
+ * @since 2.0.0
  */
 public enum NoTransactionManager implements TransactionManager {
 
     /**
-     * Singleton instance of the TransactionManager
+     * Singleton instance of the {@link TransactionManager}.
      */
     INSTANCE;
 
     /**
-     * Returns the singleton instance of this TransactionManager
+     * Returns the singleton instance of this {@link TransactionManager}.
      *
-     * @return the singleton instance of this TransactionManager
+     * @return The singleton instance of this {@link TransactionManager}.
      */
     public static TransactionManager instance() {
         return INSTANCE;
     }
-
 
 
     @Override
@@ -49,7 +50,7 @@ public enum NoTransactionManager implements TransactionManager {
     }
 
     @Override
-    public void registerHandlers(ProcessingLifecycle processingLifecycle) {
+    public void registerHandlers(@Nonnull ProcessingLifecycle processingLifecycle) {
         // no-op
     }
 
