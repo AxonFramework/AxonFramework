@@ -30,10 +30,6 @@
     <name>Axon Example - SpringBoot - University</name>
     <description>Spring Boot Example application for demo and integration testing.</description>
 
-    <properties>
-<!--        <spring.boot.version>4.0.0-RC2</spring.boot.version>-->
-    </properties>
-
     <dependencyManagement>
         <dependencies>
             <dependency>
