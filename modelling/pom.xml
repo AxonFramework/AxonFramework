@@ -161,13 +161,6 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Testing -->
-        <dependency>
-            <groupId>org.awaitility</groupId>
-            <artifactId>awaitility</artifactId>
-            <scope>test</scope>
-        </dependency>
-
         <!-- Validation -->
         <dependency>
             <groupId>org.hibernate.validator</groupId>
