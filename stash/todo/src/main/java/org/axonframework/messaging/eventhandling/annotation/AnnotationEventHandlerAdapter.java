@@ -138,7 +138,7 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
     @Override
     public Object handleSync(@Nonnull EventMessage event, @Nonnull ProcessingContext context) throws Exception {
         Optional<MessageHandlingMember<? super Object>> handler =
-                inspector.getHandlers(listenerType)
+                inspector.getHandlers(listenerType).stream()
                          .filter(h -> h.canHandle(event, context))
                          .findFirst();
         if (handler.isPresent()) {
@@ -150,13 +150,13 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
 
     @Override
     public boolean canHandle(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
-        return inspector.getHandlers(listenerType)
+        return inspector.getHandlers(listenerType).stream()
                         .anyMatch(h -> h.canHandle(event, context));
     }
 
     @Override
     public boolean canHandleType(Class<?> payloadType) {
-        return inspector.getHandlers(listenerType)
+        return inspector.getHandlers(listenerType).stream()
                         .filter(messageHandlingMember -> messageHandlingMember.canHandleMessageType(EventMessage.class))
                         .anyMatch(handler -> handler.canHandleType(payloadType));
     }
@@ -176,7 +176,7 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
         try {
             ResetContext resetMessage = asResetContext(resetContext);
             ProcessingContext messageProcessingContext = Message.addToContext(context, resetMessage);
-            inspector.getHandlers(listenerType)
+            inspector.getHandlers(listenerType).stream()
                      .filter(h -> h.canHandle(resetMessage, messageProcessingContext))
                      .findFirst()
                      .ifPresent(messageHandlingMember -> messageHandlingMember.handle(resetMessage,
@@ -231,6 +231,7 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
      *
      * @return A set of classes representing the event types this adapter can handle.
      */
+    @Override
     public Set<Class<?>> supportedEventTypes() {
         return inspector.getAllHandlers()
                         .values()

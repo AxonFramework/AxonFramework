@@ -38,24 +38,24 @@ import java.util.function.ToIntFunction;
  */
 public final class HandlerComparator {
 
+    private static final Comparator<MessageHandlingMember<?>> HANDLER_COMPARATOR =
+        Comparator.comparing(
+                (Function<MessageHandlingMember<?>, Class<?>>) MessageHandlingMember::payloadType,
+                HandlerComparator::compareHierarchy
+        )
+        .thenComparing(Comparator.comparingInt(HandlerComparator::parameterCount).reversed())
+        .thenComparing(HandlerComparator::executableSignature);
+
+    private static final Comparator<MessageHandlingMember<?>> HANDLER_COMPARATOR_REVERSED = HANDLER_COMPARATOR.reversed();
+
     private static final Comparator<MessageHandlingMember<?>> INSTANCE =
             Comparator.comparingInt((ToIntFunction<MessageHandlingMember<?>>) MessageHandlingMember::priority)
                       .reversed()
                       .thenComparing(m -> !isResultHandler(m))
-                      .thenComparing((memberOne, memberTwo) -> {
-                          Comparator<MessageHandlingMember<?>> handlerComparator =
-                                  Comparator.comparing(
-                                                    (Function<MessageHandlingMember<?>, Class<?>>) MessageHandlingMember::payloadType,
-                                                    HandlerComparator::compareHierarchy
-                                            )
-                                            .thenComparing(Comparator.comparingInt(HandlerComparator::parameterCount)
-                                                                     .reversed())
-                                            .thenComparing(HandlerComparator::executableSignature);
-
-                          return isResultHandler(memberOne) || isResultHandler(memberTwo)
-                                  ? handlerComparator.reversed().compare(memberOne, memberTwo)
-                                  : handlerComparator.compare(memberOne, memberTwo);
-                      });
+                      .thenComparing((memberOne, memberTwo) -> isResultHandler(memberOne) || isResultHandler(memberTwo)
+                              ? HANDLER_COMPARATOR_REVERSED.compare(memberOne, memberTwo)
+                              : HANDLER_COMPARATOR.compare(memberOne, memberTwo)
+                      );
 
     private static boolean isResultHandler(MessageHandlingMember<?> m) {
         return m.attribute("ResultHandler.resultType").isPresent();

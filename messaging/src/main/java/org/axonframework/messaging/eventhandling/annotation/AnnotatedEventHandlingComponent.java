@@ -17,13 +17,6 @@
 package org.axonframework.messaging.eventhandling.annotation;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.eventhandling.EventHandler;
-import org.axonframework.messaging.eventhandling.EventHandlerRegistry;
-import org.axonframework.messaging.eventhandling.EventHandlingComponent;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
-import org.axonframework.messaging.eventhandling.EventSink;
-import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageHandler;
 import org.axonframework.messaging.core.MessageStream;
@@ -31,11 +24,22 @@ import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.core.annotation.HandlerDefinition;
-import org.axonframework.messaging.core.interception.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.core.interception.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventHandler;
+import org.axonframework.messaging.eventhandling.EventHandlerRegistry;
+import org.axonframework.messaging.eventhandling.EventHandlingComponent;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.EventSink;
+import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 
+import java.lang.reflect.Executable;
+import java.lang.reflect.Method;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
@@ -130,23 +134,32 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
      * @param delegate              The delegate event handling component to which the handlers will be subscribed.
      * @param model                 The inspector to use to find the annotated handlers on the annotatedEventHandler.
      */
-    public AnnotatedEventHandlingComponent(@Nonnull T annotatedEventHandler,
-                                           @Nonnull EventHandlingComponent delegate,
-                                           @Nonnull AnnotatedHandlerInspector<T> model
+    private AnnotatedEventHandlingComponent(@Nonnull T annotatedEventHandler,
+                                            @Nonnull EventHandlingComponent delegate,
+                                            @Nonnull AnnotatedHandlerInspector<T> model
     ) {
         this.target = requireNonNull(annotatedEventHandler, "The Annotated Event Handler may not be null");
         this.model = requireNonNull(model, "The Annotated Handler Inspector may not be null");
-
         this.delegate = delegate;
+
         initializeHandlersBasedOnModel();
     }
 
     private void initializeHandlersBasedOnModel() {
-        model.getAllHandlers().forEach(
-                (modelClass, handlers) ->
-                        handlers.stream()
-                                .filter(h -> h.canHandleMessageType(EventMessage.class))
-                                .forEach(this::registerHandler));
+        Set<MethodSignature> seenMethods = new HashSet<>();
+
+        for (MessageHandlingMember<? super T> handlingMember : model.getHandlers(target.getClass())) {
+            if (handlingMember.canHandleMessageType(EventMessage.class)) {
+                MethodSignature ms = handlingMember.unwrap(Executable.class)
+                    .map(Method.class::cast)
+                    .map(MethodSignature::of)
+                    .orElseThrow();  // should never happen as this component only works with annotated methods
+
+                if (seenMethods.add(ms)) {
+                    registerHandler(handlingMember);
+                }
+            }
+        }
     }
 
     private void registerHandler(MessageHandlingMember<? super T> handler) {
@@ -206,5 +219,11 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
     @Override
     public Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
         return delegate.sequenceIdentifierFor(event, context);
+    }
+
+    record MethodSignature(String name, List<Class<?>> parameterTypes) {
+        static MethodSignature of(Method m) {
+            return new MethodSignature(m.getName(), List.of(m.getParameterTypes()));
+        }
     }
 }
