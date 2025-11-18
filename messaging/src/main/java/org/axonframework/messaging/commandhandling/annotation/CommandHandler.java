@@ -18,7 +18,6 @@ package org.axonframework.messaging.commandhandling.annotation;
 
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.core.annotation.MessageHandler;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -27,16 +26,34 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marker annotation to mark any method on an object as being a CommandHandler. Use the
- * {@link AnnotatedCommandHandlingComponent} to subscribe the annotated class to the command bus. This annotation can
- * also be placed directly on Aggregate members to have it handle the commands directly.
- * <p/>
- * The annotated method's first parameter is the command handled by that method. Optionally, the command handler may
- * specify a second parameter of type {@link ProcessingContext}. The active
- * processing context will be passed if that parameter is supplied.
+ * Annotation to be placed on methods that can handle {@link CommandMessage commands}, thus making them
+ * {@link org.axonframework.messaging.commandhandling.CommandHandler CommandHandlers}.
+ * <p>
+ * Command handler annotated methods are typically subscribed with a
+ * {@link org.axonframework.messaging.commandhandling.CommandBus} as part of an
+ * {@link AnnotatedCommandHandlingComponent}. This annotation can also be placed directly on entity children (read: an
+ * entity contained in another entity) to have it handle the commands directly.
+ * <p>
+ * The parameters of the annotated method are resolved using parameter resolvers. Axon provides a number of parameter
+ * resolvers that allow you to use the following parameter types:<ul>
+ * <li>The first parameter is always the {@link CommandMessage#payload() payload} of the {@code CommandMessage}.
+ * <li>Parameters annotated with {@link org.axonframework.messaging.core.annotation.MetadataValue} will resolve to the
+ * {@link org.axonframework.messaging.core.Metadata} value with the key as indicated on the annotation. If required is
+ * false (default), null is passed when the metadata value is not present. If required is true, the resolver will not
+ * match and prevent the method from being invoked when the metadata value is not present.</li>
+ * <li>Parameters of type {@code Metadata} will have the entire
+ * {@link CommandMessage#metadata() command message metadata} injected.</li>
+ * <li>Parameters assignable to {@link org.axonframework.messaging.core.Message} will have the entire {@link
+ * CommandMessage} injected (if the message is assignable to that parameter). If the first parameter is of type message,
+ * it effectively matches a command of any type. Due to type erasure, Axon cannot detect what parameter is expected. In
+ * such case, it is best to declare a parameter of the payload type, followed by a parameter of type
+ * {@code Message}.</li>
+ * <li>A parameter of type {@link org.axonframework.messaging.core.unitofwork.ProcessingContext} will inject the active
+ * processing context at that moment in time.</li>
+ * </ul>
  *
  * @author Allard Buijze
- * @since 0.5
+ * @since 0.5.0
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
@@ -45,25 +62,29 @@ import java.lang.annotation.Target;
 public @interface CommandHandler {
 
     /**
-     * The name of the Command this handler listens to. Defaults to the fully qualified class name of the payload type
-     * (i.e. first parameter).
+     * The name of the Command this handler listens to.
+     * <p>
+     * Defaults to the type declared by the payload type (i.e. first parameter), or its fully qualified class name, if
+     * no explicit names are declared on that payload type.
      *
      * @return The command name.
      */
     String commandName() default "";
 
     /**
-     * The property of the command to be used as a routing key towards this command handler instance. If multiple
-     * handlers instances are available, a sending component is responsible to route commands with the same routing key
-     * value to the correct instance.
+     * The property of the command to be used as a routing key towards this command handler instance.
+     * <p>
+     * If multiple handlers instances are available, a sending component is responsible to route commands with the same
+     * routing key value to the correct instance.
      *
      * @return The property of the command to use as routing key.
      */
     String routingKey() default "";
 
     /**
-     * The type of payload expected by this handler. Defaults to the expected types expresses by (primarily the first)
-     * parameters of the annotated Method or Constructor.
+     * The type of payload expected by this handler.
+     * <p>
+     * Defaults to the expected types expresses by (primarily the first) parameters of the annotated method.
      *
      * @return The payload type expected by this handler.
      */
