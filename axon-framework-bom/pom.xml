@@ -25,7 +25,7 @@
 
     <artifactId>axon-framework-bom</artifactId>
 
-    <name>Axon Framework - Bill of Material</name>
+    <name>Axon Framework - Bill of Materials</name>
     <description>
         Bill of Material providing all contained modules of the axon-framework.
     </description>
