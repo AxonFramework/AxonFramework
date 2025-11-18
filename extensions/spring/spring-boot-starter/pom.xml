@@ -53,12 +53,12 @@
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
-            <artifactId>axon-modelling</artifactId>
+            <artifactId>axon-messaging</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
-            <artifactId>axon-messaging</artifactId>
+            <artifactId>axon-modelling</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

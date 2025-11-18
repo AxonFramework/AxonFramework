@@ -16,19 +16,20 @@
   -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.axonframework</groupId>
-        <artifactId>axon</artifactId>
+        <artifactId>axon-parent</artifactId>
         <version>5.0.0-SNAPSHOT</version>
+        <relativePath>../../build/parent/pom.xml</relativePath>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>axon-legacy-saga</artifactId>
+    <artifactId>axon-legacy-aggregate</artifactId>
 
-    <name>Axon Framework - Legacy Saga</name>
+    <name>Axon Framework - Legacy Aggregate</name>
     <description>
-        This module contains the legacy Saga solution of Axon Framework 4. Use this dependency to ease a migration
-        period for a projects sagas.
+        This module contains the legacy Aggregate solution of Axon Framework 4. Use this dependency to ease a migration
+        period for a projects aggregates.
     </description>
 
     <packaging>jar</packaging>
@@ -42,27 +43,26 @@
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
-            <artifactId>axon-legacy-aggregate</artifactId>
+            <artifactId>axon-eventsourcing</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-test</artifactId>
             <version>${project.version}</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>axon-messaging</artifactId>
-            <type>test-jar</type>
-            <scope>test</scope>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
+            <groupId>org.axonframework</groupId>
             <artifactId>axon-common</artifactId>
-            <type>test-jar</type>
-            <scope>test</scope>
             <version>${project.version}</version>
+            <type>test-jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.axonframework</groupId>
+            <artifactId>axon-messaging</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
@@ -79,7 +79,6 @@
             <artifactId>jakarta.inject-api</artifactId>
             <scope>test</scope>
         </dependency>
-
         <!-- Cache -->
         <dependency>
             <groupId>javax.cache</groupId>
@@ -91,7 +90,6 @@
             <artifactId>ehcache</artifactId>
             <optional>true</optional>
         </dependency>
-
         <!-- Database -->
         <dependency>
             <groupId>jakarta.persistence</groupId>
@@ -124,34 +122,11 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Spring -->
+        <!-- Logging -->
         <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-messaging</artifactId>
-            <optional>true</optional>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-context-support</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.security</groupId>
-            <artifactId>spring-security-config</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.security</groupId>
-            <artifactId>spring-security-test</artifactId>
-            <optional>true</optional>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-
         <!-- Spring Boot dependencies -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -206,7 +181,6 @@
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-orm</artifactId>
-            <optional>true</optional>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -221,7 +195,6 @@
             <version>${spring.boot.version}</version>
             <scope>test</scope>
         </dependency>
-
         <!-- Testing -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
