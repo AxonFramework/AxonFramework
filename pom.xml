@@ -15,13 +15,12 @@
   ~ limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.axonframework</groupId>
     <artifactId>axon</artifactId>
-    <version>5.0.0-SNAPSHOT</version>
+    <version>5.0.0</version>
 
     <modules>
         <module>build/parent</module>
@@ -101,10 +100,10 @@
     </properties>
 
     <!-- Framework dependencies are managed in axon-parent -->
-    <dependencyManagement/>
+    <dependencyManagement />
 
     <!-- Framework dependencies are managed in axon-parent -->
-    <dependencies/>
+    <dependencies />
 
     <build>
         <defaultGoal>clean package</defaultGoal>
@@ -231,7 +230,7 @@
         <connection>scm:git:git://github.com/AxonFramework/AxonFramework.git</connection>
         <developerConnection>scm:git:git@github.com:AxonFramework/AxonFramework.git</developerConnection>
         <url>https://github.com/AxonFramework/AxonFramework</url>
-        <tag>axon-5.0.0-RC3</tag>
+        <tag>axon-5.0.0</tag>
     </scm>
 
     <developers>
