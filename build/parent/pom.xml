@@ -94,9 +94,9 @@
         <jobrunr.version>8.2.2</jobrunr.version>
         <quartz.version>2.5.1</quartz.version>
         <!-- Spring -->
-        <spring.version>7.0.0</spring.version>
+        <spring.version>6.2.12</spring.version>
         <spring.boot.version>3.5.7</spring.boot.version>
-        <spring-security.version>7.0.0</spring-security.version>
+        <spring-security.version>6.5.6</spring-security.version>
         <!-- Testing -->
         <awaitility.version>4.3.0</awaitility.version>
         <hamcrest.version>3.0</hamcrest.version>
