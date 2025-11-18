@@ -1781,21 +1781,15 @@ desired.
 In Axon, an _Event Handling Component_ may declare multiple `@EventHandler` annotated methods.
 For each incoming event, Axon inspects all annotated handler methods available on the instance,
 including those inherited from supertypes. It then determines which handlers best match the payload type.
-Contrary to previous versions, **all** handlers at that highest level of specificity are now
-invoked.
+Contrary to previous versions, **all** matching handlers are now invoked.
 
-Payload matching proceeds from most specific to least specific.
-A handler whose first parameter exactly matches the payload type is preferred.
-If no such handler is present, Axon considers handlers accepting supertypes
-(e.g., an `Integer` event is handled by `Integer` handlers first;
-if none exist, `Number` handlers apply; if none exist, `Object` handlers may apply).
+For each handler, the supported Message Type is determined. It looks at the `eventName` attribute of the `@EventHandler` annotation. If the attribute is not set, the handler's payload parameter is used to detect the type. If that payload type is annotated with `@Event`, the name is taken from the attributes on that annotation. If not set, the message type defaults to the fully qualified class name of the payload.
 
 Handler resolution follows these rules:
 
 1. Given the event handling component instance, Axon inspects all `@EventHandler` methods visible on it,
    including inherited methods.
-2. From this full set, Axon selects the handlers whose parameter type is the most specific match
-   for the event’s payload. All handlers at this specificity level are invoked.
+2. From this full set, Axon invokes the handlers that declare to handle that type of message
 3. If no handler on the instance can accept the payload, the event is ignored.
 
 This ensures that only handlers matching the most specific applicable payload type are invoked,
