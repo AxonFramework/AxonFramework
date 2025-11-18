@@ -73,6 +73,10 @@ class AxonServerQueryBusConnectorTest {
         @Test
         void subscribeRegistersQueryHandler() {
             Registration reg = mock(Registration.class);
+            when(reg.onAck(any())).thenAnswer(i -> {
+                i.getArgument(0, Runnable.class).run();
+                return null;
+            });
             when(mockQueryChannel.registerQueryHandler(any(), any(QueryDefinition.class))).thenReturn(reg);
 
             CompletableFuture<Void> future = testSubject.subscribe(new QualifiedName("TestQuery"));
@@ -84,6 +88,10 @@ class AxonServerQueryBusConnectorTest {
         @Test
         void unsubscribeCancelsRegistrationAndReturnsTrueWhenPresent() {
             Registration reg = mock(Registration.class);
+            when(reg.onAck(any())).thenAnswer(i -> {
+                i.getArgument(0, Runnable.class).run();
+                return null;
+            });
             when(mockQueryChannel.registerQueryHandler(any(), any(QueryDefinition.class))).thenReturn(reg);
             QualifiedName name = new QualifiedName("TestQuery");
             testSubject.subscribe(name).join();
