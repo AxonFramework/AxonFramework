@@ -38,6 +38,11 @@
             <artifactId>axon-common</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.axonframework</groupId>
+            <artifactId>axon-update</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- Conversion -->
         <dependency>
