@@ -21,6 +21,8 @@ import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
 import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
 import org.axonframework.messaging.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.eventhandling.gateway.EventAppender;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.store.inmemory.InMemoryTokenStore;
 import org.axonframework.modelling.annotation.InjectEntity;
 import org.slf4j.Logger;
 import org.springframework.boot.ApplicationRunner;
@@ -110,5 +112,10 @@ public class UniversityTestApplication {
             gateway.sendAndWait(new CreateCourse("1", "Foo"));
             gateway.sendAndWait(new UpdateCourse("1", "Bar"));
         };
+    }
+
+    @Bean
+    TokenStore tokenStore() {
+        return new InMemoryTokenStore();
     }
 }

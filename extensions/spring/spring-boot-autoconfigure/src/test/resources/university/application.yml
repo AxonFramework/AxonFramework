@@ -1,4 +1,9 @@
-spring.docker.compose.enabled: false
+spring:
+  docker.compose.enabled: false
+  autoconfigure.exclude:
+    - org.axonframework.extension.springboot.autoconfig.JpaAutoConfiguration
+    - org.axonframework.extension.springboot.autoconfig.JpaEventStoreAutoConfiguration
+    - org.axonframework.extension.springboot.autoconfig.TransactionAutoConfiguration
 axon.axonserver.enabled: false
 logging.level:
   org.axonframework.messaging.eventhandling.processing.streaming.pooled.Coordinator: off
