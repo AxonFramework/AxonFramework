@@ -118,8 +118,11 @@ public class AnnotatedCommandHandlingComponent<T> implements CommandHandlingComp
                 "AnnotatedCommandHandlingComponent[%s]".formatted(annotatedCommandHandler.getClass().getName())
         );
         this.target = requireNonNull(annotatedCommandHandler, "The Annotated Command Handler may not be null.");
-        //noinspection unchecked
-        this.model = AnnotatedHandlerInspector.inspectType((Class<T>) annotatedCommandHandler.getClass(),
+
+        @SuppressWarnings("unchecked")
+        Class<T> cls = (Class<T>) annotatedCommandHandler.getClass();
+
+        this.model = AnnotatedHandlerInspector.inspectType(cls,
                                                            parameterResolverFactory,
                                                            handlerDefinition);
         this.messageTypeResolver = requireNonNull(messageTypeResolver, "The MessageTypeResolver may not be null.");
@@ -129,12 +132,7 @@ public class AnnotatedCommandHandlingComponent<T> implements CommandHandlingComp
     }
 
     private void initializeHandlersBasedOnModel() {
-        model.getAllHandlers().forEach(
-                (modelClass, handlers) ->
-                        handlers.stream()
-                                .filter(h -> h.canHandleMessageType(CommandMessage.class))
-                                .forEach(this::registerHandler)
-        );
+        model.getUniqueHandlers(target.getClass(), CommandMessage.class).forEach(this::registerHandler);
     }
 
     private void registerHandler(MessageHandlingMember<? super T> handler) {

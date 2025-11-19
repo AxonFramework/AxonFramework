@@ -69,7 +69,13 @@ public class SimpleQueryHandlingComponent implements
         if (handler instanceof QueryHandlingComponent component) {
             return subscribe(component);
         }
-        queryHandlers.put(queryName, handler);
+
+        QueryHandler existingHandler = queryHandlers.computeIfAbsent(queryName, k -> handler);
+
+        if (existingHandler != handler) {
+            throw new DuplicateQueryHandlerSubscriptionException(queryName, existingHandler, handler);
+        }
+
         return this;
     }
 
