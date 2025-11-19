@@ -20,7 +20,7 @@
 
     <groupId>org.axonframework</groupId>
     <artifactId>axon</artifactId>
-    <version>5.1.0-SNAPSHOT</version>
+    <version>5.0.1-SNAPSHOT</version>
 
     <modules>
         <module>build/parent</module>
