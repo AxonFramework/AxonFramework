@@ -270,13 +270,30 @@ public class AnnotatedHandlerInspector<T> {
     }
 
     /**
-     * Returns a sorted set of detected members of given {@code type} that are capable of handling certain messages.
+     * Inspect another handler type and register the result to the inspector registry of this inspector. This is used by
+     * Axon to inspect child entities of an aggregate.
+     *
+     * @param entityType the type of the handler to inspect
+     * @param <C>        the handler's type
+     * @return a new inspector for the given type
+     */
+    public <C> AnnotatedHandlerInspector<C> inspect(Class<C> entityType) {
+        return AnnotatedHandlerInspector.createInspector(entityType,
+                                                         parameterResolverFactory,
+                                                         handlerDefinition,
+                                                         registry,
+                                                         emptySet());
+    }
+
+    /**
+     * Returns a list of detected members of given {@code type} that are capable of handling certain messages.
      *
      * @param type a type of inspected entity
-     * @return a sorted set of detected message handlers for given {@code type}
+     * @return a stream of detected message handlers for given {@code type}
      */
-    public SortedSet<MessageHandlingMember<? super T>> getHandlers(Class<?> type) {
-        return handlers.getOrDefault(type, emptySortedSet());
+    public Stream<MessageHandlingMember<? super T>> getHandlers(Class<?> type) {
+        return handlers.getOrDefault(type, emptySortedSet())
+                       .stream();
     }
 
     /**

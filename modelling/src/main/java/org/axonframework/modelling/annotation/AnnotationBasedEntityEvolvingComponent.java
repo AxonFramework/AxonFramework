@@ -100,7 +100,7 @@ public class AnnotationBasedEntityEvolvingComponent<E> implements EntityEvolving
             var listenerType = entity.getClass();
 
             var eventTypeName = event.type().name();
-            var handlers = inspector.getHandlers(listenerType).stream()
+            var handlers = inspector.getHandlers(listenerType)
                                     .filter(h -> messageTypeResolver.resolveOrThrow(h.payloadType())
                                                                     .name().equals(eventTypeName))
                                     .toList();
@@ -142,7 +142,7 @@ public class AnnotationBasedEntityEvolvingComponent<E> implements EntityEvolving
     @Nonnull
     @Override
     public Set<QualifiedName> supportedEvents() {
-        return inspector.getHandlers(entityType).stream()
+        return inspector.getHandlers(entityType)
                         .filter(Objects::nonNull)
                         .map(MessageHandlingMember::payloadType)
                         .map(QualifiedName::new)

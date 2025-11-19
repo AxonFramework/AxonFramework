@@ -153,7 +153,7 @@ class ExceptionHandlerTest {
      */
     private Object handle(Message message) throws Exception {
         Optional<MessageHandlingMember<? super ExceptionHandlingComponent>> handler =
-                inspector.getHandlers(ExceptionHandlingComponent.class).stream()
+                inspector.getHandlers(ExceptionHandlingComponent.class)
                          .filter(h -> h.canHandle(message, new LegacyMessageSupportingContext(message)))
                          .findFirst();
         if (handler.isPresent()) {

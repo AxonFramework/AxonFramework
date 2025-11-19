@@ -96,8 +96,8 @@ public class AnnotationSagaMetaModelFactory implements SagaMetaModelFactory {
                                                       parameterResolverFactory,
                                                       handlerDefinition);
 
-        return new InspectedSagaModel<>(
-                handlerInspector.getHandlers(sagaType).stream().toList()
+        return new InspectedSagaModel<T>(
+                handlerInspector.getHandlers(sagaType).collect(Collectors.toList())
         );
     }
 
@@ -120,6 +120,7 @@ public class AnnotationSagaMetaModelFactory implements SagaMetaModelFactory {
         }
 
         @Override
+        @SuppressWarnings("unchecked")
         public Optional<AssociationValue> resolveAssociation(EventMessage eventMessage, ProcessingContext context) {
             for (MessageHandlingMember<? super T> handler : handlers) {
                 if (handler.canHandle(eventMessage, context)) {

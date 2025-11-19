@@ -251,7 +251,7 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
             EntityMetamodelBuilder<E> builder, AnnotatedHandlerInspector<E> inspected
     ) {
         LinkedList<QualifiedName> registeredCommands = new LinkedList<>();
-        inspected.getHandlers(entityType).stream()
+        inspected.getHandlers(entityType)
                  .filter(h -> h.canHandleMessageType(CommandMessage.class)
                          || h.canHandleMessageType(EventMessage.class))
                  .filter(h -> h.unwrap(Method.class).map(m -> !Modifier.isAbstract(m.getModifiers())).orElse(false))

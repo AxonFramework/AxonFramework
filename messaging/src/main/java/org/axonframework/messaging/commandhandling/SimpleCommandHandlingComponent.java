@@ -74,13 +74,7 @@ public class SimpleCommandHandlingComponent implements
         if (commandHandler instanceof CommandHandlingComponent component) {
             return subscribe(component);
         }
-
-        CommandHandler existingHandler = commandHandlers.computeIfAbsent(name, k -> commandHandler);
-
-        if (existingHandler != commandHandler) {
-            throw new DuplicateCommandHandlerSubscriptionException(name, existingHandler, commandHandler);
-        }
-
+        commandHandlers.put(name, commandHandler);
         return this;
     }
 
