@@ -259,6 +259,7 @@ These terms are exceptions to sentence-case rules in H2-H6 headings:
 ### Warnings (won't break build but should avoid)
 - Remove annotation comments like TODO, FIXME, XXX, NOTE before committing
 - Watch for common misspellings (e.g., "poplar" instead of "popular")
+- Avoid overly long sentences (Vale may flag sentences that are too complex - break them into shorter, clearer sentences)
 
 ---
 
