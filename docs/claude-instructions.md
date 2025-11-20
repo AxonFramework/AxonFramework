@@ -32,7 +32,10 @@ Axon 5 includes fundamental architectural changes:
 3. Consult `axon-5/api-changes.md` and other design docs for API details
 4. **IMPORTANT:** Always verify against actual code in the framework before making changes
 5. Update the reference guide file with the necessary changes
-6. Mark progress in `changes-to-process.md` as sections are completed
+6. **CRITICAL:** Mark progress in `changes-to-process.md` as sections are completed
+   - Change status from "**Changes to apply:**" to "**Status:** ✅ COMPLETED"
+   - Add "**Changes applied:**" section listing all changes made
+   - This tracking is MANDATORY - never skip this step
 
 ## Important Guidelines
 
@@ -45,7 +48,7 @@ Axon 5 includes fundamental architectural changes:
 - **EventBus → EventSink**: Be careful here
   - EventBus is a well-known concept to users
   - EventSink is more technical and specifically represents the publishing/sending side
-  - Introduce EventSink clearly and explain its relationship to the EventBus concept
+  - Introduce EventSink clearly and explain its relationship to the EventBus concept. Make clear that EventSink could also be used when sending Events to a 3rd-party eventing system.
   - Don't just blindly rename - help users understand the shift
 
 ### ProcessingContext Usage
@@ -132,6 +135,40 @@ All aggregate-related files should be renamed to entity equivalents:
 - `aggregate.adoc` → `event-sourced-entity.adoc`
 - `multi-entity-aggregates.adoc` → `entity-hierarchies.adoc` or `child-entities.adoc`
 - etc. (see `changes-to-process.md` for full list)
+
+### Files to Rename
+**IMPORTANT: This is an incremental migration. Files are renamed gradually, not all at once.**
+
+When working on a file:
+1. **ALWAYS verify xref targets exist** before using them
+2. Use the OLD filename in xrefs until the target file is actually renamed
+3. When you rename a file, update ALL xrefs pointing to it across the entire reference guide
+
+**Workflow for handling xrefs:**
+1. Before writing an xref, check if the target file exists with the new name
+2. If the target file doesn't exist yet, use the old filename in the xref
+3. Add a comment noting that the xref should be updated when the target is renamed: `// TODO: Update to new-name.adoc when file is renamed`
+
+**Example:**
+```adoc
+// WRONG - references file that doesn't exist yet:
+xref:axon-framework-commands:modeling/event-sourced-entity.adoc[Entity]
+
+// CORRECT - uses current filename:
+xref:axon-framework-commands:modeling/aggregate.adoc[Entity]
+// TODO: Update to event-sourced-entity.adoc when aggregate.adoc is renamed
+```
+
+**When renaming a file:**
+1. Rename the physical file
+2. Use `Grep` to find ALL xrefs to the old filename across the entire `docs/old-reference-guide/` directory
+3. Update every xref to use the new filename
+4. Remove any TODO comments about updating that xref
+
+**To find all xrefs to a file:**
+```
+grep -r "xref:.*old-filename.adoc" docs/old-reference-guide/
+```
 
 ### Files to Remove
 - `upgrading-to-4-7.adoc` - Will be replaced with Axon 4 to 5 migration guide separately
@@ -222,6 +259,22 @@ These terms are exceptions to sentence-case rules in H2-H6 headings:
 ### Warnings (won't break build but should avoid)
 - Remove annotation comments like TODO, FIXME, XXX, NOTE before committing
 - Watch for common misspellings (e.g., "poplar" instead of "popular")
+
+---
+
+## Critical Reminders
+
+### After Completing Any Documentation Update
+
+**YOU MUST:**
+1. ✅ Update `docs/changes-to-process.md` to mark the section as completed
+2. ✅ Verify all xrefs point to existing files (use old filenames until files are renamed)
+3. ✅ Check style guide compliance (heading capitalization, acronyms, product names)
+
+**When renaming a file:**
+1. ✅ Use `Grep` to find ALL xrefs to the old filename across entire reference guide
+2. ✅ Update every xref to use the new filename
+3. ✅ Remove any TODO comments about updating that xref
 
 ---
 
