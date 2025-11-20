@@ -16,25 +16,19 @@
 
 package org.axonframework.test.fixture;
 
-import org.axonframework.messaging.core.Message;
-import org.axonframework.messaging.core.MessageStream;
-import org.axonframework.messaging.core.MessageType;
-import org.axonframework.messaging.core.QualifiedName;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
-import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
-import org.axonframework.messaging.queryhandling.GenericQueryResponseMessage;
-import org.axonframework.messaging.queryhandling.QueryHandler;
-import org.axonframework.messaging.queryhandling.QueryResponseMessage;
-import org.axonframework.messaging.queryhandling.SimpleQueryHandlingComponent;
-import org.axonframework.messaging.queryhandling.configuration.QueryHandlingModule;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
+import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorModule;
+import org.axonframework.messaging.queryhandling.configuration.QueryHandlingModule;
+import org.axonframework.test.fixture.sampledomain.GetStudentById;
+import org.axonframework.test.fixture.sampledomain.InMemoryStudentRepository;
 import org.axonframework.test.fixture.sampledomain.StudentNameChangedEvent;
+import org.axonframework.test.fixture.sampledomain.StudentNotFoundException;
+import org.axonframework.test.fixture.sampledomain.StudentProjection;
+import org.axonframework.test.fixture.sampledomain.StudentQueryHandler;
+import org.axonframework.test.fixture.sampledomain.StudentReadModel;
+import org.axonframework.test.fixture.sampledomain.StudentRepository;
 import org.junit.jupiter.api.Test;
-
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -47,25 +41,24 @@ public class AxonTestFixtureQueryTest {
 
     @Test
     void givenEventsWhenQueryThenExpectResult_Success() {
-        var configurer = queryTestConfig();
-        var fixture = AxonTestFixture.with(configurer);
+        var fixture = AxonTestFixture.with(createConfig());
 
         var studentId = "student-123";
         var studentNameChanged = new StudentNameChangedEvent(studentId, "John Doe", 1);
-        var expectedReadModel = new StudentReadModel(studentId, "John Doe");
+        var expectedStudent = new StudentReadModel(studentId, "John Doe");
+        var expectedWrappedResult = new GetStudentById.Result(expectedStudent);
 
         fixture.given()
                .events(studentNameChanged)
         .when()
                .query(new GetStudentById(studentId))
         .then()
-               .expectResult(expectedReadModel);
+               .expectQueryResult(expectedWrappedResult);
     }
 
     @Test
     void givenEventsWhenQueryThenExpectResultSatisfies_Success() {
-        var configurer = queryTestConfig();
-        var fixture = AxonTestFixture.with(configurer);
+        var fixture = AxonTestFixture.with(createConfig());
 
         var studentId = "student-456";
         var studentNameChanged = new StudentNameChangedEvent(studentId, "Jane Smith", 1);
@@ -75,18 +68,18 @@ public class AxonTestFixtureQueryTest {
         .when()
                .query(new GetStudentById(studentId))
         .then()
-               .expectResultSatisfies(result -> {
-                   assertThat(result).isInstanceOf(StudentReadModel.class);
-                   StudentReadModel student = (StudentReadModel) result;
-                   assertThat(student.id()).isEqualTo(studentId);
-                   assertThat(student.name()).isEqualTo("Jane Smith");
+               .expectQueryResultSatisfies(result -> {
+                   assertThat(result).isInstanceOf(GetStudentById.Result.class);
+                   GetStudentById.Result wrappedResult = (GetStudentById.Result) result;
+                   assertThat(wrappedResult.student()).isNotNull();
+                   assertThat(wrappedResult.student().id()).isEqualTo(studentId);
+                   assertThat(wrappedResult.student().name()).isEqualTo("Jane Smith");
                });
     }
 
     @Test
-    void givenNoEventsWhenQueryThenExpectNull_Success() {
-        var configurer = queryTestConfig();
-        var fixture = AxonTestFixture.with(configurer);
+    void givenNoEventsWhenQueryThenExpectException_Success() {
+        var fixture = AxonTestFixture.with(createConfig());
 
         var studentId = "non-existent-student";
 
@@ -94,183 +87,84 @@ public class AxonTestFixtureQueryTest {
         .when()
                .query(new GetStudentById(studentId), java.time.Duration.ZERO)
         .then()
-               .expectResult(null);
-    }
-
-    @Test
-    void givenEventsWhenQueryWithWrappedResultThenExpectResult_Success() {
-        var configurer = queryWithWrappedResultConfig();
-        var fixture = AxonTestFixture.with(configurer);
-
-        var studentId = "student-789";
-        var studentNameChanged = new StudentNameChangedEvent(studentId, "Alice Johnson", 1);
-        var expectedStudent = new StudentReadModel(studentId, "Alice Johnson");
-        var expectedWrappedResult = new GetStudentResult(expectedStudent);
-
-        fixture.given()
-               .events(studentNameChanged)
-        .when()
-               .query(new GetStudentByIdWrapped(studentId))
-        .then()
-               .expectQueryResult(expectedWrappedResult);
-    }
-
-    @Test
-    void givenEventsWhenQueryWithWrappedResultThenExpectResultSatisfies_Success() {
-        var configurer = queryWithWrappedResultConfig();
-        var fixture = AxonTestFixture.with(configurer);
-
-        var studentId = "student-999";
-        var studentNameChanged = new StudentNameChangedEvent(studentId, "Bob Williams", 1);
-
-        fixture.given()
-               .events(studentNameChanged)
-        .when()
-               .query(new GetStudentByIdWrapped(studentId))
-        .then()
-               .expectQueryResultSatisfies(result -> {
-                   assertThat(result).isInstanceOf(GetStudentResult.class);
-                   GetStudentResult wrappedResult = (GetStudentResult) result;
-                   assertThat(wrappedResult.student()).isNotNull();
-                   assertThat(wrappedResult.student().id()).isEqualTo(studentId);
-                   assertThat(wrappedResult.student().name()).isEqualTo("Bob Williams");
+               .exceptionSatisfies(exception -> {
+                   assertThat(exception).hasCauseInstanceOf(StudentNotFoundException.class);
                });
     }
 
-    private static EventSourcingConfigurer queryTestConfig() {
-        // In-memory repository shared between projection and query handler
-        StudentRepository repository = new InMemoryStudentRepository();
+    @Test
+    void givenNoEventsWhenQueryThenExpectExceptionWithMessage_Success() {
+        var fixture = AxonTestFixture.with(createConfig());
 
+        var studentId = "student-404";
+
+        fixture.given()
+        .when()
+               .query(new GetStudentById(studentId), java.time.Duration.ZERO)
+        .then()
+               .exceptionSatisfies(exception -> {
+                   assertThat(exception).hasCauseInstanceOf(StudentNotFoundException.class);
+               });
+    }
+
+    @Test
+    void givenNoEventsWhenQueryThenExpectExceptionSatisfies_Success() {
+        var fixture = AxonTestFixture.with(createConfig());
+
+        var studentId = "missing-student";
+
+        fixture.given()
+        .when()
+               .query(new GetStudentById(studentId), java.time.Duration.ZERO)
+        .then()
+               .exceptionSatisfies(exception -> {
+                   assertThat(exception).hasCauseInstanceOf(StudentNotFoundException.class);
+               });
+    }
+
+    @Test
+    void givenEventsWhenQueryThenSuccess_Success() {
+        var fixture = AxonTestFixture.with(createConfig());
+
+        var studentId = "student-success";
+        var studentNameChanged = new StudentNameChangedEvent(studentId, "Success Student", 1);
+
+        fixture.given()
+               .events(studentNameChanged)
+        .when()
+               .query(new GetStudentById(studentId))
+        .then()
+               .success();
+    }
+
+    /**
+     * Creates a test configuration with annotated projector and query handler.
+     * Uses a shared in-memory repository for both event handling and query handling.
+     */
+    private static EventSourcingConfigurer createConfig() {
         var configurer = EventSourcingConfigurer.create();
 
-        // Register the repository as a component
-        configurer.componentRegistry(cr -> cr.registerComponent(
-                StudentRepository.class,
-                cfg -> repository
-        ));
-
-        // Configure async event processor for the projection
-        configurer.messaging(cr -> cr.eventProcessing(ep -> ep.pooledStreaming(ps -> ps.processor(
-                EventProcessorModule
-                        .pooledStreaming("test-student-projection")
-                        .eventHandlingComponents(c -> c.declarative(
-                                cfg -> new SimpleEventHandlingComponent()
-                                        .subscribe(
-                                                new QualifiedName(StudentNameChangedEvent.class),
-                                                (EventMessage e, ProcessingContext ctx) -> {
-                                                    var payload = e.payloadAs(StudentNameChangedEvent.class);
-                                                    var repo = ctx.component(StudentRepository.class);
-                                                    repo.save(new StudentReadModel(payload.id(), payload.name()));
-                                                    return MessageStream.empty();
-                                                }
-                                        )
-                        )).notCustomized()
-        ))));
+        // Configure pooled streaming event processor for the projector
+        PooledStreamingEventProcessorModule projectionProcessor = EventProcessorModule
+                .pooledStreaming("student-projection-processor")
+                .eventHandlingComponents(
+                        c -> c.autodetected(cfg -> new StudentProjection(cfg.getComponent(StudentRepository.class)))
+                ).notCustomized();
 
         // Configure query handler
         QueryHandlingModule queryHandler = QueryHandlingModule.named("student-query-handler")
                 .queryHandlers()
-                .queryHandlingComponent(cfg -> {
-                    var repo = cfg.getComponent(StudentRepository.class);
-                    return SimpleQueryHandlingComponent
-                            .create("student-queries")
-                            .subscribe(
-                                    new QualifiedName(GetStudentById.class),
-                                    (org.axonframework.messaging.queryhandling.QueryMessage query, ProcessingContext context) -> {
-                                        var payload = query.payloadAs(GetStudentById.class);
-                                        var student = repo.findById(payload.id());
-                                        var responseType = new MessageType(student != null ? student.getClass() : Object.class);
-                                        var response = new GenericQueryResponseMessage(responseType, student);
-                                        return MessageStream.fromItems(response);
-                                    }
-                            );
-                })
+                .annotatedQueryHandlingComponent(cfg -> new StudentQueryHandler(cfg.getComponent(StudentRepository.class)))
                 .build();
 
-        configurer.registerQueryHandlingModule(queryHandler);
-
-        return configurer;
-    }
-
-    private static EventSourcingConfigurer queryWithWrappedResultConfig() {
-        // In-memory repository shared between projection and query handler
-        StudentRepository repository = new InMemoryStudentRepository();
-
-        var configurer = EventSourcingConfigurer.create();
-
-        // Register the repository as a component
-        configurer.componentRegistry(cr -> cr.registerComponent(
-                StudentRepository.class,
-                cfg -> repository
-        ));
-
-        // Configure async event processor for the projection (same as before)
-        configurer.messaging(cr -> cr.eventProcessing(ep -> ep.pooledStreaming(ps -> ps.processor(
-                EventProcessorModule
-                        .pooledStreaming("test-student-projection-wrapped")
-                        .eventHandlingComponents(c -> c.declarative(
-                                cfg -> new SimpleEventHandlingComponent()
-                                        .subscribe(
-                                                new QualifiedName(StudentNameChangedEvent.class),
-                                                (EventMessage e, ProcessingContext ctx) -> {
-                                                    var payload = e.payloadAs(StudentNameChangedEvent.class);
-                                                    var repo = ctx.component(StudentRepository.class);
-                                                    repo.save(new StudentReadModel(payload.id(), payload.name()));
-                                                    return MessageStream.empty();
-                                                }
-                                        )
-                        )).notCustomized()
-        ))));
-
-        // Configure query handler that returns wrapped result
-        QueryHandlingModule queryHandler = QueryHandlingModule.named("student-query-handler-wrapped")
-                .queryHandlers()
-                .queryHandlingComponent(cfg -> {
-                    var repo = cfg.getComponent(StudentRepository.class);
-                    return SimpleQueryHandlingComponent
-                            .create("student-queries-wrapped")
-                            .subscribe(
-                                    new QualifiedName(GetStudentByIdWrapped.class),
-                                    (org.axonframework.messaging.queryhandling.QueryMessage query, ProcessingContext context) -> {
-                                        var payload = query.payloadAs(GetStudentByIdWrapped.class);
-                                        var student = repo.findById(payload.id());
-                                        var wrappedResult = new GetStudentResult(student);
-                                        var responseType = new MessageType(wrappedResult.getClass());
-                                        var response = new GenericQueryResponseMessage(responseType, wrappedResult);
-                                        return MessageStream.fromItems(response);
-                                    }
-                            );
-                })
-                .build();
-
-        configurer.registerQueryHandlingModule(queryHandler);
-
-        return configurer;
-    }
-
-    // Test domain objects
-    record GetStudentById(String id) {}
-    record GetStudentByIdWrapped(String id) {}
-    record StudentReadModel(String id, String name) {}
-    record GetStudentResult(StudentReadModel student) {}
-
-    // Simple in-memory repository
-    interface StudentRepository {
-        void save(StudentReadModel student);
-        StudentReadModel findById(String id);
-    }
-
-    static class InMemoryStudentRepository implements StudentRepository {
-        private final Map<String, StudentReadModel> store = new ConcurrentHashMap<>();
-
-        @Override
-        public void save(StudentReadModel student) {
-            store.put(student.id(), student);
-        }
-
-        @Override
-        public StudentReadModel findById(String id) {
-            return store.get(id);
-        }
+        return configurer
+                .componentRegistry(cr -> cr.registerComponent(
+                        StudentRepository.class,
+                        cfg -> new InMemoryStudentRepository()
+                ))
+                .registerQueryHandlingModule(queryHandler)
+                .modelling(modelling -> modelling.messaging(messaging -> messaging.eventProcessing(eventProcessing ->
+                        eventProcessing.pooledStreaming(ps -> ps.processor(projectionProcessor))
+                )));
     }
 }

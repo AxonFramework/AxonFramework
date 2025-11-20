@@ -43,6 +43,7 @@ class AxonTestThenQuery
         implements AxonTestPhase.Then.Query {
 
     private final Reporter reporter = new Reporter();
+    private final RecordingQueryBus queryBus;
     private final Message actualResult;
 
     /**
@@ -54,6 +55,8 @@ class AxonTestThenQuery
      *                           and validate any commands that have been sent.
      * @param eventSink          The recording {@link EventSink}, used to capture and
      *                           validate any events that have been sent.
+     * @param queryBus           The recording {@link org.axonframework.messaging.queryhandling.QueryBus},
+     *                           used to capture and validate any queries that have been sent.
      * @param lastQueryResult    The last result of query handling.
      * @param lastQueryException The exception thrown during the when-phase, potentially {@code null}.
      */
@@ -62,10 +65,12 @@ class AxonTestThenQuery
             @Nonnull AxonTestFixture.Customization customization,
             @Nonnull RecordingCommandBus commandBus,
             @Nonnull RecordingEventSink eventSink,
+            @Nonnull RecordingQueryBus queryBus,
             @Nullable Message lastQueryResult,
             @Nullable Throwable lastQueryException
     ) {
         super(configuration, customization, commandBus, eventSink, lastQueryException);
+        this.queryBus = queryBus;
         this.actualResult = lastQueryResult;
     }
 
@@ -80,7 +85,7 @@ class AxonTestThenQuery
         if (actualException != null) {
             reporter.reportUnexpectedException(actualException, expectedDescription);
         } else if (actualResult == null) {
-            reporter.reportWrongResult((Object) null, "Expected result: " + expectedDescription);
+            reporter.reportWrongResult(null, "Expected result: " + expectedDescription);
         } else if (!verifyPayloadEquality(expectedResult, actualResult.payload())) {
             PayloadMatcher<QueryResponseMessage> actualMatcher =
                     new PayloadMatcher<>(CoreMatchers.equalTo(actualResult.payload()));
@@ -96,7 +101,7 @@ class AxonTestThenQuery
         if (actualException != null) {
             reporter.reportUnexpectedException(actualException, expectedDescription);
         } else if (actualResult == null) {
-            reporter.reportWrongResult((Object) null, "Expected result to satisfy custom assertions");
+            reporter.reportWrongResult(null, "Expected result to satisfy custom assertions");
         }
 
         try {
