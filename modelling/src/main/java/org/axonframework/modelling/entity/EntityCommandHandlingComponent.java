@@ -17,12 +17,12 @@
 package org.axonframework.modelling.entity;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.commandhandling.CommandHandlingComponent;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandResultMessage;
 import org.axonframework.messaging.commandhandling.NoHandlerForCommandException;
-import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.core.DelayedMessageStream;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
@@ -78,6 +78,19 @@ public class EntityCommandHandlingComponent<ID, E> implements CommandHandlingCom
     @Override
     public MessageStream.Single<CommandResultMessage> handle(@Nonnull CommandMessage command,
                                                              @Nonnull ProcessingContext context) {
+        QualifiedName messageName = command.type().qualifiedName();
+        boolean isInstanceCommand = metamodel.supportedInstanceCommands().contains(messageName);
+        if (isInstanceCommand) {
+            return handleInstanceCommand(command, context);
+        } else if (metamodel.supportedCreationalCommands().contains(messageName)) {
+            return metamodel.handleCreate(command, context);
+        } else {
+            return handleInstanceCommand(command, context);
+        }
+    }
+
+    private MessageStream.Single<CommandResultMessage> handleInstanceCommand(CommandMessage command,
+                                                                             ProcessingContext context) {
         try {
             ID id = idResolver.resolve(command, context);
             QualifiedName messageName = command.type().qualifiedName();
@@ -88,6 +101,7 @@ public class EntityCommandHandlingComponent<ID, E> implements CommandHandlingCom
                     if (me.entity() != null) {
                         return metamodel.handleInstance(command, me.entity(), context).first();
                     }
+                    // we still allow creation
                     return metamodel.handleCreate(command, context).first();
                 } catch (Exception e) {
                     return MessageStream.failed(e);
