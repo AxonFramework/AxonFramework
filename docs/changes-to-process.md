@@ -88,6 +88,13 @@ The following files in `axon-5/` describe the API changes:
 - Removed AsynchronousCommandBus and DisruptorCommandBus references
 - Added comprehensive code examples showing all three dispatch mechanisms
 - Added section explaining ProcessingContext usage in command dispatching
+- **Added command routing section:**
+  - Explained routing key concept and why it matters for consistency
+  - Documented @Command annotation's routingKey attribute (replaces @TargetAggregateIdentifier from Axon 4)
+  - Documented custom RoutingStrategy configuration
+  - Covered built-in strategies (AnnotationRoutingStrategy, MetadataRoutingStrategy)
+  - Added examples for Configuration API and Spring Boot configuration
+  - Added custom RoutingStrategy implementation example
 
 ### modules/axon-framework-commands/pages/command-handlers.adoc
 **Changes to apply:**

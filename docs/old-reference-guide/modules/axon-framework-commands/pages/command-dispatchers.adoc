@@ -307,6 +307,113 @@ The framework has built-in support for this: when a `@CommandHandler` annotated 
 
 When command handlers don't return a value, the result will be `null`.
 
+== Command routing
+
+Commands are routed to their handlers based on a *routing key*.
+This routing mechanism is important for efficiency, as it helps avoid optimistic concurrency conflicts when multiple commands affect the same state.
+
+=== Why routing keys matter
+
+When multiple instances of a command handler exist (for example, in a distributed system or when using load balancing), commands targeting the same state should be routed to the same handler instance.
+The routing key ensures this happens consistently.
+
+For example, if two commands both modify the same entity (identified by `giftCardId`), they should use the same routing key (the `giftCardId` value) to ensure they are routed to the same destination where that entity is loaded.
+The framework can handle concurrent modifications through optimistic locking.
+However, routing commands with the same routing key to the same instance avoids these conflicts in the first place.
+This is more efficient than detecting and resolving conflicts after the fact.
+
+=== Configuring routing keys with `@Command`
+
+The simplest way to specify a routing key is using the `routingKey` attribute on the `@Command` annotation:
+
+[source,java]
+----
+@Command(routingKey = "cardId") // <1>
+public record IssueCardCommand(String cardId, int amount, String shopId) {
+}
+----
+
+<1> The `routingKey` attribute specifies which property of the command should be used as the routing key.
+In this example, the `cardId` property will be extracted and used as the routing key.
+
+The framework will automatically extract the value from the specified property (field or method) and use it as the routing key when dispatching the command.
+
+[NOTE]
+====
+In Axon 4, the `@TargetAggregateIdentifier` annotation was used to specify routing keys.
+In Axon 5, this is replaced with the `routingKey` attribute on the `@Command` annotation for a more explicit and flexible approach.
+====
+
+=== Custom routing strategies
+
+For more advanced routing scenarios, you can configure a custom `RoutingStrategy`.
+The `RoutingStrategy` is used by the `CommandGateway` when building the `CommandMessage` to determine the routing key.
+
+==== Built-in routing strategies
+
+Axon provides several routing strategy implementations:
+
+* `AnnotationRoutingStrategy` - Extracts the routing key from a property specified in the `@Command` annotation's `routingKey` attribute (this is the default)
+* `MetadataRoutingStrategy` - Extracts the routing key from a specific metadata entry
+
+==== Configuring a custom routing strategy
+
+You can register a custom `RoutingStrategy` using the configuration API:
+
+[source,java]
+----
+// Using Configuration API
+public ApplicationConfigurer configureRouting(ApplicationConfigurer configurer) {
+    return configurer.messagingConfigurer(messagingConfigurer ->
+        messagingConfigurer.registerComponent(
+            RoutingStrategy.class,
+            config -> new MetadataRoutingStrategy("tenantId") // <1>
+        )
+    );
+}
+----
+
+<1> This example uses `MetadataRoutingStrategy` to extract the routing key from metadata with key `"tenantId"`.
+
+When using Spring Boot, you can register a custom `RoutingStrategy` as a Spring bean:
+
+[source,java]
+----
+@Configuration
+public class AxonConfig {
+
+    @Bean
+    public RoutingStrategy routingStrategy() {
+        return new MetadataRoutingStrategy("tenantId"); // <1>
+    }
+}
+----
+
+<1> Spring Boot auto-configuration will automatically detect and use this `RoutingStrategy`.
+
+You can also implement your own `RoutingStrategy` for completely custom routing logic:
+
+[source,java]
+----
+public class CustomRoutingStrategy implements RoutingStrategy {
+
+    @Override
+    public String getRoutingKey(CommandMessage command) {
+        // Custom logic to determine routing key
+        MyCommand payload = command.payload();
+        return payload.tenantId() + ":" + payload.entityId(); // <1>
+    }
+}
+----
+
+<1> This example creates a composite routing key from multiple properties.
+
+[NOTE]
+====
+The routing key must have a consistent `toString()` implementation.
+Inconsistent `toString()` methods may result in different handler instances receiving commands that should go to the same instance.
+====
+
 == Understanding `ProcessingContext` in command dispatching
 
 The `ProcessingContext` is a key concept in Axon 5 that replaces the thread-local `UnitOfWork` from Axon 4.
@@ -326,4 +433,5 @@ Understanding when to provide it is important:
 * The `ProcessingContext` can be injected as a parameter in command handlers.
 * All components involved in handling the command must receive and use the same `ProcessingContext`.
 
-For more details on `ProcessingContext`, see xref:messaging-concepts:processing-context.adoc[].
+// TODO: Update to processing-context.adoc when unit-of-work.adoc is renamed
+For more details on `ProcessingContext`, see xref:messaging-concepts:unit-of-work.adoc[].
