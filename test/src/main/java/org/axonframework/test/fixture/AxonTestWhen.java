@@ -17,6 +17,7 @@
 package org.axonframework.test.fixture;
 
 import jakarta.annotation.Nonnull;
+import org.awaitility.Awaitility;
 import org.axonframework.messaging.commandhandling.GenericCommandMessage;
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.messaging.eventhandling.EventMessage;
@@ -31,8 +32,10 @@ import org.axonframework.messaging.core.unitofwork.UnitOfWork;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.axonframework.messaging.eventhandling.EventSink;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
@@ -187,12 +190,45 @@ class AxonTestWhen implements AxonTestPhase.When {
 
     @Override
     public AxonTestPhase.When.Query query(@Nonnull Object payload) {
+        return query(payload, Duration.ofMillis(200));
+    }
+
+    /**
+     * Dispatches the given {@code payload} query to the appropriate query handler with a custom delay for
+     * awaiting event processing. This method automatically waits before executing the query to allow
+     * asynchronous event processors time to update the read model.
+     * <p>
+     * Note: Use {@code Duration.ZERO} to skip waiting and execute the query immediately (useful for
+     * synchronous event processors or when no event processing is needed).
+     *
+     * @param payload The query to execute.
+     * @param delay   The time to wait for asynchronous event processing before executing the query.
+     *                Use {@code Duration.ZERO} to execute immediately.
+     * @return The current When.Query instance, for fluent interfacing.
+     */
+    public AxonTestPhase.When.Query query(@Nonnull Object payload, @Nonnull Duration delay) {
+        // Wait for asynchronous event processors to process events before querying
+        if (!delay.isZero()) {
+            try {
+                Thread.sleep(delay.toMillis());
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("Interrupted while waiting for event processing", e);
+            }
+        }
+
         var messageType = messageTypeResolver.resolveOrThrow(payload);
         var queryMessage = new org.axonframework.messaging.queryhandling.GenericQueryMessage(
                 messageType,
                 payload
         );
 
+        executeQuery(queryMessage);
+
+        return new Query();
+    }
+
+    private void executeQuery(org.axonframework.messaging.queryhandling.GenericQueryMessage queryMessage) {
         inUnitOfWorkOnInvocation(processingContext -> {
             var responseStream = queryBus.query(queryMessage, processingContext);
 
@@ -210,8 +246,6 @@ class AxonTestWhen implements AxonTestPhase.When {
                                      return null;
                                  });
         });
-
-        return new Query();
     }
 
     @Override
