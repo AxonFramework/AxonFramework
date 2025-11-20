@@ -23,6 +23,7 @@ import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.messaging.eventhandling.EventSink;
 import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
+import org.axonframework.messaging.queryhandling.QueryBus;
 import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.matchers.FieldFilter;
 import org.axonframework.test.matchers.IgnoreField;
@@ -41,6 +42,7 @@ import java.util.function.UnaryOperator;
  * @author Mateusz Nowak
  * @author Mitchell Herrijgers
  * @author Steven van Beelen
+ * @author Theo Emanuelsson
  * @since 5.0.0
  */
 public class AxonTestFixture implements AxonTestPhase.Setup {
@@ -49,6 +51,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
     private final Customization customization;
     private final RecordingCommandBus commandBus;
     private final RecordingEventSink eventSink;
+    private final RecordingQueryBus queryBus;
     private final MessageTypeResolver messageTypeResolver;
     private final UnitOfWorkFactory unitOfWorkFactory;
 
@@ -86,6 +89,17 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
             );
         }
         this.eventSink = (RecordingEventSink) eventSinkComponent;
+
+        QueryBus queryBusComponent = configuration.getComponent(QueryBus.class);
+        if (!(queryBusComponent instanceof RecordingQueryBus)) {
+            throw new FixtureExecutionException(
+                    "QueryBus is not a RecordingQueryBus. This may happen in Spring environments where the " +
+                            "MessagesRecordingConfigurationEnhancer is not properly registered. " +
+                            "Please declare MessagesRecordingConfigurationEnhancer as a bean in your test context. " +
+                            "Note: This configuration may be subject to change until the 5.0.0 release."
+            );
+        }
+        this.queryBus = (RecordingQueryBus) queryBusComponent;
 
         this.messageTypeResolver = configuration.getComponent(MessageTypeResolver.class);
         this.unitOfWorkFactory = configuration.getComponent(UnitOfWorkFactory.class);
@@ -134,6 +148,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
                 customization,
                 commandBus,
                 eventSink,
+                queryBus,
                 messageTypeResolver,
                 unitOfWorkFactory
         );
@@ -146,6 +161,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
                 customization,
                 commandBus,
                 eventSink,
+                queryBus,
                 messageTypeResolver,
                 unitOfWorkFactory
         );

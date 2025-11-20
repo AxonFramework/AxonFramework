@@ -40,6 +40,7 @@ import java.util.function.Function;
  * Implementation of the {@link AxonTestPhase.When when-phase} of the {@link AxonTestFixture}.
  *
  * @author Mateusz Nowak
+ * @author Theo Emanuelsson
  * @since 5.0.0
  */
 class AxonTestWhen implements AxonTestPhase.When {
@@ -48,6 +49,7 @@ class AxonTestWhen implements AxonTestPhase.When {
     private final AxonTestFixture.Customization customization;
     private final RecordingCommandBus commandBus;
     private final RecordingEventSink eventSink;
+    private final RecordingQueryBus queryBus;
     private final MessageTypeResolver messageTypeResolver;
     private final UnitOfWorkFactory unitOfWorkFactory;
 
@@ -63,6 +65,8 @@ class AxonTestWhen implements AxonTestPhase.When {
      *                            and validate any commands that have been sent.
      * @param eventSink           The recording {@link EventSink}, used to capture and
      *                            validate any events that have been sent.
+     * @param queryBus            The recording {@link org.axonframework.messaging.queryhandling.QueryBus},
+     *                            used to capture and validate any queries that have been sent.
      * @param messageTypeResolver The message type resolver used to generate the
      *                            {@link MessageType} out of command, event, or query
      *                            payloads provided to this phase.
@@ -74,6 +78,7 @@ class AxonTestWhen implements AxonTestPhase.When {
             @Nonnull AxonTestFixture.Customization customization,
             @Nonnull RecordingCommandBus commandBus,
             @Nonnull RecordingEventSink eventSink,
+            @Nonnull RecordingQueryBus queryBus,
             @Nonnull MessageTypeResolver messageTypeResolver,
             @Nonnull UnitOfWorkFactory unitOfWorkFactory
     ) {
@@ -81,6 +86,7 @@ class AxonTestWhen implements AxonTestPhase.When {
         this.customization = customization;
         this.commandBus = commandBus.reset();
         this.eventSink = eventSink.reset();
+        this.queryBus = queryBus.reset();
         this.messageTypeResolver = messageTypeResolver;
         this.unitOfWorkFactory = unitOfWorkFactory;
     }
@@ -180,8 +186,52 @@ class AxonTestWhen implements AxonTestPhase.When {
     }
 
     @Override
+    public AxonTestPhase.When.Query query(@Nonnull Object payload) {
+        var messageType = messageTypeResolver.resolveOrThrow(payload);
+        var queryMessage = new org.axonframework.messaging.queryhandling.GenericQueryMessage(
+                messageType,
+                payload
+        );
+
+        inUnitOfWorkOnInvocation(processingContext -> {
+            var responseStream = queryBus.query(queryMessage, processingContext);
+
+            // Get the first response from the stream
+            return responseStream.first()
+                                 .asCompletableFuture()
+                                 .thenApply(entry -> {
+                                     actualResult = entry.message();
+                                     actualException = null;
+                                     return null;
+                                 })
+                                 .exceptionally(throwable -> {
+                                     actualResult = null;
+                                     actualException = throwable;
+                                     return null;
+                                 });
+        });
+
+        return new Query();
+    }
+
+    @Override
     public AxonTestPhase.When.Nothing nothing() {
         return new Nothing();
+    }
+
+    class Query implements AxonTestPhase.When.Query {
+
+        @Override
+        public AxonTestPhase.Then.Query then() {
+            return new AxonTestThenQuery(
+                    configuration,
+                    customization,
+                    commandBus,
+                    eventSink,
+                    actualResult,
+                    actualException
+            );
+        }
     }
 
     class Nothing implements AxonTestPhase.When.Nothing {
