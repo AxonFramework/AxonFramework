@@ -36,10 +36,6 @@ import org.axonframework.messaging.eventhandling.EventSink;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 
-import java.lang.reflect.Executable;
-import java.lang.reflect.Method;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
@@ -146,20 +142,7 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
     }
 
     private void initializeHandlersBasedOnModel() {
-        Set<MethodSignature> seenMethods = new HashSet<>();
-
-        for (MessageHandlingMember<? super T> handlingMember : model.getHandlers(target.getClass())) {
-            if (handlingMember.canHandleMessageType(EventMessage.class)) {
-                MethodSignature ms = handlingMember.unwrap(Executable.class)
-                    .map(Method.class::cast)
-                    .map(MethodSignature::of)
-                    .orElseThrow();  // should never happen as this component only works with annotated methods
-
-                if (seenMethods.add(ms)) {
-                    registerHandler(handlingMember);
-                }
-            }
-        }
+        model.getUniqueHandlers(target.getClass(), EventMessage.class).forEach(this::registerHandler);
     }
 
     private void registerHandler(MessageHandlingMember<? super T> handler) {
@@ -219,11 +202,5 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
     @Override
     public Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
         return delegate.sequenceIdentifierFor(event, context);
-    }
-
-    record MethodSignature(String name, List<Class<?>> parameterTypes) {
-        static MethodSignature of(Method m) {
-            return new MethodSignature(m.getName(), List.of(m.getParameterTypes()));
-        }
     }
 }
