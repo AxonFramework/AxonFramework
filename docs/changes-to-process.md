@@ -88,18 +88,76 @@ The following files in `axon-5/` describe the API changes:
 - Remove AsynchronousCommandBus and DisruptorCommandBus references
 
 ### modules/axon-framework-commands/pages/command-handlers.adoc
-**Changes to apply:**
-- Document ProcessingContext injection in handlers (mandatory - always created by Axon)
-- Show ProcessingContext must be passed to all components during handling
-- **Document message type concept**: Java class is no longer message identity
-  - Explain MessageType (QualifiedName + version) as message identifier
-  - Show handlers declare type via @Command annotation or parameter type
-  - Explain payload conversion at handling time (different handlers can receive different representations)
-  - Show how this reduces need for upcasters
-- Update to use EventAppender instead of AggregateLifecycle.apply
-- Show creational vs instance command handlers
-- Document declarative and reflection-based handler registration
-- Update parameter injection examples
+**Status:** ✅ COMPLETED
+**Changes applied:**
+- Completely rewrote documentation with Axon 5 concepts and command-centric approach
+- **Updated primary categorization: Stateless vs Stateful handlers (not "entity" vs "external")**
+  - Stateless handlers: Don't maintain state in handler itself (may access state through services)
+  - Stateful handlers: Maintain state in handler itself across invocations
+  - Emphasized commands should change conceptual state (not just validate)
+- **Documented two paradigms for stateful handlers:**
+  - Entity-centric: Command handlers placed directly on entity class
+  - Command-centric: Command handlers in separate component, entity passed as parameter (Axon auto-loads)
+  - Explained when to use each approach
+- **Handler types within stateful handlers:**
+  - Creational handlers: Must be static methods (constructors cannot have @CommandHandler in Axon 5)
+  - Instance handlers: Instance methods on entity, or methods with entity parameter
+  - Static factory methods can return any value (not required to return entity instance like Axon 4)
+  - Handlers return what the method returns (no automatic @EntityId extraction like Axon 4)
+  - Removed @CreationPolicy (doesn't exist in Axon 5)
+  - Updated all examples to use static methods instead of constructors for creational handlers
+- **Documented @EntityCreator annotation:**
+  - Explained distinction: @CommandHandler creates via commands, @EntityCreator reconstitutes from events
+  - Pattern 1: Creation with identifier only (mutable entities, always creates instance)
+  - Pattern 2: Creation from origin event (immutable entities, requires event to exist)
+  - Pattern 3: Polymorphic entities with static factory method
+  - Documented @InjectEntityId for disambiguating identifier from event payload
+  - Added IMPORTANT callout emphasizing the two annotations serve different purposes
+- **Documented ProcessingContext injection:**
+  - Showed ProcessingContext as injectable parameter in handlers
+  - Explained it's mandatory on handling side (automatically created by Axon)
+  - Demonstrated accessing correlation data and resources
+  - Added note about passing ProcessingContext to all components during handling
+- **Documented message type concept extensively:**
+  - Explained MessageType (QualifiedName + version) as message identifier
+  - Showed @Command annotation with namespace, name, version, routingKey attributes
+  - Demonstrated payload conversion at handling time with multiple handlers receiving different representations
+  - Explained how this reduces need for upcasters (upcasters still needed for event store structural changes)
+  - Provided clear examples of same command handled with different Java types
+- **Replaced AggregateLifecycle.apply with EventAppender:**
+  - Showed EventAppender as injectable parameter in all command handlers
+  - Explained EventAppender is ProcessingContext-aware
+  - Demonstrated single and multiple event appending
+  - Added warning about not storing/reusing EventAppender across invocations
+- **Documented creational vs instance command handlers:**
+  - Showed @CommandHandler on constructors (creational)
+  - Showed @CommandHandler on static factory methods (creational alternative)
+  - Showed @CommandHandler on instance methods
+  - Explained automatic return of @EntityId value from creational handlers
+- **Comprehensive parameter injection documentation:**
+  - Listed all injectable parameters (command payload, EventAppender, ProcessingContext, CommandDispatcher, QueryDispatcher, @MetadataValue)
+  - Provided complete example with all parameter types
+  - Cross-referenced supported-parameters-annotated-handlers.adoc
+- **Documented entity command handlers:**
+  - Used @EventSourced annotation (Spring) and @EventSourcedEntity (non-Spring)
+  - Used @EntityId annotation instead of @AggregateIdentifier
+  - Showed proper separation of command handlers (validation/decision) vs event sourcing handlers (state changes)
+- **Documented external command handlers:**
+  - Explained when to use external handlers
+  - Showed EventSourcedRepository usage with ProcessingContext
+  - Demonstrated manual entity loading with repository.load(id, context)
+  - Showed EventAppender.forContext(context) pattern for external handlers
+  - Provided examples for coordinating multiple entities
+- **Added explicit handler declaration:**
+  - Documented commandName attribute on @CommandHandler
+  - Documented payloadType attribute for conversion
+  - Explained use cases for explicit declaration
+- **Configuration examples:**
+  - Spring Boot auto-discovery with @EventSourced and @Component
+  - Configuration API with ApplicationConfigurer, ModellingConfigurer, EventSourcingConfigurer
+- Added comprehensive code examples throughout
+- Added proper xrefs (command-dispatchers.adoc for routing, configuration.adoc, messaging-concepts)
+- Used TODO comment for unit-of-work.adoc → processing-context.adoc rename
 
 ### modules/axon-framework-commands/pages/configuration.adoc
 **Changes to apply:**
@@ -117,44 +175,69 @@ The following files in `axon-5/` describe the API changes:
 
 ### modules/axon-framework-commands/pages/modeling/aggregate.adoc
 **RENAME TO:** `event-sourced-entity.adoc`
+**Status:** Most core content now covered in command-handlers.adoc
 **Changes to apply:**
-- Replace aggregate terminology with entity throughout
-- Document EntityMetamodel and declarative modeling
-- Show immutable entity support (records, data classes)
-- Update entity constructor patterns (no-arg not required)
-- Document @EntityCreator annotation
-- Replace AggregateLifecycle.apply with EventAppender.append
-- Show creational command handlers (static methods)
-- Document @EventSourced annotation
+- Evaluate if this page is still needed or should be merged/removed
+- Most fundamental concepts now in command-handlers.adoc:
+  - @EntityCreator annotation (all patterns including polymorphic)
+  - EventAppender.append instead of AggregateLifecycle.apply
+  - Creational command handlers (static methods)
+  - @EventSourced annotation
+  - Entity-centric vs command-centric paradigms
+- If kept, focus on advanced entity modeling topics:
+  - EntityMetamodel details (if needed for advanced use cases)
+  - Detailed immutable entity patterns beyond basic examples
+  - Advanced declarative modeling features
+- Consider consolidating or creating advanced modeling guide instead
 
 ### modules/axon-framework-commands/pages/modeling/aggregate-creation-from-another-aggregate.adoc
-**RENAME TO:** `entity-creation-from-another-entity.adoc`
+**RENAME TO:** `entity-creation-from-another-entity.adoc` OR **CONSIDER REMOVAL**
+**Status:** Likely obsolete with command-centric approach
 **Changes to apply:**
-- Update terminology from aggregate to entity
-- Update code examples to use EventAppender
-- Document new entity creation patterns
+- Evaluate necessity: This pattern (entity creating another entity) may be an anti-pattern in command-centric design
+- Alternative: Commands should target specific entities, not have entities create other entities
+- If this represents a valid advanced pattern, update terminology and EventAppender usage
+- Otherwise, consider removing or consolidating into advanced patterns section
 
 ### modules/axon-framework-commands/pages/modeling/aggregate-polymorphism.adoc
-**RENAME TO:** `entity-polymorphism.adoc`
+**RENAME TO:** `entity-polymorphism.adoc` OR **MERGE INTO command-handlers.adoc**
+**Status:** Basic polymorphism already covered in command-handlers.adoc
 **Changes to apply:**
-- Update terminology from aggregate to entity
-- Document polymorphic entity metamodel support
-- Update code examples
+- Basic polymorphic @EntityCreator pattern already documented in command-handlers.adoc
+- Evaluate if advanced polymorphism details warrant separate page
+- If kept as separate page:
+  - Update terminology from aggregate to entity
+  - Document advanced polymorphic entity metamodel features
+  - Update code examples with EventAppender
+  - Focus on complex polymorphic scenarios not covered in basics
+- Consider merging into command-handlers.adoc or creating "Advanced Entity Patterns" page
 
 ### modules/axon-framework-commands/pages/modeling/multi-entity-aggregates.adoc
 **RENAME TO:** `entity-hierarchies.adoc` or `child-entities.adoc`
+**Status:** Advanced pattern - keep as separate page
 **Changes to apply:**
-- Update terminology from aggregate to entity
-- Document @EntityMember changes (multiple children of same type, custom routing)
-- Document event routing changes (no longer forwards to all by default)
-- Update child entity patterns
+- This represents advanced state management (parent-child entity relationships)
+- NOT covered in command-handlers.adoc (appropriately kept separate)
+- Update terminology from aggregate to entity throughout
+- Document @EntityMember annotation changes:
+  - Multiple children of same type support
+  - Custom routing for child entities
+- Document event routing changes (no longer forwards to all children by default)
+- Update all code examples with EventAppender
+- Focus on when and why to use entity hierarchies vs separate entities
 
 ### modules/axon-framework-commands/pages/modeling/state-stored-aggregates.adoc
 **RENAME TO:** `state-stored-entities.adoc`
+**Status:** Alternative to event sourcing - keep as separate advanced page
 **Changes to apply:**
-- Update terminology from aggregate to entity
-- Document state-stored entity configuration
-- Update Repository usage patterns
+- This represents alternative state management strategy (state-stored vs event-sourced)
+- NOT covered in command-handlers.adoc (appropriately kept separate)
+- Update terminology from aggregate to entity throughout
+- Document state-stored entity configuration and when to use
+- Update Repository usage patterns (different from EventSourcedRepository)
+- Explain trade-offs: state-stored vs event-sourced entities
+- Update all code examples with modern Axon 5 APIs
+- Note: Most users should use event sourcing; this is for specific use cases
 
 ---
 
