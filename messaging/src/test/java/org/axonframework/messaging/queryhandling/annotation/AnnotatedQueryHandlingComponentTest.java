@@ -15,8 +15,11 @@
  */
 package org.axonframework.messaging.queryhandling.annotation;
 
+import org.axonframework.common.util.MockException;
+import org.axonframework.conversion.PassThroughConverter;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.MessageStream.Entry;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.annotation.UnsupportedHandlerException;
@@ -28,13 +31,16 @@ import org.axonframework.messaging.queryhandling.NoHandlerForQueryException;
 import org.axonframework.messaging.queryhandling.QueryExecutionException;
 import org.axonframework.messaging.queryhandling.QueryMessage;
 import org.axonframework.messaging.queryhandling.QueryResponseMessage;
-import org.axonframework.conversion.PassThroughConverter;
-import org.axonframework.common.util.MockException;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -46,6 +52,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @author Steven van Beelen
  */
 class AnnotatedQueryHandlingComponentTest {
+    private final AtomicInteger callCount = new AtomicInteger();
 
     private AnnotatedQueryHandlingComponent<?> testSubject;
 
@@ -178,6 +185,347 @@ class AnnotatedQueryHandlingComponentTest {
         MessageStream<QueryResponseMessage> result = testSubject.handle(testQuery, testContext);
         // then...
         assertThat(result.hasNextAvailable()).isFalse();
+    }
+
+    @Nested
+    class GivenAnAnnotatedInterfaceMethod {
+        interface I {
+            @QueryHandler(queryName = "call-counter")
+            int handle(Integer event);
+        }
+
+        @Nested
+        class WhenImplementedByAnnotedInstanceMethod {
+            class T implements I {
+                @Override @QueryHandler(queryName = "call-counter")
+                public int handle(Integer event) {
+                    return callCount.incrementAndGet();
+                }
+            }
+
+            @Test
+            void shouldCallHandlerOnlyOnce() {
+                assertCalledOnlyOnce(new T());
+            }
+
+            @Nested
+            class AndOverriddenAndAnnotatedInASubclass {
+                class U extends T {
+                    @Override @QueryHandler(queryName = "call-counter")
+                    public int handle(Integer event) {
+                        return callCount.incrementAndGet();
+                    }
+                }
+
+                @Test
+                void shouldCallHandlerOnlyOnce() {
+                    assertCalledOnlyOnce(new U());
+                }
+            }
+
+            @Nested
+            class AndOverriddenButNotAnnotatedInASubclass {
+                class U extends T {
+                    @Override
+                    public int handle(Integer event) {
+                        return callCount.incrementAndGet();
+                    }
+                }
+
+                @Test
+                void shouldCallHandlerOnlyOnce() {
+                    assertCalledOnlyOnce(new U());
+                }
+            }
+        }
+
+        @Nested
+        class WhenImplementedByUnannotedInstanceMethod {
+            class T implements I {
+                @Override
+                public int handle(Integer event) {
+                    return callCount.incrementAndGet();
+                }
+            }
+
+            @Test
+            void shouldCallHandlerOnlyOnce() {
+                assertCalledOnlyOnce(new T());
+            }
+
+            @Nested
+            class AndOverriddenAndAnnotatedInASubclass {
+                class U extends T {
+                    @Override @QueryHandler(queryName = "call-counter")
+                    public int handle(Integer event) {
+                        return callCount.incrementAndGet();
+                    }
+                }
+
+                @Test
+                void shouldCallHandlerOnlyOnce() {
+                    assertCalledOnlyOnce(new U());
+                }
+            }
+
+            @Nested
+            class AndOverriddenButNotAnnotatedInASubclass {
+                class U extends T {
+                    @Override
+                    public int handle(Integer event) {
+                        return callCount.incrementAndGet();
+                    }
+                }
+
+                @Test
+                void shouldCallHandlerOnlyOnce() {
+                    assertCalledOnlyOnce(new U());
+                }
+            }
+        }
+    }
+
+    @Nested
+    class GivenAnUnannotatedInterfaceMethod {
+        interface I {
+            int handle(Integer event);
+        }
+
+        @Nested
+        class WhenImplementedByAnnotedInstanceMethod {
+            class T implements I {
+                @Override @QueryHandler(queryName = "call-counter")
+                public int handle(Integer event) {
+                    return callCount.incrementAndGet();
+                }
+            }
+
+            @Test
+            void shouldCallHandlerOnlyOnce() {
+                assertCalledOnlyOnce(new T());
+            }
+
+            @Nested
+            class AndOverriddenAndAnnotatedInASubclass {
+                class U extends T {
+                    @Override @QueryHandler(queryName = "call-counter")
+                    public int handle(Integer event) {
+                        return callCount.incrementAndGet();
+                    }
+                }
+
+                @Test
+                void shouldCallHandlerOnlyOnce() {
+                    assertCalledOnlyOnce(new U());
+                }
+            }
+
+            @Nested
+            class AndOverriddenButNotAnnotatedInASubclass {
+                class U extends T {
+                    @Override
+                    public int handle(Integer event) {
+                        return callCount.incrementAndGet();
+                    }
+                }
+
+                @Test
+                void shouldCallHandlerOnlyOnce() {
+                    assertCalledOnlyOnce(new U());
+                }
+            }
+        }
+
+        @Nested
+        class WhenImplementedByUnannotedInstanceMethod {
+            class T implements I {
+                @Override
+                public int handle(Integer event) {
+                    return callCount.incrementAndGet();
+                }
+            }
+
+            @Test
+            void shouldNotCallAnything() {
+                assertNotCalled(new T());
+            }
+
+            @Nested
+            class AndOverriddenAndAnnotatedInASubclass {
+                class U extends T {
+                    @Override @QueryHandler(queryName = "call-counter")
+                    public int handle(Integer event) {
+                        return callCount.incrementAndGet();
+                    }
+                }
+
+                @Test
+                void shouldCallHandlerOnlyOnce() {
+                    assertCalledOnlyOnce(new U());
+                }
+            }
+
+            @Nested
+            class AndOverriddenButNotAnnotatedInASubclass {
+                class U extends T {
+                    @Override
+                    public int handle(Integer event) {
+                        return callCount.incrementAndGet();
+                    }
+                }
+
+                @Test
+                void shouldNotCallAnything() {
+                    assertNotCalled(new U());
+                }
+            }
+        }
+    }
+
+    @Nested
+    class GivenAnAnnotatedInstanceMethod {
+        class T {
+            @QueryHandler(queryName = "call-counter")
+            public int handle(Integer event) {
+                return callCount.incrementAndGet();
+            }
+        }
+
+        @Test
+        void shouldCallHandlerOnlyOnce() {
+            assertCalledOnlyOnce(new T());
+        }
+
+        @Nested
+        class WhenOverriddenAndAnnotatedInASubclass {
+            class U extends T {
+                @Override @QueryHandler(queryName = "call-counter")
+                public int handle(Integer event) {
+                    return callCount.incrementAndGet();
+                }
+            }
+
+            @Test
+            void shouldCallHandlerOnlyOnce() {
+                assertCalledOnlyOnce(new U());
+            }
+        }
+
+        @Nested
+        class WhenNotOverriddenInSubclass {
+            class U extends T {
+            }
+
+            @Test
+            void shouldCallHandlerOnlyOnce() {
+                assertCalledOnlyOnce(new U());
+            }
+        }
+
+        @Nested
+        class WhenOverriddenButNotAnnotatedInASubclass {
+            class U extends T {
+                @Override
+                public int handle(Integer event) {
+                    return callCount.incrementAndGet();
+                }
+            }
+
+            @Test
+            void shouldCallHandlerOnlyOnce() {
+                assertCalledOnlyOnce(new U());
+            }
+        }
+    }
+
+    @Nested
+    class GivenAnUnannotatedInstanceMethod {
+        class T {
+            public int handle(Integer event) {
+                return callCount.incrementAndGet();
+            }
+        }
+
+        @Test
+        void shouldNotCallAnything() {
+            assertNotCalled(new T());
+        }
+
+        @Nested
+        class WhenOverriddenAndAnnotatedInASubclass {
+            class U extends T {
+                @Override @QueryHandler(queryName = "call-counter")
+                public int handle(Integer event) {
+                    return callCount.incrementAndGet();
+                }
+            }
+
+            @Test
+            void shouldCallHandlerOnlyOnce() {
+                assertCalledOnlyOnce(new U());
+            }
+        }
+
+        @Nested
+        class WhenOverriddenButNotAnnotatedInASubclass {
+            class U extends T {
+                @Override
+                public int handle(Integer event) {
+                    return callCount.incrementAndGet();
+                }
+            }
+
+            @Test
+            void shouldNotCallAnything() {
+                assertNotCalled(new U());
+            }
+        }
+    }
+
+    private void assertCalledOnlyOnce(Object handlerInstance) {
+        AnnotatedQueryHandlingComponent<?> testSubject = new AnnotatedQueryHandlingComponent<>(
+            handlerInstance,
+            new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
+        );
+
+        QueryMessage testQuery = new GenericQueryMessage(new MessageType("call-counter"), 42);
+        ProcessingContext testContext = StubProcessingContext.forMessage(testQuery);
+
+        MessageStream<QueryResponseMessage> stream = testSubject.handle(testQuery, testContext);
+
+        assertThat(stream.hasNextAvailable()).isTrue();
+
+        Object result = stream.first()
+            .asCompletableFuture()
+            .thenApply(MessageStream.Entry::message)
+            .thenApply(Message::payload)
+            .join();
+
+        assertThat(callCount.get()).isEqualTo(1);
+        assertThat(result).isEqualTo(1);
+    }
+
+    private void assertNotCalled(Object handlerInstance) {
+        AnnotatedQueryHandlingComponent<?> testSubject = new AnnotatedQueryHandlingComponent<>(
+            handlerInstance,
+            new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
+        );
+
+        QueryMessage testQuery = new GenericQueryMessage(new MessageType("call-counter"), 42);
+        ProcessingContext testContext = StubProcessingContext.forMessage(testQuery);
+
+        MessageStream<QueryResponseMessage> stream = testSubject.handle(testQuery, testContext);
+
+        assertThat(stream.hasNextAvailable()).isFalse();
+
+        CompletableFuture<Entry<QueryResponseMessage>> future = stream.first().asCompletableFuture();
+
+        assertThatThrownBy(() -> future.join())
+            .isInstanceOf(CompletionException.class)
+            .cause()
+            .isInstanceOf(NoHandlerForQueryException.class);
+
+        assertThat(callCount.get()).isEqualTo(0);
     }
 
     private static class MyQueryHandler {

@@ -109,8 +109,11 @@ public class AnnotatedQueryHandlingComponent<T> implements QueryHandlingComponen
                 "AnnotatedQueryHandlingComponent[%s]".formatted(annotatedQueryHandler.getClass().getName())
         );
         this.target = requireNonNull(annotatedQueryHandler, "The Annotated Query Handler may not be null.");
-        //noinspection unchecked
-        this.model = AnnotatedHandlerInspector.inspectType((Class<T>) annotatedQueryHandler.getClass(),
+
+        @SuppressWarnings("unchecked")
+        Class<T> cls = (Class<T>) annotatedQueryHandler.getClass();
+
+        this.model = AnnotatedHandlerInspector.inspectType(cls,
                                                            parameterResolverFactory,
                                                            handlerDefinition);
         this.converter = requireNonNull(converter, "The Converter may not be null.");
@@ -119,14 +122,8 @@ public class AnnotatedQueryHandlingComponent<T> implements QueryHandlingComponen
     }
 
     private void initializeHandlersBasedOnModel() {
-        //noinspection OptionalGetWithoutIsPresent
-        model.getAllHandlers().forEach(
-                (modelClass, handlers) ->
-                        handlers.stream()
-                                .filter(handler -> handler.canHandleMessageType(QueryMessage.class))
-                                .filter(handler -> handler.unwrap(QueryHandlingMember.class).isPresent())
-                                .map(handler -> handler.unwrap(QueryHandlingMember.class).get())
-                                .forEach(this::registerHandler)
+        model.getUniqueHandlers(target.getClass(), QueryMessage.class).forEach(h ->
+            registerHandler((QueryHandlingMember<? super T>) h)
         );
     }
 
