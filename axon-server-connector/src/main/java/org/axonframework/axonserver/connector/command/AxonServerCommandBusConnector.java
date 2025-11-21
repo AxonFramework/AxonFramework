@@ -18,20 +18,19 @@ package org.axonframework.axonserver.connector.command;
 
 import io.axoniq.axonserver.connector.AxonServerConnection;
 import io.axoniq.axonserver.connector.Registration;
-import io.axoniq.axonserver.connector.impl.AsyncRegistration;
 import io.axoniq.axonserver.grpc.command.Command;
 import io.axoniq.axonserver.grpc.command.CommandResponse;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
-import org.axonframework.messaging.commandhandling.CommandMessage;
-import org.axonframework.messaging.commandhandling.CommandResultMessage;
-import org.axonframework.messaging.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.common.Assert;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.lifecycle.Phase;
 import org.axonframework.common.lifecycle.ShutdownLatch;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.commandhandling.CommandResultMessage;
+import org.axonframework.messaging.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
@@ -41,8 +40,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 /**
  * An implementation of the {@link CommandBusConnector} that connects to an Axon Server instance to send and receive
@@ -110,23 +107,10 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
         Registration registration = connection.commandChannel()
                                               .registerCommandHandler(this::handle, loadFactor, commandName.name());
 
-        // Make sure that when we subscribe and immediately send a command, it can be handled.
-        if (registration instanceof AsyncRegistration asyncRegistration) {
-            try {
-                // Waiting synchronously for the subscription to be acknowledged, this should be improved
-                // TODO https://github.com/AxonFramework/AxonFramework/issues/3544
-                asyncRegistration.awaitAck(2000, TimeUnit.MILLISECONDS);
-            } catch (TimeoutException e) {
-                throw new RuntimeException(
-                        "Timed out waiting for subscription acknowledgment for command: " + commandName, e
-                );
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException("Thread interrupted while waiting for subscription acknowledgment", e);
-            }
-        }
         this.subscriptions.put(commandName, registration);
-        return FutureUtils.emptyCompletedFuture();
+        CompletableFuture<Void> completion = new CompletableFuture<>();
+        registration.onAck(() -> completion.complete(null));
+        return completion;
     }
 
     private CompletableFuture<CommandResponse> handle(Command command) {

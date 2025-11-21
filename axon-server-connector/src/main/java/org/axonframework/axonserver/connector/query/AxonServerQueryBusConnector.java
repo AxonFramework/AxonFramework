@@ -21,7 +21,6 @@ import io.axoniq.axonserver.connector.FlowControl;
 import io.axoniq.axonserver.connector.Registration;
 import io.axoniq.axonserver.connector.ReplyChannel;
 import io.axoniq.axonserver.connector.ResultStream;
-import io.axoniq.axonserver.connector.impl.AsyncRegistration;
 import io.axoniq.axonserver.connector.query.QueryDefinition;
 import io.axoniq.axonserver.connector.query.QueryHandler;
 import io.axoniq.axonserver.grpc.query.QueryRequest;
@@ -51,8 +50,6 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.LockSupport;
 
 import static java.util.Objects.requireNonNull;
@@ -116,24 +113,11 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
         Registration registration = connection.queryChannel()
                                               .registerQueryHandler(localSegmentAdapter, definition);
 
-        // Make sure that when we subscribe and immediately send a command, it can be handled.
-        if (registration instanceof AsyncRegistration asyncRegistration) {
-            try {
-                // Waiting synchronously for the subscription to be acknowledged, this should be improved
-                // TODO https://github.com/AxonFramework/AxonFramework/issues/3544
-                asyncRegistration.awaitAck(2000, TimeUnit.MILLISECONDS);
-            } catch (TimeoutException e) {
-                throw new RuntimeException(
-                        "Timed out waiting for subscription acknowledgment for query: " + name.fullName(), e
-                );
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException("Thread interrupted while waiting for subscription acknowledgment", e);
-            }
-        }
-
         this.subscriptions.put(name, registration);
-        return FutureUtils.emptyCompletedFuture();
+
+        CompletableFuture<Void> completion = new CompletableFuture<>();
+        registration.onAck(() -> completion.complete(null));
+        return completion;
     }
 
     @Override

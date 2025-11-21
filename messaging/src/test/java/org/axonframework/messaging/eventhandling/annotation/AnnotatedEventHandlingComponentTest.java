@@ -41,6 +41,7 @@ import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy.FULL_SEQUENTIAL_POLICY;
@@ -56,6 +57,7 @@ class AnnotatedEventHandlingComponentTest {
 
     private static final String AGGREGATE_TYPE = "test";
     private static final String AGGREGATE_IDENTIFIER = "id";
+    private final AtomicInteger callCount = new AtomicInteger();
     private TestEventHandler eventHandler;
     private EventHandlingComponent eventHandlingComponent;
 
@@ -395,6 +397,319 @@ class AnnotatedEventHandlingComponentTest {
             this.handledTimestamps = handledTimestamps + "-" + timestamp;
             this.handledCount++;
         }
+    }
+
+    @Nested
+    class GivenAnAnnotatedInterfaceMethod {
+        interface I {
+            @EventHandler
+            void handle(Integer event);
+        }
+
+        @Nested
+        class WhenImplementedByAnnotedInstanceMethod {
+            class T implements I {
+                @Override @EventHandler
+                public void handle(Integer event) {
+                    callCount.incrementAndGet();
+                }
+            }
+
+            @Test
+            void shouldCallHandlerOnlyOnce() {
+                assertCalledOnlyOnce(new T());
+            }
+
+            @Nested
+            class AndOverriddenAndAnnotatedInASubclass {
+                class U extends T {
+                    @Override @EventHandler
+                    public void handle(Integer event) {
+                        callCount.incrementAndGet();
+                    }
+                }
+
+                @Test
+                void shouldCallHandlerOnlyOnce() {
+                    assertCalledOnlyOnce(new U());
+                }
+            }
+
+            @Nested
+            class AndOverriddenButNotAnnotatedInASubclass {
+                class U extends T {
+                    @Override
+                    public void handle(Integer event) {
+                        callCount.incrementAndGet();
+                    }
+                }
+
+                @Test
+                void shouldCallHandlerOnlyOnce() {
+                    assertCalledOnlyOnce(new U());
+                }
+            }
+        }
+
+        @Nested
+        class WhenImplementedByUnannotedInstanceMethod {
+            class T implements I {
+                @Override
+                public void handle(Integer event) {
+                    callCount.incrementAndGet();
+                }
+            }
+
+            @Test
+            void shouldCallHandlerOnlyOnce() {
+                assertCalledOnlyOnce(new T());
+            }
+
+            @Nested
+            class AndOverriddenAndAnnotatedInASubclass {
+                class U extends T {
+                    @Override @EventHandler
+                    public void handle(Integer event) {
+                        callCount.incrementAndGet();
+                    }
+                }
+
+                @Test
+                void shouldCallHandlerOnlyOnce() {
+                    assertCalledOnlyOnce(new U());
+                }
+            }
+
+            @Nested
+            class AndOverriddenButNotAnnotatedInASubclass {
+                class U extends T {
+                    @Override
+                    public void handle(Integer event) {
+                        callCount.incrementAndGet();
+                    }
+                }
+
+                @Test
+                void shouldCallHandlerOnlyOnce() {
+                    assertCalledOnlyOnce(new U());
+                }
+            }
+        }
+    }
+
+    @Nested
+    class GivenAnUnannotatedInterfaceMethod {
+        interface I {
+            void handle(Integer event);
+        }
+
+        @Nested
+        class WhenImplementedByAnnotedInstanceMethod {
+            class T implements I {
+                @Override @EventHandler
+                public void handle(Integer event) {
+                    callCount.incrementAndGet();
+                }
+            }
+
+            @Test
+            void shouldCallHandlerOnlyOnce() {
+                assertCalledOnlyOnce(new T());
+            }
+
+            @Nested
+            class AndOverriddenAndAnnotatedInASubclass {
+                class U extends T {
+                    @Override @EventHandler
+                    public void handle(Integer event) {
+                        callCount.incrementAndGet();
+                    }
+                }
+
+                @Test
+                void shouldCallHandlerOnlyOnce() {
+                    assertCalledOnlyOnce(new U());
+                }
+            }
+
+            @Nested
+            class AndOverriddenButNotAnnotatedInASubclass {
+                class U extends T {
+                    @Override
+                    public void handle(Integer event) {
+                        callCount.incrementAndGet();
+                    }
+                }
+
+                @Test
+                void shouldCallHandlerOnlyOnce() {
+                    assertCalledOnlyOnce(new U());
+                }
+            }
+        }
+
+        @Nested
+        class WhenImplementedByUnannotedInstanceMethod {
+            class T implements I {
+                @Override
+                public void handle(Integer event) {
+                    callCount.incrementAndGet();
+                }
+            }
+
+            @Test
+            void shouldNotCallAnything() {
+                assertNotCalled(new T());
+            }
+
+            @Nested
+            class AndOverriddenAndAnnotatedInASubclass {
+                class U extends T {
+                    @Override @EventHandler
+                    public void handle(Integer event) {
+                        callCount.incrementAndGet();
+                    }
+                }
+
+                @Test
+                void shouldCallHandlerOnlyOnce() {
+                    assertCalledOnlyOnce(new U());
+                }
+            }
+
+            @Nested
+            class AndOverriddenButNotAnnotatedInASubclass {
+                class U extends T {
+                    @Override
+                    public void handle(Integer event) {
+                        callCount.incrementAndGet();
+                    }
+                }
+
+                @Test
+                void shouldNotCallAnything() {
+                    assertNotCalled(new U());
+                }
+            }
+        }
+    }
+
+    @Nested
+    class GivenAnAnnotatedInstanceMethod {
+        class T {
+            @EventHandler
+            public void handle(Integer event) {
+                callCount.incrementAndGet();
+            }
+        }
+
+        @Test
+        void shouldCallHandlerOnlyOnce() {
+            assertCalledOnlyOnce(new T());
+        }
+
+        @Nested
+        class WhenOverriddenAndAnnotatedInASubclass {
+            class U extends T {
+                @Override @EventHandler
+                public void handle(Integer event) {
+                    callCount.incrementAndGet();
+                }
+            }
+
+            @Test
+            void shouldCallHandlerOnlyOnce() {
+                assertCalledOnlyOnce(new U());
+            }
+        }
+
+        @Nested
+        class WhenNotOverriddenInSubclass {
+            class U extends T {
+            }
+
+            @Test
+            void shouldCallHandlerOnlyOnce() {
+                assertCalledOnlyOnce(new U());
+            }
+        }
+
+        @Nested
+        class WhenOverriddenButNotAnnotatedInASubclass {
+            class U extends T {
+                @Override
+                public void handle(Integer event) {
+                    callCount.incrementAndGet();
+                }
+            }
+
+            @Test
+            void shouldCallHandlerOnlyOnce() {
+                assertCalledOnlyOnce(new U());
+            }
+        }
+    }
+
+    @Nested
+    class GivenAnUnannotatedInstanceMethod {
+        class T {
+            public void handle(Integer event) {
+                callCount.incrementAndGet();
+            }
+        }
+
+        @Test
+        void shouldNotCallAnything() {
+            assertNotCalled(new T());
+        }
+
+        @Nested
+        class WhenOverriddenAndAnnotatedInASubclass {
+            class U extends T {
+                @Override @EventHandler
+                public void handle(Integer event) {
+                    callCount.incrementAndGet();
+                }
+            }
+
+            @Test
+            void shouldCallHandlerOnlyOnce() {
+                assertCalledOnlyOnce(new U());
+            }
+        }
+
+        @Nested
+        class WhenOverriddenButNotAnnotatedInASubclass {
+            class U extends T {
+                @Override
+                public void handle(Integer event) {
+                    callCount.incrementAndGet();
+                }
+            }
+
+            @Test
+            void shouldNotCallAnything() {
+                assertNotCalled(new U());
+            }
+        }
+    }
+
+    private void assertCalledOnlyOnce(Object handlerInstance) {
+        AnnotatedEventHandlingComponent<?> annotatedEventHandlingComponent = annotatedEventHandlingComponent(handlerInstance);
+        EventMessage event = eventMessage(0);
+
+        annotatedEventHandlingComponent.handle(event, messageProcessingContext(event));
+
+        assertThat(callCount.get()).isEqualTo(1);
+    }
+
+    private void assertNotCalled(Object handlerInstance) {
+        AnnotatedEventHandlingComponent<?> annotatedEventHandlingComponent = annotatedEventHandlingComponent(handlerInstance);
+        EventMessage event = eventMessage(0);
+
+        annotatedEventHandlingComponent.handle(event, messageProcessingContext(event));
+
+        assertThat(callCount.get()).isEqualTo(0);
     }
 
     private static class ErrorThrowingEventHandler {

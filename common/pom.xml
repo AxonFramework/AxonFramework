@@ -19,8 +19,9 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.axonframework</groupId>
-        <artifactId>axon</artifactId>
-        <version>5.0.0-SNAPSHOT</version>
+        <artifactId>axon-parent</artifactId>
+        <version>5.1.0-SNAPSHOT</version>
+        <relativePath>../build/parent/pom.xml</relativePath>
     </parent>
 
     <artifactId>axon-common</artifactId>
@@ -30,16 +31,7 @@
         Module containing common framework functionality.
     </description>
 
-    <packaging>bundle</packaging>
-
     <dependencies>
-
-        <!-- Annotation -->
-        <dependency>
-            <groupId>jakarta.inject</groupId>
-            <artifactId>jakarta.inject-api</artifactId>
-            <scope>test</scope>
-        </dependency>
 
         <!-- Caching -->
         <dependency>
@@ -51,11 +43,6 @@
             <groupId>org.ehcache</groupId>
             <artifactId>ehcache</artifactId>
             <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.glassfish.expressly</groupId>
-            <artifactId>expressly</artifactId>
-            <scope>test</scope>
         </dependency>
 
         <!-- Jakarta -->
@@ -101,11 +88,6 @@
             <groupId>org.reactivestreams</groupId>
             <artifactId>reactive-streams</artifactId>
         </dependency>
-        <dependency>
-            <groupId>io.projectreactor</groupId>
-            <artifactId>reactor-test</artifactId>
-            <scope>test</scope>
-        </dependency>
 
         <!-- Persistence -->
         <dependency>
@@ -117,6 +99,13 @@
             <groupId>org.hibernate.orm</groupId>
             <artifactId>hibernate-core</artifactId>
             <optional>true</optional>
+        </dependency>
+
+        <!-- Other -->
+        <dependency>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <!-- Spring - used for testing only! -->
@@ -146,18 +135,6 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Testing -->
-        <dependency>
-            <groupId>org.awaitility</groupId>
-            <artifactId>awaitility</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest</artifactId>
-            <scope>test</scope>
-        </dependency>
-
         <!-- Validation -->
         <dependency>
             <groupId>org.hibernate.validator</groupId>
@@ -165,17 +142,21 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Other -->
+        <!-- Testing other -->
         <dependency>
-            <groupId>com.google.code.findbugs</groupId>
-            <artifactId>jsr305</artifactId>
-            <scope>provided</scope>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-test</artifactId>
+            <scope>test</scope>
         </dependency>
-
+        <dependency>
+            <groupId>org.glassfish.expressly</groupId>
+            <artifactId>expressly</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>com.tngtech.archunit</groupId>
             <artifactId>archunit-junit5</artifactId>
-            <version>1.4.1</version>
+            <version>${archunit.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -195,35 +176,6 @@
                     <execution>
                         <goals>
                             <goal>test-jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-                <version>${felix.maven-bundle-plugin.version}</version>
-                <extensions>true</extensions>
-                <configuration>
-                    <instructions>
-                        <Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
-                        <Bundle-Name>${project.artifactId}</Bundle-Name>
-                        <Bundle-Description>${project.description}</Bundle-Description>
-                        <Bundle-Version>${project.version}</Bundle-Version>
-                        <Export-Package>
-                            org.axonframework.common.*
-                        </Export-Package>
-                        <Import-Package>
-                            org.slf4j.*,
-                            *;resolution:=optional
-                        </Import-Package>
-                    </instructions>
-                </configuration>
-                <executions>
-                    <!-- This execution makes sure that the manifest is available when the tests are executed -->
-                    <execution>
-                        <goals>
-                            <goal>manifest</goal>
                         </goals>
                     </execution>
                 </executions>
@@ -256,5 +208,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>

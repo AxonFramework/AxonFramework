@@ -17,14 +17,20 @@
 package org.axonframework.messaging.core.unitofwork;
 
 import org.axonframework.common.DirectExecutor;
-import org.axonframework.messaging.core.EmptyApplicationContext;
 import org.axonframework.common.util.MockException;
+import org.axonframework.messaging.core.EmptyApplicationContext;
 import org.junit.jupiter.api.*;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -40,7 +46,7 @@ class UnitOfWorkTest extends ProcessingLifecycleTest<UnitOfWork> {
 
     @Override
     UnitOfWork createTestSubject() {
-        return new UnitOfWork("unit-of-work-id", DirectExecutor.instance(), EmptyApplicationContext.INSTANCE);
+        return new UnitOfWork("unit-of-work-id", DirectExecutor.instance(), false, EmptyApplicationContext.INSTANCE);
     }
 
     @Override
@@ -106,6 +112,76 @@ class UnitOfWorkTest extends ProcessingLifecycleTest<UnitOfWork> {
 
         assertTrue(actual.isCompletedExceptionally());
         assertInstanceOf(MockException.class, actual.exceptionNow());
+    }
+
+    @Test
+    void allHandlersAreInvokedOnMainThreadWhenUoWCommitsSuccessfully() {
+        List<String> threadNames = new ArrayList<>();
+        try (ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor()) {
+            UnitOfWork uow = new UnitOfWork("testSingleCoordinatorThread",
+                                            Runnable::run,
+                                            true,
+                                            EmptyApplicationContext.INSTANCE);
+
+            uow.on(ProcessingLifecycle.DefaultPhases.INVOCATION, c -> captureThreadName(threadNames, executor));
+            uow.on(ProcessingLifecycle.DefaultPhases.COMMIT, c -> captureThreadName(threadNames, executor));
+            uow.on(ProcessingLifecycle.DefaultPhases.AFTER_COMMIT,
+                   c -> captureThreadName(threadNames, executor));
+            uow.whenComplete(c -> captureThreadName(threadNames, executor));
+            uow.doFinally(c -> captureThreadName(threadNames, executor));
+
+            CompletableFuture<Void> actual = uow.execute();
+            await().until(actual::isDone);
+
+            threadNames.forEach(name -> assertEquals(Thread.currentThread().getName(), name));
+            assertEquals(5, threadNames.size());
+        }
+    }
+
+    @Test
+    void allHandlersAreInvokedOnMainThreadWhenUoWRollsBack() {
+        List<String> threadNames = new ArrayList<>();
+        try (ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor()) {
+            UnitOfWork uow = new UnitOfWork("testSingleCoordinatorThread",
+                                            Runnable::run,
+                                            true,
+                                            EmptyApplicationContext.INSTANCE);
+
+            uow.on(ProcessingLifecycle.DefaultPhases.INVOCATION, c -> captureThreadName(threadNames, executor));
+            uow.on(ProcessingLifecycle.DefaultPhases.INVOCATION, c -> captureThreadName(threadNames, executor));
+            uow.on(ProcessingLifecycle.DefaultPhases.COMMIT, c -> captureThreadName(threadNames, executor));
+            uow.on(ProcessingLifecycle.DefaultPhases.COMMIT, c -> captureThreadName(threadNames, executor));
+            uow.on(ProcessingLifecycle.DefaultPhases.AFTER_COMMIT,
+                   c -> captureThreadNameAndFail(threadNames, executor));
+            uow.whenComplete(c -> {
+                captureThreadName(threadNames, executor);
+                fail("WhenComplete handler should not be invoked");
+            });
+            uow.doFinally(c -> captureThreadName(threadNames, executor));
+
+            CompletableFuture<Void> actual = uow.execute();
+            await().until(actual::isDone);
+
+            threadNames.forEach(name -> assertEquals(Thread.currentThread().getName(), name));
+            assertEquals(6, threadNames.size());
+            assertInstanceOf(MockException.class, actual.exceptionNow());
+        }
+    }
+
+    private CompletableFuture<?> captureThreadName(List<String> threadNames, ScheduledExecutorService executor) {
+        threadNames.add(Thread.currentThread().getName());
+        CompletableFuture<?> completableFuture = new CompletableFuture<>();
+        executor.schedule(() -> completableFuture.complete(null), 10, TimeUnit.MILLISECONDS);
+        return completableFuture;
+    }
+
+    private CompletableFuture<?> captureThreadNameAndFail(List<String> threadNames, ScheduledExecutorService executor) {
+        threadNames.add(Thread.currentThread().getName());
+        CompletableFuture<?> completableFuture = new CompletableFuture<>();
+        executor.schedule(() -> completableFuture.completeExceptionally(new MockException()),
+                          10,
+                          TimeUnit.MILLISECONDS);
+        return completableFuture;
     }
 
     private void registerNextPhase(ProcessingContext processingContext, AtomicInteger phase) {

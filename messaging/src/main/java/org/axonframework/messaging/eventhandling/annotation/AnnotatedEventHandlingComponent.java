@@ -17,13 +17,6 @@
 package org.axonframework.messaging.eventhandling.annotation;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.eventhandling.EventHandler;
-import org.axonframework.messaging.eventhandling.EventHandlerRegistry;
-import org.axonframework.messaging.eventhandling.EventHandlingComponent;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
-import org.axonframework.messaging.eventhandling.EventSink;
-import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageHandler;
 import org.axonframework.messaging.core.MessageStream;
@@ -31,10 +24,17 @@ import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.core.annotation.HandlerDefinition;
-import org.axonframework.messaging.core.interception.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.core.interception.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventHandler;
+import org.axonframework.messaging.eventhandling.EventHandlerRegistry;
+import org.axonframework.messaging.eventhandling.EventHandlingComponent;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.EventSink;
+import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 
 import java.util.Set;
 
@@ -130,23 +130,19 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
      * @param delegate              The delegate event handling component to which the handlers will be subscribed.
      * @param model                 The inspector to use to find the annotated handlers on the annotatedEventHandler.
      */
-    public AnnotatedEventHandlingComponent(@Nonnull T annotatedEventHandler,
-                                           @Nonnull EventHandlingComponent delegate,
-                                           @Nonnull AnnotatedHandlerInspector<T> model
+    private AnnotatedEventHandlingComponent(@Nonnull T annotatedEventHandler,
+                                            @Nonnull EventHandlingComponent delegate,
+                                            @Nonnull AnnotatedHandlerInspector<T> model
     ) {
         this.target = requireNonNull(annotatedEventHandler, "The Annotated Event Handler may not be null");
         this.model = requireNonNull(model, "The Annotated Handler Inspector may not be null");
-
         this.delegate = delegate;
+
         initializeHandlersBasedOnModel();
     }
 
     private void initializeHandlersBasedOnModel() {
-        model.getAllHandlers().forEach(
-                (modelClass, handlers) ->
-                        handlers.stream()
-                                .filter(h -> h.canHandleMessageType(EventMessage.class))
-                                .forEach(this::registerHandler));
+        model.getUniqueHandlers(target.getClass(), EventMessage.class).forEach(this::registerHandler);
     }
 
     private void registerHandler(MessageHandlingMember<? super T> handler) {

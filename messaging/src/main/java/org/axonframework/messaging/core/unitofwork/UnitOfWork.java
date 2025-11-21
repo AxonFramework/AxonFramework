@@ -21,6 +21,7 @@ import jakarta.annotation.Nullable;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.ApplicationContext;
+import org.axonframework.messaging.core.Context;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,7 +31,7 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
@@ -80,6 +81,7 @@ public class UnitOfWork implements ProcessingLifecycle {
     UnitOfWork(
             @Nonnull String identifier,
             @Nonnull Executor workScheduler,
+            boolean forceSyncProcessing,
             @Nonnull ApplicationContext applicationContext
     ) {
         Objects.requireNonNull(identifier, "identifier may not be null.");
@@ -89,6 +91,7 @@ public class UnitOfWork implements ProcessingLifecycle {
         this.context = new UnitOfWorkProcessingContext(
                 identifier,
                 workScheduler,
+                forceSyncProcessing,
                 applicationContext
         );
     }
@@ -203,14 +206,17 @@ public class UnitOfWork implements ProcessingLifecycle {
         private final Executor workScheduler;
         private final ApplicationContext applicationContext;
         private final ConcurrentMap<ResourceKey<?>, Object> resources;
+        private final boolean forceSyncProcessing;
 
         private UnitOfWorkProcessingContext(
                 String identifier,
                 Executor workScheduler,
+                boolean forceSyncProcessing,
                 ApplicationContext applicationContext
         ) {
             this.identifier = identifier;
             this.workScheduler = workScheduler;
+            this.forceSyncProcessing = forceSyncProcessing;
             this.resources = new ConcurrentHashMap<>();
             this.applicationContext = applicationContext;
         }
@@ -339,9 +345,21 @@ public class UnitOfWork implements ProcessingLifecycle {
                 );
             }
 
+            if (forceSyncProcessing) {
+                try {
+                    executeAllPhaseHandlers().join();
+                    runCompletionHandlers();
+                    return FutureUtils.emptyCompletedFuture();
+                } catch (CompletionException e) {
+                    return runErrorHandlers(e.getCause());
+                } catch (Exception e) {
+                    return runErrorHandlers(e);
+                }
+            }
+
             return executeAllPhaseHandlers()
-                    .thenRun(this::runCompletionHandlers)
-                    .exceptionallyCompose(this::runErrorHandlers);
+                    .thenRunAsync(this::runCompletionHandlers, workScheduler)
+                    .exceptionallyComposeAsync(this::runErrorHandlers, workScheduler);
         }
 
         private CompletableFuture<Void> executeAllPhaseHandlers() {
@@ -350,13 +368,13 @@ public class UnitOfWork implements ProcessingLifecycle {
                 return FutureUtils.emptyCompletedFuture();
             }
 
-            CompletableFuture<Void> nextPhaseResult = runNextPhase().toCompletableFuture();
+            CompletableFuture<Void> nextPhaseResult = runNextPhase();
             // Avoid stack overflow due to recursion when executed in single thread.
             while (!phaseActions.isEmpty() && nextPhaseResult.isDone()) {
                 if (nextPhaseResult.isCompletedExceptionally()) {
                     return nextPhaseResult;
                 } else {
-                    nextPhaseResult = runNextPhase().toCompletableFuture();
+                    nextPhaseResult = runNextPhase();
                 }
             }
             return nextPhaseResult.thenCompose(result -> executeAllPhaseHandlers());
@@ -373,7 +391,7 @@ public class UnitOfWork implements ProcessingLifecycle {
             }
         }
 
-        private CompletionStage<Void> runErrorHandlers(Throwable e) {
+        private CompletableFuture<Void> runErrorHandlers(Throwable e) {
             status.set(Status.COMPLETED_ERROR);
             CauseAndPhase recordedCause = errorCause.get();
 
@@ -404,16 +422,26 @@ public class UnitOfWork implements ProcessingLifecycle {
             logger.debug("Calling {}# actions in phase {} (with order {}).",
                          actionQueue.size(), current, current.order());
 
-            return actionQueue.stream()
-                              .map(handler -> FutureUtils.emptyCompletedFuture()
-                                                         .thenComposeAsync(result -> handler.apply(this), workScheduler)
-                                                         .thenAccept(FutureUtils::ignoreResult))
-                              .reduce(CompletableFuture::allOf)
-                              .orElseGet(FutureUtils::emptyCompletedFuture);
+            CompletableFuture<Void> phaseResult = actionQueue.stream()
+                                                             .map(handler -> FutureUtils.emptyCompletedFuture()
+                                                                                        .thenComposeAsync(result -> handler.apply(
+                                                                                                this), workScheduler)
+                                                                                        .thenAccept(FutureUtils::ignoreResult))
+                                                             .reduce(CompletableFuture::allOf)
+                                                             .orElseGet(FutureUtils::emptyCompletedFuture);
+            if (forceSyncProcessing) {
+                try {
+                    phaseResult.join();
+                    return FutureUtils.emptyCompletedFuture();
+                } catch (CompletionException e) {
+                    return CompletableFuture.failedFuture(e.getCause());
+                }
+            }
+            return phaseResult;
         }
 
         @Override
-        public boolean containsResource(@Nonnull ResourceKey<?> key) {
+        public boolean containsResource(@Nonnull Context.ResourceKey<?> key) {
             return resources.containsKey(key);
         }
 

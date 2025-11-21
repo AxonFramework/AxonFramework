@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.axonframework.extensions.spring</groupId>
         <artifactId>axon-spring-extension</artifactId>
-        <version>5.0.0-SNAPSHOT</version>
+        <version>5.1.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>axon-spring</artifactId>
@@ -30,8 +30,6 @@
         Module providing Spring specific helper functionality to ease configuration / set-up of an Axon application, as
         well as some Spring specific infrastructure components.
     </description>
-
-    <packaging>bundle</packaging>
 
     <dependencies>
         <!-- Axon -->
@@ -222,11 +220,6 @@
         </dependency>
         <!-- Testing -->
         <dependency>
-            <groupId>org.awaitility</groupId>
-            <artifactId>awaitility</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers</artifactId>
             <scope>test</scope>
@@ -280,35 +273,6 @@
                     <execution>
                         <goals>
                             <goal>test-jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-                <version>${felix.maven-bundle-plugin.version}</version>
-                <extensions>true</extensions>
-                <configuration>
-                    <instructions>
-                        <Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
-                        <Bundle-Name>${project.artifactId}</Bundle-Name>
-                        <Bundle-Description>${project.description}</Bundle-Description>
-                        <Bundle-Version>${project.version}</Bundle-Version>
-                        <Export-Package>
-                            org.axonframework.extension.spring.*
-                        </Export-Package>
-                        <Import-Package>
-                            org.slf4j.*,
-                            *;resolution:=optional
-                        </Import-Package>
-                    </instructions>
-                </configuration>
-                <executions>
-                    <!-- This execution makes sure that the manifest is available when the tests are executed -->
-                    <execution>
-                        <goals>
-                            <goal>manifest</goal>
                         </goals>
                     </execution>
                 </executions>
