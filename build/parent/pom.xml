@@ -55,7 +55,7 @@
         <c3p0.version>0.9.1.2</c3p0.version>
         <hikari.version>7.0.2</hikari.version>
         <hsqldb.version>2.7.2</hsqldb.version>
-        <hibernate-core.version>7.1.8.Final</hibernate-core.version>
+        <hibernate-core.version>7.1.10.Final</hibernate-core.version>
         <mysql-connector-java.version>9.5.0</mysql-connector-java.version>
         <postgresql.version>42.7.8</postgresql.version>
         <ojdbc.version>23.26.0.0.0</ojdbc.version>
@@ -94,7 +94,7 @@
         <quartz.version>2.5.1</quartz.version>
         <!-- Spring -->
         <spring.version>6.2.14</spring.version>
-        <spring.boot.version>3.5.8</spring.boot.version>
+        <spring.boot.version>4.0.0</spring.boot.version>
         <spring-security.version>6.5.7</spring-security.version>
         <!-- Testing -->
         <awaitility.version>4.3.0</awaitility.version>
