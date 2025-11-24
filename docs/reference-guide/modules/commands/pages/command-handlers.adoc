@@ -31,7 +31,7 @@ They may access state through injected services or repositories, but the handler
 
 [source,java]
 ----
-import org.axonframework.messaging.commandhandling.CommandHandler;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
 import org.springframework.stereotype.Component;
 
 @Component // <1>
@@ -107,7 +107,7 @@ In the entity-centric model, you define a class marked with `@EventSourced` and 
 [source,java]
 ----
 import org.axonframework.extension.spring.stereotype.EventSourced;
-import org.axonframework.messaging.commandhandling.CommandHandler;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
 import org.axonframework.messaging.commandhandling.annotation.Command;
 import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 import org.axonframework.modelling.annotation.EntityId;
@@ -186,7 +186,7 @@ Axon automatically loads the entity instance based on the command's routing key:
 
 [source,java]
 ----
-import org.axonframework.messaging.commandhandling.CommandHandler;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
 import org.axonframework.extension.spring.stereotype.EventSourced;
 import org.springframework.stereotype.Component;
 
@@ -727,7 +727,7 @@ This allows you to inject different entities as parameters, which Axon will auto
 
 [source,java]
 ----
-import org.axonframework.messaging.commandhandling.CommandHandler;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
 import org.axonframework.modelling.annotation.InjectEntity;
 import org.springframework.stereotype.Component;
 
