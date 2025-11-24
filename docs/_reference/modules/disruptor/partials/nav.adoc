@@ -1,1 +1,0 @@
-* xref:disruptor:index.adoc[]
