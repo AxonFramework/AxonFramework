@@ -21,6 +21,10 @@ import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SequencingEventHandlingComponent;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
+import org.axonframework.messaging.eventhandling.replay.ResetContext;
+import org.axonframework.messaging.eventhandling.replay.ResetEventHandlingComponent;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
@@ -28,7 +32,9 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 /**
@@ -100,8 +106,16 @@ public class ProcessorEventHandlingComponents {
             @Nonnull EventMessage event,
             @Nonnull ProcessingContext context
     ) {
+        Optional<TrackingToken> token = TrackingToken.fromContext(context);
+        boolean isReplaying = token.isPresent() && ReplayToken.isReplay(token.get());
+
         MessageStream<Message> result = MessageStream.empty();
         for (var component : components) {
+            // During replay, skip components that don't implement ResetEventHandlingComponent
+            if (isReplaying && !(component instanceof ResetEventHandlingComponent)) {
+                continue;
+            }
+
             if (component.supports(event.type().qualifiedName())) {
                 var componentResult = component.handle(event, context);
                 result = result.concatWith(componentResult);
@@ -144,5 +158,41 @@ public class ProcessorEventHandlingComponents {
         return components.stream()
                          .map(c -> c.sequenceIdentifierFor(event, context))
                          .collect(Collectors.toSet());
+    }
+
+    /**
+     * Dispatches a reset message to all components that support reset.
+     * <p>
+     * This method checks each component to see if it implements {@link ResetEventHandlingComponent}
+     * and invokes the reset handler on those that do. All handlers must complete successfully
+     * for the operation to succeed.
+     *
+     * @param resetContext the reset context message
+     * @param context the processing context
+     * @return a future that completes when all reset handlers have completed
+     */
+    @Nonnull
+    public CompletableFuture<Void> handleReset(@Nonnull ResetContext resetContext,
+                                               @Nonnull ProcessingContext context) {
+        List<CompletableFuture<Void>> futures = components.stream()
+                .filter(c -> c instanceof ResetEventHandlingComponent)
+                .map(c -> ((ResetEventHandlingComponent) c).handle(resetContext, context)
+                        .toCompletableFuture()
+                        .thenApply(v -> null))
+                .toList();
+
+        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+    }
+
+    /**
+     * Checks if any component supports reset operations.
+     *
+     * @return {@code true} if at least one component implements {@link ResetEventHandlingComponent}
+     *         and supports reset, {@code false} otherwise
+     */
+    public boolean supportsReset() {
+        return components.stream()
+                .anyMatch(c -> c instanceof ResetEventHandlingComponent
+                        && ((ResetEventHandlingComponent) c).supportsReset());
     }
 }

@@ -35,8 +35,14 @@ import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventSink;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.axonframework.messaging.eventhandling.replay.ResetContext;
+import org.axonframework.messaging.eventhandling.replay.SimpleResetEventHandlingComponent;
+import org.axonframework.messaging.eventhandling.replay.ReplayBlockingEventHandlingComponent;
+import org.axonframework.messaging.eventhandling.replay.annotation.DisallowReplay;
 
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 import static java.util.Objects.requireNonNull;
 
@@ -202,5 +208,103 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
     @Override
     public Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
         return delegate.sequenceIdentifierFor(event, context);
+    }
+
+    /**
+     * Creates an {@link EventHandlingComponent} for the given target, automatically wrapping
+     * with decorators based on detected annotations.
+     * <p>
+     * This method inspects the target for:
+     * <ul>
+     *   <li>{@code @ResetHandler} methods - wraps with {@link SimpleResetEventHandlingComponent}</li>
+     *   <li>Class-level {@code @DisallowReplay} - wraps with {@link ReplayBlockingEventHandlingComponent}</li>
+     * </ul>
+     *
+     * @param target the annotated object containing event handlers
+     * @param parameterResolverFactory the parameter resolver factory
+     * @param <T> the type of the target object
+     * @return an appropriately wrapped event handling component
+     */
+    public static <T> EventHandlingComponent create(@Nonnull T target,
+                                                    @Nonnull ParameterResolverFactory parameterResolverFactory) {
+        return create(target, parameterResolverFactory, ClasspathHandlerDefinition.forClass(target.getClass()));
+    }
+
+    /**
+     * Creates an {@link EventHandlingComponent} for the given target, automatically wrapping
+     * with decorators based on detected annotations.
+     * <p>
+     * This method inspects the target for:
+     * <ul>
+     *   <li>{@code @ResetHandler} methods - wraps with {@link SimpleResetEventHandlingComponent}</li>
+     *   <li>Class-level {@code @DisallowReplay} - wraps with {@link ReplayBlockingEventHandlingComponent}</li>
+     * </ul>
+     *
+     * @param target the annotated object containing event handlers
+     * @param parameterResolverFactory the parameter resolver factory
+     * @param handlerDefinition the handler definition
+     * @param <T> the type of the target object
+     * @return an appropriately wrapped event handling component
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> EventHandlingComponent create(@Nonnull T target,
+                                                    @Nonnull ParameterResolverFactory parameterResolverFactory,
+                                                    @Nonnull HandlerDefinition handlerDefinition) {
+        // Create inspector
+        AnnotatedHandlerInspector<T> inspector = AnnotatedHandlerInspector.inspectType(
+                (Class<T>) target.getClass(),
+                parameterResolverFactory,
+                handlerDefinition
+        );
+
+        // Create base annotated component
+        AnnotatedEventHandlingComponent<T> base = new AnnotatedEventHandlingComponent<>(
+                target,
+                new SimpleEventHandlingComponent(),
+                inspector
+        );
+
+        EventHandlingComponent component = base;
+
+        // Find @ResetHandler methods
+        List<MessageHandlingMember<? super T>> resetHandlers = inspector
+                .getHandlers(target.getClass()).stream()
+                .filter(h -> h.canHandleMessageType(ResetContext.class))
+                .toList();
+
+        // Wrap with SimpleResetEventHandlingComponent if @ResetHandler methods exist
+        if (!resetHandlers.isEmpty()) {
+            SimpleResetEventHandlingComponent resetable = new SimpleResetEventHandlingComponent(component);
+
+            // Subscribe a reset handler that invokes all @ResetHandler methods
+            resetable.subscribe((resetContext, context) -> {
+                MessageHandlerInterceptorMemberChain<T> chain =
+                        inspector.chainedInterceptor(target.getClass());
+
+                List<CompletableFuture<Void>> futures = resetHandlers.stream()
+                        .filter(h -> h.canHandle(resetContext, context))
+                        .map(h -> chain.handle(resetContext, context, target, h)
+                                .ignoreEntries()
+                                .toCompletableFuture()
+                                .thenApply(v -> null))
+                        .toList();
+
+                CompletableFuture<Void> allFutures =
+                        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+
+                return MessageStream.fromCompletableFuture(allFutures)
+                        .ignoreEntries()
+                        .cast();
+            });
+
+            component = resetable;
+        }
+
+        // Wrap with ReplayBlockingEventHandlingComponent if class has @DisallowReplay
+        if (target.getClass().isAnnotationPresent(DisallowReplay.class)) {
+            component = new ReplayBlockingEventHandlingComponent(component);
+        }
+
+        return component;
     }
 }
