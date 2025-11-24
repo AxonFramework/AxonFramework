@@ -177,8 +177,8 @@ public class ProcessorEventHandlingComponents {
         List<CompletableFuture<Void>> futures = components.stream()
                 .filter(c -> c instanceof ResetEventHandlingComponent)
                 .map(c -> ((ResetEventHandlingComponent) c).handle(resetContext, context)
-                        .toCompletableFuture()
-                        .thenApply(v -> null))
+                        .asCompletableFuture()
+                        .thenApply(v -> (Void) null))
                 .toList();
 
         return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));

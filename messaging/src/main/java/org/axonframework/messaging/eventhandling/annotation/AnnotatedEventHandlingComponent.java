@@ -281,20 +281,15 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
                 MessageHandlerInterceptorMemberChain<T> chain =
                         inspector.chainedInterceptor(target.getClass());
 
-                List<CompletableFuture<Void>> futures = resetHandlers.stream()
-                        .filter(h -> h.canHandle(resetContext, context))
-                        .map(h -> chain.handle(resetContext, context, target, h)
-                                .ignoreEntries()
-                                .toCompletableFuture()
-                                .thenApply(v -> null))
-                        .toList();
+                MessageStream<Message> result = MessageStream.empty();
+                for (MessageHandlingMember<? super T> h : resetHandlers) {
+                    if (h.canHandle(resetContext, context)) {
+                        MessageStream<Message> handlerResult = chain.handle(resetContext, context, target, h).cast();
+                        result = result.concatWith(handlerResult);
+                    }
+                }
 
-                CompletableFuture<Void> allFutures =
-                        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
-
-                return MessageStream.fromCompletableFuture(allFutures)
-                        .ignoreEntries()
-                        .cast();
+                return result.ignoreEntries().cast();
             });
 
             component = resetable;
