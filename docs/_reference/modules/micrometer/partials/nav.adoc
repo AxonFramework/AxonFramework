@@ -1,1 +1,0 @@
-* xref:micrometer:index.adoc[]
