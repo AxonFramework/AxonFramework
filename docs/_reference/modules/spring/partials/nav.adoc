@@ -1,1 +1,0 @@
-* xref:spring:index.adoc[]

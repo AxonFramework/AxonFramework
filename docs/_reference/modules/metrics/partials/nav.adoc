@@ -1,1 +1,0 @@
-* xref:metrics:index.adoc[]
