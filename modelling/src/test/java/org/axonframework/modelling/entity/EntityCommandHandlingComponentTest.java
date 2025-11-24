@@ -35,6 +35,7 @@ import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
 import org.mockito.junit.jupiter.*;
 
+import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
@@ -107,23 +108,15 @@ class EntityCommandHandlingComponentTest {
                                      "No handler for command [MissingCommand]");
     }
 
-    @Nested
-    class OnlyCreationalCommandHandler {
+    @Test
+    void failureToResolveIdWillResultInCreationHandlerToBeInvoked() throws EntityIdResolutionException {
+        when(idResolver.resolve(eq(mixedCommandMessage), any()))
+                .thenThrow(new EntityIdResolutionException(String.class, Collections.emptyList()));
 
-        @Test
-        void executesCreationalCommandHandlerWithoutAttemptingToLoad() throws Exception {
-            CommandResultMessage resultMessage = testComponent.handle(creationalCommandMessage, context)
-                                                              .first()
-                                                              .asCompletableFuture()
-                                                              .join()
-                                                              .message();
+        MessageStream.Single<? extends CommandResultMessage> componentResult =
+                testComponent.handle(mixedCommandMessage, context);
 
-            verify(metamodel).handleCreate(eq(creationalCommandMessage), any());
-            assertEquals("creational", resultMessage.payload());
-            verify(idResolver, never()).resolve(any(), any());
-            verifyNoInteractions(repository);
-            verify(metamodel, never()).handleInstance(any(), any(), any());
-        }
+        assertDoesNotThrow(() -> componentResult.asCompletableFuture().join());
     }
 
     @Nested
@@ -204,16 +197,47 @@ class EntityCommandHandlingComponentTest {
         }
     }
 
-    @Test
-    void failureToResolveIdWillResultInFailedMessageStream() throws EntityIdResolutionException {
-        when(idResolver.resolve(eq(mixedCommandMessage), any()))
-                .thenThrow(new RuntimeException("Failed to resolve ID"));
+    @Nested
+    class OnlyCreationalCommandHandler {
 
-        MessageStream.Single<? extends CommandResultMessage> componentResult =
-                testComponent.handle(mixedCommandMessage, context);
+        @Test
+        void executesCreationalCommandHandlerWithoutAttemptingToLoad() throws Exception {
+            setupLoadEntity(null);
+            CommandResultMessage resultMessage = testComponent.handle(creationalCommandMessage, context)
+                                                              .first()
+                                                              .asCompletableFuture()
+                                                              .join()
+                                                              .message();
 
-        var exception = assertThrows(RuntimeException.class, () -> componentResult.asCompletableFuture().join());
-        assertEquals("Failed to resolve ID", exception.getCause().getMessage());
+            verify(metamodel).handleCreate(eq(creationalCommandMessage), any());
+            assertEquals("creational", resultMessage.payload());
+            verify(idResolver).resolve(any(), any());
+            verify(metamodel, never()).handleInstance(any(), any(), any());
+        }
+
+        @Test
+        void resultsInExceptionWhenLoadReturnsNonNullEntity() {
+            setupLoadEntity(new TestEntity());
+
+            MessageStream.Single<CommandResultMessage> result =
+                    testComponent.handle(creationalCommandMessage, context);
+
+            verify(metamodel, times(0)).handleCreate(eq(creationalCommandMessage), any());
+            assertCompletedExceptionally(result, EntityAlreadyExistsForCreationalCommandHandlerException.class);
+        }
+
+
+        @Test
+        void failureToLoadEntityWillResultInFailedMessageStream() {
+            when(repository.load(eq(entityId), any()))
+                    .thenReturn(CompletableFuture.failedFuture(new RuntimeException("Failed to load entity")));
+
+            MessageStream.Single<CommandResultMessage> componentResult =
+                    testComponent.handle(creationalCommandMessage, context);
+
+            var exception = assertThrows(RuntimeException.class, () -> componentResult.asCompletableFuture().join());
+            assertEquals("Failed to load entity", exception.getCause().getMessage());
+        }
     }
 
     @Test

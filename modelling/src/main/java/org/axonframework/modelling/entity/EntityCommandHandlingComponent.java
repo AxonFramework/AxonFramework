@@ -27,6 +27,7 @@ import org.axonframework.messaging.core.DelayedMessageStream;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.modelling.EntityIdResolutionException;
 import org.axonframework.modelling.EntityIdResolver;
 import org.axonframework.modelling.repository.ManagedEntity;
 import org.axonframework.modelling.repository.Repository;
@@ -79,20 +80,20 @@ public class EntityCommandHandlingComponent<ID, E> implements CommandHandlingCom
     public MessageStream.Single<CommandResultMessage> handle(@Nonnull CommandMessage command,
                                                              @Nonnull ProcessingContext context) {
         QualifiedName messageName = command.type().qualifiedName();
-        boolean isInstanceCommand = metamodel.supportedInstanceCommands().contains(messageName);
-        if (isInstanceCommand) {
-            return handleInstanceCommand(command, context);
-        } else if (metamodel.supportedCreationalCommands().contains(messageName)) {
-            return metamodel.handleCreate(command, context);
-        } else {
-            return handleInstanceCommand(command, context);
+        try {
+            ID id = idResolver.resolve(command, context);
+            return handleInstanceCommand(id, command, context);
+        } catch (EntityIdResolutionException e) {
+            if (metamodel.supportedCreationalCommands().contains(messageName)) {
+                return metamodel.handleCreate(command, context);
+            }
+            return MessageStream.failed(e);
         }
     }
 
-    private MessageStream.Single<CommandResultMessage> handleInstanceCommand(CommandMessage command,
+    private MessageStream.Single<CommandResultMessage> handleInstanceCommand(ID id, CommandMessage command,
                                                                              ProcessingContext context) {
         try {
-            ID id = idResolver.resolve(command, context);
             QualifiedName messageName = command.type().qualifiedName();
 
             var loadFuture = loadFromRepository(context, id, messageName);
