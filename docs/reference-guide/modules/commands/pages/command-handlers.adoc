@@ -110,7 +110,6 @@ import org.axonframework.extension.spring.stereotype.EventSourced;
 import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
 import org.axonframework.messaging.commandhandling.annotation.Command;
 import org.axonframework.messaging.eventhandling.gateway.EventAppender;
-import org.axonframework.modelling.annotation.EntityId;
 
 @Command(routingKey = "cardId") // <1>
 public record IssueCardCommand(String cardId, int amount, String shopId) {
@@ -123,11 +122,10 @@ public record RedeemCardCommand(String cardId, String transactionId, int amount)
 @EventSourced // <2>
 public class GiftCard {
 
-    @EntityId // <3>
     private String id;
     private int remainingValue;
 
-    @CommandHandler // <4>
+    @CommandHandler // <3>
     public static String issue(IssueCardCommand cmd, EventAppender eventAppender) {
         if (cmd.amount() <= 0) {
             throw new IllegalArgumentException("Amount must be positive");
@@ -136,12 +134,12 @@ public class GiftCard {
         return cmd.cardId();
     }
 
-    @CommandHandler // <5>
+    @CommandHandler // <4>
     public void handle(RedeemCardCommand cmd, EventAppender eventAppender) {
         if (cmd.amount() <= 0) {
             throw new IllegalArgumentException("amount <= 0");
         }
-        if (cmd.amount() > remainingValue) { // <6>
+        if (cmd.amount() > remainingValue) { // <5>
             throw new IllegalStateException("amount > remaining value");
         }
         eventAppender.append(new CardRedeemedEvent(id, cmd.transactionId(), cmd.amount()));
@@ -171,13 +169,11 @@ Commands with the same routing key are routed to the same handler instance to av
 
 <2> The `@EventSourced` annotation (Spring) or `@EventSourcedEntity` (non-Spring) marks the class as a stateful, event-sourced command handler.
 
-<3> The `@EntityId` annotation marks the field containing the unique identifier used to load the correct instance.
+<3> A creational command handler (static method) creates a new instance by appending events.
 
-<4> A creational command handler (static method) creates a new instance by appending events.
+<4> An instance command handler (instance method) operates on an existing instance, requiring it to be loaded first.
 
-<5> An instance command handler (instance method) operates on an existing instance, requiring it to be loaded first.
-
-<6> Instance handlers have access to current state for decision-making.
+<5> Instance handlers have access to current state for decision-making.
 
 === Command-centric stateful handlers
 
@@ -194,7 +190,6 @@ import org.springframework.stereotype.Component;
 @EventSourced
 public class GiftCard {
 
-    @EntityId
     private String id;
     private int remainingValue;
 
@@ -319,7 +314,6 @@ Instance handlers operate on existing instances that are loaded based on their i
 @EventSourced
 public class GiftCard {
 
-    @EntityId
     private String id;
     private int remainingValue;
 
@@ -365,7 +359,6 @@ Axon uses this when:
 @EventSourced
 public class GiftCard {
 
-    @EntityId
     private String id;
     private boolean created;
     private int remainingValue;
@@ -411,7 +404,6 @@ Axon uses this when:
 @EventSourced
 public class GiftCard {
 
-    @EntityId
     private final String id;
     private final int initialAmount;
 
@@ -564,8 +556,9 @@ public void handle(
     EventAppender eventAppender,
     ProcessingContext context // <1>
 ) {
-    // Access correlation data
-    String traceId = context.correlationData().traceId();
+    // The ProcessingContext is available for interaction
+    // For example, you can store and retrieve resources
+    MyCustomService service = context.getResource(MY_SERVICE_KEY);
 
     // Perform business logic
     if (cmd.amount() > remainingValue) {
@@ -907,21 +900,26 @@ Without Spring, you can register command handlers using the Configuration API:
 [source,java]
 ----
     void buildConfiguration() {
-        ApplicationConfigurer configurer = ApplicationConfigurer.defaultConfiguration();
+        // Create the Event Sourcing configurer
+        EventSourcingConfigurer configurer = EventSourcingConfigurer.create();
 
-        // Register stateful handler
-        configurer.modellingConfigurer(modellingConfigurer ->
-            modellingConfigurer.eventSourcingConfigurer(eventSourcingConfigurer ->
-                eventSourcingConfigurer.registerEntity(GiftCard.class)
-            )
+        // Register stateful event-sourced entity
+        configurer.registerEntity(
+            EventSourcedEntityModule.autodetected(String.class, GiftCard.class)
         );
 
-        // Register stateless handler
-        configurer.messagingConfigurer(messagingConfigurer ->
-            messagingConfigurer.registerCommandHandler(config ->
-                new GiftCardValidationHandler(config.queryDispatcher())
-            )
+        // Register stateless command handler
+        configurer.registerCommandHandlingModule(
+            CommandHandlingModule.named("gift-card-validation")
+                                 .commandHandlers()
+                                 .annotatedCommandHandlingComponent(config ->
+                                     new GiftCardValidationHandler(config.getComponent(QueryDispatcher.class))
+                                 )
         );
+
+        // Build and start the configuration
+        AxonConfiguration configuration = configurer.build();
+        configuration.start();
     }
 ----
 
