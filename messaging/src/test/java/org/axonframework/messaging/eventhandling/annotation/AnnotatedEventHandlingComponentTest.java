@@ -278,7 +278,7 @@ class AnnotatedEventHandlingComponentTest {
         void rejectsNullEvent() {
             // when-then
             assertThrows(NullPointerException.class,
-                         () -> eventHandlingComponent.handle(null, messageProcessingContext(null)),
+                         () -> eventHandlingComponent.handle((EventMessage) null, messageProcessingContext(null)),
                          "Event Message may not be null");
         }
 

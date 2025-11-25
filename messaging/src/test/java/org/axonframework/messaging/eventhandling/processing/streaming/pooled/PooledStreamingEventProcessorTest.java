@@ -28,6 +28,7 @@ import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorC
 import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorHandler;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.eventstreaming.EventCriteria;
@@ -220,30 +221,43 @@ class PooledStreamingEventProcessorTest {
 
     @Test
     void resetTokensFromDefinedPosition() {
-//            TrackingToken testToken = new GlobalSequenceTrackingToken(42);
-//
-//            int expectedSegmentCount = 2;
-//            TrackingToken expectedToken = ReplayToken.createReplayToken(testToken, null);
-//
-//            when(stubEventHandler.supportsReset()).thenReturn(true);
-//            setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(expectedSegmentCount)
-//                                                               .initialToken(source -> CompletableFuture.completedFuture(
-//                                                                       testToken))));
-//
-//            // Start and stop the processor to initialize the tracking tokens
-//            testSubject.start();
-//            assertWithin(2,
-//                         TimeUnit.SECONDS,
-//                         () -> assertEquals(expectedSegmentCount, tokenStore.fetchSegments(PROCESSOR_NAME).length));
-//            testSubject.shutDown();
-//
-//            testSubject.resetTokens(source -> source.latestToken());
-//
-//            verify(stubEventHandler).performReset(isNull(), any());
-//
-//            int[] segments = tokenStore.fetchSegments(PROCESSOR_NAME);
-//            assertEquals(expectedToken, tokenStore.fetchToken(PROCESSOR_NAME, segments[0]));
-//            assertEquals(expectedToken, tokenStore.fetchToken(PROCESSOR_NAME, segments[1]));
+      // given
+        TrackingToken testToken = new GlobalSequenceTrackingToken(42);
+        int expectedSegmentCount = 2;
+
+        AtomicBoolean resetHandlerInvoked = new AtomicBoolean(false);
+        defaultEventHandlingComponent.subscribe((resetContext, ctx) -> {
+            resetHandlerInvoked.set(true);
+            return MessageStream.empty();
+        });
+        defaultEventHandlingComponent.subscribe(new QualifiedName(Integer.class), (event, ctx) -> MessageStream.empty());
+
+        withTestSubject(
+                List.of(),
+                c -> c.initialSegmentCount(expectedSegmentCount)
+                      .initialToken(source -> CompletableFuture.completedFuture(testToken))
+        );
+
+        // when - Start and stop the processor to initialize the tracking tokens
+        startEventProcessor();
+        assertWithin(2, TimeUnit.SECONDS, () -> {
+            List<Segment> segments = joinAndUnwrap(tokenStore.fetchSegments(PROCESSOR_NAME, null));
+            assertEquals(expectedSegmentCount, segments.size());
+        });
+        joinAndUnwrap(testSubject.shutdown());
+
+        // when - Reset tokens
+        joinAndUnwrap(testSubject.resetTokens(source -> source.latestToken(null)));
+
+        // then - Verify reset handler was invoked
+        assertTrue(resetHandlerInvoked.get());
+
+        // then - Verify tokens are wrapped in ReplayToken
+        List<Segment> segments = joinAndUnwrap(tokenStore.fetchSegments(PROCESSOR_NAME, null));
+        TrackingToken token0 = joinAndUnwrap(tokenStore.fetchToken(PROCESSOR_NAME, segments.get(0).getSegmentId(), null));
+        TrackingToken token1 = joinAndUnwrap(tokenStore.fetchToken(PROCESSOR_NAME, segments.get(1).getSegmentId(), null));
+        assertTrue(ReplayToken.isReplay(token0));
+        assertTrue(ReplayToken.isReplay(token1));
     }
 
     @Test
@@ -351,7 +365,7 @@ class PooledStreamingEventProcessorTest {
             // Use CountDownLatch to block worker threads from actually doing work, and thus shutting down successfully.
             CountDownLatch latch = new CountDownLatch(1);
             doAnswer(i -> latch.await(10, TimeUnit.MILLISECONDS)).when(defaultEventHandlingComponent)
-                                                                 .handle(any(), any());
+                                                                 .handle(any(EventMessage.class), any(ProcessingContext.class));
 
             startEventProcessor();
 
@@ -445,7 +459,7 @@ class PooledStreamingEventProcessorTest {
             doAnswer(invocation -> {
                 Thread.sleep(1000);
                 return MessageStream.empty();
-            }).when(defaultEventHandlingComponent).handle(any(), any());
+            }).when(defaultEventHandlingComponent).handle(any(EventMessage.class), any(ProcessingContext.class));
         }
     }
 
@@ -689,7 +703,7 @@ class PooledStreamingEventProcessorTest {
                 handleLatch.await(5, TimeUnit.SECONDS);
                 return MessageStream.empty();
             }).when(defaultEventHandlingComponent)
-              .handle(any(), any());
+              .handle(any(EventMessage.class), any(ProcessingContext.class));
 
             List<EventMessage> events = createEvents(42);
             events.forEach(stubMessageSource::publishMessage);
@@ -740,7 +754,7 @@ class PooledStreamingEventProcessorTest {
                 handleLatch.await(5, TimeUnit.SECONDS);
                 return MessageStream.empty();
             }).when(defaultEventHandlingComponent)
-              .handle(any(), any());
+              .handle(any(EventMessage.class), any(ProcessingContext.class));
 
             List<EventMessage> events = createEvents(42);
             events.forEach(stubMessageSource::publishMessage);
@@ -779,7 +793,7 @@ class PooledStreamingEventProcessorTest {
             doReturn(MessageStream.failed(new RuntimeException("Simulating worker failure")))
                     .doReturn(MessageStream.empty())
                     .when(defaultEventHandlingComponent)
-                    .handle(argThat(em -> em.identifier().equals(events.get(2).identifier())), any());
+                    .handle(ArgumentMatchers.<EventMessage>argThat(em -> em.identifier().equals(events.get(2).identifier())), any(ProcessingContext.class));
 
             startEventProcessor();
 
@@ -798,7 +812,7 @@ class PooledStreamingEventProcessorTest {
             assertWithin(1, TimeUnit.SECONDS, () -> {
                 try {
                     verify(defaultEventHandlingComponent).handle(
-                            argThat(em -> em.identifier().equals(events.get(2).identifier())),
+                            ArgumentMatchers.<EventMessage>argThat(em -> em.identifier().equals(events.get(2).identifier())),
                             any()
                     );
                 } catch (Exception e) {
@@ -872,7 +886,7 @@ class PooledStreamingEventProcessorTest {
                    });
 
             // then - Verify no events were handled
-            verify(defaultEventHandlingComponent, never()).handle(any(), any());
+            verify(defaultEventHandlingComponent, never()).handle(any(EventMessage.class), any(ProcessingContext.class));
         }
 
         @Test
@@ -898,7 +912,7 @@ class PooledStreamingEventProcessorTest {
                    });
 
             // then
-            verify(defaultEventHandlingComponent, times(1)).handle(any(), any());
+            verify(defaultEventHandlingComponent, times(1)).handle(any(EventMessage.class), any(ProcessingContext.class));
         }
 
         @Test
@@ -927,7 +941,7 @@ class PooledStreamingEventProcessorTest {
                    });
 
             // then - Verify no events were handled (filtered out by EventCriteria)
-            verify(defaultEventHandlingComponent, never()).handle(any(), any());
+            verify(defaultEventHandlingComponent, never()).handle(any(EventMessage.class), any(ProcessingContext.class));
 
             // then - Verify the event was tracked as ignored (even though filtered at stream level)
             assertThat(stubMessageSource.getIgnoredEvents()).hasSize(1);
