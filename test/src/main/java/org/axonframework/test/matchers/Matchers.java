@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package org.axonframework.test.matchers;
 
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.Message;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.core.Message;
 import org.hamcrest.Matcher;
 
 import java.util.List;

@@ -20,7 +20,6 @@ import com.google.protobuf.ByteString;
 import io.axoniq.axonserver.connector.AxonServerConnection;
 import io.axoniq.axonserver.connector.Registration;
 import io.axoniq.axonserver.connector.command.CommandChannel;
-import io.axoniq.axonserver.connector.impl.AsyncRegistration;
 import io.axoniq.axonserver.grpc.ErrorMessage;
 import io.axoniq.axonserver.grpc.MetaDataValue;
 import io.axoniq.axonserver.grpc.ProcessingKey;
@@ -28,14 +27,15 @@ import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.command.Command;
 import io.axoniq.axonserver.grpc.command.CommandResponse;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.distributed.CommandBusConnector;
-import org.axonframework.lifecycle.ShutdownInProgressException;
-import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.common.lifecycle.ShutdownInProgressException;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.commandhandling.CommandResultMessage;
+import org.axonframework.messaging.commandhandling.GenericCommandMessage;
+import org.axonframework.messaging.commandhandling.GenericCommandResultMessage;
+import org.axonframework.messaging.commandhandling.distributed.CommandBusConnector;
+import org.axonframework.messaging.core.GenericMessage;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.QualifiedName;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -45,9 +45,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -253,9 +252,9 @@ class AxonServerCommandBusConnectorTest {
     }
 
     @Test
-    void subscribeWithAsyncRegistrationWaitsForAcknowledgment() throws Exception {
+    void subscribeWithAsyncRegistrationWaitsForAcknowledgment() {
         // Arrange
-        AsyncRegistration asyncRegistration = mock(AsyncRegistration.class);
+        Registration asyncRegistration = mock(Registration.class);
         when(commandChannel.registerCommandHandler(any(), eq(ANY_TEST_LOAD_FACTOR), eq(ANY_TEST_COMMAND_NAME.name())))
                 .thenReturn(asyncRegistration);
 
@@ -263,36 +262,7 @@ class AxonServerCommandBusConnectorTest {
         testSubject.subscribe(ANY_TEST_COMMAND_NAME, ANY_TEST_LOAD_FACTOR);
 
         // Assert
-        verify(asyncRegistration).awaitAck(anyLong(), eq(TimeUnit.MILLISECONDS));
-    }
-
-    @Test
-    void subscribeWithAsyncRegistrationTimeoutThrowsException() throws Exception {
-        // Arrange
-        AsyncRegistration asyncRegistration = mock(AsyncRegistration.class);
-        when(commandChannel.registerCommandHandler(any(), eq(ANY_TEST_LOAD_FACTOR), eq(ANY_TEST_COMMAND_NAME.name())))
-                .thenReturn(asyncRegistration);
-        doThrow(new TimeoutException("Test timeout"))
-                .when(asyncRegistration).awaitAck(anyLong(), eq(TimeUnit.MILLISECONDS));
-
-        // Act & Assert
-        assertThrows(RuntimeException.class,
-                     () -> testSubject.subscribe(ANY_TEST_COMMAND_NAME, ANY_TEST_LOAD_FACTOR));
-    }
-
-    @Test
-    void subscribeWithAsyncRegistrationInterruptedThrowsException() throws Exception {
-        // Arrange
-        AsyncRegistration asyncRegistration = mock(AsyncRegistration.class);
-        when(commandChannel.registerCommandHandler(any(), eq(ANY_TEST_LOAD_FACTOR), eq(ANY_TEST_COMMAND_NAME.name())))
-                .thenReturn(asyncRegistration);
-        doThrow(new InterruptedException("Test interruption"))
-                .when(asyncRegistration).awaitAck(anyLong(), eq(TimeUnit.MILLISECONDS));
-
-        // Act & Assert
-        assertThrows(RuntimeException.class,
-                     () -> testSubject.subscribe(ANY_TEST_COMMAND_NAME, ANY_TEST_LOAD_FACTOR));
-        assertTrue(Thread.currentThread().isInterrupted());
+        verify(asyncRegistration).onAck(any());
     }
 
     @Test
@@ -339,6 +309,7 @@ class AxonServerCommandBusConnectorTest {
 
     @Test
     void disconnectInvokesPrepareDisconnectOnCommandChannel() {
+        when(commandChannel.prepareDisconnect()).thenReturn(CompletableFuture.completedFuture(null));
         when(connection.isConnected()).thenReturn(true);
 
         testSubject.disconnect();
@@ -392,6 +363,49 @@ class AxonServerCommandBusConnectorTest {
                                         assertTrue(handled.get());
                                         assertTrue(dispatchingHasShutdown.isDone());
                                     });
+    }
+
+    @Nested
+    class GracefulShutdown {
+
+        @Test
+        void disconnectCompletesWhenIncomingCommandsAreHandled() {
+            when(connection.isConnected()).thenReturn(true);
+            CompletableFuture<Void> disconnectCompletion = new CompletableFuture<>();
+            when(commandChannel.prepareDisconnect()).thenReturn(disconnectCompletion);
+
+            AtomicReference<CommandBusConnector.ResultCallback> resultCallback = new AtomicReference<>();
+            testSubject.onIncomingCommand((commandMessage, callback) -> resultCallback.set(callback));
+
+            getIncomingHandler(testSubject).handle(createTestCommandMessage(), mock());
+
+            assertNotNull(resultCallback.get(), "Command was not received");
+            CompletableFuture<Void> result = testSubject.disconnect();
+            assertNotNull(result);
+            verify(commandChannel).prepareDisconnect();
+            assertFalse(result.isDone());
+
+            disconnectCompletion.complete(null);
+
+            resultCallback.get().onSuccess(new GenericCommandResultMessage(ANY_TEST_TYPE, ANY_TEST_PAYLOAD));
+            assertTrue(result.isDone());
+        }
+
+        @Test
+        void disconnectCompletesOnPrepareWhenNoActiveCommandsAvailable() {
+            when(connection.isConnected()).thenReturn(true);
+            CompletableFuture<Void> disconnectCompletion = new CompletableFuture<>();
+            when(commandChannel.prepareDisconnect()).thenReturn(disconnectCompletion);
+
+            CompletableFuture<Void> result = testSubject.disconnect();
+            assertNotNull(result);
+            verify(commandChannel).prepareDisconnect();
+            assertFalse(result.isDone());
+
+            disconnectCompletion.complete(null);
+
+            assertTrue(result.isDone());
+        }
     }
 
     // Helpers

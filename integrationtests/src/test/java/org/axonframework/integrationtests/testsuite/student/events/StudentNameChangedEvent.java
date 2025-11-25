@@ -16,7 +16,7 @@
 
 package org.axonframework.integrationtests.testsuite.student.events;
 
-import org.axonframework.eventsourcing.annotations.EventTag;
+import org.axonframework.eventsourcing.annotation.EventTag;
 
 public record StudentNameChangedEvent(
         @EventTag(key = "Student")

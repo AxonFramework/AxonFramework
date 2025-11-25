@@ -17,7 +17,7 @@ The `DeadLetterQueueProviderConfigurerModule` has an example of how you can use 
 
 [source,java]
 ----
-include::example$source_code/spring-boot-autoconfigure/src/main/java/org/axonframework/springboot/autoconfig/JpaAutoConfiguration.java[tag=JpaDeadLetterQueueProviderConfigurerModule]
+include::example$source_code/spring-boot-autoconfigure/src/main/java/org/axonframework/extension/springboot/autoconfig/JpaAutoConfiguration.java[tag=JpaDeadLetterQueueProviderConfigurerModule]
 ----
 
 You might notice the `EventProcessorProperties` parameter. That's because with Spring autoconfiguration it's easy to enable dead letter event processing for a specific processing group. You can do so by setting a property similar to `axon.eventhandling.processors.first.dlq.enabled=true`.

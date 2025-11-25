@@ -22,14 +22,15 @@ import io.axoniq.axonserver.grpc.event.dcb.Criterion;
 import io.axoniq.axonserver.grpc.event.dcb.SourceEventsRequest;
 import io.axoniq.axonserver.grpc.event.dcb.StreamEventsRequest;
 import io.axoniq.axonserver.grpc.event.dcb.TagsAndNamesCriterion;
-import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.GlobalIndexConsistencyMarker;
+import org.axonframework.eventsourcing.eventstore.GlobalIndexPositions;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
-import org.axonframework.eventstreaming.EventCriteria;
-import org.axonframework.eventstreaming.StreamingCondition;
-import org.axonframework.eventstreaming.Tag;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.axonframework.messaging.eventstreaming.StreamingCondition;
+import org.axonframework.messaging.eventstreaming.Tag;
+import org.axonframework.messaging.core.QualifiedName;
 import org.junit.jupiter.api.*;
 
 import java.nio.charset.StandardCharsets;
@@ -91,7 +92,7 @@ class ConditionConverterTest {
     void convertSourcingConditionConstructsSourceEventRequestAsExpected() {
         // given...
         SourcingCondition testCondition = SourcingCondition.conditionFor(
-                START,
+                GlobalIndexPositions.of(START),
                 EventCriteria.havingTags(
                                      Tag.of("key1OnCriterion1", "value1OnCriterion1"),
                                      Tag.of("key2OnCriterion1", "value2OnCriterion1")

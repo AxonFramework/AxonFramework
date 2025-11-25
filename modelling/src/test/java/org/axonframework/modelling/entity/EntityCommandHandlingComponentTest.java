@@ -16,16 +16,17 @@
 
 package org.axonframework.modelling.entity;
 
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.GenericCommandResultMessage;
-import org.axonframework.commandhandling.NoHandlerForCommandException;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.commandhandling.CommandResultMessage;
+import org.axonframework.messaging.commandhandling.GenericCommandMessage;
+import org.axonframework.messaging.commandhandling.GenericCommandResultMessage;
+import org.axonframework.messaging.commandhandling.NoHandlerForCommandException;
 import org.axonframework.common.infra.MockComponentDescriptor;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
+import org.axonframework.modelling.EntityIdResolutionException;
 import org.axonframework.modelling.EntityIdResolver;
 import org.axonframework.modelling.repository.ManagedEntity;
 import org.axonframework.modelling.repository.Repository;
@@ -37,7 +38,7 @@ import org.mockito.junit.jupiter.*;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
-import static org.axonframework.messaging.MessageStreamTestUtils.assertCompletedExceptionally;
+import static org.axonframework.messaging.core.MessageStreamTestUtils.assertCompletedExceptionally;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -82,7 +83,7 @@ class EntityCommandHandlingComponentTest {
     private EntityCommandHandlingComponent<String, TestEntity> testComponent;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws EntityIdResolutionException {
         lenient().when(idResolver.resolve(any(), any())).thenReturn(entityId);
     }
 
@@ -226,7 +227,7 @@ class EntityCommandHandlingComponentTest {
     }
 
     @Test
-    void failureToResolveIdWillResultInFailedMessageStream() {
+    void failureToResolveIdWillResultInFailedMessageStream() throws EntityIdResolutionException {
         when(idResolver.resolve(eq(creationalCommandMessage), any()))
                 .thenThrow(new RuntimeException("Failed to resolve ID"));
 

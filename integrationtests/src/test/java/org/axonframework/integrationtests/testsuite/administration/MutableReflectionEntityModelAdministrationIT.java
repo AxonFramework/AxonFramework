@@ -30,7 +30,7 @@ public class MutableReflectionEntityModelAdministrationIT extends AbstractAdmini
 
     @Override
     protected EventSourcingConfigurer testSuiteConfigurer(EventSourcingConfigurer configurer) {
-        var personEntity = EventSourcedEntityModule.annotated(PersonIdentifier.class, MutablePerson.class);
+        var personEntity = EventSourcedEntityModule.autodetected(PersonIdentifier.class, MutablePerson.class);
         return configurer.componentRegistry(cr -> cr.registerModule(personEntity));
     }
 

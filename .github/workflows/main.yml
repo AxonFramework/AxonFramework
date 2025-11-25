@@ -39,20 +39,20 @@ jobs:
       - name: Regular Build
         if: ${{ !matrix.sonar-enabled }}
         run: |
-          ./mvnw -B -U -Dstyle.color=always clean verify \
+          ./mvnw -B -U -ntp -Dstyle.color=always clean verify \
           -Possrh -Pintegration-test -Djacoco.skip=true -Dsurefire.rerunFailingTestsCount=5 -Dfailsafe.rerunFailingTestsCount=5 \
           -Dparallel=classes -DthreadCount=1 -DforkCount=2
       - name: Build with Coverage reports
         if: matrix.sonar-enabled
         run: |
-          ./mvnw -B -U -Dstyle.color=always clean verify \
+          ./mvnw -B -U -ntp -Dstyle.color=always clean verify \
           -Dcoverage -Dsurefire.rerunFailingTestsCount=5 -Dfailsafe.rerunFailingTestsCount=5 \
           -Dparallel=classes -DthreadCount=1 -DforkCount=2
 
       - name: Sonar Analysis
         if: matrix.sonar-enabled
         run: |
-          ./mvnw -B -Dstyle.color=always sonar:sonar \
+          ./mvnw -B -ntp -Dstyle.color=always sonar:sonar \
           -Dsonar.projectKey=AxonFramework_AxonFramework \
           -Dsonar.organization=axonframework \
           -Dsonar.host.url=https://sonarcloud.io \
@@ -63,7 +63,7 @@ jobs:
       - name: Deploy to Sonatype
         if: success() && matrix.deploy-enabled
         run: |
-          ./mvnw -B -U -Dstyle.color=always -Possrh deploy -DskipTests=true
+          ./mvnw -B -U -ntp -Dstyle.color=always -Possrh deploy -DskipTests=true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MAVEN_USERNAME: ${{ secrets.SONATYPE_TOKEN_ID }}

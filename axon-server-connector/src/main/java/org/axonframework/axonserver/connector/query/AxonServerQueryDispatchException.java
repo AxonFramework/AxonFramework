@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import io.axoniq.axonserver.grpc.ErrorMessage;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.common.AxonException;
 
+import java.io.Serial;
 import java.util.Collections;
 import java.util.List;
 
@@ -31,6 +32,7 @@ import java.util.List;
  */
 public class AxonServerQueryDispatchException extends AxonException {
 
+    @Serial
     private static final long serialVersionUID = 4810265327922717359L;
 
     private final String code;

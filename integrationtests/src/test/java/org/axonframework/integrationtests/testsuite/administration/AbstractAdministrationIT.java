@@ -16,8 +16,7 @@
 
 package org.axonframework.integrationtests.testsuite.administration;
 
-import org.axonframework.configuration.ApplicationConfigurer;
-import org.axonframework.configuration.Module;
+import org.axonframework.common.configuration.ApplicationConfigurer;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.integrationtests.testsuite.AbstractAxonServerIT;
 import org.axonframework.integrationtests.testsuite.administration.commands.AssignTaskCommand;
@@ -171,7 +170,7 @@ public abstract class AbstractAdministrationIT extends AbstractAxonServerIT {
     }
 
     private void sendCommand(Object command) {
-        commandGateway.send(command, null).getResultMessage().join();
+        commandGateway.send(command).getResultMessage().join();
     }
 }
 

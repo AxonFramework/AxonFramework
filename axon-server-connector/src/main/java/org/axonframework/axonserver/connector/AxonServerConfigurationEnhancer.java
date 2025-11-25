@@ -18,27 +18,32 @@ package org.axonframework.axonserver.connector;
 
 import org.axonframework.axonserver.connector.command.AxonServerCommandBusConnector;
 import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngineFactory;
-import org.axonframework.commandhandling.distributed.CommandBusConnector;
-import org.axonframework.commandhandling.distributed.PayloadConvertingCommandBusConnector;
+import org.axonframework.axonserver.connector.event.EventProcessorControlService;
+import org.axonframework.axonserver.connector.query.AxonServerQueryBusConnector;
+import org.axonframework.messaging.commandhandling.distributed.CommandBusConnector;
+import org.axonframework.messaging.commandhandling.distributed.PayloadConvertingCommandBusConnector;
 import org.axonframework.common.FutureUtils;
-import org.axonframework.configuration.ComponentDecorator;
-import org.axonframework.configuration.ComponentDefinition;
-import org.axonframework.configuration.ComponentLifecycleHandler;
-import org.axonframework.configuration.ComponentRegistry;
-import org.axonframework.configuration.Configuration;
-import org.axonframework.configuration.ConfigurationEnhancer;
-import org.axonframework.configuration.DecoratorDefinition;
-import org.axonframework.configuration.SearchScope;
+import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.common.configuration.ComponentDecorator;
+import org.axonframework.common.configuration.ComponentDefinition;
+import org.axonframework.common.configuration.ComponentLifecycleHandler;
+import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.configuration.ConfigurationEnhancer;
+import org.axonframework.common.configuration.DecoratorDefinition;
+import org.axonframework.common.configuration.SearchScope;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.lifecycle.Phase;
-import org.axonframework.messaging.conversion.MessageConverter;
+import org.axonframework.common.lifecycle.Phase;
+import org.axonframework.messaging.core.conversion.MessageConverter;
+import org.axonframework.messaging.queryhandling.distributed.PayloadConvertingQueryBusConnector;
+import org.axonframework.messaging.queryhandling.distributed.QueryBusConnector;
 
 import java.util.Optional;
 import javax.annotation.Nonnull;
 
 /**
  * A {@link ConfigurationEnhancer} that is auto-loadable by the
- * {@link org.axonframework.configuration.ApplicationConfigurer}, setting sensible defaults when using Axon Server.
+ * {@link ApplicationConfigurer}, setting sensible defaults when using Axon Server.
  *
  * @author Allard Buijze
  * @since 4.0.0
@@ -47,7 +52,7 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
 
     /**
      * The {@link #order()} when this {@link AxonServerConfigurationEnhancer} enhances an
-     * {@link org.axonframework.configuration.ApplicationConfigurer}.
+     * {@link ApplicationConfigurer}.
      */
     public static final int ENHANCER_ORDER = Integer.MIN_VALUE + 10;
 
@@ -62,19 +67,28 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
                                       SearchScope.ALL)
                 .registerIfNotPresent(eventStorageEngineDefinition(), SearchScope.ALL)
                 .registerIfNotPresent(commandBusConnectorDefinition(), SearchScope.ALL)
-                .registerDecorator(CommandBusConnector.class, 0, payloadConvertingConnectorComponentDecorator())
+                .registerIfNotPresent(queryBusConnectorDefinition(), SearchScope.ALL)
+                .registerDecorator(CommandBusConnector.class,
+                                   0,
+                                   payloadConvertingConnectorComponentDecorator()
+                )
+                .registerDecorator(QueryBusConnector.class,
+                                   0,
+                                   payloadConvertingQueryBusConnectorComponentDecorator()
+                )
                 .registerDecorator(topologyChangeListenerRegistration())
-                .registerFactory(new AxonServerEventStorageEngineFactory());
+                .registerFactory(new AxonServerEventStorageEngineFactory())
+                .registerIfNotPresent(eventProcessorControlService());
     }
 
-    private ComponentDefinition<AxonServerConnectionManager> connectionManagerDefinition() {
+    private static ComponentDefinition<AxonServerConnectionManager> connectionManagerDefinition() {
         return ComponentDefinition.ofType(AxonServerConnectionManager.class)
-                                  .withBuilder(this::buildConnectionManager)
+                                  .withBuilder(AxonServerConfigurationEnhancer::buildConnectionManager)
                                   .onStart(Phase.INSTRUCTION_COMPONENTS, AxonServerConnectionManager::start)
                                   .onShutdown(Phase.EXTERNAL_CONNECTIONS, AxonServerConnectionManager::shutdown);
     }
 
-    private AxonServerConnectionManager buildConnectionManager(Configuration config) {
+    private static AxonServerConnectionManager buildConnectionManager(Configuration config) {
         AxonServerConfiguration serverConfig = config.getComponent(AxonServerConfiguration.class);
         return AxonServerConnectionManager.builder()
                                           .routingServers(serverConfig.getServers())
@@ -86,7 +100,7 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
                                           .build();
     }
 
-    private ComponentDefinition<EventStorageEngine> eventStorageEngineDefinition() {
+    private static ComponentDefinition<EventStorageEngine> eventStorageEngineDefinition() {
         return ComponentDefinition.ofType(EventStorageEngine.class)
                                   .withBuilder(config -> {
                                       String defaultContext = config.getComponent(AxonServerConfiguration.class)
@@ -98,7 +112,7 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
                                   });
     }
 
-    private ComponentDefinition<CommandBusConnector> commandBusConnectorDefinition() {
+    private static ComponentDefinition<CommandBusConnector> commandBusConnectorDefinition() {
         return ComponentDefinition.ofType(CommandBusConnector.class)
                                   .withBuilder(config -> new AxonServerCommandBusConnector(
                                           config.getComponent(AxonServerConnectionManager.class).getConnection(),
@@ -114,7 +128,31 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
                                                       ((AxonServerCommandBusConnector) connector).shutdownDispatching());
     }
 
-    private ComponentDecorator<CommandBusConnector, PayloadConvertingCommandBusConnector> payloadConvertingConnectorComponentDecorator() {
+    private static ComponentDefinition<QueryBusConnector> queryBusConnectorDefinition() {
+        return ComponentDefinition.ofType(QueryBusConnector.class)
+                                  .withBuilder(config -> new AxonServerQueryBusConnector(
+                                          config.getComponent(AxonServerConnectionManager.class).getConnection(),
+                                          config.getComponent(AxonServerConfiguration.class)
+                                  ))
+                                  .onStart(Phase.INBOUND_QUERY_CONNECTOR,
+                                           connector -> ((AxonServerQueryBusConnector) connector).start())
+                                  .onShutdown(Phase.INBOUND_QUERY_CONNECTOR,
+                                              (ComponentLifecycleHandler<QueryBusConnector>) (config, connector) ->
+                                                      ((AxonServerQueryBusConnector) connector).disconnect())
+                                  .onShutdown(Phase.OUTBOUND_QUERY_CONNECTORS,
+                                              (ComponentLifecycleHandler<QueryBusConnector>) (config, connector) ->
+                                                      ((AxonServerQueryBusConnector) connector).shutdownDispatching());
+    }
+
+    private static ComponentDecorator<QueryBusConnector, PayloadConvertingQueryBusConnector> payloadConvertingQueryBusConnectorComponentDecorator() {
+        return (config, name, delegate) -> new PayloadConvertingQueryBusConnector(
+                delegate,
+                config.getComponent(MessageConverter.class),
+                byte[].class
+        );
+    }
+
+    private static ComponentDecorator<CommandBusConnector, PayloadConvertingCommandBusConnector> payloadConvertingConnectorComponentDecorator() {
         return (config, name, delegate) -> new PayloadConvertingCommandBusConnector(
                 delegate,
                 config.getComponent(MessageConverter.class),
@@ -122,7 +160,7 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
         );
     }
 
-    private DecoratorDefinition<AxonServerConnectionManager, AxonServerConnectionManager> topologyChangeListenerRegistration() {
+    private static DecoratorDefinition<AxonServerConnectionManager, AxonServerConnectionManager> topologyChangeListenerRegistration() {
         return DecoratorDefinition.forType(AxonServerConnectionManager.class)
                                   .with((config, name, delegate) -> delegate)
                                   .onStart(Phase.INSTRUCTION_COMPONENTS, (config, connectionManager) -> {
@@ -136,6 +174,20 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
                                       );
                                       return FutureUtils.emptyCompletedFuture();
                                   });
+    }
+
+    private static ComponentDefinition<EventProcessorControlService> eventProcessorControlService() {
+        return ComponentDefinition.ofType(EventProcessorControlService.class)
+                                  .withBuilder(c -> {
+                                      AxonServerConfiguration serverConfig =
+                                              c.getComponent(AxonServerConfiguration.class);
+                                      return new EventProcessorControlService(
+                                              c, c.getComponent(AxonServerConnectionManager.class),
+                                              serverConfig.getContext(),
+                                              serverConfig.getEventhandling().getProcessors()
+                                      );
+                                  })
+                                  .onStart(Phase.INSTRUCTION_COMPONENTS, EventProcessorControlService::start);
     }
 
     @Override

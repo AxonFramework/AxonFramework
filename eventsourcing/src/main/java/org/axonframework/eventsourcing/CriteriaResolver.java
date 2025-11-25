@@ -16,8 +16,8 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.eventstreaming.EventCriteria;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import jakarta.annotation.Nonnull;
 

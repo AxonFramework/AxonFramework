@@ -18,11 +18,13 @@ package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.DescribableComponent;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventSink;
-import org.axonframework.eventstreaming.StreamableEventSource;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventBus;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.EventSink;
+import org.axonframework.messaging.eventstreaming.StreamableEventSource;
+import org.axonframework.messaging.core.SubscribableEventSource;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
 
 import java.util.List;
 
@@ -34,8 +36,8 @@ import java.util.List;
  * As an extension of the {@link EventBus}, this {@code EventStore} serves as both the event storage mechanism and
  * the event distribution mechanism. This dual role allows the EventStore to persist events durably while simultaneously
  * distributing them to subscribed event handlers, eliminating the need for a separate {@link EventBus} component in
- * event sourcing scenarios. Through the {@link org.axonframework.messaging.SubscribableEventSource} capability inherited
- * from EventBus, components can {@link org.axonframework.messaging.SubscribableEventSource#subscribe(java.util.function.BiFunction) subscribe}
+ * event sourcing scenarios. Through the {@link SubscribableEventSource} capability inherited
+ * from EventBus, components can {@link SubscribableEventSource#subscribe(java.util.function.BiFunction) subscribe}
  * to receive events as they are stored. The exact timing of when events are published to subscribers is
  * implementation-dependent and may occur within the same transaction if the {@link ProcessingContext} is shared between
  * the storage and distribution operations.
@@ -47,14 +49,14 @@ import java.util.List;
  * <p>
  * As an implementation of the {@link StreamableEventSource}, this {@code EventStore} will allow for {@link #open} a
  * stream of events and use it as a source for
- * {@link org.axonframework.eventhandling.processors.streaming.StreamingEventProcessor}.
+ * {@link StreamingEventProcessor}.
  *
  * @author Allard Buijze
  * @author Rene de Waele
  * @author Steven van Beelen
  * @since 0.1.0
  */
-public interface EventStore extends StreamableEventSource<EventMessage>, EventBus, DescribableComponent {
+public interface EventStore extends StreamableEventSource, EventBus, DescribableComponent {
 
     /**
      * Retrieves the {@link EventStoreTransaction transaction for appending events} for the given

@@ -18,16 +18,16 @@ package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.common.annotations.Internal;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.DescribableComponent;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.TerminalEventMessage;
-import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
-import org.axonframework.eventstreaming.StreamingCondition;
-import org.axonframework.eventstreaming.Tag;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.ProcessingLifecycle;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.TerminalEventMessage;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
+import org.axonframework.messaging.eventstreaming.StreamingCondition;
+import org.axonframework.messaging.eventstreaming.Tag;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.ProcessingLifecycle;
 
 import java.time.Instant;
 import java.util.List;
@@ -36,6 +36,8 @@ import java.util.concurrent.CompletableFuture;
 import static java.util.Arrays.asList;
 
 /**
+ * Interface for providing storage engines for the {@link StorageEngineBackedEventStore}.
+ * <p>
  * Provides a mechanism to {@link #appendEvents(AppendCondition, TaggedEventMessage[])}  append} as well as retrieve
  * {@link EventMessage events} from an underlying storage mechanism.
  * <p>

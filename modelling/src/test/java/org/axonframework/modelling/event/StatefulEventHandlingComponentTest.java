@@ -17,14 +17,14 @@
 package org.axonframework.modelling.event;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.eventhandling.EventHandlingComponent;
-import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.SimpleEventHandlingComponent;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.eventhandling.EventHandlingComponent;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.modelling.SimpleStateManager;
 import org.axonframework.modelling.StateManager;
 import org.junit.jupiter.api.Nested;

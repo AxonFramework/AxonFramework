@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright (c) 2010-2023. Axon Framework
+  ~ Copyright (c) 2010-2025. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@
 
     <logger name="io.axoniq.axonserver" level="INFO"/>
     <logger name="org.axonframework.commandhandling" level="INFO"/>
-    <logger name="org.axonframework.serialization" level="INFO"/>
+    <logger name="org.axonframework.conversion" level="INFO"/>
 
     <root level="INFO">
         <appender-ref ref="STDOUT" />

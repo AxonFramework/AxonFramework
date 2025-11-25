@@ -17,9 +17,10 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventstreaming.EventCriteria;
-import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.TerminalEventMessage;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.axonframework.messaging.core.MessageStream;
 
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -46,7 +47,7 @@ public interface EventStoreTransaction {
      * <p>
      * <b>Any</b> {@code EventStoreTransaction} using the {@link EventStorageEngine#source(SourcingCondition)} is
      * expected to {@link MessageStream#filter(Predicate) filter} the
-     * {@link org.axonframework.eventhandling.TerminalEventMessage} with the {@link ConsistencyMarker}.
+     * {@link TerminalEventMessage} with the {@link ConsistencyMarker}.
      *
      * @param condition The {@link SourcingCondition} used to retrieve the {@link MessageStream} containing the sequence
      *                  of events that can rehydrate a model.
@@ -59,7 +60,7 @@ public interface EventStoreTransaction {
      * Appends an {@code eventMessage} to be appended to an {@link EventStore} in this transaction with the given
      * {@code condition}.
      * <p>
-     * Use the {@link org.axonframework.eventstreaming.EventCriteria#havingAnyTag} when there are no consistency
+     * Use the {@link EventCriteria#havingAnyTag} when there are no consistency
      * boundaries to validate during appending.
      *
      * @param eventMessage The {@link EventMessage} to append.

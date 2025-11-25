@@ -20,13 +20,13 @@ import io.axoniq.axonserver.connector.ResultStream;
 import io.axoniq.axonserver.grpc.event.dcb.SequencedEvent;
 import io.axoniq.axonserver.grpc.event.dcb.StreamEventsResponse;
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.annotations.Internal;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
-import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
-import org.axonframework.messaging.Context;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.SimpleEntry;
+import org.axonframework.common.annotation.Internal;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
+import org.axonframework.messaging.core.Context;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.SimpleEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -95,7 +95,7 @@ public class StreamingEventMessageStream implements MessageStream<EventMessage> 
     }
 
     @Override
-    public void onAvailable(@Nonnull Runnable callback) {
+    public void setCallback(@Nonnull Runnable callback) {
         stream.onAvailable(callback);
     }
 

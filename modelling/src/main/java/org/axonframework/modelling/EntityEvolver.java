@@ -17,8 +17,8 @@
 package org.axonframework.modelling;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 /**
  * Functional interface describing how to evolve a given {@code entity} of type {@code e} based on a given

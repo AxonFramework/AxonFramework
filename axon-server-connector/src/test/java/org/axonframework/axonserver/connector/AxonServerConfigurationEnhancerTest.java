@@ -17,13 +17,15 @@
 package org.axonframework.axonserver.connector;
 
 import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngine;
-import org.axonframework.commandhandling.distributed.CommandBusConnector;
-import org.axonframework.commandhandling.distributed.PayloadConvertingCommandBusConnector;
-import org.axonframework.configuration.AxonConfiguration;
-import org.axonframework.configuration.ComponentRegistry;
-import org.axonframework.configuration.Configuration;
+import org.axonframework.messaging.commandhandling.distributed.CommandBusConnector;
+import org.axonframework.messaging.commandhandling.distributed.PayloadConvertingCommandBusConnector;
+import org.axonframework.common.configuration.AxonConfiguration;
+import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.Configuration;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.messaging.queryhandling.distributed.PayloadConvertingQueryBusConnector;
+import org.axonframework.messaging.queryhandling.distributed.QueryBusConnector;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -70,6 +72,7 @@ class AxonServerConfigurationEnhancerTest {
         assertInstanceOf(ManagedChannelCustomizer.class, result.getComponent(ManagedChannelCustomizer.class));
         assertInstanceOf(AxonServerEventStorageEngine.class, result.getComponent(EventStorageEngine.class));
         assertInstanceOf(PayloadConvertingCommandBusConnector.class, result.getComponent(CommandBusConnector.class));
+        assertInstanceOf(PayloadConvertingQueryBusConnector.class, result.getComponent(QueryBusConnector.class));
     }
 
     @Test
@@ -94,7 +97,7 @@ class AxonServerConfigurationEnhancerTest {
         assertNotNull(connectionManager);
         await().pollDelay(Duration.ofMillis(50))
                .atMost(Duration.ofMillis(500))
-               .untilAsserted(() -> verify(connectionManager).getConnection());
+               .untilAsserted(() -> verify(connectionManager, atLeastOnce()).getConnection());
     }
 
     /**
@@ -132,6 +135,52 @@ class AxonServerConfigurationEnhancerTest {
         assertNotNull(connectionManager);
         await().pollDelay(Duration.ofMillis(50))
                .atMost(Duration.ofMillis(500))
-               .untilAsserted(() -> verify(connectionManager, times(2)).getConnection());
+               .untilAsserted(() -> verify(connectionManager, atLeastOnce()).getConnection());
+    }
+
+    @Nested
+    class EventProcessorControlServiceTests {
+
+        @Test
+        void eventProcessorControlServiceIsRegistered() {
+            // given / when
+            Configuration result = EventSourcingConfigurer.create()
+                                                          .componentRegistry(ComponentRegistry::disableEnhancerScanning)
+                                                          .componentRegistry(cr -> testSubject.enhance(cr))
+                                                          .build();
+
+            // then
+            assertNotNull(result.getComponent(
+                    org.axonframework.axonserver.connector.event.EventProcessorControlService.class
+            ));
+        }
+
+        @Test
+        void eventProcessorControlServiceStartsAndInvokesConnectionManagerGetConnection() {
+            // given
+            AxonConfiguration result =
+                    EventSourcingConfigurer.create()
+                                           .componentRegistry(ComponentRegistry::disableEnhancerScanning)
+                                           .componentRegistry(cr -> testSubject.enhance(cr))
+                                           .lifecycleRegistry(registry -> registry.registerLifecyclePhaseTimeout(
+                                                   25, TimeUnit.MILLISECONDS
+                                           ))
+                                           .componentRegistry(registry -> registry.registerDecorator(
+                                                   AxonServerConnectionManager.class,
+                                                   Integer.MIN_VALUE,
+                                                   (config, name, delegate) -> Mockito.spy(delegate)
+                                           ))
+                                           .build();
+
+            // when
+            result.start();
+
+            // then
+            AxonServerConnectionManager connectionManager = result.getComponent(AxonServerConnectionManager.class);
+            assertNotNull(connectionManager);
+            await().pollDelay(Duration.ofMillis(50))
+                   .atMost(Duration.ofMillis(500))
+                   .untilAsserted(() -> verify(connectionManager, atLeastOnce()).getConnection());
+        }
     }
 }

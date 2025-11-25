@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,10 @@
 package org.axonframework.axonserver.connector.query;
 
 import io.axoniq.axonserver.grpc.ErrorMessage;
-import org.axonframework.messaging.RemoteExceptionDescription;
-import org.axonframework.messaging.RemoteHandlingException;
+import org.axonframework.messaging.core.RemoteExceptionDescription;
+import org.axonframework.messaging.core.RemoteHandlingException;
+
+import java.io.Serial;
 
 /**
  * An AxonServer Exception which is thrown on a Query Handling exception.
@@ -31,6 +33,7 @@ import org.axonframework.messaging.RemoteHandlingException;
  */
 public class AxonServerRemoteQueryHandlingException extends RemoteHandlingException {
 
+    @Serial
     private static final long serialVersionUID = -8868624888839585045L;
 
     private final String errorCode;

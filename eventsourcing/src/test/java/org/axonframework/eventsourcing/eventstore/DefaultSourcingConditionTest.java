@@ -16,8 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.eventstreaming.EventCriteria;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -26,35 +25,47 @@ import static org.junit.jupiter.api.Assertions.*;
  * Test class validating the {@link DefaultSourcingCondition}.
  *
  * @author Steven van Beelen
+ * @author John Hendrikx
  */
 class DefaultSourcingConditionTest {
 
     private static final EventCriteria TEST_CRITERIA = EventCriteria.havingTags("key", "value");
-    private static final long TEST_START = 1L;
-
-    private SourcingCondition testSubject;
-
-    @BeforeEach
-    void setUp() {
-        testSubject = new DefaultSourcingCondition(TEST_START, TEST_CRITERIA);
-    }
 
     @Test
     void throwsExceptionWhenConstructingWithNullEventCriteria() {
         //noinspection DataFlowIssue
-        assertThrows(AxonConfigurationException.class,
-                     () -> new DefaultSourcingCondition(TEST_START, null));
+        assertThrows(NullPointerException.class,
+                     () -> new DefaultSourcingCondition(Position.START, null));
     }
 
     @Test
     void combineUsesTheSmallestStartValue() {
-        long biggerStart = testSubject.start() + 10;
-        SourcingCondition testSubjectWithLargerStart =
-                new DefaultSourcingCondition(biggerStart, TEST_CRITERIA);
+        GlobalIndexPosition position1 = new GlobalIndexPosition(10);
+        GlobalIndexPosition position2 = new GlobalIndexPosition(20);
+        SourcingCondition sc1 = new DefaultSourcingCondition(position1, TEST_CRITERIA);
+        SourcingCondition sc2 = new DefaultSourcingCondition(position2, TEST_CRITERIA);
 
-        SourcingCondition result = testSubject.or(testSubjectWithLargerStart);
+        SourcingCondition result1 = sc1.or(sc2);
+        SourcingCondition result2 = sc2.or(sc1);
 
-        assertNotEquals(biggerStart, result.start());
-        assertEquals(testSubject.start(), result.start());
+        assertNotEquals(position2, result1.start());
+        assertEquals(position1, result1.start());
+        assertNotEquals(position2, result2.start());
+        assertEquals(position1, result2.start());
+    }
+
+    @Test
+    void combineWithStandardPositionUsesTheSmallestStartValue() {
+        GlobalIndexPosition position = new GlobalIndexPosition(10);
+        SourcingCondition sc1 = new DefaultSourcingCondition(Position.START, TEST_CRITERIA);
+        SourcingCondition sc2 = new DefaultSourcingCondition(position, TEST_CRITERIA);
+
+        SourcingCondition result1 = sc1.or(sc2);
+        SourcingCondition result2 = sc2.or(sc1);
+
+        assertNotEquals(position, result1.start());
+        assertEquals(Position.START, result1.start());
+        assertNotEquals(position, result2.start());
+        assertEquals(Position.START, result2.start());
     }
 }

@@ -17,7 +17,7 @@
 package org.axonframework.integrationtests.testsuite.student.commands;
 
 import org.axonframework.integrationtests.testsuite.student.common.StudentMentorModelIdentifier;
-import org.axonframework.modelling.annotations.TargetEntityId;
+import org.axonframework.modelling.annotation.TargetEntityId;
 
 public record AssignMentorCommand(
         String menteeId,

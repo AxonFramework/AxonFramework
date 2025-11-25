@@ -16,7 +16,7 @@
 
 package org.axonframework.integrationtests.testsuite.student.state;
 
-import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.integrationtests.testsuite.student.events.MentorAssignedToStudentEvent;
 import org.axonframework.integrationtests.testsuite.student.events.StudentEnrolledEvent;
 import org.axonframework.integrationtests.testsuite.student.events.StudentNameChangedEvent;

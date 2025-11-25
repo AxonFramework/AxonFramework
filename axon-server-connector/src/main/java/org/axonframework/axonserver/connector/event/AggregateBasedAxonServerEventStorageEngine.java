@@ -29,29 +29,30 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.axonserver.connector.MetadataConverter;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.TerminalEventMessage;
-import org.axonframework.eventhandling.conversion.EventConverter;
-import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
-import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.eventhandling.TerminalEventMessage;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarker;
+import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarker.AggregateSequencer;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedEventStorageEngineUtils;
-import org.axonframework.eventsourcing.eventstore.AggregateBasedEventStorageEngineUtils.AggregateSequencer;
+import org.axonframework.eventsourcing.eventstore.AggregateSequenceNumberPosition;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.EmptyAppendTransaction;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.messaging.LegacyResources;
+import org.axonframework.messaging.core.LegacyResources;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
-import org.axonframework.eventstreaming.EventCriterion;
-import org.axonframework.eventstreaming.StreamingCondition;
-import org.axonframework.messaging.Context;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.Metadata;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventstreaming.EventCriterion;
+import org.axonframework.messaging.eventstreaming.StreamingCondition;
+import org.axonframework.messaging.core.Context;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -105,7 +106,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
         }
 
         AggregateBasedConsistencyMarker consistencyMarker = AggregateBasedConsistencyMarker.from(condition);
-        AggregateSequencer aggregateSequencer = AggregateSequencer.with(consistencyMarker);
+        AggregateSequencer aggregateSequencer = consistencyMarker.createSequencer();
 
         AppendEventsTransaction tx = connection.eventChannel().startAppendEventsTransaction();
         try {
@@ -142,7 +143,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
             public CompletableFuture<AggregateBasedConsistencyMarker> commit(@Nullable ProcessingContext context) {
                 return tx.commit()
                          .exceptionallyCompose(e -> CompletableFuture.failedFuture(translateConflictException(e)))
-                         .thenApply(r -> aggregateSequencer.forwarded());
+                         .thenApply(r -> aggregateSequencer.toMarker());
             }
 
             @Override
@@ -182,7 +183,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
         return aggregateSources.stream()
                                .map(AggregateSource::source)
                                .reduce(MessageStream.empty().cast(), MessageStream::concatWith)
-                               .whenComplete(() -> endOfStreams.complete(null))
+                               .onComplete(() -> endOfStreams.complete(null))
                                .concatWith(MessageStream.fromFuture(
                                        endOfStreams.thenApply(event -> TerminalEventMessage.INSTANCE),
                                        unused -> Context.with(
@@ -197,7 +198,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
         String aggregateIdentifier = resolveAggregateIdentifier(criterion.tags());
         AggregateEventStream aggregateStream =
                 connection.eventChannel()
-                          .openAggregateStream(aggregateIdentifier, condition.start());
+                          .openAggregateStream(aggregateIdentifier, AggregateSequenceNumberPosition.toSequenceNumber(condition.start()));
 
         MessageStream<EventMessage> source =
                 MessageStream.fromStream(aggregateStream.asStream(),
@@ -207,7 +208,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
                                                                            event.getAggregateType(),
                                                                            markerReference))
                              // Defaults the marker when the aggregate stream was empty
-                             .whenComplete(() -> markerReference.compareAndSet(
+                             .onComplete(() -> markerReference.compareAndSet(
                                      null, new AggregateBasedConsistencyMarker(aggregateIdentifier, 0)
                              ))
                              .cast();

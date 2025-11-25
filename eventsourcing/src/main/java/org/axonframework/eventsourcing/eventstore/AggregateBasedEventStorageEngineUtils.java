@@ -17,13 +17,10 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nullable;
-import org.axonframework.eventstreaming.Tag;
+import org.axonframework.messaging.eventstreaming.Tag;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 
 import static org.axonframework.eventsourcing.eventstore.AppendEventsTransactionRejectedException.conflictingEventsDetected;
@@ -35,7 +32,7 @@ import static org.axonframework.eventsourcing.eventstore.AppendEventsTransaction
  * @author Allard Buijze
  * @since 5.0.0
  */
-public class AggregateBasedEventStorageEngineUtils {
+public final class AggregateBasedEventStorageEngineUtils {
 
     /**
      * Validates the tags associated with a list of event messages. Ensures that no event has more than one tag, as the
@@ -122,69 +119,6 @@ public class AggregateBasedEventStorageEngineUtils {
             }
         }
         return e;
-    }
-
-    /**
-     * Helper class that tracks the sequence of events for different aggregates and manages the consistency marker for
-     * the aggregates.
-     */
-    public static final class AggregateSequencer {
-
-        private final Map<String, AtomicLong> aggregateSequences;
-        private AggregateBasedConsistencyMarker consistencyMarker;
-
-        /**
-         * Constructs a new {@code AggregateSequencer} with the specified aggregate sequences and consistency marker.
-         *
-         * @param aggregateSequences A map of aggregate identifiers to atomic sequences.
-         * @param consistencyMarker  The consistency marker for this sequencer.
-         */
-        private AggregateSequencer(Map<String, AtomicLong> aggregateSequences,
-                                   AggregateBasedConsistencyMarker consistencyMarker) {
-            this.aggregateSequences = aggregateSequences;
-            this.consistencyMarker = consistencyMarker;
-        }
-
-        /**
-         * Creates a new {@code AggregateSequencer} with the provided consistency marker.
-         *
-         * @param consistencyMarker The consistency marker for the new sequencer.
-         * @return A new {@code AggregateSequencer}.
-         */
-        public static AggregateSequencer with(AggregateBasedConsistencyMarker consistencyMarker) {
-            return new AggregateSequencer(new HashMap<>(), consistencyMarker);
-        }
-
-        /**
-         * Forwarded the consistency marker by the state of aggregate sequences.
-         *
-         * @return The new consistency marker after forwarding
-         * @see AggregateBasedConsistencyMarker#forwarded(String, long)
-         */
-        public AggregateBasedConsistencyMarker forwarded() {
-            var newConsistencyMarker = consistencyMarker;
-            for (var aggSeq : aggregateSequences.entrySet()) {
-                newConsistencyMarker = newConsistencyMarker
-                        .forwarded(aggSeq.getKey(), aggSeq.getValue().get());
-            }
-            consistencyMarker = newConsistencyMarker;
-            return newConsistencyMarker;
-        }
-
-        /**
-         * Get and increment the sequence for the given aggregate identifier. If the aggregate does not exist, it is
-         * initialized with the consistency marker's position for that identifier.
-         *
-         * @param aggregateIdentifier The identifier of the aggregate to get and increment the sequence for
-         * @return The atomic long sequence for the aggregate
-         */
-        public long incrementAndGetSequenceOf(String aggregateIdentifier) {
-            var aggregateSequence = aggregateSequences.computeIfAbsent(
-                    aggregateIdentifier,
-                    i -> new AtomicLong(consistencyMarker.positionOf(i))
-            );
-            return aggregateSequence.incrementAndGet();
-        }
     }
 
     private AggregateBasedEventStorageEngineUtils() {

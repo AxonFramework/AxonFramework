@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package org.axonframework.axonserver.connector.command;
 
 import io.axoniq.axonserver.grpc.ErrorMessage;
-import org.axonframework.messaging.RemoteExceptionDescription;
-import org.axonframework.messaging.RemoteHandlingException;
+import org.axonframework.messaging.core.RemoteExceptionDescription;
+import org.axonframework.messaging.core.RemoteHandlingException;
 
 /**
  * Exception indicating a problem that was reported by the remote end of a connection.

@@ -17,8 +17,8 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.eventstreaming.EventCriteria;
-import org.axonframework.eventstreaming.EventsCondition;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.axonframework.messaging.eventstreaming.EventsCondition;
 
 /**
  * Interface describing the condition to {@link EventStoreTransaction#source(SourcingCondition) source} events from an
@@ -44,7 +44,7 @@ public sealed interface SourcingCondition extends EventsCondition permits Defaul
      * @return A {@code SourcingCondition} that will retrieve an event sequence matching the given {@code criteria}.
      */
     static SourcingCondition conditionFor(@Nonnull EventCriteria criteria) {
-        return conditionFor(0, criteria);
+        return conditionFor(Position.START, criteria);
     }
 
     /**
@@ -57,7 +57,7 @@ public sealed interface SourcingCondition extends EventsCondition permits Defaul
      * @return A {@code SourcingCondition} that will retrieve an event sequence matching the given {@code criteria},
      * starting at the given {@code start}.
      */
-    static SourcingCondition conditionFor(long start, @Nonnull EventCriteria criteria) {
+    static SourcingCondition conditionFor(@Nonnull Position start, @Nonnull EventCriteria criteria) {
         return new DefaultSourcingCondition(start, criteria);
     }
 
@@ -65,10 +65,10 @@ public sealed interface SourcingCondition extends EventsCondition permits Defaul
      * The start position in the event sequence to source. Defaults to {@code -1L} to ensure we start at the beginning
      * of the sequence's stream complying to the {@link #criteria()}.
      *
-     * @return The start position in the event sequence to source.
+     * @return The start position in the event sequence to source, never {@code null}.
      */
-    default long start() {
-        return -1L;
+    default @Nonnull Position start() {
+        return Position.START;
     }
 
     /**

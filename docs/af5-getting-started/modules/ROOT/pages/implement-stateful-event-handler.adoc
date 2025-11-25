@@ -122,7 +122,7 @@ public class WhenAllCoursesFullyBookedThenSendNotification {
             return new State(courses, true);
         }
     }
-    
+
     // Command and Event handlers will be added in next steps...
 }
 ----
@@ -231,12 +231,12 @@ public class AllCoursesFullyBookedNotifierConfiguration {
 
     public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
         EntityModule<String, WhenAllCoursesFullyBookedThenSendNotification.State> automationState = // <1>
-                EventSourcedEntityModule.annotated(String.class, WhenAllCoursesFullyBookedThenSendNotification.State.class);
+                EventSourcedEntityModule.autodetected(String.class, WhenAllCoursesFullyBookedThenSendNotification.State.class);
 
         PooledStreamingEventProcessorModule automationProcessor = EventProcessorModule // <2>
                 .pooledStreaming("Automation_WhenAllCoursesFullyBookedThenSendNotification_Processor")
                 .eventHandlingComponents(
-                        c -> c.annotated(cfg -> new WhenAllCoursesFullyBookedThenSendNotification.AutomationEventHandler()) // <3>
+                        c -> c.autodetected(cfg -> new WhenAllCoursesFullyBookedThenSendNotification.AutomationEventHandler()) // <3>
                 )
                 .notCustomized();
 
@@ -332,7 +332,7 @@ public class WhenAllCoursesFullyBookedThenSendNotificationAxonFixtureTest {
 |Aspect |Stateless Event Handler |Stateful Event Handler
 
 |**State Management** |No internal state |Maintains state across events
-|**Complexity** |Simple, single-event reactions |Complex, multi-event conditions  
+|**Complexity** |Simple, single-event reactions |Complex, multi-event conditions
 |**Use Cases** |Notifications, logging, integrations |Read models, Process Managers / Sagas, complex conditions, monitoring
 |**Performance** |Fast, no state loading |Slower due to state management
 |**Concurrency** |High parallelism possible |Limited by state consistency needs
@@ -366,7 +366,7 @@ public class UniversityAxonApplication {
 
 In this section, you learned how to implement a stateful event handler for complex condition monitoring. Key takeaways:
 
-- **Stateful handlers** maintain state across multiple events to implement complex business logic  
+- **Stateful handlers** maintain state across multiple events to implement complex business logic
 - **Event sourcing** provides reliable state management and complete auditability for the automation logic
 - **Event Modeling Automation pattern** provides a clear way to visualize and design automated processes that monitor system state and trigger actions
 

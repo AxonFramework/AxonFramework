@@ -17,14 +17,15 @@
 package org.axonframework.eventsourcing.configuration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.configuration.ComponentBuilder;
-import org.axonframework.configuration.ModuleBuilder;
+import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.common.configuration.ComponentBuilder;
+import org.axonframework.common.configuration.ModuleBuilder;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
-import org.axonframework.eventsourcing.annotations.EventSourcedEntity;
+import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
-import org.axonframework.eventstreaming.EventCriteria;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.modelling.EntityIdResolver;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.configuration.EntityMetamodelConfigurationBuilder;
@@ -35,7 +36,7 @@ import org.axonframework.modelling.repository.Repository;
 
 /**
  * An expansion of the {@link EntityModule}, specifically for event-sourced entities. When constructed, either
- * {@link #annotated(Class, Class) annotated} or {@link #declarative(Class, Class) declarative}, it provides the
+ * {@link #autodetected(Class, Class) autodetected} or {@link #declarative(Class, Class) declarative}, it provides the
  * resulting {@link Repository} with the nearest {@link StateManager} so the state can be loaded.
  *
  * <h2>Command Handling</h2>
@@ -45,7 +46,7 @@ import org.axonframework.modelling.repository.Repository;
  * entity will still be registered to the {@link StateManager} so it can be loaded in stateful command handlers.
  *
  * <h2>Annotation-based entities</h2>
- * Entities annotated with {@link EventSourcedEntity} can be built using {@link #annotated(Class, Class)}. This will
+ * Entities annotated with {@link EventSourcedEntity} can be built using {@link #autodetected(Class, Class)}. This will
  * automatically build all required components based on the {@link EventSourcedEntity} annotation present on the entity
  * type.
  *
@@ -104,7 +105,7 @@ public interface EventSourcedEntityModule<ID, E> extends EntityModule<ID, E> {
      * @throws IllegalArgumentException When the given {@code entityType} is not annotated with
      *                                  {@link EventSourcedEntity}.
      */
-    static <ID, E> EventSourcedEntityModule<ID, E> annotated(@Nonnull Class<ID> idType, @Nonnull Class<E> entityType) {
+    static <ID, E> EventSourcedEntityModule<ID, E> autodetected(@Nonnull Class<ID> idType, @Nonnull Class<E> entityType) {
         return new AnnotatedEventSourcedEntityModule<>(idType, entityType);
     }
 
@@ -134,7 +135,7 @@ public interface EventSourcedEntityModule<ID, E> extends EntityModule<ID, E> {
      * Phase of the module's building process in which a {@link ComponentBuilder} for an
      * {@link EventSourcedEntityFactory} should be provided. This factory is responsible for creating the event-sourced
      * entity of type {@code E} based on the entity's type, an identifier of type {@code I}, and optionally an
-     * {@link org.axonframework.eventhandling.EventMessage} if the stream is non-empty.
+     * {@link EventMessage} if the stream is non-empty.
      *
      * @param <ID> The type of identifier used to identify the event-sourced entity.
      * @param <E>  The type of the event-sourced entity being built.
@@ -145,7 +146,7 @@ public interface EventSourcedEntityModule<ID, E> extends EntityModule<ID, E> {
          * Registers the given {@link ComponentBuilder} of an {@link EventSourcedEntityFactory} as the factory for the
          * event-sourced entity being built. This factory is responsible for creating the event-sourced entity of type
          * {@code E} based on the entity's type, an identifier of type {@code I}, and optionally an
-         * {@link org.axonframework.eventhandling.EventMessage} if the stream is non-empty.
+         * {@link EventMessage} if the stream is non-empty.
          *
          * @param entityFactory A {@link ComponentBuilder} constructing the {@link EventSourcedEntityFactory} for the
          *                      event-sourced entity.

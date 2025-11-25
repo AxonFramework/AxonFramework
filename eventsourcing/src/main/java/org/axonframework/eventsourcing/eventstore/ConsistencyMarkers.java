@@ -49,6 +49,11 @@ abstract class ConsistencyMarkers {
         }
 
         @Override
+        public Position position() {
+            return Position.START;
+        }
+
+        @Override
         public String toString() {
             return "ORIGIN";
         }
@@ -69,6 +74,11 @@ abstract class ConsistencyMarkers {
         @Override
         public ConsistencyMarker upperBound(@Nonnull ConsistencyMarker other) {
             return this;
+        }
+
+        @Override
+        public Position position() {
+            throw new UnsupportedOperationException("Not yet implemented");  // not implemented because there are no use cases
         }
 
         @Override

@@ -17,9 +17,9 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.eventstreaming.EventCriteria;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
 
-import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * The default {@link SourcingCondition} implementation.
@@ -30,20 +30,24 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @param start    The start position in the event sequence to retrieve of the entity to source.
  * @param criteria The {@link EventCriteria} set of the entity to source.
  * @author Steven van Beelen
+ * @author John Hendrikx
  * @since 5.0.0
  */
 record DefaultSourcingCondition(
-        long start,
+        @Nonnull Position start,
         @Nonnull EventCriteria criteria
 ) implements SourcingCondition {
 
     DefaultSourcingCondition {
-        assertNonNull(criteria, "The EventCriteria cannot be null");
+        requireNonNull(start, "start cannot be null");
+        requireNonNull(criteria, "criteria cannot be null");
     }
 
     @Override
     public SourcingCondition or(@Nonnull SourcingCondition other) {
-        var combinedCriteria = other.criteria().or(this.criteria());
-        return new DefaultSourcingCondition(Math.min(this.start, other.start()), combinedCriteria);
+        return new DefaultSourcingCondition(
+            other.start().min(start),
+            other.criteria().or(criteria)
+        );
     }
 }

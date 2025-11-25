@@ -17,26 +17,29 @@
 package org.axonframework.integrationtests.testsuite.student;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.commandhandling.CommandExecutionException;
-import org.axonframework.commandhandling.annotations.CommandHandler;
-import org.axonframework.eventhandling.gateway.EventAppender;
+import org.axonframework.messaging.commandhandling.CommandExecutionException;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 import org.axonframework.integrationtests.testsuite.student.commands.AssignMentorCommand;
 import org.axonframework.integrationtests.testsuite.student.commands.EnrollStudentToCourseCommand;
 import org.axonframework.integrationtests.testsuite.student.events.MentorAssignedToStudentEvent;
 import org.axonframework.integrationtests.testsuite.student.events.StudentEnrolledEvent;
 import org.axonframework.integrationtests.testsuite.student.state.Course;
 import org.axonframework.integrationtests.testsuite.student.state.Student;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.UnitOfWork;
+import org.axonframework.modelling.EntityIdResolutionException;
 import org.axonframework.modelling.EntityIdResolver;
 import org.axonframework.modelling.StateManager;
-import org.axonframework.modelling.annotations.InjectEntity;
+import org.axonframework.modelling.annotation.InjectEntity;
 import org.axonframework.modelling.repository.ManagedEntity;
-import org.axonframework.serialization.Converter;
+import org.axonframework.conversion.Converter;
 import org.junit.jupiter.api.*;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
@@ -180,12 +183,12 @@ class MultiEntityCommandHandlingComponentIT extends AbstractCommandHandlingStude
 
             @Override
             @Nonnull
-            public String resolve(@Nonnull Message command, @Nonnull ProcessingContext context) {
+            public String resolve(@Nonnull Message command, @Nonnull ProcessingContext context) throws EntityIdResolutionException {
                 //noinspection unused
                 if (command.payload() instanceof AssignMentorCommand(String studentId, String mentorId)) {
                     return studentId;
                 }
-                throw new IllegalArgumentException("Can not resolve mentor id from command");
+                throw new EntityIdResolutionException(command.payloadType(), List.of());
             }
         }
     }

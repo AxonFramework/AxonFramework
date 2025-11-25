@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.Context;
+import org.axonframework.messaging.core.Context;
 
 /**
  * Interface representing a point in an Event Stream up to where certain state has been made up-to-date. Typically,
@@ -75,6 +75,14 @@ public interface ConsistencyMarker {
      * @return a ConsistencyMarker that represents the upper bound of two other markers
      */
     ConsistencyMarker upperBound(@Nonnull ConsistencyMarker other);
+
+    /**
+     * Reduces this consistency marker to a single position if possible. 
+     * 
+     * @return a {@link Position}, never {@code null}
+     * @throws IllegalStateException if the marker could not be reduced to a single position
+     */
+    Position position();
 
     /**
      * Adds the given {@code consistencyMarker} to the given {@code context} using the {@link #RESOURCE_KEY}.

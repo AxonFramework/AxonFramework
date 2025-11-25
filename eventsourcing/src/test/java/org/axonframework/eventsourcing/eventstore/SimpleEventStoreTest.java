@@ -17,26 +17,26 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
-import junit.framework.AssertionFailedError;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventTestUtils;
-import org.axonframework.eventhandling.SimpleEventBus;
-import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
-import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
-import org.axonframework.eventstreaming.EventCriteria;
-import org.axonframework.eventstreaming.StreamingCondition;
-import org.axonframework.eventstreaming.Tag;
-import org.axonframework.messaging.Context;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.EventTestUtils;
+import org.axonframework.messaging.eventhandling.SimpleEventBus;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.axonframework.messaging.eventstreaming.StreamingCondition;
+import org.axonframework.messaging.eventstreaming.Tag;
+import org.axonframework.messaging.core.Context;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.UnitOfWork;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.opentest4j.AssertionFailedError;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -53,14 +53,14 @@ import java.util.stream.Stream;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.axonframework.eventhandling.EventTestUtils.createEvent;
-import static org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils.aUnitOfWork;
-import static org.axonframework.utils.AssertUtils.awaitSuccessfulCompletion;
+import static org.axonframework.messaging.eventhandling.EventTestUtils.createEvent;
+import static org.axonframework.messaging.core.unitofwork.UnitOfWorkTestUtils.aUnitOfWork;
+import static org.axonframework.common.util.AssertUtils.awaitSuccessfulCompletion;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Test class validating the {@link SimpleEventStore} supports just one context and delegates operations to
+ * Test class validating the {@link StorageEngineBackedEventStore} supports just one context and delegates operations to
  * {@link EventStorageEngine}.
  *
  * @author Mateusz Nowak
@@ -73,7 +73,7 @@ class SimpleEventStoreTest {
     private TagResolver tagResolver = mock(TagResolver.class);
     private ProcessingContext processingContext = mock(ProcessingContext.class);
 
-    private SimpleEventStore testSubject = new SimpleEventStore(mockStorageEngine, new SimpleEventBus(), tagResolver);
+    private StorageEngineBackedEventStore testSubject = new StorageEngineBackedEventStore(mockStorageEngine, new SimpleEventBus(), tagResolver);
 
     private static GlobalSequenceTrackingToken aGlobalSequenceToken() {
         return new GlobalSequenceTrackingToken(999);

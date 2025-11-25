@@ -1,10 +1,8 @@
 <p align="center">
   <a href="https://www.axoniq.io/products/axon-framework">
-    <img src="https://www.axoniq.io/hubfs/axon-framework.svg" alt="Axon Framework logo" width="200" height="200">
+    <img src="https://raw.githubusercontent.com/AxonFramework/.github/main/images/AxonFrameworkLogo-2025.png" alt="Axon Framework logo" width="500"/>
   </a>
 </p>
-
-<h1 align="center">Axon Framework</h1>
 
 <p align="center">
   Build modern event-driven systems with AxonIQ technology.
@@ -22,7 +20,8 @@
 </p>
 
 # Axon Framework
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.axonframework/axon/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.axonframework/axon)
+
+[![Maven Central](https://img.shields.io/maven-central/v/org.axonframework/axon-framework-bom)](https://central.sonatype.com/artifact/org.axonframework/axon-framework-bom)
 ![Build Status](https://github.com/AxonFramework/AxonFramework/workflows/Axon%20Framework/badge.svg?branch=master)
 [![SonarCloud Status](https://sonarcloud.io/api/project_badges/measure?project=AxonFramework_AxonFramework&metric=alert_status)](https://sonarcloud.io/dashboard?id=AxonFramework_AxonFramework)
 

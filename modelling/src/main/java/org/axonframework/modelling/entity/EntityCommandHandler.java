@@ -17,11 +17,11 @@
 package org.axonframework.modelling.entity;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.configuration.MessageHandler;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.commandhandling.CommandResultMessage;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.MessageHandler;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 /**
  * Functional interface describing a handler of a {@link CommandMessage} for that uses an entity to make a decision.

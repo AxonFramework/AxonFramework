@@ -17,17 +17,16 @@
 package org.axonframework.modelling.query;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.modelling.SimpleStateManager;
 import org.axonframework.modelling.StateManager;
-import org.axonframework.queryhandling.GenericQueryMessage;
-import org.axonframework.queryhandling.QueryHandlerName;
-import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.queryhandling.SimpleQueryHandlingComponent;
+import org.axonframework.messaging.queryhandling.GenericQueryMessage;
+import org.axonframework.messaging.queryhandling.QueryMessage;
+import org.axonframework.messaging.queryhandling.SimpleQueryHandlingComponent;
 import org.junit.jupiter.api.*;
 
 import java.util.Set;
@@ -46,8 +45,6 @@ class StatefulQueryHandlingComponentTest {
 
     private static final QualifiedName QUERY_NAME = new QualifiedName("test-query");
     private static final MessageType QUERY_TYPE = new MessageType(QUERY_NAME);
-    private static final QualifiedName RESPONSE_NAME = new QualifiedName(String.class);
-    private static final MessageType RESPONSE_TYPE = new MessageType(RESPONSE_NAME);
     private static final String QUERY_PAYLOAD = "my-payload";
 
     private final StateManager stateManager = SimpleStateManager
@@ -65,17 +62,17 @@ class StatefulQueryHandlingComponentTest {
             SimpleQueryHandlingComponent testSubject = SimpleQueryHandlingComponent.create("qch");
             AtomicBoolean invoked = new AtomicBoolean();
 
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, (query, ctx) -> {
+            testSubject.subscribe(QUERY_NAME, (query, ctx) -> {
                 var state = ctx.component(StateManager.class);
-                state.loadEntity(Integer.class, "42", ctx).thenAccept(result -> {
-                    assertEquals(42, result);
-                }).join();
+                state.loadEntity(Integer.class, "42", ctx).thenAccept(result ->
+                                                                              assertEquals(42, result))
+                     .join();
                 invoked.set(true);
                 return MessageStream.empty().cast();
             });
 
             // when
-            QueryMessage query = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
+            QueryMessage query = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD);
             testSubject.handle(query, messageProcessingContext(query)).first().asCompletableFuture().join();
 
             // then
@@ -88,13 +85,13 @@ class StatefulQueryHandlingComponentTest {
             SimpleQueryHandlingComponent testSubject = SimpleQueryHandlingComponent.create("qch");
             AtomicBoolean invoked = new AtomicBoolean();
 
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, (query, ctx) -> {
+            testSubject.subscribe(QUERY_NAME, (query, ctx) -> {
                 invoked.set(true);
                 return MessageStream.empty().cast();
             });
 
             // when
-            QueryMessage query = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
+            QueryMessage query = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD);
             testSubject.handle(query, messageProcessingContext(query)).first().asCompletableFuture().join();
 
             // then
@@ -105,13 +102,13 @@ class StatefulQueryHandlingComponentTest {
         void exceptionWhileHandlingQueryResultsInFailedStream() {
             // given
             SimpleQueryHandlingComponent testSubject = SimpleQueryHandlingComponent.create("qch");
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, (query, ctx) -> {
+            testSubject.subscribe(QUERY_NAME, (query, ctx) -> {
                 throw new RuntimeException("Faking an exception");
             });
 
             // when / then
             var exception = assertThrows(RuntimeException.class, () -> {
-                QueryMessage query = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
+                QueryMessage query = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD);
                 testSubject.handle(query, messageProcessingContext(query))
                            .first()
                            .asCompletableFuture()
@@ -126,24 +123,23 @@ class StatefulQueryHandlingComponentTest {
     class SupportedQueriesTests {
 
         @Test
-        void registeredHandlersAreListedInSupportedQuerys() {
+        void registeredHandlersAreListedInSupportedQueries() {
             // given
             SimpleQueryHandlingComponent testSubject = SimpleQueryHandlingComponent.create("qch");
             QualifiedName otherQueryName = new QualifiedName("test-query-2");
-            QualifiedName otherResponseName = new QualifiedName("test-query-response");
 
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME,
+            testSubject.subscribe(QUERY_NAME,
                                   (query, ctx) -> MessageStream.empty().cast());
-            testSubject.subscribe(otherQueryName, otherResponseName,
+            testSubject.subscribe(otherQueryName,
                                   (query, ctx) -> MessageStream.empty().cast());
 
             // when
-            Set<QueryHandlerName> supportedQueries = testSubject.supportedQueries();
+            Set<QualifiedName> supportedQueries = testSubject.supportedQueries();
 
             // then
             assertEquals(2, supportedQueries.size());
-            assertTrue(supportedQueries.contains(new QueryHandlerName(QUERY_NAME, RESPONSE_NAME)));
-            assertTrue(supportedQueries.contains(new QueryHandlerName(otherQueryName, otherResponseName)));
+            assertTrue(supportedQueries.contains(QUERY_NAME));
+            assertTrue(supportedQueries.contains(otherQueryName));
         }
 
         @Test
@@ -152,7 +148,7 @@ class StatefulQueryHandlingComponentTest {
             SimpleQueryHandlingComponent testSubject = SimpleQueryHandlingComponent.create("qch");
 
             // when
-            Set<QueryHandlerName> supportedQueries = testSubject.supportedQueries();
+            Set<QualifiedName> supportedQueries = testSubject.supportedQueries();
 
             // then
             assertTrue(supportedQueries.isEmpty());
@@ -168,7 +164,7 @@ class StatefulQueryHandlingComponentTest {
             SimpleQueryHandlingComponent testSubject = SimpleQueryHandlingComponent.create("qhc");
             AtomicBoolean stateManagerProvided = new AtomicBoolean();
 
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, (quey, ctx) -> {
+            testSubject.subscribe(QUERY_NAME, (quey, ctx) -> {
                 var state = ctx.component(StateManager.class);
                 assertSame(stateManager, state);
                 stateManagerProvided.set(true);
@@ -176,7 +172,7 @@ class StatefulQueryHandlingComponentTest {
             });
 
             // when
-            QueryMessage query = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
+            QueryMessage query = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD);
             testSubject.handle(query, messageProcessingContext(query)).first().asCompletableFuture().join();
 
             // then
@@ -189,7 +185,7 @@ class StatefulQueryHandlingComponentTest {
             SimpleQueryHandlingComponent testSubject = SimpleQueryHandlingComponent.create("qch");
             AtomicBoolean entityLoaded = new AtomicBoolean();
 
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, (query, ctx) -> {
+            testSubject.subscribe(QUERY_NAME, (query, ctx) -> {
                 var state = ctx.component(StateManager.class);
                 Integer loadedEntity = state.loadEntity(Integer.class, "123", ctx).join();
                 assertEquals(123, loadedEntity);
@@ -198,7 +194,7 @@ class StatefulQueryHandlingComponentTest {
             });
 
             // when
-            QueryMessage query = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
+            QueryMessage query = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD);
             testSubject.handle(query, messageProcessingContext(query)).first().asCompletableFuture().join();
 
             // then

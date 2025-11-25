@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.axonframework.eventstreaming.EventCriteria;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -30,14 +30,14 @@ import static org.junit.jupiter.api.Assertions.*;
 class SourcingConditionTest {
 
     private static final EventCriteria TEST_CRITERIA = EventCriteria.havingTags("key", "value");
-    private static final long TEST_START = 42L;
+    private static final GlobalIndexPosition TEST_START = new GlobalIndexPosition(42);
 
     @Test
     void conditionForCriteria() {
         SourcingCondition result = SourcingCondition.conditionFor(TEST_CRITERIA);
 
         assertEquals(TEST_CRITERIA, result.criteria());
-        assertEquals(0, result.start());
+        assertEquals(Position.START, result.start());
     }
 
     @Test

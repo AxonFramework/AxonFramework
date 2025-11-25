@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,10 +29,10 @@ import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.axonserver.connector.utils.PlatformService;
+import org.axonframework.axonserver.connector.util.PlatformService;
 import org.axonframework.axonserver.connector.event.EventStoreImpl;
-import org.axonframework.axonserver.connector.util.TcpUtil;
-import org.axonframework.axonserver.connector.utils.ContextInterceptor;
+import org.axonframework.axonserver.connector.util.TcpUtils;
+import org.axonframework.axonserver.connector.util.ContextInterceptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,7 +63,7 @@ public class DummyMessagePlatformServer {
     private final Set<String> unsubscribedCommands = new CopyOnWriteArraySet<>();
 
     public DummyMessagePlatformServer() {
-        this(TcpUtil.findFreePort());
+        this(TcpUtils.findFreePort());
     }
 
     public DummyMessagePlatformServer(int port) {

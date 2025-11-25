@@ -16,7 +16,7 @@
 
 package org.axonframework.integrationtests.testsuite.administration.events;
 
-import org.axonframework.eventsourcing.annotations.EventTag;
+import org.axonframework.eventsourcing.annotation.EventTag;
 import org.axonframework.integrationtests.testsuite.administration.common.PersonIdentifier;
 
 public interface PersonEvent {

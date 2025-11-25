@@ -10,7 +10,7 @@ updates:
   labels:
     - "Type: Dependency Upgrade"
     - "Priority 1: Must"
-  milestone: 112
+  milestone: 119
   groups:
     github-dependencies:
       update-types:
@@ -27,10 +27,15 @@ updates:
   labels:
     - "Type: Dependency Upgrade"
     - "Priority 1: Must"
-  milestone: 112
+  milestone: 119
   groups:
     maven-dependencies:
       update-types:
         - "patch"
         - "minor"
         - "major"
+  ignore:
+    - dependency-name: "org.springframework:spring-framework-bom"
+      versions: [ "[7.0.0,)" ]
+    - dependency-name: "org.springframework.security:spring-security-bom"
+      versions: [ "[7.0.0,)" ]

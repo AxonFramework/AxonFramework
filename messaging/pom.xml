@@ -19,8 +19,9 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.axonframework</groupId>
-        <artifactId>axon</artifactId>
-        <version>5.0.0-SNAPSHOT</version>
+        <artifactId>axon-parent</artifactId>
+        <version>5.1.0-SNAPSHOT</version>
+        <relativePath>../build/parent/pom.xml</relativePath>
     </parent>
 
     <artifactId>axon-messaging</artifactId>
@@ -31,14 +32,29 @@
         messaging.
     </description>
 
-    <packaging>bundle</packaging>
-
     <dependencies>
-        <!-- Annotation -->
         <dependency>
-            <groupId>jakarta.inject</groupId>
-            <artifactId>jakarta.inject-api</artifactId>
-            <scope>test</scope>
+            <groupId>org.axonframework</groupId>
+            <artifactId>axon-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.axonframework</groupId>
+            <artifactId>axon-update</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Conversion -->
+        <dependency>
+            <groupId>org.axonframework</groupId>
+            <artifactId>axon-conversion</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <optional>true</optional>
         </dependency>
 
         <!-- Caching -->
@@ -53,40 +69,6 @@
             <optional>true</optional>
         </dependency>
 
-        <!-- Conversion -->
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.dataformat</groupId>
-            <artifactId>jackson-dataformat-cbor</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-jsr310</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.module</groupId>
-            <artifactId>jackson-module-parameter-names</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.avro</groupId>
-            <artifactId>avro</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.dom4j</groupId>
-            <artifactId>dom4j</artifactId>
-            <optional>true</optional>
-        </dependency>
 
         <!-- Jakarta -->
         <dependency>
@@ -98,11 +80,6 @@
             <groupId>jakarta.validation</groupId>
             <artifactId>jakarta.validation-api</artifactId>
             <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.glassfish.expressly</groupId>
-            <artifactId>expressly</artifactId>
-            <scope>test</scope>
         </dependency>
 
         <!-- Logging -->
@@ -121,11 +98,6 @@
             <groupId>org.reactivestreams</groupId>
             <artifactId>reactive-streams</artifactId>
         </dependency>
-        <dependency>
-            <groupId>io.projectreactor</groupId>
-            <artifactId>reactor-test</artifactId>
-            <scope>test</scope>
-        </dependency>
 
         <!-- Persistence -->
         <dependency>
@@ -138,12 +110,6 @@
             <artifactId>hibernate-core</artifactId>
             <optional>true</optional>
         </dependency>
-        <dependency>
-            <groupId>org.hsqldb</groupId>
-            <artifactId>hsqldb</artifactId>
-            <scope>test</scope>
-        </dependency>
-
         <!-- Scheduling  -->
         <dependency>
             <groupId>org.quartz-scheduler</groupId>
@@ -159,6 +125,54 @@
             <groupId>com.github.kagkarlsson</groupId>
             <artifactId>db-scheduler</artifactId>
             <optional>true</optional>
+        </dependency>
+        <!-- Other -->
+        <dependency>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Testing -->
+        <dependency>
+            <groupId>org.axonframework</groupId>
+            <artifactId>axon-common</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.axonframework</groupId>
+            <artifactId>axon-conversion</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-cbor</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.module</groupId>
+            <artifactId>jackson-module-parameter-names</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.expressly</groupId>
+            <artifactId>expressly</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hsqldb</groupId>
+            <artifactId>hsqldb</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>
@@ -194,16 +208,6 @@
         </dependency>
 
         <!-- Testing -->
-        <dependency>
-            <groupId>org.awaitility</groupId>
-            <artifactId>awaitility</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest</artifactId>
-            <scope>test</scope>
-        </dependency>
 
         <!-- Validation -->
         <dependency>
@@ -212,12 +216,6 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Other -->
-        <dependency>
-            <groupId>com.google.code.findbugs</groupId>
-            <artifactId>jsr305</artifactId>
-            <scope>provided</scope>
-        </dependency>
     </dependencies>
 
     <build>
@@ -235,35 +233,6 @@
                     <execution>
                         <goals>
                             <goal>test-jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-                <version>${felix.maven-bundle-plugin.version}</version>
-                <extensions>true</extensions>
-                <configuration>
-                    <instructions>
-                        <Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
-                        <Bundle-Name>${project.artifactId}</Bundle-Name>
-                        <Bundle-Description>${project.description}</Bundle-Description>
-                        <Bundle-Version>${project.version}</Bundle-Version>
-                        <Export-Package>
-                            org.axonframework.*
-                        </Export-Package>
-                        <Import-Package>
-                            org.slf4j.*,
-                            *;resolution:=optional
-                        </Import-Package>
-                    </instructions>
-                </configuration>
-                <executions>
-                    <!-- This execution makes sure that the manifest is available when the tests are executed -->
-                    <execution>
-                        <goals>
-                            <goal>manifest</goal>
                         </goals>
                     </execution>
                 </executions>
@@ -296,5 +265,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>

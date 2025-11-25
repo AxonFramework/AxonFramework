@@ -19,23 +19,24 @@ package org.axonframework.eventsourcing.eventstore.inmemory;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.TerminalEventMessage;
-import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
-import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.TerminalEventMessage;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.GlobalIndexConsistencyMarker;
+import org.axonframework.eventsourcing.eventstore.GlobalIndexPosition;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
-import org.axonframework.eventstreaming.EventsCondition;
-import org.axonframework.eventstreaming.StreamingCondition;
-import org.axonframework.messaging.Context;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.SimpleEntry;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventstreaming.EventsCondition;
+import org.axonframework.messaging.eventstreaming.StreamingCondition;
+import org.axonframework.messaging.core.Context;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.SimpleEntry;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -183,9 +184,12 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
             logger.debug("Start sourcing events with condition [{}].", condition);
         }
 
+        // Get start position and ensure it is within valid bounds for this implementation:
+        long start = Math.max(0, GlobalIndexPosition.toIndex(condition.start()));
+
         // Set end to the CURRENT last position, to reflect it's a finite stream.
         MapBackedMessageStream messageStream = new MapBackedSourcingEventMessageStream(
-                condition.start(), eventStorage.isEmpty() ? -1 : eventStorage.lastKey(), condition
+                start, eventStorage.isEmpty() ? -1 : eventStorage.lastKey(), condition
         );
         openStreams.add(messageStream);
         return messageStream;
@@ -316,7 +320,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
         abstract Optional<Entry<EventMessage>> lastEntry();
 
         @Override
-        public void onAvailable(@Nonnull Runnable callback) {
+        public void setCallback(@Nonnull Runnable callback) {
             this.callback.set(callback);
             if (eventStorage.isEmpty() || eventStorage.containsKey(Math.max(0, this.position.get()))) {
                 callback.run();

@@ -16,21 +16,21 @@
 
 package org.axonframework.integrationtests.testsuite.course.module;
 
-import org.axonframework.commandhandling.GenericCommandResultMessage;
-import org.axonframework.commandhandling.configuration.CommandHandlingModule;
-import org.axonframework.eventhandling.gateway.EventAppender;
+import org.axonframework.messaging.commandhandling.GenericCommandResultMessage;
+import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.conversion.MessageConverter;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.conversion.MessageConverter;
 
 public class CreateCourseConfiguration {
 
     public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
         var stateEntity = EventSourcedEntityModule
-                .annotated(String.class, CreateCourseCommandHandler.State.class);
+                .autodetected(String.class, CreateCourseCommandHandler.State.class);
 
         var commandHandlingModule = CommandHandlingModule
                 .named("CreateCourse")

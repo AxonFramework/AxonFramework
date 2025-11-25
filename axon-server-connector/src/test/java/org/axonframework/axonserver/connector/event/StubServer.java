@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package org.axonframework.axonserver.connector.event;
 
 import io.grpc.Server;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
-import org.axonframework.axonserver.connector.utils.ContextInterceptor;
-import org.axonframework.axonserver.connector.utils.PlatformService;
+import org.axonframework.axonserver.connector.util.ContextInterceptor;
+import org.axonframework.axonserver.connector.util.PlatformService;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
