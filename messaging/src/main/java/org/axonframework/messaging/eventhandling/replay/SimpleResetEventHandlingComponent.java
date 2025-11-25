@@ -35,8 +35,13 @@ import java.util.concurrent.CopyOnWriteArrayList;
  *   <li>Delegates all event handling to the wrapped {@link EventHandlingComponent}</li>
  *   <li>Stores reset handlers in a thread-safe list via {@link ResetHandlerRegistry}</li>
  *   <li>Invokes all subscribed reset handlers sequentially during reset</li>
- *   <li>Returns {@code true} from {@link #supportsReset()} when at least one handler is registered</li>
+ *   <li>Always returns {@code true} from {@link #supportsReset()}, allowing the component to participate in replay</li>
  * </ul>
+ * <p>
+ * Note: Wrapping a component in {@code SimpleResetEventHandlingComponent} explicitly opts it into
+ * reset/replay support. Reset handlers are optional and provide a hook for cleanup operations before
+ * replay begins (e.g., clearing projections or caches). Even without handlers, the wrapped component
+ * will receive and process events during replay.
  * <p>
  * Example usage:
  * <pre>{@code
@@ -103,6 +108,6 @@ public class SimpleResetEventHandlingComponent
 
     @Override
     public boolean supportsReset() {
-        return !resetHandlers.isEmpty();
+        return true;
     }
 }

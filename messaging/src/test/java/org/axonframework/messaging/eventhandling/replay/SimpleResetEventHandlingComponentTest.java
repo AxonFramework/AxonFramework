@@ -45,12 +45,12 @@ class SimpleResetEventHandlingComponentTest {
     class SupportsResetTest {
 
         @Test
-        void returnsFalseWhenNoResetHandlersRegistered() {
-            // given
+        void alwaysReturnsTrueEvenWithoutHandlers() {
+            // given - Component wrapped in SimpleResetEventHandlingComponent explicitly supports reset
             var component = new SimpleResetEventHandlingComponent(new SimpleEventHandlingComponent());
 
-            // then
-            assertThat(component.supportsReset()).isFalse();
+            // then - Should return true even without handlers, allowing component to participate in replay
+            assertThat(component.supportsReset()).isTrue();
         }
 
         @Test
