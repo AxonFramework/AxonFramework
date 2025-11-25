@@ -451,6 +451,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("name", name);
         descriptor.describeProperty("mode", "pooled");
+        descriptor.describeProperty("running", isRunning());
         descriptor.describeProperty("eventHandlingComponents", eventHandlingComponents);
         descriptor.describeProperty("eventCriteria", eventCriteria);
         descriptor.describeProperty("configuration", configuration);
