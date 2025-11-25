@@ -282,58 +282,62 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         assertThat(!isRunning(), state -> state, "The Processor must be shut down before triggering a reset.");
 
         var unitOfWork = unitOfWorkFactory.create();
-        return unitOfWork.executeWithResult((processingContext) -> {
-            // Find all segments and fetch all tokens
-            return tokenStore.fetchSegments(name, processingContext)
-                    .thenCompose(segments -> {
-                        logger.debug("Processor [{}] will try to reset tokens for segments [{}].", name, segments);
+        return unitOfWork.executeWithResult(processingContext ->
+                fetchSegmentsWithTokens(processingContext)
+                        .thenCompose(segmentTokens -> performReset(segmentTokens, resetContext, processingContext))
+                        .thenCompose(segmentTokens -> storeReplayTokens(segmentTokens, startPosition, resetContext, processingContext))
+        );
+    }
 
-                        // Fetch all tokens for the segments
-                        List<CompletableFuture<TrackingToken>> tokenFutures = segments.stream()
-                                .map(segment -> tokenStore.fetchToken(name, segment.getSegmentId(), processingContext))
-                                .toList();
+    private CompletableFuture<List<SegmentToken>> fetchSegmentsWithTokens(ProcessingContext processingContext) {
+        return tokenStore.fetchSegments(name, processingContext)
+                .thenCompose(segments -> {
+                    logger.debug("Processor [{}] will try to reset tokens for segments [{}].", name, segments);
+                    var tokenFutures = segments.stream()
+                            .map(segment -> fetchTokenForSegment(segment, processingContext))
+                            .toList();
+                    return CompletableFuture.allOf(tokenFutures.toArray(CompletableFuture[]::new))
+                            .thenApply(ignored -> tokenFutures.stream()
+                                    .map(CompletableFuture::join)
+                                    .toList());
+                });
+    }
 
-                        return CompletableFuture.allOf(tokenFutures.toArray(new CompletableFuture[0]))
-                                .thenApply(v -> {
-                                    TrackingToken[] tokens = tokenFutures.stream()
-                                            .map(CompletableFuture::join)
-                                            .toArray(TrackingToken[]::new);
-                                    return new Object() {
-                                        final List<Segment> segs = segments;
-                                        final TrackingToken[] tkns = tokens;
-                                    };
-                                });
-                    })
-                    .thenCompose(data -> {
-                        // Create ResetContext message and dispatch to event handling components
-                        ResetContext resetMessage = new GenericResetContext(
-                                new MessageType(ResetContext.class),
-                                resetContext
-                        );
+    private CompletableFuture<SegmentToken> fetchTokenForSegment(Segment segment, ProcessingContext processingContext) {
+        return tokenStore.fetchToken(name, segment.getSegmentId(), processingContext)
+                .thenApply(token -> new SegmentToken(segment, token));
+    }
 
-                        // Perform the reset on the event handling components
-                        return eventHandlingComponents.handleReset(resetMessage, processingContext)
-                                .thenCompose(v -> {
-                                    // After reset completes, update all tokens to ReplayTokens
-                                    List<CompletableFuture<Void>> storeTokenFutures = new java.util.ArrayList<>();
-                                    for (int i = 0; i < data.tkns.length; i++) {
-                                        storeTokenFutures.add(
-                                                tokenStore.storeToken(
-                                                        ReplayToken.createReplayToken(data.tkns[i], startPosition, resetContext),
-                                                        name,
-                                                        data.segs.get(i).getSegmentId(),
-                                                        processingContext
-                                                )
-                                        );
-                                    }
-                                    return CompletableFuture.allOf(storeTokenFutures.toArray(new CompletableFuture[0]))
-                                            .thenApply(ignored -> {
-                                                logger.info("Processor [{}] successfully reset tokens for segments [{}].", name, data.segs);
-                                                return null;
-                                            });
-                                });
-                    });
-        });
+    private <R> CompletableFuture<List<SegmentToken>> performReset(
+            List<SegmentToken> segmentTokens,
+            R resetContext,
+            ProcessingContext processingContext
+    ) {
+        var resetMessage = new GenericResetContext(new MessageType(ResetContext.class), resetContext);
+        return eventHandlingComponents.handleReset(resetMessage, processingContext)
+                .thenApply(ignored -> segmentTokens);
+    }
+
+    private <R> CompletableFuture<Void> storeReplayTokens(
+            List<SegmentToken> segmentTokens,
+            TrackingToken startPosition,
+            R resetContext,
+            ProcessingContext processingContext
+    ) {
+        var storeFutures = segmentTokens.stream()
+                .map(st -> tokenStore.storeToken(
+                        ReplayToken.createReplayToken(st.token(), startPosition, resetContext),
+                        name,
+                        st.segment().getSegmentId(),
+                        processingContext
+                ))
+                .toList();
+        return CompletableFuture.allOf(storeFutures.toArray(CompletableFuture[]::new))
+                .thenRun(() -> logger.info("Processor [{}] successfully reset tokens for segments [{}].",
+                        name, segmentTokens.stream().map(SegmentToken::segment).toList()));
+    }
+
+    private record SegmentToken(Segment segment, TrackingToken token) {
     }
 
     /**
