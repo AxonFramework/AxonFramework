@@ -19,6 +19,7 @@ package org.axonframework.messaging.eventhandling;
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.replay.ResetContext;
 import org.axonframework.messaging.eventhandling.replay.ResetHandler;
 import org.axonframework.messaging.eventhandling.replay.ResetHandlerRegistry;
 
@@ -57,10 +58,9 @@ public interface EventHandlingComponent extends EventHandler, EventHandlerRegist
      * Returns the sequence identifier for the given {@code event}. When two events have the same sequence identifier
      * (as defined by their equals method), they will be executed sequentially.
      * <b>Important:</b> All {@link EventHandler EventHandlers} for the same
-     * {@link org.axonframework.messaging.core.QualifiedName}
-     * within a single {@code EventHandlingComponent} must return the same sequence identifier for a given event. Mixing
-     * different sequence identifiers within the scope of a single {@code EventHandlingComponent} is not supported and
-     * may lead to undefined behavior.
+     * {@link org.axonframework.messaging.core.QualifiedName} within a single {@code EventHandlingComponent} must return
+     * the same sequence identifier for a given event. Mixing different sequence identifiers within the scope of a
+     * single {@code EventHandlingComponent} is not supported and may lead to undefined behavior.
      *
      * @param event   The event for which to get the sequencing identifier.
      * @param context The processing context in which the event is being handled.
@@ -68,4 +68,18 @@ public interface EventHandlingComponent extends EventHandler, EventHandlerRegist
      */
     @Nonnull
     Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context);
+
+    /**
+     * Indicates whether this component supports reset operations.
+     * <p>
+     * When {@code true}, this component can participate in replay operations and its
+     * {@link #handle(ResetContext, ProcessingContext)} method will be called before replay begins.
+     * <p>
+     * By default reset is supported.
+     *
+     * @return {@code true} if this component supports reset operations, {@code false} otherwise.
+     */
+    default boolean supportsReset() {
+        return true;
+    }
 }

@@ -236,9 +236,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
 
     @Override
     public boolean supportsReset() {
-        return false;
-        // TODO #3304 - Integrate event replay logic into Event Handling Component
-        //return eventHandlerInvoker().supportsReset();
+        return eventHandlingComponents.supportsReset();
     }
 
     @Override

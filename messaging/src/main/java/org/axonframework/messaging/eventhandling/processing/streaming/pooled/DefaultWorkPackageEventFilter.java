@@ -26,6 +26,8 @@ import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorH
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SegmentMatcher;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 
 import java.util.Collections;
 import java.util.Objects;
@@ -84,6 +86,15 @@ class DefaultWorkPackageEventFilter implements WorkPackage.EventFilter {
             if (!eventSupported) {
                 return false;
             }
+
+            var notReplayOrSupportReset = TrackingToken.fromContext(context)
+                                                       .filter(ReplayToken::isReplay)
+                                                       .map(it -> eventHandlingComponents.supportsReset())
+                                                       .orElse(true);
+            if (!notReplayOrSupportReset) {
+                return false;
+            }
+
             var sequenceIdentifiers = eventHandlingComponents.sequenceIdentifiersFor(eventMessage, context);
             return sequenceIdentifiers.stream().anyMatch(identifier -> new SegmentMatcher(
                     (e, ctx) -> Optional.of(identifier)).matches(segment, eventMessage, context)
