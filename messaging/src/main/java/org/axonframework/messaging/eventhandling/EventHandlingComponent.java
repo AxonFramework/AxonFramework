@@ -19,6 +19,8 @@ package org.axonframework.messaging.eventhandling;
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.replay.ResetHandler;
+import org.axonframework.messaging.eventhandling.replay.ResetHandlerRegistry;
 
 import java.util.Set;
 
@@ -32,7 +34,7 @@ import java.util.Set;
  * @author Steven van Beelen
  * @since 3.0.0
  */
-public interface EventHandlingComponent extends EventHandler, EventHandlerRegistry {
+public interface EventHandlingComponent extends EventHandler, EventHandlerRegistry, ResetHandler, ResetHandlerRegistry {
 
     /**
      * All supported {@link EventMessage events}, referenced through a {@link QualifiedName}.
