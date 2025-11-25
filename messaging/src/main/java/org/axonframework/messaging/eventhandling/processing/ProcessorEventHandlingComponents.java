@@ -172,14 +172,17 @@ public class ProcessorEventHandlingComponents {
     @Nonnull
     public CompletableFuture<Void> handleReset(@Nonnull ResetContext resetContext,
                                                @Nonnull ProcessingContext context) {
-        List<CompletableFuture<Void>> futures = components.stream()
-                .filter(EventHandlingComponent::supportsReset)
-                .map(c -> c.handle(resetContext, context)
-                        .asCompletableFuture()
-                        .thenApply(v -> (Void) null))
-                .toList();
+        MessageStream<Message> result = MessageStream.empty();
 
-        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+        for (var component : components) {
+            if (component.supportsReset()) {
+                result = result.concatWith(component.handle(resetContext, context).cast());
+            }
+        }
+
+        return result.ignoreEntries()
+                     .asCompletableFuture()
+                     .thenApply(v -> null);
     }
 
     /**
