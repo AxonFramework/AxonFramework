@@ -17,9 +17,12 @@
 package org.axonframework.messaging.eventhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.messaging.eventhandling.replay.GenericResetContext;
+import org.axonframework.messaging.eventhandling.replay.ResetContext;
 import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
@@ -126,23 +129,112 @@ class SimpleEventHandlingComponentTest {
             // then
             assertThat(component.invoked).isTrue();
         }
+    }
 
+    @Nested
+    class ResetContextHandlingTest {
 
-        static class SampleDecoration extends DelegatingEventHandlingComponent {
+        @Test
+        void supportsResetReturnsFalseByDefault() {
+            // given
+            var component = new SimpleEventHandlingComponent()
+                    .subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
 
-            AtomicBoolean invoked = new AtomicBoolean();
+            // then
+            assertThat(component.supportsReset()).isFalse();
+        }
 
-            public SampleDecoration(@Nonnull EventHandlingComponent delegate) {
-                super(delegate);
-            }
+        @Test
+        void handleResetContextReturnsEmptyStreamByDefault() {
+            // given
+            var component = new SimpleEventHandlingComponent()
+                    .subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
 
-            @Nonnull
-            @Override
-            public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
-                                                       @Nonnull ProcessingContext context) {
-                invoked.set(true);
-                return super.handle(event, context);
-            }
+            ResetContext resetContext = new GenericResetContext(
+                    new MessageType(ResetContext.class),
+                    "test-payload"
+            );
+
+            // when
+            var result = component.handle(resetContext, STUB_PROCESSING_CONTEXT);
+
+            // then
+            assertThat(result.asCompletableFuture().join()).isNull();
+        }
+
+        @Test
+        void delegatingComponentDelegatesSupportsReset() {
+            // given
+            var delegate = new SimpleEventHandlingComponent()
+                    .subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
+            var decoratedComponent = new SampleDecoration(delegate);
+
+            // then - Both should return false as SimpleEventHandlingComponent doesn't support reset
+            assertThat(delegate.supportsReset()).isFalse();
+            assertThat(decoratedComponent.supportsReset()).isFalse();
+        }
+
+        @Test
+        void delegatingComponentDelegatesHandleResetContext() {
+            // given
+            var resetHandlerInvoked = new AtomicBoolean(false);
+            var resetCapableDelegate = new ResetCapableComponent(resetHandlerInvoked);
+            var decoratedComponent = new SampleDecoration(resetCapableDelegate);
+
+            ResetContext resetContext = new GenericResetContext(
+                    new MessageType(ResetContext.class),
+                    "test-payload"
+            );
+
+            // when
+            decoratedComponent.handle(resetContext, STUB_PROCESSING_CONTEXT);
+
+            // then
+            assertThat(resetHandlerInvoked).isTrue();
+        }
+    }
+
+    // Test helper classes
+
+    static class SampleDecoration extends DelegatingEventHandlingComponent {
+
+        AtomicBoolean invoked = new AtomicBoolean();
+
+        public SampleDecoration(@Nonnull EventHandlingComponent delegate) {
+            super(delegate);
+        }
+
+        @Nonnull
+        @Override
+        public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
+                                                   @Nonnull ProcessingContext context) {
+            invoked.set(true);
+            return super.handle(event, context);
+        }
+    }
+
+    /**
+     * A simple EventHandlingComponent that supports reset for testing delegation.
+     */
+    static class ResetCapableComponent extends SimpleEventHandlingComponent {
+
+        private final AtomicBoolean resetInvoked;
+
+        ResetCapableComponent(AtomicBoolean resetInvoked) {
+            this.resetInvoked = resetInvoked;
+        }
+
+        @Override
+        public boolean supportsReset() {
+            return true;
+        }
+
+        @Nonnull
+        @Override
+        public MessageStream.Empty<Message> handle(@Nonnull ResetContext resetContext,
+                                                   @Nonnull ProcessingContext context) {
+            resetInvoked.set(true);
+            return MessageStream.empty();
         }
     }
 }
