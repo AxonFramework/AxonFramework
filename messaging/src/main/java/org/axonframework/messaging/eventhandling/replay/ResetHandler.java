@@ -44,7 +44,7 @@ import javax.annotation.Nonnull;
  * @author Mateusz Nowak
  * @see ResetContext
  * @see ResetHandlerRegistry
- * @see ResetEventHandlingComponent
+ * @see org.axonframework.messaging.eventhandling.EventHandlingComponent
  * @since 5.0.0
  */
 @FunctionalInterface

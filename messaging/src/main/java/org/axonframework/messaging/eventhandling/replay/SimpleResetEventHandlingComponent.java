@@ -27,15 +27,15 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * Implementation of {@link ResetEventHandlingComponent} that extends
- * {@link DelegatingEventHandlingComponent} to add reset capability to an existing
- * event handling component.
+ * Decorator that extends {@link DelegatingEventHandlingComponent} to add reset capability
+ * to an existing event handling component.
  * <p>
  * This implementation:
  * <ul>
  *   <li>Delegates all event handling to the wrapped {@link EventHandlingComponent}</li>
- *   <li>Stores reset handlers in a thread-safe list</li>
+ *   <li>Stores reset handlers in a thread-safe list via {@link ResetHandlerRegistry}</li>
  *   <li>Invokes all subscribed reset handlers sequentially during reset</li>
+ *   <li>Returns {@code true} from {@link #supportsReset()} when at least one handler is registered</li>
  * </ul>
  * <p>
  * Example usage:
@@ -60,13 +60,13 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * }</pre>
  *
  * @author Mateusz Nowak
- * @see ResetEventHandlingComponent
  * @see DelegatingEventHandlingComponent
+ * @see ResetHandlerRegistry
  * @since 5.0.0
  */
 public class SimpleResetEventHandlingComponent
         extends DelegatingEventHandlingComponent
-        implements ResetEventHandlingComponent {
+        implements ResetHandlerRegistry {
 
     private final List<ResetHandler> resetHandlers = new CopyOnWriteArrayList<>();
 

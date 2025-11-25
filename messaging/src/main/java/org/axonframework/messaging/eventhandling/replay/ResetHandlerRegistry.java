@@ -35,7 +35,7 @@ import javax.annotation.Nonnull;
  *
  * @author Mateusz Nowak
  * @see ResetHandler
- * @see ResetEventHandlingComponent
+ * @see SimpleResetEventHandlingComponent
  * @since 5.0.0
  */
 public interface ResetHandlerRegistry {

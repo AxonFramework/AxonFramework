@@ -17,8 +17,12 @@
 package org.axonframework.messaging.eventhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.replay.ResetContext;
+import org.axonframework.messaging.eventhandling.replay.ResetHandler;
 
 import java.util.Set;
 
@@ -27,12 +31,17 @@ import java.util.Set;
  * <p>
  * As such, it allows registration of {@code EventHandlers} through the {@code EventHandlerRegistry}. Besides handling
  * and registration, it specifies which {@link #supportedEvents() events} it supports.
+ * <p>
+ * This interface also extends {@link ResetHandler} to support reset/replay operations. By default, components
+ * do not support reset operations (see {@link #supportsReset()}). Implementations that need reset capability
+ * should override both {@link #supportsReset()} to return {@code true} and
+ * {@link #handle(ResetContext, ProcessingContext)} to perform the reset operation.
  *
  * @author Rene de Waele
  * @author Steven van Beelen
  * @since 3.0.0
  */
-public interface EventHandlingComponent extends EventHandler, EventHandlerRegistry {
+public interface EventHandlingComponent extends EventHandler, EventHandlerRegistry, ResetHandler {
 
     /**
      * All supported {@link EventMessage events}, referenced through a {@link QualifiedName}.
@@ -66,4 +75,32 @@ public interface EventHandlingComponent extends EventHandler, EventHandlerRegist
      */
     @Nonnull
     Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context);
+
+    /**
+     * Indicates whether this component supports reset operations.
+     * <p>
+     * When {@code true}, this component can participate in replay operations and its
+     * {@link #handle(ResetContext, ProcessingContext)} method will be called before replay begins.
+     * <p>
+     * By default, components do not support reset operations.
+     *
+     * @return {@code true} if this component supports reset operations, {@code false} otherwise.
+     */
+    default boolean supportsReset() {
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * By default, this method returns an empty stream as most components do not need reset handling.
+     * Implementations that support reset should override this method to perform cleanup operations
+     * before replay begins, such as clearing projections or caches.
+     */
+    @Override
+    @Nonnull
+    default MessageStream.Empty<Message> handle(@Nonnull ResetContext resetContext,
+                                                @Nonnull ProcessingContext context) {
+        return MessageStream.empty();
+    }
 }

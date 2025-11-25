@@ -31,14 +31,15 @@ import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * Decorator that blocks all event handling during replay while still allowing reset handling.
+ * Decorator that blocks all event handling during replay while still supporting reset.
  * <p>
  * This component checks if the current tracking token indicates replay (via {@link ReplayToken})
- * and prevents all event handling in that case. Reset handlers can still be subscribed and
- * will be invoked during reset operations.
+ * and prevents all event handling in that case. Reset handlers can still be subscribed via
+ * the {@link ResetHandlerRegistry} and will be invoked during reset operations.
  * <p>
- * Implements {@link ResetEventHandlingComponent} to ensure it participates in the processor's
- * event handling chain during replay (components without reset support are skipped entirely).
+ * This component returns {@code true} from {@link #supportsReset()} when at least one reset
+ * handler is subscribed, ensuring it participates in the processor's event handling chain
+ * during replay (components that don't support reset are skipped entirely).
  * <p>
  * This is the non-annotated, component-level equivalent of the {@code @DisallowReplay}
  * annotation.
@@ -68,7 +69,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class ReplayBlockingEventHandlingComponent
         extends DelegatingEventHandlingComponent
-        implements ResetEventHandlingComponent {
+        implements ResetHandlerRegistry {
 
     private final List<ResetHandler> resetHandlers = new CopyOnWriteArrayList<>();
 

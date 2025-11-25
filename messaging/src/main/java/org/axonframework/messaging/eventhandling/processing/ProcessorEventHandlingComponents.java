@@ -24,7 +24,6 @@ import org.axonframework.messaging.eventhandling.processing.streaming.segmenting
 import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
-import org.axonframework.messaging.eventhandling.replay.ResetEventHandlingComponent;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
@@ -111,8 +110,8 @@ public class ProcessorEventHandlingComponents {
 
         MessageStream<Message> result = MessageStream.empty();
         for (var component : components) {
-            // During replay, skip components that don't implement ResetEventHandlingComponent
-            if (isReplaying && !(component instanceof ResetEventHandlingComponent)) {
+            // During replay, skip components that don't support reset
+            if (isReplaying && !component.supportsReset()) {
                 continue;
             }
 
@@ -161,11 +160,10 @@ public class ProcessorEventHandlingComponents {
     }
 
     /**
-     * Dispatches a reset message to all components that support reset.
+     * Handles reset for all components that support it.
      * <p>
-     * This method checks each component to see if it implements {@link ResetEventHandlingComponent}
-     * and invokes the reset handler on those that do. All handlers must complete successfully
-     * for the operation to succeed.
+     * This method invokes the reset handler on each component that supports reset operations.
+     * All handlers must complete successfully for the operation to succeed.
      *
      * @param resetContext the reset context message
      * @param context the processing context
@@ -175,8 +173,8 @@ public class ProcessorEventHandlingComponents {
     public CompletableFuture<Void> handleReset(@Nonnull ResetContext resetContext,
                                                @Nonnull ProcessingContext context) {
         List<CompletableFuture<Void>> futures = components.stream()
-                .filter(c -> c instanceof ResetEventHandlingComponent)
-                .map(c -> ((ResetEventHandlingComponent) c).handle(resetContext, context)
+                .filter(EventHandlingComponent::supportsReset)
+                .map(c -> c.handle(resetContext, context)
                         .asCompletableFuture()
                         .thenApply(v -> (Void) null))
                 .toList();
@@ -187,12 +185,10 @@ public class ProcessorEventHandlingComponents {
     /**
      * Checks if any component supports reset operations.
      *
-     * @return {@code true} if at least one component implements {@link ResetEventHandlingComponent}
-     *         and supports reset, {@code false} otherwise
+     * @return {@code true} if at least one component supports reset, {@code false} otherwise
      */
     public boolean supportsReset() {
         return components.stream()
-                .anyMatch(c -> c instanceof ResetEventHandlingComponent
-                        && ((ResetEventHandlingComponent) c).supportsReset());
+                .anyMatch(EventHandlingComponent::supportsReset);
     }
 }
