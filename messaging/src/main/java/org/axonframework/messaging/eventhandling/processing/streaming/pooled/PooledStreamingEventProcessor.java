@@ -281,18 +281,27 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         assertThat(supportsReset(), state -> state, "The handlers assigned to this Processor do not support a reset.");
         assertThat(!isRunning(), state -> state, "The Processor must be shut down before triggering a reset.");
 
+        logger.info("Processor [{}] starting reset to position [{}].", name, startPosition);
         var unitOfWork = unitOfWorkFactory.create();
         return unitOfWork.executeWithResult(processingContext ->
                 fetchSegmentsWithTokens(processingContext)
+                        .thenApply(segmentTokens -> {
+                            logger.debug("Processor [{}] fetched [{}] segments for reset.", name, segmentTokens.size());
+                            return segmentTokens;
+                        })
                         .thenCompose(segmentTokens -> performReset(segmentTokens, resetContext, processingContext))
+                        .thenApply(segmentTokens -> {
+                            logger.debug("Processor [{}] notified event handlers about reset.", name);
+                            return segmentTokens;
+                        })
                         .thenCompose(segmentTokens -> storeReplayTokens(segmentTokens, startPosition, resetContext, processingContext))
+                        .thenRun(() -> logger.info("Processor [{}] successfully completed reset.", name))
         );
     }
 
     private CompletableFuture<List<SegmentToken>> fetchSegmentsWithTokens(ProcessingContext processingContext) {
         return tokenStore.fetchSegments(name, processingContext)
                 .thenCompose(segments -> {
-                    logger.debug("Processor [{}] will try to reset tokens for segments [{}].", name, segments);
                     var tokenFutures = segments.stream()
                             .map(segment -> fetchTokenForSegment(segment, processingContext))
                             .toList();
@@ -332,9 +341,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
                         processingContext
                 ))
                 .toList();
-        return CompletableFuture.allOf(storeFutures.toArray(CompletableFuture[]::new))
-                .thenRun(() -> logger.info("Processor [{}] successfully reset tokens for segments [{}].",
-                        name, segmentTokens.stream().map(SegmentToken::segment).toList()));
+        return CompletableFuture.allOf(storeFutures.toArray(CompletableFuture[]::new));
     }
 
     private record SegmentToken(Segment segment, TrackingToken token) {
