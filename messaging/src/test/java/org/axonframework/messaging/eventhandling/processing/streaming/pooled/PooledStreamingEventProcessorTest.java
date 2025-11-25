@@ -1249,24 +1249,6 @@ class PooledStreamingEventProcessorTest {
             assertTrue(testSubject.supportsReset());
         }
 
-        @Disabled("TODO - prepare test case")
-        @Test
-        void supportsResetReturnsFalseWhenNoComponentSupportsReset() {
-            // given
-            var nonResetableComponent = new DelegatingEventHandlingComponent(new SimpleEventHandlingComponent()) {
-                @Override
-                public boolean supportsReset() {
-                    return false;
-                }
-            };
-
-            // when
-            withTestSubject(List.of(nonResetableComponent));
-
-            // then
-            assertFalse(testSubject.supportsReset());
-        }
-
         @Test
         void resetTokensFailsIfTheProcessorIsStillRunning() {
             startEventProcessor();
@@ -1292,7 +1274,8 @@ class PooledStreamingEventProcessorTest {
             );
 
             // Start and stop the processor to initialize the tracking tokens
-            testSubject.start();
+            joinAndUnwrap(testSubject.start());
+            startEventProcessor();
             assertWithin(2, TimeUnit.SECONDS, () -> {
                 List<Segment> segments = joinAndUnwrap(tokenStore.fetchSegments(PROCESSOR_NAME, null));
                 assertEquals(expectedSegmentCount, segments.size());
@@ -1315,39 +1298,48 @@ class PooledStreamingEventProcessorTest {
 
         @Test
         void resetTokensWithContext() {
-//            int expectedSegmentCount = 2;
-//            TrackingToken expectedToken = new GlobalSequenceTrackingToken(42);
-//            String expectedContext = "my-context";
-//
-//            when(stubEventHandler.supportsReset()).thenReturn(true);
-//            setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(expectedSegmentCount)
-//                                                               .initialToken(source -> CompletableFuture.completedFuture(
-//                                                                       expectedToken))));
-//
-//            // Start and stop the processor to initialize the tracking tokens
-//            testSubject.start();
-//            await().atMost(Duration.ofSeconds(2L)).untilAsserted(
-//                    () -> assertEquals(expectedSegmentCount, tokenStore.fetchSegments(PROCESSOR_NAME).length)
-//            );
-//            testSubject.shutDown();
-//
-//            testSubject.resetTokens(expectedContext);
-//
-//            verify(stubEventHandler).performReset(expectedContext, null);
-//
-//            int[] segments = tokenStore.fetchSegments(PROCESSOR_NAME);
-//            // The token stays the same, as the original and token after reset are identical.
-//            assertEquals(expectedToken, tokenStore.fetchToken(PROCESSOR_NAME, segments[0]));
-//            assertEquals(expectedToken, tokenStore.fetchToken(PROCESSOR_NAME, segments[1]));
-//            await().atMost(Duration.ofSeconds(2L)).untilAsserted(
-//                    () -> verify(stubEventHandler, times(2)).segmentReleased(any(Segment.class))
-//            );
+            int expectedSegmentCount = 2;
+            TrackingToken expectedToken = new GlobalSequenceTrackingToken(42);
+            String expectedContext = "my-context";
+
+            AtomicBoolean resetHandlerInvoked = new AtomicBoolean(false);
+            defaultEventHandlingComponent.subscribe((resetContext, ctx) -> {
+                resetHandlerInvoked.set(true);
+                return MessageStream.empty();
+            });
+
+            withTestSubject(
+                    List.of(),
+                    c -> c.initialSegmentCount(expectedSegmentCount)
+                          .initialToken(source -> CompletableFuture.completedFuture(expectedToken))
+            );
+
+            // Start and stop the processor to initialize the tracking tokens
+            joinAndUnwrap(testSubject.start());
+            await().atMost(Duration.ofSeconds(2L)).untilAsserted(
+                    () -> {
+                        List<Segment> segments = joinAndUnwrap(tokenStore.fetchSegments(PROCESSOR_NAME, null));
+                        assertEquals(expectedSegmentCount, segments.size());
+                    }
+            );
+            joinAndUnwrap(testSubject.shutdown());
+
+            joinAndUnwrap(testSubject.resetTokens(expectedContext));
+
+            assertTrue(resetHandlerInvoked.get());
+
+            List<Segment> segments = joinAndUnwrap(tokenStore.fetchSegments(PROCESSOR_NAME, null));
+            // The token stays the same, as the original and token after reset are identical.
+            TrackingToken token0 = joinAndUnwrap(tokenStore.fetchToken(PROCESSOR_NAME, segments.get(0).getSegmentId(), null));
+            TrackingToken token1 = joinAndUnwrap(tokenStore.fetchToken(PROCESSOR_NAME, segments.get(1).getSegmentId(), null));
+            assertEquals(expectedToken, token0);
+            assertEquals(expectedToken, token1);
+            assertFalse(ReplayToken.isReplay(token0));
+            assertFalse(ReplayToken.isReplay(token1));
         }
 
         @Test
         void isReplaying() {
-//                when(stubEventHandler.supportsReset()).thenReturn(true);
-
             withTestSubject(List.of(), c -> c.initialSegmentCount(1));
 
             List<EventMessage> events = createEvents(100);
