@@ -16,12 +16,11 @@
 
 package org.axonframework.messaging.eventhandling.replay;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageHandler;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-
-import javax.annotation.Nonnull;
 
 /**
  * Functional interface for handling {@link ResetContext} messages.

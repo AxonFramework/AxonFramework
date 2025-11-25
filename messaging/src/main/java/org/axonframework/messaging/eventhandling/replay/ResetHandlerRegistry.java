@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.replay;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * Registry for subscribing {@link ResetHandler} instances.

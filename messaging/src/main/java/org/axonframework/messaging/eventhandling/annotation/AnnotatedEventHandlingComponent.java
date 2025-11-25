@@ -35,14 +35,17 @@ import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventSink;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.axonframework.messaging.eventhandling.replay.ResetContext;
+import org.axonframework.messaging.eventhandling.replay.ResetHandler;
+import org.axonframework.messaging.eventhandling.replay.ResetHandlerRegistry;
 
 import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
 
 /**
- * Adapter that turns any {@link org.axonframework.messaging.eventhandling.annotation.EventHandler} annotated bean into a
- * {@link MessageHandler} implementation. Each annotated method is subscribed as Event Handler at the
+ * Adapter that turns any {@link org.axonframework.messaging.eventhandling.annotation.EventHandler} annotated bean into
+ * a {@link MessageHandler} implementation. Each annotated method is subscribed as Event Handler at the
  * {@link EventSink} for the event type specified by the parameter of that method.
  *
  * @param <T> The type of the annotated event handler.
@@ -56,12 +59,12 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
     private final EventHandlingComponent delegate;
 
     /**
-     * Wraps the given {@code annotatedEventHandler}, allowing it to be subscribed to a
-     * {@link EventSink} as an {@link EventHandlingComponent}.
+     * Wraps the given {@code annotatedEventHandler}, allowing it to be subscribed to a {@link EventSink} as an
+     * {@link EventHandlingComponent}.
      *
      * @param annotatedEventHandler    The object containing the
-     *                                 {@link org.axonframework.messaging.eventhandling.annotation.EventHandler} annotated
-     *                                 methods.
+     *                                 {@link org.axonframework.messaging.eventhandling.annotation.EventHandler}
+     *                                 annotated methods.
      * @param parameterResolverFactory The strategy for resolving handler method parameter values.
      */
     public AnnotatedEventHandlingComponent(@Nonnull T annotatedEventHandler,
@@ -76,12 +79,12 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
     }
 
     /**
-     * Wraps the given {@code annotatedEventHandler}, allowing it to be subscribed to a
-     * {@link EventSink} as an {@link EventHandlingComponent}.
+     * Wraps the given {@code annotatedEventHandler}, allowing it to be subscribed to a {@link EventSink} as an
+     * {@link EventHandlingComponent}.
      *
      * @param annotatedEventHandler    The object containing the
-     *                                 {@link org.axonframework.messaging.eventhandling.annotation.EventHandler} annotated
-     *                                 methods.
+     *                                 {@link org.axonframework.messaging.eventhandling.annotation.EventHandler}
+     *                                 annotated methods.
      * @param parameterResolverFactory The strategy for resolving handler method parameter values.
      * @param delegate                 The delegate event handling component to which the handlers will be subscribed.
      */
@@ -97,12 +100,12 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
     }
 
     /**
-     * Wraps the given {@code annotatedEventHandler}, allowing it to be subscribed to a
-     * {@link EventSink} as an {@link EventHandlingComponent}.
+     * Wraps the given {@code annotatedEventHandler}, allowing it to be subscribed to a {@link EventSink} as an
+     * {@link EventHandlingComponent}.
      *
      * @param annotatedEventHandler    The object containing the
-     *                                 {@link org.axonframework.messaging.eventhandling.annotation.EventHandler} annotated
-     *                                 methods.
+     *                                 {@link org.axonframework.messaging.eventhandling.annotation.EventHandler}
+     *                                 annotated methods.
      * @param parameterResolverFactory The strategy for resolving handler method parameter values.
      * @param handlerDefinition        The handler definition used to create concrete handlers.
      * @param delegate                 The delegate event handling component to which the handlers will be subscribed.
@@ -122,11 +125,12 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
     }
 
     /**
-     * Wraps the given {@code annotatedEventHandler}, allowing it to be subscribed to a
-     * {@link EventSink} as an {@link EventHandlingComponent}.
+     * Wraps the given {@code annotatedEventHandler}, allowing it to be subscribed to a {@link EventSink} as an
+     * {@link EventHandlingComponent}.
      *
      * @param annotatedEventHandler The object containing the
-     *                              {@link org.axonframework.messaging.eventhandling.annotation.EventHandler} annotated methods.
+     *                              {@link org.axonframework.messaging.eventhandling.annotation.EventHandler} annotated
+     *                              methods.
      * @param delegate              The delegate event handling component to which the handlers will be subscribed.
      * @param model                 The inspector to use to find the annotated handlers on the annotatedEventHandler.
      */
@@ -138,14 +142,15 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
         this.model = requireNonNull(model, "The Annotated Handler Inspector may not be null");
         this.delegate = delegate;
 
-        initializeHandlersBasedOnModel();
+        initializeEventHandlersBasedOnModel();
+        initializeResetHandlersBasedOnModle();
     }
 
-    private void initializeHandlersBasedOnModel() {
-        model.getUniqueHandlers(target.getClass(), EventMessage.class).forEach(this::registerHandler);
+    private void initializeEventHandlersBasedOnModel() {
+        model.getUniqueHandlers(target.getClass(), EventMessage.class).forEach(this::registerEventHandler);
     }
 
-    private void registerHandler(MessageHandlingMember<? super T> handler) {
+    private void registerEventHandler(MessageHandlingMember<? super T> handler) {
         Class<?> payloadType = handler.payloadType();
         QualifiedName qualifiedName = handler.unwrap(MethodEventHandlerDefinition.MethodEventMessageHandlingMember.class)
                                              .map(EventHandlingMember::eventName)
@@ -177,8 +182,33 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
                 .map(MethodSequencingPolicyEventHandlerDefinition.SequencingPolicyEventMessageHandlingMember::sequencingPolicy);
 
         return sequencingPolicy
-                .map(sp -> (EventHandler) new SimpleEventHandlingComponent(sp).subscribe(qualifiedName, interceptedEventHandler))
+                .map(sp -> (EventHandler) new SimpleEventHandlingComponent(sp).subscribe(qualifiedName,
+                                                                                         interceptedEventHandler))
                 .orElse(interceptedEventHandler);
+    }
+
+    private void initializeResetHandlersBasedOnModle() {
+        model.getUniqueHandlers(target.getClass(), ResetContext.class).forEach(this::registerResetHandler);
+    }
+
+    private void registerResetHandler(MessageHandlingMember<? super T> handler) {
+        MessageHandlerInterceptorMemberChain<T> interceptorChain = model.chainedInterceptor(target.getClass());
+        delegate.subscribe(interceptedResetHandler(handler, interceptorChain));
+    }
+
+    @Nonnull
+    private ResetHandler interceptedResetHandler(
+            MessageHandlingMember<? super T> handler,
+            MessageHandlerInterceptorMemberChain<T> interceptorChain
+    ) {
+        // todo: isDisallowReplay handled automatically here?
+        return (resetContext, ctx) ->
+                interceptorChain.handle(
+                        resetContext,
+                        ctx,
+                        target,
+                        handler
+                ).ignoreEntries().cast();
     }
 
     @Override
@@ -202,5 +232,17 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
     @Override
     public Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
         return delegate.sequenceIdentifierFor(event, context);
+    }
+
+    @Nonnull
+    @Override
+    public MessageStream.Empty<Message> handle(@Nonnull ResetContext resetContext, @Nonnull ProcessingContext context) {
+        return delegate.handle(resetContext, context);
+    }
+
+    @Nonnull
+    @Override
+    public ResetHandlerRegistry subscribe(@Nonnull ResetHandler resetHandler) {
+        return delegate.subscribe(resetHandler);
     }
 }
