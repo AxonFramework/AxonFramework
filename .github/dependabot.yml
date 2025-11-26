@@ -35,7 +35,9 @@ updates:
         - "minor"
         - "major"
   ignore:
-    - dependency-name: "org.springframework:spring-framework-bom"
+    - dependency-name: "org.springframework:*"
       versions: [ "[7.0.0,)" ]
-    - dependency-name: "org.springframework.security:spring-security-bom"
+    - dependency-name: "org.springframework.security:*"
       versions: [ "[7.0.0,)" ]
+    - dependency-name: "org.springframework.boot:*"
+      versions: [ "[4.0.0,)" ]
