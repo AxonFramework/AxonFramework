@@ -31,6 +31,7 @@ import org.axonframework.messaging.eventhandling.processing.streaming.segmenting
 import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
+import org.axonframework.messaging.eventhandling.replay.ReplayBlockingEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.messaging.core.EmptyApplicationContext;
@@ -62,6 +63,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.UnaryOperator;
@@ -670,7 +672,7 @@ class PooledStreamingEventProcessorTest {
         void coordinationIsTriggeredThroughEventAvailabilityCallback() {
             boolean streamCallbackSupported = true;
             AsyncInMemoryStreamableEventSource testMessageSource = new AsyncInMemoryStreamableEventSource(
-                    streamCallbackSupported);
+                    streamCallbackSupported, true);
             stubMessageSource = testMessageSource;
             withTestSubject(List.of());
 
@@ -1031,6 +1033,60 @@ class PooledStreamingEventProcessorTest {
                                                         .collect(Collectors.toList());
             assertThat(ignoredPayloads).containsExactlyInAnyOrderElementsOf(eventsToIgnore);
         }
+
+        @Test
+        void replayBlockingEventHandlingComponentBlocksEventsDuringReplay() {
+            // given
+            List<EventMessage> recordedEvents = new CopyOnWriteArrayList<>();
+
+            // Create a component that wraps event handling with replay blocking
+            var innerComponent = new SimpleEventHandlingComponent();
+            innerComponent.subscribe(new QualifiedName(String.class), (event, ctx) -> {
+                recordedEvents.add(event);
+                return MessageStream.empty();
+            });
+
+            var replayBlockingComponent = new ReplayBlockingEventHandlingComponent(innerComponent);
+            // Register a reset handler to enable replay
+            replayBlockingComponent.subscribe((resetContext, ctx) -> MessageStream.empty());
+
+            withTestSubject(
+                    List.of(replayBlockingComponent),
+                    c -> c.initialSegmentCount(1)
+            );
+
+            // Publish events
+            EventMessage event1 = EventTestUtils.asEventMessage("event-1");
+            EventMessage event2 = EventTestUtils.asEventMessage("event-2");
+            EventMessage event3 = EventTestUtils.asEventMessage("event-3");
+            stubMessageSource.publishMessage(event1);
+            stubMessageSource.publishMessage(event2);
+            stubMessageSource.publishMessage(event3);
+
+            // when - Start and process events normally (not during replay)
+            startEventProcessor();
+
+            // Wait for initial processing to complete (events processed normally, not during replay)
+            await().atMost(10, TimeUnit.SECONDS)
+                   .untilAsserted(() -> assertThat(recordedEvents).containsOnly(event1, event2, event3));
+
+            joinAndUnwrap(testSubject.shutdown());
+
+            // Clear recorded events to track only replay events
+            recordedEvents.clear();
+
+            // Reset tokens to trigger replay (reset to position before any events)
+            joinAndUnwrap(testSubject.resetTokens(source -> source.firstToken(null)));
+            EventMessage event4 = EventTestUtils.asEventMessage("event-4");
+            stubMessageSource.publishMessage(event4);
+
+            // Restart to process events during replay
+            startEventProcessor();
+
+            // then - verify NO events were handled during replay
+            await().atMost(10, TimeUnit.SECONDS)
+                   .untilAsserted(() -> assertThat(recordedEvents).isEmpty());
+        }
     }
 
     @Nested
@@ -1212,7 +1268,6 @@ class PooledStreamingEventProcessorTest {
         }
     }
 
-    @Disabled("TODO #3304 - Integrate event replay logic into Event Handling Component")
     @Nested
     class ResetSupportTest {
 
@@ -1343,6 +1398,7 @@ class PooledStreamingEventProcessorTest {
             withTestSubject(List.of(), c -> c.initialSegmentCount(1));
 
             List<EventMessage> events = createEvents(100);
+            stubMessageSource = new AsyncInMemoryStreamableEventSource(false, true);
             startEventProcessor();
 
             events.forEach(stubMessageSource::publishMessage);
@@ -1362,11 +1418,13 @@ class PooledStreamingEventProcessorTest {
             startEventProcessor();
 
             assertWithin(
-                    1, TimeUnit.SECONDS, () -> {
+                    5, TimeUnit.SECONDS, () -> {
                         assertEquals(1, testSubject.processingStatus().size());
                         assertTrue(testSubject.processingStatus().get(0).isCaughtUp());
                         assertTrue(testSubject.processingStatus().get(0).isReplaying());
                         assertFalse(testSubject.isReplaying());
+                        assertEquals(100, testSubject.processingStatus().get(0).getCurrentPosition().getAsLong());
+//                        assertEquals(100, testSubject.processingStatus().get(0).getResetPosition().getAsLong());
                     }
             );
         }

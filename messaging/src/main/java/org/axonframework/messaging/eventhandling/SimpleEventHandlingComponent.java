@@ -17,8 +17,6 @@
 package org.axonframework.messaging.eventhandling;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
 import org.axonframework.messaging.eventhandling.replay.ResetHandler;
 import org.axonframework.messaging.eventhandling.replay.ResetHandlerRegistry;
@@ -87,14 +85,6 @@ public class SimpleEventHandlingComponent implements EventHandlingComponent {
             );
         }
         MessageStream<Message> result = MessageStream.empty();
-
-        var notReplayOrSupportReset = TrackingToken.fromContext(context)
-                                                   .filter(ReplayToken::isReplay)
-                                                   .map(it -> supportsReset())
-                                                   .orElse(true);
-        if (!notReplayOrSupportReset) {
-            return result.ignoreEntries().cast();
-        }
 
         for (var handler : handlers) {
             var handlerResult = handler.handle(event, context);
@@ -183,10 +173,5 @@ public class SimpleEventHandlingComponent implements EventHandlingComponent {
     public ResetHandlerRegistry subscribe(@Nonnull ResetHandler resetHandler) {
         resetHandlers.add(resetHandler);
         return this;
-    }
-
-    @Override
-    public boolean supportsReset() {
-        return EventHandlingComponent.super.supportsReset();
     }
 }
