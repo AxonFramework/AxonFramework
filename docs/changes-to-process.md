@@ -34,18 +34,25 @@ The following files in `axon-5/` describe the API changes:
 - Update dependency coordinates and groupIds
 
 ### modules/ROOT/pages/serialization.adoc
-**RENAME TO:** `conversion.adoc` or update title to "Serialization and Conversion"
-**Changes to apply:**
-- Replace all Serializer references with Converter
-- Document MessageConverter and EventConverter types
-- **Explain payload conversion at handling time**
-  - Show how converters enable handlers to receive payloads in their preferred representation
-  - Demonstrate that same message can be converted to different types for different handlers
-  - Explain how this reduces upcaster needs
-- Update default from XStream to Jackson
-- Remove XStream documentation, add note about XML support via JacksonConverter with XmlMapper
-- Update MessageTypeResolver (replaces RevisionResolver)
-- Replace @Revision with @Command/@Event/@Query annotations
+**Status:** ✅ COMPLETED
+
+**Changes applied:**
+- Updated title to "Serialization and Conversion" to reflect both concepts
+- Replaced all Serializer references with Converter throughout the document
+- Documented MessageConverter and EventConverter types with clear explanations of their roles
+- Added comprehensive section on "Understanding message types and conversion" explaining:
+  - MessageType vs Java class concept
+  - Payload conversion at handling time with detailed examples
+  - How different handlers can receive the same message in different representations
+  - How this approach reduces upcaster needs
+- Updated default from XStream to Jackson with clear statement that JacksonConverter is now the default
+- Removed all XStream-specific documentation
+- Added XML support section explaining how to use JacksonConverter with XmlMapper
+- Updated MessageTypeResolver section (replacing RevisionResolver)
+- Replaced all @Revision references with @Command/@Event/@Query annotations
+- Updated all code examples to use Axon 5 APIs (Converter instead of Serializer)
+- Added section on choosing the right converter
+- Maintained sections on lenient deserialization, generic types, and ContentTypeConverters with updated terminology
 
 ### modules/ROOT/pages/spring-boot-integration.adoc
 **Changes to apply:**
