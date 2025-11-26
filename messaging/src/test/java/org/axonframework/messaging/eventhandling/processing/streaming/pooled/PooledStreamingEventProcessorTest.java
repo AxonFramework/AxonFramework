@@ -1050,6 +1050,7 @@ class PooledStreamingEventProcessorTest {
             // Register a reset handler to enable replay
             replayBlockingComponent.subscribe((resetContext, ctx) -> MessageStream.empty());
 
+            stubMessageSource = new AsyncInMemoryStreamableEventSource(false, false);
             withTestSubject(
                     List.of(replayBlockingComponent),
                     c -> c.initialSegmentCount(1)
@@ -1077,8 +1078,6 @@ class PooledStreamingEventProcessorTest {
 
             // Reset tokens to trigger replay (reset to position before any events)
             joinAndUnwrap(testSubject.resetTokens(source -> source.firstToken(null)));
-            EventMessage event4 = EventTestUtils.asEventMessage("event-4");
-            stubMessageSource.publishMessage(event4);
 
             // Restart to process events during replay
             startEventProcessor();
