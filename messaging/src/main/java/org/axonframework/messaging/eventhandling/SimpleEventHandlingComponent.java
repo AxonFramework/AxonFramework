@@ -88,14 +88,13 @@ public class SimpleEventHandlingComponent implements EventHandlingComponent {
         }
         MessageStream<Message> result = MessageStream.empty();
 
-        // should we check it on single component level?
-//        var notReplayOrSupportReset = TrackingToken.fromContext(context)
-//                                                   .filter(ReplayToken::isReplay)
-//                                                   .map(it -> supportsReset())
-//                                                   .orElse(true);
-//        if (!notReplayOrSupportReset) {
-//            return result.ignoreEntries().cast();
-//        }
+        var notReplayOrSupportReset = TrackingToken.fromContext(context)
+                                                   .filter(ReplayToken::isReplay)
+                                                   .map(it -> supportsReset())
+                                                   .orElse(true);
+        if (!notReplayOrSupportReset) {
+            return result.ignoreEntries().cast();
+        }
 
         for (var handler : handlers) {
             var handlerResult = handler.handle(event, context);

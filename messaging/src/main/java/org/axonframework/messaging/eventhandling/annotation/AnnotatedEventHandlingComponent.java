@@ -46,9 +46,13 @@ import java.util.Set;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Adapter that turns any {@link org.axonframework.messaging.eventhandling.annotation.EventHandler} annotated bean into
- * a {@link MessageHandler} implementation. Each annotated method is subscribed as Event Handler at the
- * {@link EventSink} for the event type specified by the parameter of that method.
+ * Adapter that turns any {@link org.axonframework.messaging.eventhandling.annotation.EventHandler @EventHandler}
+ * annotated bean into a {@link MessageHandler} implementation. Each annotated method is subscribed as Event Handler at
+ * the {@link EventSink} for the event type specified by the parameter of that method.
+ * <p>
+ * Additionally, methods annotated with
+ * {@link org.axonframework.messaging.eventhandling.replay.annotation.ResetHandler @ResetHandler} are registered to
+ * handle {@link ResetContext} messages during event processor reset operations.
  *
  * @param <T> The type of the annotated event handler.
  * @author Mateusz Nowak
@@ -203,7 +207,6 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
             MessageHandlingMember<? super T> handler,
             MessageHandlerInterceptorMemberChain<T> interceptorChain
     ) {
-        // todo: isDisallowReplay handled automatically here?
         return (resetContext, ctx) ->
                 interceptorChain.handle(
                         resetContext,
