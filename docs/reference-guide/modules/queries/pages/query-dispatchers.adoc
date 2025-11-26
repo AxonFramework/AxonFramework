@@ -469,8 +469,8 @@ configurer.messaging(messagingConfigurer -> {
 });
 
 Configuration configuration = configurer.start();
-QueryGateway queryGateway = configuration.queryGateway();
-QueryBus queryBus = configuration.component(QueryBus.class);
+QueryGateway queryGateway = configuration.getComponent(QueryGateway.class);
+QueryBus queryBus = configuration.getComponent(QueryBus.class);
 ----
 
 == Summary

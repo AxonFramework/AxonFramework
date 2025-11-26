@@ -228,7 +228,7 @@ The `CommandDispatcher` can be injected as a parameter in any message handler:
 public class GiftCard {
 
     @CommandHandler
-    public void handle(RedeemCardCommand command, CommandDispatcher dispatcher) { // <1>
+    public void handle(RedeemCardCommand command, EventAppender eventAppender, CommandDispatcher dispatcher) { // <1>
         // Validate and apply event
         eventAppender.append(new CardRedeemedEvent(command.cardId(), command.amount()));
 
@@ -301,7 +301,7 @@ If the primary purpose of sending a message is to obtain a result value, conside
 That said, there are legitimate cases where command handlers return values:
 
 * **Entity identifiers**: Returning the identifier of a newly created aggregate or entity is a common pattern.
-The framework has built-in support for this: when a `@CommandHandler` annotated constructor executes successfully, the value of the `@AggregateIdentifier` annotated field is automatically returned.
+The framework has built-in support for this: when a `@CommandHandler` annotated static handler executes successfully, the value of the `@AggregateIdentifier` annotated field is automatically returned.
 * **Confirmation data**: Sometimes you may need to return confirmation information or generated values (such as reference numbers, timestamps, or other data produced during command handling).
 * **Synchronous workflows**: In certain integration scenarios, returning a value from a command handler may be necessary for synchronous processing flows.
 
@@ -416,7 +416,7 @@ Inconsistent `toString()` methods may result in different handler instances rece
 
 == Understanding `ProcessingContext` in command dispatching
 
-The `ProcessingContext` is a key concept in Axon 5 that replaces the thread-local `UnitOfWork` from Axon 4.
+The `ProcessingContext` is a key concept in Axon that coordinates all components involved in processing a message.
 Understanding when to provide it is important:
 
 **When dispatching commands:**

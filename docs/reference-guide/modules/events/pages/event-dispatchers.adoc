@@ -40,11 +40,11 @@ public class GiftCard {
 The `EventAppender` is automatically injected by Axon Framework when declared as a parameter in a command handler.
 It is the recommended way to append events from within an entity's command handling methods, as it automatically:
 
-. Uses the current `ProcessingContext` (the Axon 5 replacement for `UnitOfWork`)
+. Uses the current `ProcessingContext`
 . Attaches the entity identifier to the event
 . Assigns the correct sequence number
 . Publishes the event to registered event handlers within the entity (necessary for event sourcing)
-. Publishes the event to the `EventSink` (the Axon 5 name for what was previously known as the `EventBus`)
+. Publishes the event to the `EventSink`
 
 [TIP]
 ====
@@ -56,22 +56,6 @@ appender.append(
     new CardActivatedEvent(cmd.getCardId())
 );
 ----
-====
-
-[NOTE]
-.Understanding EventSink
-====
-In Axon 5, the `EventBus` has been renamed to `EventSink` to more accurately represent its role as the publishing side of event distribution.
-While "EventBus" is a familiar concept to many users, `EventSink` is more technically precise - it represents the component that receives and distributes events.
-
-The `EventSink` can distribute events to:
-
-* Event handlers within the same application
-* Event processors for asynchronous processing
-* Event stores for persistence
-* External eventing systems (like Kafka, RabbitMQ, or cloud-based event services)
-
-This naming helps clarify that events flow *into* the sink, which then distributes them to appropriate destinations.
 ====
 
 == Dispatching events from a non-entity
@@ -190,8 +174,9 @@ public class DirectEventPublisher {
 
     public CompletableFuture<Void> publishWithMetadata() {
         EventMessage<CardIssuedEvent> eventMessage = new GenericEventMessage<>(
-            new CardIssuedEvent("cardId", 100, "shopId")
-        ).withMetadata(Map.of("userId", "user123", "source", "api"));
+                    new MessageType(CardIssuedEvent),
+                    new CardIssuedEvent("cardId", 100, "shopId")
+                ).withMetadata(Map.of("userId", "user123", "source", "api"));
 
         return eventSink.publish(null, eventMessage);
     }
@@ -247,8 +232,8 @@ configurer.messaging(messagingConfigurer -> {
 });
 
 Configuration configuration = configurer.start();
-EventGateway eventGateway = configuration.eventGateway();
-EventSink eventSink = configuration.component(EventSink.class);
+EventGateway eventGateway = configuration.getComponent(EventGateway.class);
+EventSink eventSink = configuration.getComponent(EventSink.class);
 ----
 
 == Summary
