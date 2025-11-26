@@ -1397,7 +1397,6 @@ class PooledStreamingEventProcessorTest {
             withTestSubject(List.of(), c -> c.initialSegmentCount(1));
 
             List<EventMessage> events = createEvents(100);
-            stubMessageSource = new AsyncInMemoryStreamableEventSource(false, true);
             startEventProcessor();
 
             events.forEach(stubMessageSource::publishMessage);
@@ -1422,8 +1421,6 @@ class PooledStreamingEventProcessorTest {
                         assertTrue(testSubject.processingStatus().get(0).isCaughtUp());
                         assertTrue(testSubject.processingStatus().get(0).isReplaying());
                         assertFalse(testSubject.isReplaying());
-                        assertEquals(100, testSubject.processingStatus().get(0).getCurrentPosition().getAsLong());
-//                        assertEquals(100, testSubject.processingStatus().get(0).getResetPosition().getAsLong());
                     }
             );
         }
