@@ -48,9 +48,6 @@ import static org.junit.jupiter.api.Assertions.*;
  *   <li>{@link ReplayStatus} parameter is resolved correctly outside of replay</li>
  *   <li>Handlers receive unwrapped tracking tokens (not {@link ReplayToken})</li>
  * </ul>
- *
- * @author Allard Buijze
- * @since 3.2
  */
 class ReplayParameterResolverFactoryTest {
 

@@ -53,9 +53,6 @@ import static org.junit.jupiter.api.Assertions.*;
  *   <li>{@code supportsReset()} returns appropriate values based on replay configuration</li>
  *   <li>Handlers receive unwrapped tracking tokens (not {@link ReplayToken})</li>
  * </ul>
- *
- * @author Mateusz Nowak
- * @since 5.0.0
  */
 class ReplayAwareMessageHandlerWrapperTest {
 
