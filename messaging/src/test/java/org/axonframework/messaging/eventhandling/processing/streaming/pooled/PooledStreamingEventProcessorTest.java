@@ -1035,6 +1035,62 @@ class PooledStreamingEventProcessorTest {
         }
 
         @Test
+        void eventHandlingComponentReprocessEventsDuringReplay() {
+            // given
+            List<EventMessage> recordedEvents = new CopyOnWriteArrayList<>();
+
+            // Create a component that wraps event handling with replay blocking
+            var eventHandlingComponent = new SimpleEventHandlingComponent();
+            eventHandlingComponent.subscribe(new QualifiedName(String.class), (event, ctx) -> {
+                recordedEvents.add(event);
+                return MessageStream.empty();
+            });
+
+            // do not clear event source after close
+            stubMessageSource = new AsyncInMemoryStreamableEventSource(false, false);
+            withTestSubject(
+                    List.of(eventHandlingComponent),
+                    c -> c.initialSegmentCount(1)
+            );
+
+            // Publish events
+            EventMessage event1 = EventTestUtils.asEventMessage("event-1");
+            EventMessage event2 = EventTestUtils.asEventMessage("event-2");
+            EventMessage event3 = EventTestUtils.asEventMessage("event-3");
+            stubMessageSource.publishMessage(event1);
+            stubMessageSource.publishMessage(event2);
+            stubMessageSource.publishMessage(event3);
+
+            // when - Start and process events normally (not during replay)
+            startEventProcessor();
+
+            // Wait for initial processing to complete (events processed normally, not during replay)
+            await().atMost(10, TimeUnit.SECONDS)
+                   .untilAsserted(() -> assertThat(recordedEvents).containsOnly(event1, event2, event3));
+
+            joinAndUnwrap(testSubject.shutdown());
+
+            // Clear recorded events to track only replay events
+            recordedEvents.clear();
+
+            // Reset tokens to trigger replay (reset to position before any events)
+            joinAndUnwrap(testSubject.resetTokens(source -> source.firstToken(null)));
+
+            // Restart to process events during replay
+            startEventProcessor();
+
+            // then - wait for catchup
+            await().atMost(2, TimeUnit.SECONDS)
+                   .untilAsserted(() -> {
+                       long currentPosition = testSubject.processingStatus().get(0).getCurrentPosition().orElse(0);
+                       assertThat(currentPosition).isEqualTo(3);
+                   });
+
+            // then - verify no events processed during replay
+            assertThat(recordedEvents).containsOnly(event1, event2, event3);
+        }
+
+        @Test
         void replayBlockingEventHandlingComponentBlocksEventsDuringReplay() {
             // given
             List<EventMessage> recordedEvents = new CopyOnWriteArrayList<>();
@@ -1047,9 +1103,8 @@ class PooledStreamingEventProcessorTest {
             });
 
             var replayBlockingComponent = new ReplayBlockingEventHandlingComponent(innerComponent);
-            // Register a reset handler to enable replay
-            replayBlockingComponent.subscribe((resetContext, ctx) -> MessageStream.empty());
 
+            // do not clear event source after close
             stubMessageSource = new AsyncInMemoryStreamableEventSource(false, false);
             withTestSubject(
                     List.of(replayBlockingComponent),
