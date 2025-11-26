@@ -76,16 +76,25 @@ The following files in `axon-5/` describe the API changes:
 - Clarify that command handling is the primary focus, with entities as one pattern option
 
 ### modules/axon-framework-commands/pages/command-dispatchers.adoc
-**Changes to apply:**
-- Update CommandBus API (async-native, optional ProcessingContext parameter)
-- Document CommandGateway changes (result conversion, no CommandCallback)
-- Introduce CommandDispatcher for in-handler command dispatch (automatically uses current ProcessingContext)
-- Document ProcessingContext usage:
+**Status:** ✅ COMPLETED
+**Changes applied:**
+- Updated CommandBus API (async-native, optional ProcessingContext parameter)
+- Documented CommandGateway changes (CommandResult return type, no CommandCallback)
+- Introduced CommandDispatcher for in-handler command dispatch (automatically uses current ProcessingContext)
+- Documented ProcessingContext usage:
   - Optional when dispatching: provide when available (dispatching from handler)
   - Pass null or use variant without ProcessingContext from HTTP endpoints
   - CommandDispatcher automatically provides it when used in handlers
-- Update subscription API (QualifiedName, CommandHandlingComponent)
-- Remove AsynchronousCommandBus and DisruptorCommandBus references
+- Removed AsynchronousCommandBus and DisruptorCommandBus references
+- Added comprehensive code examples showing all three dispatch mechanisms
+- Added section explaining ProcessingContext usage in command dispatching
+- **Added command routing section:**
+  - Explained routing key concept and why it matters for consistency
+  - Documented @Command annotation's routingKey attribute (replaces @TargetAggregateIdentifier from Axon 4)
+  - Documented custom RoutingStrategy configuration
+  - Covered built-in strategies (AnnotationRoutingStrategy, MetadataRoutingStrategy)
+  - Added examples for Configuration API and Spring Boot configuration
+  - Added custom RoutingStrategy implementation example
 
 ### modules/axon-framework-commands/pages/command-handlers.adoc
 **Changes to apply:**
@@ -168,17 +177,25 @@ The following files in `axon-5/` describe the API changes:
 - Introduce Dynamic Consistency Boundary (DCB) concept
 
 ### modules/events/pages/event-dispatchers.adoc
-**Changes to apply:**
-- Introduce EventSink concept carefully (EventBus is well-known, EventSink is more technical)
-- Explain that EventSink is the publishing/sending side of event distribution
-- Clarify relationship between EventBus concept and EventSink implementation
-- Document context parameter for publish operations (OPTIONAL on dispatch side)
-- Update to async API (CompletableFuture returns)
-- Document ProcessingContext usage:
-  - Optional when dispatching: pass it when available (from within handler) for correlation
-  - Can pass null or use method without ProcessingContext when dispatching from HTTP/outside handler
-  - Show both patterns with examples
-- Update EventGateway (if applicable)
+**Status:** ✅ COMPLETED
+**Changes applied:**
+- Introduced EventSink concept with clear explanation of EventBus → EventSink rename
+- Explained EventSink as the publishing/sending side of event distribution
+- Clarified EventSink can distribute to internal handlers, processors, stores, AND external systems (Kafka, RabbitMQ)
+- Documented EventAppender for entity event dispatching (replaces AggregateLifecycle.apply)
+- Updated terminology from Aggregate to Entity throughout
+- Documented ProcessingContext usage:
+  - Optional when dispatching: provide when available (from within handler) for correlation
+  - Pass null or use method without ProcessingContext when dispatching from HTTP endpoints/outside handlers
+  - Added examples for both patterns
+- Updated to async API (CompletableFuture<Void> returns)
+- Documented EventGateway with comprehensive examples:
+  - Publishing without ProcessingContext (from HTTP endpoints)
+  - Publishing with ProcessingContext (from event handlers)
+- Added direct EventSink usage section for advanced scenarios
+- Added Configuration section (Spring Boot and Configuration API examples)
+- Added Summary table comparing EventAppender, EventGateway, and EventSink
+- Verified all xrefs point to existing files (using current filenames until files are renamed)
 
 ### modules/events/pages/event-handlers.adoc
 **Changes to apply:**
@@ -273,18 +290,36 @@ The following files in `axon-5/` describe the API changes:
 - Document subscription query infrastructure changes
 
 ### modules/queries/pages/query-dispatchers.adoc
-**Changes to apply:**
-- Update QueryBus API (async-native, optional ProcessingContext parameter, MessageStream)
-- Document QueryGateway changes (no ResponseType, query vs queryMany)
-- Introduce QueryDispatcher for in-handler query dispatch (automatically uses current ProcessingContext)
-- Document ProcessingContext usage:
-  - Optional when dispatching: provide when available (dispatching from handler)
-  - Pass null or use variant without ProcessingContext from HTTP endpoints
-  - QueryDispatcher automatically provides it when used in handlers
-- Remove scatter-gather support
-- Update subscription API (QualifiedName instead of String+Type)
-- Document handler uniqueness requirement (no more duplicates)
-- Document streaming query API
+**Status:** ✅ COMPLETED
+**Changes applied:**
+- Documented removal of scatter-gather query support with link to GitHub issue for feedback
+- Documented point-to-point query routing behavior when multiple handlers exist
+- Updated QueryGateway API documentation:
+  - No more ResponseTypes - use Class types directly
+  - query() for single result, queryMany() for list results
+  - All methods return CompletableFuture (async-native)
+  - Optional ProcessingContext parameter documented
+- Documented ProcessingContext usage:
+  - Provide when dispatching from within message handlers (for correlation data)
+  - Omit or pass null when dispatching from HTTP endpoints/outside handlers
+  - Comprehensive examples for both patterns
+- Updated subscription query documentation:
+  - Returns single Publisher that combines initial results and updates
+  - No need to explicitly close subscriptions - cancelling Publisher automatically closes query
+  - QueryUpdateEmitter must be injected as handler parameter (not field)
+  - QueryUpdateEmitter is ProcessingContext-aware
+  - Added clear WRONG vs CORRECT examples
+  - Updated code examples to use Publisher API with Flux.from() and dispose()
+- Updated streaming query documentation:
+  - Documented Publisher-based streaming
+  - Native Flux support for fine-grained control
+  - Back-pressure, cancellation, and error handling
+  - Transaction leaking concerns
+- Added Configuration section (Spring Boot and Configuration API examples)
+- Added Summary table comparing query types
+- **Note:** QueryDispatcher does not exist in Axon 5 - QueryGateway with ProcessingContext is the recommended approach
+- Verified all xrefs point to existing files
+- Style guide compliance verified (heading capitalization, API/HTTP capitalization)
 
 ### modules/queries/pages/query-handlers.adoc
 **Changes to apply:**
