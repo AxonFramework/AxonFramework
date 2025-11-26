@@ -1082,9 +1082,15 @@ class PooledStreamingEventProcessorTest {
             // Restart to process events during replay
             startEventProcessor();
 
-            // then - verify NO events were handled during replay
-            await().atMost(10, TimeUnit.SECONDS)
-                   .untilAsserted(() -> assertThat(recordedEvents).isEmpty());
+            // then - wait for catchup
+            await().atMost(2, TimeUnit.SECONDS)
+                   .untilAsserted(() -> {
+                       long currentPosition = testSubject.processingStatus().get(0).getCurrentPosition().orElse(0);
+                       assertThat(currentPosition).isEqualTo(3);
+                   });
+
+            // then - verify no events processed during replay
+            assertThat(recordedEvents).isEmpty();
         }
     }
 
