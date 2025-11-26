@@ -530,6 +530,12 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     }
 
     private void onAppendDetected() {
+
+        /*
+         * The callbacks are coming from ContinuousMessageStream which already
+         * ensures they do not throw exceptions.
+         */
+
         for (Runnable callback : streamCallbacks.values()) {
             callback.run();
         }
