@@ -29,8 +29,9 @@ import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 public class GiftCard {
 
     @CommandHandler
-    public GiftCard(IssueCardCommand cmd, EventAppender appender) {
+    public static GiftCard create(IssueCardCommand cmd, EventAppender appender) {
         appender.append(new CardIssuedEvent(cmd.getCardId(), cmd.getAmount()));
+        return new GiftCard();
     }
     // omitted state, command and event sourcing handlers
 }
