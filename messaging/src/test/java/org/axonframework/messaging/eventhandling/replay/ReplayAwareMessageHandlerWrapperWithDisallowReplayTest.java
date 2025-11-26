@@ -29,6 +29,7 @@ import org.axonframework.messaging.eventhandling.processing.streaming.token.Repl
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.eventhandling.replay.annotation.AllowReplay;
 import org.axonframework.messaging.eventhandling.replay.annotation.DisallowReplay;
+import org.axonframework.messaging.eventhandling.replay.annotation.ResetHandler;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -225,6 +226,67 @@ class ReplayAwareMessageHandlerWrapperWithDisallowReplayTest {
     }
 
     @Nested
+    class GivenOnlyResetHandlerAllowsReplay {
+
+        private OnlyResetHandlerAllowedHandler handler;
+        private EventHandlingComponent testSubject;
+
+        @BeforeEach
+        void setUp() {
+            handler = new OnlyResetHandlerAllowedHandler();
+            testSubject = new AnnotatedEventHandlingComponent<>(
+                    handler,
+                    ClasspathParameterResolverFactory.forClass(OnlyResetHandlerAllowedHandler.class)
+            );
+        }
+
+        @Test
+        void resetHandlerIsInvokedOnReset() {
+            // given
+            var resetContext = new GenericResetContext(new MessageType(String.class), "reset-payload");
+            var processingContext = StubProcessingContext.withComponent(EventConverter.class, eventConverter())
+                                                         .withMessage(resetContext);
+
+            // when
+            testSubject.handle(resetContext, processingContext);
+
+            // then
+            assertThat(handler.resetInvoked).isTrue();
+            assertThat(handler.resetPayload).isEqualTo("reset-payload");
+        }
+
+        @Test
+        void eventHandlersSkipEventsDuringReplay() {
+            // given
+            var stringEvent = stringEvent();
+            var longEvent = longEvent();
+
+            // when
+            testSubject.handle(stringEvent, replayContext(stringEvent));
+            testSubject.handle(longEvent, replayContext(longEvent));
+
+            // then
+            assertThat(handler.receivedStrings).isEmpty();
+            assertThat(handler.receivedLongs).isEmpty();
+        }
+
+        @Test
+        void eventHandlersHandleEventsOutsideReplay() {
+            // given
+            var stringEvent = stringEvent();
+            var longEvent = longEvent();
+
+            // when
+            testSubject.handle(stringEvent, regularContext(stringEvent));
+            testSubject.handle(longEvent, regularContext(longEvent));
+
+            // then
+            assertThat(handler.receivedStrings).containsExactly("test-string");
+            assertThat(handler.receivedLongs).containsExactly(42L);
+        }
+    }
+
+    @Nested
     class SupportsReset {
 
         @Test
@@ -312,6 +374,19 @@ class ReplayAwareMessageHandlerWrapperWithDisallowReplayTest {
             var testSubject = new AnnotatedEventHandlingComponent<>(
                     handler,
                     ClasspathParameterResolverFactory.forClass(ClassAllowedOnlyHandler.class)
+            );
+
+            // when / then
+            assertThat(testSubject.supportsReset()).isTrue();
+        }
+
+        @Test
+        void onlyResetHandlerAllowedReturnsFalse() {
+            // given - all event handlers are @DisallowReplay, but @ResetHandler exists with @AllowReplay
+            var handler = new OnlyResetHandlerAllowedHandler();
+            var testSubject = new AnnotatedEventHandlingComponent<>(
+                    handler,
+                    ClasspathParameterResolverFactory.forClass(OnlyResetHandlerAllowedHandler.class)
             );
 
             // when / then
@@ -502,6 +577,38 @@ class ReplayAwareMessageHandlerWrapperWithDisallowReplayTest {
         public void handle(Long event, TrackingToken token) {
             assertFalse(token instanceof ReplayToken);
             receivedLongs.add(event);
+        }
+    }
+
+    /**
+     * Handler with class-level {@code @DisallowReplay} for all event handlers, but with a {@code @ResetHandler}.
+     * The reset handler should still be invoked on reset (if annotated with {@code @AllowReplay}), even though all event handlers are blocked during replay.
+     */
+    @DisallowReplay
+    private static class OnlyResetHandlerAllowedHandler {
+
+        private final List<String> receivedStrings = new ArrayList<>();
+        private final List<Long> receivedLongs = new ArrayList<>();
+        private boolean resetInvoked = false;
+        private Object resetPayload = null;
+
+        @EventHandler
+        public void handle(String event, TrackingToken token) {
+            assertFalse(token instanceof ReplayToken);
+            receivedStrings.add(event);
+        }
+
+        @EventHandler
+        public void handle(Long event, TrackingToken token) {
+            assertFalse(token instanceof ReplayToken);
+            receivedLongs.add(event);
+        }
+
+        @AllowReplay
+        @ResetHandler
+        public void onReset(String payload) {
+            resetInvoked = true;
+            resetPayload = payload;
         }
     }
 }
