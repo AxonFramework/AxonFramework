@@ -52,6 +52,10 @@ public class DelayedTask {
                 Thread.sleep(delay);
                 started = true;
                 runnable.run();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                failed = true;
+                failureCause = e;
             } catch (Exception e) {
                 failed = true;
                 failureCause = e;
