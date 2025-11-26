@@ -23,6 +23,7 @@ import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.core.annotation.HandlerAttributes;
 import org.axonframework.messaging.core.annotation.HandlerDefinition;
 import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
@@ -38,6 +39,7 @@ import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
 import org.axonframework.messaging.eventhandling.replay.ResetHandler;
 import org.axonframework.messaging.eventhandling.replay.ResetHandlerRegistry;
+import org.axonframework.messaging.eventhandling.replay.annotation.DisallowReplay;
 
 import java.util.Set;
 
@@ -244,5 +246,18 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
     @Override
     public ResetHandlerRegistry subscribe(@Nonnull ResetHandler resetHandler) {
         return delegate.subscribe(resetHandler);
+    }
+
+    /**
+     * If at least one event handler allow replay, then the component supports replay.
+     * @return True if replay is supported.
+     */
+    @Override
+    public boolean supportsReset() {
+        return model.getUniqueHandlers(target.getClass(), EventMessage.class).stream()
+                    .filter(h -> h.canHandleMessageType(EventMessage.class))
+                    .anyMatch(h -> h.attribute(HandlerAttributes.ALLOW_REPLAY)
+                                    .map(Boolean.TRUE::equals)
+                                    .orElse(true));
     }
 }
