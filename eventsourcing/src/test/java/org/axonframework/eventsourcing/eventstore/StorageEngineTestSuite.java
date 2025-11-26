@@ -19,8 +19,11 @@ package org.axonframework.eventsourcing.eventstore;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.eventhandling.TerminalEventMessage;
+import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
+import org.axonframework.conversion.json.JacksonConverter;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine.AppendTransaction;
 import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.messaging.eventstreaming.StreamingCondition;
@@ -65,6 +68,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 @TestInstance(Lifecycle.PER_CLASS)
 public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
+    protected static final EventConverter CONVERTER = new DelegatingEventConverter(new JacksonConverter());
 
     protected String TEST_DOMAIN_ID;
     protected String OTHER_DOMAIN_ID;
@@ -684,6 +688,82 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
         assertNotNull(tokenAt);
         assertNotNull(headToken);
         assertEquals(headToken, tokenAt);
+    }
+
+    @Test
+    protected void streamShouldBeNotifiedOfAppend() {
+        TrackingToken latest = testSubject.latestToken(null).join();
+
+        // Create a stream to see what if it is notified of a new event:
+        MessageStream<EventMessage> stream = testSubject.stream(StreamingCondition.startingFrom(latest), null);
+
+        finishTx(testSubject.appendEvents(AppendCondition.none(), null, List.of(
+            taggedEventMessage("Hello World", Set.of())
+        )));
+
+        // Assert that the event has become available:
+        await().untilAsserted(() -> assertThat(stream.hasNextAvailable()).isTrue());
+
+        assertThat(stream.next())
+            .map(Entry::message)
+            .map(em -> em.payloadAs(String.class, CONVERTER))
+            .contains("Hello World");
+    }
+
+    @Test
+    protected void twoIndependentStorageEnginesShouldSeeEachOthersAppends() throws Exception {
+        EventStorageEngine engine1 = testSubject;
+        EventStorageEngine engine2 = buildStorageEngine();
+
+        TrackingToken latest = engine1.latestToken(null).join();
+
+        assertThat(latest).isEqualTo(engine2.latestToken(null).join());
+
+        // Create a stream on both engines, to see what events are being appended:
+        MessageStream<EventMessage> stream1 = engine1.stream(StreamingCondition.startingFrom(latest), null);
+        MessageStream<EventMessage> stream2 = engine1.stream(StreamingCondition.startingFrom(latest), null);
+
+        // Append an event via engine 1:
+        finishTx(engine1.appendEvents(AppendCondition.none(), null, List.of(
+            taggedEventMessage("Hello From Engine 1", Set.of())
+        )));
+
+        // Assert that both engines see the event:
+        await().untilAsserted(() -> {
+            assertThat(stream1.hasNextAvailable()).isTrue();
+            assertThat(stream2.hasNextAvailable()).isTrue();
+        });
+
+        assertThat(stream1.next())
+            .map(Entry::message)
+            .map(em -> em.payloadAs(String.class, CONVERTER))
+            .contains("Hello From Engine 1");
+
+        assertThat(stream2.next())
+            .map(Entry::message)
+            .map(em -> em.payloadAs(String.class, CONVERTER))
+            .contains("Hello From Engine 1");
+
+        // Append an event via engine 2:
+        finishTx(engine1.appendEvents(AppendCondition.none(), null, List.of(
+            taggedEventMessage("Hello From Engine 2", Set.of())
+        )));
+
+        // Assert that both engines see the event:
+        await().untilAsserted(() -> {
+            assertThat(stream1.hasNextAvailable()).isTrue();
+            assertThat(stream2.hasNextAvailable()).isTrue();
+        });
+
+        assertThat(stream1.next())
+            .map(Entry::message)
+            .map(em -> em.payloadAs(String.class, CONVERTER))
+            .contains("Hello From Engine 2");
+
+        assertThat(stream2.next())
+            .map(Entry::message)
+            .map(em -> em.payloadAs(String.class, CONVERTER))
+            .contains("Hello From Engine 2");
     }
 
     @Nested
