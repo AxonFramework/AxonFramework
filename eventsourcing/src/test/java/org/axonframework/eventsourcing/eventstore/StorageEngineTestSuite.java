@@ -274,7 +274,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
     }
 
     @Test
-    protected void sourcingEventsShouldReturnLatestConsistencyMarkerEvenWhenStoreIsEmpty() throws Exception {
+    protected void sourcingEventsShouldReturnLatestConsistencyMarkerEvenWhenStoreIsEmpty() {
         ConsistencyMarker marker1 = FluxUtils.of(testSubject.source(SourcingCondition.conditionFor(TEST_CRITERIA), processingContext()))
             .collectList()
             .map(List::getLast)
@@ -820,18 +820,6 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
             assertTrue(next.isPresent());
             assertEvent(peeked.get().message(), expectedEvent1.event());
             assertEvent(next.get().message(), expectedEvent1.event());
-        }
-
-        @Test
-        protected void returnsMarkerWhenNoEvents() {
-            SourcingCondition condition = SourcingCondition.conditionFor(TEST_CRITERIA);
-            MessageStream<EventMessage> stream = testSubject.source(condition, processingContext());
-
-            waitUntilHasNextAvailable(stream);
-            Optional<Entry<EventMessage>> peeked = stream.peek();
-
-            assertTrue(peeked.isPresent());
-            assertMarkerEntry(peeked.get());
         }
 
         @Test
