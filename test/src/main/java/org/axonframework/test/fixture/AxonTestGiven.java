@@ -40,6 +40,7 @@ import java.util.function.Function;
  * Implementation of the {@link AxonTestPhase.Given given-phase} of the {@link AxonTestFixture}.
  *
  * @author Mateusz Nowak
+ * @author Theo Emanuelsson
  * @since 5.0.0
  */
 class AxonTestGiven implements AxonTestPhase.Given {
@@ -48,6 +49,7 @@ class AxonTestGiven implements AxonTestPhase.Given {
     private final AxonTestFixture.Customization customization;
     private final RecordingCommandBus commandBus;
     private final RecordingEventSink eventSink;
+    private final RecordingQueryBus queryBus;
     private final MessageTypeResolver messageTypeResolver;
     private final UnitOfWorkFactory unitOfWorkFactory;
 
@@ -60,6 +62,8 @@ class AxonTestGiven implements AxonTestPhase.Given {
      *                            and validate any commands that have been sent.
      * @param eventSink           The recording {@link EventSink}, used to capture and
      *                            validate any events that have been sent.
+     * @param queryBus            The recording {@link org.axonframework.messaging.queryhandling.QueryBus},
+     *                            used to capture and validate any queries that have been sent.
      * @param messageTypeResolver The message type resolver used to generate the
      *                            {@link MessageType} out of command, event, or query
      *                            payloads provided to this phase.
@@ -71,6 +75,7 @@ class AxonTestGiven implements AxonTestPhase.Given {
             @Nonnull AxonTestFixture.Customization customization,
             @Nonnull RecordingCommandBus commandBus,
             @Nonnull RecordingEventSink eventSink,
+            @Nonnull RecordingQueryBus queryBus,
             @Nonnull MessageTypeResolver messageTypeResolver,
             @Nonnull UnitOfWorkFactory unitOfWorkFactory
     ) {
@@ -78,6 +83,7 @@ class AxonTestGiven implements AxonTestPhase.Given {
         this.customization = customization;
         this.commandBus = commandBus;
         this.eventSink = eventSink;
+        this.queryBus = queryBus;
         this.messageTypeResolver = messageTypeResolver;
         this.unitOfWorkFactory = unitOfWorkFactory;
     }
@@ -179,6 +185,7 @@ class AxonTestGiven implements AxonTestPhase.Given {
                 customization,
                 commandBus,
                 eventSink,
+                queryBus,
                 messageTypeResolver,
                 unitOfWorkFactory
         );
