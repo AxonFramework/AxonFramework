@@ -39,8 +39,8 @@ import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
 import org.axonframework.messaging.eventhandling.replay.ResetHandler;
 import org.axonframework.messaging.eventhandling.replay.ResetHandlerRegistry;
-import org.axonframework.messaging.eventhandling.replay.annotation.DisallowReplay;
 
+import java.util.Collection;
 import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
@@ -249,15 +249,19 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
     }
 
     /**
-     * If at least one event handler allow replay, then the component supports replay.
-     * @return True if replay is supported.
+     * @implNote This implementation will consider any class that has a single handler that accepts a replay, to support
+     * reset. If no handlers explicitly indicate whether replay is supported, the method returns {@code true}.
      */
     @Override
     public boolean supportsReset() {
-        return model.getUniqueHandlers(target.getClass(), EventMessage.class).stream()
-                    .filter(h -> h.canHandleMessageType(EventMessage.class))
-                    .anyMatch(h -> h.attribute(HandlerAttributes.ALLOW_REPLAY)
-                                    .map(Boolean.TRUE::equals)
-                                    .orElse(true));
+        return model.getAllHandlers()
+                        .values()
+                        .stream()
+                        .flatMap(Collection::stream)
+                        .anyMatch(AnnotatedEventHandlingComponent::supportsReplay);
+    }
+
+    private static boolean supportsReplay(MessageHandlingMember<?> h) {
+        return h.attribute(HandlerAttributes.ALLOW_REPLAY).map(Boolean.TRUE::equals).orElse(Boolean.TRUE);
     }
 }

@@ -58,14 +58,8 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class ReplayAwareMessageHandlerWrapperWithDisallowReplayTest {
 
-    private TrackingToken replayToken;
-    private TrackingToken regularToken;
-
-    @BeforeEach
-    void setUp() {
-        regularToken = new GlobalSequenceTrackingToken(1L);
-        replayToken = ReplayToken.createReplayToken(regularToken);
-    }
+    private static final TrackingToken regularToken = new GlobalSequenceTrackingToken(1L);
+    private static final TrackingToken replayToken = ReplayToken.createReplayToken(regularToken);
 
     @Nested
     class GivenClassLevelDisallowReplayWithMethodLevelAllowReplay {

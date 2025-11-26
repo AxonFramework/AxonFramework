@@ -185,4 +185,9 @@ public class SimpleEventHandlingComponent implements EventHandlingComponent {
         resetHandlers.add(resetHandler);
         return this;
     }
+
+    @Override
+    public boolean supportsReset() {
+        return EventHandlingComponent.super.supportsReset();
+    }
 }
