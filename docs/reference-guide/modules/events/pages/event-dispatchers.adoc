@@ -64,7 +64,7 @@ appender.append(
 In the vast majority of cases, xref:commands:modeling/aggregate.adoc[entities] will publish events by appending them.
 However, occasionally, it is necessary to publish an event directly to the `EventSink`, possibly from within another component such as an event handler or a regular service.
 
-=== Using EventGateway
+=== Using `EventGateway`
 
 The `EventGateway` provides a convenient API for publishing events from components that are not entities:
 
@@ -81,7 +81,7 @@ public void dispatchEvent() {
 The `EventGateway` automatically wraps your event objects into `EventMessage` instances before sending them to the `EventSink`.
 It provides two main approaches for publishing events:
 
-==== Publishing without ProcessingContext
+==== Publishing without `ProcessingContext`
 
 When publishing events from outside a message handler (for example, from an HTTP endpoint or scheduled task), you can use the simple `publish` method without providing a `ProcessingContext`:
 
@@ -108,7 +108,7 @@ public class CardController {
 
 The `publish` method returns a `CompletableFuture<Void>`, allowing you to handle the result asynchronously.
 
-==== Publishing with ProcessingContext
+==== Publishing with `ProcessingContext`
 
 When publishing events from within a message handler (such as an event handler or query handler), you should provide the `ProcessingContext` to maintain correlation data:
 
@@ -154,7 +154,7 @@ eventGateway.publish(event)
 ----
 ====
 
-=== Using EventSink directly
+=== Using `EventSink` directly
 
 For advanced use cases where you need more control over the event publication process, you can use the `EventSink` directly.
 The `EventSink` operates on `EventMessage` instances rather than plain event objects:
