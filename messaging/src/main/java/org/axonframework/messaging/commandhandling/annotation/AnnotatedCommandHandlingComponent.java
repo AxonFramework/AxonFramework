@@ -24,13 +24,13 @@ import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandResultMessage;
 import org.axonframework.messaging.commandhandling.GenericCommandResultMessage;
 import org.axonframework.messaging.commandhandling.SimpleCommandHandlingComponent;
-import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.annotation.AnnotatedHandlerInspector;
+import org.axonframework.messaging.core.annotation.AnnotationMessageTypeResolver;
 import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.core.annotation.HandlerDefinition;
@@ -92,7 +92,7 @@ public class AnnotatedCommandHandlingComponent<T> implements CommandHandlingComp
         this(annotatedCommandHandler,
              parameterResolverFactory,
              ClasspathHandlerDefinition.forClass(annotatedCommandHandler.getClass()),
-             new ClassBasedMessageTypeResolver(),
+             new AnnotationMessageTypeResolver(),
              converter);
     }
 
