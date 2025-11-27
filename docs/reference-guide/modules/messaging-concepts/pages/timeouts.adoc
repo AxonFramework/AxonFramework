@@ -298,7 +298,7 @@ AxonConfiguration config = configurer.build();
 Axon Framework's async-native design means that many operations return `CompletableFuture` or work with reactive types.
 Understanding how timeouts work in async contexts is important for building reliable applications.
 
-=== CompletableFuture timeouts
+=== `CompletableFuture` timeouts
 
 When dispatching commands or queries, Axon returns results wrapped in async types.
 You can apply timeouts at multiple levels:

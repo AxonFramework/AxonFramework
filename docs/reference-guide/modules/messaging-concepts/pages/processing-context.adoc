@@ -451,7 +451,7 @@ The default is `ANY_THROWABLE`, meaning any exception will trigger a rollback.
 
 When dispatching new messages from within a handler, you can propagate the context to maintain correlation and share resources.
 
-=== Using EventAppender
+=== Using `EventAppender`
 
 `EventAppender` automatically uses the current processing context when publishing events:
 
@@ -468,7 +468,7 @@ public void handle(PlaceOrderCommand command,
 }
 ----
 
-=== Using CommandDispatcher
+=== Using `CommandDispatcher`
 
 `CommandDispatcher` is automatically context-aware when injected into handlers:
 
