@@ -22,6 +22,10 @@ import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.replay.ResetContext;
+import org.axonframework.messaging.eventhandling.replay.ResetHandler;
+import org.axonframework.messaging.eventhandling.replay.ResetHandlerRegistry;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
 import java.util.Set;
@@ -111,5 +115,26 @@ public class LegacyEventHandlingComponent implements EventHandlingComponent {
      */
     public EventHandlerInvoker getEventHandlerInvoker() {
         return eventHandlerInvoker;
+    }
+
+    @Override
+    public @NotNull MessageStream.Empty<Message> handle(@NotNull ResetContext resetContext,
+                                                        @NotNull ProcessingContext context) {
+        eventHandlerInvoker.performReset(resetContext, context);
+        return MessageStream.empty();
+    }
+
+    @Override
+    public @NotNull ResetHandlerRegistry subscribe(@NotNull ResetHandler resetHandler) {
+        // EventHandlerInvoker doesn't support dynamic subscription
+        throw new UnsupportedOperationException(
+                "Dynamic subscription is not supported by LegacyEventHandlingComponent. " +
+                        "This is a legacy adapter for EventHandlerInvoker which doesn't support runtime registration."
+        );
+    }
+
+    @Override
+    public boolean supportsReset() {
+        return eventHandlerInvoker.supportsReset();
     }
 }
