@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-This is a gradual migration project to update the Axon Framework reference guide from Axon 4 to Axon 5. The reference guide is located in `docs/old-reference-guide/` and uses Antora for documentation.
+This is a gradual migration project to update the Axon Framework reference guide from Axon 4 to Axon 5. The reference guide is located in `docs/reference-guide/` and uses Antora for documentation.
 
 Axon 5 includes fundamental architectural changes:
 - Messaging-centric approach (Commands, Events, and Queries are equally important)
@@ -28,7 +28,7 @@ Axon 5 includes fundamental architectural changes:
 ## Workflow
 
 1. Select a section from `changes-to-process.md` to work on
-2. Read the corresponding reference guide file in `docs/old-reference-guide/modules/`
+2. Read the corresponding reference guide file in `docs/reference-guide/modules/`
 3. Consult `axon-5/api-changes.md` and other design docs for API details
 4. **IMPORTANT:** Always verify against actual code in the framework before making changes
 5. Update the reference guide file with the necessary changes
@@ -161,13 +161,13 @@ xref:axon-framework-commands:modeling/aggregate.adoc[Entity]
 
 **When renaming a file:**
 1. Rename the physical file
-2. Use `Grep` to find ALL xrefs to the old filename across the entire `docs/old-reference-guide/` directory
+2. Use `Grep` to find ALL xrefs to the old filename across the entire `docs/reference-guide/` directory
 3. Update every xref to use the new filename
 4. Remove any TODO comments about updating that xref
 
 **To find all xrefs to a file:**
 ```
-grep -r "xref:.*old-filename.adoc" docs/old-reference-guide/
+grep -r "xref:.*old-filename.adoc" docs/reference-guide/
 ```
 
 ### Files to Remove
