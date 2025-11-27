@@ -19,14 +19,18 @@ package org.axonframework.messaging.eventhandling.replay;
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.DelegatingEventHandlingComponent;
+import org.axonframework.messaging.eventhandling.EventHandler;
+import org.axonframework.messaging.eventhandling.EventHandlerRegistry;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -39,8 +43,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * registered through {@link #subscribe(ResetHandler)}.
  *
  * @author Mateusz Nowak
- * @since 5.0.0
  * @see ReplayToken#isReplay(TrackingToken)
+ * @since 5.0.0
  */
 public class ReplayBlockingEventHandlingComponent extends DelegatingEventHandlingComponent {
 
@@ -75,6 +79,25 @@ public class ReplayBlockingEventHandlingComponent extends DelegatingEventHandlin
         return super.handle(event, context);
     }
 
+    @Override
+    public ReplayBlockingEventHandlingComponent subscribe(@Nonnull EventHandlingComponent handlingComponent) {
+        super.subscribe(handlingComponent);
+        return this;
+    }
+
+    @Override
+    public ReplayBlockingEventHandlingComponent subscribe(@Nonnull Set<QualifiedName> names,
+                                                          @Nonnull EventHandler eventHandler) {
+        super.subscribe(names, eventHandler);
+        return this;
+    }
+
+    @Override
+    public DelegatingEventHandlingComponent subscribe(@Nonnull QualifiedName name, @Nonnull EventHandler eventHandler) {
+        super.subscribe(name, eventHandler);
+        return this;
+    }
+
     /**
      * Subscribes a {@link ResetHandler} and tracks that at least one reset handler has been registered.
      * <p>
@@ -85,9 +108,10 @@ public class ReplayBlockingEventHandlingComponent extends DelegatingEventHandlin
      */
     @Nonnull
     @Override
-    public ResetHandlerRegistry subscribe(@Nonnull ResetHandler resetHandler) {
+    public ReplayBlockingEventHandlingComponent subscribe(@Nonnull ResetHandler resetHandler) {
         hasResetHandler.set(true);
-        return super.subscribe(resetHandler);
+        super.subscribe(resetHandler);
+        return this;
     }
 
     /**
