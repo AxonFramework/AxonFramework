@@ -1,7 +1,9 @@
 = Implementations
 
-When it comes to dispatching queries, as explained in the xref:query-dispatchers.adoc[Dispatching Queries] section, there are a couple of implementations when it comes to actually sending the query message in question.
-The next sections provide an overview of the possible implementations, as well as pointing out how to set up query dispatching infrastructure with Axon.
+When it comes to dispatching queries, as explained in the xref:query-dispatchers.adoc[Dispatching queries] section, there are several implementations for actually sending query messages.
+The next sections provide an overview of the available implementations, as well as how to set up query dispatching infrastructure with Axon.
+
+All query operations are async-native, returning `CompletableFuture` or `Publisher` types. This enables efficient asynchronous processing without blocking threads.
 
 == Query gateway
 
@@ -9,21 +11,34 @@ The query gateway is a convenient interface towards the query dispatching mechan
 While you are not required to use a gateway to dispatch queries, it is generally the easiest option to do so.
 
 Axon provides a `QueryGateway` interface and the `DefaultQueryGateway` implementation.
-The query gateway provides a number of methods that allow you to send a query and wait for a single or multiple results either synchronously, with a timeout or asynchronously.
-The query gateway needs to be configured with access to the query bus and a (possibly empty) list of `QueryDispatchInterceptor`s.
+The query gateway provides methods for:
+
+* *Point-to-point queries*: `query()` for single results, `queryMany()` for multiple results (both return `CompletableFuture`)
+* *Streaming queries*: `streamingQuery()` returns a `Publisher` for streaming large result sets
+* *Subscription queries*: `subscriptionQuery()` returns a `Publisher` combining initial result and updates
+
+All methods support an optional `ProcessingContext` parameter for correlation data propagation when dispatching from within a message handler.
+
+The query gateway automatically handles message construction, dispatch interceptors, and result conversion. It's configured with access to the query bus and dispatch interceptors.
 
 == Query bus
 
 The query bus is the mechanism that dispatches queries to query handlers.
-Queries are registered using the combination of the query request name and query response type.
-It is possible to register multiple handlers for the same request-response combination, which can be used to implement the scatter-gather pattern.
-When dispatching queries, the client must indicate whether it wants a response from a single handler or from all handlers.
+Queries are registered using the combination of the query name (based on `MessageType`) and response type.
+It is possible to register multiple handlers for the same query name and response type. When multiple handlers are available, the `QueryBus` implementation selects which handler to invoke.
 
 [[AxonServerQueryBus]]
 === `AxonServerQueryBus`
 
-Axon provides a query bus out of the box, the `AxonServerQueryBus`.
-It connects to the AxonServer to send and receive Queries in a distributed way.
+The `AxonServerQueryBus` is the default query bus when Axon Server is available.
+It connects to Axon Server to send and receive queries in a distributed way, allowing queries to be handled by any node in the cluster.
+
+The `AxonServerQueryBus` provides:
+
+* *Distributed query handling*: Queries can be handled by any connected application
+* *Load balancing*: When multiple handlers are available, Axon Server distributes queries among them
+* *Subscription query support*: Full support for subscription queries with update distribution across nodes
+* *Query prioritization*: Support for query priority to ensure critical queries are processed first
 
 [tabs]
 ====
@@ -42,7 +57,7 @@ Declare dependencies:
 </dependency>
 <dependency>
     <groupId>org.axonframework</groupId>
-    <artifactId>axon-configuration</artifactId>
+    <artifactId>axon-messaging</artifactId>
     <version>${axon.version}</version>
 </dependency>
 
@@ -92,7 +107,15 @@ axon.axonserver.local-segment-short-cut=true
 [[SimpleQueryBus]]
 === `SimpleQueryBus`
 
-The `SimpleQueryBus` does straightforward processing of queries in the thread that dispatches them.
+The `SimpleQueryBus` is a local, non-distributed query bus implementation that processes queries in the dispatching thread by default. It's used when Axon Server is not available or when you explicitly configure it.
+
+The `SimpleQueryBus` provides:
+
+* *Local query handling*: All queries are handled within the same JVM
+* *Simple routing*: When multiple handlers are available, selects one in round-robin fashion
+* *Subscription query support*: Full support for subscription queries within the same JVM
+* *Transaction management*: Integrates with a `TransactionManager` for transactional query handling
+
 To configure a `SimpleQueryBus` (instead of an `AxonServerQueryBus`):
 
 [tabs]
@@ -142,3 +165,93 @@ public class AxonConfig {
 ----
 --
 ====
+
+== Subscription query infrastructure
+
+Subscription queries allow clients to receive an initial result and then continue receiving updates as long as the subscription is active. The subscription query infrastructure consists of several components working together.
+
+=== QueryUpdateEmitter
+
+The `QueryUpdateEmitter` is responsible for emitting updates to active subscription queries. The `QueryUpdateEmitter` is context-aware and must be created from the `ProcessingContext`:
+
+[source,java]
+----
+import org.axonframework.messaging.queryhandling.QueryUpdateEmitter;
+import org.axonframework.messaging.eventhandling.EventHandler;
+
+@Component
+public class CardSummaryProjection {
+
+    @EventHandler
+    public void on(CardRedeemedEvent event, ProcessingContext context) {
+        // Create a context-aware emitter
+        QueryUpdateEmitter emitter = QueryUpdateEmitter.forContext(context);
+
+        // Update the model
+        CardSummary summary = updateModel(event);
+
+        // Emit update to subscription queries
+        emitter.emit(FetchCardSummaryQuery.class,
+                    query -> query.getCardSummaryId().equals(event.getCardId()),
+                    summary);
+    }
+}
+----
+
+The emitter filters subscription queries based on the provided predicate and emits the update only to matching subscriptions. This allows fine-grained control over which subscribers receive which updates.
+
+=== Subscription lifecycle
+
+Subscription queries follow this lifecycle:
+
+. *Subscription creation*: Client calls `QueryGateway.subscriptionQuery()`, which returns a `Publisher`
+. *Initial result*: The query is dispatched to a handler, and the initial result is emitted
+. *Update buffering*: Updates are buffered until the `Publisher` is subscribed to
+. *Update streaming*: Once subscribed, buffered and new updates are streamed to the client
+. *Completion*: The subscription completes when:
+  - The client cancels the subscription (by disposing the `Publisher`)
+  - The server calls `QueryUpdateEmitter.complete()` to signal no more updates
+  - An error occurs, completing the subscription exceptionally
+
+[source,java]
+----
+// Client-side subscription query
+Publisher<CardSummary> results = queryGateway.subscriptionQuery(
+    new FetchCardSummaryQuery(cardId),
+    CardSummary.class
+);
+
+// Subscribe using Reactor (requires reactor-core dependency)
+Disposable subscription = Flux.from(results)
+    .doOnNext(summary -> System.out.println("Received: " + summary))
+    .doOnComplete(() -> System.out.println("No more updates"))
+    .doOnError(error -> System.err.println("Error: " + error))
+    .subscribe();
+
+// Later: cancel the subscription
+subscription.dispose();
+----
+
+=== Update buffer
+
+The `QueryBus` maintains an update buffer for each subscription query. Updates emitted before the client subscribes to the `Publisher` are stored in this buffer. Once the client subscribes, buffered updates are delivered first, followed by new updates.
+
+The buffer size is configurable when creating a subscription query:
+
+[source,java]
+----
+// Default buffer size (small buffer)
+Publisher<CardSummary> results = queryGateway.subscriptionQuery(
+    new FetchCardSummaryQuery(cardId),
+    CardSummary.class
+);
+
+// Custom buffer size
+Publisher<CardSummary> results = queryGateway.subscriptionQuery(
+    new FetchCardSummaryQuery(cardId),
+    CardSummary.class,
+    256  // buffer size
+);
+----
+
+If the buffer fills up before the client subscribes, attempting to add more updates will complete the subscription exceptionally. Choose an appropriate buffer size based on your expected update rate and subscription delay.
