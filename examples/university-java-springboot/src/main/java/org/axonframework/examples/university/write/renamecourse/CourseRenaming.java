@@ -27,7 +27,7 @@ import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
 import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 
 /**
- * Course aggregate for renaming.
+ * Course entity for renaming.
  */
 @EventSourced(tagKey = FacultyTags.COURSE_ID, idType = CourseId.class)
 public class CourseRenaming {

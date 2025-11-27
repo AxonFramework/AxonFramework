@@ -18,6 +18,10 @@ package org.axonframework.examples.university.read.coursestats.api;
 
 import org.axonframework.examples.university.read.coursestats.projection.CoursesStats;
 
+/**
+ * Result of a course stats query.
+ * @param courseStats course stats.
+ */
 public record CoursesQueryResult(
         CoursesStats courseStats
 ) {

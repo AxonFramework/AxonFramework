@@ -16,19 +16,24 @@
 
 package org.axonframework.examples.university.read.coursestats.handler;
 
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.axonframework.examples.university.read.coursestats.api.CoursesQueryResult;
 import org.axonframework.examples.university.read.coursestats.api.GetCourseStatsById;
 import org.axonframework.examples.university.read.coursestats.projection.CourseStatsRepository;
 import org.axonframework.messaging.queryhandling.annotation.QueryHandler;
 import org.springframework.stereotype.Component;
+import org.springframework.validation.annotation.Validated;
 
+@Validated
 @Component
-public record GetCourseStatsByIdQueryHandler(
-        CourseStatsRepository repository
-) {
+@RequiredArgsConstructor
+public class GetCourseStatsByIdQueryHandler {
+
+    private final CourseStatsRepository repository;
 
     @QueryHandler
-    CoursesQueryResult handle(GetCourseStatsById query) {
+    CoursesQueryResult handle(@Valid GetCourseStatsById query) {
         var stats = repository.findByIdOrThrow(query.courseId());
         return new CoursesQueryResult(stats);
     }

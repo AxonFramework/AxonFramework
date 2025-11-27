@@ -31,6 +31,7 @@
 
     <properties>
         <spring.boot.version>3.5.8</spring.boot.version>
+        <testcontainers.version>2.0.2</testcontainers.version>
     </properties>
 
     <dependencyManagement>
@@ -39,7 +40,7 @@
             <dependency>
                 <groupId>org.testcontainers</groupId>
                 <artifactId>testcontainers-bom</artifactId>
-                <version>2.0.2</version>
+                <version>${testcontainers.version}</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>

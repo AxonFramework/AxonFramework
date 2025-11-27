@@ -18,7 +18,6 @@ package org.axonframework.examples.university.write.subscribestudent;
 
 
 import org.axonframework.eventsourcing.annotation.EventCriteriaBuilder;
-import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventsourcing.annotation.reflection.EntityCreator;
 import org.axonframework.examples.university.event.CourseCapacityChanged;
@@ -28,14 +27,17 @@ import org.axonframework.examples.university.event.StudentSubscribedToCourse;
 import org.axonframework.examples.university.event.StudentUnsubscribedFromCourse;
 import org.axonframework.examples.university.shared.CourseId;
 import org.axonframework.examples.university.shared.FacultyTags;
+import org.axonframework.extension.spring.stereotype.EventSourced;
 import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
 import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.messaging.eventstreaming.Tag;
 import org.axonframework.modelling.annotation.InjectEntity;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+@Component
 class SubscribeStudentToCourseCommandHandler {
 
     private static final int MAX_COURSES_PER_STUDENT = 3;
@@ -96,7 +98,7 @@ class SubscribeStudentToCourseCommandHandler {
         }
     }
 
-    @EventSourcedEntity
+    @EventSourced(idType = SubscriptionId.class)
     static class State {
 
         private CourseId courseId;

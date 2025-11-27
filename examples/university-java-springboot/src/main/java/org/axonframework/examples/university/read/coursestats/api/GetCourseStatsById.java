@@ -16,8 +16,13 @@
 
 package org.axonframework.examples.university.read.coursestats.api;
 
+import jakarta.validation.Valid;
 import org.axonframework.examples.university.shared.CourseId;
 
-public record GetCourseStatsById(CourseId courseId) {
+/**
+ * Retrieves a course by id.
+ * @param courseId course id.
+ */
+public record GetCourseStatsById(@Valid CourseId courseId) {
 
 }
