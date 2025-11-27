@@ -73,8 +73,8 @@ These extensions are part of the main Axon Framework repository and provide esse
 
 |<<Axon Spring>>                        |`axon-spring`                     |`org.axonframework.extensions.spring`   |https://search.maven.org/search?q=a:axon-spring[available]
 |<<Axon Spring Boot Starter>>           |`axon-spring-boot-starter`        |`org.axonframework.extensions.spring`   |https://search.maven.org/search?q=a:axon-spring-boot-starter[available]
-|<<Axon metrics Dropwizard>>            |`axon-metrics-dropwizard`         |`org.axonframework.extensions.metrics`  |https://search.maven.org/search?q=a:axon-metrics-dropwizard[available]
-|<<Axon metrics Micrometer>>            |`axon-metrics-micrometer`         |`org.axonframework.extensions.metrics`  |https://search.maven.org/search?q=a:axon-metrics-micrometer[available]
+|<<Dropwizard metrics>>            |`axon-metrics-dropwizard`         |`org.axonframework.extensions.metrics`  |https://search.maven.org/search?q=a:axon-metrics-dropwizard[available]
+|<<Micrometer metrics>>            |`axon-metrics-micrometer`         |`org.axonframework.extensions.metrics`  |https://search.maven.org/search?q=a:axon-metrics-micrometer[available]
 |<<Axon Tracing OpenTelemetry>>         |`axon-tracing-opentelemetry`      |`org.axonframework.extensions.tracing`  |https://search.maven.org/search?q=a:axon-tracing-opentelemetry[available]
 |===
 
@@ -89,11 +89,11 @@ This extension provides Spring Boot auto-configuration for your project.
 It is by far the easiest option to get started as it automatically configures all Axon components.
 It is explained in more details xref:spring-boot-integration.adoc[here].
 
-==== Axon metrics Dropwizard
+==== Dropwizard metrics
 
 This extension provides basic implementations based on Dropwizard to collect monitoring information.
 
-==== Axon metrics Micrometer
+==== Micrometer metrics
 
 This extension provides basic implementations based on Micrometer to collect monitoring information.
 https://micrometer.io/[Micrometer] is a dimensional-first metrics collection facade whose aim is to allow you to time, count, and gauge your code with a vendor neutral API.
