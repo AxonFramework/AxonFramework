@@ -16,6 +16,10 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.pooled;
 
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.UnitOfWork;
+import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
@@ -30,10 +34,6 @@ import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.messaging.eventstreaming.StreamableEventSource;
 import org.axonframework.messaging.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.eventstreaming.TrackingTokenSource;
-import org.axonframework.messaging.core.MessageStream;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.messaging.core.unitofwork.UnitOfWork;
-import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -318,7 +318,7 @@ class Coordinator {
                     context -> {
                         List<Segment> segments = joinAndUnwrap(tokenStore.fetchSegments(name, context));
                         if (segments.isEmpty()) {
-                            logger.info("Initializing segments for processor [{}] ({} segments)",
+                            logger.debug("Initializing segments for processor [{}] ({} segments)",
                                         name, initialSegmentCount);
                             joinAndUnwrap(tokenStore.initializeTokenSegments(
                                     name,
@@ -332,7 +332,7 @@ class Coordinator {
                     }
             ));
         } catch (Exception e) {
-            logger.info(
+            logger.warn(
                     "Error while initializing the Token Store. This may simply indicate concurrent attempts to initialize.",
                     e);
         }
@@ -738,7 +738,7 @@ class Coordinator {
                         .filter(entry -> isSegmentBlockedFromClaim(entry.getKey()))
                         .map(Map.Entry::getValue)
                         .forEach(workPackage -> {
-                            logger.info(
+                            logger.debug(
                                     "Processor [{}] was requested and will comply with releasing claim for segment {}.",
                                     name, workPackage.segment().getSegmentId()
                             );
@@ -801,7 +801,7 @@ class Coordinator {
                         }
 
                         if (logger.isInfoEnabled() && !newSegments.isEmpty()) {
-                            logger.info("Processor [{}] claimed {} new segments for processing",
+                            logger.debug("Processor [{}] claimed {} new segments for processing",
                                         name,
                                         newSegments.size());
                         }
@@ -907,7 +907,7 @@ class Coordinator {
             int maxSegmentsPerNode = maxSegmentProvider.apply(name);
             boolean tooManySegmentsClaimed = workPackages.size() > maxSegmentsPerNode;
             if (tooManySegmentsClaimed) {
-                logger.info("Total segments [{}] for processor [{}] is above maxSegmentsPerNode = [{}], "
+                logger.debug("Total segments [{}] for processor [{}] is above maxSegmentsPerNode = [{}], "
                                     + "going to release surplus claimed segments.",
                             workPackages.size(), name, maxSegmentsPerNode);
                 workPackages.values()
@@ -955,7 +955,7 @@ class Coordinator {
                                 context -> tokenStore.fetchToken(name, segment, context)
                         ));
                         newClaims.put(segment, token);
-                        logger.info("Processor [{}] claimed the token for segment {}.", name, segmentId);
+                        logger.debug("Processor [{}] claimed the token for segment {}.", name, segmentId);
                     } catch (UnableToClaimTokenException e) {
                         processingStatusUpdater.accept(segmentId, u -> null);
                         logger.debug("Processor [{}] is unable to claim the token for segment {}. "
@@ -1151,7 +1151,7 @@ class Coordinator {
         }
 
         private void abortAndScheduleRetry(Exception cause) {
-            logger.info("Processor [{}] is releasing claims and scheduling a new coordination task in {}ms",
+            logger.debug("Processor [{}] is releasing claims and scheduling a new coordination task in {}ms",
                         name, errorWaitBackOff);
 
             errorWaitBackOff = Math.min(errorWaitBackOff * 2, 60000);
@@ -1187,7 +1187,7 @@ class Coordinator {
                                                     .thenRun(() -> segmentReleasedAction.accept(work.segment()))
                        )))
                        .exceptionally(throwable -> {
-                           logger.info("An exception occurred during the abort of work package [{}] on [{}] processor.",
+                           logger.error("An exception occurred during the abort of work package [{}] on [{}] processor.",
                                        segmentId, name, throwable);
                            return null;
                        });
