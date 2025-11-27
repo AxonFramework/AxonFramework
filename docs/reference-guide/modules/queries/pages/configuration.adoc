@@ -107,7 +107,7 @@ Note that this should be regarded as an extremely uncommon scenario, as typicall
 
 Beyond registering query handlers, you may need to configure the query infrastructure components such as the `QueryBus`, `QueryGateway`, and interceptors.
 
-=== QueryBus configuration
+=== `QueryBus` configuration
 
 The `QueryBus` is the mechanism that dispatches queries to query handlers. By default, Axon configures an `AxonServerQueryBus` when Axon Server is available, or a `SimpleQueryBus` otherwise.
 
@@ -158,7 +158,7 @@ public class AxonConfig {
 --
 ====
 
-=== QueryGateway configuration
+=== `QueryGateway` configuration
 
 The `QueryGateway` provides a convenient interface for dispatching queries. It's typically auto-configured, but you can customize it if needed:
 

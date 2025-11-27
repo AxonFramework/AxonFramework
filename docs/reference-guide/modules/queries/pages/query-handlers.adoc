@@ -1,4 +1,4 @@
-= Query handlers
+= Query Handlers
 :navtitle: Handling
 
 The handling of a query comes down to an annotated handler returning the query's response. The goal of this chapter is to describe what such a `@QueryHandler` annotated method looks like, as well as describing the call order and response type options. For configuration of query handlers and the `QueryBus`, it is recommended to read the xref:configuration.adoc[Configuration] section.
@@ -222,7 +222,7 @@ When calling a remote query handler from your query handler, the response proces
 
 Query handlers support parameter injection to access various framework components and message metadata during query processing. The first parameter is always the query payload, but additional parameters can be injected.
 
-=== ProcessingContext
+=== `ProcessingContext`
 
 The `ProcessingContext` is mandatory in query handlers and is always created by Axon when processing a query message. It provides access to resources, correlation data, and lifecycle hooks during query processing.
 
@@ -263,7 +263,7 @@ public OrderDetails handle(FetchOrderDetailsQuery query,
 }
 ----
 
-=== QueryUpdateEmitter
+=== `QueryUpdateEmitter`
 
 For subscription queries, you can inject a `QueryUpdateEmitter` to emit updates to subscribers. The emitter must be created from the `ProcessingContext` to ensure it's context-aware:
 

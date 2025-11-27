@@ -66,7 +66,7 @@ public List<String> query(FetchItemsQuery query) {
 <1> By default, the name of the query is the fully qualified class name of the query payload (`FetchItemsQuery` in our case).
 You can override this behavior by setting the `queryName` attribute of the `@QueryHandler` annotation.
 
-=== Dispatching with QueryGateway
+=== Dispatching with `QueryGateway`
 
 To query our view model using the `QueryGateway`:
 
@@ -109,7 +109,7 @@ The result is returned asynchronously regardless of the QueryBus implementation.
 However, if a `@QueryHandler` annotated function's return type is `CompletableFuture`, the result will be fully asynchronous.
 ====
 
-=== Dispatching with ProcessingContext
+=== Dispatching with `ProcessingContext`
 
 When dispatching queries from within a message handler (such as an event handler or command handler), you should provide the `ProcessingContext` to maintain correlation data:
 
@@ -348,7 +348,7 @@ If we used a point-to-point query with `queryMany`, we would get an extensive li
 This result can potentially cause a buffer overflow or maximum message size violation.
 Instead, we use `streamingQuery`, which converts our response to a stream and chunks the result into smaller messages containing the `CardSummary` instances.
 
-=== Native streaming with Flux
+=== Native streaming with `Flux`
 
 For fine-grained control of the producing stream, you can use Project Reactor's `Flux` as the return type:
 

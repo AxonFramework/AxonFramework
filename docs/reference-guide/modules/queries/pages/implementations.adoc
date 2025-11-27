@@ -170,7 +170,7 @@ public class AxonConfig {
 
 Subscription queries allow clients to receive an initial result and then continue receiving updates as long as the subscription is active. The subscription query infrastructure consists of several components working together.
 
-=== QueryUpdateEmitter
+=== `QueryUpdateEmitter`
 
 The `QueryUpdateEmitter` is responsible for emitting updates to active subscription queries. The `QueryUpdateEmitter` is context-aware and must be created from the `ProcessingContext`:
 
