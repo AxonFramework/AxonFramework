@@ -18,16 +18,16 @@ package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.eventsourcing.annotation.EventTag;
 import org.axonframework.eventsourcing.annotation.EventTags;
+import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventstreaming.Tag;
 
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -96,14 +96,8 @@ public class AnnotationBasedTagResolver implements TagResolver {
                 return Set.of();
             }
 
-            var tags = new HashSet<Tag>();
-            var annotations = field.getAnnotationsByType(EVENT_TAG_ANNOTATION);
-
-            for (var annotation : annotations) {
-                tags.addAll(createTagsForValue(value, field.getName(), annotation.key()));
-            }
-
-            return tags;
+            var key = (String) AnnotationUtils.findAnnotationAttributes(field, EVENT_TAG_ANNOTATION).get().get("key");
+            return createTagsForValue(value, field.getName(), key);
         } catch (Exception e) {
             throw new TagResolutionException("Failed to resolve tag from field: " + field.getName(), e);
         }
@@ -118,8 +112,8 @@ public class AnnotationBasedTagResolver implements TagResolver {
     }
 
     private static boolean isTagAnnotationPresent(AnnotatedElement member) {
-        return member.isAnnotationPresent(EVENT_TAG_ANNOTATION)
-                || member.isAnnotationPresent(CONTAINING_ANNOTATION_TYPE);
+        return AnnotationUtils.isAnnotationPresent(member, EVENT_TAG_ANNOTATION)
+                || AnnotationUtils.isAnnotationPresent(member, CONTAINING_ANNOTATION_TYPE);
     }
 
     private Set<Tag> tagsFrom(Method method, Object payload) {
@@ -130,14 +124,8 @@ public class AnnotationBasedTagResolver implements TagResolver {
                 return Set.of();
             }
 
-            var tags = new HashSet<Tag>();
-            var annotations = method.getAnnotationsByType(EVENT_TAG_ANNOTATION);
-
-            for (var annotation : annotations) {
-                tags.addAll(createTagsForValue(value, getMemberIdentifierName(method), annotation.key()));
-            }
-
-            return tags;
+            var key = (String) AnnotationUtils.findAnnotationAttributes(method, EVENT_TAG_ANNOTATION).get().get("key");
+            return createTagsForValue(value, getMemberIdentifierName(method), key);
         } catch (Exception e) {
             throw new TagResolutionException("Failed to resolve tag from method: " + method.getName(), e);
         }
