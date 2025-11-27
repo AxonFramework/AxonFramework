@@ -17,8 +17,6 @@
 package org.axonframework.modelling.configuration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.commandhandling.CommandBus;
-import org.axonframework.messaging.commandhandling.CommandHandlingComponent;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.TypeReference;
 import org.axonframework.common.configuration.BaseModule;
@@ -27,14 +25,17 @@ import org.axonframework.common.configuration.ComponentDefinition;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.LifecycleRegistry;
 import org.axonframework.common.lifecycle.Phase;
+import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.commandhandling.CommandHandlingComponent;
 import org.axonframework.modelling.EntityIdResolver;
-import org.axonframework.modelling.repository.SimpleRepository;
-import org.axonframework.modelling.repository.SimpleRepositoryEntityLoader;
-import org.axonframework.modelling.repository.SimpleRepositoryEntityPersister;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.entity.EntityCommandHandlingComponent;
 import org.axonframework.modelling.entity.EntityMetamodel;
+import org.axonframework.modelling.repository.AccessSerializingRepository;
 import org.axonframework.modelling.repository.Repository;
+import org.axonframework.modelling.repository.SimpleRepository;
+import org.axonframework.modelling.repository.SimpleRepositoryEntityLoader;
+import org.axonframework.modelling.repository.SimpleRepositoryEntityPersister;
 
 import static java.util.Objects.requireNonNull;
 
@@ -144,22 +145,17 @@ class SimpleStateBasedEntityModule<ID, E>
     private void registerRepository() {
         componentRegistry(cr -> cr.registerComponent(
                 ComponentDefinition
-                        .ofTypeAndName(new TypeReference<Repository<ID, E>>() {
-                                       }, entityName()
-                        )
+                        .ofTypeAndName(new TypeReference<Repository<ID, E>>() {}, entityName())
                         .withBuilder(c -> {
                             if (repository != null) {
                                 return repository.build(c);
                             }
-                            return new SimpleRepository<>(
-                                    idType,
-                                    entityType,
-                                    loader.build(c),
-                                    persister.build(c)
-                            );
+                            SimpleRepository<ID, E> repo =
+                                    new SimpleRepository<>(idType, entityType, loader.build(c), persister.build(c));
+                            return new AccessSerializingRepository<>(repo);
                         })
-                        .onStart(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, (config, component) -> {
-                            config.getComponent(StateManager.class).register(component);
+                        .onStart(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, (config, repository) -> {
+                            config.getComponent(StateManager.class).register(repository);
                             return FutureUtils.emptyCompletedFuture();
                         })
         ));

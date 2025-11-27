@@ -18,6 +18,7 @@ package org.axonframework.modelling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.modelling.repository.AccessSerializingRepository;
 import org.axonframework.modelling.repository.ManagedEntity;
 import org.axonframework.modelling.repository.Repository;
 import org.axonframework.modelling.repository.SimpleRepository;
@@ -57,8 +58,11 @@ public interface StateManager {
     <ID, T> StateManager register(@Nonnull Repository<ID, T> repository);
 
     /**
-     * Registers a load and save function for state type {@code T} with id of type {@code ID}. Creates a
-     * {@link SimpleRepository} for the given type with the given load and save functions.
+     * Registers a load and save function for state type {@code T} with id of type {@code ID}.
+     * <p>
+     * Creates an {@link AccessSerializingRepository} delegating to a {@link SimpleRepository} for the given type with
+     * the given load and save functions. Wrapping the {@code SimpleRepository} in an
+     * {@code AccessSerializingRepository} ensures the access to concurrently invoked entities is serialized.
      *
      * @param idType     The type of the identifier.
      * @param entityType The type of the state.
@@ -75,7 +79,10 @@ public interface StateManager {
                                           @Nonnull SimpleRepositoryEntityLoader<ID, T> loader,
                                           @Nonnull SimpleRepositoryEntityPersister<ID, T> persister
     ) {
-        return register(new SimpleRepository<>(idType, entityType, loader, persister));
+        SimpleRepository<ID, T> repository = new SimpleRepository<>(idType, entityType, loader, persister);
+        AccessSerializingRepository<ID, T> accessSerializingRepository =
+                new AccessSerializingRepository<>(repository);
+        return register(accessSerializingRepository);
     }
 
     /**

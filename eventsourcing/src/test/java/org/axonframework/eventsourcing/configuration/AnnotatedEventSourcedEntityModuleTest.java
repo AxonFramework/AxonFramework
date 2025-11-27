@@ -18,9 +18,9 @@ package org.axonframework.eventsourcing.configuration;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.configuration.Configuration;
-import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.common.infra.MockComponentDescriptor;
+import org.axonframework.common.util.StubLifecycleRegistry;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.EventSourcingRepository;
@@ -28,11 +28,12 @@ import org.axonframework.eventsourcing.annotation.CriteriaResolverDefinition;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactoryDefinition;
 import org.axonframework.eventsourcing.annotation.reflection.EntityCreator;
-import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.modelling.StateManager;
+import org.axonframework.modelling.repository.AccessSerializingRepository;
 import org.axonframework.modelling.repository.Repository;
-import org.axonframework.common.util.StubLifecycleRegistry;
 import org.junit.jupiter.api.*;
 
 import java.lang.annotation.ElementType;
@@ -41,8 +42,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.Set;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link AnnotatedEventSourcedEntityModule}.
@@ -90,59 +91,73 @@ class AnnotatedEventSourcedEntityModuleTest {
     }
 
     @Test
-    void repositoryConstructsEventSourcingRepositoryForEntityFactory() {
+    void autodetectedFlowConstructsAccessSerializingRepositoryDelegatingToEventSourcing() {
+        MockComponentDescriptor descriptor = new MockComponentDescriptor();
         EventSourcedEntityModule.autodetected(CourseId.class, Course.class)
                                 .build(parentConfiguration, lifecycleRegistry);
         lifecycleRegistry.start(parentConfiguration);
-
         StateManager stateManager = parentConfiguration.getComponent(StateManager.class);
+
         Repository<CourseId, Course> result = stateManager.repository(Course.class, CourseId.class);
 
-        assertInstanceOf(EventSourcingRepository.class, result);
+        assertThat(result).isInstanceOf(AccessSerializingRepository.class);
+        result.describeTo(descriptor);
+        Object delegate = descriptor.getProperty("delegate");
+        assertThat(delegate).isInstanceOf(EventSourcingRepository.class);
     }
 
     @Test
-    void customCriteriaResolverIsPresentOnResultingEventSourcingRepository() {
+    void customCriteriaResolverIsPresentOnResultingRepository() {
+        MockComponentDescriptor descriptor = new MockComponentDescriptor();
         EventSourcedEntityModule.autodetected(CourseId.class, CustomCriteriaResolverCourse.class)
                                 .build(parentConfiguration, lifecycleRegistry);
         lifecycleRegistry.start(parentConfiguration);
-        ComponentDescriptor componentDescriptor = mock(ComponentDescriptor.class);
-
         StateManager stateManager = parentConfiguration.getComponent(StateManager.class);
-        Repository<CourseId, CustomCriteriaResolverCourse> result = stateManager.repository(CustomCriteriaResolverCourse.class,
-                                                                                            CourseId.class);
 
-        assertInstanceOf(EventSourcingRepository.class, result);
-        result.describeTo(componentDescriptor);
-        verify(componentDescriptor).describeProperty(eq("criteriaResolver"), isA(CustomCriteriaResolver.class));
+        Repository<CourseId, CustomCriteriaResolverCourse> result =
+                stateManager.repository(CustomCriteriaResolverCourse.class, CourseId.class);
+
+        assertThat(result).isInstanceOf(AccessSerializingRepository.class);
+        result.describeTo(descriptor);
+        EventSourcingRepository<?,?> delegate = descriptor.getProperty("delegate");
+        delegate.describeTo(descriptor);
+        Object criteriaResolver = descriptor.getProperty("criteriaResolver");
+        assertThat(criteriaResolver).isInstanceOf(CustomCriteriaResolver.class);
     }
 
     @Test
-    void customEntityFactoryIsPresentOnResultingEventSourcingRepository() {
-        ComponentDescriptor componentDescriptor = mock(ComponentDescriptor.class);
+    void customEntityFactoryIsPresentOnResultingRepository() {
+        MockComponentDescriptor descriptor = new MockComponentDescriptor();
         EventSourcedEntityModule.autodetected(CourseId.class, CustomEntityFactoryCourse.class)
                                 .build(parentConfiguration, lifecycleRegistry);
         lifecycleRegistry.start(parentConfiguration);
-
         StateManager stateManager = parentConfiguration.getComponent(StateManager.class);
-        Repository<CourseId, CustomEntityFactoryCourse> result = stateManager.repository(CustomEntityFactoryCourse.class,
-                                                                                         CourseId.class);
 
-        assertInstanceOf(EventSourcingRepository.class, result);
-        result.describeTo(componentDescriptor);
-        verify(componentDescriptor).describeProperty(eq("entityFactory"), isA(CustomEventSourcedEntityFactory.class));
+        Repository<CourseId, CustomEntityFactoryCourse> result =
+                stateManager.repository(CustomEntityFactoryCourse.class, CourseId.class);
+
+        assertThat(result).isInstanceOf(AccessSerializingRepository.class);
+        result.describeTo(descriptor);
+        EventSourcingRepository<?,?> delegate = descriptor.getProperty("delegate");
+        delegate.describeTo(descriptor);
+        Object entityFactory = descriptor.getProperty("entityFactory");
+        assertThat(entityFactory).isInstanceOf(CustomEventSourcedEntityFactory.class);
     }
 
     @Test
-    void metaAnnotatedEventSourcedEntityConstructsAnEventSourcingRepository() {
+    void metaAnnotatedEventSourcedEntityConstructsAnAccessSerializingRepositoryDelegatingToEventSourcing() {
+        MockComponentDescriptor descriptor = new MockComponentDescriptor();
         StateManager stateManager = parentConfiguration.getComponent(StateManager.class);
         EventSourcedEntityModule.autodetected(CourseId.class, MetaAnnotatedCourse.class)
                                 .build(parentConfiguration, lifecycleRegistry);
         lifecycleRegistry.start(parentConfiguration);
-        Repository<CourseId, MetaAnnotatedCourse> result = stateManager.repository(MetaAnnotatedCourse.class,
-                                                                                   CourseId.class);
+        Repository<CourseId, MetaAnnotatedCourse> result =
+                stateManager.repository(MetaAnnotatedCourse.class, CourseId.class);
 
-        assertInstanceOf(EventSourcingRepository.class, result);
+        assertThat(result).isInstanceOf(AccessSerializingRepository.class);
+        result.describeTo(descriptor);
+        Object delegate = descriptor.getProperty("delegate");
+        assertThat(delegate).isInstanceOf(EventSourcingRepository.class);
     }
 
     record CourseId() {
