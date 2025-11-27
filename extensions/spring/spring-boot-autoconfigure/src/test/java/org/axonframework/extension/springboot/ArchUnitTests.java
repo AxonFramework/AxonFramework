@@ -23,6 +23,7 @@ import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.lang.ArchCondition;
 import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
+import org.axonframework.extension.springboot.autoconfig.AxonTimeoutAutoConfiguration;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.core.io.ClassPathResource;
@@ -66,6 +67,9 @@ class ArchUnitTests {
         classes()
                 .that()
                 .areAnnotatedWith(AutoConfiguration.class)
+                .and()
+                // TODO: This exception from the rule can be removed with #3959
+                .doNotHaveSimpleName(AxonTimeoutAutoConfiguration.class.getSimpleName())
                 .should(listedInAutoConfigurationImports())
                 .andShould()
                 .haveSimpleNameEndingWith("AutoConfiguration")
