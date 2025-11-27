@@ -1,4 +1,4 @@
-= Command handlers
+= Command Handlers
 :navtitle: Handling
 
 Command handlers are the components that process commands and perform the corresponding business logic.
@@ -542,7 +542,7 @@ Upcasters are still needed for structural changes to events in the event store.
 However, for commands and for handlers that simply need data in a different format, payload conversion is more appropriate.
 ====
 
-== Handling commands with ProcessingContext
+== `Handling commands with ProcessingContext`
 
 The `ProcessingContext` is a fundamental concept in Axon 5 that replaces the thread-local `UnitOfWork` from Axon 4.
 When a command is handled, Axon automatically creates a `ProcessingContext` and makes it available to all components involved in processing.
@@ -577,7 +577,7 @@ It provides access to correlation data, resources, and lifecycle management.
 // TODO: Update to processing-context.adoc when unit-of-work.adoc is renamed
 For more details on `ProcessingContext`, see xref:messaging-concepts:unit-of-work.adoc[].
 
-== Publishing events with EventAppender
+== Publishing events with `EventAppender`
 
 In Axon 5, the `EventAppender` replaces the static `AggregateLifecycle.apply()` method from Axon 4.
 The `EventAppender` must be injected as a parameter in your command handlers:
@@ -668,7 +668,7 @@ public class GiftCard {
 
 <1> Command handler reads current state to make decisions.
 
-<2> Command handler does NOT modify state directly.
+<2> Command handler does not modify state directly.
 
 <3> Event sourcing handler is the only place where state is modified.
 

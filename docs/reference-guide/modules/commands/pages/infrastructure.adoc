@@ -49,7 +49,7 @@ public interface Repository<ID, E> {
 All repository operations require an active `ProcessingContext`.
 Command handlers automatically receive a `ProcessingContext` parameter that you pass to repository methods.
 
-=== ManagedEntity
+=== `ManagedEntity`
 
 Repositories return entities wrapped in a `ManagedEntity` interface.
 This wrapper tracks the entity's lifecycle and enables the repository to detect and persist changes.
@@ -102,7 +102,7 @@ public class OrderCommandHandler {
 }
 ----
 
-=== EventSourcedRepository
+=== `EventSourcedRepository`
 
 The most common repository implementation is `EventSourcedRepository`, which manages event-sourced entities.
 
@@ -157,7 +157,7 @@ NOTE: When using `@EventSourced` annotation on your entity class with Spring Boo
 The command bus is responsible for routing commands to their registered handlers.
 It receives commands from gateways or dispatchers and invokes the appropriate command handler.
 
-=== SimpleCommandBus
+=== `SimpleCommandBus`
 
 The `SimpleCommandBus` is the standard command bus implementation.
 It processes commands in the same thread that dispatches them, which works well for most applications including web applications.
@@ -234,7 +234,7 @@ See xref:messaging-concepts:message-intercepting.adoc#command-interceptors[Comma
 The command gateway provides a convenient, type-safe API for dispatching commands.
 While you can dispatch commands directly through the command bus, the gateway is generally the easiest option.
 
-=== Using the default CommandGateway
+=== Using the default `CommandGateway`
 
 The `CommandGateway` interface provides several methods for sending commands:
 
@@ -405,7 +405,7 @@ public class Order {
 }
 ----
 
-=== Manual registration with Configuration API
+=== Manual registration with configuration API
 
 When not using Spring Boot, register command handlers using `CommandHandlingModule`:
 
@@ -440,7 +440,7 @@ For registering event-sourced entities and their repositories, use `EventSourcin
 
 For applications that need to distribute command handling across multiple JVM instances, Axon provides distributed command bus implementations.
 
-=== AxonServerCommandBus
+=== `AxonServerCommandBus`
 
 The `AxonServerCommandBus` connects to https://www.axoniq.io/products/axon-server[Axon Server,window=_blank,role=external] for distributed command routing.
 This is the default when using the Axon Spring Boot starter with `axon-server-connector` dependency.
@@ -471,7 +471,7 @@ To disable Axon Server and use local command bus instead:
 axon.axonserver.enabled=false
 ----
 
-=== DistributedCommandBus
+=== `DistributedCommandBus`
 
 The `DistributedCommandBus` provides an alternative for distributing commands using other messaging infrastructure.
 
