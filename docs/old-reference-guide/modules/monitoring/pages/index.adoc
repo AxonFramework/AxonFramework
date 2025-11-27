@@ -11,7 +11,7 @@ It provides insights into each handler, event processor and aggregate with almos
 
 image::axoniq-console-teaser.png[alt="Statistics measured in AxonIQ Console"]
 
-For more information, see the xref:axoniq-console-reference:ROOT:index.adoc[AxonIQ Console Reference Guide] or link:https://console.axoniq.io[sign up directly].
+For more information, see the xref:axoniq-platform-reference:ROOT:index.adoc[Axoniq Platform Reference] or link:https://console.axoniq.io[sign up directly].
 
 
 == Reference sections

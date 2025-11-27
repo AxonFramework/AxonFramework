@@ -10,7 +10,7 @@ You can also get scalable xref:axon-server-reference::index.adoc[Axon Server] li
 
 image::axoniq-console-teaser.png[alt="Statistics measured in AxonIQ Console"]
 
-For more information, see the xref:axoniq-console-reference:ROOT:index.adoc[AxonIQ Console Reference Guide] or link:https://console.axoniq.io[sign up directly].
+For more information, see the xref:axoniq-platform-reference:ROOT:index.adoc[Axoniq Platform Reference Guide] or link:https://console.axoniq.io[sign up directly].
 
 == Reference sections
 A summary of the various subsections is given below.
