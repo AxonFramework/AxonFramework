@@ -1,7 +1,9 @@
 = Timeouts
 
-Axon Framework is built around the asynchronous processing of messages.
-In order to prevent a message from being processed indefinitely, Axon provides a mechanism to set a timeout on the invocation of a message handler, or on the processing of the `UnitOfWork` as a whole.
+Axon Framework is built with asynchronous processing at its core.
+To prevent messages from being processed indefinitely, Axon provides mechanisms to set timeouts on message handler invocations and on the processing of the xref:processing-context.adoc[`ProcessingContext`] as a whole.
+
+This chapter covers both Axon's built-in timeout mechanisms and how to work with timeouts in async operations using `CompletableFuture` and reactive frameworks.
 
 == Overview
 
@@ -72,7 +74,7 @@ To disable timeouts and warnings for non-Spring Boot applications, you only have
 == Handler timeouts
 
 The method you define for Axon Framework to invoke is known as a message handler.
-These are the methods you annotate with `@CommandHandler`, `@EventHandler`, `@QueryHandler`, or `@DeadlineHandler`.
+These are the methods you annotate with `@CommandHandler`, `@EventHandler`, or `@QueryHandler`.
 
 You can set a timeout on all message handlers, with unique configuration per message type.
 
@@ -101,11 +103,6 @@ axon.timeout.handler.commands.warning-interval-ms=1000
 axon.timeout.handler.queries.timeout-ms=20000
 axon.timeout.handler.queries.warning-threshold-ms=5000
 axon.timeout.handler.queries.warning-interval-ms=1000
-
-# For @DeadlineHandler methods
-axon.timeout.handler.deadlines.timeout-ms=20000
-axon.timeout.handler.deadlines.warning-threshold-ms=5000
-axon.timeout.handler.deadlines.warning-interval-ms=1000
 ----
 --
 
@@ -149,14 +146,14 @@ class MyEventProcessor {
 Setting `timeoutMs` on the global configuration and the annotation to `-1` will disable the timeout for that specific message handler.
 Similarly, setting `warningThresholdMs` to `-1` on both will disable the warning messages for that message handler.
 
-[#unit-of-work-timeouts]
-== Unit of work timeouts
+[#processing-context-timeouts]
+== Processing context timeouts
 
-The xref:unit-of-work.adoc[unit of work] is the context in which one or more messages are processed.
-While xref:#handler-timeouts[handler timeouts] only set timeouts for the invocation if the handler functions, the `UnitOfWork` timeout sets a timeout for the entire processing of the message.
-This includes the loading of resources (such as the aggregate of the command), the invocation of the handler function, and the committing of the `UnitOfWork`.
+The xref:processing-context.adoc[`ProcessingContext`] is the context in which messages are processed.
+While xref:#handler-timeouts[handler timeouts] only set timeouts for the invocation of handler functions, the `ProcessingContext` timeout sets a timeout for the entire processing of the message.
+This includes loading resources (such as entities for commands), invoking the handler function, and committing the processing context.
 
-You can customize this for each component separately, such as the `CommandBus`, `QueryBus`, and `EventProcessor`.
+You can customize timeouts for each component separately, such as the `CommandBus`, `QueryBus`, and `EventProcessor`.
 
 [tabs]
 ======
@@ -189,12 +186,6 @@ axon.timeout.transaction.command-bus.warning-interval-ms=1000
 axon.timeout.transaction.query.timeout-ms=20000
 axon.timeout.transaction.query.warning-threshold-ms=10000
 axon.timeout.transaction.query.warning-interval-ms=1000
-
-# Timeout for the deadline manager
-axon.timeout.transaction.deadline.timeout-ms=20000
-axon.timeout.transaction.deadline.warning-threshold-ms=10000
-axon.timeout.transaction.deadline.warning-interval-ms=1000
-
 ----
 --
 
@@ -202,32 +193,261 @@ axon.timeout.transaction.deadline.warning-interval-ms=1000
 Axon Configuration::
 +
 --
-You can create a `ConfigurerModule` with the exact settings you would like.
 Without Spring Boot, no default timeouts are applied.
+You can register timeout interceptors directly using the configuration API:
 
 [source,java]
 ----
-public class MyTimeoutConfigurerModule implements ConfigurerModule {
+// Create the messaging configurer
+MessagingConfigurer configurer = MessagingConfigurer.create();
+
+// Register timeout interceptor for command bus
+configurer.registerCommandHandlerInterceptor(c -> {
+    UnitOfWorkTimeoutInterceptorBuilder builder =
+        new UnitOfWorkTimeoutInterceptorBuilder(
+            "CommandBus",
+            30000,  // timeout in ms
+            25000,  // warning threshold in ms
+            1000    // warning interval in ms
+        );
+    return builder.buildCommandInterceptor();
+});
+
+// Register timeout interceptor for query bus
+configurer.registerQueryHandlerInterceptor(c -> {
+    UnitOfWorkTimeoutInterceptorBuilder builder =
+        new UnitOfWorkTimeoutInterceptorBuilder(
+            "QueryBus",
+            30000,  // timeout in ms
+            25000,  // warning threshold in ms
+            1000    // warning interval in ms
+        );
+    return builder.buildQueryInterceptor();
+});
+
+// Register timeout interceptor for event handlers
+configurer.registerEventHandlerInterceptor(c -> {
+    UnitOfWorkTimeoutInterceptorBuilder builder =
+        new UnitOfWorkTimeoutInterceptorBuilder(
+            "EventProcessor",
+            30000,  // timeout in ms
+            25000,  // warning threshold in ms
+            1000    // warning interval in ms
+        );
+    return builder.buildEventInterceptor();
+});
+
+// Build the configuration
+AxonConfiguration config = configurer.build();
+----
+
+For more advanced scenarios, you can implement a `ConfigurationEnhancer` to customize timeout configuration across all components:
+
+[source,java]
+----
+public class TimeoutConfigurationEnhancer implements ConfigurationEnhancer {
 
     @Override
-    public void configureModule(@NotNull Configurer configurer) {
-        configurer.eventProcessing().registerDefaultHandlerInterceptor((c, name) -> new UnitOfWorkTimeoutInterceptor(
-                "EventProcessor " + name,
-                30000,
-                25000,
-                1000));
+    public int order() {
+        return Integer.MIN_VALUE; // Execute early
+    }
 
-        // Register a transaction timeout for the command bus
-        configurer.onStart(Integer.MIN_VALUE, () -> {
-            configurer.buildConfiguration().commandBus().registerHandlerInterceptor(new UnitOfWorkTimeoutInterceptor(
-                    "CommandBus",
-                    30000,
-                    25000,
-                    1000));
-            // You can do this for the queryBus() and  deadlineManager() as well
-        });
+    @Override
+    public void enhance(ComponentRegistry registry) {
+        // Register decorators for handler interceptor registry
+        registry.registerDecorator(
+            HandlerInterceptorRegistry.class,
+            0,
+            (config, name, delegate) ->
+                delegate
+                    .registerCommandInterceptor(c ->
+                        new UnitOfWorkTimeoutInterceptorBuilder(
+                            "CommandBus",
+                            30000, 25000, 1000
+                        ).buildCommandInterceptor()
+                    )
+                    .registerQueryInterceptor(c ->
+                        new UnitOfWorkTimeoutInterceptorBuilder(
+                            "QueryBus",
+                            30000, 25000, 1000
+                        ).buildQueryInterceptor()
+                    )
+                    .registerEventInterceptor(c ->
+                        new UnitOfWorkTimeoutInterceptorBuilder(
+                            "EventProcessor " + name,
+                            30000, 25000, 1000
+                        ).buildEventInterceptor()
+                    )
+        );
     }
 }
+
+// Register the enhancer with your configuration
+EventSourcingConfigurer configurer = EventSourcingConfigurer.create();
+configurer.componentRegistry(cr ->
+    cr.registerEnhancer(new TimeoutConfigurationEnhancer())
+);
+
+AxonConfiguration config = configurer.build();
 ----
 --
 ======
+
+== Async processing and timeouts
+
+Axon Framework's async-native design means that many operations return `CompletableFuture` or work with reactive types.
+Understanding how timeouts work in async contexts is important for building reliable applications.
+
+=== CompletableFuture timeouts
+
+When dispatching commands or queries, Axon returns results wrapped in async types.
+You can apply timeouts at multiple levels:
+
+==== Application-level timeouts
+
+Apply timeouts when waiting for results in your application code:
+
+[source,java]
+----
+@RestController
+public class OrderController {
+
+    private final CommandGateway commandGateway;
+
+    @PostMapping("/orders")
+    public CompletableFuture<OrderResult> placeOrder(@RequestBody PlaceOrderCommand command) {
+        // Send command and apply timeout
+        return commandGateway.send(command)
+            .toCompletableFuture()
+            .orTimeout(5, TimeUnit.SECONDS)  // Timeout after 5 seconds
+            .exceptionally(ex -> {
+                if (ex instanceof TimeoutException) {
+                    // Handle timeout
+                    return OrderResult.timeout();
+                }
+                throw new RuntimeException(ex);
+            });
+    }
+}
+----
+
+==== Framework-managed timeouts with Spring
+
+Modern frameworks like Spring Boot have excellent support for async processing and can manage timeouts automatically:
+
+[source,java]
+----
+@RestController
+public class OrderController {
+
+    private final CommandGateway commandGateway;
+
+    // Spring WebMVC async support
+    @PostMapping("/orders")
+    @Async
+    public CompletableFuture<OrderResult> placeOrder(@RequestBody PlaceOrderCommand command) {
+        // Spring manages the async execution and timeout
+        return commandGateway.send(command)
+            .toCompletableFuture();
+    }
+
+    // Configure timeout in application.properties:
+    // spring.mvc.async.request-timeout=5000
+}
+----
+
+With Spring WebFlux (reactive):
+
+[source,java]
+----
+@RestController
+public class OrderController {
+
+    private final CommandGateway commandGateway;
+
+    @PostMapping("/orders")
+    public Mono<OrderResult> placeOrder(@RequestBody PlaceOrderCommand command) {
+        return Mono.fromFuture(
+                commandGateway.send(command).toCompletableFuture()
+            )
+            .timeout(Duration.ofSeconds(5))  // Reactive timeout
+            .onErrorResume(TimeoutException.class, ex ->
+                Mono.just(OrderResult.timeout())
+            );
+    }
+}
+----
+
+=== Timeout strategies
+
+Different scenarios call for different timeout approaches:
+
+==== Fail fast for user-facing operations
+
+For synchronous user-facing operations, use short timeouts to provide quick feedback:
+
+[source,java]
+----
+public OrderResult placeOrderSync(PlaceOrderCommand command) {
+    try {
+        return commandGateway.send(command)
+            .toCompletableFuture()
+            .get(3, TimeUnit.SECONDS);  // Short timeout for UI
+    } catch (TimeoutException e) {
+        return OrderResult.failed("Request timed out, please try again");
+    }
+}
+----
+
+==== Long-running background operations
+
+For background operations, you may want longer timeouts or no timeout at all:
+
+[source,java]
+----
+@EventHandler
+public void onBulkImportRequested(BulkImportRequestedEvent event) {
+    // Long-running operation, let Axon's handler timeout manage it
+    // Handler timeout is configured separately
+    processBulkImport(event.getDataFile());
+}
+----
+
+==== Retry with exponential backoff
+
+For operations that may temporarily fail, combine timeouts with retries:
+
+[source,java]
+----
+public CompletableFuture<OrderResult> placeOrderWithRetry(PlaceOrderCommand command) {
+    return retryWithBackoff(
+        () -> commandGateway.send(command)
+            .toCompletableFuture()
+            .orTimeout(5, TimeUnit.SECONDS),
+        3,  // max retries
+        Duration.ofMillis(100)  // initial delay
+    );
+}
+
+private <T> CompletableFuture<T> retryWithBackoff(
+        Supplier<CompletableFuture<T>> operation,
+        int maxRetries,
+        Duration initialDelay) {
+    // Implementation of retry logic with exponential backoff
+    // ...
+}
+----
+
+=== Best practices
+
+1. **Choose appropriate timeouts**: User-facing operations should have shorter timeouts (1-5 seconds), while background processing can have longer timeouts (30+ seconds).
+
+2. **Use framework features**: Leverage Spring's `@Async`, WebFlux, or other framework features for managing async operations and timeouts.
+
+3. **Separate handler and transaction timeouts**: Configure handler timeouts for the actual business logic, and transaction timeouts for the entire message processing lifecycle.
+
+4. **Provide meaningful feedback**: When timeouts occur, provide clear error messages to users or log appropriate information for debugging.
+
+5. **Monitor timeout occurrences**: Track timeout warnings and actual timeouts to identify performance bottlenecks or configuration issues.
+
+6. **Consider idempotency**: When implementing retry logic, ensure your command handlers are idempotent to handle duplicate executions safely.
