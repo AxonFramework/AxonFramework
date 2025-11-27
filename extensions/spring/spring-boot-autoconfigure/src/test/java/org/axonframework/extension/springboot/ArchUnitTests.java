@@ -25,12 +25,28 @@ import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.util.StreamUtils;
+
+import java.util.Set;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.stream.Collectors.toSet;
 
-public class ArchUnitTests {
+/**
+ * We use ArchUnit to ensure that architecture and coding conventions in this module are met.
+ * <p/>
+ * In particular:
+ * <ul>
+ *     <li>when we declare @Autoconfiguration beans, they must be listed in META-INF</li>
+ *     <li>classes annotated with @Autoconfiguration should be named accordingly</li>
+ * </ul>
+ */
+class ArchUnitTests {
 
     private static JavaClasses importedClasses;
+    private static final String RESOURCE_PATH = "META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports";
 
     @BeforeAll
     static void beforeAll() {
@@ -69,12 +85,13 @@ public class ArchUnitTests {
     }
 
     private static ArchCondition<JavaClass> listedInAutoConfigurationImports() {
-        return new ArchCondition<JavaClass>(
-                "be listed in META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports") {
+        var autoConfigurationImports = autoConfigurationImports();
+        return new ArchCondition<>(
+                "be listed in " + RESOURCE_PATH) {
             @Override
             public void check(JavaClass javaClass, ConditionEvents events) {
                 String className = javaClass.getName();
-                if (!autoConfigurationImports().contains(className)) {
+                if (!autoConfigurationImports.contains(className)) {
                     String message = String.format("AutoConfiguration %s is not listed in %s",
                                                    className,
                                                    RESOURCE_PATH);
@@ -84,31 +101,18 @@ public class ArchUnitTests {
         };
     }
 
-    private static final String RESOURCE_PATH = "META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports";
 
-    private static java.util.Set<String> autoConfigurationImports() {
-        java.util.Set<String> result = new java.util.HashSet<>();
-        ClassLoader cl = Thread.currentThread().getContextClassLoader();
-        if (cl == null) {
-            cl = ArchUnitTests.class.getClassLoader();
+
+    private static Set<String> autoConfigurationImports() {
+        try {
+            return StreamUtils.copyToString(new ClassPathResource(RESOURCE_PATH).getInputStream(),
+                                            UTF_8)
+                              .lines().map(String::trim)
+                              .filter(s -> !s.isEmpty())
+                              .filter(s -> !s.startsWith("#"))
+                              .collect(toSet());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-        try (java.io.InputStream is = cl.getResourceAsStream(RESOURCE_PATH)) {
-            if (is == null) {
-                throw new IllegalStateException("Could not load resource: " + RESOURCE_PATH);
-            }
-            try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(is))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    String trimmed = line.trim();
-                    if (trimmed.isEmpty() || trimmed.startsWith("#")) {
-                        continue;
-                    }
-                    result.add(trimmed);
-                }
-            }
-        } catch (java.io.IOException e) {
-            throw new RuntimeException("Error reading " + RESOURCE_PATH, e);
-        }
-        return result;
     }
 }
