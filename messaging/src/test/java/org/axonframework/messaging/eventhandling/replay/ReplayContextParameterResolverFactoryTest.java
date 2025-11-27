@@ -158,7 +158,8 @@ class ReplayContextParameterResolverFactoryTest {
         }
     }
 
-    private record MyResetContext(List<Long> sequences) {
+    private record MyResetContext(List<Long> sequences)
+            implements org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayContext {
 
     }
 }

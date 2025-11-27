@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.EventTrackerStatus;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayContext;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.UnableToRetrieveIdentifierException;
@@ -167,10 +168,9 @@ public interface StreamingEventProcessor extends EventProcessor {
      * logical processor that may be running in the cluster. Failure to do so will cause the reset to fail, as a
      * processor can only reset the tokens if it is able to claim them all.
      *
-     * @param resetContext a {@code R} used to support the reset operation
-     * @param <R>          the type of the provided {@code resetContext}
+     * @param resetContext a {@link ReplayContext} used to support the reset operation
      */
-    <R> CompletableFuture<Void> resetTokens(@Nullable R resetContext);
+    CompletableFuture<Void> resetTokens(@Nullable ReplayContext resetContext);
 
     /**
      * Reset tokens to the position as return by the given {@code initialTrackingTokenSupplier}. This effectively causes
@@ -200,12 +200,11 @@ public interface StreamingEventProcessor extends EventProcessor {
      * processor can only reset the tokens if it is able to claim them all.
      *
      * @param initialTrackingTokenSupplier a function returning the token representing the position to reset to
-     * @param resetContext                 a {@code R} used to support the reset operation
-     * @param <R>                          the type of the provided {@code resetContext}
+     * @param resetContext                 a {@link ReplayContext} used to support the reset operation
      */
-    <R> CompletableFuture<Void> resetTokens(
+    CompletableFuture<Void> resetTokens(
             @Nonnull Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier,
-            @Nullable R resetContext
+            @Nullable ReplayContext resetContext
     );
 
     /**
@@ -236,10 +235,9 @@ public interface StreamingEventProcessor extends EventProcessor {
      * processor can only reset the tokens if it is able to claim them all.
      *
      * @param startPosition the token representing the position to reset the processor to
-     * @param resetContext  a {@code R} used to support the reset operation
-     * @param <R>           the type of the provided {@code resetContext}
+     * @param resetContext  a {@link ReplayContext} used to support the reset operation
      */
-    <R> CompletableFuture<Void> resetTokens(@Nonnull TrackingToken startPosition, @Nullable R resetContext);
+    CompletableFuture<Void> resetTokens(@Nonnull TrackingToken startPosition, @Nullable ReplayContext resetContext);
 
     /**
      * Specifies the maximum amount of segments this {@link EventProcessor} can process at the same time.

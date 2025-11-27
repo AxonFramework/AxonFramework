@@ -33,6 +33,7 @@ import org.axonframework.messaging.eventhandling.processing.streaming.StreamingE
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.EventTrackerStatus;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.TrackerStatus;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayContext;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
@@ -253,7 +254,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     }
 
     @Override
-    public <R> CompletableFuture<Void> resetTokens(R resetContext) {
+    public CompletableFuture<Void> resetTokens(ReplayContext resetContext) {
         var initialToken = configuration.initialToken();
         return resetTokens(initialToken, resetContext);
     }
@@ -266,9 +267,9 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     }
 
     @Override
-    public <R> CompletableFuture<Void> resetTokens(
+    public CompletableFuture<Void> resetTokens(
             @Nonnull Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier,
-            R resetContext
+            ReplayContext resetContext
     ) {
         return initialTrackingTokenSupplier.apply(eventSource).thenCompose(r -> resetTokens(r, resetContext));
     }
@@ -279,7 +280,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     }
 
     @Override
-    public <R> CompletableFuture<Void> resetTokens(@Nonnull TrackingToken startPosition, R resetContext) {
+    public CompletableFuture<Void> resetTokens(@Nonnull TrackingToken startPosition, ReplayContext resetContext) {
         Assert.state(supportsReset(), () -> "The handlers assigned to this Processor do not support a reset.");
         Assert.state(!isRunning(), () -> "The Processor must be shut down before triggering a reset.");
 
@@ -321,9 +322,9 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
                          .thenApply(token -> new SegmentToken(segment, token));
     }
 
-    private <R> CompletableFuture<List<SegmentToken>> performReset(
+    private CompletableFuture<List<SegmentToken>> performReset(
             List<SegmentToken> segmentTokens,
-            R resetContext,
+            ReplayContext resetContext,
             ProcessingContext processingContext
     ) {
         var resetMessage = new GenericResetContext(new MessageType(ResetContext.class), resetContext);
@@ -331,10 +332,10 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
                                       .thenApply(ignored -> segmentTokens);
     }
 
-    private <R> CompletableFuture<Void> storeReplayTokens(
+    private CompletableFuture<Void> storeReplayTokens(
             List<SegmentToken> segmentTokens,
             TrackingToken startPosition,
-            R resetContext,
+            ReplayContext resetContext,
             ProcessingContext processingContext
     ) {
         var storeFutures = segmentTokens.stream()

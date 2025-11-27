@@ -30,6 +30,7 @@ import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorH
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.StringReplayContext;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.eventhandling.replay.ReplayBlockingEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.inmemory.InMemoryTokenStore;
@@ -267,7 +268,7 @@ class PooledStreamingEventProcessorTest {
         // given
         TrackingToken testToken = new GlobalSequenceTrackingToken(42);
         int expectedSegmentCount = 2;
-        String expectedContext = "my-context";
+        StringReplayContext expectedContext = new StringReplayContext("my-context");
 
         AtomicReference<Object> capturedResetPayload = new AtomicReference<>();
         defaultEventHandlingComponent.subscribe((resetContext, ctx) -> {
@@ -1415,7 +1416,7 @@ class PooledStreamingEventProcessorTest {
         void resetTokensWithContext() {
             int expectedSegmentCount = 2;
             TrackingToken expectedToken = new GlobalSequenceTrackingToken(42);
-            String expectedContext = "my-context";
+            StringReplayContext expectedContext = new StringReplayContext("my-context");
 
             AtomicBoolean resetHandlerInvoked = new AtomicBoolean(false);
             defaultEventHandlingComponent.subscribe((resetContext, ctx) -> {
