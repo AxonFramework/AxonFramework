@@ -84,7 +84,7 @@ public List<String> query(FetchItemsQuery query) { // <2>
 ----
 
 <1> The `@QueryHandler` annotation marks this method as a query handler.
-<2> The first parameter must be the `@Query` annotated message class. The handler will process queries matching the query name defined by the `@Query` annotation (`inventory.FetchItems` in this case). If you want to use a different parameter type (e.g., `Map<String, Object>`), you **must** specify `queryName` in the `@QueryHandler` annotation.
+<2> The first parameter must be the `@Query` annotated message class. The handler will process queries matching the query name defined by the `@Query` annotation (`inventory.FetchItems` in this case). If you want to use a different parameter type (for example, `Map<String, Object>`), you **must** specify `queryName` in the `@QueryHandler` annotation.
 
 === Dispatching with `QueryGateway`
 
