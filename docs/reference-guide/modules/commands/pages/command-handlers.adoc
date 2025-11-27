@@ -175,6 +175,7 @@ Commands with the same routing key are routed to the same handler instance to av
 
 <5> Instance handlers have access to current state for decision-making.
 
+[#_command_centric_stateful_handlers]
 === Command-centric stateful handlers
 
 In the command-centric model, you define command handlers as separate methods that receive the entity as a parameter.

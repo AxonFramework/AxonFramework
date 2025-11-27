@@ -1,19 +1,77 @@
 = Commands
 :page-aliases: README.adoc
 
-The first type of Message that an Axon application is associated with is the Command Message, or simply Commands.
-These are messages with the intent to change the state of the application in one way or another.
+Commands are messages that express the intent to change application state.
+They represent actions that _should_ happen, such as "create an order," "update a user profile," or "approve a payment."
+In Axon Framework, commands are a fundamental building block of your application architecture.
 
-This section of the reference guide covers in detail the capabilities that Axon Framework provides for Command messages. A summary of the various sections is given below.
+== Command-centric approach
+
+Axon Framework 5 takes a **messaging-centric** approach to application design.
+Commands are central to how your application processes user actions and external events.
+The framework provides comprehensive support for:
+
+* **Dispatching commands** - Sending commands from controllers, APIs, or other handlers
+* **Handling commands** - Processing commands to validate requests and apply changes
+* **Routing commands** - Directing commands to the appropriate handler based on routing keys
+* **Coordinating changes** - Managing state changes across one or more components
+
+This approach emphasizes _what you want to accomplish_ (commands) rather than _how you structure your domain model_.
+
+== Command handlers: stateful and stateless
+
+Command handlers fall into two main categories based on how they manage state:
+
+**Stateful handlers** (most common)::
+Handlers where Axon Framework manages the state lifecycle automatically.
+Axon loads the current state, invokes your handler, and persists any changes.
+Your handler focuses on business logic while Axon handles state management.
++
+Examples: Order handlers, user account handlers, payment handlers
+
+**Stateless handlers**::
+Handlers where state is not managed by Axon Framework.
+These handlers must query and manage state themselves, typically by calling external services or databases directly within the handler.
++
+Examples: Integration handlers that call external APIs, handlers that query read models, notification handlers
+
+=== Managing state with entities
+
+For stateful command handling, Axon Framework provides comprehensive **entity** support for state management.
+Entities are components that encapsulate state and the business logic that operates on that state.
+
+Axon supports two approaches to entity state management:
+
+* **Event-sourced entities** - State derived from a sequence of events
+* **State-stored entities** - State persisted directly to a database
+
+You can mix and match these approaches based on your needs.
+The choice depends on your specific requirements for state management, auditability, and consistency.
+
+Alternatively, you can implement stateful handlers without using entities, managing state through your own custom mechanisms.
+
+== What's in this section
+
+This section covers everything you need to work with commands in Axon Framework.
 
 [cols="<,<"]
 |===
-|Sub-Section |Purpose 
+|Sub-Section |Purpose
 
-|xref:modeling/aggregate.adoc[Modeling] |Axon Framework provided components to address Aggregate Modeling concerns
-|xref:command-dispatchers.adoc[Command Dispatchers]/ xref:command-handlers.adoc[Command Handlers] |Functional Development concerns for Command Messages using the Axon Framework
-|xref:infrastructure.adoc[Infrastructure] |Non-Functional Development concerns for Command Messages using the Axon Framework
-|xref:configuration.adoc[Configuration] |Configuration concerns for Command Messages using the Axon Framework
+|xref:command-handlers.adoc[Command handlers] |How to write command handlers (stateless and stateful, with and without entities)
+|xref:command-dispatchers.adoc[Command dispatchers] |How to dispatch commands from your application code
+|xref:infrastructure.adoc[Infrastructure] |Command bus implementations, repositories, and other infrastructure components
+|xref:configuration.adoc[Configuration] |How to configure command handling in your application
+|xref:modeling/aggregate.adoc[Advanced modeling] |Advanced entity modeling patterns (polymorphism, hierarchies, state-stored entities)
 |===
 
-This guide is complemented by a video tutorial which gives a practical demonstration of the concepts explained in this section. The tutorial is available at -&gt; https://www.youtube.com/watch?v=7oy4w5THFEU&feature=youtu.be[Axon Coding Tutorial - Command Messages]
+== Getting started
+
+The typical workflow for working with commands:
+
+1. **Define your command messages** - Create classes representing the actions users can take
+2. **Write command handlers** - Implement the logic to process commands and apply changes
+3. **Dispatch commands** - Send commands from your controllers, APIs, or other handlers
+4. **Configure routing** - Ensure commands are routed to the correct handler instances
+
+Start with xref:command-handlers.adoc[Command handlers] to learn how to implement command handling logic, then move on to xref:command-dispatchers.adoc[Command dispatchers] to learn how to send commands from your application code.

@@ -68,12 +68,18 @@ The following files in `axon-5/` describe the API changes:
 ## Axon Framework Commands Module
 
 ### modules/axon-framework-commands/pages/index.adoc
-**Changes to apply:**
-- Emphasize command-centric approach (shift from modeling-centric in Axon 4)
-- Update terminology from aggregates to entities where discussing modeling patterns
-- Introduce concept of stateful command handling components
-- Document that entities are implementation patterns, not core framework concepts
-- Clarify that command handling is the primary focus, with entities as one pattern option
+**Status:** ✅ COMPLETED
+**Changes applied:**
+- Rewrote introduction with command-centric, messaging-focused approach
+- Emphasized that commands express intent to change state (not just modeling constructs)
+- Documented command-centric vs modeling-centric shift from Axon 4
+- Introduced stateless vs stateful command handler categorization
+- Documented entities as optional implementation patterns (not core framework concepts)
+- Clarified that entities are tools for organizing stateful command handling logic
+- Explained two entity patterns: event-sourced and state-stored
+- Updated table of contents to prioritize command-handlers over modeling
+- Added "Getting started" section with typical workflow
+- Removed outdated Axon 4 video tutorial reference
 
 ### modules/axon-framework-commands/pages/command-dispatchers.adoc
 **Status:** ✅ COMPLETED
@@ -169,23 +175,81 @@ The following files in `axon-5/` describe the API changes:
 - Used TODO comment for unit-of-work.adoc → processing-context.adoc rename
 
 ### modules/axon-framework-commands/pages/configuration.adoc
-**Changes to apply:**
-- Replace Configurer with ApplicationConfigurer hierarchy
-- Document MessagingConfigurer, ModellingConfigurer approach
-- Update component registration using ComponentBuilder
-- Document decorator pattern for component customization
-- Update interceptor registration approach
+**Status:** ✅ COMPLETED
+**Changes applied:**
+- **Complete rewrite with command-centric focus**
+- **Introduced ApplicationConfigurer hierarchy:**
+  - Documented MessagingConfigurer for messaging infrastructure
+  - Documented ModellingConfigurer for domain modeling
+  - Documented EventSourcingConfigurer for event sourcing
+  - Explained the enhance() pattern for wrapping configurers
+- **Updated entity configuration:**
+  - Changed from @Aggregate to @EventSourced
+  - Showed Spring Boot auto-configuration
+  - Showed Configuration API with EntityModule
+  - Added custom repository configuration examples
+- **Updated command handler registration:**
+  - Used CommandHandlingModule.named() with annotatedCommandHandlingComponent()
+  - Showed proper handler registration for non-entity handlers
+  - Both Spring Boot (@Component) and Configuration API examples
+- **Documented component registration patterns:**
+  - Basic component registration with ComponentBuilder
+  - Component replacement (last registration wins)
+  - Component decoration with decorators and example LoggingCommandBus
+- **Updated interceptor registration:**
+  - Dispatch interceptors (before routing)
+  - Handler interceptors (after routing)
+  - Both Spring Boot (bean-based) and Configuration API (explicit registration)
+  - Reference to messaging-concepts for details
+- **Added configuration builder pattern:**
+  - Showed fluent chaining of configurers
+  - Complete example from EventSourcingConfigurer through entities, handlers, interceptors
+- **Added configuration enhancers:**
+  - Explained ConfigurationEnhancer for advanced scenarios
+  - Showed how to register and use enhancers
+- All examples use Axon 5 APIs (ProcessingContext, EventAppender, Repository interface, async patterns)
 
 ### modules/axon-framework-commands/pages/infrastructure.adoc
-**Changes to apply:**
-- Document Repository changes (async-native, ManagedEntity)
-- Update CommandBus implementations
-- Document Command Handling Component registration patterns
+**Status:** ✅ COMPLETED
+**Changes applied:**
+- **Complete rewrite with user-centric focus**
+- **Added comprehensive Repository section:**
+  - Explained why repositories are needed and what they do
+  - Documented async-native API (CompletableFuture return types)
+  - Explained ManagedEntity concept and its role in lifecycle management
+  - Showed load(), loadOrCreate(), persist() methods
+  - Documented ProcessingContext requirement
+  - Provided examples of using repositories in external command handlers
+  - Documented EventSourcedRepository configuration (Spring Boot and Configuration API)
+- **Updated CommandBus section:**
+  - Removed AsynchronousCommandBus (no longer exists in Axon 5)
+  - Removed DisruptorCommandBus (no longer exists in Axon 5)
+  - Kept only SimpleCommandBus with updated examples
+  - Updated configuration examples to use ApplicationConfigurer instead of Configurer
+  - Documented interceptors with xref to messaging-concepts
+- **Updated CommandGateway section:**
+  - Simplified to focus on practical usage
+  - Showed default CommandGateway interface methods (send, sendAndWait, sendAndForget)
+  - Provided realistic REST controller example
+  - Documented custom gateway creation with method signature behaviors
+  - Updated configuration examples for both Spring Boot and Configuration API
+- **Added Command Handling Component registration section:**
+  - Documented Spring Boot auto-registration with @Component and @EventSourced
+  - Showed manual registration with Configuration API
+  - Provided examples for both stateless handlers and event-sourced entities
+- **Updated Distributed CommandBus section:**
+  - Kept AxonServerCommandBus documentation
+  - Kept DistributedCommandBus with extension references
+  - Updated routing strategy examples with ApplicationConfigurer
+- Removed lengthy, implementation-focused content in favor of practical, user-centric documentation
+- All code examples use Axon 5 APIs (ProcessingContext, EventAppender, ApplicationConfigurer)
 
 ### modules/axon-framework-commands/pages/modeling/aggregate.adoc
 **RENAME TO:** `event-sourced-entity.adoc`
-**Status:** Most core content now covered in command-handlers.adoc
-**Changes to apply:**
+**Status:** ⏸️ TEMPORARILY REMOVED FROM NAVIGATION
+**Note:** Commented out in nav.adoc - Development team to decide on reinstatement
+**Previous status:** Most core content now covered in command-handlers.adoc
+**Changes to apply if reinstated:**
 - Evaluate if this page is still needed or should be merged/removed
 - Most fundamental concepts now in command-handlers.adoc:
   - @EntityCreator annotation (all patterns including polymorphic)
@@ -201,8 +265,10 @@ The following files in `axon-5/` describe the API changes:
 
 ### modules/axon-framework-commands/pages/modeling/aggregate-creation-from-another-aggregate.adoc
 **RENAME TO:** `entity-creation-from-another-entity.adoc` OR **CONSIDER REMOVAL**
-**Status:** Likely obsolete with command-centric approach
-**Changes to apply:**
+**Status:** ⏸️ TEMPORARILY REMOVED FROM NAVIGATION
+**Note:** Commented out in nav.adoc - Development team to decide on reinstatement
+**Previous status:** Likely obsolete with command-centric approach
+**Changes to apply if reinstated:**
 - Evaluate necessity: This pattern (entity creating another entity) may be an anti-pattern in command-centric design
 - Alternative: Commands should target specific entities, not have entities create other entities
 - If this represents a valid advanced pattern, update terminology and EventAppender usage
@@ -210,8 +276,10 @@ The following files in `axon-5/` describe the API changes:
 
 ### modules/axon-framework-commands/pages/modeling/aggregate-polymorphism.adoc
 **RENAME TO:** `entity-polymorphism.adoc` OR **MERGE INTO command-handlers.adoc**
-**Status:** Basic polymorphism already covered in command-handlers.adoc
-**Changes to apply:**
+**Status:** ⏸️ TEMPORARILY REMOVED FROM NAVIGATION
+**Note:** Commented out in nav.adoc - Development team to decide on reinstatement
+**Previous status:** Basic polymorphism already covered in command-handlers.adoc
+**Changes to apply if reinstated:**
 - Basic polymorphic @EntityCreator pattern already documented in command-handlers.adoc
 - Evaluate if advanced polymorphism details warrant separate page
 - If kept as separate page:
@@ -223,8 +291,10 @@ The following files in `axon-5/` describe the API changes:
 
 ### modules/axon-framework-commands/pages/modeling/multi-entity-aggregates.adoc
 **RENAME TO:** `entity-hierarchies.adoc` or `child-entities.adoc`
-**Status:** Advanced pattern - keep as separate page
-**Changes to apply:**
+**Status:** ⏸️ TEMPORARILY REMOVED FROM NAVIGATION
+**Note:** Commented out in nav.adoc - Development team to decide on reinstatement
+**Previous status:** Advanced pattern - keep as separate page
+**Changes to apply if reinstated:**
 - This represents advanced state management (parent-child entity relationships)
 - NOT covered in command-handlers.adoc (appropriately kept separate)
 - Update terminology from aggregate to entity throughout
@@ -237,8 +307,10 @@ The following files in `axon-5/` describe the API changes:
 
 ### modules/axon-framework-commands/pages/modeling/state-stored-aggregates.adoc
 **RENAME TO:** `state-stored-entities.adoc`
-**Status:** Alternative to event sourcing - keep as separate advanced page
-**Changes to apply:**
+**Status:** ⏸️ TEMPORARILY REMOVED FROM NAVIGATION
+**Note:** Commented out in nav.adoc - Development team to decide on reinstatement
+**Previous status:** Alternative to event sourcing - keep as separate advanced page
+**Changes to apply if reinstated:**
 - This represents alternative state management strategy (state-stored vs event-sourced)
 - NOT covered in command-handlers.adoc (appropriately kept separate)
 - Update terminology from aggregate to entity throughout
