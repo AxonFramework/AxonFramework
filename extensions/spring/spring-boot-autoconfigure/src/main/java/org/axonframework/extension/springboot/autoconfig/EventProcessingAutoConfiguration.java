@@ -21,6 +21,7 @@ import org.axonframework.extension.springboot.EventProcessorProperties;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Lazy;
 
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -43,7 +44,8 @@ public class EventProcessingAutoConfiguration {
      * @return event processor settings keyed by processor name.
      */
     @Bean
-    public EventProcessorSettings.MapWrapper eventProcessorSettings(EventProcessorProperties properties) {
+    public EventProcessorSettings.MapWrapper eventProcessorSettings(@Lazy EventProcessorProperties properties) {
+
         Map<String, EventProcessorSettings> map = properties
                 .getProcessors()
                 .entrySet()

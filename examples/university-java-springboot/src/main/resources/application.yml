@@ -1,0 +1,11 @@
+spring:
+  docker:
+    compose:
+      file: file:examples/docker-compose.yaml
+axon:
+  server:
+    enabled: true
+
+springdoc:
+  swagger-ui:
+    try-it-out-enabled: true

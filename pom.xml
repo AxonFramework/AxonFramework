@@ -189,6 +189,18 @@
                 <module>build/coverage-report</module>
             </modules>
         </profile>
+        <profile>
+            <id>examples</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+                <property>
+                    <name>examples</name>
+                </property>
+            </activation>
+            <modules>
+                <module>examples</module>
+            </modules>
+        </profile>
 
         <profile>
             <id>sign</id>
