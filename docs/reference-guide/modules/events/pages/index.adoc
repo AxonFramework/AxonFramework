@@ -1,18 +1,345 @@
 = Events
 :page-aliases: README.adoc
 
-The second type of Message that an Axon application is associated with is the Event Message, or simply Events.
-These are messages that communicate that something has happened in the business domain or application.
-Other parts of the application, or event other applications, can react to these events.
+Events are messages that communicate that something has happened in the business domain or application.
+They represent facts about the past that cannot be changed.
+Other parts of the application, or even other applications, can react to these events.
 
-This section of the reference guide covers in detail the capabilities that Axon Framework provides for Event messages.
-A summary of the various sections is given below.
+== Core concepts
+
+=== EventSink
+
+An **EventSink** is any component where you can send events into.
+This is a general abstraction that encompasses:
+
+- **Event Bus** - Distributes events to internal handlers and processors (both sending and consuming)
+- **External system facades** - Publishes events to external systems (Kafka, RabbitMQ, etc.)
+- **Event Store** - Persists events and distributes them to processors
+
+The EventSink abstraction allows you to publish events without knowing the specific distribution mechanism.
+
+For details, see xref:event-dispatchers.adoc[Event Dispatchers].
+
+=== MessageStream
+
+Event handling is built on **MessageStream**, a non-blocking, async-native abstraction for working with sequences of messages.
+
+MessageStream provides:
+
+- **Non-blocking operations** - Never blocks waiting for messages
+- **Composable transformations** - Rich set of operators (map, filter, concat, etc.)
+- **Backpressure handling** - Callback-based availability signaling
+- **Lazy evaluation** - Transformations computed only when needed
+
+This architecture enables efficient, scalable event processing without blocking threads.
+
+For more on MessageStream, see xref:messaging-concepts:message-stream.adoc[MessageStream].
+
+=== Dynamic Consistency Boundaries (DCB)
+
+**Dynamic Consistency Boundaries** (DCB) allow flexible grouping of events for consistency guarantees.
+
+DCB enables you to:
+
+- **Tag events** with arbitrary key-value pairs
+- **Query events by tags** using EventCriteria
+- **Define consistency boundaries** based on business needs, not technical constraints
+- **Track consistency markers** to prevent write conflicts
+
+DCB enables more flexible event sourcing patterns while maintaining consistency guarantees.
+
+For details, see xref:infrastructure.adoc[Event Infrastructure].
+
+=== ProcessingContext
+
+Event handlers receive a **ProcessingContext** that manages the processing lifecycle:
+
+- **Mutable resource management** - Share resources across processing stages
+- **Lifecycle hooks** - Register callbacks for commit, rollback, cleanup
+- **Correlation data** - Automatic propagation through the system
+
+ProcessingContext is created automatically by the framework and available in all event handlers.
+
+For details, see xref:messaging-concepts:processing-context.adoc[ProcessingContext].
+
+=== Message types
+
+Event identity is determined by **MessageType** (qualified name + version), not by Java class.
+
+This enables:
+
+- **Multiple representations** - Same event, different Java classes
+- **Payload conversion** - Automatic conversion at handling time
+- **Reduced upcasting** - Many evolution scenarios handled by conversion instead
+
+For details, see xref:event-handlers.adoc#message-types-and-event-names[Message Types and Event Names].
+
+== Event handling overview
+
+This section covers the complete event handling capabilities in Axon 5:
 
 [cols="<,<"]
 |===
 |Sub-Section |Purpose
 
-|xref:event-dispatchers.adoc[Event Dispatchers] / xref:event-handlers.adoc[Event Handlers] |Functional development for Event Messages using the Axon Framework
-|xref:event-processors/index.adoc[Event Processors] / xref:event-bus-and-event-store.adoc[Event Bus &amp; Event Store] |Non-Functional development for Event Messages using the Axon Framework
-|xref:event-versioning.adoc[Event Versioning] |Details on Event versioning capabilities provided by the Axon Framework
+|xref:event-dispatchers.adoc[Event Dispatchers] |Publishing events using EventSink, EventAppender, and EventGateway
+|xref:event-handlers.adoc[Event Handlers] |Implementing event handlers with @EventHandler annotation
+|xref:event-processors/index.adoc[Event Processors] |Configuring and managing event processors (pooled streaming and subscribing)
+|xref:infrastructure.adoc[Event Infrastructure] |EventStore, Dynamic Consistency Boundaries, tags, and event storage
+|xref:event-versioning.adoc[Event Versioning] |Evolving event structures with payload conversion and upcasters
 |===
+
+== Getting started
+
+=== Publishing events
+
+Events are published using EventSink or its higher-level abstractions:
+
+[source,java]
+----
+// From within an entity
+@CommandHandler
+public void handle(PlaceOrderCommand cmd, EventAppender appender) {
+    appender.append(new OrderPlacedEvent(cmd.getOrderId(), cmd.getCustomerId()));
+}
+
+// From an application service
+@Service
+public class OrderService {
+    private final EventGateway eventGateway;
+
+    public void placeOrder(OrderRequest request) {
+        eventGateway.publish(new OrderPlacedEvent(request.getOrderId(), request.getCustomerId()));
+    }
+}
+----
+
+See xref:event-dispatchers.adoc[Event Dispatchers] for complete details.
+
+=== Handling events
+
+Event handlers are methods annotated with `@EventHandler`:
+
+[source,java]
+----
+@Component
+public class OrderProjection {
+
+    @EventHandler
+    public void on(OrderPlacedEvent event) {
+        // Update read model
+        updateOrderView(event);
+    }
+
+    @EventHandler
+    public void on(OrderPlacedEvent event, CommandDispatcher dispatcher) {
+        // Dispatch follow-up command
+        dispatcher.send(new ReserveInventoryCommand(event.getOrderId()));
+    }
+}
+----
+
+**All matching handlers are invoked** for each event.
+
+See xref:event-handlers.adoc[Event Handlers] for complete details.
+
+=== Configuring event processors
+
+Event handlers are processed by event processors.
+Spring Boot auto-configuration handles this automatically:
+
+[source,java]
+----
+@Component  // Automatically registered and processed
+public class OrderProjection {
+
+    @EventHandler
+    public void on(OrderPlacedEvent event) {
+        // Processed by auto-configured event processor
+    }
+}
+----
+
+For non-Spring applications, explicitly configure processors:
+
+[source,java]
+----
+MessagingConfigurer configurer = MessagingConfigurer.create()
+    .eventProcessing(eventProcessing -> eventProcessing
+        .pooledStreaming(pooledStreaming -> pooledStreaming
+            .processor("order-processor", components -> components
+                .autodetected(config -> new OrderProjection())
+            )
+        )
+    );
+----
+
+See xref:event-processors/index.adoc[Event Processors] for complete details.
+
+=== Storing events
+
+Events are persisted using EventStore, which provides both storage and distribution:
+
+[source,java]
+----
+MessagingConfigurer configurer = MessagingConfigurer.create()
+    .registerEventSink(config ->
+        new StorageEngineBackedEventStore(
+            new InMemoryEventStorageEngine(),
+            new SimpleEventBus(),
+            new AnnotationBasedTagResolver()
+        )
+    );
+----
+
+EventStore supports Dynamic Consistency Boundaries through tagging and EventCriteria.
+
+See xref:infrastructure.adoc[Event Infrastructure] for complete details.
+
+== Key concepts
+
+=== Events vs Commands
+
+- **Commands** - Express intent, can be rejected, directed to specific handler
+- **Events** - Express facts, cannot be rejected, broadcast to all interested parties
+
+=== Event ordering and parallelization
+
+Events are processed in the order they are received by the processor.
+When processing is parallelized, the **SequencingPolicy** determines which events must be processed sequentially and which can be processed in parallel.
+
+By default, Axon uses the aggregate identifier for sequencing:
+
+- **Events for the same aggregate** - Processed sequentially to maintain consistency
+- **Events for different aggregates** - Can be processed in parallel
+- **Events without aggregate identifier** - Processed sequentially
+
+You can provide a custom `SequencingPolicy` to define which events are safe to process in parallel based on your business requirements.
+This allows you to optimize parallel processing while maintaining necessary ordering guarantees.
+
+=== Event processors
+
+Two types of event processors are available:
+
+- **PooledStreamingEventProcessor** - High-performance, segmented processing with two-pool architecture
+- **SubscribingEventProcessor** - Simple, single-threaded, synchronous processing
+
+See xref:event-processors/index.adoc[Event Processors] for detailed comparison.
+
+=== Event sourcing
+
+Event sourcing stores all changes to application state as a sequence of events:
+
+- **Append-only** - Events are never modified or deleted
+- **Complete audit trail** - Full history of all changes
+- **Temporal queries** - Reconstruct state at any point in time
+- **Event replay** - Rebuild read models or migrate to new models
+
+Dynamic Consistency Boundaries provide flexible event sourcing beyond traditional aggregate boundaries.
+
+== Best practices
+
+=== Design events around business meaning
+
+Events should represent meaningful business occurrences:
+
+[source,java]
+----
+// GOOD - Business meaning is clear
+public class OrderPlacedEvent {
+    private final String orderId;
+    private final String customerId;
+    private final List<OrderLine> items;
+}
+
+// AVOID - Technical focus
+public class OrderStatusChangedEvent {
+    private final String orderId;
+    private final String oldStatus;
+    private final String newStatus;
+}
+----
+
+=== Keep events immutable
+
+Events represent facts that have already occurred and cannot be changed:
+
+[source,java]
+----
+@Event(name = "OrderPlaced", version = "1.0.0")
+public class OrderPlacedEvent {
+    private final String orderId;  // final fields
+    private final String customerId;
+
+    // Constructor and getters only - no setters
+}
+----
+
+=== Use fine-grained events
+
+Prefer multiple specific events over one generic event:
+
+[source,java]
+----
+// GOOD - Specific events
+public class OrderPlacedEvent { ... }
+public class OrderShippedEvent { ... }
+public class OrderDeliveredEvent { ... }
+
+// AVOID - Generic event
+public class OrderStatusChangedEvent {
+    private final String status;  // "placed", "shipped", "delivered"
+}
+----
+
+=== Don't include mutable references
+
+Events should contain only immutable data:
+
+[source,java]
+----
+// GOOD
+public class OrderPlacedEvent {
+    private final String orderId;
+    private final List<OrderLine> items;  // Assuming OrderLine is immutable
+}
+
+// AVOID
+public class OrderPlacedEvent {
+    private final Order order;  // Mutable entity reference
+}
+----
+
+=== Consider event granularity
+
+Balance between too coarse (loses information) and too fine (overwhelming):
+
+[source,java]
+----
+// Too coarse - loses detail
+public class CustomerUpdatedEvent {
+    private final Customer customer;  // What changed?
+}
+
+// Too fine - too many events
+public class CustomerFirstNameChangedEvent { ... }
+public class CustomerLastNameChangedEvent { ... }
+public class CustomerEmailChangedEvent { ... }
+
+// GOOD - Balanced
+public class CustomerContactDetailsUpdatedEvent {
+    private final String customerId;
+    private final String email;
+    private final String phone;
+}
+----
+
+== Further reading
+
+- xref:event-dispatchers.adoc[Event Dispatchers] - Publishing events
+- xref:event-handlers.adoc[Event Handlers] - Handling events
+- xref:event-processors/index.adoc[Event Processors] - Processing infrastructure
+- xref:infrastructure.adoc[Event Infrastructure] - EventStore and DCB
+- xref:event-versioning.adoc[Event Versioning] - Evolving event structures
+- xref:messaging-concepts:message-correlation.adoc[Message correlation] - Correlating cause and effect
+- xref:messaging-concepts:processing-context.adoc[ProcessingContext] - Processing lifecycle management

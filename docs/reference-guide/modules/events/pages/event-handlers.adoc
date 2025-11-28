@@ -14,89 +14,395 @@ If the event handler does not need access to the payload of the message, you can
 Do not configure the payload type on the annotation if you want the payload to be passed as a parameter.
 For a complete list of all parameters, we refer to xref:messaging-concepts:supported-parameters-annotated-handlers.adoc#supported-parameters-for-event-handlers[this] section.
 
-In all circumstances, at most one event handler method is invoked per listener instance.
-Axon will search for the most specific method to invoke, using the following rules:
+[[handler-resolution]]
+== Handler resolution
 
-. On the actual instance level of the class hierarchy (as returned by `this.getClass()`), all annotated methods are evaluated.
-. If the framework finds one or more methods for which it can resolve all parameters to a value, the method with the most specific type is chosen and invoked.
-. If the framework finds no methods on this level of the class hierarchy, the supertype is evaluated the same way.
-. When it reaches the top level of the hierarchy and no suitable event handler is found, the event is ignored.
+When an event is published, Axon determines which event handler methods to invoke based on the event type.
+In Axon 5, **all matching event handlers are invoked** for each event.
 
-Consider the following Event Handling Component sample to explain the event handler invocation rules further:
+The framework uses the following rules to determine matching handlers:
+
+. Axon identifies all event handlers that can handle the event type (based on the event's `MessageType`).
+. For each matching handler, Axon evaluates whether it can resolve all required parameters.
+. All handlers for which parameters can be resolved are invoked.
+. If no suitable event handler is found, the event is ignored (or handled by the processor's default behavior).
+
+NOTE: This is a change from Axon 4, where only the most specific handler method was invoked per instance.
+In Axon 5, all matching handlers are invoked, allowing multiple handlers in the same component to process the same event.
+
+Consider the following Event Handling Component sample:
 
 [source,java]
 ----
-// assume EventB extends EventA 
-// and    EventC extends EventB
-// and    a single instance of SubListener is registered
-
-public class TopListener {
+public class OrderEventHandler {
 
     @EventHandler
-    public void handle(EventA event) {
+    public void on(OrderPlacedEvent event) {
+        // Update read model
     }
 
     @EventHandler
-    public void handle(EventC event) {
+    public void logOrderPlaced(OrderPlacedEvent event, @MetadataValue("userId") String userId) {
+        // Log the event - this handler is ALSO invoked for OrderPlacedEvent
     }
 
+    @EventHandler
+    public void on(OrderShippedEvent event) {
+        // Handle order shipped
+    }
 }
-
-public class SubListener extends TopListener {
-
-    @EventHandler
-    public void handle(EventB event) {
-    }
-
-}
-
 ----
 
-In the example above, Axon will invoke the handler methods of `SubListener` for all instances of `EventB` and `EventC` (as it extends `EventB`).
-In other words, the handler methods of `TopListener` will not receive any invocations for `EventC` at all.
-Since `EventA` is not assignable to `EventB` (it is its superclass), the `TopListener&#39;s` handler method will process them.
+In this example, when an `OrderPlacedEvent` is published, **both** the `on()` and `logOrderPlaced()` methods will be invoked.
+
+[[message-types-and-event-names]]
+== Understanding message types and event names
+
+In Axon 5, the identity of an event is determined by its **MessageType**, not by its Java class.
+This is a fundamental conceptual shift from Axon 4.
+
+=== MessageType vs Java class
+
+A `MessageType` consists of two parts:
+
+1. **QualifiedName**: A namespace and local name (for example, `com.example.orders.OrderPlaced`)
+2. **Version**: A version string (for example, `"1.0.0"`)
+
+The Java class used to represent an event is just one possible representation of that event.
+Different handlers can receive the same event in different Java class representations, and Axon will convert the payload accordingly at handling time.
+
+=== Defining event types with @Event
+
+You can explicitly define an event's type using the `@Event` annotation on your event class:
+
+[source,java]
+----
+@Event(
+    namespace = "com.example.orders",   // Defaults to package name
+    name = "OrderPlaced",               // Local name; defaults to simple class name
+    version = "1.0.0"                   // Defaults to "0.0.1"
+)
+public class OrderPlacedEvent {
+    private final String orderId;
+    private final String customerId;
+
+    // constructor, getters...
+}
+----
+
+The **fully qualified event name** is composed of: `namespace` + `name` = `"com.example.orders.OrderPlaced"`.
+This fully qualified name is what you use in `@EventHandler(eventName = "...")` when explicitly specifying which event to handle.
+
+If you don't use the `@Event` annotation, Axon derives the event type from the fully qualified class name and uses the default version `"0.0.1"`.
+
+=== Event name resolution in handlers
+
+Event handlers can specify which event they handle in several ways:
+
+==== 1. By parameter type (most common)
+
+[source,java]
+----
+@EventHandler
+public void on(OrderPlacedEvent event) {
+    // Handles events with type derived from OrderPlacedEvent class
+}
+----
+
+==== 2. By explicit event name
+
+The `eventName` attribute requires the **fully qualified name** (namespace + local name):
+
+[source,java]
+----
+// Given an event with @Event annotation:
+// @Event(name = "OrderPlaced") in package com.example.orders
+// The fully qualified name is: com.example.orders.OrderPlaced
+
+@EventHandler(eventName = "com.example.orders.OrderPlaced")
+public void handleOrderPlaced(Map<String, Object> eventData) {
+    // Handles events with qualified name "com.example.orders.OrderPlaced"
+    // Payload is converted to Map at handling time
+}
+----
+
+=== Payload conversion at handling time
+
+This is one of the most powerful features in Axon 5: the framework converts event payloads to the type expected by each handler **at handling time**.
+
+Different handlers can receive the same event in different representations based on their parameter type.
+Consider this example:
+
+[source,java]
+----
+package com.example.orders;  // Package provides the namespace
+
+// Event class
+@Event(name = "OrderPlaced", version = "1.0.0")  // Local name = "OrderPlaced"
+public class OrderPlacedEvent {                   // Fully qualified name = "com.example.orders.OrderPlaced"
+    private final String orderId;
+    private final String customerId;
+    private final Instant orderDate;
+
+    // constructor, getters...
+}
+
+// Handler 1: Receives event as OrderPlacedEvent
+@EventHandler
+public void updateReadModel(OrderPlacedEvent event) {
+    // Full event object
+}
+
+// Handler 2: Receives as generic representation
+// Note: eventName requires the FULLY QUALIFIED name (namespace + local name)
+@EventHandler(eventName = "com.example.orders.OrderPlaced")
+public void auditLog(JsonNode eventData) {
+    // Same event converted to JsonNode
+}
+
+// Handler 3: Receives as Map
+@EventHandler(eventName = "com.example.orders.OrderPlaced")
+public void sendNotification(Map<String, Object> eventData) {
+    // Same event converted to Map
+    String orderId = (String) eventData.get("orderId");
+}
+----
+
+All three handlers will be invoked for the same `OrderPlaced` event, each receiving the payload in their preferred representation.
+Axon's `Converter` automatically performs the transformation at handling time.
+
+This approach significantly reduces the need for upcasters in many scenarios.
+When you evolve your event structures, handlers can often adapt by simply changing their parameter type, rather than requiring upcasters to transform stored events.
+
+[[processing-context]]
+== ProcessingContext in event handlers
+
+The `ProcessingContext` is a critical component in Axon 5.
+On the handling side, a `ProcessingContext` is **always** created by the framework when processing an event.
+
+=== Injecting ProcessingContext
+
+You can inject the `ProcessingContext` as a parameter in your event handler:
+
+[source,java]
+----
+@EventHandler
+public void handle(OrderPlacedEvent event, ProcessingContext context) {
+    // Access the message
+    Message message = Message.fromContext(context);
+
+    // Access metadata
+    String userId = message.metadata().get("userId");
+
+    // Register cleanup actions
+    context.onCleanup(ctx -> cleanupResources());
+
+    // Access correlation data
+    String correlationId = message.metadata().get("correlationId");
+}
+----
+
+=== Passing ProcessingContext to components
+
+When your event handler needs to dispatch commands, publish events, or interact with other Axon components, you should pass the `ProcessingContext` to those components.
+This ensures correlation data flows through your system.
+
+**Note:** Some components like `CommandDispatcher` and `EventAppender` are automatically scoped to the current `ProcessingContext` when injected as handler parameters.
+However, you still need the `ProcessingContext` parameter to:
+- Pass context to your own services and repositories
+- Register lifecycle callbacks
+- Access resources or metadata
+
+[source,java]
+----
+@Component
+public class OrderEventHandler {
+
+    private final NotificationService notificationService;
+
+    @EventHandler
+    public void handle(OrderPlacedEvent event,
+                       ProcessingContext context,
+                       CommandDispatcher commandDispatcher) {
+        // CommandDispatcher is automatically context-aware (no need to pass context)
+        commandDispatcher.send(new ReserveInventoryCommand(event.getOrderId()));
+
+        // Pass context to your own services that need correlation data
+        notificationService.sendOrderConfirmation(event, context);
+
+        // Use context for lifecycle callbacks
+        context.onCommit(ctx -> {
+            // This runs only after successful commit
+            auditLog.recordOrderPlaced(event.getOrderId());
+        });
+
+        // Access correlation data for logging
+        Message message = Message.fromContext(context);
+        String traceId = message.metadata().get("traceId");
+        logger.info("Processing order {} with trace {}", event.getOrderId(), traceId);
+    }
+}
+----
+
+For more details on `ProcessingContext`, see xref:messaging-concepts:processing-context.adoc[ProcessingContext].
+
+[[parameter-injection]]
+== Parameter injection
+
+Event handlers support a rich set of parameter types that the framework will automatically inject.
+The most commonly used parameters are:
+
+=== Event payload
+
+The first parameter is always the event payload:
+
+[source,java]
+----
+@EventHandler
+public void on(OrderPlacedEvent event) {
+    // event is the payload
+}
+----
+
+=== ProcessingContext
+
+Provides access to the processing lifecycle and resources:
+
+[source,java]
+----
+@EventHandler
+public void on(OrderPlacedEvent event, ProcessingContext context) {
+    context.onCleanup(ctx -> cleanupResources());
+}
+----
+
+=== EventAppender
+
+Allows publishing new events from within the handler:
+
+[source,java]
+----
+@EventHandler
+public void on(OrderPlacedEvent event, EventAppender appender) {
+    // Publish a follow-up event
+    appender.append(new OrderConfirmedEvent(event.getOrderId()));
+}
+----
+
+IMPORTANT: EventAppender must be injected as a parameter, not as a field.
+It is `ProcessingContext`-scoped and automatically propagates correlation data.
+
+=== CommandDispatcher
+
+Allows dispatching commands from within the handler:
+
+[source,java]
+----
+@EventHandler
+public void on(OrderPlacedEvent event, CommandDispatcher dispatcher) {
+    // Dispatch a command in response to the event
+    dispatcher.send(new ReserveInventoryCommand(event.getOrderId()));
+}
+----
+
+=== Metadata and @MetadataValue
+
+Access message metadata:
+
+[source,java]
+----
+@EventHandler
+public void on(OrderPlacedEvent event,
+               @MetadataValue("userId") String userId,
+               @MetadataValue(value = "traceId", required = false) String traceId) {
+    // userId is required, traceId is optional
+}
+----
+
+=== Aggregate-specific parameters
+
+For events published by aggregates, additional parameters are available:
+
+[source,java]
+----
+@EventHandler
+public void on(OrderPlacedEvent event,
+               @SourceId String aggregateId,
+               @SequenceNumber long sequenceNumber,
+               @AggregateType String aggregateType) {
+    // aggregateId: The identifier of the aggregate that published the event
+    // sequenceNumber: The sequence number of the event within the aggregate
+    // aggregateType: The type name of the aggregate
+}
+----
+
+=== Event processor-specific parameters
+
+[source,java]
+----
+@EventHandler
+public void on(OrderPlacedEvent event,
+               TrackingToken token,
+               ReplayStatus replayStatus,
+               @ReplayContext Map<String, String> replayContext) {
+    // token: Current position in event stream (streaming processors only)
+    // replayStatus: Indicates if this is a replay
+    // replayContext: Custom context data provided when replay was initiated
+}
+----
+
+=== Complete example
+
+[source,java]
+----
+@Component
+public class OrderEventHandler {
+
+    @EventHandler
+    public void on(OrderPlacedEvent event,
+                   ProcessingContext context,
+                   EventAppender appender,
+                   CommandDispatcher dispatcher,
+                   @MetadataValue("userId") String userId,
+                   @SourceId String orderId,
+                   @Timestamp Instant eventTime) {
+
+        // Update read model
+        updateOrderView(event, userId);
+
+        // Publish a follow-up event
+        appender.append(new OrderProcessingStartedEvent(orderId));
+
+        // Dispatch a command
+        dispatcher.send(new ReserveInventoryCommand(orderId, event.getItems()))
+            .thenAccept(result -> {
+                // Handle command result
+            });
+
+        // Register cleanup
+        context.onCleanup(ctx -> releaseResources());
+    }
+
+    private void updateOrderView(OrderPlacedEvent event, String userId) {
+        // Implementation...
+    }
+
+    private void releaseResources() {
+        // Implementation...
+    }
+}
+----
+
+For a complete list of supported parameters, see xref:messaging-concepts:supported-parameters-annotated-handlers.adoc#supported-parameters-for-event-handlers[Supported Parameters for Event Handlers].
 
 [[registering-event-handlers]]
 == Registering event handlers
 
-Event handling Components are defined using an `EventProcessingConfigurer`, which can be accessed from the global Axon `Configurer`.
-`EventProcessingConfigurer` is used to configure an `EventProcessingConfiguration`.
-Typically, an application will have a single `EventProcessingConfiguration` defined, but larger, more modular applications may define one per module.
-
-To register objects with `@EventHandler` methods, consider the following samples:
+Event handlers are components with `@EventHandler` annotated methods.
+In Axon 5, event handlers are registered as part of configuring event processors.
 
 [tabs]
 ====
-Configuration API::
-+
---
-The `Configurer` exposes several options towards registering an Event Handling Component:
-
-[source,java]
-----
-public class AxonConfig {
-    // omitting other configuration methods...
-    public void configureEventHandler(Configurer configurer) {
-        configurer.registerEventHandler(
-                config -> new MyEventHandlingComponent()
-        );
-
-        // or, when the handling component contains several message handler types:
-        configurer.registerMessageHandler(
-                config -> new MyEventHandlingComponent()
-        );
-
-        // or, directly on the EventProcessingConfigurer:
-        configurer.eventProcessing()
-            .registerEventHandler(config ->
-                new MyEventHandlingComponent()
-            );
-    }
-}
-----
---
-
-
 Spring Boot::
 +
 --
@@ -114,5 +420,365 @@ public class MyEventHandlingComponent {
     }
 }
 ----
+
+Axon's auto-configuration will automatically detect and register all message handlers and assign them to appropriate event processors.
+--
+
+Configuration API::
++
+--
+For non-Spring applications, event handlers are registered as part of event processor configuration.
+Event handlers must be explicitly assigned to processors.
+
+There are two approaches for registering components with a processor:
+
+**1. Autodetected (annotation-based)** - Uses annotation scanning to automatically detect `@EventHandler` methods:
+
+[source,java]
+----
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+
+MessagingConfigurer configurer = MessagingConfigurer.create()
+    .eventProcessing(eventProcessing -> eventProcessing
+        .pooledStreaming(pooledStreaming -> pooledStreaming
+            .processor("my-processor", components -> components
+                .autodetected(config -> new MyEventHandlingComponent())
+            )
+        )
+    );
+----
+
+With `autodetected()`, the framework scans the component for `@EventHandler` annotated methods and registers them automatically. This is the recommended approach when using annotations.
+
+**2. Declarative (explicit)** - For users who prefer explicit control without annotation "magic":
+
+[source,java]
+----
+import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
+import org.axonframework.messaging.core.QualifiedName;
+
+MessagingConfigurer configurer = MessagingConfigurer.create()
+    .eventProcessing(eventProcessing -> eventProcessing
+        .pooledStreaming(pooledStreaming -> pooledStreaming
+            .processor("my-processor", components -> components
+                .declarative(config -> {
+                    SimpleEventHandlingComponent component = new SimpleEventHandlingComponent();
+
+                    // Explicitly subscribe handlers
+                    component.subscribe(
+                        new QualifiedName("com.example.orders.OrderPlaced"),
+                        (event, context) -> {
+                            // Handle OrderPlaced event
+                            OrderPlacedEvent orderPlaced = (OrderPlacedEvent) event.payload();
+                            // Processing logic here
+                        }
+                    );
+
+                    return component;
+                })
+            )
+        )
+    );
+----
+
+With `declarative()`, you explicitly create an `EventHandlingComponent` (typically `SimpleEventHandlingComponent`) and subscribe handler logic using the `subscribe()` methods. This gives you full control without relying on annotation scanning. Use this when you want to avoid annotation-based "magic" and prefer a more explicit configuration style.
+
+For complete details on event processor configuration and assigning handlers to processors, see xref:event-processors/index.adoc[Event Processors].
 --
 ====
+
+[[configuration-examples]]
+== Configuration examples
+
+=== Spring Boot with auto-configuration
+
+Spring Boot automatically registers all `@Component` beans with `@EventHandler` methods:
+
+[source,java]
+----
+@Component
+public class OrderProjection {
+
+    @EventHandler
+    public void on(OrderPlacedEvent event,
+                   ProcessingContext context,
+                   EventAppender appender) {
+        // Automatically registered and assigned to an event processor
+    }
+}
+----
+
+=== Configuration API with annotation scanning
+
+For non-Spring applications using annotations, use `autodetected()` to enable annotation scanning:
+
+[source,java]
+----
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.common.configuration.AxonConfiguration;
+
+public class AxonConfig {
+
+    public AxonConfiguration buildConfiguration() {
+        MessagingConfigurer configurer = MessagingConfigurer.create()
+            .eventProcessing(eventProcessing -> eventProcessing
+                .pooledStreaming(pooledStreaming -> pooledStreaming
+                    .processor("order-processor", components -> components
+                        .autodetected(config -> new OrderProjection())
+                    )
+                    .processor("inventory-processor", components -> components
+                        .autodetected(config -> new InventoryProjection())
+                    )
+                )
+            );
+
+        // Build and start
+        AxonConfiguration configuration = configurer.build();
+        configuration.start();
+
+        return configuration;
+    }
+}
+----
+
+The `autodetected()` method scans components for `@EventHandler` annotated methods, making it the natural choice when using annotation-based handlers.
+
+=== Configuration API with explicit registration
+
+For users who prefer explicit control without annotation scanning, use `declarative()` with `SimpleEventHandlingComponent`:
+
+[source,java]
+----
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.common.configuration.AxonConfiguration;
+import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
+import org.axonframework.messaging.core.QualifiedName;
+
+public class AxonConfig {
+
+    public AxonConfiguration buildConfiguration() {
+        MessagingConfigurer configurer = MessagingConfigurer.create()
+            .eventProcessing(eventProcessing -> eventProcessing
+                .pooledStreaming(pooledStreaming -> pooledStreaming
+                    .processor("order-processor", components -> components
+                        .declarative(config -> {
+                            SimpleEventHandlingComponent component = new SimpleEventHandlingComponent();
+
+                            // Explicitly subscribe handler logic
+                            component.subscribe(
+                                new QualifiedName("com.example.orders.OrderPlaced"),
+                                (event, context) -> {
+                                    OrderPlacedEvent orderPlaced = (OrderPlacedEvent) event.payload();
+                                    // Update read model
+                                    updateOrderView(orderPlaced);
+                                }
+                            );
+
+                            component.subscribe(
+                                new QualifiedName("com.example.orders.OrderShipped"),
+                                (event, context) -> {
+                                    OrderShippedEvent orderShipped = (OrderShippedEvent) event.payload();
+                                    // Update shipping status
+                                    updateShippingStatus(orderShipped);
+                                }
+                            );
+
+                            return component;
+                        })
+                    )
+                )
+            );
+
+        // Build and start
+        AxonConfiguration configuration = configurer.build();
+        configuration.start();
+
+        return configuration;
+    }
+
+    private void updateOrderView(OrderPlacedEvent event) {
+        // Implementation
+    }
+
+    private void updateShippingStatus(OrderShippedEvent event) {
+        // Implementation
+    }
+}
+----
+
+With `declarative()`, you explicitly create a `SimpleEventHandlingComponent` and subscribe handler logic to specific event types using the `subscribe()` methods. This gives you full control without relying on annotation scanning.
+
+For more advanced processor configuration options, see xref:event-processors/index.adoc[Event Processors].
+
+[[return-values]]
+== Event handler return values
+
+Event handlers can have different return types:
+
+=== Void return type
+
+Most event handlers return `void`:
+
+[source,java]
+----
+@EventHandler
+public void on(OrderPlacedEvent event) {
+    // Update state, no return value
+}
+----
+
+=== CompletableFuture for async processing
+
+For async operations, return a `CompletableFuture`:
+
+[source,java]
+----
+@EventHandler
+public CompletableFuture<Void> on(OrderPlacedEvent event) {
+    return asyncService.processOrder(event.getOrderId());
+}
+----
+
+The framework will wait for the `CompletableFuture` to complete before considering the event handled.
+
+[[best-practices]]
+== Best practices
+
+=== Keep handlers focused
+
+Each event handler should have a single, clear purpose:
+
+[source,java]
+----
+// GOOD: Focused handlers
+@EventHandler
+public void updateReadModel(OrderPlacedEvent event) {
+    // Only update read model
+}
+
+@EventHandler
+public void sendNotification(OrderPlacedEvent event, CommandDispatcher dispatcher) {
+    // Only send notification
+}
+
+// AVOID: Handler doing too many things
+@EventHandler
+public void handleEverything(OrderPlacedEvent event) {
+    // Update read model
+    // Send notifications
+    // Dispatch commands
+    // Log events
+    // etc.
+}
+----
+
+=== When to inject ProcessingContext
+
+Inject `ProcessingContext` as a parameter **only when you need it**.
+
+**You DON'T need ProcessingContext** when only using `CommandDispatcher` or `EventAppender`, as they're automatically context-aware when injected as parameters:
+
+[source,java]
+----
+@EventHandler
+public void on(OrderPlacedEvent event, CommandDispatcher dispatcher) {
+    // CommandDispatcher is already context-aware - correlation data flows automatically
+    dispatcher.send(new ReserveInventoryCommand(event.getOrderId()));
+}
+----
+
+**You DO need ProcessingContext** when:
+- Using components that require it explicitly (like `CommandGateway`)
+- Registering lifecycle callbacks (`onCommit`, `onCleanup`, etc.)
+- Accessing the message or its metadata
+- Passing context to your own services
+
+[source,java]
+----
+@EventHandler
+public void on(OrderPlacedEvent event,
+               ProcessingContext context,
+               CommandDispatcher dispatcher) {
+    // Use dispatcher (no context needed)
+    dispatcher.send(new ReserveInventoryCommand(event.getOrderId()));
+
+    // But also need context for lifecycle callback
+    context.onCommit(ctx -> auditLog.record(event));
+
+    // Or to pass to your own services
+    myService.processOrder(event, context);
+}
+----
+
+=== Inject dispatchers as parameters, not fields
+
+Always inject `EventAppender` and `CommandDispatcher` as method parameters:
+
+[source,java]
+----
+// CORRECT
+@EventHandler
+public void on(OrderPlacedEvent event, EventAppender appender) {
+    appender.append(new OrderConfirmedEvent(...));
+}
+
+// WRONG - will not be ProcessingContext-aware
+@Component
+public class OrderHandler {
+    private final EventAppender appender;  // Don't do this!
+
+    public OrderHandler(EventAppender appender) {
+        this.appender = appender;
+    }
+}
+----
+
+=== Handle events idempotently
+
+Event handlers may be invoked multiple times for the same event (due to retries, replays, or system failures).
+Design handlers to be idempotent:
+
+[source,java]
+----
+@EventHandler
+public void on(OrderPlacedEvent event) {
+    // Check if already processed
+    if (orderRepository.exists(event.getOrderId())) {
+        return;  // Already processed, skip
+    }
+
+    // Process event
+    orderRepository.save(new OrderView(event));
+}
+----
+
+=== Use result objects instead of exceptions for expected failures
+
+In distributed systems, prefer result objects over exceptions for expected failure scenarios:
+
+[source,java]
+----
+// GOOD: Use result object for business decisions
+@EventHandler
+public void on(OrderPlacedEvent event, CommandDispatcher dispatcher) {
+    ValidationResult result = validateOrder(event);
+    if (result.isValid()) {
+        // Dispatch command - allows Order aggregate to verify intent based on its state
+        dispatcher.send(new ValidateOrderCommand(event.getOrderId()));
+    } else {
+        // Dispatch rejection command with validation errors
+        dispatcher.send(new RejectOrderCommand(event.getOrderId(), result.getErrors()));
+    }
+}
+
+// Reserve exceptions for truly exceptional circumstances
+@EventHandler
+public void on(OrderPlacedEvent event) {
+    // This is appropriate for infrastructure failures
+    if (!databaseAvailable()) {
+        throw new InfrastructureException("Database unavailable");
+    }
+}
+----
+
+For more on exception handling philosophy, see xref:messaging-concepts:exception-handling.adoc[Exception Handling].
