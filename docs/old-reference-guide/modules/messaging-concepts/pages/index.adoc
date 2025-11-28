@@ -107,9 +107,9 @@ Commands are sent to the Command Bus, which dispatches them to the appropriate C
 The command handler will apply events that will be published and handled by Event Handlers.
 These handlers can update the read model, which can be queried using Query Messages.
 
-Using xref:axoniq-console-reference:ROOT:index.adoc[AxonIQ Console], you can monitor the flow of messages in your application as you can see in the image below.
+Using xref:axoniq-platform-reference:ROOT:index.adoc[Axoniq Platform],
+you can monitor the flow of messages in your application as you can see in the image below.
 
-image::axoniq-console-flow.gif[alt="Animated graphic of message flow in AxonIQ Console"]
+image::axoniq-console-flow.gif[alt="Animated graphic of message flow in Axoniq Platform"]
 
-Besides seeing the flow, every message handler is individually monitored, providing deep insight into the performance and behavior of your application.
-For more information, see the xref:axoniq-console-reference:ROOT:index.adoc[AxonIQ Console Reference Guide] or link:https://console.axoniq.io[sign up directly].
+Besides seeing the flow, every message handler is individually monitored, providing deep insight into the performance and behavior of your application. For more information, see the xref:axoniq-platform-reference:ROOT:index.adoc[Axoniq Platform Reference Guide] or link:https://console.axoniq.io[sign up directly].

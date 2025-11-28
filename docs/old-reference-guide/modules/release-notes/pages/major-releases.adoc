@@ -149,7 +149,7 @@ As such, the default `ReplayToken` should be regarded as a behavioral breaking c
 
 * Add suppressible log message when console client is not on the classpath. https://github.com/AxonFramework/AxonFramework/pull/2868[#2868]
 * Instruct compiler to include parameter names metadata https://github.com/AxonFramework/AxonFramework/pull/2835[#2835]
-* Log notification about AxonIQ console, if console-framework-client is not there https://github.com/AxonFramework/AxonFramework/issues/2819[#2819]
+* Log notification about Axoniq Platform, if console-framework-client is not there https://github.com/AxonFramework/AxonFramework/issues/2819[#2819]
 * Add additional Axon Server connector configuration to the `AxonServerConfiguration` https://github.com/AxonFramework/AxonFramework/pull/2815[#2815]
 * Introduce the `AxonServerEventStoreFactory` https://github.com/AxonFramework/AxonFramework/pull/2807[#2807]
 * Claim segments operation for Streaming Event Processors https://github.com/AxonFramework/AxonFramework/issues/2803[#2803]

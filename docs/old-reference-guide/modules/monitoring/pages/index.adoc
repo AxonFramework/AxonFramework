@@ -6,12 +6,12 @@ This section contains all information regarding metrics, tracing and monitoring 
 
 == New: Easy monitoring and management
 
-AxonIQ Console is the platform to monitor and manage your Axon Framework applications in great detail.
+Axoniq Platform is the platform to monitor and manage your Axon Framework applications in great detail.
 It provides insights into each handler, event processor and aggregate with almost zero configuration. You can set alerts on these metrics and get notified when something goes wrong, so you can act before it becomes a problem
 
-image::axoniq-console-teaser.png[alt="Statistics measured in AxonIQ Console"]
+image::axoniq-console-teaser.png[alt="Statistics measured in Axoniq Platform"]
 
-For more information, see the xref:axoniq-console-reference:ROOT:index.adoc[AxonIQ Console Reference Guide] or link:https://console.axoniq.io[sign up directly].
+For more information, see the xref:axoniq-platform-reference:ROOT:index.adoc[Axoniq Platform Reference Guide] or link:https://console.axoniq.io[sign up directly].
 
 
 == Reference sections
