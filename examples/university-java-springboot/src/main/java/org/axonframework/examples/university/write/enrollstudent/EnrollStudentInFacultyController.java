@@ -71,7 +71,7 @@ public class EnrollStudentInFacultyController {
                     .status(HttpStatus.CREATED)
                     .body(new EnrollStudentResponse(studentId, request.firstName(), request.lastName()));
         } catch (Exception e) {
-            log.error("Failed to create course.", e);
+            log.error("Failed to enroll student.", e);
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .build();
