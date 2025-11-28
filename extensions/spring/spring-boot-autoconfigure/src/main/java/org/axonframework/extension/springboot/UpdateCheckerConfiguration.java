@@ -20,6 +20,12 @@ import org.axonframework.update.configuration.UsagePropertyProvider;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
+ * An {@link UsagePropertyProvider} implementation that reacts to Spring Boot properties through the
+ * {@link ConfigurationProperties} annotation.
+ * <p>
+ * This component allows users to disable the {@link org.axonframework.update.UpdateChecker} through application
+ * properties.
+ *
  * @author Allard Buijze
  * @since 4.12.2
  */
