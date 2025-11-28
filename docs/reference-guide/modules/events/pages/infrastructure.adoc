@@ -46,7 +46,7 @@ Tags are particularly useful for:
 * **Filtering event streams** - Create focused event processors that only handle relevant events
 * **Business-level organization** - Group events by business concepts rather than technical entity boundaries
 
-==== EventCriteria
+==== `EventCriteria`
 
 Use `EventCriteria` to query events based on tags when reading from the event store:
 

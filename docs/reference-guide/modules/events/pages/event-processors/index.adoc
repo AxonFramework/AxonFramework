@@ -298,7 +298,7 @@ Based on the provided `ErrorContext` object, you can decide to ignore the error,
 //[[dead-letter-queue]]
 //=== Dead-letter queue
 //
-//// TODO: Reinstate when DLQ API is available in Axon 5.0
+// TODO: Reinstate when DLQ API is available in Axon 5.0
 //Although configuring a <<listener-invocation-error-handler,Listener Invocation Error Handler>>
 //and <<event-processor-error-handler,Error Handler>>
 //helps you to deal with exceptions when processing events, you still end up in an event handling stop.

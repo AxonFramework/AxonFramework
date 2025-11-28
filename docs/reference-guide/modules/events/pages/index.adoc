@@ -7,7 +7,7 @@ Other parts of the application, or even other applications, can react to these e
 
 == Core concepts
 
-=== EventSink
+=== `EventSink`
 
 An **EventSink** is any component where you can send events into.
 This is a general abstraction that encompasses:
@@ -20,7 +20,7 @@ The EventSink abstraction allows you to publish events without knowing the speci
 
 For details, see xref:event-dispatchers.adoc[Event Dispatchers].
 
-=== MessageStream
+=== `MessageStream`
 
 Event handling is built on **MessageStream**, a non-blocking, async-native abstraction for working with sequences of messages.
 
@@ -50,7 +50,7 @@ DCB enables more flexible event sourcing patterns while maintaining consistency 
 
 For details, see xref:infrastructure.adoc[Event Infrastructure].
 
-=== ProcessingContext
+=== `ProcessingContext`
 
 Event handlers receive a **ProcessingContext** that manages the processing lifecycle:
 
@@ -198,7 +198,7 @@ See xref:infrastructure.adoc[Event Infrastructure] for complete details.
 
 == Key concepts
 
-=== Events vs Commands
+=== Events or commands
 
 - **Commands** - Express intent, can be rejected, directed to specific handler
 - **Events** - Express facts, cannot be rejected, broadcast to all interested parties
@@ -226,7 +226,7 @@ Two types of event processors are available:
 
 See xref:event-processors/index.adoc[Event Processors] for detailed comparison.
 
-=== Event sourcing
+=== Event Sourcing
 
 Event sourcing stores all changes to application state as a sequence of events:
 

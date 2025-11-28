@@ -61,7 +61,7 @@ In this example, when an `OrderPlacedEvent` is published, **both** the `on()` an
 In Axon 5, the identity of an event is determined by its **MessageType**, not by its Java class.
 This is a fundamental conceptual shift from Axon 4.
 
-=== MessageType vs Java class
+=== `MessageType` vs Java class
 
 A `MessageType` consists of two parts:
 
@@ -71,7 +71,7 @@ A `MessageType` consists of two parts:
 The Java class used to represent an event is just one possible representation of that event.
 Different handlers can receive the same event in different Java class representations, and Axon will convert the payload accordingly at handling time.
 
-=== Defining event types with @Event
+=== Defining event types with `@Event`
 
 You can explicitly define an event's type using the `@Event` annotation on your event class:
 
@@ -175,12 +175,12 @@ This approach significantly reduces the need for upcasters in many scenarios.
 When you evolve your event structures, handlers can often adapt by simply changing their parameter type, rather than requiring upcasters to transform stored events.
 
 [[processing-context]]
-== ProcessingContext in event handlers
+== `ProcessingContext` in event handlers
 
 The `ProcessingContext` is a critical component in Axon 5.
 On the handling side, a `ProcessingContext` is **always** created by the framework when processing an event.
 
-=== Injecting ProcessingContext
+=== Injecting `ProcessingContext`
 
 You can inject the `ProcessingContext` as a parameter in your event handler:
 
@@ -202,7 +202,7 @@ public void handle(OrderPlacedEvent event, ProcessingContext context) {
 }
 ----
 
-=== Passing ProcessingContext to components
+=== Passing `ProcessingContext` to components
 
 When your event handler needs to dispatch commands, publish events, or interact with other Axon components, you should pass the `ProcessingContext` to those components.
 This ensures correlation data flows through your system.
@@ -264,7 +264,7 @@ public void on(OrderPlacedEvent event) {
 }
 ----
 
-=== ProcessingContext
+=== `ProcessingContext`
 
 Provides access to the processing lifecycle and resources:
 
@@ -276,7 +276,7 @@ public void on(OrderPlacedEvent event, ProcessingContext context) {
 }
 ----
 
-=== EventAppender
+=== `EventAppender`
 
 Allows publishing new events from within the handler:
 
@@ -292,7 +292,7 @@ public void on(OrderPlacedEvent event, EventAppender appender) {
 IMPORTANT: EventAppender must be injected as a parameter, not as a field.
 It is `ProcessingContext`-scoped and automatically propagates correlation data.
 
-=== CommandDispatcher
+=== `CommandDispatcher`
 
 Allows dispatching commands from within the handler:
 
@@ -305,7 +305,7 @@ public void on(OrderPlacedEvent event, CommandDispatcher dispatcher) {
 }
 ----
 
-=== Metadata and @MetadataValue
+=== `Metadata` and `@MetadataValue`
 
 Access message metadata:
 
