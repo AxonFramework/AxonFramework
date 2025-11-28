@@ -22,6 +22,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest(classes = UniversityExampleApplication.class)
 @ActiveProfiles("itest")
+@Disabled("Currently disabled because of the bug #3966")
 class UniversityTestApplicationITest {
 
     @Nested
