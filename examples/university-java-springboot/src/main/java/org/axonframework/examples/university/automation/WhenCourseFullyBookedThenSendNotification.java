@@ -37,7 +37,6 @@ import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.annotation.InjectEntity;
 import org.springframework.stereotype.Component;
 
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -47,13 +46,67 @@ import java.util.concurrent.CompletableFuture;
  * The implementation uses event soured entity to track the state of courses and their capacities. When a course is
  * determined to be fully booked, a notification is sent to the appropriate recipient.
  * <p>
- * The functionality includes: - Managing the state of courses (availability and subscription levels). - Reacting to
- * events such as course capacity updates, student subscriptions, and un-subscriptions.
+ * The functionality includes:
+ * - Managing the state of courses (availability and subscription levels).
+ * - Reacting to events such as course capacity updates, student subscriptions, and un-subscriptions.
+ * - Sending notification if necessary.
  */
 @Component
 @Slf4j
 public class WhenCourseFullyBookedThenSendNotification {
 
+    @EventHandler
+    CompletableFuture<?> react(
+            StudentSubscribedToCourse event,
+            CommandDispatcher commandDispatcher,
+            ProcessingContext context
+    ) {
+        var state = context.component(StateManager.class).loadEntity(State.class, event.courseId(), context).join();
+        return sendNotificationIfCourseFullyBooked(state, commandDispatcher);
+    }
+
+    @EventHandler
+    CompletableFuture<?> react(
+            CourseCapacityChanged event,
+            CommandDispatcher commandDispatcher,
+            ProcessingContext context
+    ) {
+        var state = context.component(StateManager.class).loadEntity(State.class, event.courseId(), context).join();
+        return sendNotificationIfCourseFullyBooked(state, commandDispatcher);
+    }
+
+    private CompletableFuture<?> sendNotificationIfCourseFullyBooked(
+            State state,
+            CommandDispatcher commandDispatcher
+    ) {
+        var automationState = state != null ? state : new State();
+        var courseFullyBooked = automationState.course != null && automationState.course.isFullyBooked();
+        var shouldNotify = courseFullyBooked && !automationState.notified();
+        if (!shouldNotify) {
+            return CompletableFuture.completedFuture(null);
+        }
+        return commandDispatcher.send(new SendCourseFullyBookedNotification(automationState.course.courseId()),
+                                      Object.class);
+    }
+
+
+    @CommandHandler
+    void decide(
+            SendCourseFullyBookedNotification command,
+            @InjectEntity State state,
+            ProcessingContext context
+    ) {
+        var canNotify = state != null && !state.notified();
+        if (canNotify) {
+
+            var message = String.format("Course %s is fully booked", command.courseId());
+            var notification = new NotificationService.Notification("admin", message);
+            context.component(NotificationService.class).sendNotification(notification);
+
+            var eventAppender = EventAppender.forContext(context);
+            eventAppender.append(new CourseFullyBookedNotificationSent(command.courseId()));
+        }
+    }
 
     @EventSourced(idType = CourseId.class, tagKey = FacultyTags.COURSE_ID)
     record State(Course course, boolean notified) {
@@ -112,60 +165,6 @@ public class WhenCourseFullyBookedThenSendNotification {
                 return notified;
             }
             return false;
-        }
-    }
-
-
-    @EventHandler
-    CompletableFuture<?> react(
-            StudentSubscribedToCourse event,
-            CommandDispatcher commandDispatcher,
-            ProcessingContext context
-    ) {
-        var state = context.component(StateManager.class).loadEntity(State.class, event.courseId(), context).join();
-        return sendNotificationIfCourseFullyBooked(state, commandDispatcher);
-    }
-
-    @EventHandler
-    CompletableFuture<?> react(
-            CourseCapacityChanged event,
-            CommandDispatcher commandDispatcher,
-            ProcessingContext context
-    ) {
-        var state = context.component(StateManager.class).loadEntity(State.class, event.courseId(), context).join();
-        return sendNotificationIfCourseFullyBooked(state, commandDispatcher);
-    }
-
-    private CompletableFuture<?> sendNotificationIfCourseFullyBooked(
-            State state,
-            CommandDispatcher commandDispatcher
-    ) {
-        var automationState = state != null ? state : new State();
-        var courseFullyBooked = automationState.course != null && automationState.course.isFullyBooked();
-        var shouldNotify = courseFullyBooked && !automationState.notified();
-        if (!shouldNotify) {
-            return CompletableFuture.completedFuture(null);
-        }
-        return commandDispatcher.send(new SendCourseFullyBookedNotification(automationState.course.courseId()),
-                                      Object.class);
-    }
-
-
-    @CommandHandler
-    void decide(
-            SendCourseFullyBookedNotification command,
-            @InjectEntity State state,
-            ProcessingContext context
-    ) {
-        var canNotify = state != null && !state.notified();
-        if (canNotify) {
-
-            var message = String.format("Course %s is fully booked", command.courseId());
-            var notification = new NotificationService.Notification("admin", message);
-            context.component(NotificationService.class).sendNotification(notification);
-
-            var eventAppender = EventAppender.forContext(context);
-            eventAppender.append(new CourseFullyBookedNotificationSent(command.courseId()));
         }
     }
 }

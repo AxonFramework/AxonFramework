@@ -30,9 +30,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * REST Controller for enrolling students.
+ * REST Controller for unsubscribing students from courses.
  * <p>
- * This controller handles student enrollment requests and dispatches them via Axon CommandGateway.
+ * This controller handles student unsubscription requests and dispatches them via Axon CommandGateway.
  */
 @RestController
 @RequestMapping("/api/subscriptions")
@@ -45,7 +45,7 @@ public class UnsubscribeStudentToCourseController {
 
     @DeleteMapping
     public ResponseEntity<Void> unsubscribeStudentFromCourse(@RequestBody UnsubscribeStudentToCourseRequest request) {
-        log.info("Subscribing student {} to course {}", request.studentId(), request.courseId());
+        log.info("Unsubscribing student {} from course {}", request.studentId(), request.courseId());
 
         try {
             var command = new UnsubscribeStudentFromCourse(request.studentId(), CourseId.of(request.courseId()));

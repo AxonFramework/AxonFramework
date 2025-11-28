@@ -19,7 +19,7 @@ import org.axonframework.examples.university.shared.CourseId;
 import org.axonframework.modelling.annotation.TargetEntityId;
 
 /**
- * Command to send notification about a booked course.
+ * Command to send notification about a fully booked course.
  * @param courseId course id.
  */
 public record SendCourseFullyBookedNotification(@TargetEntityId CourseId courseId) {

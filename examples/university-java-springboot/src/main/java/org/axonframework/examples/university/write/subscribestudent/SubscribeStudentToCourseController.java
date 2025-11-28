@@ -27,12 +27,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.UUID;
-
 /**
- * REST Controller for enrolling students.
+ * REST Controller for subscribing students to courses.
  * <p>
- * This controller handles student enrollment requests and dispatches them via Axon CommandGateway.
+ * This controller handles student subscription requests and dispatches them via Axon CommandGateway.
  */
 @RestController
 @RequestMapping("/api/subscriptions")
@@ -52,7 +50,9 @@ public class SubscribeStudentToCourseController {
 
             commandGateway.sendAndWait(command);
 
-            log.info("Successfully subscribed student with ID: {} to course {}", command.studentId(), request.courseId());
+            log.info("Successfully subscribed student with ID: {} to course {}",
+                     command.studentId(),
+                     request.courseId());
 
             return ResponseEntity
                     .status(HttpStatus.NO_CONTENT)
