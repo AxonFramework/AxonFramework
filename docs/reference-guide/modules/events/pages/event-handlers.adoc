@@ -61,7 +61,7 @@ In this example, when an `OrderPlacedEvent` is published, **both** the `on()` an
 In Axon 5, the identity of an event is determined by its **MessageType**, not by its Java class.
 This is a fundamental conceptual shift from Axon 4.
 
-=== `MessageType` vs Java class
+=== `MessageType` or Java class
 
 A `MessageType` consists of two parts:
 
@@ -627,7 +627,7 @@ public void on(OrderPlacedEvent event) {
 }
 ----
 
-=== CompletableFuture for async processing
+=== `CompletableFuture` for async processing
 
 For async operations, return a `CompletableFuture`:
 
@@ -672,7 +672,7 @@ public void handleEverything(OrderPlacedEvent event) {
 }
 ----
 
-=== When to inject ProcessingContext
+=== When to inject `ProcessingContext`
 
 Inject `ProcessingContext` as a parameter **only when you need it**.
 
