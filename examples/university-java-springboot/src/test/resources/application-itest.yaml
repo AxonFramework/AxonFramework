@@ -1,6 +1,9 @@
+
 spring:
   docker:
     compose:
       skip:
         in-tests: false
       file: file:../docker-compose.yaml
+server:
+  port: 8081

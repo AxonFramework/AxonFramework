@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package org.axonframework.extension.springboot.example;
+package org.axonframework.examples.university;
 
-import org.axonframework.examples.university.UniversityExampleApplication;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
