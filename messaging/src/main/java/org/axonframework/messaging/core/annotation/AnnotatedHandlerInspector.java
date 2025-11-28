@@ -210,7 +210,7 @@ public class AnnotatedHandlerInspector<T> {
             handlerDefinition.createHandler(inspectedType,
                                             method,
                                             parameterResolverFactory,
-                                            result -> resolveToStream(result, new ClassBasedMessageTypeResolver()))
+                                            result -> resolveToStream(result, new AnnotationMessageTypeResolver()))
                              .ifPresent(h -> registerHandler(inspectedType, h));
         }
 

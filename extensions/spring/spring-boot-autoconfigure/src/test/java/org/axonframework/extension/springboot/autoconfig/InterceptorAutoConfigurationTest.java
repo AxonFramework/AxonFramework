@@ -55,7 +55,7 @@ import java.util.concurrent.TimeUnit;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Test class validating the behavior of the {@link InfrastructureConfiguration}.
+ * Test class validating the behavior of the {@link InfrastructureAutoConfiguration}.
  *
  * @author Christian Thiel
  */
