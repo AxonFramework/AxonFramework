@@ -44,6 +44,7 @@ import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 import static org.axonframework.common.Assert.assertStrictPositive;
+import static org.axonframework.common.FutureUtils.runFailing;
 
 /**
  * Default implementation of the {@code AxonApplication}.
@@ -218,7 +219,7 @@ public class DefaultAxonApplication implements ApplicationConfigurer, LifecycleR
                 List<LifecycleHandler> handlers = phasedHandlers.getValue();
                 try {
                     handlers.stream()
-                            .map(lch -> lch.run(this))
+                            .map(lch -> runFailing(() -> lch.run(this)))
                             .map(c -> c.thenRun(NOTHING))
                             .reduce(CompletableFuture::allOf)
                             .orElse(FutureUtils.emptyCompletedFuture())

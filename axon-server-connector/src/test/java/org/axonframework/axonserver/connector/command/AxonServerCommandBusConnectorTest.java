@@ -262,7 +262,7 @@ class AxonServerCommandBusConnectorTest {
         testSubject.subscribe(ANY_TEST_COMMAND_NAME, ANY_TEST_LOAD_FACTOR);
 
         // Assert
-        verify(asyncRegistration).onAck(any());
+        verify(asyncRegistration).onAck(any(Runnable.class));
     }
 
     @Test

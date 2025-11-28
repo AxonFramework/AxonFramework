@@ -73,7 +73,7 @@ class AxonServerQueryBusConnectorTest {
         @Test
         void subscribeRegistersQueryHandler() {
             Registration reg = mock(Registration.class);
-            when(reg.onAck(any())).thenAnswer(i -> {
+            when(reg.onAck(any(Runnable.class))).thenAnswer(i -> {
                 i.getArgument(0, Runnable.class).run();
                 return null;
             });
@@ -88,7 +88,7 @@ class AxonServerQueryBusConnectorTest {
         @Test
         void unsubscribeCancelsRegistrationAndReturnsTrueWhenPresent() {
             Registration reg = mock(Registration.class);
-            when(reg.onAck(any())).thenAnswer(i -> {
+            when(reg.onAck(any(Runnable.class))).thenAnswer(i -> {
                 i.getArgument(0, Runnable.class).run();
                 return null;
             });
