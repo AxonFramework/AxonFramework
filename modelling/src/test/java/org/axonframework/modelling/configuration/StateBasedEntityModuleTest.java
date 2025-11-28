@@ -16,19 +16,19 @@
 
 package org.axonframework.modelling.configuration;
 
+import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.CommandHandlingComponent;
-import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.correlation.CorrelationDataProviderRegistry;
 import org.axonframework.messaging.core.correlation.DefaultCorrelationDataProviderRegistry;
-import org.axonframework.modelling.repository.SimpleRepository;
-import org.axonframework.modelling.repository.SimpleRepositoryEntityLoader;
-import org.axonframework.modelling.repository.SimpleRepositoryEntityPersister;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.entity.EntityCommandHandlingComponent;
+import org.axonframework.modelling.repository.AccessSerializingRepository;
 import org.axonframework.modelling.repository.Repository;
+import org.axonframework.modelling.repository.SimpleRepositoryEntityLoader;
+import org.axonframework.modelling.repository.SimpleRepositoryEntityPersister;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -122,7 +122,7 @@ class StateBasedEntityModuleTest {
                 .getComponent(StateManager.class)
                 .repository(Course.class, CourseId.class);
 
-        assertInstanceOf(SimpleRepository.class, result);
+        assertInstanceOf(AccessSerializingRepository.class, result);
         assertTrue(constructedLoader.get());
         assertTrue(constructedPersister.get());
     }
