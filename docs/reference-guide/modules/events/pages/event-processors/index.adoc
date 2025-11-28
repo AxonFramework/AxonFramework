@@ -3,7 +3,7 @@
 
 xref:event-handlers.adoc[Event handlers] define the business logic to be performed when an event is received.
 _Event Processors_ are the components that take care of the technical aspects of that processing.
-They start a xref:messaging-concepts:unit-of-work.adoc[unit of work] and possibly a transaction.
+They start a xref:messaging-concepts:processing-context.adoc[unit of work] and possibly a transaction.
 However, they also ensure that xref:messaging-concepts:message-correlation.adoc[correlation data] can be correctly attached to all messages created during event processing, among other non-functional requirements.
 
 The image below depicts a representation of the organization of Event Processors and Event Handlers:
@@ -405,13 +405,13 @@ Note that in the majority of the scenarios, the defaults will suffice.
 This section simply serves to show these options to allow adjustment if the application requires it.
 
 The first of these is the `TransactionManager`.
-Axon uses the `TransactionManager` to attach a transaction to every xref:messaging-concepts:unit-of-work.adoc[Unit of Work].
+Axon uses the `TransactionManager` to attach a transaction to every xref:messaging-concepts:processing-context.adoc[Unit of Work].
 Within a Spring environment, the `TransactionManager` defaults to a `SpringTransactionManager`, which uses Spring's `PlatformTransactionManager` under the hood.
 In non Spring environments, it would be wise to build a `TransactionManager` implement if transaction management is required, of course.
 Such an implementation only requires the definition of the `TransactionManager#startTransaction()` method.
 To adjust the transaction manager for an Event Processor, the `registerTransactionManager(String, Function<Configuration, TransactionManager>)` on the `EventProcessingConfigurer` should be used.
 
 Secondly, you can adjust the desired `RollbackConfiguration` per Event Processor.
-It is the `RollbackConfiguration` that decide when a xref:messaging-concepts:unit-of-work.adoc[Unit of Work] should rollback the transaction.
-The default `RollbackConfiguration` is to rollback on any type of `Throwable`; the xref:messaging-concepts:unit-of-work.adoc[Unit of Work] page describes the other options you can choose.
+It is the `RollbackConfiguration` that decide when a xref:messaging-concepts:processing-context.adoc[Unit of Work] should rollback the transaction.
+The default `RollbackConfiguration` is to rollback on any type of `Throwable`; the xref:messaging-concepts:processing-context.adoc[Unit of Work] page describes the other options you can choose.
 To adjust the default behaviour, the `registerRollbackConfiguration(String, Function<Configuration, RollbackConfiguration>)` function should be invoked on the `EventProcessingConfigurer`.

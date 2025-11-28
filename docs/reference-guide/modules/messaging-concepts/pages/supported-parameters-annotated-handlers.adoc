@@ -21,15 +21,17 @@ By default, `@CommandHandler` annotated methods allow the following parameter ty
 |===
 |Parameter designation |Purpose
 
-|The first parameter |The first parameter is always the payload of the command message. It may also be of type: `Message` or `CommandMessage`, if the `@CommandHandler` annotation explicitly defined the name of the command the handler can process. By default, a command name is the fully qualified class name of the command its payload.
+|The first parameter |The first parameter is always the payload of the command message. It may also be of type `Message` or `CommandMessage`, if the `@CommandHandler` annotation explicitly defines the message type the handler processes. By default, a command's message type is derived from the payload class.
 |type: `MetaData` |Will contain the entire metadata of a `CommandMessage`.
 |annotated with `@MetaDataValue` |Will resolve the metadata value with the key as indicated on the annotation. If `required` is `false` (default), `null` is passed when the metadata value is not present. If `required` is `true`, the resolver will not match and prevent the method from being invoked when the metadata value is not present.
 |type: `Message`, or type: `CommandMessage` |Will get the complete message, with both the payload and the metadata. Resolving the entire `Message` is helpful if a method needs several metadata fields or other properties of the message.
-|type: `UnitOfWork` |Will get the current xref:unit-of-work.adoc[unit of work] injected. The `UnitOfWork` allows command handlers to register actions to be performed at specific stages of the unit of work or gain access to the resources registered with it.
+|type: `ProcessingContext` |Will get the current xref:processing-context.adoc[`ProcessingContext`] injected. The `ProcessingContext` allows command handlers to register actions to be performed at specific stages of processing or gain access to the resources registered with it.
 |type: `String` annotated with `@MessageIdentifier` |Will resolve the identifier of the handled `CommandMessage`.
-|type: `InterceptorChain` |Will resolve the chain of `MessageHandlerInterceptor`s for a `CommandMessage`. You should use this feature in conjunction with a `@CommandHandlerInterceptor` annotated method. For more specifics on this it is recommended to read xref:message-intercepting.adoc#command-handler-interceptor-annotation[this] section.
-|subtype of `ScopeDescriptor` |The scope descriptor is helpful when xref:deadlines:index.adoc[scheduling a deadline] through the `DeadlineManager`. Note that the `ScopeDescriptor` only makes sense from within the scope of an Aggregate or Saga.
-|Spring Bean |If the application runs in a Spring environment, any Spring Bean can be resolved. The parameter can be the annotation with `@Qualifier` if a specific version of the bean should be wired.
+|type: `String` annotated with `@AggregateType` |Will resolve the aggregate type name when available in the processing context. This is typically available when handling commands within an aggregate.
+|type: `MessageHandlerInterceptorChain` |Will resolve the chain of message handler interceptors for a `CommandMessage`. You should use this parameter in conjunction with handler interceptor methods. For more specifics, see xref:message-intercepting.adoc[Message Intercepting].
+|type: `EventAppender` |Will inject the `EventAppender` for publishing events from within a command handler. This is useful when you need to publish events outside of an entity context.
+|type: `CommandDispatcher` |Will inject the `CommandDispatcher` for dispatching commands from within a command handler. This is useful for command orchestration or dispatching follow-up commands.
+|Spring Bean |If the application runs in a Spring environment, any Spring Bean can be resolved. The parameter can be annotated with `@Qualifier` if a specific version of the bean should be wired.
 |===
 
 [[supported-parameters-for-event-handlers]]
@@ -40,19 +42,22 @@ By default, `@EventHandler` annotated methods allow the following parameter type
 |===
 |Parameter designation |Purpose
 
-|The first parameter |The first parameter is the payload of the event message. If the event handler does not need access to the payload of the message, you can specify the expected payload type on the `@EventHandler` annotation. Do not configure the payload type on the annotation if you want the payload passed as a parameter.
-|type: `EventMessage` |Will resolve the `EventMessage` in its entirety as well. If the first parameter is of type message, it effectively matches an event of any type, even if generic parameters suggest otherwise. Due to type erasure, Axon cannot detect what parameter the implementation expects. It is best to declare a parameter of the payload type as first parameter in such a case, followed by a parameter of type message.
-|type: `MetaData` |Will contain the entire metadata of a `EventMessage`.
+|The first parameter |The first parameter is the payload of the event message. If the event handler does not need access to the payload of the message, you can specify the expected message type on the `@EventHandler` annotation. Do not configure the message type on the annotation if you want the payload passed as a parameter.
+|type: `EventMessage` |Will resolve the `EventMessage` in its entirety. If the first parameter is of type `EventMessage`, it effectively matches an event of any type. It is best to declare a parameter of the payload type as the first parameter, followed by a parameter of type `EventMessage` if you need both.
+|type: `MetaData` |Will contain the entire metadata of an `EventMessage`.
 |annotated with `@MetaDataValue` |Will resolve the metadata value with the key as indicated on the annotation. If `required` is `false` (default), `null` is passed when the metadata value is not present. If `required` is `true`, the resolver will not match and prevent the method from being invoked when the metadata value is not present.
-|type: `UnitOfWork` |Will get the current xref:unit-of-work.adoc[unit of work] injected. The `UnitOfWork` allows event handlers to register actions to be performed at specific stages of the unit of work or gain access to the resources registered with it.
-|type: `String` annotated with `@MessageIdentifier` |Will resolve the identifier of the handled `CommandMessage`.
-|type: `java.time.Instant` annotated with `@Timestamp`, or type: `java.time.temporal.Temporal` annotated with `@Timestamp` |Will resolve to the timestamp of the `EventMessage`. The resolved timestamp is the time at which the event was generated.
-|type: `java.lang.Long` annotated with `@SequenceNumber`, or type: `long` annotated with `@SequenceNumber` |Will resolve to the `sequenceNumber` of a `DomainEventMessage`. This parameter provides the order in which the event was generated (within the aggregate scope it originated from). It is important to note that `DomainEventMessage` *can only* originate from an Aggregate. Hence, events that have been published directly on the `EventBus`/`EventGateway` are _not_ implementations of the `DomainEventMessage`. As such, they will not resolve a sequence number.
-|type: `TrackingToken` |Will have the current xref:events:event-processors/streaming.adoc#tracking-tokens[token] related to the processed event injected. Note that this will only work for `StreamingEventProcessor` instances, as otherwise, there is no token attached to the events.
-|type: `java.lang.String` annotated with  `@SourceId` |Will resolve to the `aggregateIdentifier` of a `DomainEventMessage`. This parameter provides the identifier of the aggregate from which the event originates. It is important to note that `DomainEventMessage` *can only* originate from an Aggregate. Hence, events that have been published directly on the `EventBus`/`EventGateway` are _not_ implementations of the `DomainEventMessage`. As such, they will not resolve a source id.
-|type: `DeadLetter<EventMessage<?>>` |Will have the current xref:events:event-processors/index.adoc#dead-letter-queue[dead letter] related to the processed event injected. Note that the inserted field is _nullable_ since there is no guarantee the event of the handler is a dead letter, yes or no.
-|type: `ReplayStatus` |Will resolve to the ReplayStatus indicating whether the event is delivered as a 'REGULAR' event or a 'REPLAY' event.
-|Spring Bean |If the application runs in a Spring environment, any Spring Bean can be resolved. The parameter can be the annotation with `@Qualifier` if a specific version of the bean should be wired.
+|type: `ProcessingContext` |Will get the current xref:processing-context.adoc[`ProcessingContext`] injected. The `ProcessingContext` allows event handlers to register actions to be performed at specific stages of processing or gain access to the resources registered with it.
+|type: `String` annotated with `@MessageIdentifier` |Will resolve the identifier of the handled `EventMessage`.
+|type: `String` annotated with `@AggregateType` |Will resolve the aggregate type name when the event originated from an aggregate. This provides the type of aggregate that published the event.
+|type: `java.time.Instant` annotated with `@Timestamp` |Will resolve to the timestamp of the `EventMessage`. The resolved timestamp is the time at which the event was generated.
+|type: `Long` or `long` annotated with `@SequenceNumber` |Will resolve to the sequence number of events originating from an aggregate. This parameter provides the order in which the event was generated within the aggregate that published it. Only available for events published by aggregates.
+|type: `String` annotated with `@SourceId` |Will resolve to the aggregate identifier when the event originated from an aggregate. This parameter provides the identifier of the aggregate that published the event. Only available for events published by aggregates.
+|type: `TrackingToken` |Will have the current xref:events:event-processors/streaming.adoc#tracking-tokens[token] related to the processed event injected. Note that this will only work for streaming event processors, as otherwise there is no token attached to the events.
+|type: `ReplayStatus` |Will resolve to the `ReplayStatus` indicating whether the event is delivered as a regular event or a replay event during event replay operations.
+|annotated with `@ReplayContext` |Will resolve to replay context values that were registered when the replay was started. This is only available during event replay and can be used to access replay-specific configuration or state.
+|type: `EventAppender` |Will inject the `EventAppender` for publishing events from within an event handler. This is useful when an event handler needs to publish new events in response to the event being handled.
+|type: `CommandDispatcher` |Will inject the `CommandDispatcher` for dispatching commands from within an event handler. This is useful when events should trigger command execution.
+|Spring Bean |If the application runs in a Spring environment, any Spring Bean can be resolved. The parameter can be annotated with `@Qualifier` if a specific version of the bean should be wired.
 |===
 
 [[supported-parameters-for-query-handlers]]
@@ -63,11 +68,138 @@ By default, `@QueryHandler` annotated methods allow the following parameter type
 |===
 |Parameter designation |Purpose
 
-|The first parameter |The first parameter is always the payload of the query message. It may also be of type: `Message` or `QueryMessage`, if the `@QueryHandler` annotation explicitly defined the name of the query the handler can process. By default, a query name is the fully qualified class name of the query its payload.
+|The first parameter |The first parameter is always the payload of the query message. It may also be of type `Message` or `QueryMessage`, if the `@QueryHandler` annotation explicitly defines the message type the handler processes. By default, a query's message type is derived from the payload class.
 |type: `MetaData` |Will contain the entire metadata of a `QueryMessage`.
 |annotated with `@MetaDataValue` |Will resolve the metadata value with the key as indicated on the annotation. If `required` is `false` (default), `null` is passed when the metadata value is not present. If `required` is `true`, the resolver will not match and prevent the method from being invoked when the metadata value is not present.
-|type: `Message`, or  type: `QueryMessage` |Will get the complete message, with both the payload and the metadata. Resolving the entire `Message` is helpful if a method needs several metadata fields or other properties of the message.
-|type: `UnitOfWork` |Will get the current xref:unit-of-work.adoc[unit of work] injected. The `UnitOfWork` allows query handlers to register actions to be performed at specific stages of the unit of work or gain access to the resources registered with it.
+|type: `Message`, or type: `QueryMessage` |Will get the complete message, with both the payload and the metadata. Resolving the entire `Message` is helpful if a method needs several metadata fields or other properties of the message.
+|type: `ProcessingContext` |Will get the current xref:processing-context.adoc[`ProcessingContext`] injected. The `ProcessingContext` allows query handlers to register actions to be performed at specific stages of processing or gain access to the resources registered with it.
 |type: `String` annotated with `@MessageIdentifier` |Will resolve the identifier of the handled `QueryMessage`.
-|Spring Bean |If the application runs in a Spring environment, any Spring Bean can be resolved. The parameter can be the annotation with `@Qualifier` if a specific version of the bean should be wired.
+|type: `String` annotated with `@AggregateType` |Will resolve the aggregate type name when available in the processing context. This is typically available when handling queries within an aggregate context.
+|type: `QueryUpdateEmitter` |Will inject the `QueryUpdateEmitter` for emitting updates to subscription queries. This is useful when query handlers need to push incremental updates or notify subscribers of changes.
+|type: `CommandDispatcher` |Will inject the `CommandDispatcher` for dispatching commands from within a query handler. While generally discouraged (queries should not have side effects), this may be useful in specific scenarios.
+|Spring Bean |If the application runs in a Spring environment, any Spring Bean can be resolved. The parameter can be annotated with `@Qualifier` if a specific version of the bean should be wired.
 |===
+
+== Examples
+
+Here are some examples demonstrating the use of different parameter types:
+
+=== Basic command handler with `ProcessingContext`
+
+[source,java]
+----
+@CommandHandler
+public OrderResult handle(PlaceOrderCommand command,
+                         ProcessingContext context) {
+    // Access metadata
+    String userId = context.message().metadata().get("userId");
+
+    // Register cleanup action
+    context.onCleanup(ctx -> cleanupResources());
+
+    // Process command
+    return placeOrder(command);
+}
+----
+
+=== Event handler publishing follow-up events
+
+[source,java]
+----
+@EventHandler
+public void on(OrderPlacedEvent event,
+               EventAppender eventAppender,
+               ProcessingContext context) {
+    // Publish a follow-up event
+    PaymentRequestedEvent paymentEvent = new PaymentRequestedEvent(
+        event.getOrderId(),
+        event.getAmount()
+    );
+
+    eventAppender.append(paymentEvent, context);
+}
+----
+
+=== Event handler with metadata and aggregate information
+
+[source,java]
+----
+@EventHandler
+public void on(OrderPlacedEvent event,
+               @SourceId String aggregateId,
+               @SequenceNumber Long sequence,
+               @Timestamp Instant timestamp,
+               @MetaDataValue("userId") String userId) {
+    // aggregateId contains the aggregate identifier
+    // sequence contains the event sequence number
+    // timestamp contains when the event occurred
+    // userId is extracted from metadata
+
+    updateProjection(aggregateId, event, timestamp);
+}
+----
+
+=== Query handler with subscription query support
+
+[source,java]
+----
+@QueryHandler
+public OrderSummary handle(OrderQuery query,
+                          QueryUpdateEmitter updateEmitter) {
+    OrderSummary summary = loadOrderSummary(query.getOrderId());
+
+    // Register for updates to send incremental changes
+    registerForUpdates(query.getOrderId(), update -> {
+        updateEmitter.emit(OrderQuery.class,
+            q -> q.getOrderId().equals(query.getOrderId()),
+            update);
+    });
+
+    return summary;
+}
+----
+
+=== Command handler dispatching follow-up commands
+
+[source,java]
+----
+@CommandHandler
+public CompletableFuture<Void> handle(ProcessOrderCommand command,
+                                      CommandDispatcher commandDispatcher) {
+    // Process the order
+    processOrder(command);
+
+    // Dispatch follow-up command
+    // CommandDispatcher is already context-aware, no need to pass context
+    ShipOrderCommand shipCommand = new ShipOrderCommand(command.getOrderId());
+    CommandResult result = commandDispatcher.send(shipCommand);
+
+    // Return the CompletableFuture so the handler only completes when the command finishes
+    return result.toCompletableFuture()
+                 .thenAccept(r -> logger.info("Shipping initiated"))
+                 .exceptionally(ex -> {
+                     logger.error("Failed to initiate shipping: {}", ex.getMessage());
+                     // Handle error appropriately
+                     return null;
+                 });
+}
+----
+
+=== Event handler accessing replay context
+
+[source,java]
+----
+@EventHandler
+public void on(OrderPlacedEvent event,
+               ReplayStatus replayStatus,
+               @ReplayContext String replayReason) {
+    if (replayStatus == ReplayStatus.REPLAY) {
+        // Special handling during replay
+        logger.info("Replaying event due to: {}", replayReason);
+        // Skip side effects during replay
+    } else {
+        // Normal processing
+        sendEmailNotification(event);
+    }
+}
+----
