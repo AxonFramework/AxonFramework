@@ -45,5 +45,6 @@
 
     <modules>
         <module>university-java-springboot</module>
+        <module>university-java</module>
     </modules>
 </project>
