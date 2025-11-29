@@ -144,19 +144,39 @@ class ReplayTokenTest {
         /**
          * Simulates AxonServer behavior where firstToken() returns position 0.
          * Current default: es.firstToken(null).thenApply(ReplayToken::createReplayToken)
+         * <p>
+         * With currentToken=null (start from beginning), the first event is at position 0.
+         * With tokenAtReset=0, event at position 0 is still within replay range.
          */
         @Test
-        void axonServerFirstToken_firstEventAtPosition0_isConsideredReplay() {
+        void axonServerFirstToken_eventAtPosition0_isConsideredReplay() {
             // Given: AxonServer returns firstToken at position 0
             TrackingToken tokenAtReset = new GlobalSequenceTrackingToken(0);
             ReplayToken initialToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset);
 
-            // When: first event arrives at position 0
-            TrackingToken afterFirstEvent = initialToken.advancedTo(new GlobalSequenceTrackingToken(0));
+            // When: event at position 0 is processed
+            TrackingToken afterEvent0 = initialToken.advancedTo(new GlobalSequenceTrackingToken(0));
 
-            // Then: Current behavior - first event IS considered replay (arguably a quirk)
-            assertTrue(ReplayToken.isReplay(afterFirstEvent),
-                       "With AxonServer (tokenAtReset=0), first event at position 0 is marked as replay");
+            // Then: Event at position 0 IS considered replay (tokenAtReset covers it)
+            assertTrue(ReplayToken.isReplay(afterEvent0),
+                       "With AxonServer (tokenAtReset=0), event at position 0 is marked as replay");
+        }
+
+        /**
+         * With AxonServer (tokenAtReset=0), event at position 1 exits replay mode.
+         */
+        @Test
+        void axonServerFirstToken_eventAtPosition1_isNotConsideredReplay() {
+            // Given: AxonServer returns firstToken at position 0
+            TrackingToken tokenAtReset = new GlobalSequenceTrackingToken(0);
+            ReplayToken initialToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset);
+
+            // When: event at position 1 is processed
+            TrackingToken afterEvent1 = initialToken.advancedTo(new GlobalSequenceTrackingToken(1));
+
+            // Then: Event at position 1 is NOT replay (we've passed tokenAtReset)
+            assertFalse(ReplayToken.isReplay(afterEvent1),
+                        "With AxonServer (tokenAtReset=0), event at position 1 is NOT marked as replay");
         }
 
         /**
