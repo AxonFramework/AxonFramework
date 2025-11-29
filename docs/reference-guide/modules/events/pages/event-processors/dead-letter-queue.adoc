@@ -10,8 +10,8 @@ xref:axoniq-console-reference:ROOT:index.adoc[AxonIQ Console] provides insight i
 It's straightforward to see the dead letters in the queue and decide to retry them or remove them from the queue.
 You can find more information on the xref:axoniq-console-reference:ROOT:features/dlq.adoc[Dead-Letter Queue page of AxonIQ Console].
 
-Note that you _cannot_ share a dead-letter queue between different processing groups.
-Hence, each processing group you want to enable this behavior for should receive a unique dead-letter queue instance.
+Note that you _cannot_ share a dead-letter queue between different processors.
+Hence, each processor you want to enable this behavior for should receive a unique dead-letter queue instance.
 
 [NOTE]
 .Dead-Letter Queues do not support Sagas
@@ -59,9 +59,9 @@ The MongoDB dead-letter queue is a suitable option for production environments b
 == Idempotency
 
 Before configuring a `SequencedDeadLetterQueue` it is vital to validate whether your event handling functions are idempotent.
-As a processing group consists of several Event Handling Components (as explained in the intro of this chapter), some handlers may succeed in event handling while others will not.
+As a processor consists of several Event Handling Components (as explained in the intro of this chapter), some handlers may succeed in event handling while others will not.
 As a configured dead-letter queue does not stall event handling, a failure in one Event Handling Component does not cause a rollback for other event handlers.
-Furthermore, as the dead-letter support is on the processing group level, <<Processing dead-letter sequences,dead-letter processing>> will invoke _all_ event handlers for that event within the processing group.
+Furthermore, as the dead-letter support is on the processor level, <<Processing sequences,dead-letter processing>> will invoke _all_ event handlers for that event within the processor.
 
 Thus, if your event handlers are not idempotent, processing letters may result in undesired side effects.
 
@@ -83,16 +83,16 @@ Configuration API::
 public class AxonConfig {
     // omitting other configuration methods...
     public void configureDeadLetterQueue(EventProcessingConfigurer processingConfigurer) {
-        // Replace "my-processing-group" for the processing group you want to configure the DLQ on. 
+        // Replace "my-processor" for the processor you want to configure the DLQ on.
         processingConfigurer.registerDeadLetterQueue(
-                "my-processing-group",
+                "my-processor",
                 config -> JpaSequencedDeadLetterQueue.builder()
-                                                     .processingGroup("my-processing-group")
+                                                     .processingGroup("my-processor")
                                                      .maxSequences(256)
                                                      .maxSequenceSize(256)
                                                      .entityManagerProvider(config.getComponent(EntityManagerProvider.class))
                                                      .transactionManager(config.getComponent(TransactionManager.class))
-                                                     .serializer(config.serializer())
+                                                     .serializer(config.converter())
                                                      .build()
         );
     }
@@ -109,17 +109,17 @@ Spring Boot::
 public class AxonConfig {
     // omitting other configuration methods...
     @Bean
-    public ConfigurerModule deadLetterQueueConfigurerModule() {
-        // Replace "my-processing-group" for the processing group you want to configure the DLQ on.
-        return configurer -> configurer.eventProcessing().registerDeadLetterQueue(
-                "my-processing-group",
+    public ConfigurationEnhancer deadLetterQueueConfigurationEnhancer() {
+        // Replace "my-processor" for the processor you want to configure the DLQ on.
+        return registry -> MessagingConfigurer.with(registry).eventProcessing().registerDeadLetterQueue(
+                "my-processor",
                 config -> JpaSequencedDeadLetterQueue.builder()
-                                                     .processingGroup("my-processing-group")
+                                                     .processingGroup("my-processor")
                                                      .maxSequences(256)
                                                      .maxSequenceSize(256)
                                                      .entityManagerProvider(config.getComponent(EntityManagerProvider.class))
                                                      .transactionManager(config.getComponent(TransactionManager.class))
-                                                     .serializer(config.serializer())
+                                                     .serializer(config.converter())
                                                      .build()
         );
     }
@@ -130,15 +130,15 @@ public class AxonConfig {
 
 You can set the maximum number of saved sequences (defaults to 1024) and the maximum number of dead letters in a sequence (also defaults to 1024).
 If either of these thresholds is exceeded, the queue will throw a `DeadLetterQueueOverflowException`.
-This exception means the processing group will stop processing new events altogether.
-Thus, the processing group moves back to the behavior described at the start of the <<Error handling,Error Handling>> section.
+This exception means the processor will stop processing new events altogether.
+Thus, the processor moves back to the behavior described at the start of the xref:index.adoc#error-handling[Error Handling] section.
 
 == Configuration through a provider
 
-To make it easier to use a dead-letter queue on multiple processing groups, it's possible to set a dead-letter queue provider.
-The provider is a function that takes a processing group, and returns either `null`, meaning it will not be configured using a dead-letter queue, or a function that takes the `Configuration` and returns a new dead-letter queue.
+To make it easier to use a dead-letter queue on multiple processors, it's possible to set a dead-letter queue provider.
+The provider is a function that takes a processor name, and returns either `null`, meaning it will not be configured using a dead-letter queue, or a function that takes the `Configuration` and returns a new dead-letter queue.
 
-Here is a `JpaSequencedDeadLetterQueue` configuration example that uses a collection to determine if a dead-letter queue should be created for a given processing group:
+Here is a `JpaSequencedDeadLetterQueue` configuration example that uses a collection to determine if a dead-letter queue should be created for a given processor:
 
 [tabs]
 ====
@@ -151,18 +151,18 @@ public class AxonConfig {
     // omitting other configuration methods...
     public void configureDeadLetterQueue(EventProcessingConfigurer processingConfigurer) {
         processingConfigurer.registerDeadLetterQueueProvider(
-                processingGroup -> {
-                    //dlqEnabledGroups is a collection with the groups that should have a dlq
-                    if (dlqEnabledGroups.contains(processingGrouping)) {
+                processorName -> {
+                    //dlqEnabledProcessors is a collection with the processors that should have a dlq
+                    if (dlqEnabledProcessors.contains(processorName)) {
                         return config -> JpaSequencedDeadLetterQueue.builder()
-                                                             .processingGroup(processingGroup)
+                                                             .processingGroup(processorName)
                                                              .entityManagerProvider(config.getComponent(
                                                                      EntityManagerProvider.class
                                                              ))
                                                              .transactionManager(config.getComponent(
                                                                      TransactionManager.class
                                                              ))
-                                                             .serializer(config.serializer())
+                                                             .serializer(config.converter())
                                                              .build();
                     } else {
                         return null;
@@ -183,20 +183,20 @@ Spring Boot::
 public class AxonConfig {
     // omitting other configuration methods...
     @Bean
-    public ConfigurerModule deadLetterQueueConfigurerModule () {
-        return configurer -> configurer.eventProcessing().registerDeadLetterQueueProvider(
-                processingGroup -> {
-                    //dlqEnabledGroups is a collection with the groups that should have a dlq
-                    if (dlqEnabledGroups.contains(processingGrouping)) {
+    public ConfigurationEnhancer deadLetterQueueConfigurationEnhancer () {
+        return registry -> MessagingConfigurer.with(registry).eventProcessing().registerDeadLetterQueueProvider(
+                processorName -> {
+                    //dlqEnabledProcessors is a collection with the processors that should have a dlq
+                    if (dlqEnabledProcessors.contains(processorName)) {
                         return config -> JpaSequencedDeadLetterQueue.builder()
-                                                             .processingGroup(processingGroup)
+                                                             .processingGroup(processorName)
                                                              .entityManagerProvider(config.getComponent(
                                                                      EntityManagerProvider.class
                                                              ))
                                                              .transactionManager(config.getComponent(
                                                                      TransactionManager.class
                                                              ))
-                                                             .serializer(config.serializer())
+                                                             .serializer(config.converter())
                                                              .build();
                     } else {
                         return null;
@@ -211,7 +211,7 @@ public class AxonConfig {
 
 If you are using Spring Boot, a default dead-letter queue provider will be set if using JPA, JDBC, or Mongo.
 The default dead-letter queue provider will use the `axon.eventhandling.processors.my-processor.dlq.enabled` property to determine whether to return `null` or a dead-letter queue factory method.
-For example, by setting the `axon.eventhandling.processors.my-processing-group.dlq.enabled` to true you would enable the dead-letter queue for the `my-processing-group` processing group.
+For example, by setting the `axon.eventhandling.processors.my-processor.dlq.enabled` to true you would enable the dead-letter queue for the `my-processor` processor.
 
 == Processing sequences
 
@@ -230,7 +230,7 @@ Returns `true` if it processes a sequence successfully.
 If the processing of a dead letter fails, the event will be offered to the dead-letter queue again.
 How the dead-lettering process reacts to this depends on the <<Enqueue policy,enqueue policy>>.
 
-You can retrieve a `SequencedDeadLetterProcessor` from the `EventProcessingConfiguration` based on a processing group name _if_ you have configured a dead-letter queue for this processing group.
+You can retrieve a `SequencedDeadLetterProcessor` from the `EventProcessingConfiguration` based on a processor name _if_ you have configured a dead-letter queue for this processor.
 Below are a couple of examples of how to process dead-letter sequences:
 
 [tabs]
@@ -287,10 +287,10 @@ public class DeadletterProcessor {
         SequencedDeadLetterProcessor<EventMessage<?>> letterProcessor = optionalLetterProcessor.get();
         
         // Retrieve all the dead lettered event sequences:
-       Iterable<Iterable<DeadLetter<? extends EventMessage<?>>>> deadLetterSequences = 
+       Iterable<Iterable<DeadLetter<? extends EventMessage<?>>>> deadLetterSequences =
                config.deadLetterQueue(processingGroup)
                      .map(SequencedDeadLetterQueue::deadLetters)
-                     .orElseThrow(() -> new IllegalArgumentException("No such Processing Group"));
+                     .orElseThrow(() -> new IllegalArgumentException("No such processor"));
        
        // Iterate over all sequences:
        for (Iterable<DeadLetter<? extends EventMessage<?>>> sequence : deadLetterSequences) {
@@ -322,9 +322,9 @@ For added clarity, here's an event handler sample containing a `DeadLetter` para
 
 [source,java]
 ----
-@ProcessingGroup("my-processing-group")
-class MyProcessingGroup {
-    // omitted  services and other event handlers for simplicity...
+@ProcessingGroup("my-processor")
+class MyEventHandler {
+    // omitted services and other event handlers for simplicity...
     @EventHandler
     public void on(SomeEvent event, DeadLetter<EventMessage<SomeEvent>> deadLetter) {
         if (deadLetter != null) {
@@ -411,7 +411,7 @@ Configuration API::
 public class AxonConfig {
     // omitting other configuration methods...
     public void configureEnqueuePolicy(EventProcessingConfigurer configurer) {
-        // Replace "my-processing-group" for the processing group you want to configure the policy on.
+        // Replace "my-processor" for the processor you want to configure the policy on.
         configurer.registerDeadLetterPolicy("my-processing-group", config -> new MyEnqueuePolicy());
     }
 }
@@ -426,9 +426,9 @@ Spring Boot::
 public class AxonConfig {
     // omitting other configuration methods...
     @Bean
-    public ConfigurerModule enqueuePolicyConfigurerModule() {
-        // Replace "my-processing-group" for the processing group you want to configure the policy on.
-        return configurer -> configurer.eventProcessing()
+    public ConfigurationEnhancer enqueuePolicyConfigurationEnhancer() {
+        // Replace "my-processor" for the processor you want to configure the policy on.
+        return registry -> MessagingConfigurer.with(registry).eventProcessing()
                                        .registerDeadLetterPolicy("my-processing-group", config -> new MyEnqueuePolicy());
     }
 }
