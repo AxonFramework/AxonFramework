@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test to verify that the {@link DisallowReplay} annotation has the expected behavior.
@@ -48,6 +49,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  *   <li>Class-level {@code @DisallowReplay} blocks all handlers during replay</li>
  *   <li>Method-level {@code @AllowReplay} can override class-level {@code @DisallowReplay}</li>
  *   <li>Method-level {@code @DisallowReplay} blocks individual handlers during replay</li>
+ *   <li>{@code supportsReset()} returns appropriate values based on replay configuration</li>
+ *   <li>Handlers receive unwrapped tracking tokens (not {@link ReplayToken})</li>
  * </ul>
  *
  * @author Mateusz Nowak
@@ -126,6 +129,7 @@ class ReplayAwareMessageHandlerWrapperWithDisallowReplayTest {
             // then
             assertThat(handler.receivedStrings).containsExactly("test-string");
         }
+
     }
 
     @Nested
@@ -226,6 +230,70 @@ class ReplayAwareMessageHandlerWrapperWithDisallowReplayTest {
         }
     }
 
+    /**
+     * Tests for {@code supportsReset()} behavior.
+     * <p>
+     * In AF5, {@code supportsReset()} returns {@code true} if at least one handler allows replay:
+     * <ul>
+     *   <li>If class has {@code @DisallowReplay} but at least one method has {@code @AllowReplay},
+     *       the component IS wrapped with {@code SimpleResetEventHandlingComponent}, so
+     *       {@code supportsReset()} returns {@code true}</li>
+     *   <li>If class has {@code @DisallowReplay} and NO method has {@code @AllowReplay},
+     *       the component IS wrapped with {@code ReplayBlockingEventHandlingComponent},
+     *       which returns {@code false} for {@code supportsReset()}</li>
+     *   <li>If no class-level {@code @DisallowReplay}, default behavior applies
+     *       ({@code supportsReset()} returns {@code false})</li>
+     * </ul>
+     */
+    @Nested
+    class SupportsReset {
+
+        @Test
+        void classLevelDisallowWithMethodAllowReturnsTrue() {
+            // given
+            var handler = new ClassDisallowedWithMethodAllowedHandler();
+            var testSubject = AnnotatedEventHandlingComponent.create(
+                    handler,
+                    ClasspathParameterResolverFactory.forClass(ClassDisallowedWithMethodAllowedHandler.class)
+            );
+
+            // when / then
+            // Class has @DisallowReplay but one method has @AllowReplay
+            // Wrapped with SimpleResetEventHandlingComponent which returns true
+            assertThat(testSubject.supportsReset()).isTrue();
+        }
+
+        @Test
+        void methodLevelOnlyReturnsFalse() {
+            // given
+            var handler = new MethodLevelDisallowedHandler();
+            var testSubject = AnnotatedEventHandlingComponent.create(
+                    handler,
+                    ClasspathParameterResolverFactory.forClass(MethodLevelDisallowedHandler.class)
+            );
+
+            // when / then
+            // No class-level @DisallowReplay, default behavior applies
+            // Default EventHandlingComponent.supportsReset() returns false
+            assertThat(testSubject.supportsReset()).isFalse();
+        }
+
+        @Test
+        void fullyDisallowedReturnsFalse() {
+            // given
+            var handler = new FullyDisallowedHandler();
+            var testSubject = AnnotatedEventHandlingComponent.create(
+                    handler,
+                    ClasspathParameterResolverFactory.forClass(FullyDisallowedHandler.class)
+            );
+
+            // when / then
+            // Class has @DisallowReplay and no method has @AllowReplay
+            // Wrapped with ReplayBlockingEventHandlingComponent which returns false
+            assertThat(testSubject.supportsReset()).isFalse();
+        }
+    }
+
     private EventMessage stringEvent() {
         return new GenericEventMessage(new MessageType(String.class), "test-string");
     }
@@ -261,12 +329,14 @@ class ReplayAwareMessageHandlerWrapperWithDisallowReplayTest {
 
         @AllowReplay
         @EventHandler
-        public void handle(String event) {
+        public void handle(String event, TrackingToken token) {
+            assertFalse(token instanceof ReplayToken);
             receivedStrings.add(event);
         }
 
         @EventHandler
-        public void handle(Long event) {
+        public void handle(Long event, TrackingToken token) {
+            assertFalse(token instanceof ReplayToken);
             receivedLongs.add(event);
         }
     }
@@ -281,13 +351,15 @@ class ReplayAwareMessageHandlerWrapperWithDisallowReplayTest {
 
         @AllowReplay
         @EventHandler
-        public void handle(String event) {
+        public void handle(String event, TrackingToken token) {
+            assertFalse(token instanceof ReplayToken);
             receivedStrings.add(event);
         }
 
         @EventHandler
         @DisallowReplay
-        public void handle(Long event) {
+        public void handle(Long event, TrackingToken token) {
+            assertFalse(token instanceof ReplayToken);
             receivedLongs.add(event);
         }
     }
@@ -302,12 +374,14 @@ class ReplayAwareMessageHandlerWrapperWithDisallowReplayTest {
         private final List<Long> receivedLongs = new ArrayList<>();
 
         @EventHandler
-        public void handle(String event) {
+        public void handle(String event, TrackingToken token) {
+            assertFalse(token instanceof ReplayToken);
             receivedStrings.add(event);
         }
 
         @EventHandler
-        public void handle(Long event) {
+        public void handle(Long event, TrackingToken token) {
+            assertFalse(token instanceof ReplayToken);
             receivedLongs.add(event);
         }
     }

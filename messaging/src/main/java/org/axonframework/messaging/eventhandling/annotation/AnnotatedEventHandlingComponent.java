@@ -23,6 +23,7 @@ import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.core.annotation.HandlerAttributes;
 import org.axonframework.messaging.core.annotation.HandlerDefinition;
 import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
@@ -272,31 +273,46 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
                 .filter(h -> h.canHandleMessageType(ResetContext.class))
                 .toList();
 
-        // Wrap with SimpleResetEventHandlingComponent if @ResetHandler methods exist
-        if (!resetHandlers.isEmpty()) {
+        // Check if any event handler method allows replay
+        boolean anyMethodAllowsReplay = inspector.getHandlers(target.getClass()).stream()
+                .filter(h -> h.canHandleMessageType(EventMessage.class))
+                .anyMatch(h -> h.attribute(HandlerAttributes.ALLOW_REPLAY)
+                                .map(Boolean.TRUE::equals)
+                                .orElse(false));
+
+        // Determine if class-level @DisallowReplay exists
+        boolean classDisallowsReplay = target.getClass().isAnnotationPresent(DisallowReplay.class);
+
+        // Wrap with SimpleResetEventHandlingComponent if:
+        // 1. @ResetHandler methods exist, OR
+        // 2. Class has @DisallowReplay but at least one method has @AllowReplay (so supportsReset() = true)
+        if (!resetHandlers.isEmpty() || (classDisallowsReplay && anyMethodAllowsReplay)) {
             SimpleResetEventHandlingComponent resetable = new SimpleResetEventHandlingComponent(component);
 
-            // Subscribe a reset handler that invokes all @ResetHandler methods
-            resetable.subscribe((resetContext, context) -> {
-                MessageHandlerInterceptorMemberChain<T> chain =
-                        inspector.chainedInterceptor(target.getClass());
+            // Subscribe a reset handler that invokes all @ResetHandler methods (if any)
+            if (!resetHandlers.isEmpty()) {
+                resetable.subscribe((resetContext, context) -> {
+                    MessageHandlerInterceptorMemberChain<T> chain =
+                            inspector.chainedInterceptor(target.getClass());
 
-                MessageStream<Message> result = MessageStream.empty();
-                for (MessageHandlingMember<? super T> h : resetHandlers) {
-                    if (h.canHandle(resetContext, context)) {
-                        MessageStream<Message> handlerResult = chain.handle(resetContext, context, target, h).cast();
-                        result = result.concatWith(handlerResult);
+                    MessageStream<Message> result = MessageStream.empty();
+                    for (MessageHandlingMember<? super T> h : resetHandlers) {
+                        if (h.canHandle(resetContext, context)) {
+                            MessageStream<Message> handlerResult = chain.handle(resetContext, context, target, h).cast();
+                            result = result.concatWith(handlerResult);
+                        }
                     }
-                }
 
-                return result.ignoreEntries().cast();
-            });
+                    return result.ignoreEntries().cast();
+                });
+            }
 
             component = resetable;
         }
 
         // Wrap with ReplayBlockingEventHandlingComponent if class has @DisallowReplay
-        if (target.getClass().isAnnotationPresent(DisallowReplay.class)) {
+        // AND no method-level @AllowReplay overrides exist
+        if (classDisallowsReplay && !anyMethodAllowsReplay) {
             component = new ReplayBlockingEventHandlingComponent(component);
         }
 
