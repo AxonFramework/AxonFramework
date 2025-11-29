@@ -18,8 +18,8 @@ package org.axonframework.integrationtests.testsuite.course;
 
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.integrationtests.testsuite.course.module.CourseCreated;
-import org.axonframework.integrationtests.testsuite.course.module.CreateCourse;
+import org.axonframework.integrationtests.testsuite.course.events.CourseCreated;
+import org.axonframework.integrationtests.testsuite.course.commands.CreateCourse;
 import org.axonframework.integrationtests.testsuite.course.module.CreateCourseConfiguration;
 import org.axonframework.test.fixture.AxonTestFixture;
 import org.axonframework.test.server.AxonServerContainer;

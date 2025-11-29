@@ -18,33 +18,34 @@ package org.axonframework.modelling.entity.annotation;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.messaging.commandhandling.CommandMessage;
-import org.axonframework.messaging.commandhandling.CommandResultMessage;
-import org.axonframework.messaging.commandhandling.GenericCommandResultMessage;
-import org.axonframework.messaging.commandhandling.annotation.CommandHandlingMember;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.axonframework.conversion.ConversionException;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.commandhandling.CommandResultMessage;
+import org.axonframework.messaging.commandhandling.GenericCommandResultMessage;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandlingMember;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.annotation.AnnotatedHandlerInspector;
+import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.conversion.MessageConverter;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.modelling.annotation.AnnotationBasedEntityEvolvingComponent;
 import org.axonframework.modelling.entity.ConcreteEntityMetamodel;
 import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.entity.EntityMetamodelBuilder;
 import org.axonframework.modelling.entity.PolymorphicEntityMetamodel;
 import org.axonframework.modelling.entity.child.EntityChildMetamodel;
-import org.axonframework.conversion.ConversionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,6 +55,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -174,8 +176,10 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
 
     /**
      * Instantiate an annotated {@link EntityMetamodel} of an entity type. If the supplied {@code concreteTypes} is not
-     * empty, the entity type is considered polymorphic and will be a {@link PolymorphicEntityMetamodel}. If no concrete
-     * types are supplied, the entity type is considered concrete and will be a {@link ConcreteEntityMetamodel}.
+     * empty, the entity type is considered polymorphic and will be a {@link PolymorphicEntityMetamodel}. If the entity
+     * type is sealed, all concrete types in the sealed hierarchy will be automatically discovered and their event
+     * handlers will be registered. If no concrete types are supplied, the entity type is considered concrete and will
+     * be a {@link ConcreteEntityMetamodel}.
      *
      * @param entityType               The concrete entity type this metamodel describes.
      * @param parameterResolverFactory The {@link ParameterResolverFactory} to use for resolving parameters.
@@ -226,7 +230,9 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
 
     private EntityMetamodel<E> initializePolymorphicMetamodel(Class<E> entityType,
                                                               Set<Class<? extends E>> concreteTypes) {
-        AnnotatedHandlerInspector<E> inspected = inspectType(entityType, parameterResolverFactory);
+        AnnotatedHandlerInspector<E> inspected = inspectType(entityType, parameterResolverFactory,
+                                                             ClasspathHandlerDefinition.forClass(entityType),
+                                                             collectSealedHierarchyIfSealed(entityType));
         var builder = PolymorphicEntityMetamodel.forSuperType(entityType);
         builder.entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(entityType,
                                                                            inspected,
@@ -503,5 +509,52 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
      */
     MessageConverter messageConverter() {
         return messageConverter;
+    }
+
+    /**
+     * Collects all concrete types from a sealed hierarchy if the given type is sealed. Returns an empty set if the type
+     * is not sealed.
+     * <p>
+     * This is essential for polymorphic entity support where event handlers may be defined on concrete implementations
+     * of a sealed interface. The {@link AnnotatedHandlerInspector} needs to know about all concrete types upfront to
+     * discover their handlers.
+     *
+     * @param rootType The root type to scan for sealed hierarchy.
+     * @param <T>      The type parameter.
+     * @return A set of all concrete types in the hierarchy, or an empty set if the type is not sealed.
+     */
+    private static <T> Set<Class<? extends T>> collectSealedHierarchyIfSealed(@Nonnull Class<T> rootType) {
+        if (!rootType.isSealed()) {
+            return Set.of();
+        }
+        Set<Class<? extends T>> result = new HashSet<>();
+        collectSealedHierarchyRecursive(rootType, result);
+        return result;
+    }
+
+    /**
+     * Recursively collects all concrete types from a sealed hierarchy.
+     *
+     * @param type        The current type to scan.
+     * @param accumulator The set to accumulate concrete types into.
+     * @param <T>         The root type parameter.
+     */
+    @SuppressWarnings("unchecked")
+    private static <T> void collectSealedHierarchyRecursive(@Nonnull Class<T> type,
+                                                            @Nonnull Set<Class<? extends T>> accumulator) {
+        if (type.isSealed()) {
+            Class<?>[] permittedSubclasses = type.getPermittedSubclasses();
+            if (permittedSubclasses != null) {
+                for (Class<?> subclass : permittedSubclasses) {
+                    // Recursively scan if the subclass is also sealed
+                    if (subclass.isSealed()) {
+                        collectSealedHierarchyRecursive((Class<T>) subclass, accumulator);
+                    } else {
+                        // Add concrete types to the accumulator
+                        accumulator.add((Class<? extends T>) subclass);
+                    }
+                }
+            }
+        }
     }
 }
