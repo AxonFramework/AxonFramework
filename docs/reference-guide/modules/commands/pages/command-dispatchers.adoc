@@ -433,5 +433,4 @@ Understanding when to provide it is important:
 * The `ProcessingContext` can be injected as a parameter in command handlers.
 * All components involved in handling the command must receive and use the same `ProcessingContext`.
 
-// TODO: Update to processing-context.adoc when unit-of-work.adoc is renamed
-For more details on `ProcessingContext`, see xref:messaging-concepts:unit-of-work.adoc[].
+For more details on `ProcessingContext`, see xref:messaging-concepts:processing-context.adoc[].

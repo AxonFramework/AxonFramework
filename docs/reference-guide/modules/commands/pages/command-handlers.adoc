@@ -166,9 +166,60 @@ This can be achieved by adding the `@CreationPolicy` annotation to a command han
 
 [source,java]
 ----
-import org.axonframework.messaging.commandhandling.CommandHandler;
-import org.axonframework.modelling.command.CreationPolicy;
-import org.axonframework.modelling.command.AggregateCreationPolicy;
+@CommandHandler
+public void handle(
+    RedeemCardCommand cmd,
+    EventAppender eventAppender,
+    ProcessingContext context // <1>
+) {
+    // The ProcessingContext is available for interaction
+    // For example, you can store and retrieve resources
+    MyCustomService service = context.getResource(MY_SERVICE_KEY);
+
+    // Perform business logic
+    if (cmd.amount() > remainingValue) {
+        throw new IllegalStateException("Insufficient balance");
+    }
+
+    // Append events
+    eventAppender.append(new CardRedeemedEvent(id, cmd.transactionId(), cmd.amount()));
+}
+----
+
+<1> The `ProcessingContext` is automatically injected by the framework.
+It provides access to correlation data, resources, and lifecycle management.
+
+For more details on `ProcessingContext`, see xref:messaging-concepts:processing-context.adoc[].
+
+== Publishing events with EventAppender
+
+In Axon 5, the `EventAppender` replaces the static `AggregateLifecycle.apply()` method from Axon 4.
+The `EventAppender` must be injected as a parameter in your command handlers:
+
+[source,java]
+----
+@CommandHandler
+public GiftCard(IssueCardCommand cmd, EventAppender eventAppender) { // <1>
+    // Validate command
+    if (cmd.amount() <= 0) {
+        throw new IllegalArgumentException("Amount must be positive");
+    }
+
+    // Append event(s)
+    eventAppender.append(new CardIssuedEvent(cmd.cardId(), cmd.amount())); // <2>
+}
+
+@CommandHandler
+public void handle(RechargeCardCommand cmd, EventAppender eventAppender) {
+    // Can append multiple events
+    eventAppender.append(
+        new CardRechargedEvent(id, cmd.amount()),
+        new CardRechargeRecordedEvent(id, cmd.transactionId())
+    ); // <3>
+}
+----
+
+<1> The `EventAppender` is injected as a method parameter alongside the command.
 
 public class GiftCard {
 
