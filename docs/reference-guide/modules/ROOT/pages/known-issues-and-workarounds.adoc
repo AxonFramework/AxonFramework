@@ -85,7 +85,7 @@ To resolve this issue, explicitly override the protobuf version in your project:
 <dependency>
     <groupId>com.google.protobuf</groupId>
     <artifactId>protobuf-java</artifactId>
-    <version>4.29.3</version>
+    <version>4.33.1</version>
 </dependency>
 ----
 
