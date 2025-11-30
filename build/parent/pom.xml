@@ -47,7 +47,7 @@
         </mockito.agent.argLine>
 
         <!-- Axon Server -->
-        <axonserver-connector-java.version>2025.2.0</axonserver-connector-java.version>
+        <axonserver-connector-java.version>2025.2.1</axonserver-connector-java.version>
         <!-- Caching -->
         <ehcache.version>3.11.1</ehcache.version>
         <javax.cache-api.version>1.1.1</javax.cache-api.version>
@@ -73,7 +73,7 @@
         <dropwizard.metrics.version>4.2.37</dropwizard.metrics.version>
         <micrometer.version>1.16.0</micrometer.version>
         <!-- Other -->
-        <byte-buddy.version>1.18.1</byte-buddy.version>
+        <byte-buddy.version>1.18.2</byte-buddy.version>
         <commons-io.version>2.21.0</commons-io.version>
         <disruptor.version>4.0.0</disruptor.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
