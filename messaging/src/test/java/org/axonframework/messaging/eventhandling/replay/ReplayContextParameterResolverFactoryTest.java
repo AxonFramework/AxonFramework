@@ -16,14 +16,13 @@
 
 package org.axonframework.messaging.eventhandling.replay;
 
+import org.axonframework.conversion.Converter;
 import org.axonframework.conversion.PassThroughConverter;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.eventhandling.annotation.AnnotatedEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.annotation.EventHandler;
-import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
-import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
@@ -129,13 +128,9 @@ class ReplayContextParameterResolverFactoryTest {
     }
 
     private ProcessingContext contextWithToken(EventMessage event, TrackingToken token) {
-        return StubProcessingContext.withComponent(EventConverter.class, eventConverter())
+        return StubProcessingContext.withComponent(Converter.class, PassThroughConverter.INSTANCE)
                                     .withMessage(event)
                                     .withResource(TrackingToken.RESOURCE_KEY, token);
-    }
-
-    private static EventConverter eventConverter() {
-        return new DelegatingEventConverter(PassThroughConverter.INSTANCE);
     }
 
     private static class SomeHandler {
