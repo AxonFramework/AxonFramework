@@ -69,9 +69,9 @@ public interface StateBasedEntityModule<ID, E> extends EntityModule<ID, E> {
      * a {@link #repository(ComponentBuilder) repository} right away.
      * <p>
      * When the loader-persister path is taken the resulting {@link Repository} will be wrapped into an
-     * {@link org.axonframework.modelling.repository.AccessSerializingRepository}. In doing so, the access to
-     * concurrently invoked entities is serialized, ensuring safe access. When taking the
-     * {@link #repository(ComponentBuilder)} path, the choice is to the invoker whether an
+     * {@link org.axonframework.modelling.repository.AccessSerializingRepository}. This serializes the access to
+     * concurrently invoked entities, ensuring safe access. When taking the
+     * {@link #repository(ComponentBuilder)} path, the invoker decides whether an
      * {@code AccessSerializingRepository} instance should be used.
      *
      * @param <ID> The type of identifier used to identify the state-based entity that's being built.
