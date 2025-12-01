@@ -56,7 +56,8 @@ public class UpdateCheckerConfigurerModule implements ConfigurerModule {
                   .registerComponent(UpdateChecker.class,
                                      c -> new UpdateChecker(
                                              c.getComponent(UpdateCheckerHttpClient.class),
-                                             c.getComponent(UpdateCheckerReporter.class)
+                                             c.getComponent(UpdateCheckerReporter.class),
+                                             c.getComponent(UsagePropertyProvider.class)
                                      ));
     }
 

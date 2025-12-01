@@ -63,6 +63,7 @@ public class UpdateChecker implements Runnable, Lifecycle {
     private final UpdateCheckerHttpClient client;
     private final MachineId machineId;
     private final UpdateCheckerReporter reporter;
+    private final UsagePropertyProvider usagePropertyProvider;
     private final ScheduledExecutorService executor;
 
     private boolean firstRequest = true;
@@ -77,18 +78,41 @@ public class UpdateChecker implements Runnable, Lifecycle {
      */
     public UpdateChecker(UpdateCheckerHttpClient client,
                          UpdateCheckerReporter reporter) {
-        this(client, reporter, Executors.newScheduledThreadPool(1));
+        this(client, reporter, UsagePropertyProvider.create(), Executors.newScheduledThreadPool(1));
+    }
+
+    /**
+     * Creates a new instance of {@code UpdateCheckTask} with the given {@link UpdateCheckerHttpClient} and
+     * {@link UsagePropertyProvider}.
+     *
+     * @param client                The HTTP client used to send requests to the telemetry endpoint.
+     * @param reporter              The reporter that will handle the response from the telemetry endpoint.
+     * @param usagePropertyProvider The property provider used to determine if the update check is disabled.
+     */
+    public UpdateChecker(UpdateCheckerHttpClient client,
+                         UpdateCheckerReporter reporter,
+                         UsagePropertyProvider usagePropertyProvider) {
+        this(client, reporter, usagePropertyProvider, Executors.newScheduledThreadPool(1));
     }
 
     public UpdateChecker(UpdateCheckerHttpClient client,
                          UpdateCheckerReporter reporter,
                          ScheduledExecutorService executor) {
+        this(client, reporter, UsagePropertyProvider.create(), executor);
+    }
+
+    public UpdateChecker(UpdateCheckerHttpClient client,
+                         UpdateCheckerReporter reporter,
+                         UsagePropertyProvider usagePropertyProvider,
+                         ScheduledExecutorService executor) {
         BuilderUtils.assertNonNull(client, "The client must not be null.");
         BuilderUtils.assertNonNull(reporter, "The reporter must not be null.");
+        BuilderUtils.assertNonNull(usagePropertyProvider, "The usagePropertyProvider must not be null.");
         BuilderUtils.assertNonNull(executor, "The executor must not be null.");
         this.client = client;
         this.machineId = new MachineId();
         this.reporter = reporter;
+        this.usagePropertyProvider = usagePropertyProvider;
         this.executor = executor;
     }
 
@@ -108,8 +132,7 @@ public class UpdateChecker implements Runnable, Lifecycle {
                 logger.debug("The AxonIQ UpdateChecker was already started.");
                 return;
             }
-            UsagePropertyProvider userProperties = UsagePropertyProvider.create();
-            if (userProperties.getDisabled()) {
+            if (usagePropertyProvider.getDisabled()) {
                 logger.info(
                         "You have opted out of the AxonIQ UpdateChecker. No updates or vulnerabilities will be checked. See https://www.axoniq.io/update-check for more information.");
                 return;
