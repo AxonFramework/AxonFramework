@@ -39,7 +39,7 @@ import org.springframework.core.type.AnnotatedTypeMetadata;
  * @since 4.12.0
  */
 @AutoConfiguration
-@EnableConfigurationProperties(UpdateCheckerConfiguration.class)
+@EnableConfigurationProperties(UpdateCheckerConfigurationProperties.class)
 public class UpdateCheckerAutoConfiguration {
 
     @Bean
