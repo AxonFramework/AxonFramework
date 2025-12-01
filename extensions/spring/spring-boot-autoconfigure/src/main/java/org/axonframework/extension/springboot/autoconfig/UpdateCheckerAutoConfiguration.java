@@ -17,6 +17,7 @@
 package org.axonframework.extension.springboot.autoconfig;
 
 import org.axonframework.extension.springboot.UpdateCheckerProperties;
+import org.axonframework.update.UpdateCheckerHttpClient;
 import org.axonframework.update.configuration.UsagePropertyProvider;
 import org.axonframework.update.detection.TestEnvironmentDetector;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -26,7 +27,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
 import org.springframework.context.annotation.Conditional;
-import org.springframework.context.annotation.Primary;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 
 /**
@@ -43,11 +43,30 @@ import org.springframework.core.type.AnnotatedTypeMetadata;
 public class UpdateCheckerAutoConfiguration {
 
     @Bean
-    @Primary
     @ConditionalOnMissingBean
     @Conditional(NotTestEnvironmentCondition.class)
     public UsagePropertyProvider usagePropertyProvider(UpdateCheckerProperties properties) {
         return UsagePropertyProvider.create(properties);
+    }
+
+    /**
+     * Bean creation method for the {@link UpdateCheckerHttpClient}.
+     * <p>
+     * Although a duplicate of the {@link org.axonframework.update.UpdateCheckerConfigurationEnhancer} its logic to add
+     * a {@code UpdateCheckerHttpClient} component, this bean creation method provides a Spring-specific mechanism to
+     * expect the exact {@code UpdateCheckerHttpClient} constructed in this file (based on type and name). This ensures
+     * we do not have to add any component name in the {@code UpdateCheckerConfigurationEnhancer} to pick the
+     * Spring-specific {@code UsagePropertyProvider} constructed by this autoconfiguration class.
+     *
+     * @param usagePropertyProvider The {@code UsagePropertyProvider} to attach to the {@link UpdateCheckerHttpClient}
+     *                              under construction.
+     * @return A {@code UpdateCheckerHttpClient} based on the given {@code usagePropertyProvider}.
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    @Conditional(NotTestEnvironmentCondition.class)
+    public UpdateCheckerHttpClient updateCheckerHttpClient(UsagePropertyProvider usagePropertyProvider) {
+        return new UpdateCheckerHttpClient(usagePropertyProvider);
     }
 
     static class NotTestEnvironmentCondition implements Condition {
