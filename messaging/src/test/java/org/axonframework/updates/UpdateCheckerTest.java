@@ -17,6 +17,7 @@
 package org.axonframework.updates;
 
 import org.axonframework.updates.api.UpdateCheckResponse;
+import org.axonframework.updates.configuration.UsagePropertyProvider;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
@@ -40,11 +41,15 @@ class UpdateCheckerTest {
     @Mock
     private UpdateCheckerReporter reporter;
 
+    @Mock
+    private UsagePropertyProvider usagePropertyProvider;
+
     private UpdateChecker updateChecker;
 
     @BeforeEach
     void setUp() {
-        updateChecker = new UpdateChecker(httpClient, reporter);
+        when(usagePropertyProvider.getDisabled()).thenReturn(false);
+        updateChecker = new UpdateChecker(httpClient, reporter, usagePropertyProvider);
     }
 
     @AfterEach

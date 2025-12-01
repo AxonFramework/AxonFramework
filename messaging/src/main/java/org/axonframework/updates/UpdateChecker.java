@@ -97,12 +97,6 @@ public class UpdateChecker implements Runnable, Lifecycle {
 
     public UpdateChecker(UpdateCheckerHttpClient client,
                          UpdateCheckerReporter reporter,
-                         ScheduledExecutorService executor) {
-        this(client, reporter, UsagePropertyProvider.create(), executor);
-    }
-
-    public UpdateChecker(UpdateCheckerHttpClient client,
-                         UpdateCheckerReporter reporter,
                          UsagePropertyProvider usagePropertyProvider,
                          ScheduledExecutorService executor) {
         BuilderUtils.assertNonNull(client, "The client must not be null.");
