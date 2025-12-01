@@ -18,6 +18,7 @@ package org.axonframework.messaging.eventhandling.replay;
 
 import org.axonframework.conversion.Converter;
 import org.axonframework.conversion.PassThroughConverter;
+import org.axonframework.conversion.json.JacksonConverter;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
@@ -35,6 +36,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -155,5 +157,94 @@ class ReplayContextParameterResolverFactoryTest {
 
     private record MyResetContext(List<Long> sequences) {
 
+    }
+
+    @Nested
+    class WithJacksonConverter {
+
+        private static final JacksonConverter jacksonConverter = new JacksonConverter();
+
+        @Test
+        void replayContextIsConvertedFromMapToRecord() {
+            // given
+            Map<String, Object> mapContext = Map.of("sequences", List.of(2L, 3L));
+            var handler = new SomeHandler();
+            var testSubject = new AnnotatedEventHandlingComponent<>(
+                    handler,
+                    ClasspathParameterResolverFactory.forClass(SomeHandler.class)
+            );
+            var event = new GenericEventMessage(new MessageType(Long.class), 2L);
+            var replayToken = ReplayToken.createReplayToken(
+                    new GlobalSequenceTrackingToken(3L),
+                    new GlobalSequenceTrackingToken(2L),
+                    mapContext
+            );
+
+            // when
+            testSubject.handle(event, contextWithJacksonConverter(event, replayToken));
+
+            // then
+            assertThat(handler.receivedLongs).containsExactly(2L);
+            assertThat(handler.receivedResetContexts).hasSize(1);
+            assertThat(handler.receivedResetContexts.get(0)).isNotNull();
+            assertThat(handler.receivedResetContexts.get(0).sequences()).containsExactly(2L, 3L);
+        }
+
+        @Test
+        void replayContextIsConvertedFromMapToCustomRecord() {
+            // given
+            Map<String, Object> mapContext = Map.of(
+                    "reason", "Full replay requested",
+                    "requestedBy", "admin-user",
+                    "fromPosition", 100L,
+                    "toPosition", 500L
+            );
+            var handler = new ReplayInfoHandler();
+            var testSubject = new AnnotatedEventHandlingComponent<>(
+                    handler,
+                    ClasspathParameterResolverFactory.forClass(ReplayInfoHandler.class)
+            );
+            var event = new GenericEventMessage(new MessageType(String.class), "test-event");
+            var replayToken = ReplayToken.createReplayToken(
+                    new GlobalSequenceTrackingToken(501L),
+                    new GlobalSequenceTrackingToken(100L),
+                    mapContext
+            );
+
+            // when
+            testSubject.handle(event, contextWithJacksonConverter(event, replayToken));
+
+            // then
+            assertThat(handler.receivedEvents).containsExactly("test-event");
+            assertThat(handler.receivedReplayInfos).hasSize(1);
+            ReplayInfo replayInfo = handler.receivedReplayInfos.get(0);
+            assertThat(replayInfo).isNotNull();
+            assertThat(replayInfo.reason()).isEqualTo("Full replay requested");
+            assertThat(replayInfo.requestedBy()).isEqualTo("admin-user");
+            assertThat(replayInfo.fromPosition()).isEqualTo(100L);
+            assertThat(replayInfo.toPosition()).isEqualTo(500L);
+        }
+
+        private ProcessingContext contextWithJacksonConverter(EventMessage event, TrackingToken token) {
+            return StubProcessingContext.withComponent(Converter.class, jacksonConverter)
+                                        .withMessage(event)
+                                        .withResource(TrackingToken.RESOURCE_KEY, token);
+        }
+
+        private static class ReplayInfoHandler {
+
+            private final List<String> receivedEvents = new ArrayList<>();
+            private final List<ReplayInfo> receivedReplayInfos = new ArrayList<>();
+
+            @EventHandler
+            public void handle(String event, @ReplayContext ReplayInfo replayInfo) {
+                receivedEvents.add(event);
+                receivedReplayInfos.add(replayInfo);
+            }
+        }
+
+        private record ReplayInfo(String reason, String requestedBy, Long fromPosition, Long toPosition) {
+
+        }
     }
 }
