@@ -158,6 +158,17 @@ class SplitTask extends CoordinatorTask {
                                  splitStatuses[0].getSegment().getSegmentId(),
                                  context
                          ))
+                         .thenCompose(result -> tokenStore.deleteToken(
+                                 name,
+                                 splitStatuses[0].getSegment().getSegmentId(),
+                                 context
+                         ))
+                         .thenCompose(result -> tokenStore.initializeSegment(
+                                 splitStatuses[0].getTrackingToken(),
+                                 name,
+                                 splitStatuses[0].getSegment(),
+                                 context
+                         ))
                          .thenRun(() -> logger.info(
                                  "Processor [{}] successfully split {} into {} and {}.",
                                  name, segmentToSplit, splitStatuses[0].getSegment(), splitStatuses[1].getSegment()
