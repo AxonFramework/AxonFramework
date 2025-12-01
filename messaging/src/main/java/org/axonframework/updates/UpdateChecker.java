@@ -71,17 +71,6 @@ public class UpdateChecker implements Runnable, Lifecycle {
     private int errorRetryBackoffFactor = 1;
 
     /**
-     * Creates a new instance of {@code UpdateCheckTask} with the given {@link UpdateCheckerHttpClient}.
-     *
-     * @param client   The HTTP client used to send requests to the telemetry endpoint.
-     * @param reporter The reporter that will handle the response from the telemetry endpoint.
-     */
-    public UpdateChecker(UpdateCheckerHttpClient client,
-                         UpdateCheckerReporter reporter) {
-        this(client, reporter, UsagePropertyProvider.create(), Executors.newScheduledThreadPool(1));
-    }
-
-    /**
      * Creates a new instance of {@code UpdateCheckTask} with the given {@link UpdateCheckerHttpClient} and
      * {@link UsagePropertyProvider}.
      *
