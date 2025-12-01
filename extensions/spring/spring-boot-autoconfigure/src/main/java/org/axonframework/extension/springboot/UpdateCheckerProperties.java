@@ -35,11 +35,10 @@ public class UpdateCheckerConfigurationProperties implements UsagePropertyProvid
     /**
      * Indicates whether the update check should be disabled.
      * <p>
-     * Defaults to detecting this setting via system properties or environment variables.
-     * <p>
-     * Unless disabled in any one of these locations, the update check will be enabled.
+     * Defaults to detecting this setting via system properties or environment variables. Unless disabled in any one of
+     * these locations, the update check will be enabled.
      */
-    private boolean disabled;
+    private Boolean disabled;
 
     /**
      * The url to use to check for updates. Generally doesn't need to be changed, unless there is a local proxy, or for
@@ -47,12 +46,20 @@ public class UpdateCheckerConfigurationProperties implements UsagePropertyProvid
      */
     private String url;
 
-    public void setDisabled(boolean disabled) {
+    /**
+     * Set's the boolean dictating whether the {@link org.axonframework.update.UpdateChecker} is disabled.
+     * <p>
+     * Defaults to detecting this setting via system properties or environment variables. Unless disabled in any one of
+     * these locations, the update check will be enabled.
+     *
+     * @param disabled A boolean dictating whether the {@link org.axonframework.update.UpdateChecker} is disabled.
+     */
+    public void setDisabled(Boolean disabled) {
         this.disabled = disabled;
     }
 
     @Override
-    public boolean isDisabled() {
+    public Boolean getDisabled() {
         return disabled;
     }
 
