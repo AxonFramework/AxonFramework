@@ -26,6 +26,11 @@ import java.util.function.Function;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+/**
+ * Test class validating the {@link FutureUtils}.
+ *
+ * @author Jan Galinski
+ */
 class FutureUtilsTest {
 
     @ParameterizedTest

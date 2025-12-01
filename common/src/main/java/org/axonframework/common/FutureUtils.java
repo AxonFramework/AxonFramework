@@ -100,11 +100,12 @@ public final class FutureUtils {
     /**
      * Safely catches exceptions thrown by the given {@code fn} and returns a {@link CompletableFuture} that completes.
      *
-     * @param fn  a lambda returning a {@link CompletableFuture}
-     * @param <T> type of the completable future
-     * @return completable future that completes exceptionally if the given lambda throws an exception
+     * @param fn  A lambda returning a {@link CompletableFuture}.
+     * @param <T> Type of the completable future.
+     * @return A completable future that completes exceptionally if the given lambda throws an exception.
      */
-    public static <T> CompletableFuture<T> runFailing(final Supplier<CompletableFuture<T>> fn) {
+    @Nonnull
+    public static <T> CompletableFuture<T> runFailing(@Nonnull final Supplier<CompletableFuture<T>> fn) {
         try {
             return fn.get();
         } catch (Exception e) {
