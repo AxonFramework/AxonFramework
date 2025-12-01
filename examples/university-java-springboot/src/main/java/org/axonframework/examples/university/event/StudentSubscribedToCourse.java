@@ -21,6 +21,11 @@ import org.axonframework.eventsourcing.annotation.EventTag;
 import org.axonframework.examples.university.shared.CourseId;
 import org.axonframework.examples.university.shared.FacultyTags;
 
+/**
+ * Student subscribed to course.
+ * @param studentId student id.
+ * @param courseId
+ */
 public record StudentSubscribedToCourse(
         @EventTag(key = FacultyTags.STUDENT_ID)
         String studentId,

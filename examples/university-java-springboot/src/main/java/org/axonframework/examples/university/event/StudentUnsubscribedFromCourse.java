@@ -20,6 +20,11 @@ import org.axonframework.eventsourcing.annotation.EventTag;
 import org.axonframework.examples.university.shared.CourseId;
 import org.axonframework.examples.university.shared.FacultyTags;
 
+/**
+ * Stundet unsubscribed from course.
+ * @param studentId Student id.
+ * @param courseId Course id.
+ */
 public record StudentUnsubscribedFromCourse(
         @EventTag(key = FacultyTags.STUDENT_ID)
         String studentId,

@@ -16,9 +16,7 @@
 
 package org.axonframework.examples.university.event;
 
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
 import org.axonframework.eventsourcing.annotation.EventTag;
 import org.axonframework.examples.university.shared.CourseId;
 import org.axonframework.examples.university.shared.FacultyTags;
@@ -26,8 +24,9 @@ import org.axonframework.messaging.eventhandling.annotation.Event;
 
 /**
  * Course renamed event.
+ *
  * @param courseId course courseId.
- * @param name course name.
+ * @param name     course name.
  */
 @Event(name = "CourseRenamed")
 public record CourseRenamed(

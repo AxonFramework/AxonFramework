@@ -20,6 +20,11 @@ import org.axonframework.eventsourcing.annotation.EventTag;
 import org.axonframework.examples.university.shared.CourseId;
 import org.axonframework.examples.university.shared.FacultyTags;
 
+/**
+ * Course capacity has changed.
+ * @param courseId course id.
+ * @param capacity new capacity.
+ */
 public record CourseCapacityChanged(
         @EventTag(key = FacultyTags.COURSE_ID)
         CourseId courseId,

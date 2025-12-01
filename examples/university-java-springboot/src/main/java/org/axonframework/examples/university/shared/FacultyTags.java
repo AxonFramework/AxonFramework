@@ -16,6 +16,9 @@
 
 package org.axonframework.examples.university.shared;
 
+/**
+ * Constants.
+ */
 public class FacultyTags {
 
     public static final String STUDENT_ID = "studentId";

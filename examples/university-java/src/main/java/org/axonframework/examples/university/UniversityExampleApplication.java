@@ -16,7 +16,6 @@
 
 package org.axonframework.examples.university;
 
-import lombok.SneakyThrows;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConfigurationEnhancer;
 import org.axonframework.common.configuration.AxonConfiguration;
