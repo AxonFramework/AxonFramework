@@ -18,14 +18,17 @@ package org.axonframework.examples.university;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.examples.university.read.coursestats.api.CoursesQueryResult;
 import org.axonframework.examples.university.read.coursestats.api.FindAllCourses;
 import org.axonframework.examples.university.read.coursestats.api.GetCourseStatsById;
 import org.axonframework.examples.university.read.coursestats.projection.CoursesStats;
+import org.axonframework.examples.university.read.coursestats.projection.CoursesStatsProjectionConfiguration;
 import org.axonframework.examples.university.shared.CourseId;
 import org.axonframework.examples.university.write.changecoursecapacity.ChangeCourseCapacity;
 import org.axonframework.examples.university.write.createcourse.CreateCourse;
 import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
+import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessor;
 import org.axonframework.messaging.queryhandling.gateway.QueryGateway;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -34,6 +37,8 @@ import reactor.core.publisher.Flux;
 
 import java.util.List;
 import java.util.Random;
+
+import static org.axonframework.common.ProcessUtils.executeUntilTrue;
 
 /**
  * Initializer of the faculty.
@@ -52,9 +57,28 @@ public class FacultyInitializer implements ApplicationRunner {
 
     private final CommandGateway commandGateway;
     private final QueryGateway queryGateway;
+    private final AxonConfiguration axonConfiguration;
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
+        waitUntilReady();
+        initialize();
+    }
+
+    private void waitUntilReady() {
+        var processor = axonConfiguration.getComponents(PooledStreamingEventProcessor.class).get(
+                "EventProcessor[" + CoursesStatsProjectionConfiguration.class.getPackageName() + "]");
+        log.info("[FACULTY] Waiting for course statistics projection replay to finish...");
+        executeUntilTrue(
+                () -> !processor.isReplaying(),
+                1_000,
+                30
+        );
+        log.info("[FACULTY] Done. Course statistics is up to date.");
+
+    }
+
+    private void initialize() throws Exception {
         log.info("[FACULTY] Initializing faculty...");
 
         var allCourses = queryGateway.queryMany(new FindAllCourses(), CoursesQueryResult.class).get();
@@ -67,18 +91,18 @@ public class FacultyInitializer implements ApplicationRunner {
                         course.capacity()
                 ));
                 log.info("[FACULTY] Created course '{}' with id '{}' and capacity '{}'",
-                            course.name(),
-                            course.courseId(),
-                            course.capacity());
+                         course.name(),
+                         course.courseId(),
+                         course.capacity());
             });
         } else {
             log.info("[FACULTY] {} courses found.", allCourses.size());
             allCourses.forEach(courseResult -> {
                 var course = courseResult.courseStats();
                 log.info("[FACULTY] Found course '{}' with id '{}' and capacity '{}'",
-                            course.name(),
-                            course.courseId(),
-                            course.capacity());
+                         course.name(),
+                         course.courseId(),
+                         course.capacity());
             });
         }
 
