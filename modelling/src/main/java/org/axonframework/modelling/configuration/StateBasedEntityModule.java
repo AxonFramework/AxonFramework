@@ -22,9 +22,9 @@ import org.axonframework.common.configuration.ModuleBuilder;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.modelling.EntityIdResolver;
+import org.axonframework.modelling.repository.Repository;
 import org.axonframework.modelling.repository.SimpleRepositoryEntityLoader;
 import org.axonframework.modelling.repository.SimpleRepositoryEntityPersister;
-import org.axonframework.modelling.repository.Repository;
 
 /**
  * An expansion on the {@link EntityModule}, specifically for state-based entities.
@@ -67,6 +67,12 @@ public interface StateBasedEntityModule<ID, E> extends EntityModule<ID, E> {
      * {@link #loader(ComponentBuilder) entity loader} can be defined, after which the builder will enforce registration
      * of an {@link PersisterPhase#persister(ComponentBuilder) entity persister}. The second option allows for providing
      * a {@link #repository(ComponentBuilder) repository} right away.
+     * <p>
+     * When the loader-persister path is taken the resulting {@link Repository} will be wrapped into an
+     * {@link org.axonframework.modelling.repository.AccessSerializingRepository}. This serializes the access to
+     * concurrently invoked entities, ensuring safe access. When taking the
+     * {@link #repository(ComponentBuilder)} path, the invoker decides whether an
+     * {@code AccessSerializingRepository} instance should be used.
      *
      * @param <ID> The type of identifier used to identify the state-based entity that's being built.
      * @param <E>  The type of the state-based entity being built.
@@ -83,6 +89,13 @@ public interface StateBasedEntityModule<ID, E> extends EntityModule<ID, E> {
 
         /**
          * Registers the given {@code repository} as a factory method for the state-based entity being built.
+         * <p>
+         * Compared to the {@link #loader(ComponentBuilder)}-{@link PersisterPhase#persister(ComponentBuilder)} flow,
+         * this operation
+         * <b>does not</b> wrap the resulting {@link Repository} into an
+         * {@link org.axonframework.modelling.repository.AccessSerializingRepository}. If access serialization is
+         * desired, the repository lambda given to this method should return an {@code AccessSerializingRepository} that
+         * delegates to the chosen {@code Repository} implementation.
          *
          * @param repository A factory method constructing a {@link Repository}.
          * @return The parent {@link StateBasedEntityModule}, signaling the end of configuring a state-based entity.

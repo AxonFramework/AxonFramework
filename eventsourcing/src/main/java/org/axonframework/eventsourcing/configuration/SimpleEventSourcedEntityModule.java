@@ -17,8 +17,6 @@
 package org.axonframework.eventsourcing.configuration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.commandhandling.CommandBus;
-import org.axonframework.messaging.commandhandling.CommandHandlingComponent;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.TypeReference;
 import org.axonframework.common.configuration.BaseModule;
@@ -26,16 +24,19 @@ import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.ComponentDefinition;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.LifecycleRegistry;
+import org.axonframework.common.lifecycle.Phase;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.common.lifecycle.Phase;
+import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.commandhandling.CommandHandlingComponent;
 import org.axonframework.modelling.EntityIdResolver;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.configuration.EntityMetamodelConfigurationBuilder;
 import org.axonframework.modelling.entity.EntityCommandHandlingComponent;
 import org.axonframework.modelling.entity.EntityMetamodel;
+import org.axonframework.modelling.repository.AccessSerializingRepository;
 import org.axonframework.modelling.repository.Repository;
 
 import static java.util.Objects.requireNonNull;
@@ -160,7 +161,7 @@ class SimpleEventSourcedEntityModule<ID, E> extends BaseModule<SimpleEventSource
                 .ofTypeAndName(type, entityName())
                 .withBuilder(config -> {
                     //noinspection unchecked
-                    return new EventSourcingRepository<ID, E>(
+                    EventSourcingRepository<ID, E> repository = new EventSourcingRepository<ID, E>(
                             idType,
                             entityType,
                             config.getComponent(EventStore.class),
@@ -168,13 +169,12 @@ class SimpleEventSourcedEntityModule<ID, E> extends BaseModule<SimpleEventSource
                             config.getComponent(CriteriaResolver.class, entityName()),
                             config.getComponent(EntityMetamodel.class, entityName())
                     );
+                    return new AccessSerializingRepository<>(repository);
                 })
-                .onStart(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS,
-                         (config, component) -> {
-                             config.getComponent(StateManager.class).register(component);
-                             return FutureUtils.emptyCompletedFuture();
-                         }
-                );
+                .onStart(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, (config, repository) -> {
+                    config.getComponent(StateManager.class).register(repository);
+                    return FutureUtils.emptyCompletedFuture();
+                });
     }
 
     private ComponentDefinition<CommandHandlingComponent> commandHandlingComponent() {
