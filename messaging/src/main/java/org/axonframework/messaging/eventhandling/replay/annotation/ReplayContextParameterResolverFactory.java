@@ -73,7 +73,7 @@ public class ReplayContextParameterResolverFactory implements ParameterResolverF
                         ReplayToken.replayContext(token.get(), this.type).orElse(null)
                 );
             }
-            return CompletableFuture.completedFuture(false);
+            return CompletableFuture.completedFuture(null);
         }
 
         @Override
