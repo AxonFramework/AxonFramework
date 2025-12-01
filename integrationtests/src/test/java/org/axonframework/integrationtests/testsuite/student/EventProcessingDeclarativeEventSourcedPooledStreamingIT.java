@@ -74,7 +74,7 @@ public class EventProcessingDeclarativeEventSourcedPooledStreamingIT extends Abs
         studentEnrolledToCourse(studentId, "my-courseId-4");
 
         // then
-        await().atMost(20, TimeUnit.SECONDS)
+        await().atMost(10, TimeUnit.SECONDS)
                .untilAsserted(() -> verifyNotificationSentTo(studentId));
     }
 
