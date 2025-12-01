@@ -146,4 +146,23 @@ class UpdateCheckerTest {
         // Cleanup
         updateChecker.stop();
     }
+
+    @Test
+    void shouldNotStartWhenDisabled() {
+        // Given
+        when(usagePropertyProvider.getDisabled()).thenReturn(true);
+        UpdateChecker disabledChecker = new UpdateChecker(httpClient, reporter, usagePropertyProvider);
+
+        // When
+        disabledChecker.start();
+
+        // Then
+        // Wait a bit to ensure no requests are made
+        await().during(Duration.ofMillis(500))
+               .atMost(Duration.ofSeconds(1))
+               .untilAsserted(() -> verify(httpClient, never()).sendRequest(any(), anyBoolean()));
+
+        // Cleanup
+        disabledChecker.stop();
+    }
 }
