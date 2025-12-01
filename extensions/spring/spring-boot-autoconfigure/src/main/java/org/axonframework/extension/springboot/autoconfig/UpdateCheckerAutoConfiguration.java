@@ -16,7 +16,7 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
-import org.axonframework.extension.springboot.UpdateCheckerConfiguration;
+import org.axonframework.extension.springboot.UpdateCheckerProperties;
 import org.axonframework.update.configuration.UsagePropertyProvider;
 import org.axonframework.update.detection.TestEnvironmentDetector;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -39,15 +39,15 @@ import org.springframework.core.type.AnnotatedTypeMetadata;
  * @since 4.12.0
  */
 @AutoConfiguration
-@EnableConfigurationProperties(UpdateCheckerConfigurationProperties.class)
+@EnableConfigurationProperties(UpdateCheckerProperties.class)
 public class UpdateCheckerAutoConfiguration {
 
     @Bean
     @Primary
     @ConditionalOnMissingBean
     @Conditional(NotTestEnvironmentCondition.class)
-    public UsagePropertyProvider usagePropertyProvider(UpdateCheckerConfiguration updateCheckConfiguration) {
-        return UsagePropertyProvider.create(updateCheckConfiguration);
+    public UsagePropertyProvider usagePropertyProvider(UpdateCheckerProperties properties) {
+        return UsagePropertyProvider.create(properties);
     }
 
     static class NotTestEnvironmentCondition implements Condition {

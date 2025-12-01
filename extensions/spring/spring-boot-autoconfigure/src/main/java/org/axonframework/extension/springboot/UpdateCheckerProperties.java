@@ -30,7 +30,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @since 4.12.2
  */
 @ConfigurationProperties(prefix = "axon.update-check")
-public class UpdateCheckerConfigurationProperties implements UsagePropertyProvider {
+public class UpdateCheckerProperties implements UsagePropertyProvider {
 
     /**
      * Indicates whether the update check should be disabled.
