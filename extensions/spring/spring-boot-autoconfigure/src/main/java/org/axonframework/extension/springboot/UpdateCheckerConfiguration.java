@@ -52,7 +52,7 @@ public class UpdateCheckerConfiguration implements UsagePropertyProvider {
     }
 
     @Override
-    public Boolean getDisabled() {
+    public boolean isDisabled() {
         return disabled;
     }
 
