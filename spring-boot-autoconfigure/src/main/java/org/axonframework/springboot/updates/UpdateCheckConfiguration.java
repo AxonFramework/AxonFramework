@@ -12,7 +12,7 @@ public class UpdateCheckConfiguration implements UsagePropertyProvider {
      * <p>
      * Unless disabled in any one of these locations, the update check will be enabled.
      */
-    private Boolean disabled;
+    private boolean disabled;
 
     /**
      * The url to use to check for updates. Generally doesn't need to be changed, unless there is a local proxy, or for
