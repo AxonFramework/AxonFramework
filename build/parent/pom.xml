@@ -47,7 +47,7 @@
         </mockito.agent.argLine>
 
         <!-- Axon Server -->
-        <axonserver-connector-java.version>2025.2.0</axonserver-connector-java.version>
+        <axonserver-connector-java.version>2025.2.1</axonserver-connector-java.version>
         <!-- Caching -->
         <ehcache.version>3.11.1</ehcache.version>
         <javax.cache-api.version>1.1.1</javax.cache-api.version>
