@@ -62,6 +62,10 @@ public interface UsagePropertyProvider {
      * Creates a new instance of {@code UsagePropertyProvider} that combines multiple property providers. The providers
      * are sorted by their priority, with the highest priority provider checked first.
      *
+     * @param additionalProviders Additional {@code UsagePropertyProviders} that should be attached to the default
+     *                            {@link CommandLineUsagePropertyProvider},
+     *                            {@link EnvironmentVariableUsagePropertyProvider},
+     *                            {@link PropertyFileUsagePropertyProvider}, and {@link DefaultUsagePropertyProvider}.
      * @return A new {@code UsagePropertyProvider} instance.
      */
     static UsagePropertyProvider create(UsagePropertyProvider... additionalProviders) {
