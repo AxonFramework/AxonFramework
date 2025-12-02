@@ -96,6 +96,7 @@ import java.util.function.Predicate;
  * @author Mateusz Nowak
  * @author Mitchell Herrijgers
  * @author Steven van Beelen
+ * @author Theo Emanuelsson
  * @since 5.0.0
  */
 public interface AxonTestPhase {
@@ -443,11 +444,47 @@ public interface AxonTestPhase {
         Event events(@Nonnull List<?>... events);
 
         /**
+         * Dispatches the given {@code payload} query to the appropriate query handler and records the response for
+         * result validation. This method automatically waits 200ms before executing the query, allowing time for
+         * asynchronous event processors to update the read model.
+         *
+         * @param payload The query to execute.
+         * @return The current When.Query instance, for fluent interfacing.
+         */
+        Query query(@Nonnull Object payload);
+
+        /**
+         * Dispatches the given {@code payload} query to the appropriate query handler with a custom delay for
+         * awaiting event processing. This method waits for the specified duration before executing the query,
+         * allowing asynchronous event processors time to update the read model.
+         * <p>
+         * Use {@code Duration.ZERO} to skip waiting and execute the query immediately.
+         *
+         * @param payload The query to execute.
+         * @param delay   The time to wait before executing the query. Use {@code Duration.ZERO} to execute immediately.
+         * @return The current When.Query instance, for fluent interfacing.
+         */
+        Query query(@Nonnull Object payload, @Nonnull Duration delay);
+
+        /**
          * Transitions to the Then phase to validate the results of the test. It skips the When phase.
          *
          * @return A {@link Then.Nothing} instance that allows validating the test results.
          */
         Nothing nothing();
+
+        /**
+         * When-phase specific for executing a query.
+         */
+        interface Query {
+
+            /**
+             * Transitions to the Then phase to validate the query results.
+             *
+             * @return A {@link Then.Query} instance that allows validating the query results.
+             */
+            Then.Query then();
+        }
     }
 
     /**
@@ -512,6 +549,63 @@ public interface AxonTestPhase {
              * @return The current Then instance, for fluent interfacing.
              */
             Event success();
+        }
+
+        /**
+         * Operations available in the Then phase of the test fixture execution only if a query was dispatched during
+         * the When phase.
+         */
+        interface Query extends Message<Query> {
+
+            /**
+             * Expect the query to have returned the given {@code expectedResult}. The actual and expected values are
+             * compared using deep equality with field-by-field comparison.
+             *
+             * @param expectedResult The expected query result.
+             * @return The current Then instance, for fluent interfacing.
+             */
+            Query expectResult(@Nonnull Object expectedResult);
+
+            /**
+             * Expect the query to have returned the given {@code expectedResult}. This is an alias for
+             * {@link #expectResult(Object)} that makes query testing more explicit.
+             * The actual and expected values are compared using deep equality with field-by-field comparison.
+             *
+             * @param expectedResult The expected query result.
+             * @return The current Then instance, for fluent interfacing.
+             */
+            default Query expectQueryResult(@Nonnull Object expectedResult) {
+                return expectResult(expectedResult);
+            }
+
+            /**
+             * Invokes the given {@code consumer} of the query result that has been returned during the When phase,
+             * allowing for <b>any</b> form of assertion.
+             *
+             * @param consumer Consumes the query result. You may place your own assertions here.
+             * @return The current Then instance, for fluent interfacing.
+             */
+            Query expectResultSatisfies(@Nonnull Consumer<Object> consumer);
+
+            /**
+             * Invokes the given {@code consumer} of the query result that has been returned during the When phase,
+             * allowing for <b>any</b> form of assertion. This is an alias for {@link #expectResultSatisfies(Consumer)}
+             * that makes query testing more explicit.
+             *
+             * @param consumer Consumes the query result. You may place your own assertions here.
+             * @return The current Then instance, for fluent interfacing.
+             */
+            default Query expectQueryResultSatisfies(@Nonnull Consumer<Object> consumer) {
+                return expectResultSatisfies(consumer);
+            }
+
+            /**
+             * Expect a successful execution of the When phase, meaning the query was handled without throwing an
+             * exception.
+             *
+             * @return The current Then instance, for fluent interfacing.
+             */
+            Query success();
         }
 
         /**

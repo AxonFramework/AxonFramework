@@ -30,9 +30,13 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.UnitOfWork;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.axonframework.messaging.eventhandling.EventSink;
+import org.axonframework.messaging.queryhandling.GenericQueryMessage;
+import org.axonframework.test.util.EventProcessorUtils;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
@@ -40,6 +44,7 @@ import java.util.function.Function;
  * Implementation of the {@link AxonTestPhase.When when-phase} of the {@link AxonTestFixture}.
  *
  * @author Mateusz Nowak
+ * @author Theo Emanuelsson
  * @since 5.0.0
  */
 class AxonTestWhen implements AxonTestPhase.When {
@@ -48,6 +53,7 @@ class AxonTestWhen implements AxonTestPhase.When {
     private final AxonTestFixture.Customization customization;
     private final RecordingCommandBus commandBus;
     private final RecordingEventSink eventSink;
+    private final RecordingQueryBus queryBus;
     private final MessageTypeResolver messageTypeResolver;
     private final UnitOfWorkFactory unitOfWorkFactory;
 
@@ -63,6 +69,8 @@ class AxonTestWhen implements AxonTestPhase.When {
      *                            and validate any commands that have been sent.
      * @param eventSink           The recording {@link EventSink}, used to capture and
      *                            validate any events that have been sent.
+     * @param queryBus            The recording {@link org.axonframework.messaging.queryhandling.QueryBus},
+     *                            used to capture and validate any queries that have been sent.
      * @param messageTypeResolver The message type resolver used to generate the
      *                            {@link MessageType} out of command, event, or query
      *                            payloads provided to this phase.
@@ -74,6 +82,7 @@ class AxonTestWhen implements AxonTestPhase.When {
             @Nonnull AxonTestFixture.Customization customization,
             @Nonnull RecordingCommandBus commandBus,
             @Nonnull RecordingEventSink eventSink,
+            @Nonnull RecordingQueryBus queryBus,
             @Nonnull MessageTypeResolver messageTypeResolver,
             @Nonnull UnitOfWorkFactory unitOfWorkFactory
     ) {
@@ -81,6 +90,7 @@ class AxonTestWhen implements AxonTestPhase.When {
         this.customization = customization;
         this.commandBus = commandBus.reset();
         this.eventSink = eventSink.reset();
+        this.queryBus = queryBus.reset();
         this.messageTypeResolver = messageTypeResolver;
         this.unitOfWorkFactory = unitOfWorkFactory;
     }
@@ -180,8 +190,81 @@ class AxonTestWhen implements AxonTestPhase.When {
     }
 
     @Override
+    public AxonTestPhase.When.Query query(@Nonnull Object payload) {
+        return query(payload, Duration.ofSeconds(5));
+    }
+
+    /**
+     * Dispatches the given {@code payload} query to the appropriate query handler. This method automatically
+     * waits for asynchronous event processors to catch up before executing the query, ensuring that the read
+     * model has been updated with all previously published events.
+     * <p>
+     * The waiting mechanism compares each processor's current tracking token position against the latest token
+     * position from the event store. Once all processors have reached or passed the head position, the query
+     * is executed.
+     * <p>
+     * Note: Use {@code Duration.ZERO} as the timeout to skip waiting and execute the query immediately (useful
+     * for synchronous event processors or when no event processing is needed).
+     *
+     * @param payload The query to execute.
+     * @param timeout The maximum time to wait for event processors to catch up. Use {@code Duration.ZERO} to
+     *                execute immediately without waiting.
+     * @return The current When.Query instance, for fluent interfacing.
+     */
+    public AxonTestPhase.When.Query query(@Nonnull Object payload, @Nonnull Duration timeout) {
+        // Wait for asynchronous event processors to catch up before querying
+        if (!timeout.isZero()) {
+            EventProcessorUtils.waitForEventProcessorsToCatchUp(configuration, timeout);
+        }
+
+        var messageType = messageTypeResolver.resolveOrThrow(payload);
+        var queryMessage = new GenericQueryMessage(messageType, payload);
+
+        inUnitOfWorkOnInvocation(processingContext -> {
+            var responseStream = queryBus.query(queryMessage, processingContext);
+
+            // Get the first response from the stream
+            return responseStream.first()
+                                 .asCompletableFuture()
+                                 .thenApply(entry -> {
+                                     if (entry != null) {
+                                         actualResult = entry.message();
+                                         actualException = null;
+                                     } else {
+                                         actualResult = null;
+                                         actualException = new RuntimeException("No query handler found for query: " + queryMessage.payloadType());
+                                     }
+                                     return null;
+                                 })
+                                 .exceptionally(throwable -> {
+                                     actualResult = null;
+                                     actualException = throwable;
+                                     return null;
+                                 });
+        });
+
+        return new Query();
+    }
+
+    @Override
     public AxonTestPhase.When.Nothing nothing() {
         return new Nothing();
+    }
+
+    class Query implements AxonTestPhase.When.Query {
+
+        @Override
+        public AxonTestPhase.Then.Query then() {
+            return new AxonTestThenQuery(
+                    configuration,
+                    customization,
+                    commandBus,
+                    eventSink,
+                    queryBus,
+                    actualResult,
+                    actualException
+            );
+        }
     }
 
     class Nothing implements AxonTestPhase.When.Nothing {
