@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.configuration;
 
-import org.axonframework.common.infra.MockComponentDescriptor;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.CommandHandlingComponent;
 import org.axonframework.common.configuration.AxonConfiguration;
@@ -32,14 +31,12 @@ import org.axonframework.modelling.EntityIdResolver;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.entity.EntityCommandHandlingComponent;
 import org.axonframework.modelling.entity.EntityMetamodel;
-import org.axonframework.modelling.repository.AccessSerializingRepository;
 import org.axonframework.modelling.repository.Repository;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -157,18 +154,14 @@ class SimpleEventSourcedEntityModuleTest {
     }
 
     @Test
-    void registersAnAccessSerializingRepositoryDelegatingToAnEventSourcingRepositoryWithTheStateManager() {
-        MockComponentDescriptor descriptor = new MockComponentDescriptor();
+    void registersAnEventSourcingRepositoryWithTheStateManager() {
         AxonConfiguration configuration = EventSourcingConfigurer.create()
                                                                  .componentRegistry(cr -> cr.registerModule(testSubject))
                                                                  .start();
         Repository<CourseId, Course> result = configuration.getComponent(StateManager.class)
                                                            .repository(Course.class, CourseId.class);
 
-        assertThat(result).isInstanceOf(AccessSerializingRepository.class);
-        result.describeTo(descriptor);
-        Object delegate = descriptor.getProperty("delegate");
-        assertThat(delegate).isInstanceOf(EventSourcingRepository.class);
+        assertInstanceOf(EventSourcingRepository.class, result);
         assertTrue(constructedEntityFactory.get());
         assertTrue(constructedCriteriaResolver.get());
         assertTrue(constructedEntityModel.get());
