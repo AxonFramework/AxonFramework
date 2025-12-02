@@ -283,14 +283,13 @@ class AxonTestFixtureMessagingTest {
             // given
             var configurer = messagingConfigurer();
             registerChangeStudentNameHandlerReturnsSingle(configurer);
-            var receivedEvents = new ArrayList<>();
+            var receivedEvents = new ArrayList<EventMessage>();
 
             var fixture = AxonTestFixture.with(configurer);
 
-            var givenEventMessages = List.of(
-                    studentNameChangedEventMessage("my-studentId-1", "name-1", 1),
-                    studentNameChangedEventMessage("my-studentId-1", "name-2", 2)
-            );
+            var givenEventMessage1 = studentNameChangedEventMessage("my-studentId-1", "name-1", 1);
+            var givenEventMessage2 = studentNameChangedEventMessage("my-studentId-1", "name-2", 2);
+            var givenEventMessages = List.of(givenEventMessage1, givenEventMessage2);
 
             // when
             fixture.given()
@@ -307,10 +306,9 @@ class AxonTestFixtureMessagingTest {
             // then - verify EventMessages were passed through correctly (not wrapped)
             // First two events are from Given phase, third event is from command handler
             assertEquals(3, receivedEvents.size());
-            var firstEvent = (EventMessage) receivedEvents.get(0);
-            var secondEvent = (EventMessage) receivedEvents.get(1);
-            assertEquals("name-1", ((StudentNameChangedEvent) firstEvent.payload()).name());
-            assertEquals("name-2", ((StudentNameChangedEvent) secondEvent.payload()).name());
+            // Verify the exact same EventMessage instances were received (not wrapped)
+            assertSame(givenEventMessage1, receivedEvents.get(0));
+            assertSame(givenEventMessage2, receivedEvents.get(1));
         }
 
         @Test
