@@ -45,11 +45,8 @@ import java.util.concurrent.CompletableFuture;
 public interface StateManager {
 
     /**
-     * Registers an {@link Repository} for use with this {@code StateManager}.
-     * <p>
-     * The combination of {@link Repository#entityType()} and {@link Repository#idType()} must be unique for all
-     * registered repositories. If optimized concurrent access to the entities of the {@code Repository} is desired, be
-     * sure to wrap the given {@code repository} in an {@link AccessSerializingRepository}.
+     * Registers an {@link Repository} for use with this {@code StateManager}. The combination of
+     * {@link Repository#entityType()} and {@link Repository#idType()} must be unique for all registered repositories.
      *
      * @param repository The {@link Repository} to use for loading state.
      * @param <ID>       The type of id.
