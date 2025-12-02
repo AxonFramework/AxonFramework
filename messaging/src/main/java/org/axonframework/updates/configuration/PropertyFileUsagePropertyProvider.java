@@ -26,10 +26,11 @@ import java.util.Properties;
 
 /**
  * A {@link UsagePropertyProvider} that reads the AxonIQ Data Collection properties from a file located at
- * `~/.axoniq/data-collection.properties`. If the file does not exist, it creates a default file with the default
- * telemetry endpoint and opt-out settings.
+ * {@code ~/.axoniq/update-checker.properties}.
  * <p>
- * If the file cannot be written, it will log a debug message and skip the property provider.
+ * If the file does not exist, it creates a default file with the default telemetry endpoint and opt-out settings, using
+ * property names {@code "telemetry_url"} and {@code "disabled"} respectively. If the file cannot be written, it will
+ * log a debug message and skip the property provider.
  *
  * @author Mitchell Herrijgers
  * @since 4.12.0
@@ -37,16 +38,19 @@ import java.util.Properties;
 public class PropertyFileUsagePropertyProvider implements UsagePropertyProvider {
 
     private static final Logger logger = LoggerFactory.getLogger(PropertyFileUsagePropertyProvider.class);
-    private static final String AXONIQ_PROPERTIES_PATH = "/.axoniq/update-checker.properties";
 
-    private Boolean optOut;
+    private static final String AXONIQ_PROPERTIES_PATH = "/.axoniq/update-checker.properties";
+    private static final String TELEMETRY_URL_FIELD_NAME = "telemetry_url";
+    private static final String DISABLED_PROPERTY_NAME = "disabled";
+
+    private Boolean disabled;
     private String telemetryEndpoint;
     private boolean loaded = false;
 
     @Override
     public Boolean getDisabled() {
         ensureLoaded();
-        return optOut;
+        return disabled;
     }
 
     @Override
@@ -74,8 +78,8 @@ public class PropertyFileUsagePropertyProvider implements UsagePropertyProvider 
                 createDefaultFile();
             }
             properties.load(Files.newInputStream(installationIdFile.toPath()));
-            this.telemetryEndpoint = properties.getProperty("telemetry_url");
-            this.optOut = Boolean.valueOf(properties.getProperty("disabled"));
+            this.telemetryEndpoint = properties.getProperty(TELEMETRY_URL_FIELD_NAME);
+            this.disabled = Boolean.valueOf(properties.getProperty(DISABLED_PROPERTY_NAME));
         } catch (Exception e) {
             logger.debug("Failed to load AxonIQ properties from file: {}. Skipping property provider from file.",
                          getFile().getAbsolutePath(), e);
@@ -95,8 +99,9 @@ public class PropertyFileUsagePropertyProvider implements UsagePropertyProvider 
         }
         logger.info("Creating default AxonIQ Data Collection properties file at: {}", file.getAbsolutePath());
         Properties properties = new Properties();
-        properties.setProperty("telemetry_url", DefaultUsagePropertyProvider.INSTANCE.getUrl());
-        properties.setProperty("opted_out", String.valueOf(DefaultUsagePropertyProvider.INSTANCE.getDisabled()));
+        properties.setProperty(TELEMETRY_URL_FIELD_NAME, DefaultUsagePropertyProvider.INSTANCE.getUrl());
+        properties.setProperty(DISABLED_PROPERTY_NAME,
+                               String.valueOf(DefaultUsagePropertyProvider.INSTANCE.getDisabled()));
         // Ensure the parent directory exists
         File parentDir = file.getParentFile();
         if (!parentDir.exists() && !parentDir.mkdirs()) {
