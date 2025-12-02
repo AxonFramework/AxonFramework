@@ -7,7 +7,7 @@ In Axon Framework, commands are a fundamental building block of your application
 
 == Command-centric approach
 
-Axon Framework 5 takes a **messaging-centric** approach to application design.
+Axon Framework takes a **messaging-centric** approach to application design.
 Commands are central to how your application processes user actions and external events.
 The framework provides comprehensive support for:
 
@@ -31,7 +31,7 @@ Examples: Order handlers, user account handlers, payment handlers
 
 **Stateless handlers**::
 Handlers where state is not managed by Axon Framework.
-These handlers must query and manage state themselves, typically by calling external services or databases directly within the handler.
+These handlers must query and manage state themselves when needed, typically by calling external services or databases directly within the handler.
 +
 Examples: Integration handlers that call external APIs, handlers that query read models, notification handlers
 
@@ -62,8 +62,6 @@ This section covers everything you need to work with commands in Axon Framework.
 |xref:command-dispatchers.adoc[Command dispatchers] |How to dispatch commands from your application code
 |xref:infrastructure.adoc[Infrastructure] |Command bus implementations, repositories, and other infrastructure components
 |xref:configuration.adoc[Configuration] |How to configure command handling in your application
-|xref:modeling/aggregate.adoc[Advanced modeling] |Advanced entity modeling patterns (polymorphism, hierarchies, state-stored entities)
-|===
 
 == Getting started
 
