@@ -16,20 +16,54 @@
 
 package org.axonframework.examples.university;
 
-import org.junit.jupiter.api.*;
+import lombok.extern.slf4j.Slf4j;
+import org.axonframework.test.server.AxonServerContainer;
+import org.axonframework.test.server.AxonServerContainerUtils;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
-@SpringBootTest(classes = UniversityExampleApplication.class)
-@ActiveProfiles("itest")
 class UniversityTestApplicationITest {
 
-    @Nested
-    class DefaultTests {
+  @Nested
+  @SpringBootTest(classes = UniversityExampleApplication.class)
+  @ActiveProfiles("itest")
+  @Testcontainers
+  class DefaultTests {
 
-        @Test
-        void applicationStarts() {
-            // just run
-        }
+    @ServiceConnection
+    @Container
+    private static final AxonServerContainer axonServer = new AxonServerContainer()
+      .withAxonServerHostname("localhost")
+      .withReuse(true)
+      .withDevMode(true);
+
+    @DynamicPropertySource
+    static void datasourceProperties(DynamicPropertyRegistry registry) {
+      registry.add("axon.axonserver.servers", axonServer::getAxonServerAddress);
     }
+
+    @BeforeAll
+    static void setContextUp() throws Exception {
+      axonServer.start();
+
+      // Mainly needed to create DBC context now:
+      AxonServerContainerUtils.purgeEventsFromAxonServer(axonServer.getHost(),
+        axonServer.getHttpPort(),
+        "default",
+        AxonServerContainerUtils.DCB_CONTEXT);
+    }
+
+    @Test
+    void applicationStarts() {
+      // just run
+    }
+  }
 }
