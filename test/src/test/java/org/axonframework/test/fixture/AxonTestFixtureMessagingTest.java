@@ -506,6 +506,58 @@ class AxonTestFixtureMessagingTest {
                    .noCommands();
         }
 
+        @Test
+        void whenEventsWithPayloadVarargsThenSuccess() {
+            // given
+            var configurer = messagingConfigurer();
+            var receivedEvents = new ArrayList<>();
+            var fixture = AxonTestFixture.with(configurer);
+
+            // when
+            fixture.given()
+                   .execute(c -> c.getComponent(SubscribableEventSource.class).subscribe((events, context) -> {
+                       receivedEvents.addAll(events);
+                       return CompletableFuture.completedFuture(null);
+                   }))
+                   .when()
+                   .events(
+                           new StudentNameChangedEvent("my-studentId-1", "name-1", 1),
+                           new StudentNameChangedEvent("my-studentId-1", "name-2", 2)
+                   )
+                   .then()
+                   .success()
+                   .noCommands();
+
+            // then
+            assertEquals(2, receivedEvents.size());
+        }
+
+        @Test
+        void whenEventsWithEventMessageVarargsThenSuccess() {
+            // given
+            var configurer = messagingConfigurer();
+            var receivedEvents = new ArrayList<>();
+            var fixture = AxonTestFixture.with(configurer);
+
+            // when
+            fixture.given()
+                   .execute(c -> c.getComponent(SubscribableEventSource.class).subscribe((events, context) -> {
+                       receivedEvents.addAll(events);
+                       return CompletableFuture.completedFuture(null);
+                   }))
+                   .when()
+                   .events(
+                           studentNameChangedEventMessage("my-studentId-1", "name-1", 1),
+                           studentNameChangedEventMessage("my-studentId-1", "name-2", 2)
+                   )
+                   .then()
+                   .success()
+                   .noCommands();
+
+            // then
+            assertEquals(2, receivedEvents.size());
+        }
+
         @Nested
         class AssertionErrors {
 

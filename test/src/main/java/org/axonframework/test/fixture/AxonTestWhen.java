@@ -31,7 +31,6 @@ import org.axonframework.messaging.core.unitofwork.UnitOfWork;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.axonframework.messaging.eventhandling.EventSink;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
@@ -120,8 +119,8 @@ class AxonTestWhen implements AxonTestPhase.When {
     }
 
     @Override
-    public Event events(@Nonnull List<?>... events) {
-        var messages = Arrays.stream(events)
+    public Event events(@Nonnull List<?> events) {
+        var messages = events.stream()
                              .map(e -> e instanceof EventMessage message
                                      ? message
                                      : toGenericEventMessage(e, Metadata.emptyInstance())

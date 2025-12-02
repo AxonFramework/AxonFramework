@@ -434,13 +434,24 @@ public interface AxonTestPhase {
         Event events(@Nonnull EventMessage... messages);
 
         /**
-         * Publishes the given Event Messages to the appropriate event handlers and records all activity for result
-         * validation.
+         * Publishes the given events to the appropriate event handlers and records all activity for result
+         * validation. The events will be published with empty metadata.
          *
-         * @param events The lists of events to publish.
+         * @param events The events (payloads or EventMessages) to publish.
          * @return The current When instance, for fluent interfacing.
          */
-        Event events(@Nonnull List<?>... events);
+        default Event events(@Nonnull Object... events) {
+            return events(Arrays.stream(events).toList());
+        }
+
+        /**
+         * Publishes the given events to the appropriate event handlers and records all activity for result
+         * validation.
+         *
+         * @param events The list of events to publish.
+         * @return The current When instance, for fluent interfacing.
+         */
+        Event events(@Nonnull List<?> events);
 
         /**
          * Transitions to the Then phase to validate the results of the test. It skips the When phase.
