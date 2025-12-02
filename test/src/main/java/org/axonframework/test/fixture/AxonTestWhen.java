@@ -89,7 +89,7 @@ class AxonTestWhen implements AxonTestPhase.When {
     public Command command(@Nonnull Object payload, @Nonnull Metadata metadata) {
         CommandMessage message;
         if (payload instanceof CommandMessage commandMessage) {
-            message = commandMessage;
+            message = commandMessage.andMetadata(metadata);
         } else {
             var messageType = messageTypeResolver.resolveOrThrow(payload);
             message = new GenericCommandMessage(messageType, payload, metadata);
@@ -112,7 +112,7 @@ class AxonTestWhen implements AxonTestPhase.When {
     @Override
     public Event event(@Nonnull Object payload, @Nonnull Metadata metadata) {
         if (payload instanceof EventMessage message) {
-            return events(message);
+            return events(message.andMetadata(metadata));
         }
         var eventMessage = toGenericEventMessage(payload, metadata);
         return events(eventMessage);

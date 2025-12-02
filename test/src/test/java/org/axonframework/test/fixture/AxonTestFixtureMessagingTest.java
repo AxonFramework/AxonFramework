@@ -312,6 +312,40 @@ class AxonTestFixtureMessagingTest {
         }
 
         @Test
+        void givenEventMessageWithAdditionalMetadataThenMetadataIsMerged() {
+            // given
+            var configurer = messagingConfigurer();
+            registerChangeStudentNameHandlerReturnsSingle(configurer);
+            var receivedEvents = new ArrayList<EventMessage>();
+
+            var fixture = AxonTestFixture.with(configurer);
+
+            var originalEventMessage = new GenericEventMessage(
+                    new MessageType(StudentNameChangedEvent.class),
+                    new StudentNameChangedEvent("my-studentId-1", "name-1", 1),
+                    Metadata.with("original-key", "original-value")
+            );
+
+            // when
+            fixture.given()
+                   .execute(c -> c.getComponent(SubscribableEventSource.class).subscribe((events, context) -> {
+                       receivedEvents.addAll(events);
+                       return CompletableFuture.completedFuture(null);
+                   }))
+                   .event(originalEventMessage, Metadata.with("additional-key", "additional-value"))
+                   .when()
+                   .command(new ChangeStudentNameCommand("my-studentId-1", "name-2"))
+                   .then()
+                   .success();
+
+            // then - verify metadata was merged
+            assertEquals(2, receivedEvents.size());
+            var receivedEvent = receivedEvents.getFirst();
+            assertEquals("original-value", receivedEvent.metadata().get("original-key"));
+            assertEquals("additional-value", receivedEvent.metadata().get("additional-key"));
+        }
+
+        @Test
         void givenEventWhenCommandThenExpectEvents() {
             var configurer = messagingConfigurer();
             var studentEvents = new ArrayList<>();
@@ -702,6 +736,38 @@ class AxonTestFixtureMessagingTest {
             assertEquals(1, receivedEvents.size());
             var receivedEvent = (EventMessage) receivedEvents.getFirst();
             assertEquals("value", receivedEvent.metadata().get("key"));
+        }
+
+        @Test
+        void whenEventMessageWithAdditionalMetadataThenMetadataIsMerged() {
+            // given
+            var configurer = messagingConfigurer();
+            var receivedEvents = new ArrayList<EventMessage>();
+            var fixture = AxonTestFixture.with(configurer);
+
+            var originalEventMessage = new GenericEventMessage(
+                    new MessageType(StudentNameChangedEvent.class),
+                    new StudentNameChangedEvent("my-studentId-1", "name-1", 1),
+                    Metadata.with("original-key", "original-value")
+            );
+
+            // when
+            fixture.given()
+                   .execute(c -> c.getComponent(SubscribableEventSource.class).subscribe((events, context) -> {
+                       receivedEvents.addAll(events);
+                       return CompletableFuture.completedFuture(null);
+                   }))
+                   .when()
+                   .event(originalEventMessage, Metadata.with("additional-key", "additional-value"))
+                   .then()
+                   .success()
+                   .noCommands();
+
+            // then - verify metadata was merged
+            assertEquals(1, receivedEvents.size());
+            var receivedEvent = receivedEvents.getFirst();
+            assertEquals("original-value", receivedEvent.metadata().get("original-key"));
+            assertEquals("additional-value", receivedEvent.metadata().get("additional-key"));
         }
 
         @Nested

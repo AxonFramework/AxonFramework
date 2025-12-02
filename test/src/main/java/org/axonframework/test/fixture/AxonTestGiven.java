@@ -90,7 +90,7 @@ class AxonTestGiven implements AxonTestPhase.Given {
     @Override
     public AxonTestPhase.Given event(@Nonnull Object payload, @Nonnull Metadata metadata) {
         if (payload instanceof EventMessage message) {
-            return events(message);
+            return events(message.andMetadata(metadata));
         }
         var eventMessage = toGenericEventMessage(payload, metadata);
         return events(eventMessage);
@@ -132,7 +132,7 @@ class AxonTestGiven implements AxonTestPhase.Given {
     @Override
     public AxonTestPhase.Given command(@Nonnull Object payload, @Nonnull Metadata metadata) {
         if (payload instanceof CommandMessage message) {
-            return commands(message);
+            return commands(message.andMetadata(metadata));
         }
         var commandMessage = toGenericCommandMessage(payload, metadata);
         return commands(commandMessage);
