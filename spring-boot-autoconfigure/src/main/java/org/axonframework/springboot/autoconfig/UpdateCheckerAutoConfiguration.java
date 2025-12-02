@@ -45,8 +45,9 @@ public class UpdateCheckerAutoConfiguration {
     @ConditionalOnMissingBean
     @Conditional(NotTestEnvironmentCondition.class)
     public UpdateChecker updateChecker(UpdateCheckerHttpClient updateCheckerHttpClient,
-                                       UpdateCheckerReporter updateCheckerReporter) {
-        return new UpdateChecker(updateCheckerHttpClient, updateCheckerReporter);
+                                       UpdateCheckerReporter updateCheckerReporter,
+                                       UsagePropertyProvider usagePropertyProvider) {
+        return new UpdateChecker(updateCheckerHttpClient, updateCheckerReporter, usagePropertyProvider);
     }
 
     static class NotTestEnvironmentCondition implements Condition {
