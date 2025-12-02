@@ -246,6 +246,74 @@ class AxonTestFixtureMessagingTest {
         }
 
         @Test
+        void givenEventsWithEventMessagesWhenCommandThenSuccess() {
+            // given
+            var configurer = messagingConfigurer();
+            registerChangeStudentNameHandlerReturnsSingle(configurer);
+            var receivedEvents = new ArrayList<>();
+
+            var fixture = AxonTestFixture.with(configurer);
+
+            // when
+            fixture.given()
+                   .execute(c -> c.getComponent(SubscribableEventSource.class).subscribe((events, context) -> {
+                       receivedEvents.addAll(events);
+                       return CompletableFuture.completedFuture(null);
+                   }))
+                   .events(
+                           studentNameChangedEventMessage("my-studentId-1", "name-1", 1),
+                           studentNameChangedEventMessage("my-studentId-1", "name-2", 2)
+                   )
+                   .when()
+                   .command(new ChangeStudentNameCommand("my-studentId-1", "name-3"))
+                   .then()
+                   .success();
+
+            // then - verify EventMessages were passed through correctly (not wrapped)
+            // First two events are from Given phase, third event is from command handler
+            assertEquals(3, receivedEvents.size());
+            var firstEvent = (EventMessage) receivedEvents.get(0);
+            var secondEvent = (EventMessage) receivedEvents.get(1);
+            assertEquals("name-1", ((StudentNameChangedEvent) firstEvent.payload()).name());
+            assertEquals("name-2", ((StudentNameChangedEvent) secondEvent.payload()).name());
+        }
+
+        @Test
+        void givenEventsWithListOfEventMessagesWhenCommandThenSuccess() {
+            // given
+            var configurer = messagingConfigurer();
+            registerChangeStudentNameHandlerReturnsSingle(configurer);
+            var receivedEvents = new ArrayList<>();
+
+            var fixture = AxonTestFixture.with(configurer);
+
+            var givenEventMessages = List.of(
+                    studentNameChangedEventMessage("my-studentId-1", "name-1", 1),
+                    studentNameChangedEventMessage("my-studentId-1", "name-2", 2)
+            );
+
+            // when
+            fixture.given()
+                   .execute(c -> c.getComponent(SubscribableEventSource.class).subscribe((events, context) -> {
+                       receivedEvents.addAll(events);
+                       return CompletableFuture.completedFuture(null);
+                   }))
+                   .events(givenEventMessages)
+                   .when()
+                   .command(new ChangeStudentNameCommand("my-studentId-1", "name-3"))
+                   .then()
+                   .success();
+
+            // then - verify EventMessages were passed through correctly (not wrapped)
+            // First two events are from Given phase, third event is from command handler
+            assertEquals(3, receivedEvents.size());
+            var firstEvent = (EventMessage) receivedEvents.get(0);
+            var secondEvent = (EventMessage) receivedEvents.get(1);
+            assertEquals("name-1", ((StudentNameChangedEvent) firstEvent.payload()).name());
+            assertEquals("name-2", ((StudentNameChangedEvent) secondEvent.payload()).name());
+        }
+
+        @Test
         void givenEventWhenCommandThenExpectEvents() {
             var configurer = messagingConfigurer();
             var studentEvents = new ArrayList<>();
