@@ -23,6 +23,7 @@ import org.axonframework.messaging.commandhandling.SimpleCommandBus;
 import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventSink;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.core.EmptyApplicationContext;
@@ -213,6 +214,35 @@ class AxonTestFixtureMessagingTest {
                    .then()
                    .success()
                    .resultMessagePayload(new CommandResult("Result name-3"));
+        }
+
+        @Test
+        void givenSingleEventMessageWhenCommandThenSuccess() {
+            // given
+            var configurer = messagingConfigurer();
+            registerChangeStudentNameHandlerReturnsSingle(configurer);
+            var receivedEvents = new ArrayList<>();
+
+            var fixture = AxonTestFixture.with(configurer);
+
+            // when
+            fixture.given()
+                   .execute(c -> c.getComponent(SubscribableEventSource.class).subscribe((events, context) -> {
+                       receivedEvents.addAll(events);
+                       return CompletableFuture.completedFuture(null);
+                   }))
+                   .event(studentNameChangedEventMessage("my-studentId-1", "name-1", 1))
+                   .when()
+                   .command(new ChangeStudentNameCommand("my-studentId-1", "name-2"))
+                   .then()
+                   .success();
+
+            // then - verify EventMessage was passed through correctly (not wrapped)
+            // First event is from Given phase, second event is from command handler
+            assertEquals(2, receivedEvents.size());
+            var givenPhaseEvent = (EventMessage) receivedEvents.getFirst();
+            assertEquals("my-studentId-1", ((StudentNameChangedEvent) givenPhaseEvent.payload()).id());
+            assertEquals("name-1", ((StudentNameChangedEvent) givenPhaseEvent.payload()).name());
         }
 
         @Test
@@ -556,6 +586,56 @@ class AxonTestFixtureMessagingTest {
 
             // then
             assertEquals(2, receivedEvents.size());
+        }
+
+        @Test
+        void whenSingleEventWithEventMessageThenSuccess() {
+            // given
+            var configurer = messagingConfigurer();
+            var receivedEvents = new ArrayList<>();
+            var fixture = AxonTestFixture.with(configurer);
+
+            // when
+            fixture.given()
+                   .execute(c -> c.getComponent(SubscribableEventSource.class).subscribe((events, context) -> {
+                       receivedEvents.addAll(events);
+                       return CompletableFuture.completedFuture(null);
+                   }))
+                   .when()
+                   .event(studentNameChangedEventMessage("my-studentId-1", "name-1", 1))
+                   .then()
+                   .success()
+                   .noCommands();
+
+            // then
+            assertEquals(1, receivedEvents.size());
+            var receivedEvent = (EventMessage) receivedEvents.getFirst();
+            assertEquals("my-studentId-1", ((StudentNameChangedEvent) receivedEvent.payload()).id());
+        }
+
+        @Test
+        void whenSingleEventWithMapMetadataThenSuccess() {
+            // given
+            var configurer = messagingConfigurer();
+            var receivedEvents = new ArrayList<>();
+            var fixture = AxonTestFixture.with(configurer);
+
+            // when
+            fixture.given()
+                   .execute(c -> c.getComponent(SubscribableEventSource.class).subscribe((events, context) -> {
+                       receivedEvents.addAll(events);
+                       return CompletableFuture.completedFuture(null);
+                   }))
+                   .when()
+                   .event(new StudentNameChangedEvent("my-studentId-1", "name-1", 1), Map.of("key", "value"))
+                   .then()
+                   .success()
+                   .noCommands();
+
+            // then
+            assertEquals(1, receivedEvents.size());
+            var receivedEvent = (EventMessage) receivedEvents.getFirst();
+            assertEquals("value", receivedEvent.metadata().get("key"));
         }
 
         @Nested

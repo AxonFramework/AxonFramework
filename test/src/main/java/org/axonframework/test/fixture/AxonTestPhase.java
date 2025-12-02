@@ -407,7 +407,7 @@ public interface AxonTestPhase {
          * Publishes the given {@code payload} event with the provided {@code metadata} to the appropriate event handler
          * and records all activity for result validation. The event will be published with empty metadata.
          *
-         * @param payload The command to execute.
+         * @param payload The event to publish.
          * @return The current When instance, for fluent interfacing.
          */
         default Event event(@Nonnull Object payload) {
@@ -418,8 +418,20 @@ public interface AxonTestPhase {
          * Publishes the given {@code payload} event with the provided {@code metadata} to the appropriate event handler
          * and records all activity for result validation.
          *
-         * @param payload  The event to execute.
-         * @param metadata The metadata to attach to the command.
+         * @param payload  The event to publish.
+         * @param metadata The metadata to attach to the event.
+         * @return The current When instance, for fluent interfacing.
+         */
+        default Event event(@Nonnull Object payload, @Nonnull Map<String, String> metadata) {
+            return event(payload, Metadata.from(metadata));
+        }
+
+        /**
+         * Publishes the given {@code payload} event with the provided {@code metadata} to the appropriate event handler
+         * and records all activity for result validation.
+         *
+         * @param payload  The event to publish.
+         * @param metadata The metadata to attach to the event.
          * @return The current When instance, for fluent interfacing.
          */
         Event event(@Nonnull Object payload, @Nonnull Metadata metadata);

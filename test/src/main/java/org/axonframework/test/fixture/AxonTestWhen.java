@@ -17,6 +17,7 @@
 package org.axonframework.test.fixture;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.GenericCommandMessage;
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.messaging.eventhandling.EventMessage;
@@ -86,8 +87,13 @@ class AxonTestWhen implements AxonTestPhase.When {
 
     @Override
     public Command command(@Nonnull Object payload, @Nonnull Metadata metadata) {
-        var messageType = messageTypeResolver.resolveOrThrow(payload);
-        var message = new GenericCommandMessage(messageType, payload, metadata);
+        CommandMessage message;
+        if (payload instanceof CommandMessage commandMessage) {
+            message = commandMessage;
+        } else {
+            var messageType = messageTypeResolver.resolveOrThrow(payload);
+            message = new GenericCommandMessage(messageType, payload, metadata);
+        }
         inUnitOfWorkOnInvocation(processingContext ->
                                          commandBus.dispatch(message, processingContext)
                                                    .whenComplete((r, e) -> {
@@ -105,6 +111,9 @@ class AxonTestWhen implements AxonTestPhase.When {
 
     @Override
     public Event event(@Nonnull Object payload, @Nonnull Metadata metadata) {
+        if (payload instanceof EventMessage message) {
+            return events(message);
+        }
         var eventMessage = toGenericEventMessage(payload, metadata);
         return events(eventMessage);
     }
