@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.replay;
 
+import org.axonframework.conversion.ConversionException;
 import org.axonframework.conversion.Converter;
 import org.axonframework.conversion.PassThroughConverter;
 import org.axonframework.conversion.json.JacksonConverter;
@@ -40,6 +41,7 @@ import java.util.Map;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -191,60 +193,24 @@ class ReplayContextParameterResolverFactoryTest {
         }
 
         @Test
-        void replayContextIsConvertedFromMapToCustomRecord() {
+        void conversionExceptionIsThrownWhenConversionFails() {
             // given
-            Map<String, Object> mapContext = Map.of(
-                    "reason", "Full replay requested",
-                    "requestedBy", "admin-user",
-                    "fromPosition", 100L,
-                    "toPosition", 500L
-            );
-            var handler = new ReplayInfoHandler();
-            var testSubject = new AnnotatedEventHandlingComponent<>(
-                    handler,
-                    ClasspathParameterResolverFactory.forClass(ReplayInfoHandler.class)
-            );
-            var event = new GenericEventMessage(new MessageType(String.class), "test-event");
+            String incompatibleContext = "incompatible-string-context";
             var replayToken = ReplayToken.createReplayToken(
-                    new GlobalSequenceTrackingToken(501L),
-                    new GlobalSequenceTrackingToken(100L),
-                    mapContext
+                    new GlobalSequenceTrackingToken(3L),
+                    new GlobalSequenceTrackingToken(2L),
+                    incompatibleContext
             );
 
-            // when
-            testSubject.handle(event, contextWithJacksonConverter(event, replayToken));
-
-            // then
-            assertThat(handler.receivedEvents).containsExactly("test-event");
-            assertThat(handler.receivedReplayInfos).hasSize(1);
-            ReplayInfo replayInfo = handler.receivedReplayInfos.get(0);
-            assertThat(replayInfo).isNotNull();
-            assertThat(replayInfo.reason()).isEqualTo("Full replay requested");
-            assertThat(replayInfo.requestedBy()).isEqualTo("admin-user");
-            assertThat(replayInfo.fromPosition()).isEqualTo(100L);
-            assertThat(replayInfo.toPosition()).isEqualTo(500L);
+            // when/then
+            assertThatThrownBy(() -> ReplayToken.replayContext(replayToken, MyResetContext.class, jacksonConverter))
+                    .isInstanceOf(ConversionException.class);
         }
 
         private ProcessingContext contextWithJacksonConverter(EventMessage event, TrackingToken token) {
             return StubProcessingContext.withComponent(Converter.class, jacksonConverter)
                                         .withMessage(event)
                                         .withResource(TrackingToken.RESOURCE_KEY, token);
-        }
-
-        private static class ReplayInfoHandler {
-
-            private final List<String> receivedEvents = new ArrayList<>();
-            private final List<ReplayInfo> receivedReplayInfos = new ArrayList<>();
-
-            @EventHandler
-            public void handle(String event, @ReplayContext ReplayInfo replayInfo) {
-                receivedEvents.add(event);
-                receivedReplayInfos.add(replayInfo);
-            }
-        }
-
-        private record ReplayInfo(String reason, String requestedBy, Long fromPosition, Long toPosition) {
-
         }
     }
 }
