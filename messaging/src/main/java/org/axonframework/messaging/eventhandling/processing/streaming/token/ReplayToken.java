@@ -140,8 +140,8 @@ public class ReplayToken implements TrackingToken, WrappedToken {
      * Extracts the context from a {@code trackingToken} of the matching {@code contextClass}, using the provided
      * {@code converter} for type conversion if necessary.
      * <p>
-     * Will resolve to an empty {@code Optional} if the provided token is not a {@link ReplayToken}, or the context
-     * isn't convertible to the provided {@code contextClass}, or there is no context at all.
+     * Will resolve to an empty {@code Optional} if the provided token is not a {@link ReplayToken}, or there is no
+     * context at all.
      * <p>
      * If the context is directly assignable to the given {@code contextClass}, no conversion is performed.
      * Otherwise, the provided {@code converter} is used to attempt conversion.
@@ -151,6 +151,7 @@ public class ReplayToken implements TrackingToken, WrappedToken {
      * @param converter     The {@link Converter} to use for type conversion.
      * @param <T>           The type of the context.
      * @return The context converted to the expected type, if present in the token and convertible.
+     * @throws org.axonframework.conversion.ConversionException If the context cannot be converted to the expected type.
      */
     public static <T> Optional<T> replayContext(
             TrackingToken trackingToken,
