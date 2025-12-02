@@ -1,0 +1,54 @@
+name: Axon Framework with Examples
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths-ignore:
+      - 'docs/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Test and Build on JDK ${{ matrix.java-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - java-version: 21
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up JDK ${{ matrix.java-version }}
+        uses: actions/setup-java@v5.0.0
+        with:
+          distribution: 'zulu'
+          java-version: ${{ matrix.java-version }}
+          cache: "maven"
+          server-id: central
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
+
+      - name: Regular Build including examples
+        run: |
+          ./mvnw -B -U -ntp -Pintegration-test -Pexamples clean verify \
+          -Dcoverage \
+          -Dstyle.color=always \
+          -Dsurefire.rerunFailingTestsCount=5 \
+          -Dfailsafe.rerunFailingTestsCount=5 \
+          -Dparallel=classes \
+          -DthreadCount=1 \
+          -DforkCount=2
+
+      - name: Create test summary
+        uses: test-summary/action@v2
+        with:
+          paths: "**/target/surefire-reports/TEST-*.xml"
+          show: "fail, skip"
+        if: always() # This allows the build step to fail -- due to failing tests -- but still produce a test summary.
