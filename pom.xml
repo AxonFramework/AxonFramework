@@ -20,7 +20,7 @@
 
     <groupId>org.axonframework</groupId>
     <artifactId>axon</artifactId>
-    <version>5.1.0-SNAPSHOT</version>
+    <version>5.0.2-SNAPSHOT</version>
 
     <modules>
         <module>build/parent</module>
@@ -187,6 +187,18 @@
             </activation>
             <modules>
                 <module>build/coverage-report</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>examples</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+                <property>
+                    <name>examples</name>
+                </property>
+            </activation>
+            <modules>
+                <module>examples</module>
             </modules>
         </profile>
 

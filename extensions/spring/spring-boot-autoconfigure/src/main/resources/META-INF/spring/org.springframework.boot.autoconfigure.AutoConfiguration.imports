@@ -31,3 +31,4 @@ org.axonframework.extension.springboot.autoconfig.NoOpTransactionAutoConfigurati
 org.axonframework.extension.springboot.autoconfig.ObjectMapperAutoConfiguration
 org.axonframework.extension.springboot.autoconfig.SecurityAutoConfiguration
 org.axonframework.extension.springboot.autoconfig.TransactionAutoConfiguration
+org.axonframework.extension.springboot.autoconfig.UpdateCheckerAutoConfiguration
