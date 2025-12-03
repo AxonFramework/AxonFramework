@@ -44,6 +44,8 @@ import org.axonframework.messaging.eventhandling.AsyncInMemoryStreamableEventSou
 import org.axonframework.common.util.DelegateScheduledExecutorService;
 import org.axonframework.common.util.MockException;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,6 +64,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -1145,6 +1148,81 @@ class PooledStreamingEventProcessorTest {
 
             // then - verify no events processed during replay
             assertThat(recordedEvents).isEmpty();
+        }
+
+        @ParameterizedTest(name = "firstToken position {0}")
+        @ValueSource(longs = {-1, 0, 1})
+        void initialReplayStatusDependsOnFirstTokenPosition(long firstTokenPosition) {
+            // given
+            ConcurrentHashMap<String, Boolean> eventReplayStatus = new ConcurrentHashMap<>();
+
+            var eventHandlingComponent = new SimpleEventHandlingComponent();
+            eventHandlingComponent.subscribe(new QualifiedName(String.class), (event, ctx) -> {
+                TrackingToken token = TrackingToken.fromContext(ctx).orElse(null);
+                boolean isReplay = ReplayToken.isReplay(token);
+                eventReplayStatus.put(event.payloadAs(String.class), isReplay);
+                return MessageStream.empty();
+            });
+
+            // Mock firstToken to return specified position
+            when(stubMessageSource.firstToken(null))
+                    .thenReturn(CompletableFuture.completedFuture(new GlobalSequenceTrackingToken(firstTokenPosition)));
+
+            withTestSubject(
+                    List.of(eventHandlingComponent),
+                    c -> c.initialSegmentCount(1)
+                    // Uses default initialToken: es.firstToken(null).thenApply(ReplayToken::createReplayToken)
+            );
+
+            // Publish 3 events
+            // AsyncInMemoryStreamableEventSource stores events at positions 0, 1, 2
+            // Token in context = storage position + 1 (so events have token positions 1, 2, 3)
+            // Streaming starts AFTER firstToken position (exclusive)
+            EventMessage event1 = EventTestUtils.asEventMessage("event-1");
+            EventMessage event2 = EventTestUtils.asEventMessage("event-2");
+            EventMessage event3 = EventTestUtils.asEventMessage("event-3");
+            stubMessageSource.publishMessage(event1);
+            stubMessageSource.publishMessage(event2);
+            stubMessageSource.publishMessage(event3);
+
+            // when
+            startEventProcessor();
+
+            // then - verify which events are processed and their replay status based on firstToken
+            // The firstToken determines:
+            // 1. Where streaming STARTS (events at storage positions > firstToken are streamed)
+            // 2. The replay boundary (events with token position <= firstToken are replay)
+            // Since streaming starts after firstToken, processed events have positions > firstToken
+            // Therefore, all processed events are NOT replay
+            switch ((int) firstTokenPosition) {
+                case -1 -> {
+                    // firstToken=-1: stream starts at storage pos 0, all events processed
+                    // Events at token positions 1, 2, 3 are all > -1, so none are replay
+                    await().atMost(5, TimeUnit.SECONDS)
+                           .untilAsserted(() -> assertThat(eventReplayStatus).hasSize(3));
+                    assertThat(eventReplayStatus.get("event-1")).isFalse();
+                    assertThat(eventReplayStatus.get("event-2")).isFalse();
+                    assertThat(eventReplayStatus.get("event-3")).isFalse();
+                }
+                case 0 -> {
+                    // firstToken=0: stream starts at storage pos 1, event-1 skipped
+                    // Events at token positions 2, 3 are > 0, so not replay
+                    await().atMost(5, TimeUnit.SECONDS)
+                           .untilAsserted(() -> assertThat(eventReplayStatus).hasSize(2));
+                    assertThat(eventReplayStatus).doesNotContainKey("event-1");
+                    assertThat(eventReplayStatus.get("event-2")).isFalse();
+                    assertThat(eventReplayStatus.get("event-3")).isFalse();
+                }
+                case 1 -> {
+                    // firstToken=1: stream starts at storage pos 2, event-1 and event-2 skipped
+                    // Event at token position 3 is > 1, so not replay
+                    await().atMost(5, TimeUnit.SECONDS)
+                           .untilAsserted(() -> assertThat(eventReplayStatus).hasSize(1));
+                    assertThat(eventReplayStatus).doesNotContainKey("event-1");
+                    assertThat(eventReplayStatus).doesNotContainKey("event-2");
+                    assertThat(eventReplayStatus.get("event-3")).isFalse();
+                }
+            }
         }
     }
 
