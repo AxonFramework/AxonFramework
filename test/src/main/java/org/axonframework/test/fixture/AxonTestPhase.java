@@ -145,10 +145,12 @@ public interface AxonTestPhase {
         Given noPriorActivity();
 
         /**
-         * Configures a single event with the given {@code payload} as part of the "given" state. This event will be
-         * published with empty metadata.
+         * Configures a single event as part of the "given" state. This event will be published with empty metadata.
+         * <p>
+         * The {@code payload} parameter accepts either an event payload object or an {@link EventMessage}.
+         * If an {@link EventMessage} is provided, it will be used directly.
          *
-         * @param payload The payload of the event to publish.
+         * @param payload The event payload or {@link EventMessage} to publish.
          * @return The current Given instance, for fluent interfacing.
          */
         default Given event(@Nonnull Object payload) {
@@ -156,11 +158,15 @@ public interface AxonTestPhase {
         }
 
         /**
-         * Configures a single event with the given {@code payload} and {@code metadata} as part of the "given" state.
+         * Configures a single event with the given {@code metadata} as part of the "given" state.
          * This event will be published.
+         * <p>
+         * The {@code payload} parameter accepts either an event payload object or an {@link EventMessage}.
+         * If an {@link EventMessage} is provided, the given {@code metadata} will be merged with the message's
+         * existing metadata using {@link EventMessage#andMetadata(Metadata)}.
          *
-         * @param payload  The payload of the event to publish.
-         * @param metadata The metadata to attach to the event.
+         * @param payload  The event payload or {@link EventMessage} to publish.
+         * @param metadata The metadata to attach to the event (merged if payload is an {@link EventMessage}).
          * @return The current Given instance, for fluent interfacing.
          */
         default Given event(@Nonnull Object payload, @Nonnull Map<String, String> metadata) {
@@ -168,11 +174,15 @@ public interface AxonTestPhase {
         }
 
         /**
-         * Configures a single event with the given {@code payload} and {@code metadata} as part of the "given" state.
+         * Configures a single event with the given {@code metadata} as part of the "given" state.
          * This event will be published.
+         * <p>
+         * The {@code payload} parameter accepts either an event payload object or an {@link EventMessage}.
+         * If an {@link EventMessage} is provided, the given {@code metadata} will be merged with the message's
+         * existing metadata using {@link EventMessage#andMetadata(Metadata)}.
          *
-         * @param payload  The payload of the event to publish.
-         * @param metadata The metadata to attach to the event.
+         * @param payload  The event payload or {@link EventMessage} to publish.
+         * @param metadata The metadata to attach to the event (merged if payload is an {@link EventMessage}).
          * @return The current Given instance, for fluent interfacing.
          */
         Given event(@Nonnull Object payload, @Nonnull Metadata metadata);
@@ -216,10 +226,13 @@ public interface AxonTestPhase {
         Given events(@Nonnull List<?> events);
 
         /**
-         * Configures a single command with the given {@code payload} as part of the "given" state. This command will be
-         * dispatched to corresponding command handlers.
+         * Configures a single command as part of the "given" state. This command will be dispatched to corresponding
+         * command handlers with empty metadata.
+         * <p>
+         * The {@code payload} parameter accepts either a command payload object or a {@link CommandMessage}.
+         * If a {@link CommandMessage} is provided, it will be used directly.
          *
-         * @param payload The payload of the command to dispatch.
+         * @param payload The command payload or {@link CommandMessage} to dispatch.
          * @return The current Given instance, for fluent interfacing.
          */
         default Given command(@Nonnull Object payload) {
@@ -227,11 +240,15 @@ public interface AxonTestPhase {
         }
 
         /**
-         * Configures a single command with the given {@code payload} and {@code metadata} as part of the "given" state.
+         * Configures a single command with the given {@code metadata} as part of the "given" state.
          * This command will be dispatched to corresponding command handlers.
+         * <p>
+         * The {@code payload} parameter accepts either a command payload object or a {@link CommandMessage}.
+         * If a {@link CommandMessage} is provided, the given {@code metadata} will be merged with the message's
+         * existing metadata using {@link CommandMessage#andMetadata(Metadata)}.
          *
-         * @param payload  The payload of the command to dispatch.
-         * @param metadata The metadata to attach to the command.
+         * @param payload  The command payload or {@link CommandMessage} to dispatch.
+         * @param metadata The metadata to attach to the command (merged if payload is a {@link CommandMessage}).
          * @return The current Given instance, for fluent interfacing.
          */
         default Given command(@Nonnull Object payload, @Nonnull Map<String, String> metadata) {
@@ -239,11 +256,15 @@ public interface AxonTestPhase {
         }
 
         /**
-         * Configures a single command with the given {@code payload} and {@code metadata} as part of the "given" state.
+         * Configures a single command with the given {@code metadata} as part of the "given" state.
          * This command will be dispatched to corresponding command handlers.
+         * <p>
+         * The {@code payload} parameter accepts either a command payload object or a {@link CommandMessage}.
+         * If a {@link CommandMessage} is provided, the given {@code metadata} will be merged with the message's
+         * existing metadata using {@link CommandMessage#andMetadata(Metadata)}.
          *
-         * @param payload  The payload of the command to dispatch.
-         * @param metadata The metadata to attach to the command.
+         * @param payload  The command payload or {@link CommandMessage} to dispatch.
+         * @param metadata The metadata to attach to the command (merged if payload is a {@link CommandMessage}).
          * @return The current Given instance, for fluent interfacing.
          */
         Given command(@Nonnull Object payload, @Nonnull Metadata metadata);
@@ -371,10 +392,13 @@ public interface AxonTestPhase {
         }
 
         /**
-         * Dispatches the given {@code payload} command to the appropriate command handler and records all activity for
+         * Dispatches the given command to the appropriate command handler and records all activity for
          * result validation. The command will be dispatched with empty metadata.
+         * <p>
+         * The {@code payload} parameter accepts either a command payload object or a {@link CommandMessage}.
+         * If a {@link CommandMessage} is provided, it will be used directly.
          *
-         * @param payload The command to execute.
+         * @param payload The command payload or {@link CommandMessage} to dispatch.
          * @return The current When instance, for fluent interfacing.
          */
         default Command command(@Nonnull Object payload) {
@@ -382,11 +406,15 @@ public interface AxonTestPhase {
         }
 
         /**
-         * Dispatches the given {@code payload} command with the provided {@code metadata} to the appropriate command
+         * Dispatches the given command with the provided {@code metadata} to the appropriate command
          * handler and records all activity for result validation.
+         * <p>
+         * The {@code payload} parameter accepts either a command payload object or a {@link CommandMessage}.
+         * If a {@link CommandMessage} is provided, the given {@code metadata} will be merged with the message's
+         * existing metadata using {@link CommandMessage#andMetadata(Metadata)}.
          *
-         * @param payload  The command to execute.
-         * @param metadata The metadata to attach to the command.
+         * @param payload  The command payload or {@link CommandMessage} to dispatch.
+         * @param metadata The metadata to attach to the command (merged if payload is a {@link CommandMessage}).
          * @return The current When instance, for fluent interfacing.
          */
         default Command command(@Nonnull Object payload, @Nonnull Map<String, String> metadata) {
@@ -394,20 +422,27 @@ public interface AxonTestPhase {
         }
 
         /**
-         * Dispatches the given {@code payload} command with the provided {@code metadata} to the appropriate command
+         * Dispatches the given command with the provided {@code metadata} to the appropriate command
          * handler and records all activity for result validation.
+         * <p>
+         * The {@code payload} parameter accepts either a command payload object or a {@link CommandMessage}.
+         * If a {@link CommandMessage} is provided, the given {@code metadata} will be merged with the message's
+         * existing metadata using {@link CommandMessage#andMetadata(Metadata)}.
          *
-         * @param payload  The command to execute.
-         * @param metadata The metadata to attach to the command.
+         * @param payload  The command payload or {@link CommandMessage} to dispatch.
+         * @param metadata The metadata to attach to the command (merged if payload is a {@link CommandMessage}).
          * @return The current When instance, for fluent interfacing.
          */
         Command command(@Nonnull Object payload, @Nonnull Metadata metadata);
 
         /**
-         * Publishes the given {@code payload} event with the provided {@code metadata} to the appropriate event handler
-         * and records all activity for result validation. The event will be published with empty metadata.
+         * Publishes the given event to the appropriate event handler and records all activity for result validation.
+         * The event will be published with empty metadata.
+         * <p>
+         * The {@code payload} parameter accepts either an event payload object or an {@link EventMessage}.
+         * If an {@link EventMessage} is provided, it will be used directly.
          *
-         * @param payload The command to execute.
+         * @param payload The event payload or {@link EventMessage} to publish.
          * @return The current When instance, for fluent interfacing.
          */
         default Event event(@Nonnull Object payload) {
@@ -415,11 +450,31 @@ public interface AxonTestPhase {
         }
 
         /**
-         * Publishes the given {@code payload} event with the provided {@code metadata} to the appropriate event handler
+         * Publishes the given event with the provided {@code metadata} to the appropriate event handler
          * and records all activity for result validation.
+         * <p>
+         * The {@code payload} parameter accepts either an event payload object or an {@link EventMessage}.
+         * If an {@link EventMessage} is provided, the given {@code metadata} will be merged with the message's
+         * existing metadata using {@link EventMessage#andMetadata(Metadata)}.
          *
-         * @param payload  The event to execute.
-         * @param metadata The metadata to attach to the command.
+         * @param payload  The event payload or {@link EventMessage} to publish.
+         * @param metadata The metadata to attach to the event (merged if payload is an {@link EventMessage}).
+         * @return The current When instance, for fluent interfacing.
+         */
+        default Event event(@Nonnull Object payload, @Nonnull Map<String, String> metadata) {
+            return event(payload, Metadata.from(metadata));
+        }
+
+        /**
+         * Publishes the given event with the provided {@code metadata} to the appropriate event handler
+         * and records all activity for result validation.
+         * <p>
+         * The {@code payload} parameter accepts either an event payload object or an {@link EventMessage}.
+         * If an {@link EventMessage} is provided, the given {@code metadata} will be merged with the message's
+         * existing metadata using {@link EventMessage#andMetadata(Metadata)}.
+         *
+         * @param payload  The event payload or {@link EventMessage} to publish.
+         * @param metadata The metadata to attach to the event (merged if payload is an {@link EventMessage}).
          * @return The current When instance, for fluent interfacing.
          */
         Event event(@Nonnull Object payload, @Nonnull Metadata metadata);
@@ -434,13 +489,24 @@ public interface AxonTestPhase {
         Event events(@Nonnull EventMessage... messages);
 
         /**
-         * Publishes the given Event Messages to the appropriate event handlers and records all activity for result
-         * validation.
+         * Publishes the given events to the appropriate event handlers and records all activity for result
+         * validation. The events will be published with empty metadata.
          *
-         * @param events The lists of events to publish.
+         * @param events The events (payloads or EventMessages) to publish.
          * @return The current When instance, for fluent interfacing.
          */
-        Event events(@Nonnull List<?>... events);
+        default Event events(@Nonnull Object... events) {
+            return events(Arrays.stream(events).toList());
+        }
+
+        /**
+         * Publishes the given events to the appropriate event handlers and records all activity for result
+         * validation.
+         *
+         * @param events The list of events to publish.
+         * @return The current When instance, for fluent interfacing.
+         */
+        Event events(@Nonnull List<?> events);
 
         /**
          * Transitions to the Then phase to validate the results of the test. It skips the When phase.

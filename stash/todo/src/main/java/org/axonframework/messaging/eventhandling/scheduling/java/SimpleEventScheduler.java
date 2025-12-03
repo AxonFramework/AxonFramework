@@ -18,6 +18,10 @@ package org.axonframework.messaging.eventhandling.scheduling.java;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.IdentifierFactory;
+import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.core.MessageTypeResolver;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.annotation.AnnotationMessageTypeResolver;
 import org.axonframework.messaging.core.unitofwork.transaction.NoTransactionManager;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
 import org.axonframework.messaging.eventhandling.EventBus;
@@ -25,9 +29,6 @@ import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.eventhandling.scheduling.EventScheduler;
 import org.axonframework.messaging.eventhandling.scheduling.ScheduleToken;
-import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
-import org.axonframework.messaging.core.MessageTypeResolver;
-import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.eventhandling.scheduling.quartz.QuartzEventScheduler;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
@@ -140,7 +141,7 @@ public class SimpleEventScheduler implements EventScheduler {
         private ScheduledExecutorService scheduledExecutorService;
         private EventBus eventBus;
         private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
-        private MessageTypeResolver messageTypeResolver = new ClassBasedMessageTypeResolver();
+        private MessageTypeResolver messageTypeResolver = new AnnotationMessageTypeResolver();
 
         /**
          * Sets the {@link EventBus} used to publish events on to, once the schedule has been met.
