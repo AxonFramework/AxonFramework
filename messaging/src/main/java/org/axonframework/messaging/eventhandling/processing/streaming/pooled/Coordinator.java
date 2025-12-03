@@ -16,6 +16,10 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.pooled;
 
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.UnitOfWork;
+import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
@@ -30,10 +34,6 @@ import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.messaging.eventstreaming.StreamableEventSource;
 import org.axonframework.messaging.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.eventstreaming.TrackingTokenSource;
-import org.axonframework.messaging.core.MessageStream;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.messaging.core.unitofwork.UnitOfWork;
-import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -332,9 +332,10 @@ class Coordinator {
                     }
             ));
         } catch (Exception e) {
-            logger.info(
+            logger.warn(
                     "Error while initializing the Token Store. This may simply indicate concurrent attempts to initialize.",
-                    e);
+                    e
+            );
         }
         return tokenStoreInitialized.get();
     }
