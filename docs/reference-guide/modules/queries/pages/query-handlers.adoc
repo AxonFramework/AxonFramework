@@ -32,7 +32,7 @@ public class FetchCardSummaryQuery {
 The query message is annotated with `@Query` to define its message type. The annotation specifies:
 
 * `namespace`: The bounded context or namespace for the query (defaults to the package name if omitted)
-* `name`: The business/domain name of the query (defaults to the simple class name if omitted)
+* `localName`: The business/domain name of the query (defaults to the simple class name if omitted)
 * `version`: The version of the query message (defaults to "1.0" if omitted)
 
 Together, the namespace and name form a `QualifiedName`, which combined with the version creates the `MessageType`. This is how Axon identifies and routes the query, independent of the Java class name.
@@ -84,10 +84,10 @@ Queries are identified by their `MessageType`, which consists of a `QualifiedNam
 
 === Defining the query name
 
-The query message's name is defined by the query payload class:
+The `MessageTypeResolver` determines how query names are resolved from query payload classes. By default, the query name is resolved as follows:
 
-. If the `@Query` annotation is present on the query payload class, it defines the qualified name and version of the query.
-. Otherwise, the fully qualified class name of the query payload class is used as the query name.
+. If the `@Query` annotation is present on the query payload class, the annotation's `namespace` and `localName` attributes define the qualified name, and the `version` attribute defines the version.
+. If the `@Query` annotation is absent, the fully qualified class name of the query payload class is used as the query name (with a default version).
 
 === Matching handlers to queries
 
@@ -171,7 +171,7 @@ Both handlers can be invoked for queries with the same `MessageType`, but they r
 [IMPORTANT]
 .Single handler per query
 ====
-Axon invokes exactly one query handler per query message. If multiple handlers are registered for the same query name, one will be selected (typically in round-robin fashion for distributed setups). To avoid ambiguity, ensure only one handler is registered per query name, or use explicit routing if multiple handlers are intentional.
+Each query name can have only one registered handler. Attempting to register multiple handlers for the same query name will result in a `DuplicateQueryHandlerSubscriptionException`.
 ====
 
 == Query handler chaining
@@ -359,6 +359,7 @@ When querying for a single object using `QueryGateway.query()`, the following qu
 * A subtype of the requested type
 * A generic bound to the requested type
 * A `CompletableFuture` of the requested type (for async processing)
+* A `Mono` (from Project Reactor) of the requested type (for reactive async processing)
 * A primitive of the requested type (will be boxed)
 * An `Optional` of the requested type
 

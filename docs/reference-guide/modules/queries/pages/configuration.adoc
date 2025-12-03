@@ -12,7 +12,7 @@ When you register a Query Handler, that means you are registering a class contai
 . The method's response type is the query's _response type_.
 . The value of the `queryName` field in the annotation as the query's _name_ (this is optional and in its absence will default to the query payload).
 
-Note that it is possible to register multiple query handlers for the same query name and response type. When dispatching a query, if multiple handlers are available, the `QueryBus` implementation determines which handler to invoke (typically selecting one in a round-robin or similar fashion).
+Only one query handler can be registered for a given query name. Attempting to register a duplicate query handler will result in a `DuplicateQueryHandlerSubscriptionException`.
 
 Query handlers are registered by providing a component that contains `@QueryHandler` annotated methods. Axon scans the component and automatically subscribes all query handler methods to the `QueryBus`.
 
@@ -44,11 +44,14 @@ The following shows how to register the `CardSummaryProjection` as a query handl
 ----
 import org.axonframework.messaging.core.configuration.MessagingConfigurer;
 import org.axonframework.messaging.queryhandling.configuration.QueryHandlingModule;
+import org.axonframework.common.configuration.AxonConfiguration;
 
 MessagingConfigurer configurer = MessagingConfigurer.create()
     .registerQueryHandlingModule(
-        QueryHandlingModule.create()
-                          .registerQueryHandler(config -> new CardSummaryProjection())
+        QueryHandlingModule.named("card-summary-projection")
+                          .queryHandlers()
+                          .annotatedQueryHandlingComponent(config -> new CardSummaryProjection())
+                          .build()
     );
 
 // Build and start the configuration
@@ -56,17 +59,12 @@ AxonConfiguration configuration = configurer.build();
 configuration.start();
 ----
 
-Alternatively, you can use the general message handler registration, which works for any type of message handler (command, event, or query):
+The `annotatedQueryHandlingComponent()` method scans the provided object for methods annotated with `@QueryHandler` and automatically registers them with the `QueryBus`.
 
-[source,java]
-----
-import org.axonframework.messaging.core.configuration.MessagingConfigurer;
-
-MessagingConfigurer configurer = MessagingConfigurer.create()
-    .componentRegistry(registry -> registry.registerMessageHandler(
-        config -> new CardSummaryProjection()
-    ));
-----
+[NOTE]
+====
+For most use cases, using `annotatedQueryHandlingComponent()` with `@QueryHandler` annotated methods is the recommended approach. The framework also provides low-level APIs for registering lambda query handlers directly, but these require working with `QueryMessage` and `MessageStream` types and are primarily intended for advanced scenarios or framework integrations.
+====
 --
 
 Spring Boot::
@@ -95,14 +93,6 @@ Spring Boot's auto-configuration automatically scans for beans containing `@Quer
 --
 ====
 
-[NOTE]
-.Identical query handling methods in a single query handler
-====
-A query handler class can currently contain several identical query handling methods. The outcome of which method will actually be called is however unspecified.
-
-Note that this should be regarded as an extremely uncommon scenario, as typically identical query handling methods would be spread over several query handlers.
-====
-
 == Configuring query infrastructure
 
 Beyond registering query handlers, you may need to configure the query infrastructure components such as the `QueryBus`, `QueryGateway`, and interceptors.
@@ -123,12 +113,13 @@ Configuration API::
 import org.axonframework.messaging.core.configuration.MessagingConfigurer;
 import org.axonframework.messaging.queryhandling.QueryBus;
 import org.axonframework.messaging.queryhandling.SimpleQueryBus;
+import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 
 MessagingConfigurer configurer = MessagingConfigurer.create()
-    .registerQueryBus(config -> SimpleQueryBus.builder()
-                                              .transactionManager(config.transactionManager())
-                                              .messageMonitor(config.messageMonitor(QueryBus.class, "queryBus"))
-                                              .build());
+    .registerQueryBus(config -> {
+        UnitOfWorkFactory unitOfWorkFactory = config.getComponent(UnitOfWorkFactory.class);
+        return new SimpleQueryBus(unitOfWorkFactory);
+    });
 ----
 --
 
@@ -141,17 +132,14 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.axonframework.messaging.queryhandling.QueryBus;
 import org.axonframework.messaging.queryhandling.SimpleQueryBus;
+import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 
 @Configuration
 public class AxonConfig {
 
     @Bean
-    public QueryBus queryBus(TransactionManager transactionManager,
-                            MessageMonitor<QueryMessage> messageMonitor) {
-        return SimpleQueryBus.builder()
-                            .transactionManager(transactionManager)
-                            .messageMonitor(messageMonitor)
-                            .build();
+    public QueryBus queryBus(UnitOfWorkFactory unitOfWorkFactory) {
+        return new SimpleQueryBus(unitOfWorkFactory);
     }
 }
 ----
@@ -171,13 +159,20 @@ Configuration API::
 ----
 import org.axonframework.messaging.queryhandling.gateway.QueryGateway;
 import org.axonframework.messaging.queryhandling.gateway.DefaultQueryGateway;
+import org.axonframework.messaging.core.MessageTypeResolver;
+import org.axonframework.messaging.core.conversion.MessageConverter;
+import org.axonframework.messaging.queryhandling.QueryBus;
+import org.axonframework.messaging.queryhandling.QueryPriorityCalculator;
 
 MessagingConfigurer configurer = MessagingConfigurer.create()
     .componentRegistry(registry -> registry.registerComponent(
         QueryGateway.class,
-        config -> DefaultQueryGateway.builder()
-                                    .queryBus(config.queryBus())
-                                    .build()
+        config -> new DefaultQueryGateway(
+            config.getComponent(QueryBus.class),
+            config.getComponent(MessageTypeResolver.class),
+            config.getComponent(QueryPriorityCalculator.class),
+            config.getComponent(MessageConverter.class)
+        )
     ));
 ----
 --

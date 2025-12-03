@@ -24,8 +24,8 @@ The query gateway automatically handles message construction, dispatch intercept
 == Query bus
 
 The query bus is the mechanism that dispatches queries to query handlers.
-Queries are registered using the combination of the query name (based on `MessageType`) and response type.
-It is possible to register multiple handlers for the same query name and response type. When multiple handlers are available, the `QueryBus` implementation selects which handler to invoke.
+Queries are registered using the query name (based on `MessageType`).
+Each query name can have only one registered handler.
 
 [[AxonServerQueryBus]]
 === `AxonServerQueryBus`
@@ -35,8 +35,8 @@ It connects to Axon Server to send and receive queries in a distributed way, all
 
 The `AxonServerQueryBus` provides:
 
-* *Distributed query handling*: Queries can be handled by any connected application
-* *Load balancing*: When multiple handlers are available, Axon Server distributes queries among them
+* *Distributed query handling*: Queries are routed to the appropriate handler across connected applications
+* *Load balancing*: When the same application is deployed across multiple instances, Axon Server can distribute queries among those instances
 * *Subscription query support*: Full support for subscription queries with update distribution across nodes
 * *Query prioritization*: Support for query priority to ensure critical queries are processed first
 
@@ -112,7 +112,7 @@ The `SimpleQueryBus` is a local, non-distributed query bus implementation that p
 The `SimpleQueryBus` provides:
 
 * *Local query handling*: All queries are handled within the same JVM
-* *Simple routing*: When multiple handlers are available, selects one in round-robin fashion
+* *Simple routing*: Routes queries to their registered handler based on query name
 * *Subscription query support*: Full support for subscription queries within the same JVM
 * *Transaction management*: Integrates with a `TransactionManager` for transactional query handling
 
@@ -125,14 +125,15 @@ Configuration API::
 --
 [source,java]
 ----
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.queryhandling.SimpleQueryBus;
+import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
+
 public class AxonConfig {
     // omitting other configuration methods...
-    public void configureQueryBus(Configurer configurer) {
-        configurer.configureQueryBus(
-                config -> SimpleQueryBus.builder()
-                                        .transactionManager(config.getComponent(TransactionManager.class))
-                                        .messageMonitor(config.messageMonitor(SimpleQueryBus.class, "queryBus"))
-                                        .build()
+    public void configureQueryBus(MessagingConfigurer configurer) {
+        configurer.registerQueryBus(
+                config ->  new SimpleQueryBus(config.getComponent(UnitOfWorkFactory.class))
         );
     }
 }
@@ -145,21 +146,18 @@ Spring Boot::
 
 [source,java]
 ----
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.axonframework.messaging.queryhandling.QueryBus;
+import org.axonframework.messaging.queryhandling.SimpleQueryBus;
+import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
+
 @Configuration
 public class AxonConfig {
     // omitting other configuration methods...
     @Bean
-    public QueryBus queryBus(GlobalMetricRegistry metricRegistry,
-                             SpanFactory spanFactory,
-                             TransactionManager transactionManager,
-                             QueryUpdateEmitter updateEmitter) {
-        return SimpleQueryBus.builder()
-                             .messageMonitor(metricRegistry.registerQueryBus("queryBus"))
-                             .transactionManager(transactionManager)
-                             .spanFactory(spanFactory)
-                             .queryUpdateEmitter(updateEmitter)
-                             // ..
-                             .build();
+    public QueryBus queryBus(UnitOfWorkFactory unitOfWorkFactory) {
+        return new SimpleQueryBus(unitOfWorkFactory);
     }
 }
 ----
@@ -199,6 +197,25 @@ public class CardSummaryProjection {
 ----
 
 The emitter filters subscription queries based on the provided predicate and emits the update only to matching subscriptions. This allows fine-grained control over which subscribers receive which updates.
+
+[NOTE]
+.Automatic emitter creation for annotated methods
+====
+When using annotated message handlers (`@EventHandler`, `@QueryHandler`, etc.), Axon Framework automatically handles the `QueryUpdateEmitter` creation for you through parameter resolution. You can simply inject it as a method parameter without explicitly creating it from the `ProcessingContext`:
+
+[source,java]
+----
+@EventHandler
+public void on(CardRedeemedEvent event, QueryUpdateEmitter emitter) {
+    // Axon automatically provides the context-aware emitter
+    emitter.emit(FetchCardSummaryQuery.class,
+                query -> query.getCardSummaryId().equals(event.getCardId()),
+                updateModel(event));
+}
+----
+
+Explicitly creating the emitter using `QueryUpdateEmitter.forContext(context)` is only necessary when manually registering query handlers or when you need direct control over the emitter creation.
+====
 
 === Subscription lifecycle
 
