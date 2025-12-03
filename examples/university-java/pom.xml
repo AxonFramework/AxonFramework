@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.axonframework.examples</groupId>
         <artifactId>axon-framework-examples</artifactId>
-        <version>5.0.2-SNAPSHOT</version>
+        <version>5.1.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>university-java</artifactId>
