@@ -17,6 +17,7 @@
 package org.axonframework.update;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.update.api.UpdateCheckRequest;
 import org.axonframework.update.api.UpdateCheckResponse;
@@ -59,23 +60,32 @@ public class UpdateChecker implements Runnable {
     private final static Logger logger = LoggerFactory.getLogger(UpdateChecker.class);
 
     private final UpdateCheckerHttpClient client;
-    private final MachineId machineId;
     private final UpdateCheckerReporter reporter;
+    private final UsagePropertyProvider usagePropertyProvider;
+    private final MachineId machineId;
+
     private boolean firstRequest = true;
     private final AtomicBoolean started = new AtomicBoolean(false);
     private int errorRetryBackoffFactor = 1;
     private DelayedTask delayedTask;
 
     /**
-     * Creates a new instance of {@code UpdateCheckTask} with the given {@link UpdateCheckerHttpClient}.
+     * Creates a new instance of {@code UpdateCheckTask} with the given {@link UpdateCheckerHttpClient} and
+     * {@link UsagePropertyProvider}.
      *
-     * @param client   The HTTP client used to send requests to the telemetry endpoint.
-     * @param reporter The reporter that will handle the response from the telemetry endpoint.
+     * @param client                The HTTP client used to send requests to the telemetry endpoint.
+     * @param reporter              The reporter that will handle the response from the telemetry endpoint.
+     * @param usagePropertyProvider The property provider used to determine if the update check is disabled.
      */
-    public UpdateChecker(@Nonnull UpdateCheckerHttpClient client, @Nonnull UpdateCheckerReporter reporter) {
+    public UpdateChecker(@Nonnull UpdateCheckerHttpClient client,
+                         @Nonnull UpdateCheckerReporter reporter,
+                         @Nonnull UsagePropertyProvider usagePropertyProvider) {
         this.client = Objects.requireNonNull(client, "The client must not be null.");
-        this.machineId = new MachineId();
         this.reporter = Objects.requireNonNull(reporter, "The reporter must not be null.");
+        this.usagePropertyProvider = Objects.requireNonNull(
+                usagePropertyProvider, "The usagePropertyProvider must not be null."
+        );
+        this.machineId = new MachineId();
     }
 
     /**
@@ -88,8 +98,7 @@ public class UpdateChecker implements Runnable {
                 logger.debug("The AxonIQ UpdateChecker was already started.");
                 return;
             }
-            UsagePropertyProvider userProperties = UsagePropertyProvider.create();
-            if (userProperties.getDisabled()) {
+            if (ObjectUtils.getOrDefault(usagePropertyProvider.getDisabled(), false)) {
                 logger.info(
                         "You have opted out of the AxonIQ UpdateChecker. No update or vulnerabilities will be checked. See https://www.axoniq.io/update-check for more information.");
                 return;
@@ -137,7 +146,7 @@ public class UpdateChecker implements Runnable {
     public void stop() {
         if (started.compareAndSet(true, false)) {
             logger.info("Stopped the AxonIQ UpdateChecker. No further update will be checked.");
-            if(this.delayedTask != null) {
+            if (this.delayedTask != null) {
                 delayedTask.cancel();
                 delayedTask = null;
             }
