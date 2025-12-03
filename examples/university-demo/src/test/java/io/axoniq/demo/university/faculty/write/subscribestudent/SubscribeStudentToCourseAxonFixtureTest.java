@@ -7,10 +7,14 @@ import io.axoniq.demo.university.faculty.events.StudentEnrolledInFaculty;
 import io.axoniq.demo.university.faculty.events.StudentSubscribedToCourse;
 import io.axoniq.demo.university.shared.ids.CourseId;
 import io.axoniq.demo.university.shared.ids.StudentId;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.test.fixture.AxonTestFixture;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -36,6 +40,21 @@ class SubscribeStudentToCourseAxonFixtureTest {
         fixture.given()
                 .event(new StudentEnrolledInFaculty(Ids.FACULTY_ID, studentId, "Mateusz", "Nowak"))
                 .event(new CourseCreated(Ids.FACULTY_ID, courseId, "Axon Framework 5: Be a PRO", 2))
+                .when()
+                .command(new SubscribeStudentToCourse(studentId, courseId))
+                .then()
+                .events(new StudentSubscribedToCourse(Ids.FACULTY_ID, studentId, courseId));
+    }
+
+    @Test
+    void successfulSubscriptionMessageObject() {
+        var courseId = CourseId.random();
+        var studentId = StudentId.random();
+
+        var studentEnrolledInFaculty = new GenericEventMessage(new MessageType(StudentEnrolledInFaculty.class), new StudentEnrolledInFaculty(Ids.FACULTY_ID, studentId, "Mateusz", "Nowak"));
+        var courseCreated = new GenericEventMessage(new MessageType(CourseCreated.class), new CourseCreated(Ids.FACULTY_ID, courseId, "Axon Framework 5: Be a PRO", 2));
+        fixture.given()
+                .events(List.of(studentEnrolledInFaculty, courseCreated))
                 .when()
                 .command(new SubscribeStudentToCourse(studentId, courseId))
                 .then()
