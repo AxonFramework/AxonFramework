@@ -75,11 +75,11 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
         testSubject = buildStorageEngine();
 
         // At this time the store is empty, verify first and latest token are the same:
-        TrackingToken actualTailToken = testSubject.firstToken(processingContext()).get(5, TimeUnit.SECONDS);
-        TrackingToken actualHeadToken = testSubject.latestToken(processingContext()).get(5, TimeUnit.SECONDS);
+        TrackingToken actualFirstToken = testSubject.firstToken(processingContext()).get(5, TimeUnit.SECONDS);
+        TrackingToken actualLatestToken = testSubject.latestToken(processingContext()).get(5, TimeUnit.SECONDS);
 
-        assertTrue(actualHeadToken.covers(actualTailToken));
-        assertTrue(actualTailToken.covers(actualHeadToken));
+        assertTrue(actualLatestToken.covers(actualFirstToken));
+        assertTrue(actualFirstToken.covers(actualLatestToken));
     }
 
     @BeforeEach
@@ -618,7 +618,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
     }
 
     @Test
-    void tailTokenReturnsFirstAppendedEvent() throws Exception {
+    void firstTokenReturnsFirstAppendedEvent() throws Exception {
         TaggedEventMessage<EventMessage> firstEvent = taggedEventMessage("event-0", TEST_CRITERIA_TAGS);
         TrackingToken startToken = testSubject.latestToken(processingContext()).join();
 
@@ -637,7 +637,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
     }
 
     @Test
-    void headTokenReturnsTokenBasedOnLastAppendedEvent() throws Exception {
+    void latestTokenReturnsTokenBasedOnLastAppendedEvent() throws Exception {
         appendEvents(
                 AppendCondition.none(),
                 taggedEventMessage("event-0", TEST_CRITERIA_TAGS),
@@ -678,7 +678,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
     }
 
     @Test
-    void tokenAtReturnsHeadTokenWhenThereAreNoEventsAfterTheGivenAt() throws Exception {
+    void tokenAtReturnsLatestTokenWhenThereAreNoEventsAfterTheGivenAt() throws Exception {
         appendEvents(
                 AppendCondition.none(),
                 taggedEventMessage("event-0", TEST_CRITERIA_TAGS),
@@ -688,12 +688,12 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
 
         TrackingToken tokenAt = testSubject.tokenAt(Instant.now().plus(1, ChronoUnit.DAYS), processingContext())
                                            .get(5, TimeUnit.SECONDS);
-        TrackingToken headToken = testSubject.latestToken(processingContext())
-                                             .get(5, TimeUnit.SECONDS);
+        TrackingToken latestToken = testSubject.latestToken(processingContext())
+                                               .get(5, TimeUnit.SECONDS);
 
         assertNotNull(tokenAt);
-        assertNotNull(headToken);
-        assertEquals(headToken, tokenAt);
+        assertNotNull(latestToken);
+        assertEquals(latestToken, tokenAt);
     }
 
     @Nested
@@ -783,12 +783,12 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
     class TrackingTokens {
 
         @Test
-        void firstTokenReturnsPositionZeroAsTheTailOfStream() throws Exception {
+        void firstTokenReturnsPositionZeroAsTheBeginningOfStream() throws Exception {
             // when
             TrackingToken actualFirstToken = testSubject.firstToken(processingContext()).get(5, TimeUnit.SECONDS);
 
             // then
-            // First token (tail) is always at position 0 (beginning of the stream) for all implementations
+            // First token is always at position 0 (beginning of the stream) for all implementations
             assertThat(actualFirstToken).isNotNull();
             assertThat(actualFirstToken.position()).isPresent();
             assertThat(actualFirstToken.position().getAsLong()).isEqualTo(0L);
@@ -816,7 +816,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
         }
 
         @Test
-        void latestTokenReturnsCurrentHeadPosition() throws Exception {
+        void latestTokenReturnsCurrentLatestPosition() throws Exception {
             // given
             // Note: Store may have events from other tests due to @TestInstance(Lifecycle.PER_CLASS)
 
@@ -824,7 +824,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
             TrackingToken actualLatestToken = testSubject.latestToken(processingContext()).get(5, TimeUnit.SECONDS);
 
             // then
-            // Latest token (head) should be at or after the tail position
+            // Latest token should be at or after the first token position
             TrackingToken firstToken = testSubject.firstToken(processingContext()).get(5, TimeUnit.SECONDS);
             assertThat(actualLatestToken).isNotNull();
             assertThat(actualLatestToken.position()).isPresent();
@@ -847,7 +847,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
         }
 
         @Test
-        void firstTokenAfterAppendingEventsRemainsAtTail() throws Exception {
+        void firstTokenAfterAppendingEventsRemainsAtBeginning() throws Exception {
             // given
             TrackingToken firstTokenBefore = testSubject.firstToken(processingContext()).get(5, TimeUnit.SECONDS);
             appendEvents(
@@ -861,7 +861,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
             TrackingToken actualFirstToken = testSubject.firstToken(processingContext()).get(5, TimeUnit.SECONDS);
 
             // then
-            // First token (tail) should remain unchanged after appending events
+            // First token should remain unchanged after appending events
             assertThat(actualFirstToken).isNotNull();
             assertThat(actualFirstToken.position()).isPresent();
             assertThat(actualFirstToken).isEqualTo(firstTokenBefore);
