@@ -17,11 +17,11 @@
 package org.axonframework.update;
 
 import org.axonframework.update.api.UpdateCheckResponse;
-import org.axonframework.updates.configuration.UsagePropertyProvider;
+import org.axonframework.update.configuration.UsagePropertyProvider;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.junit.jupiter.api.extension.*;
+import org.mockito.*;
+import org.mockito.junit.jupiter.*;
 
 import java.time.Duration;
 import java.util.List;

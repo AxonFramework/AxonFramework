@@ -17,7 +17,9 @@
 package org.axonframework.extension.springboot.autoconfig;
 
 import org.axonframework.extension.springboot.UpdateCheckerProperties;
+import org.axonframework.update.UpdateChecker;
 import org.axonframework.update.UpdateCheckerHttpClient;
+import org.axonframework.update.UpdateCheckerReporter;
 import org.axonframework.update.configuration.UsagePropertyProvider;
 import org.axonframework.update.detection.TestEnvironmentDetector;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -54,8 +56,8 @@ public class UpdateCheckerAutoConfiguration {
      * <p>
      * Although a duplicate of the {@link org.axonframework.update.UpdateCheckerConfigurationEnhancer} its logic to add
      * a {@code UpdateCheckerHttpClient} component, this bean creation method provides a Spring-specific mechanism to
-     * expect the exact {@code UpdateCheckerHttpClient} constructed in this file (based on type and name). This ensures
-     * we do not have to add any component name in the {@code UpdateCheckerConfigurationEnhancer} to pick the
+     * expect the exact {@code UsagePropertyProvider} constructed in this file (based on type and name). This ensures we
+     * do not have to add any component name in the {@code UpdateCheckerConfigurationEnhancer} to pick the
      * Spring-specific {@code UsagePropertyProvider} constructed by this autoconfiguration class.
      *
      * @param usagePropertyProvider The {@code UsagePropertyProvider} to attach to the {@link UpdateCheckerHttpClient}
@@ -67,6 +69,33 @@ public class UpdateCheckerAutoConfiguration {
     @Conditional(NotTestEnvironmentCondition.class)
     public UpdateCheckerHttpClient updateCheckerHttpClient(UsagePropertyProvider usagePropertyProvider) {
         return new UpdateCheckerHttpClient(usagePropertyProvider);
+    }
+
+    /**
+     * Bean creation method for the {@link UpdateChecker}.
+     * <p>
+     * Although a duplicate of the {@link org.axonframework.update.UpdateCheckerConfigurationEnhancer} its logic to add
+     * a {@code UpdateChecker} component, this bean creation method provides a Spring-specific mechanism to expect the
+     * exact {@code UpdateCheckerHttpClient} and {@link UsagePropertyProvider} constructed in this file (based on type
+     * and name). This ensures we do not have to add any component name in the
+     * {@code UpdateCheckerConfigurationEnhancer} to pick the Spring-specific {@code UpdateCheckerHttpClient} amd
+     * {@code UsagePropertyProvider} constructed by this autoconfiguration class.
+     *
+     * @param updateCheckerHttpClient The {@code UpdateCheckerHttpClient} to attach to the {@link UpdateChecker} under
+     *                                construction.
+     * @param updateCheckerReporter   The {@code UpdateCheckerReporter} to attach to the {@link UpdateChecker} under
+     *                                construction.
+     * @param usagePropertyProvider   The {@code UsagePropertyProvider} to attach to the {@link UpdateChecker} under
+     *                                construction.
+     * @return A {@code UpdateCheckerHttpClient} based on the given {@code usagePropertyProvider}.
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    @Conditional(NotTestEnvironmentCondition.class)
+    public UpdateChecker updateChecker(UpdateCheckerHttpClient updateCheckerHttpClient,
+                                       UpdateCheckerReporter updateCheckerReporter,
+                                       UsagePropertyProvider usagePropertyProvider) {
+        return new UpdateChecker(updateCheckerHttpClient, updateCheckerReporter, usagePropertyProvider);
     }
 
     static class NotTestEnvironmentCondition implements Condition {

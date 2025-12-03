@@ -73,7 +73,7 @@ public class PropertyFileUsagePropertyProvider implements UsagePropertyProvider 
     private void load() {
         try {
             var installationIdFile = getFile();
-            if(installationIdFile == null) {
+            if (installationIdFile == null) {
                 logger.debug("Could not determine user home directory. Skipping property provider from file.");
                 return;
             }
@@ -88,8 +88,7 @@ public class PropertyFileUsagePropertyProvider implements UsagePropertyProvider 
             this.disabled = Boolean.valueOf(properties.getProperty(DISABLED_PROPERTY_NAME));
         } catch (Exception e) {
             logger.debug("Failed to load AxonIQ properties from file: {}. Skipping property provider from file.",
-                         getFile().getAbsolutePath(),
-                         e);
+                         getFile() != null ? getFile().getAbsolutePath() : "unknown", e);
         }
     }
 
@@ -100,7 +99,7 @@ public class PropertyFileUsagePropertyProvider implements UsagePropertyProvider 
 
     private void createDefaultFile() throws IOException {
         File file = getFile();
-        if(file == null) {
+        if (file == null) {
             logger.debug("Could not determine user home directory. Skipping creation of default properties file.");
             return;
         }

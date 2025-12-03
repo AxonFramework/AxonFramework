@@ -60,7 +60,8 @@ public class UpdateCheckerConfigurationEnhancer implements ConfigurationEnhancer
                          .registerIfNotPresent(ofType(UpdateChecker.class)
                                                        .withBuilder(c -> new UpdateChecker(
                                                                c.getComponent(UpdateCheckerHttpClient.class),
-                                                               c.getComponent(UpdateCheckerReporter.class)
+                                                               c.getComponent(UpdateCheckerReporter.class),
+                                                               c.getComponent(UsagePropertyProvider.class)
                                                        ))
                                                        .onStart(Phase.EXTERNAL_CONNECTIONS, UpdateChecker::start)
                                                        .onShutdown(Phase.EXTERNAL_CONNECTIONS, UpdateChecker::stop));
