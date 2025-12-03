@@ -35,7 +35,7 @@ public abstract class UniversityApplicationTest {
         boolean axonServerEnabled = configuration.axonServerEnabled();
         if (axonServerEnabled) {
             try {
-                AxonServerContainerUtils.purgeEventsFromAxonServer("localhost", 8024, "university", true);
+                AxonServerContainerUtils.purgeEventsFromAxonServer("localhost", 8024, "default", true);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
