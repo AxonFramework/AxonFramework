@@ -17,6 +17,7 @@
 package org.axonframework.updates;
 
 import org.axonframework.common.BuilderUtils;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.updates.api.UpdateCheckRequest;
@@ -115,7 +116,7 @@ public class UpdateChecker implements Runnable, Lifecycle {
                 logger.debug("The AxonIQ UpdateChecker was already started.");
                 return;
             }
-            if (usagePropertyProvider.getDisabled()) {
+            if (ObjectUtils.getOrDefault(usagePropertyProvider.getDisabled(), false)) {
                 logger.info(
                         "You have opted out of the AxonIQ UpdateChecker. No updates or vulnerabilities will be checked. See https://www.axoniq.io/update-check for more information.");
                 return;
