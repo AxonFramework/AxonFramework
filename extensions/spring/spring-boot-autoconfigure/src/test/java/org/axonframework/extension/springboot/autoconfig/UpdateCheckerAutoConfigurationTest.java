@@ -53,7 +53,6 @@ class UpdateCheckerAutoConfigurationTest {
         System.clearProperty(AXONIQ_USAGE_FORCE_TEST_ENVIRONMENT);
         System.clearProperty(EnvironmentVariableUsagePropertyProvider.DISABLED_KEY);
         System.clearProperty(EnvironmentVariableUsagePropertyProvider.URL_KEY);
-
     }
 
     @Test
