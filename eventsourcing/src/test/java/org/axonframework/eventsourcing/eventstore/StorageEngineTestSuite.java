@@ -107,6 +107,21 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
      */
     protected abstract ProcessingContext processingContext();
 
+    /**
+     * Returns the expected tracking token position based on the number of stored events.
+     * <p>
+     * Different storage engine implementations have different position schemes:
+     * <ul>
+     *     <li>InMemory: returns {@code storedEvents - 1} (position -1 for empty store)</li>
+     *     <li>AxonServer: returns {@code storedEvents} (position 0 for empty store)</li>
+     *     <li>Postgres (extension): returns {@code storedEvents + 1} (position 1 for empty store)</li>
+     * </ul>
+     *
+     * @param storedEvents The number of events stored in the event store.
+     * @return The expected tracking token position for the given number of stored events.
+     */
+    protected abstract long trackingTokenPosition(int storedEvents);
+
     @Test
     void sourcingEventsReturnsMatchingAggregateEvents() throws Exception {
         int expectedNumberOfEvents = 3;
@@ -761,6 +776,187 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
             stream.next(); // consume marker
 
             assertTrue(stream.peek().isEmpty());
+        }
+    }
+
+    @Nested
+    class TrackingTokens {
+
+        @Test
+        void firstTokenReturnsPositionZeroAsTheTailOfStream() throws Exception {
+            // when
+            TrackingToken actualFirstToken = testSubject.firstToken(processingContext()).get(5, TimeUnit.SECONDS);
+
+            // then
+            // First token (tail) is always at position 0 (beginning of the stream) for all implementations
+            assertThat(actualFirstToken).isNotNull();
+            assertThat(actualFirstToken.position()).isPresent();
+            assertThat(actualFirstToken.position().getAsLong()).isEqualTo(0L);
+        }
+
+        @Test
+        void latestTokenReturnsExpectedPositionForEmptyStore() throws Exception {
+            // given
+            // The event store is empty at the start of @BeforeAll:
+            // - AxonServer: explicitly purged via purgeEventsFromAxonServer in buildStorageEngine
+            // - InMemory: new instance created in buildStorageEngine
+            // Due to @TestInstance(Lifecycle.PER_CLASS), other tests may have appended events before this @Nested test runs
+
+            // when
+            TrackingToken actualLatestToken = testSubject.latestToken(processingContext()).get(5, TimeUnit.SECONDS);
+
+            // then
+            // For a store with 0 events, latestToken position depends on implementation
+            // InMemory: -1, AxonServer: 0, Postgres: 1
+            // Since we can't guarantee empty store in @Nested, we just verify it's >= trackingTokenPosition(0)
+            assertThat(actualLatestToken).isNotNull();
+            assertThat(actualLatestToken.position()).isPresent();
+            assertThat(actualLatestToken.position().getAsLong())
+                    .isGreaterThanOrEqualTo(trackingTokenPosition(0));
+        }
+
+        @Test
+        void latestTokenReturnsCurrentHeadPosition() throws Exception {
+            // given
+            // Note: Store may have events from other tests due to @TestInstance(Lifecycle.PER_CLASS)
+
+            // when
+            TrackingToken actualLatestToken = testSubject.latestToken(processingContext()).get(5, TimeUnit.SECONDS);
+
+            // then
+            // Latest token (head) should be at or after the tail position
+            TrackingToken firstToken = testSubject.firstToken(processingContext()).get(5, TimeUnit.SECONDS);
+            assertThat(actualLatestToken).isNotNull();
+            assertThat(actualLatestToken.position()).isPresent();
+            assertThat(actualLatestToken.position().getAsLong())
+                    .isGreaterThanOrEqualTo(firstToken.position().getAsLong());
+        }
+
+        @Test
+        void latestTokenCoversFirstToken() throws Exception {
+            // given
+            // Note: Store may have events from other tests due to @TestInstance(Lifecycle.PER_CLASS)
+
+            // when
+            TrackingToken actualFirstToken = testSubject.firstToken(processingContext()).get(5, TimeUnit.SECONDS);
+            TrackingToken actualLatestToken = testSubject.latestToken(processingContext()).get(5, TimeUnit.SECONDS);
+
+            // then
+            // Latest token should always cover (or equal) the first token
+            assertThat(actualLatestToken.covers(actualFirstToken)).isTrue();
+        }
+
+        @Test
+        void firstTokenAfterAppendingEventsRemainsAtTail() throws Exception {
+            // given
+            TrackingToken firstTokenBefore = testSubject.firstToken(processingContext()).get(5, TimeUnit.SECONDS);
+            appendEvents(
+                    AppendCondition.none(),
+                    taggedEventMessage("event-0", TEST_CRITERIA_TAGS),
+                    taggedEventMessage("event-1", TEST_CRITERIA_TAGS),
+                    taggedEventMessage("event-2", TEST_CRITERIA_TAGS)
+            );
+
+            // when
+            TrackingToken actualFirstToken = testSubject.firstToken(processingContext()).get(5, TimeUnit.SECONDS);
+
+            // then
+            // First token (tail) should remain unchanged after appending events
+            assertThat(actualFirstToken).isNotNull();
+            assertThat(actualFirstToken.position()).isPresent();
+            assertThat(actualFirstToken).isEqualTo(firstTokenBefore);
+        }
+
+        @Test
+        void latestTokenAfterAppendingEventsAdvancesByEventCount() throws Exception {
+            // given
+            TrackingToken tokenBeforeAppend = testSubject.latestToken(processingContext()).get(5, TimeUnit.SECONDS);
+            long positionBeforeAppend = tokenBeforeAppend.position().getAsLong();
+            int eventsToAppend = 3;
+
+            appendEvents(
+                    AppendCondition.none(),
+                    taggedEventMessage("event-0", TEST_CRITERIA_TAGS),
+                    taggedEventMessage("event-1", TEST_CRITERIA_TAGS),
+                    taggedEventMessage("event-2", TEST_CRITERIA_TAGS)
+            );
+
+            // when
+            TrackingToken actualLatestToken = testSubject.latestToken(processingContext()).get(5, TimeUnit.SECONDS);
+
+            // then
+            // Latest token should advance by the number of events appended
+            long expectedPosition = positionBeforeAppend + eventsToAppend;
+            assertThat(actualLatestToken).isNotNull();
+            assertThat(actualLatestToken.position()).isPresent();
+            assertThat(actualLatestToken.position().getAsLong()).isEqualTo(expectedPosition);
+        }
+
+        @Test
+        void latestTokenCoversFirstTokenAfterAppendingEvents() throws Exception {
+            // given
+            appendEvents(
+                    AppendCondition.none(),
+                    taggedEventMessage("event-0", TEST_CRITERIA_TAGS),
+                    taggedEventMessage("event-1", TEST_CRITERIA_TAGS),
+                    taggedEventMessage("event-2", TEST_CRITERIA_TAGS)
+            );
+
+            // when
+            TrackingToken actualFirstToken = testSubject.firstToken(processingContext()).get(5, TimeUnit.SECONDS);
+            TrackingToken actualLatestToken = testSubject.latestToken(processingContext()).get(5, TimeUnit.SECONDS);
+
+            // then
+            assertThat(actualLatestToken.covers(actualFirstToken)).isTrue();
+            assertThat(actualFirstToken.covers(actualLatestToken)).isFalse();
+            assertThat(actualLatestToken.position().getAsLong())
+                    .isGreaterThan(actualFirstToken.position().getAsLong());
+        }
+
+        @Test
+        void firstTokenRemainsStableAfterMultipleAppends() throws Exception {
+            // given
+            TrackingToken initialFirstToken = testSubject.firstToken(processingContext()).get(5, TimeUnit.SECONDS);
+
+            appendEvents(AppendCondition.none(), taggedEventMessage("event-0", TEST_CRITERIA_TAGS));
+            TrackingToken firstTokenAfterFirstAppend = testSubject.firstToken(processingContext()).get(5, TimeUnit.SECONDS);
+
+            appendEvents(AppendCondition.none(), taggedEventMessage("event-1", TEST_CRITERIA_TAGS));
+            TrackingToken firstTokenAfterSecondAppend = testSubject.firstToken(processingContext()).get(5, TimeUnit.SECONDS);
+
+            // when
+            appendEvents(AppendCondition.none(), taggedEventMessage("event-2", TEST_CRITERIA_TAGS));
+            TrackingToken firstTokenAfterThirdAppend = testSubject.firstToken(processingContext()).get(5, TimeUnit.SECONDS);
+
+            // then
+            // First token should remain stable across all appends
+            assertThat(firstTokenAfterFirstAppend).isEqualTo(initialFirstToken);
+            assertThat(firstTokenAfterSecondAppend).isEqualTo(initialFirstToken);
+            assertThat(firstTokenAfterThirdAppend).isEqualTo(initialFirstToken);
+        }
+
+        @Test
+        void latestTokenAdvancesWithEachAppend() throws Exception {
+            // given
+            TrackingToken tokenBeforeAppend = testSubject.latestToken(processingContext()).get(5, TimeUnit.SECONDS);
+
+            // when
+            appendEvents(AppendCondition.none(), taggedEventMessage("event-0", TEST_CRITERIA_TAGS));
+            TrackingToken tokenAfterFirstAppend = testSubject.latestToken(processingContext()).get(5, TimeUnit.SECONDS);
+
+            appendEvents(AppendCondition.none(), taggedEventMessage("event-1", TEST_CRITERIA_TAGS));
+            TrackingToken tokenAfterSecondAppend = testSubject.latestToken(processingContext()).get(5, TimeUnit.SECONDS);
+
+            appendEvents(AppendCondition.none(), taggedEventMessage("event-2", TEST_CRITERIA_TAGS));
+            TrackingToken tokenAfterThirdAppend = testSubject.latestToken(processingContext()).get(5, TimeUnit.SECONDS);
+
+            // then
+            assertThat(tokenAfterFirstAppend.position().getAsLong())
+                    .isGreaterThan(tokenBeforeAppend.position().getAsLong());
+            assertThat(tokenAfterSecondAppend.position().getAsLong())
+                    .isGreaterThan(tokenAfterFirstAppend.position().getAsLong());
+            assertThat(tokenAfterThirdAppend.position().getAsLong())
+                    .isGreaterThan(tokenAfterSecondAppend.position().getAsLong());
         }
     }
 

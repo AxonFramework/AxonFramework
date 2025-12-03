@@ -36,4 +36,10 @@ class InMemoryEventStorageEngineTest extends StorageEngineTestSuite<InMemoryEven
     protected ProcessingContext processingContext() {
         return null;
     }
+
+    @Override
+    protected long trackingTokenPosition(int storedEvents) {
+        // InMemory uses position = storedEvents - 1 (position -1 for empty store)
+        return storedEvents - 1;
+    }
 }

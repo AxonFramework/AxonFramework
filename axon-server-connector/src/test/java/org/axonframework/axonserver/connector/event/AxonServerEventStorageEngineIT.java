@@ -83,6 +83,12 @@ class AxonServerEventStorageEngineIT extends StorageEngineTestSuite<AxonServerEv
         return null;
     }
 
+    @Override
+    protected long trackingTokenPosition(int storedEvents) {
+        // AxonServer uses position = storedEvents (position 0 for empty store)
+        return storedEvents;
+    }
+
     @Test
     void describeTo() {
         MockComponentDescriptor descriptor = new MockComponentDescriptor();
