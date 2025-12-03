@@ -80,6 +80,8 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
 
         assertTrue(actualLatestToken.covers(actualFirstToken));
         assertTrue(actualFirstToken.covers(actualLatestToken));
+        assertEquals(actualFirstToken.position().getAsLong(), trackingTokenPosition(0));
+        assertEquals(actualLatestToken.position().getAsLong(), trackingTokenPosition(0));
     }
 
     @BeforeEach
@@ -783,60 +785,18 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
     class TrackingTokens {
 
         @Test
-        void firstTokenReturnsPositionZeroAsTheBeginningOfStream() throws Exception {
+        void firstTokenReturnsTheBeginningOfStream() throws Exception {
             // when
             TrackingToken actualFirstToken = testSubject.firstToken(processingContext()).get(5, TimeUnit.SECONDS);
 
             // then
-            // First token is always at position 0 (beginning of the stream) for all implementations
             assertThat(actualFirstToken).isNotNull();
             assertThat(actualFirstToken.position()).isPresent();
-            assertThat(actualFirstToken.position().getAsLong()).isEqualTo(0L);
-        }
-
-        @Test
-        void latestTokenReturnsExpectedPositionForEmptyStore() throws Exception {
-            // given
-            // The event store is empty at the start of @BeforeAll:
-            // - AxonServer: explicitly purged via purgeEventsFromAxonServer in buildStorageEngine
-            // - InMemory: new instance created in buildStorageEngine
-            // Due to @TestInstance(Lifecycle.PER_CLASS), other tests may have appended events before this @Nested test runs
-
-            // when
-            TrackingToken actualLatestToken = testSubject.latestToken(processingContext()).get(5, TimeUnit.SECONDS);
-
-            // then
-            // For a store with 0 events, latestToken position depends on implementation
-            // InMemory: -1, AxonServer: 0, Postgres: 1
-            // Since we can't guarantee empty store in @Nested, we just verify it's >= trackingTokenPosition(0)
-            assertThat(actualLatestToken).isNotNull();
-            assertThat(actualLatestToken.position()).isPresent();
-            assertThat(actualLatestToken.position().getAsLong())
-                    .isGreaterThanOrEqualTo(trackingTokenPosition(0));
-        }
-
-        @Test
-        void latestTokenReturnsCurrentLatestPosition() throws Exception {
-            // given
-            // Note: Store may have events from other tests due to @TestInstance(Lifecycle.PER_CLASS)
-
-            // when
-            TrackingToken actualLatestToken = testSubject.latestToken(processingContext()).get(5, TimeUnit.SECONDS);
-
-            // then
-            // Latest token should be at or after the first token position
-            TrackingToken firstToken = testSubject.firstToken(processingContext()).get(5, TimeUnit.SECONDS);
-            assertThat(actualLatestToken).isNotNull();
-            assertThat(actualLatestToken.position()).isPresent();
-            assertThat(actualLatestToken.position().getAsLong())
-                    .isGreaterThanOrEqualTo(firstToken.position().getAsLong());
+            assertThat(actualFirstToken.position().getAsLong()).isEqualTo(trackingTokenPosition(0));
         }
 
         @Test
         void latestTokenCoversFirstToken() throws Exception {
-            // given
-            // Note: Store may have events from other tests due to @TestInstance(Lifecycle.PER_CLASS)
-
             // when
             TrackingToken actualFirstToken = testSubject.firstToken(processingContext()).get(5, TimeUnit.SECONDS);
             TrackingToken actualLatestToken = testSubject.latestToken(processingContext()).get(5, TimeUnit.SECONDS);
