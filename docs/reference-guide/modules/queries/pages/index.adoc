@@ -1,23 +1,21 @@
 = Queries
 :page-aliases: README.adoc,query-processing.adoc
 
-The third type of Message that an Axon application is associated with is the Query Message, or simply Queries.
-These are messages that request information in a certain format. Any application can declare it's able to handle a query message, and provide a response to it.
+The third type of message that an Axon application is associated with is the query message, or simply queries.
+These are messages that request information in a certain format. Any application can declare it's able to handle a query message and provide a response to it.
+
+Query handling is fully async-native, with all query dispatching operations returning `CompletableFuture` or `Publisher` types. Query handlers can return these types directly, allowing for efficient asynchronous processing. Queries are routed based on the query's `MessageType` (qualified name and version), independent of the Java class used to represent the query payload.
 
 == Types of queries
 
-There are multiple types of queries that cane be distinguished.
+There are multiple types of queries that can be distinguished:
 
 . xref:axon-framework-reference:queries:query-dispatchers.adoc#point-to-point-queries[Point-to-point queries]:
-They are routed to a single handler, which is expected to return a single result. This is the most common type of query.
-. xref:axon-framework-reference:queries:query-dispatchers.adoc#scatter-gather-queries[Scatter-gather queries]:
-These queries are dispatched to all handlers that are capable of handling the query.
-The results of all handlers are then aggregated and returned to the client.
-. xref:axon-framework-reference:queries:query-dispatchers.adoc#subscription-queries[Subscription queries]: These request an initial result and then continue to receive updates as long as the subscription is active.
-. xref:axon-framework-reference:queries:query-dispatchers.adoc#streaming-queries[Streaming queries]: These queries are used to request a stream of results, which are returned as they become available.
+These are routed to a single handler, which is expected to return a single result. This is the most common type of query.
+. xref:axon-framework-reference:queries:query-dispatchers.adoc#subscription-queries[Subscription queries]: These request an initial result and then continue to receive updates as long as the subscription is active. The initial result and updates are combined in a single `Publisher` stream.
+. xref:axon-framework-reference:queries:query-dispatchers.adoc#streaming-queries[Streaming queries]: These queries are used to request a stream of results as a `Publisher`, which are returned as they become available. This is ideal for large result sets.
 
-
-You can find more about each type of query in the xref:axon-framework-reference:queries:query-dispatchers.adoc[Query Dispatchers] section.
+You can find more about each type of query in the xref:axon-framework-reference:queries:query-dispatchers.adoc[Query dispatchers] section.
 
 
 == Subsections
