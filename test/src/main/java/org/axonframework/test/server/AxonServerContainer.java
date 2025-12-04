@@ -299,7 +299,8 @@ public class AxonServerContainer extends GenericContainer<AxonServerContainer> {
                 && Objects.equals(axonServerName, that.axonServerName)
                 && Objects.equals(axonServerInternalHostname, that.axonServerInternalHostname)
                 && Objects.equals(axonServerHostname, that.axonServerHostname)
-                && Objects.equals(devMode, that.devMode);
+                && Objects.equals(devMode, that.devMode)
+                && Objects.equals(dcbContext, that.dcbContext);
     }
 
     @Override
@@ -311,7 +312,8 @@ public class AxonServerContainer extends GenericContainer<AxonServerContainer> {
                             axonServerName,
                             axonServerInternalHostname,
                             axonServerHostname,
-                            devMode);
+                            devMode,
+                            dcbContext);
     }
 
     @Override
@@ -324,6 +326,7 @@ public class AxonServerContainer extends GenericContainer<AxonServerContainer> {
                 ", axonServerInternalHostname='" + axonServerInternalHostname + '\'' +
                 ", axonServerHostname='" + axonServerHostname + '\'' +
                 ", devMode='" + devMode + '\'' +
+                ", dcbContext='" + dcbContext + '\'' +
                 '}';
     }
 }

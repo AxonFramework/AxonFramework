@@ -26,7 +26,6 @@ import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.Random;
 
 /**
@@ -50,7 +49,7 @@ public abstract class AbstractAxonServerIT {
     protected AxonConfiguration startedConfiguration;
 
     @BeforeAll
-    static void beforeAll() throws IOException {
+    static void beforeAll() {
         container.start();
         logger.info("Using Axon Server for integration test. UI is available at http://localhost:{}",
                     container.getHttpPort());
