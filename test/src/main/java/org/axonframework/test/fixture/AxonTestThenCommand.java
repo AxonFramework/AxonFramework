@@ -129,6 +129,26 @@ class AxonTestThenCommand
     }
 
     @Override
+    public <T> AxonTestPhase.Then.Command resultMessagePayloadSatisfies(
+            @Nonnull Class<T> type,
+            @Nonnull Consumer<T> consumer
+    ) {
+        StringDescription expectedDescription = new StringDescription();
+        if (actualException != null) {
+            reporter.reportUnexpectedException(actualException, expectedDescription);
+        }
+        try {
+            var messageConverter = configuration.getComponent(MessageConverter.class);
+            T convertedPayload = actualResult.payloadAs(type, messageConverter);
+            consumer.accept(convertedPayload);
+        } catch (AssertionError e) {
+            reporter.reportWrongResult(actualResult.payload(),
+                                       "Result message to satisfy custom assertions: " + e.getMessage());
+        }
+        return this;
+    }
+
+    @Override
     public AxonTestPhase.Then.Command exception(@Nonnull Class<? extends Throwable> type) {
         StringDescription description = new StringDescription();
         if (actualException == null) {

@@ -26,6 +26,8 @@ import org.junit.jupiter.api.*;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 /**
  * Integration test for {@link AxonTestFixture} with a stateless annotated command handler
  * using a real Axon Server via testcontainers.
@@ -106,6 +108,26 @@ class AxonTestFixtureStatelessAnnotatedCommandHandlerIntegrationTest {
                     .then()
                     .success()
                     .resultMessagePayload(new TestCommandResult("failure"));
+        }
+    }
+
+    @Nested
+    class WhenUsingTypedPayloadSatisfies {
+
+        @Test
+        void thenPayloadIsAutomaticallyConverted() {
+            // given
+            var configurer = configurerWithStatelessHandler();
+            var fixture = AxonTestFixture.with(configurer);
+
+            // when / then
+            fixture.when()
+                    .command(new TestCommand(true))
+                    .then()
+                    .success()
+                    .resultMessagePayloadSatisfies(TestCommandResult.class, result -> {
+                        assertThat(result.message()).isEqualTo("success");
+                    });
         }
     }
 }
