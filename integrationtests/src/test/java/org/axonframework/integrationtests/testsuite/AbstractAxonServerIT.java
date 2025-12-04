@@ -43,7 +43,8 @@ public abstract class AbstractAxonServerIT {
     private static final AxonServerContainer container = new AxonServerContainer("docker.axoniq.io/axoniq/axonserver:2025.2.0")
             .withAxonServerHostname("localhost")
             .withDevMode(true)
-            .withReuse(true);
+            .withReuse(true)
+            .withDcbContext(true);
 
     protected CommandGateway commandGateway;
     protected AxonConfiguration startedConfiguration;
@@ -51,12 +52,6 @@ public abstract class AbstractAxonServerIT {
     @BeforeAll
     static void beforeAll() throws IOException {
         container.start();
-
-        // Mainly needed to create DBC context now:
-        AxonServerContainerUtils.purgeEventsFromAxonServer(container.getHost(),
-                                                           container.getHttpPort(),
-                                                           "default",
-                                                           AxonServerContainerUtils.DCB_CONTEXT);
         logger.info("Using Axon Server for integration test. UI is available at http://localhost:{}",
                     container.getHttpPort());
     }
