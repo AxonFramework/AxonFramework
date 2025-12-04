@@ -1,0 +1,647 @@
+= Advanced Testing Techniques
+
+This page covers advanced testing scenarios including custom matchers, integration testing, testing queries, and Spring Boot integration.
+
+== Custom matchers
+
+While the built-in assertions cover most scenarios, custom matchers provide more expressive test failures and reusable validation logic.
+
+=== Why custom matchers
+
+Custom matchers provide:
+
+* **Better error messages** - Describe exactly what went wrong
+* **Reusable logic** - Define validation once, use in multiple tests
+* **Expressive tests** - Make test intent clearer
+
+=== Using built-in matchers
+
+Axon provides several useful matchers in the `org.axonframework.test.matchers.Matchers` class:
+
+[source,java]
+----
+import static org.axonframework.test.matchers.Matchers.*;
+
+fixture.then()
+       .eventsSatisfy(events ->
+           assertThat(events, payloadsMatching(hasSize(2)))
+       );
+----
+
+**Available matchers:**
+
+`payloadsMatching(Matcher<? extends List<?>>)`::
+Match a list of message payloads.
+
+`messageWithPayload(Matcher<?>)`::
+Match a single message's payload.
+
+`listWithAllOf(Matcher<T>...)`::
+All matchers must match items in the list (any order).
+
+`listWithAnyOf(Matcher<T>...)`::
+At least one matcher must match an item.
+
+`sequenceOf(Matcher<T>...)`::
+Ordered sequence with gaps allowed.
+
+`exactSequenceOf(Matcher<T>...)`::
+Exact ordered sequence, no gaps.
+
+`matches(Predicate<T>)` / `predicate(Predicate<T>)`::
+Predicate-based matching.
+
+`deepEquals(T expected)` / `deepEquals(T expected, FieldFilter filter)`::
+Deep field-by-field equality with optional filtering.
+
+`exactClassOf(Class<T> expected)`::
+Exact class type matching.
+
+`noEvents()` / `noCommands()`::
+Empty collection matching.
+
+=== Example using built-in matchers
+
+[source,java]
+----
+import static org.axonframework.test.matchers.Matchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+
+@Test
+void testMultipleEventsWithMatchers() {
+    fixture.when()
+           .command(new ProcessOrderCommand("order-1"))
+           .then()
+           .eventsSatisfy(events -> {
+               assertThat(events, payloadsMatching(
+                   listWithAllOf(
+                       instanceOf(OrderProcessedEvent.class),
+                       instanceOf(InventoryUpdatedEvent.class)
+                   )
+               ));
+           });
+}
+
+@Test
+void testEventSequence() {
+    fixture.when()
+           .command(new CompleteOrderCommand("order-1"))
+           .then()
+           .eventsSatisfy(events -> {
+               assertThat(events, sequenceOf(
+                   messageWithPayload(instanceOf(OrderCompletedEvent.class)),
+                   messageWithPayload(instanceOf(PaymentProcessedEvent.class))
+               ));
+           });
+}
+----
+
+=== Creating custom matchers
+
+For domain-specific validation, create custom Hamcrest matchers:
+
+[source,java]
+----
+import org.hamcrest.*;
+
+public class AccountEventMatcher extends TypeSafeMatcher<EventMessage> {
+
+    private final String expectedAccountId;
+
+    public AccountEventMatcher(String expectedAccountId) {
+        this.expectedAccountId = expectedAccountId;
+    }
+
+    @Override
+    protected boolean matchesSafely(EventMessage message) {
+        Object payload = message.getPayload();
+        if (payload instanceof AccountCreatedEvent event) {
+            return expectedAccountId.equals(event.getAccountId());
+        } else if (payload instanceof MoneyWithdrawnEvent event) {
+            return expectedAccountId.equals(event.getAccountId());
+        }
+        return false;
+    }
+
+    @Override
+    public void describeTo(Description description) {
+        description.appendText("an account event for account ")
+                   .appendValue(expectedAccountId);
+    }
+
+    @Override
+    protected void describeMismatchSafely(EventMessage item,
+                                         Description mismatchDescription) {
+        mismatchDescription.appendText("was event: ")
+                          .appendValue(item.getPayload());
+    }
+
+    public static Matcher<EventMessage> accountEvent(String accountId) {
+        return new AccountEventMatcher(accountId);
+    }
+}
+----
+
+Use it in tests:
+
+[source,java]
+----
+import static com.example.matchers.AccountEventMatcher.accountEvent;
+
+@Test
+void testWithCustomMatcher() {
+    fixture.when()
+           .command(new WithdrawMoneyCommand("account-1", 100.00))
+           .then()
+           .eventsSatisfy(events -> {
+               assertThat(events.get(0), accountEvent("account-1"));
+           });
+}
+----
+
+== Integration testing
+
+=== Testing with real infrastructure
+
+The fixture can use real infrastructure components instead of in-memory implementations:
+
+[source,java]
+----
+@BeforeEach
+void setUp() {
+    var eventStore = EmbeddedEventStore.builder()
+        .storageEngine(new InMemoryEventStorageEngine())
+        .build();
+
+    var configurer = EventSourcingConfigurer.create()
+        .registerEventStore(config -> eventStore)
+        .registerEntity(EventSourcedEntityModule.autodetected(String.class, Account.class));
+
+    fixture = AxonTestFixture.with(configurer);
+}
+----
+
+Benefits:
+
+* Test actual serialization and deserialization
+* Verify converters work correctly
+* Test event upcasters
+* Test snapshot behavior
+
+=== Testing event processors
+
+Test that event processors handle events correctly:
+
+[source,java]
+----
+@BeforeEach
+void setUp() {
+    var configurer = EventSourcingConfigurer.create()
+        .registerEntity(EventSourcedEntityModule.autodetected(String.class, Account.class))
+        .registerEventHandler(AccountProjection.class);
+
+    fixture = AxonTestFixture.with(configurer);
+}
+
+@Test
+void testEventProcessorUpdatesProjection() {
+    fixture.given()
+           .event(new AccountCreatedEvent("account-1", 500.00))
+           .when()
+           .nothing()
+           .then()
+           .await(t -> t.expect(config -> {
+               var queryGateway = config.component(QueryGateway.class);
+               var balance = queryGateway.query(
+                   new GetBalanceQuery("account-1"),
+                   AccountBalance.class
+               ).join();
+
+               assertNotNull(balance);
+               assertEquals(500.00, balance.getBalance());
+           }), Duration.ofSeconds(5));
+}
+----
+
+Use `await()` because event processors are asynchronous.
+
+[#testing-with-spring-boot]
+== Testing with Spring Boot
+
+=== Reusing Spring configuration
+
+When using Spring Boot, inject the `ApplicationConfigurer` bean:
+
+[source,java]
+----
+import org.axonframework.test.server.AxonServerContainer;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+
+@SpringBootTest
+@Testcontainers
+class AccountSpringTest {
+
+    @Container
+    @ServiceConnection
+    static AxonServerContainer axonServer = new AxonServerContainer();
+
+    @Autowired
+    private ApplicationConfigurer configurer;
+
+    private AxonTestFixture fixture;
+
+    @BeforeEach
+    void setUp() {
+        fixture = AxonTestFixture.with(configurer);
+    }
+
+    @Test
+    void testWithSpringConfiguration() {
+        fixture.given()
+               .event(new AccountCreatedEvent("account-1", 500.00))
+               .when()
+               .command(new WithdrawMoneyCommand("account-1", 100.00))
+               .then()
+               .success()
+               .events(new MoneyWithdrawnEvent("account-1", 100.00));
+    }
+
+    @AfterEach
+    void tearDown() {
+        fixture.stop();
+    }
+}
+----
+
+The `@ServiceConnection` annotation (Spring Boot 3.1+) automatically configures the Axon Server connection, providing realistic integration testing with your production configuration.
+
+=== Testing Spring beans
+
+Access Spring beans through the configuration:
+
+[source,java]
+----
+@Test
+void testWithSpringBeans() {
+    fixture.when()
+           .command(new ProcessPaymentCommand("payment-1"))
+           .then()
+           .expect(config -> {
+               var paymentService = config.component(PaymentService.class);
+               assertTrue(paymentService.isProcessed("payment-1"));
+           });
+}
+----
+
+=== Mocking Spring beans
+
+Replace Spring beans with mocks for testing:
+
+[source,java]
+----
+@SpringBootTest
+@TestConfiguration
+static class TestConfig {
+    @Bean
+    @Primary
+    public EmailService mockEmailService() {
+        return mock(EmailService.class);
+    }
+}
+
+@Autowired
+private EmailService mockEmailService;
+
+@Test
+void testEmailSent() {
+    fixture.when()
+           .command(new CreateAccountCommand("account-1"))
+           .then()
+           .success();
+
+    verify(mockEmailService).sendWelcomeEmail("account-1");
+}
+----
+
+== Testing queries
+
+=== Query handler testing
+
+Test query handlers using `expect()`:
+
+[source,java]
+----
+@BeforeEach
+void setUp() {
+    var configurer = MessagingConfigurer.create()
+        .registerEventHandler(AccountProjection.class)
+        .registerQueryHandler(AccountQueryHandler.class);
+
+    fixture = AxonTestFixture.with(configurer);
+}
+
+@Test
+void testGetAccountBalance() {
+    fixture.given()
+           .event(new AccountCreatedEvent("account-1", 500.00))
+           .event(new MoneyDepositedEvent("account-1", 100.00))
+           .when()
+           .nothing()
+           .then()
+           .expect(config -> {
+               var queryGateway = config.component(QueryGateway.class);
+               var balance = queryGateway.query(
+                   new GetBalanceQuery("account-1"),
+                   AccountBalance.class
+               ).join();
+
+               assertEquals(600.00, balance.getBalance());
+           });
+}
+----
+
+=== Testing subscription queries
+
+Test subscription queries with updates:
+
+[source,java]
+----
+@Test
+void testSubscriptionQueryUpdates() {
+    fixture.given()
+           .event(new AccountCreatedEvent("account-1", 500.00))
+           .when()
+           .nothing()
+           .then()
+           .expectAsync(config -> {
+               var queryGateway = config.component(QueryGateway.class);
+
+               var publisher = queryGateway.subscriptionQuery(
+                   new GetBalanceQuery("account-1"),
+                   AccountBalance.class
+               );
+
+               // Collect updates
+               List<AccountBalance> updates = new ArrayList<>();
+               var subscription = Flux.from(publisher)
+                   .doOnNext(updates::add)
+                   .subscribe();
+
+               // Trigger update
+               var commandGateway = config.component(CommandGateway.class);
+               commandGateway.sendAndWait(
+                   new DepositMoneyCommand("account-1", 100.00)
+               );
+
+               // Wait for update
+               await().atMost(Duration.ofSeconds(5))
+                      .until(() -> updates.size() >= 2);
+
+               subscription.dispose();
+
+               // Verify initial result and update
+               assertEquals(500.00, updates.get(0).getBalance());
+               assertEquals(600.00, updates.get(1).getBalance());
+
+               return CompletableFuture.completedFuture(null);
+           });
+}
+----
+
+== Testing message correlation
+
+=== Verifying metadata propagation
+
+Test that metadata is correctly propagated:
+
+[source,java]
+----
+@Test
+void testMetadataPropagation() {
+    fixture.given()
+           .event(new AccountCreatedEvent("account-1", 500.00),
+                  Map.of("userId", "user-123"))
+           .when()
+           .nothing()
+           .then()
+           .commandsSatisfy(commands -> {
+               var metadata = commands.get(0).getMetadata();
+               assertEquals("user-123", metadata.get("userId"));
+           });
+}
+----
+
+=== Testing correlation IDs
+
+Verify that correlation and causation IDs are propagated correctly:
+
+[source,java]
+----
+@Test
+void testCorrelationIds() {
+    fixture.when()
+           .command(new CreateAccountCommand("account-1"),
+                    Map.of("correlationId", "correlation-123"))
+           .then()
+           .eventsSatisfy(events -> {
+               var metadata = events.get(0).getMetadata();
+               assertEquals("correlation-123",
+                   metadata.get("correlationId"));
+               assertNotNull(metadata.get("causationId"));
+           });
+}
+----
+
+== Testing with snapshots
+
+=== Configuring snapshot triggers
+
+Test snapshot creation:
+
+[source,java]
+----
+@BeforeEach
+void setUp() {
+    var configurer = EventSourcingConfigurer.create()
+        .registerEntity(EventSourcedEntityModule.autodetected(String.class, Account.class))
+        .registerSnapshotTriggerDefinition(config ->
+            new EventCountSnapshotTriggerDefinition(5)
+        );
+
+    fixture = AxonTestFixture.with(configurer);
+}
+
+@Test
+void testSnapshotCreation() {
+    fixture.given()
+           .events(
+               new AccountCreatedEvent("account-1", 500.00),
+               new MoneyDepositedEvent("account-1", 100.00),
+               new MoneyDepositedEvent("account-1", 100.00),
+               new MoneyDepositedEvent("account-1", 100.00),
+               new MoneyDepositedEvent("account-1", 100.00)
+           )  // 5 events triggers snapshot
+           .when()
+           .command(new WithdrawMoneyCommand("account-1", 100.00))
+           .then()
+           .success()
+           .expect(config -> {
+               var eventStore = config.component(EventStore.class);
+               // Verify snapshot was created
+               // Implementation depends on your event store
+           });
+}
+----
+
+== Testing time-based triggers
+
+Time-based features require special handling in tests.
+
+=== Testing scheduled tasks
+
+For scheduled tasks, manually trigger the scheduled methods in tests:
+
+[source,java]
+----
+@Component
+public class AccountCleanupTask {
+
+    @Scheduled(cron = "0 0 0 * * *")  // Midnight daily
+    public void cleanupInactiveAccounts() {
+        // Cleanup logic
+    }
+}
+
+// Test
+@Test
+void testCleanupTask() {
+    var task = new AccountCleanupTask();
+
+    fixture.given()
+           .event(new AccountCreatedEvent("account-1", 0.00))
+           .execute(config -> {
+               // Manually trigger scheduled method
+               task.cleanupInactiveAccounts();
+               return null;
+           })
+           .when()
+           .nothing()
+           .then()
+           .expect(config -> {
+               // Verify cleanup occurred
+           });
+}
+----
+
+=== Testing database-based scheduling
+
+For database-based deadline/timeout patterns:
+
+[source,java]
+----
+@Test
+void testDatabaseBasedTimeout() {
+    fixture.when()
+           .command(new StartProcessCommand("process-1"))
+           .then()
+           .success()
+           .expect(config -> {
+               // Verify timeout record was created
+               var timeoutRepository = config.component(TimeoutRepository.class);
+               var timeout = timeoutRepository.findByProcessId("process-1");
+
+               assertNotNull(timeout);
+               assertEquals(Instant.now().plus(Duration.ofHours(24)),
+                   timeout.getScheduledFor());
+           });
+}
+----
+
+== Performance testing considerations
+
+`AxonTestFixture` is not designed for performance testing:
+
+* Recording infrastructure adds overhead
+* Message comparison is expensive
+* Focus is on correctness, not speed
+
+**For performance testing:**
+
+1. Use separate performance test suite
+2. Test with production configuration (no recording)
+3. Use load testing tools (JMeter, Gatling)
+4. Measure throughput, latency, resource usage
+
+[source,java]
+----
+// Performance test (not using AxonTestFixture)
+@Test
+void performanceTest() {
+    var configurer = EventSourcingConfigurer.create()
+        .registerEntity(EventSourcedEntityModule.autodetected(String.class, Account.class));
+
+    var config = configurer.build();
+    config.start();
+
+    var commandGateway = config.component(CommandGateway.class);
+
+    // Measure performance
+    long start = System.nanoTime();
+    for (int i = 0; i < 10000; i++) {
+        commandGateway.sendAndWait(new CreateAccountCommand("account-" + i));
+    }
+    long duration = System.nanoTime() - start;
+
+    System.out.println("Throughput: " + (10000.0 / (duration / 1_000_000_000.0)) + " commands/sec");
+
+    config.shutdown();
+}
+----
+
+== Best practices
+
+**Use custom matchers for complex validation**::
+Create reusable matchers for domain-specific validation logic.
+
+**Test with real infrastructure when needed**::
+Integration tests with real event stores verify serialization and conversion.
+
+**Use await() for async operations**::
+Event processors, scheduled tasks, and async handlers need `await()`.
+
+**Leverage Spring configuration**::
+Reuse production Spring configuration in tests for consistency.
+
+**Mock external dependencies**::
+Mock HTTP clients, email services, and other external systems.
+
+**Keep performance tests separate**::
+Don't use `AxonTestFixture` for performance testing.
+
+**Test correlation data**::
+Verify metadata propagation in distributed scenarios.
+
+**Document complex test setups**::
+Add comments explaining why you're using specific configurations.
+
+== Summary
+
+Advanced testing techniques provide:
+
+* **Custom matchers** - Expressive, reusable validation logic
+* **Integration testing** - Test with real infrastructure components
+* **Spring Boot support** - Reuse production Spring configuration
+* **Query testing** - Verify query handlers and subscription queries
+* **Correlation testing** - Validate metadata and correlation IDs
+* **Snapshot testing** - Test snapshot creation and restoration
+* **Time-based testing** - Handle scheduled tasks and timeouts
+
+For more testing guidance, see:
+
+* xref:testing-with-axon-test-fixture.adoc[] - Main testing guide
+* xref:field-filters.adoc[] - Field filtering and equality comparison
+* xref:upgrading-from-axon-4.adoc[] - Migration guide for Axon 4 users

@@ -707,44 +707,84 @@ The following files in `axon-5/` describe the API changes:
 
 ## Testing Module
 
-**CRITICAL:** This entire module requires complete rewrite
+**Status:** ✅ COMPLETED
 
 ### modules/testing/pages/index.adoc
-**COMPLETE REWRITE:**
-**Changes to apply:**
-- Replace AggregateTestFixture with AxonTestFixture
-- Replace SagaTestFixture with AxonTestFixture
-- Document that fixture now based on ApplicationConfigurer
-- Explain benefits (no duplicate configuration, integration testing support)
-- Document given-when-then style with new fixture
-- Note that legacy fixtures available but deprecated
-- Update all overview examples
+**Status:** ✅ COMPLETED
+**Changes applied:**
+- Complete rewrite introducing AxonTestFixture as the main testing tool
+- Documented configurer-based testing approach (reuse production configuration)
+- Explained benefits: no duplicate configuration, integration testing support
+- Introduced Given-When-Then testing pattern
+- Provided quick example with complete test class
+- Added "Where to get the Configurer" section explaining production config reuse and creating test configurers
+- Updated module contents to list all new pages
 
-### modules/testing/pages/commands-events.adoc
-**RENAME TO:** `testing-with-axontestfixture.adoc` or similar
-**COMPLETE REWRITE:**
-**Changes to apply:**
-- Remove all AggregateTestFixture references
-- Document AxonTestFixture creation from ApplicationConfigurer
-- Show testing entities (not aggregates)
-- Show testing event handlers
-- Show testing command handlers
-- Document given phase (any message type)
-- Document when phase (any message type)
-- Document then phase (any message type)
-- Update all code examples
-- Document testing with declarative configuration
-- Show integration testing capabilities (upcasters, snapshots, DLQ)
+### modules/testing/pages/testing-with-axon-test-fixture.adoc
+**Status:** ✅ COMPLETED (NEW FILE)
+**Note:** Replaces commands-events.adoc
+**Changes applied:**
+- Comprehensive guide to using AxonTestFixture
+- Creating fixtures from ApplicationConfigurer with customization options
+- Complete documentation of all three phases:
+  - Given phase: events, commands, noPriorActivity(), execute()
+  - When phase: commands, events, nothing()
+  - Then phase: success/exception, events, commands, results, await(), expect()
+- Chaining multiple tests with and()
+- Testing different scenarios: command handlers, event handlers, entities, queries
+- Best practices and common patterns
+- Examples with mocks, time-based logic, and external state
 
-### modules/testing/pages/sagas-1.adoc
-**REMOVE OR REWRITE:**
-**Changes to apply:**
-- Remove SagaTestFixture references entirely (Sagas not available in Axon 5)
-- Rewrite to show testing alternatives:
-  - Testing stateful event handlers with AxonTestFixture
-  - Testing event handlers with custom state storage
-  - Testing scheduled database checks
-- Update all examples
+### modules/testing/pages/field-filters.adoc
+**Status:** ✅ COMPLETED (NEW FILE)
+**Changes applied:**
+- Explained why field filtering is needed for non-deterministic fields
+- Documented registerIgnoredField() and registerFieldFilter()
+- Documented all built-in filters: AllFieldsFilter, NonStaticFieldsFilter, NonTransientFieldsFilter, IgnoreField, MatchAllFieldFilter
+- Explained how field filters work recursively
+- Provided common patterns: ignoring timestamps, UUIDs, custom annotations
+- Comprehensive troubleshooting section
+- Best practices for selective filtering
+
+### modules/testing/pages/advanced-testing.adoc
+**Status:** ✅ COMPLETED (NEW FILE)
+**Changes applied:**
+- Custom matchers: using built-in matchers and creating custom ones
+- Integration testing with real infrastructure (event stores, processors)
+- Testing with Spring Boot: reusing configuration, accessing/mocking beans
+- Testing queries and subscription queries
+- Testing message correlation and metadata propagation
+- Testing with snapshots
+- Testing time-based triggers (scheduled tasks, database-based scheduling)
+- Performance testing considerations
+- Best practices for advanced scenarios
+
+### modules/testing/pages/upgrading-from-axon-4.adoc
+**Status:** ✅ COMPLETED (NEW FILE)
+**Changes applied:**
+- Complete migration guide for Axon 4 users
+- "What's new in Axon 5 testing" section explaining all improvements
+- "Why the change?" section explaining Axon 4 problems and Axon 5 benefits
+- Key differences: single fixture, configuration approach, method names
+- Migration examples for aggregate tests and saga tests (converting to event handlers)
+- Complete method name mapping table (Axon 4 → Axon 5)
+- Common migration pitfalls with solutions
+- Benefits of migration
+- Step-by-step migration guide (10 steps)
+
+### modules/testing/partials/nav.adoc
+**Status:** ✅ COMPLETED
+**Changes applied:**
+- Updated navigation structure with new files:
+  - testing-with-axon-test-fixture.adoc
+  - field-filters.adoc
+  - advanced-testing.adoc
+  - upgrading-from-axon-4.adoc
+- Removed old files: commands-events.adoc, sagas-1.adoc
+
+### Old files removed:
+- commands-events.adoc (replaced by testing-with-axon-test-fixture.adoc)
+- sagas-1.adoc (sagas not available in Axon 5, alternatives covered in upgrading-from-axon-4.adoc)
 
 ---
 

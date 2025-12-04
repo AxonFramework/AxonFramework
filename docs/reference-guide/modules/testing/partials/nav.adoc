@@ -1,3 +1,5 @@
 * xref:testing:index.adoc[]
-** xref:testing:commands-events.adoc[]
-** xref:testing:sagas-1.adoc[]
+** xref:testing:testing-with-axon-test-fixture.adoc[]
+** xref:testing:field-filters.adoc[]
+** xref:testing:advanced-testing.adoc[]
+** xref:testing:upgrading-from-axon-4.adoc[]

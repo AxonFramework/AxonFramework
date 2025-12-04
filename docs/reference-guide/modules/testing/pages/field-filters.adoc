@@ -1,0 +1,396 @@
+= Field Filters and Equality Comparison
+
+When testing message handling, the fixture compares expected and actual messages using field-by-field equality.
+Field filters control which fields are included in this comparison, allowing you to ignore non-deterministic fields like timestamps and UUIDs.
+
+== Why field filtering is needed
+
+Consider this event:
+
+[source,java]
+----
+public class AccountCreatedEvent {
+    private final String accountId;
+    private final double initialBalance;
+    private final Instant timestamp;  // Generated at runtime
+    private final String eventId;     // UUID generated at runtime
+
+    // constructor, getters...
+}
+----
+
+When testing, you want to verify the `accountId` and `initialBalance`, but the `timestamp` and `eventId` are generated at runtime and will be different every time.
+
+Without field filtering, this test would fail:
+
+[source,java]
+----
+fixture.when()
+       .command(new CreateAccountCommand("account-1", 500.00))
+       .then()
+       .events(new AccountCreatedEvent("account-1", 500.00));  // Fails!
+       // timestamp and eventId don't match
+----
+
+Field filters solve this by telling the fixture which fields to ignore during comparison.
+
+== Registering field filters
+
+=== Ignoring specific fields
+
+The simplest approach is to ignore specific fields by class and field name:
+
+[source,java]
+----
+var fixture = AxonTestFixture.with(configurer, c -> c
+    .registerIgnoredField(AccountCreatedEvent.class, "timestamp")
+    .registerIgnoredField(AccountCreatedEvent.class, "eventId")
+);
+----
+
+Now the test will pass because `timestamp` and `eventId` are ignored during comparison.
+
+=== Custom field filters
+
+For more control, implement a custom `FieldFilter`:
+
+[source,java]
+----
+var fixture = AxonTestFixture.with(configurer, c -> c
+    .registerFieldFilter(field ->
+        !field.getName().equals("timestamp") &&
+        !field.getName().equals("eventId")
+    )
+);
+----
+
+A `FieldFilter` is a functional interface:
+
+[source,java]
+----
+@FunctionalInterface
+public interface FieldFilter {
+    boolean accept(Field field);
+}
+----
+
+Return `true` to include the field in comparison, `false` to ignore it.
+
+== Built-in field filters
+
+Axon provides several built-in field filters:
+
+=== `AllFieldsFilter`
+
+Accepts all fields (the default behavior):
+
+[source,java]
+----
+import org.axonframework.test.matchers.AllFieldsFilter;
+
+AllFieldsFilter.instance()
+----
+
+=== `NonStaticFieldsFilter`
+
+Excludes static fields from comparison:
+
+[source,java]
+----
+import org.axonframework.test.matchers.NonStaticFieldsFilter;
+
+c -> c.registerFieldFilter(new NonStaticFieldsFilter())
+----
+
+=== `NonTransientFieldsFilter`
+
+Excludes transient fields from comparison:
+
+[source,java]
+----
+import org.axonframework.test.matchers.NonTransientFieldsFilter;
+
+c -> c.registerFieldFilter(new NonTransientFieldsFilter())
+----
+
+=== `IgnoreField`
+
+Ignores a specific field:
+
+[source,java]
+----
+import org.axonframework.test.matchers.IgnoreField;
+
+// By class and field name
+new IgnoreField(AccountCreatedEvent.class, "timestamp")
+
+// By Field object
+new IgnoreField(timestampField)
+----
+
+This is what `registerIgnoredField()` uses internally.
+
+=== `MatchAllFieldFilter`
+
+Combines multiple filters using AND logic (all filters must accept the field):
+
+[source,java]
+----
+import org.axonframework.test.matchers.MatchAllFieldFilter;
+
+var combined = new MatchAllFieldFilter(List.of(
+    new NonStaticFieldsFilter(),
+    new NonTransientFieldsFilter(),
+    new IgnoreField(AccountCreatedEvent.class, "timestamp")
+));
+
+c -> c.registerFieldFilter(combined)
+----
+
+== How field filters work
+
+Field filters are applied during deep equality comparison in the Then phase:
+
+1. The fixture recursively examines all fields of expected and actual objects
+2. For each field, all registered field filters are consulted
+3. If any filter returns `false`, the field is skipped
+4. Only fields that pass all filters are compared
+
+This works recursively for nested objects:
+
+[source,java]
+----
+public class OrderCreatedEvent {
+    private final String orderId;
+    private final Customer customer;  // Nested object
+    private final Instant timestamp;
+}
+
+public class Customer {
+    private final String customerId;
+    private final Instant registeredAt;  // Also filtered
+}
+----
+
+Field filters apply to all fields with matching names, even in nested objects.
+
+== Common patterns
+
+=== Ignoring all timestamp fields
+
+[source,java]
+----
+c -> c.registerFieldFilter(field -> {
+    String name = field.getName().toLowerCase();
+    return !name.contains("timestamp") &&
+           !name.contains("createdat") &&
+           !name.contains("updatedat") &&
+           !field.getType().equals(Instant.class);
+})
+----
+
+=== Ignoring all UUID fields
+
+[source,java]
+----
+import java.util.UUID;
+
+c -> c.registerFieldFilter(field ->
+    !field.getType().equals(UUID.class) &&
+    !field.getName().toLowerCase().contains("id")
+)
+----
+
+Be careful - this might ignore business-relevant IDs!
+
+=== Ignoring fields with custom annotation
+
+Define a custom annotation:
+
+[source,java]
+----
+import java.lang.annotation.*;
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.FIELD)
+public @interface IgnoreInTest {}
+----
+
+Use it on fields:
+
+[source,java]
+----
+public class AccountCreatedEvent {
+    private final String accountId;
+    private final double initialBalance;
+
+    @IgnoreInTest
+    private final Instant timestamp;
+
+    @IgnoreInTest
+    private final String eventId;
+}
+----
+
+Register a filter:
+
+[source,java]
+----
+c -> c.registerFieldFilter(field ->
+    !field.isAnnotationPresent(IgnoreInTest.class)
+)
+----
+
+=== Combining multiple filters
+
+[source,java]
+----
+var fixture = AxonTestFixture.with(configurer, c -> c
+    .registerIgnoredField(AccountCreatedEvent.class, "timestamp")
+    .registerIgnoredField(OrderCreatedEvent.class, "timestamp")
+    .registerFieldFilter(new NonTransientFieldsFilter())
+    .registerFieldFilter(field -> !field.getName().contains("internal"))
+);
+----
+
+All filters are combined with AND logic - a field must pass all filters to be included.
+
+== Troubleshooting
+
+=== Test fails due to field mismatch
+
+**Symptom:** Test fails with message like:
+
+----
+Field 'timestamp' differ:
+Expected: 2023-01-01T10:00:00Z
+Actual:   2023-01-01T10:00:00.123Z
+----
+
+**Solution:**
+
+1. Check the error message to identify which field is different
+2. Determine if the field is non-deterministic (timestamp, UUID, generated value)
+3. If non-deterministic, add it to ignored fields:
+
+[source,java]
+----
+c -> c.registerIgnoredField(MyEvent.class, "timestamp")
+----
+
+4. If the field value is actually wrong, fix your code instead of ignoring the field!
+
+=== Field filter not working
+
+**Symptom:** Field is still compared even though you added a filter
+
+**Common causes:**
+
+1. **Typo in field name** - Field names are case-sensitive:
++
+[source,java]
+----
+c -> c.registerIgnoredField(MyEvent.class, "timestamp")  // Wrong
+c -> c.registerIgnoredField(MyEvent.class, "timeStamp")  // Correct
+----
+
+2. **Wrong class reference** - Make sure you're using the correct event class:
++
+[source,java]
+----
+c -> c.registerIgnoredField(AccountCreatedEvent.class, "timestamp")
+// Not AccountCreatedEventV2.class
+----
+
+3. **Filter logic inverted** - Remember: `true` means include, `false` means ignore:
++
+[source,java]
+----
+// Wrong - this ONLY compares timestamp fields
+c -> c.registerFieldFilter(field ->
+    field.getName().equals("timestamp")
+)
+
+// Correct - this IGNORES timestamp fields
+c -> c.registerFieldFilter(field ->
+    !field.getName().equals("timestamp")
+)
+----
+
+=== Too many fields ignored
+
+**Symptom:** Test passes but doesn't actually validate anything meaningful
+
+**Solution:**
+
+Be selective about which fields to ignore.
+Only ignore truly non-deterministic fields.
+If you're ignoring business-relevant fields, your test isn't testing enough.
+
+[source,java]
+----
+// Bad - ignores too much
+c -> c.registerFieldFilter(field ->
+    !field.getName().contains("id") &&  // Ignores accountId, orderId, etc!
+    !field.getName().contains("time") &&
+    !field.getName().contains("date")
+)
+
+// Good - only ignores generated metadata
+c -> c.registerIgnoredField(AccountCreatedEvent.class, "eventId")
+    .registerIgnoredField(AccountCreatedEvent.class, "timestamp")
+----
+
+== Best practices
+
+**Be specific**::
+Use `registerIgnoredField(Class, String)` for specific fields rather than broad filters.
+
+**Document why**::
+Add comments explaining why fields are ignored:
++
+[source,java]
+----
+c -> c
+    .registerIgnoredField(AccountCreatedEvent.class, "timestamp")  // Generated at runtime
+    .registerIgnoredField(AccountCreatedEvent.class, "eventId")    // UUID generated on creation
+----
+
+**Use annotations sparingly**::
+Custom `@IgnoreInTest` annotations can be useful, but they leak test concerns into production code.
+Prefer configuring filters in test setup.
+
+**Test what matters**::
+Only ignore fields that are truly non-deterministic.
+If a field contains business logic, test it!
+
+**Consider test data builders**::
+For complex scenarios, consider using test data builders that provide expected values for non-deterministic fields:
++
+[source,java]
+----
+// In test setup
+var fixedClock = Clock.fixed(Instant.parse("2023-01-01T00:00:00Z"), ZoneId.of("UTC"));
+var fixedIdGenerator = new FixedIdGenerator("event-123");
+
+var configurer = EventSourcingConfigurer.create()
+    .registerComponent(Clock.class, config -> fixedClock)
+    .registerComponent(IdGenerator.class, config -> fixedIdGenerator);
+----
++
+This approach eliminates non-determinism at the source rather than ignoring it during comparison.
+
+== Summary
+
+Field filters provide fine-grained control over message equality comparison:
+
+* Use `registerIgnoredField(Class, String)` for specific fields
+* Use `registerFieldFilter(FieldFilter)` for custom logic
+* Combine multiple filters for complex scenarios
+* Only ignore truly non-deterministic fields
+* Document why fields are ignored
+
+For more testing guidance, see:
+
+* xref:testing-with-axon-test-fixture.adoc[] - Main testing guide
+* xref:advanced-testing.adoc[] - Advanced testing techniques

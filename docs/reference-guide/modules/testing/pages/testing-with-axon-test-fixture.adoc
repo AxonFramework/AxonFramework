@@ -1,0 +1,974 @@
+= Testing with AxonTestFixture
+
+The `AxonTestFixture` is the main tool for testing Axon applications.
+It provides a fluent API for setting up test scenarios, executing actions, and verifying results using a clear Given-When-Then pattern.
+
+== Introduction
+
+`AxonTestFixture` is built on the same `ApplicationConfigurer` you use in production, which means:
+
+* **No duplicate configuration** - Your tests use the same setup as your production code
+* **Integration testing support** - Test with real infrastructure (event stores, processors, etc.)
+* **Consistent behavior** - What works in tests works in production
+
+The fixture automatically wraps your command bus and event sink with recording implementations that capture all dispatched messages for verification.
+
+**When to use AxonTestFixture:**
+
+* Testing command handlers (entity or external)
+* Testing event handlers
+* Testing complete message flows
+* Integration testing with real components
+
+**When to use plain unit tests:**
+
+* Testing simple utility functions
+* Testing classes that don't interact with Axon components
+* Performance testing (fixtures add overhead)
+
+== Creating a test fixture
+
+=== Basic fixture creation
+
+Create a fixture from any `ApplicationConfigurer`:
+
+[source,java]
+----
+import org.axonframework.test.fixture.AxonTestFixture;
+import org.axonframework.eventsourcing.EventSourcingConfigurer;
+import org.junit.jupiter.api.*;
+
+class AccountTest {
+
+    private AxonTestFixture fixture;
+
+    @BeforeEach
+    void setUp() {
+        var configurer = EventSourcingConfigurer.create()
+            .registerEntity(EventSourcedEntityModule.autodetected(String.class, Account.class));
+
+        fixture = AxonTestFixture.with(configurer);
+    }
+
+    @AfterEach
+    void tearDown() {
+        fixture.stop();  // Always stop the fixture
+    }
+}
+----
+
+IMPORTANT: Always call `fixture.stop()` in your `@AfterEach` method to properly release resources.
+
+=== Fixture with customization
+
+Customize the fixture using the customization parameter:
+
+[source,java]
+----
+fixture = AxonTestFixture.with(configurer, c -> c
+    .disableAxonServer()  // Disable Axon Server for tests
+    .registerIgnoredField(MyEvent.class, "timestamp")
+    .registerIgnoredField(MyEvent.class, "eventId")
+);
+----
+
+**Available customizations:**
+
+* `disableAxonServer()` - Disable Axon Server connector (useful for local testing)
+* `registerIgnoredField(Class<?> clazz, String field)` - Ignore specific fields during equality checks
+* `registerFieldFilter(FieldFilter filter)` - Register custom field filter
+
+See xref:field-filters.adoc[] for details on field filtering.
+
+=== Reusing production configuration
+
+The recommended approach is to reuse your production configuration.
+This ensures your tests use exactly the same configuration as production.
+
+**With Spring Boot:**
+
+When using Spring Boot, the configurer is created by the Spring Boot integration.
+Inject it as a bean into your test for realistic integration testing:
+
+[source,java]
+----
+import org.axonframework.test.server.AxonServerContainer;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+
+@SpringBootTest
+@Testcontainers
+class AccountTest {
+
+    @Container
+    @ServiceConnection
+    static AxonServerContainer axonServer = new AxonServerContainer();
+
+    @Autowired
+    private ApplicationConfigurer configurer;
+
+    private AxonTestFixture fixture;
+
+    @BeforeEach
+    void setUp() {
+        fixture = AxonTestFixture.with(configurer);
+    }
+
+    // ... tests ...
+
+    @AfterEach
+    void tearDown() {
+        fixture.stop();
+    }
+}
+----
+
+The `@SpringBootTest` annotation ensures Spring Boot starts with your production configuration, and `@Autowired` injects the configurer bean created by Axon's Spring Boot integration.
+The `AxonServerContainer` starts an Axon Server instance in a Docker container for realistic integration testing.
+The `@ServiceConnection` annotation (Spring Boot 3.1+) automatically configures the Axon Server connection.
+
+**Without Spring (plain Java):**
+
+If you're not using Spring, create a static configuration method:
+
+[source,java]
+----
+// Production configuration class
+public class AxonConfig {
+    public static EventSourcingConfigurer configurer() {
+        return EventSourcingConfigurer.create()
+            .registerEntity(EventSourcedEntityModule.autodetected(String.class, Account.class))
+            .registerEntity(EventSourcedEntityModule.autodetected(String.class, Order.class))
+            .registerCommandHandler(PaymentCommandHandler.class)
+            .registerEventHandler(NotificationEventHandler.class);
+    }
+}
+
+// Test class
+class AccountTest {
+    @BeforeEach
+    void setUp() {
+        fixture = AxonTestFixture.with(AxonConfig.configurer(), c ->
+            c.disableAxonServer()  // Override for testing
+        );
+    }
+}
+----
+
+== Test phases
+
+Every test follows a three-phase structure:
+
+1. **Given** - Set up initial state
+2. **When** - Execute the action being tested
+3. **Then** - Verify the results
+
+The API enforces this structure with type-safe phase transitions.
+
+== Given phase: Setting up initial state
+
+The Given phase defines the state before your test action.
+Each operation runs in its own processing context and is immediately committed.
+
+=== Given events
+
+Publish events to set up state:
+
+[source,java]
+----
+fixture.given()
+       .event(new AccountCreatedEvent("account-1", 500.00))
+       .event(new MoneyDepositedEvent("account-1", 100.00))
+----
+
+**With metadata:**
+
+[source,java]
+----
+import org.axonframework.messaging.Metadata;
+
+fixture.given()
+       .event(new AccountCreatedEvent("account-1", 500.00),
+              Metadata.with("userId", "user-123"))
+----
+
+**Multiple events at once:**
+
+[source,java]
+----
+fixture.given()
+       .events(
+           new AccountCreatedEvent("account-1", 500.00),
+           new MoneyDepositedEvent("account-1", 100.00),
+           new MoneyDepositedEvent("account-1", 50.00)
+       )
+----
+
+Events are published to the event sink, triggering any registered event handlers.
+
+=== Given commands
+
+Dispatch commands to set up state through command handling:
+
+[source,java]
+----
+fixture.given()
+       .command(new CreateAccountCommand("account-1"))
+       .command(new DepositMoneyCommand("account-1", 100.00))
+----
+
+This is useful when:
+
+* You want to test the full command handling flow
+* Your setup needs both command validation and event generation
+* You're testing command sequences
+
+Commands are dispatched through the command bus, executing full command handling logic including validation.
+
+=== No prior activity
+
+Explicitly indicate that no setup is needed:
+
+[source,java]
+----
+fixture.given()
+       .noPriorActivity()
+----
+
+This is useful for:
+
+* Testing entity creation commands
+* Documenting that the test starts with clean state
+* Making test intent clear
+
+=== Custom setup with execute()
+
+For complex setup scenarios, use `execute()` to access the configuration directly:
+
+[source,java]
+----
+fixture.given()
+       .execute(config -> {
+           // Access any component from configuration
+           var repository = config.component(Repository.class);
+           // Perform custom setup
+           return null;
+       })
+----
+
+**Async variant:**
+
+[source,java]
+----
+fixture.given()
+       .executeAsync(config ->
+           // Return CompletableFuture
+           CompletableFuture.supplyAsync(() -> {
+               // Async setup logic
+               return null;
+           })
+       )
+----
+
+Use cases:
+
+* Setting up external state (databases, files)
+* Mocking complex dependencies
+* Configuring time-based logic (clocks)
+
+== When phase: Executing the action
+
+The When phase executes the action you're testing.
+The entire phase runs in a single processing context.
+
+=== Dispatching commands
+
+Test command handling:
+
+[source,java]
+----
+fixture.when()
+       .command(new WithdrawMoneyCommand("account-1", 100.00))
+----
+
+**With metadata:**
+
+[source,java]
+----
+fixture.when()
+       .command(
+           new WithdrawMoneyCommand("account-1", 100.00),
+           Map.of("userId", "user-123", "ipAddress", "192.168.1.1")
+       )
+----
+
+The command is dispatched through the command bus, and all resulting activity is recorded for verification.
+
+=== Publishing events
+
+Test event handling:
+
+[source,java]
+----
+fixture.when()
+       .event(new ExternalPaymentReceivedEvent("account-1", 50.00))
+----
+
+**Multiple events:**
+
+[source,java]
+----
+fixture.when()
+       .events(
+           new ExternalPaymentReceivedEvent("account-1", 50.00),
+           new PaymentConfirmedEvent("account-1")
+       )
+----
+
+Use this when:
+
+* Testing event handlers
+* Simulating events from external systems
+* Testing event-driven side effects
+
+=== No action
+
+Skip the When phase when testing queries or validating initial state:
+
+[source,java]
+----
+fixture.when()
+       .nothing()
+----
+
+This is useful for:
+
+* Testing query handlers against pre-existing state
+* Validating that Given phase setup worked correctly
+* Testing that no handlers are triggered
+
+== Then phase: Verifying results
+
+The Then phase verifies that the action produced the expected results.
+
+=== Success or exception
+
+**Expecting success:**
+
+[source,java]
+----
+.then()
+.success()
+----
+
+This validates that no exception was thrown during the When phase.
+You can combine it with other assertions:
+
+[source,java]
+----
+.then()
+.success()
+.events(new MoneyWithdrawnEvent("account-1", 100.00))
+----
+
+**Expecting exceptions:**
+
+[source,java]
+----
+.then()
+.exception(InsufficientBalanceException.class)
+----
+
+**With message matching:**
+
+[source,java]
+----
+.then()
+.exception(InsufficientBalanceException.class, "Insufficient balance")
+----
+
+**Custom exception validation:**
+
+[source,java]
+----
+.then()
+.exceptionSatisfies(ex -> {
+    assertInstanceOf(InsufficientBalanceException.class, ex);
+    var ibe = (InsufficientBalanceException) ex;
+    assertEquals("account-1", ibe.getAccountId());
+    assertEquals(100.00, ibe.getRequestedAmount());
+})
+----
+
+=== Verifying events
+
+**Exact event matching:**
+
+[source,java]
+----
+.then()
+.events(new MoneyWithdrawnEvent("account-1", 100.00))
+----
+
+The fixture performs field-by-field comparison, respecting any registered field filters.
+
+**Multiple events (order matters):**
+
+[source,java]
+----
+.then()
+.events(
+    new MoneyWithdrawnEvent("account-1", 100.00),
+    new BalanceUpdatedEvent("account-1", 400.00)
+)
+----
+
+**Event messages with metadata:**
+
+[source,java]
+----
+import org.axonframework.messaging.GenericEventMessage;
+
+.then()
+.events(
+    GenericEventMessage.asEventMessage(payload1)
+        .withMetadata(Map.of("key", "value"))
+)
+----
+
+**Custom event validation:**
+
+[source,java]
+----
+.then()
+.eventsSatisfy(events -> {
+    assertEquals(2, events.size());
+    assertInstanceOf(MoneyWithdrawnEvent.class, events.get(0).getPayload());
+
+    var event = (MoneyWithdrawnEvent) events.get(0).getPayload();
+    assertEquals("account-1", event.getAccountId());
+    assertEquals(100.00, event.getAmount());
+})
+----
+
+**Event matching with predicates:**
+
+[source,java]
+----
+.then()
+.eventsMatch(events ->
+    events.size() == 1 &&
+    events.get(0).getPayload() instanceof MoneyWithdrawnEvent
+)
+----
+
+**No events expected:**
+
+[source,java]
+----
+.then()
+.noEvents()
+----
+
+=== Verifying command results
+
+**Result message validation:**
+
+[source,java]
+----
+.then()
+.resultMessageSatisfies(result -> {
+    assertTrue(result.isSuccess());
+    assertEquals("account-1", result.getPayload());
+})
+----
+
+**Result payload validation:**
+
+[source,java]
+----
+.then()
+.resultMessagePayload("account-1")
+----
+
+**Or with custom validation:**
+
+[source,java]
+----
+.then()
+.resultMessagePayloadSatisfies(payload -> {
+    assertEquals("account-1", payload);
+})
+----
+
+=== Verifying side-effect commands
+
+Commands dispatched during message handling (side effects) are captured:
+
+[source,java]
+----
+.then()
+.commands(new SendEmailCommand("user@example.com", "Welcome!"))
+----
+
+**Multiple commands:**
+
+[source,java]
+----
+.then()
+.commands(
+    new SendEmailCommand("user@example.com", "Welcome!"),
+    new LogActivityCommand("account-1", "Account created")
+)
+----
+
+**Custom command validation:**
+
+[source,java]
+----
+.then()
+.commandsSatisfy(commands -> {
+    assertEquals(1, commands.size());
+    assertInstanceOf(SendEmailCommand.class, commands.get(0).getPayload());
+
+    var cmd = (SendEmailCommand) commands.get(0).getPayload();
+    assertEquals("user@example.com", cmd.getRecipient());
+})
+----
+
+**No commands expected:**
+
+[source,java]
+----
+.then()
+.noCommands()
+----
+
+=== Async testing with await()
+
+For async operations that need time to complete:
+
+[source,java]
+----
+.then()
+.await(t -> t.events(expectedEvent), Duration.ofSeconds(10))
+----
+
+**Default timeout (5 seconds):**
+
+[source,java]
+----
+.then()
+.await(t -> t.events(expectedEvent))
+----
+
+The fixture polls periodically until the assertion passes or the timeout expires.
+
+**Use cases:**
+
+* Testing async event processors
+* Testing scheduled tasks
+* Testing eventual consistency
+
+=== Custom assertions with expect()
+
+Access the configuration for custom validation:
+
+[source,java]
+----
+.then()
+.expect(config -> {
+    var queryGateway = config.component(QueryGateway.class);
+    var balance = queryGateway.query(
+        new GetBalanceQuery("account-1"),
+        AccountBalance.class
+    ).join();
+
+    assertEquals(400.00, balance.getBalance());
+})
+----
+
+**Async variant:**
+
+[source,java]
+----
+.then()
+.expectAsync(config -> {
+    var queryGateway = config.component(QueryGateway.class);
+    return queryGateway.query(
+        new GetBalanceQuery("account-1"),
+        AccountBalance.class
+    ).thenAccept(balance ->
+        assertEquals(400.00, balance.getBalance())
+    );
+})
+----
+
+Use cases:
+
+* Testing query handlers
+* Verifying external state changes
+* Accessing custom components
+
+== Chaining multiple tests
+
+Use `and()` to chain multiple test scenarios:
+
+[source,java]
+----
+fixture.given()
+       .event(new AccountCreatedEvent("account-1", 500.00))
+       .when()
+       .command(new WithdrawMoneyCommand("account-1", 100.00))
+       .then()
+       .success()
+       .events(new MoneyWithdrawnEvent("account-1", 100.00))
+       .and()  // Chain to next test
+       .when()
+       .command(new WithdrawMoneyCommand("account-1", 500.00))
+       .then()
+       .exception(InsufficientBalanceException.class)
+       .noEvents();
+----
+
+Benefits:
+
+* Reuse state from previous tests
+* Test sequences of operations
+* More efficient than recreating fixtures
+* Test workflows and processes
+
+== Testing different scenarios
+
+=== Testing command handlers
+
+Complete example testing command validation and state changes:
+
+[source,java]
+----
+class AccountCommandHandlerTest {
+
+    private AxonTestFixture fixture;
+
+    @BeforeEach
+    void setUp() {
+        var configurer = EventSourcingConfigurer.create()
+            .registerEntity(EventSourcedEntityModule.autodetected(String.class, Account.class));
+
+        fixture = AxonTestFixture.with(configurer);
+    }
+
+    @Test
+    void testCreateAccount() {
+        fixture.given()
+               .noPriorActivity()
+               .when()
+               .command(new CreateAccountCommand("account-1", 500.00))
+               .then()
+               .success()
+               .events(new AccountCreatedEvent("account-1", 500.00));
+    }
+
+    @Test
+    void testWithdrawMoney() {
+        fixture.given()
+               .event(new AccountCreatedEvent("account-1", 500.00))
+               .when()
+               .command(new WithdrawMoneyCommand("account-1", 100.00))
+               .then()
+               .success()
+               .events(new MoneyWithdrawnEvent("account-1", 100.00));
+    }
+
+    @Test
+    void testWithdrawInsufficientBalance() {
+        fixture.given()
+               .event(new AccountCreatedEvent("account-1", 50.00))
+               .when()
+               .command(new WithdrawMoneyCommand("account-1", 100.00))
+               .then()
+               .exception(InsufficientBalanceException.class)
+               .noEvents();
+    }
+
+    @AfterEach
+    void tearDown() {
+        fixture.stop();
+    }
+}
+----
+
+=== Testing event handlers
+
+Complete example testing event-triggered side effects:
+
+[source,java]
+----
+class NotificationEventHandlerTest {
+
+    private AxonTestFixture fixture;
+
+    @BeforeEach
+    void setUp() {
+        var configurer = MessagingConfigurer.create()
+            .registerEventHandler(NotificationEventHandler.class);
+
+        fixture = AxonTestFixture.with(configurer);
+    }
+
+    @Test
+    void testSendNotificationOnAccountCreated() {
+        fixture.given()
+               .noPriorActivity()
+               .when()
+               .event(new AccountCreatedEvent("account-1", 500.00))
+               .then()
+               .success()
+               .commands(new SendEmailCommand("user@example.com",
+                    "Your account has been created"));
+    }
+
+    @Test
+    void testSendNotificationOnLowBalance() {
+        fixture.given()
+               .event(new AccountCreatedEvent("account-1", 500.00))
+               .when()
+               .event(new MoneyWithdrawnEvent("account-1", 480.00))
+               .then()
+               .success()
+               .commands(new SendEmailCommand("user@example.com",
+                    "Low balance alert"));
+    }
+
+    @AfterEach
+    void tearDown() {
+        fixture.stop();
+    }
+}
+----
+
+=== Testing entities
+
+Complete example testing entity state transitions:
+
+[source,java]
+----
+class AccountEntityTest {
+
+    private AxonTestFixture fixture;
+
+    @BeforeEach
+    void setUp() {
+        var configurer = EventSourcingConfigurer.create()
+            .registerEntity(EventSourcedEntityModule.autodetected(String.class, Account.class));
+
+        fixture = AxonTestFixture.with(configurer, c ->
+            c.registerIgnoredField(AccountCreatedEvent.class, "timestamp")
+        );
+    }
+
+    @Test
+    void testAccountLifecycle() {
+        fixture.given()
+               .noPriorActivity()
+               .when()
+               .command(new CreateAccountCommand("account-1", 500.00))
+               .then()
+               .success()
+               .events(new AccountCreatedEvent("account-1", 500.00))
+               .and()
+               .when()
+               .command(new DepositMoneyCommand("account-1", 100.00))
+               .then()
+               .success()
+               .events(new MoneyDepositedEvent("account-1", 100.00))
+               .and()
+               .when()
+               .command(new WithdrawMoneyCommand("account-1", 200.00))
+               .then()
+               .success()
+               .events(new MoneyWithdrawnEvent("account-1", 200.00))
+               .and()
+               .when()
+               .command(new CloseAccountCommand("account-1"))
+               .then()
+               .success()
+               .events(new AccountClosedEvent("account-1"));
+    }
+
+    @AfterEach
+    void tearDown() {
+        fixture.stop();
+    }
+}
+----
+
+=== Testing query handlers
+
+Use `expect()` to test query handlers:
+
+[source,java]
+----
+class AccountQueryHandlerTest {
+
+    private AxonTestFixture fixture;
+
+    @BeforeEach
+    void setUp() {
+        var configurer = MessagingConfigurer.create()
+            .registerEventHandler(AccountProjection.class)
+            .registerQueryHandler(AccountQueryHandler.class);
+
+        fixture = AxonTestFixture.with(configurer);
+    }
+
+    @Test
+    void testGetAccountBalance() {
+        fixture.given()
+               .event(new AccountCreatedEvent("account-1", 500.00))
+               .event(new MoneyDepositedEvent("account-1", 100.00))
+               .when()
+               .nothing()
+               .then()
+               .expect(config -> {
+                   var queryGateway = config.component(QueryGateway.class);
+                   var balance = queryGateway.query(
+                       new GetBalanceQuery("account-1"),
+                       AccountBalance.class
+                   ).join();
+
+                   assertEquals(600.00, balance.getBalance());
+               });
+    }
+
+    @AfterEach
+    void tearDown() {
+        fixture.stop();
+    }
+}
+----
+
+== Best practices
+
+**Use production configuration**::
+Reuse your production `ApplicationConfigurer` to ensure tests match production behavior.
+
+**Keep tests focused**::
+Each test should verify one scenario.
+Use descriptive test names that explain what's being tested.
+
+**Use meaningful test names**::
+Name tests to describe the scenario: `testWithdrawMoneyWhenSufficientBalance()`, `testWithdrawMoneyWhenInsufficientBalance()`
+
+**Chain related tests**::
+Use `.and()` to test sequences of operations efficiently.
+
+**Ignore non-deterministic fields**::
+Register field filters for timestamps, UUIDs, and other generated values.
+See xref:field-filters.adoc[] for details.
+
+**Test both success and failure**::
+Cover happy paths and validation failures.
+
+**Use custom assertions**::
+Use `eventsSatisfies()`, `commandsSatisfy()`, and `expect()` for complex validation.
+
+**Clean up properly**::
+Always call `fixture.stop()` in `@AfterEach` to release resources.
+
+== Common patterns
+
+=== Testing with mocks
+
+[source,java]
+----
+class PaymentCommandHandlerTest {
+
+    private EmailService mockEmailService;
+    private AxonTestFixture fixture;
+
+    @BeforeEach
+    void setUp() {
+        mockEmailService = mock(EmailService.class);
+
+        var configurer = MessagingConfigurer.create()
+            .registerCommandHandler(PaymentCommandHandler.class)
+            .registerComponent(EmailService.class, config -> mockEmailService);
+
+        fixture = AxonTestFixture.with(configurer);
+    }
+
+    @Test
+    void testProcessPayment() {
+        fixture.when()
+               .command(new ProcessPaymentCommand("payment-1", 100.00))
+               .then()
+               .success();
+
+        verify(mockEmailService).sendEmail(any());
+    }
+}
+----
+
+=== Testing time-sensitive logic
+
+[source,java]
+----
+@BeforeEach
+void setUp() {
+    var clock = Clock.fixed(
+        Instant.parse("2023-01-01T00:00:00Z"),
+        ZoneId.of("UTC")
+    );
+
+    var configurer = EventSourcingConfigurer.create()
+        .registerEntity(EventSourcedEntityModule.autodetected(String.class, Account.class))
+        .registerComponent(Clock.class, config -> clock);
+
+    fixture = AxonTestFixture.with(configurer);
+}
+----
+
+=== Testing with external state
+
+[source,java]
+----
+@Test
+void testWithExternalState() {
+    fixture.given()
+           .execute(config -> {
+               // Set up database state
+               database.insert(new AccountRecord("account-1", 500.00));
+               return null;
+           })
+           .when()
+           .command(new SyncAccountCommand("account-1"))
+           .then()
+           .success()
+           .expect(config -> {
+               // Verify database was updated
+               var record = database.find("account-1");
+               assertEquals(500.00, record.getBalance());
+           });
+}
+----
+
+== Summary
+
+`AxonTestFixture` provides a comprehensive, type-safe API for testing Axon applications:
+
+* **Given phase** - Set up state with events, commands, or custom logic
+* **When phase** - Execute commands, publish events, or do nothing
+* **Then phase** - Verify events, commands, exceptions, and custom results
+* **Chaining** - Test sequences with `.and()`
+* **Integration** - Use real infrastructure components
+* **Customization** - Field filters, mocks, and custom setup
+
+For advanced topics, see:
+
+* xref:field-filters.adoc[] - Handle non-deterministic fields
+* xref:advanced-testing.adoc[] - Custom matchers, integration testing, Spring Boot
+* xref:upgrading-from-axon-4.adoc[] - Migration guide for Axon 4 users
