@@ -65,6 +65,7 @@ public class AxonServerContainer extends GenericContainer<AxonServerContainer> {
     private String axonServerInternalHostname;
     private String axonServerHostname;
     private boolean devMode;
+    private boolean dcbContext;
 
     /**
      * Initialize an Axon Server {@link GenericContainer test container} using the default image name
@@ -117,7 +118,7 @@ public class AxonServerContainer extends GenericContainer<AxonServerContainer> {
     protected void doStart() {
         super.doStart();
         try {
-            AxonServerContainerUtils.initCluster(getHost(), getHttpPort(), isShouldBeReused());
+            AxonServerContainerUtils.initCluster(getHost(), getHttpPort(), isShouldBeReused(), dcbContext);
         } catch (IOException e) {
             throw new ContainerLaunchException("Axon Server cluster initialization failed.", e);
         }
@@ -231,6 +232,23 @@ public class AxonServerContainer extends GenericContainer<AxonServerContainer> {
      */
     public AxonServerContainer withDevMode(boolean devMode) {
         this.devMode = devMode;
+        return self();
+    }
+
+    /**
+     * Initialize this Axon Server test container with DCB (Dynamic Consistency Boundary) context support.
+     * <p>
+     * When enabled, the default context will be created with DCB support, allowing for more flexible consistency
+     * boundaries in event-sourced applications. DCB enables defining consistency boundaries dynamically based on
+     * event tags rather than being limited to aggregate-based boundaries.
+     * <p>
+     * Default value is {@code false}.
+     *
+     * @param dcbContext A {@code boolean} dictating whether to enable DCB context support, yes or no.
+     * @return This container itself for fluent API.
+     */
+    public AxonServerContainer withDcbContext(boolean dcbContext) {
+        this.dcbContext = dcbContext;
         return self();
     }
 
