@@ -30,6 +30,10 @@ import java.util.Set;
  * <p>
  * As such, it allows registration of {@code EventHandlers} through the {@code EventHandlerRegistry}. Besides handling
  * and registration, it specifies which {@link #supportedEvents() events} it supports.
+ * <p>
+ * Additionally, this component supports reset operations through the {@link ResetHandler} and
+ * {@link ResetHandlerRegistry} interfaces. The {@link #supportsReset()} method indicates whether the component can
+ * participate in replay operations.
  *
  * @author Rene de Waele
  * @author Steven van Beelen
