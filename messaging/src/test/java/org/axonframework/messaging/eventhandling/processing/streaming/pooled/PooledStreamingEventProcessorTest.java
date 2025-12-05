@@ -221,90 +221,6 @@ class PooledStreamingEventProcessorTest {
                });
     }
 
-    @Test
-    void resetTokensFromDefinedPosition() {
-      // given
-        TrackingToken testToken = new GlobalSequenceTrackingToken(42);
-        int expectedSegmentCount = 2;
-
-        AtomicBoolean resetHandlerInvoked = new AtomicBoolean(false);
-        defaultEventHandlingComponent.subscribe((resetContext, ctx) -> {
-            resetHandlerInvoked.set(true);
-            return MessageStream.empty();
-        });
-
-        withTestSubject(
-                List.of(),
-                c -> c.initialSegmentCount(expectedSegmentCount)
-                      .initialToken(source -> CompletableFuture.completedFuture(testToken))
-        );
-
-        // when - Start and stop the processor to initialize the tracking tokens
-        startEventProcessor();
-        assertWithin(2, TimeUnit.SECONDS, () -> {
-            List<Segment> segments = joinAndUnwrap(tokenStore.fetchSegments(PROCESSOR_NAME, null));
-            assertEquals(expectedSegmentCount, segments.size());
-        });
-        joinAndUnwrap(testSubject.shutdown());
-
-        // when - Reset tokens
-        joinAndUnwrap(testSubject.resetTokens(source -> source.latestToken(null)));
-
-        // then - Verify reset handler was invoked
-        assertTrue(resetHandlerInvoked.get());
-
-        // then - Verify tokens are wrapped in ReplayToken
-        List<Segment> segments = joinAndUnwrap(tokenStore.fetchSegments(PROCESSOR_NAME, null));
-        TrackingToken token0 = joinAndUnwrap(tokenStore.fetchToken(PROCESSOR_NAME, segments.get(0).getSegmentId(), null));
-        TrackingToken token1 = joinAndUnwrap(tokenStore.fetchToken(PROCESSOR_NAME, segments.get(1).getSegmentId(), null));
-        assertTrue(ReplayToken.isReplay(token0));
-        assertTrue(ReplayToken.isReplay(token1));
-    }
-
-    @Test
-    void resetTokensFromDefinedPositionAndWithResetContext() {
-        // given
-        TrackingToken testToken = new GlobalSequenceTrackingToken(42);
-        int expectedSegmentCount = 2;
-        String expectedContext = "my-context";
-
-        AtomicReference<Object> capturedResetPayload = new AtomicReference<>();
-        defaultEventHandlingComponent.subscribe((resetContext, ctx) -> {
-            capturedResetPayload.set(resetContext.payload());
-            return MessageStream.empty();
-        });
-
-        withTestSubject(
-                List.of(),
-                c -> c.initialSegmentCount(expectedSegmentCount)
-                      .initialToken(source -> CompletableFuture.completedFuture(testToken))
-        );
-
-        // when - Start and stop the processor to initialize the tracking tokens
-        startEventProcessor();
-        assertWithin(2, TimeUnit.SECONDS, () -> {
-            List<Segment> segments = joinAndUnwrap(tokenStore.fetchSegments(PROCESSOR_NAME, null));
-            assertEquals(expectedSegmentCount, segments.size());
-        });
-        joinAndUnwrap(testSubject.shutdown());
-
-        // when - Reset tokens with context
-        joinAndUnwrap(testSubject.resetTokens(source -> source.latestToken(null), expectedContext));
-
-        // then - Verify reset handler received the context
-        assertEquals(expectedContext, capturedResetPayload.get());
-
-        // then - Verify tokens are wrapped in ReplayToken with context
-        List<Segment> segments = joinAndUnwrap(tokenStore.fetchSegments(PROCESSOR_NAME, null));
-        TrackingToken token0 = joinAndUnwrap(tokenStore.fetchToken(PROCESSOR_NAME, segments.get(0).getSegmentId(), null));
-        TrackingToken token1 = joinAndUnwrap(tokenStore.fetchToken(PROCESSOR_NAME, segments.get(1).getSegmentId(), null));
-        assertTrue(ReplayToken.isReplay(token0));
-        assertTrue(ReplayToken.isReplay(token1));
-        // Verify the reset context is stored in the ReplayToken
-        assertEquals(expectedContext, ((ReplayToken) token0).context());
-        assertEquals(expectedContext, ((ReplayToken) token1).context());
-    }
-
     private ProcessingContext createProcessingContext() {
         return new StubProcessingContext();
     }
@@ -1038,7 +954,6 @@ class PooledStreamingEventProcessorTest {
             // given
             List<EventMessage> recordedEvents = new CopyOnWriteArrayList<>();
 
-            // Create a component that wraps event handling with replay blocking
             var eventHandlingComponent = new SimpleEventHandlingComponent();
             eventHandlingComponent.subscribe(new QualifiedName(String.class), (event, ctx) -> {
                 recordedEvents.add(event);
@@ -1064,7 +979,7 @@ class PooledStreamingEventProcessorTest {
             startEventProcessor();
 
             // Wait for initial processing to complete (events processed normally, not during replay)
-            await().atMost(10, TimeUnit.SECONDS)
+            await().atMost(2, TimeUnit.SECONDS)
                    .untilAsserted(() -> assertThat(recordedEvents).containsOnly(event1, event2, event3));
 
             joinAndUnwrap(testSubject.shutdown());
@@ -1085,7 +1000,7 @@ class PooledStreamingEventProcessorTest {
                        assertThat(currentPosition).isEqualTo(3);
                    });
 
-            // then - verify no events processed during replay
+            // then - verify events reprocessed during replay
             assertThat(recordedEvents).containsOnly(event1, event2, event3);
         }
 
@@ -1122,7 +1037,7 @@ class PooledStreamingEventProcessorTest {
             startEventProcessor();
 
             // Wait for initial processing to complete (events processed normally, not during replay)
-            await().atMost(10, TimeUnit.SECONDS)
+            await().atMost(2, TimeUnit.SECONDS)
                    .untilAsserted(() -> assertThat(recordedEvents).containsOnly(event1, event2, event3));
 
             joinAndUnwrap(testSubject.shutdown());
@@ -1483,6 +1398,90 @@ class PooledStreamingEventProcessorTest {
                         assertFalse(testSubject.isReplaying());
                     }
             );
+        }
+
+        @Test
+        void resetTokensFromDefinedPosition() {
+            // given
+            TrackingToken testToken = new GlobalSequenceTrackingToken(42);
+            int expectedSegmentCount = 2;
+
+            AtomicBoolean resetHandlerInvoked = new AtomicBoolean(false);
+            defaultEventHandlingComponent.subscribe((resetContext, ctx) -> {
+                resetHandlerInvoked.set(true);
+                return MessageStream.empty();
+            });
+
+            withTestSubject(
+                    List.of(),
+                    c -> c.initialSegmentCount(expectedSegmentCount)
+                          .initialToken(source -> CompletableFuture.completedFuture(testToken))
+            );
+
+            // when - Start and stop the processor to initialize the tracking tokens
+            startEventProcessor();
+            assertWithin(2, TimeUnit.SECONDS, () -> {
+                List<Segment> segments = joinAndUnwrap(tokenStore.fetchSegments(PROCESSOR_NAME, null));
+                assertEquals(expectedSegmentCount, segments.size());
+            });
+            joinAndUnwrap(testSubject.shutdown());
+
+            // when - Reset tokens
+            joinAndUnwrap(testSubject.resetTokens(source -> source.latestToken(null)));
+
+            // then - Verify reset handler was invoked
+            assertTrue(resetHandlerInvoked.get());
+
+            // then - Verify tokens are wrapped in ReplayToken
+            List<Segment> segments = joinAndUnwrap(tokenStore.fetchSegments(PROCESSOR_NAME, null));
+            TrackingToken token0 = joinAndUnwrap(tokenStore.fetchToken(PROCESSOR_NAME, segments.get(0).getSegmentId(), null));
+            TrackingToken token1 = joinAndUnwrap(tokenStore.fetchToken(PROCESSOR_NAME, segments.get(1).getSegmentId(), null));
+            assertTrue(ReplayToken.isReplay(token0));
+            assertTrue(ReplayToken.isReplay(token1));
+        }
+
+        @Test
+        void resetTokensFromDefinedPositionAndWithResetContext() {
+            // given
+            TrackingToken testToken = new GlobalSequenceTrackingToken(42);
+            int expectedSegmentCount = 2;
+            String expectedContext = "my-context";
+
+            AtomicReference<Object> capturedResetPayload = new AtomicReference<>();
+            defaultEventHandlingComponent.subscribe((resetContext, ctx) -> {
+                capturedResetPayload.set(resetContext.payload());
+                return MessageStream.empty();
+            });
+
+            withTestSubject(
+                    List.of(),
+                    c -> c.initialSegmentCount(expectedSegmentCount)
+                          .initialToken(source -> CompletableFuture.completedFuture(testToken))
+            );
+
+            // when - Start and stop the processor to initialize the tracking tokens
+            startEventProcessor();
+            assertWithin(2, TimeUnit.SECONDS, () -> {
+                List<Segment> segments = joinAndUnwrap(tokenStore.fetchSegments(PROCESSOR_NAME, null));
+                assertEquals(expectedSegmentCount, segments.size());
+            });
+            joinAndUnwrap(testSubject.shutdown());
+
+            // when - Reset tokens with context
+            joinAndUnwrap(testSubject.resetTokens(source -> source.latestToken(null), expectedContext));
+
+            // then - Verify reset handler received the context
+            assertEquals(expectedContext, capturedResetPayload.get());
+
+            // then - Verify tokens are wrapped in ReplayToken with context
+            List<Segment> segments = joinAndUnwrap(tokenStore.fetchSegments(PROCESSOR_NAME, null));
+            TrackingToken token0 = joinAndUnwrap(tokenStore.fetchToken(PROCESSOR_NAME, segments.get(0).getSegmentId(), null));
+            TrackingToken token1 = joinAndUnwrap(tokenStore.fetchToken(PROCESSOR_NAME, segments.get(1).getSegmentId(), null));
+            assertTrue(ReplayToken.isReplay(token0));
+            assertTrue(ReplayToken.isReplay(token1));
+            // Verify the reset context is stored in the ReplayToken
+            assertEquals(expectedContext, ((ReplayToken) token0).context());
+            assertEquals(expectedContext, ((ReplayToken) token1).context());
         }
     }
 
