@@ -190,6 +190,7 @@ public class SubscribingEventProcessor implements EventProcessor {
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("name", name);
         descriptor.describeProperty("mode", "subscribing");
+        descriptor.describeProperty("running", isRunning());
         descriptor.describeProperty("eventHandlingComponents", eventHandlingComponents);
         descriptor.describeProperty("configuration", configuration);
     }
