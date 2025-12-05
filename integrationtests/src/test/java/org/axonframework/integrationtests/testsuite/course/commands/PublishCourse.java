@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package org.axonframework.integrationtests.testsuite.course.module;
+package org.axonframework.integrationtests.testsuite.course.commands;
 
-import org.axonframework.eventsourcing.annotation.EventTag;
+import org.axonframework.modelling.annotation.TargetEntityId;
 
-public record CourseCreated(@EventTag(key = "Course") String courseId) {
+public record PublishCourse(@TargetEntityId String courseId) {
 
 }
