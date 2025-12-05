@@ -28,6 +28,8 @@ import org.axonframework.messaging.eventhandling.processing.streaming.segmenting
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.Objects;
@@ -47,6 +49,8 @@ import java.util.Optional;
  */
 @Internal
 class DefaultWorkPackageEventFilter implements WorkPackage.EventFilter {
+
+    private static final Logger logger = LoggerFactory.getLogger(DefaultWorkPackageEventFilter.class);
 
     private final String eventProcessor;
     private final ProcessorEventHandlingComponents eventHandlingComponents;
@@ -84,14 +88,19 @@ class DefaultWorkPackageEventFilter implements WorkPackage.EventFilter {
             var eventMessageQualifiedName = eventMessage.type().qualifiedName();
             var eventSupported = eventHandlingComponents.supports(eventMessageQualifiedName);
             if (!eventSupported) {
+                logger.trace("Processor [{}] filtered out event [{}] of type [{}]: "
+                                     + "event type not supported by event handling components.",
+                             eventProcessor, eventMessage.identifier(), eventMessageQualifiedName);
                 return false;
             }
 
-            var notReplayOrSupportReset = TrackingToken.fromContext(context)
-                                                       .filter(ReplayToken::isReplay)
-                                                       .map(it -> eventHandlingComponents.supportsReset())
-                                                       .orElse(true);
-            if (!notReplayOrSupportReset) {
+            var isReplay = TrackingToken.fromContext(context)
+                                        .filter(ReplayToken::isReplay)
+                                        .isPresent();
+            if (isReplay && !eventHandlingComponents.supportsReset()) {
+                logger.trace("Processor [{}] filtered out event [{}] of type [{}] during replay: "
+                                     + "event handling components do not support reset.",
+                             eventProcessor, eventMessage.identifier(), eventMessage.type().qualifiedName());
                 return false;
             }
 

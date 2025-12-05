@@ -149,9 +149,10 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
         this.delegate = delegate;
 
         initializeEventHandlersBasedOnModel();
-        initializeResetHandlersBasedOnModle();
+        initializeResetHandlersBasedOnModel();
     }
 
+    // region [EventHandlers]
     private void initializeEventHandlersBasedOnModel() {
         model.getUniqueHandlers(target.getClass(), EventMessage.class).forEach(this::registerEventHandler);
     }
@@ -193,29 +194,6 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
                 .orElse(interceptedEventHandler);
     }
 
-    private void initializeResetHandlersBasedOnModle() {
-        model.getUniqueHandlers(target.getClass(), ResetContext.class).forEach(this::registerResetHandler);
-    }
-
-    private void registerResetHandler(MessageHandlingMember<? super T> handler) {
-        MessageHandlerInterceptorMemberChain<T> interceptorChain = model.chainedInterceptor(target.getClass());
-        delegate.subscribe(interceptedResetHandler(handler, interceptorChain));
-    }
-
-    @Nonnull
-    private ResetHandler interceptedResetHandler(
-            MessageHandlingMember<? super T> handler,
-            MessageHandlerInterceptorMemberChain<T> interceptorChain
-    ) {
-        return (resetContext, ctx) ->
-                interceptorChain.handle(
-                        resetContext,
-                        ctx,
-                        target,
-                        handler
-                ).ignoreEntries().cast();
-    }
-
     @Override
     public EventHandlerRegistry subscribe(@Nonnull QualifiedName name, @Nonnull EventHandler eventHandler) {
         return delegate.subscribe(name, eventHandler);
@@ -238,6 +216,31 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
     public Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
         return delegate.sequenceIdentifierFor(event, context);
     }
+    // endregion
+
+    // region [ResetHandlers]
+    private void initializeResetHandlersBasedOnModel() {
+        model.getUniqueHandlers(target.getClass(), ResetContext.class).forEach(this::registerResetHandler);
+    }
+
+    private void registerResetHandler(MessageHandlingMember<? super T> handler) {
+        MessageHandlerInterceptorMemberChain<T> interceptorChain = model.chainedInterceptor(target.getClass());
+        delegate.subscribe(interceptedResetHandler(handler, interceptorChain));
+    }
+
+    @Nonnull
+    private ResetHandler interceptedResetHandler(
+            MessageHandlingMember<? super T> handler,
+            MessageHandlerInterceptorMemberChain<T> interceptorChain
+    ) {
+        return (resetContext, ctx) ->
+                interceptorChain.handle(
+                        resetContext,
+                        ctx,
+                        target,
+                        handler
+                ).ignoreEntries().cast();
+    }
 
     @Nonnull
     @Override
@@ -258,13 +261,14 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
     @Override
     public boolean supportsReset() {
         return model.getAllHandlers()
-                        .values()
-                        .stream()
-                        .flatMap(Collection::stream)
-                        .anyMatch(AnnotatedEventHandlingComponent::supportsReplay);
+                    .values()
+                    .stream()
+                    .flatMap(Collection::stream)
+                    .anyMatch(AnnotatedEventHandlingComponent::supportsReplay);
     }
 
     private static boolean supportsReplay(MessageHandlingMember<?> h) {
         return h.attribute(HandlerAttributes.ALLOW_REPLAY).map(Boolean.TRUE::equals).orElse(Boolean.TRUE);
     }
+    // endregion
 }
