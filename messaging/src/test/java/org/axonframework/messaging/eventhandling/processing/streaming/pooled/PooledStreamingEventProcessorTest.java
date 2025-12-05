@@ -1287,7 +1287,8 @@ class PooledStreamingEventProcessorTest {
         }
 
         @Test
-        void resetTokens() {
+        void resetTokensWithDefaultFirstTokenAsStart() {
+            // given
             int expectedSegmentCount = 2;
             TrackingToken expectedToken = new GlobalSequenceTrackingToken(42);
 
@@ -1302,7 +1303,7 @@ class PooledStreamingEventProcessorTest {
                           .initialToken(source -> CompletableFuture.completedFuture(expectedToken))
             );
 
-            // Start and stop the processor to initialize the tracking tokens
+            // when - Start and stop the processor to initialize the tracking tokens
             startEventProcessor();
             assertWithin(2, TimeUnit.SECONDS, () -> {
                 List<Segment> segments = joinAndUnwrap(tokenStore.fetchSegments(PROCESSOR_NAME, null));
@@ -1310,12 +1311,14 @@ class PooledStreamingEventProcessorTest {
             });
             joinAndUnwrap(testSubject.shutdown());
 
+            // when - Reset tokens
             joinAndUnwrap(testSubject.resetTokens());
 
+            // then - Verify reset handler was invoked
             assertTrue(resetHandlerInvoked.get());
 
+            // then - The token stays the same, as the original and token after reset are identical.
             List<Segment> segments = joinAndUnwrap(tokenStore.fetchSegments(PROCESSOR_NAME, null));
-            // The token stays the same, as the original and token after reset are identical.
             TrackingToken token0 = joinAndUnwrap(tokenStore.fetchToken(PROCESSOR_NAME, segments.get(0).getSegmentId(), null));
             TrackingToken token1 = joinAndUnwrap(tokenStore.fetchToken(PROCESSOR_NAME, segments.get(1).getSegmentId(), null));
             assertEquals(expectedToken, token0);
@@ -1325,7 +1328,7 @@ class PooledStreamingEventProcessorTest {
         }
 
         @Test
-        void resetTokensWithContext() {
+        void resetTokensFromDefaultFirstTokenWithResetContext() {
             int expectedSegmentCount = 2;
             TrackingToken expectedToken = new GlobalSequenceTrackingToken(42);
             String expectedContext = "my-context";
@@ -1400,7 +1403,7 @@ class PooledStreamingEventProcessorTest {
         }
 
         @Test
-        void resetTokensFromDefinedPosition() {
+        void resetTokensWithLatestTokenAsStart() {
             // given
             int expectedSegmentCount = 2;
             TrackingToken expectedToken = new GlobalSequenceTrackingToken(42);
@@ -1440,7 +1443,7 @@ class PooledStreamingEventProcessorTest {
         }
 
         @Test
-        void resetTokensFromDefinedPositionAndWithResetContext() {
+        void resetTokensFromLatestTokenAndWithResetContext() {
             // given
             TrackingToken testToken = new GlobalSequenceTrackingToken(42);
             int expectedSegmentCount = 2;
