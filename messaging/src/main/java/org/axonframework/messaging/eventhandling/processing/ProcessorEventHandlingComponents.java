@@ -17,6 +17,7 @@
 package org.axonframework.messaging.eventhandling.processing;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
@@ -181,7 +182,7 @@ public class ProcessorEventHandlingComponents {
 
         return result.ignoreEntries()
                      .asCompletableFuture()
-                     .thenApply(v -> null);
+                     .thenApply(FutureUtils::ignoreResult);
     }
 
     /**
