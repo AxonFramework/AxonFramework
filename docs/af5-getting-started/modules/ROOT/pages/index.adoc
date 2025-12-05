@@ -4,7 +4,6 @@
 = Introduction
 
 Welcome to the Axon Framework 5 Getting Started Guide!
-This tutorial is based on the version `5.0.0`.
 
 Building a new application from scratch can be daunting, especially when learning a new framework.
 This tutorial will guide you through the various stages of development,
