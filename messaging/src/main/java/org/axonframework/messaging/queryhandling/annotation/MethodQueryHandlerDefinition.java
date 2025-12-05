@@ -18,15 +18,15 @@ package org.axonframework.messaging.queryhandling.annotation;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.util.ClasspathResolver;
 import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.annotation.AbstractAnnotatedMessageHandlerEnhancerDefinition;
 import org.axonframework.messaging.core.annotation.HandlerAttributes;
-import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.messaging.core.annotation.UnsupportedHandlerException;
 import org.axonframework.messaging.core.annotation.WrappedMessageHandlingMember;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.queryhandling.QueryMessage;
-import org.axonframework.common.util.ClasspathResolver;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -51,15 +51,13 @@ import static org.axonframework.common.ReflectionUtils.unwrapIfType;
  * @author Allard Buijze
  * @since 3.1.0
  */
-public class MethodQueryHandlerDefinition implements HandlerEnhancerDefinition {
+public class MethodQueryHandlerDefinition extends AbstractAnnotatedMessageHandlerEnhancerDefinition {
 
     @Override
     public @Nonnull <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
-        return original.<String>attribute(HandlerAttributes.QUERY_NAME)
-                       .map(queryName -> (MessageHandlingMember<T>) new MethodQueryHandlingMember<>(
-                               original, queryName
-                       ))
-                       .orElse(original);
+        return resolveMessageNameFromPayloadType(original, HandlerAttributes.QUERY_NAME, QueryMessage.class)
+                .<MessageHandlingMember<T>>map(name -> new MethodQueryHandlingMember<>(original, name))
+                .orElse(original);
     }
 
     private static class MethodQueryHandlingMember<T>
