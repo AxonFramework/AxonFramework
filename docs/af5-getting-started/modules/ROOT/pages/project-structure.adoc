@@ -42,7 +42,7 @@ Please ensure you have the following properties and dependencies in your `pom.xm
 
     <properties>
         <assertj.version>3.27.3</assertj.version>
-        <axon.version>5.0.0</axon.version>
+        <axon.version>5.0.1</axon.version>
         <hamcrest.version>3.0</hamcrest.version>
         <junit.version>5.12.1</junit.version>
         <jackson.version>2.20.0</jackson.version>
