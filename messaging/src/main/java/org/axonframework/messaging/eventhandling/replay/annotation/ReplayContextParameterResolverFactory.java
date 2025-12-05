@@ -18,6 +18,7 @@ package org.axonframework.messaging.eventhandling.replay.annotation;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.conversion.Converter;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
@@ -69,11 +70,12 @@ public class ReplayContextParameterResolverFactory implements ParameterResolverF
         public CompletableFuture<Object> resolveParameterValue(@Nonnull ProcessingContext context) {
             Optional<TrackingToken> token = TrackingToken.fromContext(context);
             if (token.isPresent()) {
+                Converter converter = context.component(Converter.class);
                 return CompletableFuture.completedFuture(
-                        ReplayToken.replayContext(token.get(), this.type).orElse(null)
+                        ReplayToken.replayContext(token.get(), this.type, converter).orElse(null)
                 );
             }
-            return CompletableFuture.completedFuture(false);
+            return CompletableFuture.completedFuture(null);
         }
 
         @Override
