@@ -136,8 +136,8 @@ In your dependency configuration (Maven, Gradle, etc.) replace the `jakarta`-spe
 The steps above explain in detail what you need to do to upgrade to Axon Framework 4.7 or higher.
 If you want to automate some of these steps, there are two https://github.com/openrewrite[OpenRewrite] migration recipes you can use:
 
-. https://github.com/AxonFramework/AxonFramework/blob/master/migration/src/main/resources/META-INF/rewrite/axon-jakarta-4.yml[*Upgrade to Axon Framework 4.7+ Jakarta*] - A recipe to upgrade from an Axon Framework Javax-specific project to Jakarta.
-. https://github.com/AxonFramework/AxonFramework/blob/master/migration/src/main/resources/META-INF/rewrite/axon-javax-4.yml[*Upgrade to Axon Framework 4.7+ Javax*] - A recipe to upgrade an Axon Framework Javax-specific project and remain on Javax.
+. https://github.com/AxonFramework/AxonFramework/blob/axon-4.11.x/migration/src/main/resources/META-INF/rewrite/axon-jakarta-4.yml[*Upgrade to Axon Framework 4.7+ Jakarta*] - A recipe to upgrade from an Axon Framework Javax-specific project to Jakarta.
+. https://github.com/AxonFramework/AxonFramework/blob/axon-4.11.x/migration/src/main/resources/META-INF/rewrite/axon-javax-4.yml[*Upgrade to Axon Framework 4.7+ Javax*] - A recipe to upgrade an Axon Framework Javax-specific project and remain on Javax.
 
 For example, if you want to upgrade to 4.7 and stick with Javax, you can run the following command:
 
