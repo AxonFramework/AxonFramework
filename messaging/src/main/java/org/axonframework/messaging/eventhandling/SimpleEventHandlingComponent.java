@@ -53,7 +53,7 @@ public class SimpleEventHandlingComponent implements EventHandlingComponent {
     private final ConcurrentHashMap<QualifiedName, List<EventHandler>> eventHandlers = new ConcurrentHashMap<>();
     private final SequencingPolicy sequencingPolicy;
 
-    private final List<ResetHandler> resetHandlers = new CopyOnWriteArrayList<>();
+    private final Set<ResetHandler> resetHandlers = ConcurrentHashMap.newKeySet();
 
     /**
      * Initializes a {@code SimpleEventHandlingComponent} with no {@link EventHandler}s and default

@@ -1303,7 +1303,6 @@ class PooledStreamingEventProcessorTest {
             );
 
             // Start and stop the processor to initialize the tracking tokens
-            joinAndUnwrap(testSubject.start());
             startEventProcessor();
             assertWithin(2, TimeUnit.SECONDS, () -> {
                 List<Segment> segments = joinAndUnwrap(tokenStore.fetchSegments(PROCESSOR_NAME, null));
@@ -1311,7 +1310,7 @@ class PooledStreamingEventProcessorTest {
             });
             joinAndUnwrap(testSubject.shutdown());
 
-            testSubject.resetTokens();
+            joinAndUnwrap(testSubject.resetTokens());
 
             assertTrue(resetHandlerInvoked.get());
 
@@ -1403,8 +1402,8 @@ class PooledStreamingEventProcessorTest {
         @Test
         void resetTokensFromDefinedPosition() {
             // given
-            TrackingToken testToken = new GlobalSequenceTrackingToken(42);
             int expectedSegmentCount = 2;
+            TrackingToken expectedToken = new GlobalSequenceTrackingToken(42);
 
             AtomicBoolean resetHandlerInvoked = new AtomicBoolean(false);
             defaultEventHandlingComponent.subscribe((resetContext, ctx) -> {
@@ -1415,7 +1414,7 @@ class PooledStreamingEventProcessorTest {
             withTestSubject(
                     List.of(),
                     c -> c.initialSegmentCount(expectedSegmentCount)
-                          .initialToken(source -> CompletableFuture.completedFuture(testToken))
+                          .initialToken(source -> CompletableFuture.completedFuture(expectedToken))
             );
 
             // when - Start and stop the processor to initialize the tracking tokens
