@@ -186,7 +186,8 @@ public class GenericEventMessage extends MessageDecorator implements EventMessag
     protected void describeTo(StringBuilder stringBuilder) {
         super.describeTo(stringBuilder);
         stringBuilder.append(", timestamp='")
-                     .append(timestamp());
+                     .append(timestamp())
+                     .append("'");
     }
 
     @Override
