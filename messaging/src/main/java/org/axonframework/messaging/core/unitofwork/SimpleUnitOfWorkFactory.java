@@ -74,9 +74,16 @@ public class SimpleUnitOfWorkFactory implements UnitOfWorkFactory {
         Objects.requireNonNull(identifier, "The identifier may not be null.");
         Objects.requireNonNull(customization, "The customization may not be null.");
         var configuration = customization.apply(factoryCustomization.apply(UnitOfWorkConfiguration.defaultValues()));
-        return new UnitOfWork(identifier,
-                              configuration.workScheduler(),
-                              !configuration.allowAsyncProcessing(),
-                              applicationContext);
+
+        UnitOfWork workUnit = new UnitOfWork(
+            identifier,
+            configuration.workScheduler(),
+            !configuration.allowAsyncProcessing(),
+            applicationContext
+        );
+
+        configuration.processingLifecycleEnhancers().forEach(enhancer -> enhancer.accept(workUnit));
+
+        return workUnit;
     }
 }
