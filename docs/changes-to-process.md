@@ -392,35 +392,115 @@ The following files in `axon-5/` describe the API changes:
 - Remove DomainEventStream references (replaced by MessageStream)
 
 ### modules/events/pages/event-processors/index.adoc
-**Changes to apply:**
-- Remove ProcessingGroup layer documentation
-- Document direct Event Handler to Event Processor assignment
-- Update configuration API (EventProcessorModule)
-- Remove EventProcessingModule/Configurer references
+**Status:** ✅ COMPLETED
+**Changes applied:**
+- Updated terminology from "unit of work" to "ProcessingContext" in introduction
+- **Added "Message delivery models" section**:
+  - Moved from subscribing.adoc to provide fundamental concepts in overview page
+  - Explains push model (SubscribableMessageSource) vs pull model (StreamableEventSource)
+  - Clarifies that processor implementation determines threading, not message source
+- Verified ProcessingGroup annotation usage is correct (still valid in Axon 5)
+- Verified direct Event Handler to Event Processor assignment by name (line 9)
+- **CRITICAL API FIX - Removed ListenerInvocationErrorHandler section** (not available in Axon 5.0):
+  - Removed registerDefaultListenerInvocationErrorHandler() calls (method doesn't exist)
+  - Removed registerListenerInvocationErrorHandler() calls (method doesn't exist)
+  - Removed ListenerInvocationErrorHandler interface documentation
+  - This feature is not yet implemented in Axon 5.0
+- **CRITICAL API FIX - Updated ErrorHandler configuration** to use correct Axon 5 API:
+  - Removed registerDefaultErrorHandler() calls (method doesn't exist)
+  - Removed registerErrorHandler() calls (method doesn't exist)
+  - Updated to use `.defaults((config, processorConfig) -> processorConfig.errorHandler(...))` pattern
+  - Updated processor-specific configuration to use `.customized((config, processorConfig) -> processorConfig.errorHandler(...))`
+- All configuration examples now use correct Axon 5 EventProcessingConfigurer API
 
 ### modules/events/pages/event-processors/dead-letter-queue.adoc
-**Changes to apply:**
-- Update stored format changes (column renames)
-- Document MessageType usage in DLQ entries
-- Update code examples
+**Status:** ⏸️ NOT IMPLEMENTED YET
+**Note:** DLQ is not yet available in Axon 5.0 - file excluded from navigation
+- Already commented out in nav.adoc with TODO comment
+- Will be reinstated when DLQ API is available in future Axon 5 releases
 
 ### modules/events/pages/event-processors/streaming.adoc
-**CRITICAL CHANGES:**
-**Changes to apply:**
-- Remove TrackingEventProcessor documentation entirely
-- Document PooledStreamingEventProcessor as default and recommended
-- Explain threading model differences and benefits
-- Document SequencingPolicy configuration (now more important with DCB)
-- Document @SequencingPolicy annotation
-- Update configuration examples
-- Document StreamableEventSource (replaces StreamableMessageSource)
-- Update token management (now async with CompletableFuture)
+**Status:** ✅ COMPLETED
+**Changes applied:**
+- **Completely rewrote introduction** to focus on Pooled Streaming Event Processor (PSEP) as default
+- **Removed all TrackingEventProcessor (TEP) documentation**:
+  - Removed "Tracking processor threading" section entirely
+  - Removed TEP configuration examples
+  - Updated "Differences" section to "PSEP architecture benefits"
+- **Documented PSEP as default and recommended implementation**:
+  - Explained two-pool thread architecture (coordinator + worker pools)
+  - Documented separation of event fetching from event processing
+  - Emphasized efficient parallel processing and resource utilization
+- **Updated Key Features section**:
+  - Separate threading with dedicated threads
+  - Progress tracking with tokens
+  - Parallel processing through segments
+  - Event replay capability
+- **Updated thread configuration section**:
+  - Removed TEP threading examples
+  - Kept only PSEP threading configuration
+  - Documented coordinator and worker executor pools
+  - Explained flexible segment claims regardless of thread count
+- **Updated PSEP architecture benefits**:
+  - Single event stream reduces I/O
+  - Flexible segment claims (not 1:1 with threads)
+  - Shared thread pools across processors
+  - Dynamic scaling support
+- **CRITICAL API FIX - Removed invalid configuration examples**:
+  - Removed usingPooledStreamingEventProcessors() calls (method doesn't exist in Axon 5)
+  - Updated to explain PSEP is automatic when StreamableEventSource is available
+  - All configuration now uses `.pooledStreaming(pooledStreaming -> pooledStreaming.processor(...))`
+- **CRITICAL API FIX - Fixed method names** (10 occurrences):
+  - Changed all `.customize(` to `.customized(` throughout file
+  - The method is `customized()` not `customize()` in Axon 5 API
+- All configuration examples use correct PooledStreamingEventProcessorsConfigurer API
+- Verified StreamableEventSource usage (already correct - not StreamableMessageSource)
+- Token management already documented as async with CompletableFuture
+- SequencingPolicy configuration and @SequencingPolicy annotation already documented
 
 ### modules/events/pages/event-processors/subscribing.adoc
-**Changes to apply:**
-- Update configuration examples
-- Document async nature of processing
-- Update code examples with ProcessingContext
+**Status:** ✅ COMPLETED
+**Changes applied:**
+- **Added comprehensive "Event handling with ProcessingContext" section**:
+  - Explained ProcessingContext is created automatically by framework
+  - **CORRECTED**: Documented that correlation data is stored internally for dispatch interceptors (not directly accessible)
+  - Showed lifecycle callbacks for cleanup actions
+  - Demonstrated resource management during processing
+  - **CORRECTED**: CommandDispatcher should be injected as method parameter (automatically configured with ProcessingContext)
+  - **CORRECTED**: CommandGateway requires explicit ProcessingContext parameter in dispatch/send calls
+  - Provided code examples showing both CommandDispatcher (automatic) and CommandGateway (explicit) approaches
+- **Moved "Message delivery models" section to index.adoc**:
+  - Push vs pull explanation now in overview page for better structure
+  - Provides fundamental concepts before diving into specific processor types
+- **Documented async nature of processing**:
+  - Clarified that event processing is asynchronous from publisher's perspective
+  - Noted that events are handled sequentially within the processor
+  - Explained same-thread processing model (publisher thread handles event)
+- **CRITICAL API FIX - Removed invalid configuration examples**:
+  - Removed usingSubscribingEventProcessors() calls (method doesn't exist in Axon 5)
+  - Removed registerSubscribingEventProcessor() calls (method doesn't exist in Axon 5)
+  - Updated to explain Subscribing EP is automatic when only Event Bus is available
+  - All basic configuration now uses `.subscribing(subscribing -> subscribing.processor(...))`
+- **CRITICAL API FIX - Updated persistent streams configuration**:
+  - Completely rewrote persistent stream examples to use correct API
+  - Changed from registerSubscribingEventProcessor() to `.subscribing(subscribing -> subscribing.processor(...))`
+  - Updated to use `.customized((config, processorConfig) -> processorConfig.eventSource(...))` pattern
+  - Simplified and cleaned up property descriptions
+- Configuration examples now use correct SubscribingEventProcessorsConfigurer API with `.processor()`, `.autodetected()`, and `.customized()`
+- All code examples validated against Axon 5.0 APIs
+- **CRITICAL - Removed ALL Spring Boot Java examples** (14 code blocks removed):
+  - Spring Boot does NOT support programmatic event processor configuration in Axon 5.0
+  - Removed all ConfigurationEnhancer examples using MessagingConfigurer.with() (method doesn't exist)
+  - Spring Boot users MUST use properties-based configuration
+  - Updated all documentation to reflect properties-only approach for Spring Boot
+  - Updated misleading text claiming "Java configuration provides more degrees of freedom"
+  - Changed to "Spring Boot uses properties for event processor configuration"
+
+**Summary of Spring Boot removals:**
+- streaming.adoc: 11 invalid Java code blocks removed
+- subscribing.adoc: 2 invalid Java code blocks removed
+- index.adoc: 1 invalid Java code block removed
+- Total: 14 invalid Spring Boot ConfigurationEnhancer examples removed
 
 ---
 

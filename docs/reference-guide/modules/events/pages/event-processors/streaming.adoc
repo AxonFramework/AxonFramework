@@ -1,60 +1,49 @@
 = Streaming Event Processor
 
-The `StreamingEventProcessor`, or Streaming Processor for short, is a type of xref:event-processors/index.adoc[Event Processor].
-As any Event Processor, it serves as the technical aspect to handle events by invoking the event handlers written in an Axon application.
+The Streaming Event Processor is a type of xref:event-processors/index.adoc[Event Processor] that handles events by pulling them from a `StreamableEventSource`.
+The `StreamableEventSource` is an infrastructure component through which a stream of events can be opened.
+Examples include the xref:infrastructure.adoc#event-store[EventStore] (Axon Server or xref:infrastructure.adoc#embedded-event-store[embedded RDBMS-based stores]).
 
-The Streaming Processor defines itself by receiving the events from a `StreamableMessageSource`.
-The `StreamableMessageSource` is an infrastructure component through which we can open a stream of events.
-The source can also specify positions on the event stream, so-called <<tracking-tokens,Tracking Tokens>>, used as start positions when opening an event stream.
-An example of a `StreamableMessageSource` is the xref:event-bus-and-event-store.adoc#event-store[`EventStore`], like for example Axon Server or an xref:event-bus-and-event-store.adoc#embedded-event-store[RDBMS].
+The Pooled Streaming Event Processor (PSEP) is the default and recommended streaming processor implementation in Axon 5.
+It provides a high-performance, two-pool thread architecture that separates event fetching from event processing, enabling efficient parallel processing and better resource utilization.
 
-Furthermore, Streaming Processors use separate threads to process the events retrieved from the `StreamableMessageSource`.
-Using separate threads decouples the `StreamingEventProcessor` from other operations (for example, event publication or command handling), allowing for cleaner separation within any application. +
-Using separate threads allows for <<parallel-processing,parallelization>> of the event load, either within a single JVM or between several.
+== Key features
 
-When starting a Streaming Processor, it will open an event stream through the configured `StreamableMessageSource`.
-The first time a stream has started, it, by default, will begin at the tail (the oldest/the first token) of the stream.
-It keeps track of the event processing progress while traversing the stream.
-It does so by storing the Tracking Tokens, or _tokens_ for short, accompanying the events.
-This solution works towards tracking the progress since the tokens specify the event's position on the stream.
+**Separate threading**:
+Streaming Processors use dedicated threads to process events, decoupling event processing from event publication (such as command handling).
+This separation allows for cleaner architecture and better performance.
+
+**Progress tracking with tokens**:
+The processor tracks progress through <<tracking-tokens,Tracking Tokens>>.
+Each event is accompanied by a token that specifies its position in the stream.
+By storing these tokens, the processor can:
+
+1. Resume processing after stopping and starting
+2. Recover from unintended shutdowns
+3. <<replaying-events,Replay events>> by adjusting token positions
 
 [TIP]
-.Head or tail?
+.Token positions
 ====
 The oldest (the first) token is located at the tail of the stream, and the latest (newest) token is positioned at the head of the stream.
 ====
 
-Maintaining the progress through tokens makes a Streaming Processor
+**Parallel processing**:
+The PSEP's two-pool architecture enables <<parallel-processing,parallel processing>> through segments.
+Events are divided into segments, and multiple threads can process different segments concurrently.
+This works both within a single JVM and across multiple application instances.
 
-1. able to deal with stopping and starting the processor,
-2. more resilient against unintended shutdowns, and
-3. the token provides a means to <<replaying-events,replay>> events by adjusting the position of tokens.
-
-All combined, the Streaming Processor allows for decoupling, parallelization, resiliency, and replay-ability.
-It is these features that make the Streaming Processor the logical choice for the majority of applications.
-Due to this, the "Tracking Event Processor," a type of Streaming Processor, is the default Event Processor.
+**Event replay**:
+By adjusting token positions, you can <<replaying-events,replay events>> to rebuild projections or reprocess events after fixing bugs in event handlers.
 
 
 [NOTE]
 .Default Event Processor
 ====
-Which `EventProcessor` type becomes the default processor depends on the event message source available in your application.
-In the majority of use cases, an Event Store is present.
-As the Event Store is a type of `StreamableMessageSource`, the default will switch to the Tracking Event Processor.
+When a `StreamableEventSource` (such as an Event Store) is available in your application, the Pooled Streaming Event Processor is used as the default.
 
-If the application only has an Event Bus configured, the framework will lack a `StreamableMessageSource`.
-It will fall back to the xref:event-processors/subscribing.adoc[Subscribing Event Processor] as the default in these scenarios.
-This implementation will use the configured `EventBus` as its `SubscribableMessageSource`.
+If the application only has an Event Bus configured without an Event Store, the framework falls back to the xref:event-processors/subscribing.adoc[Subscribing Event Processor] as the default.
 ====
-
-There are two implementations of Streaming Processor available in Axon Framework:
-
-. the Tracking Event Processor (TEP for short), and
-. the Pooled Streaming Event Processor (PSEP for short).
-
-Both implementations support the same set of operations.
-Operations like replaying events through a <<replaying-events,reset>>, <<parallel-processing,parallelism>> and tracking the progress with <<tracking-tokens,tokens>>.
-They diverge on their threading approach and work separation, as discussed in more detail in <<Thread configuration,this>> section.
 
 [[configuring]]
 == Configuring
@@ -65,43 +54,10 @@ This chapter will cover how to configure a <<Configuring a tracking processor,Tr
 
 === Configuring a tracking processor
 
-Firstly, to specify that new event processors should default to a `TrackingEventProcessor`, you can invoke the `usingTrackingEventProcessors` method:
+The Pooled Streaming Event Processor is the default processor when a `StreamableEventSource` (such as an Event Store) is available.
+When you register event handlers without specifying a processor type, they automatically use the PSEP if an Event Store is present.
 
-[tabs]
-====
-Configuration API::
-+
---
-[source,java]
-----
-public class AxonConfig {
-    // omitting other configuration methods...
-    public void configureProcessorDefault(EventProcessingConfigurer processingConfigurer) {
-        processingConfigurer.usingTrackingEventProcessors();
-    }
-}
-----
---
-
-Spring Boot::
-+
---
-[source,java]
-----
-@Configuration
-public class AxonConfig {
-    // omitting other configuration methods...
-    @Bean
-    public ConfigurerModule processorDefaultConfigurerModule() {
-        return configurer -> configurer
-            .eventProcessing(EventProcessingConfigurer::usingTrackingEventProcessors);
-    }
-}
-----
---
-====
-
-For a specific Event Processor to be a Tracking instance, `registerTrackingEventProcessor` is used:
+To explicitly configure a specific Event Processor as a Pooled Streaming instance, use the `pooledStreaming` configurer:
 
 
 [tabs]
@@ -120,57 +76,22 @@ public class AxonConfig {
 
         // To configure a processor to be tracking ...
         processingConfigurer
-            .registerTrackingEventProcessor("my-processor")
-                // ... to define a specific StreamableMessageSource ...
-                .registerTrackingEventProcessor(
-                        "my-processor", conf -> {
-                            /* create/return StreamableMessageSource */
-                        }
-                )
-                // ... to provide additional configuration ...
-                .registerTrackingEventProcessor(
-                        "my-processor", conf -> {
-                            /* create/return StreamableMessageSource */
-                        },
-                        conf -> tepConfig
-                );
-    }
-}
-----
---
-Spring Boot::
-+
---
-[source,java]
-----
-@Configuration
-public class AxonConfig {
-    // omitting other configuration methods...
-    @Bean
-    public ConfigurerModule trackingProcessorConfigurerModule() {
-        // This configuration object allows for fine-grained control over the Tracking Processor
-        TrackingEventProcessorConfiguration tepConfig =
-              TrackingEventProcessorConfiguration.forSingleThreadedProcessing();
-
-        return configurer -> configurer.eventProcessing(processingConfigurer -> processingConfigurer
-            // To configure a processor to be tracking ...
-            .registerTrackingEventProcessor("my-processor")
-            // ... to define a specific StreamableMessageSource ...
-            .registerTrackingEventProcessor(
-                    "my-processor",
-                    conf -> {
-                        /* create/return StreamableMessageSource */
-                    }
-            )
-            // ... to provide additional configuration ...
-            .registerTrackingEventProcessor(
-                    "my-processor",
-                    conf -> {
-                        /* create/return StreamableMessageSource */
-                    },
-                    conf -> tepConfig
-            )
-        );
+            .pooledStreaming(pooledStreaming ->
+                pooledStreaming
+                    // Configure a specific processor with event handlers
+                    .processor("my-processor", processor -> processor
+                        .eventHandlingComponents(components -> components
+                            .autodetected(cfg -> myEventHandler)
+                        )
+                        .notCustomized()
+                    )
+                    // Set defaults for all pooled streaming processors
+                    .defaults((config, processorConfig) -> processorConfig
+                        .segmentCount(4)
+                        .batchSize(100)
+                        .eventSource(config.getComponent(StreamableEventSource.class))
+                    )
+            );
     }
 }
 ----
@@ -180,8 +101,7 @@ Spring Boot properties::
 +
 --
 
-A properties file allows the configuration of some fields on an Event Processor.
-Do note that the Java configuration provides more degrees of freedom.
+Spring Boot uses properties for event processor configuration.
 
 [source,properties]
 ----
@@ -213,147 +133,27 @@ Configuration API::
 ----
 public class AxonConfig {
     // omitting other configuration methods...
-    public void registerTrackingProcessorConfig(EventProcessingConfigurer processingConfigurer) {
-        TrackingEventProcessorConfiguration tepConfig =
-                TrackingEventProcessorConfiguration.forSingleThreadedProcessing();
-
-        // To register a default tracking config ...
-        processingConfigurer.registerTrackingEventProcessorConfiguration(config -> tepConfig)
-                            // ... to register a config for a specific processor.
-                            .registerTrackingEventProcessorConfiguration("my-processor", config -> tepConfig);
-    }
-}
-----
---
-
-Spring Boot::
-+
---
-
-[source,java]
-----
-@Configuration
-public class AxonConfig {
-    // omitting other configuration methods...
-    @Bean
-    public ConfigurerModule trackingProcessorConfigurerModule() {
-        TrackingEventProcessorConfiguration tepConfig =
-              TrackingEventProcessorConfiguration.forSingleThreadedProcessing();
-
-        return configurer -> configurer.eventProcessing(
-              // To register a default tracking config ...
-              processingConfigurer -> processingConfigurer.registerTrackingEventProcessorConfiguration(config -> tepConfig)
-                                                          // ... to register a config for a specific processor.
-                                                          .registerTrackingEventProcessorConfiguration(
-                                                                  "my-processor", config -> tepConfig
-                                                          )
-        );
-    }
-}
-----
---
-====
-
-=== Configuring a pooled streaming processor
-
-Firstly, to specify that every new processor should default to a `PooledStreamingEventProcessor`, you can invoke the `usingPooledStreamingEventProcessors` method:
-
-[tabs]
-====
-Axon Configuration API::
-+
---
-
-[source,java]
-----
-public class AxonConfig {
-    // omitting other configuration methods...
-    public void configureProcessorDefault(EventProcessingConfigurer processingConfigurer) {
-        processingConfigurer.usingPooledStreamingEventProcessors();
-    }
-}
-----
---
-
-Spring Boot::
-+
---
-
-[source,java]
-----
-@Configuration
-public class AxonConfig {
-    // omitting other configuration methods...
-    @Bean
-    public ConfigurerModule processorDefaultConfigurerModule() {
-        return configurer -> configurer.eventProcessing(EventProcessingConfigurer::usingPooledStreamingEventProcessors);
-    }
-}
-----
---
-====
-
-For a specific Event Processor to be a Pooled Streaming instance, `registerPooledStreamingProcessor` is used:
-
-[tabs]
-====
-Configuration API::
-+
---
-[source,java]
-----
-public class AxonConfig {
-    // omitting other configuration methods...
-    public void configurePooledStreamingProcessors(EventProcessingConfigurer processingConfigurer) {
-          // This configuration object allows for fine-grained control over the Pooled Streaming Processor
-        EventProcessingConfigurer.PooledStreamingProcessorConfiguration psepConfig =
-                (config, builder) -> builder/* ... */;
-
-        // To configure a processor to be pooled streaming ...
-        processingConfigurer.registerPooledStreamingEventProcessor("my-processor")
-                            // ... to define a specific StreamableMessageSource ...
-                            .registerPooledStreamingEventProcessor(
-                                    "my-processor", conf -> {}/* create/return StreamableMessageSource */
-                            )
-                            // ... to provide additional configuration ...
-                            .registerPooledStreamingEventProcessor(
-                                    "my-processor", conf -> {} /* create/return StreamableMessageSource */, psepConfig
-                            );
-    }
-}
-----
---
-
-Spring Boot::
-+
---
-
-[source,java]
-----
-@Configuration
-public class AxonConfig {
-    // omitting other configuration methods...
-    @Bean
-    public ConfigurerModule pooledStreamingProcessorConfigurerModule() {
-        // This configuration object allows for fine-grained control over the Pooled Streaming Processor
-        EventProcessingConfigurer.PooledStreamingProcessorConfiguration psepConfig =
-              (config, builder) -> builder/* ... */;
-
-        return configurer -> configurer.eventProcessing(
-              // To configure a processor to be pooled streaming ...
-              processingConfigurer -> processingConfigurer.registerPooledStreamingEventProcessor("my-processor")
-                                                          // ... to define a specific StreamableMessageSource ...
-                                                          .registerPooledStreamingEventProcessor(
-                                                                  "my-processor",
-                                                                  conf -> {} /* create/return StreamableMessageSource */
-                                                          )
-                                                          // ... to provide additional configuration ...
-                                                          .registerPooledStreamingEventProcessor(
-                                                                  "my-processor",
-                                                                  conf -> {} /* create/return StreamableMessageSource */,
-                                                                  psepConfig
-                                                          )
-        );
+    public void configurePooledProcessors(EventProcessingConfigurer processingConfigurer) {
+        processingConfigurer
+            .pooledStreaming(pooledStreaming ->
+                pooledStreaming
+                    // Set defaults for all pooled streaming processors
+                    .defaults((config, processorConfig) -> processorConfig
+                        .segmentCount(4)
+                        .batchSize(100)
+                        .claimExtensionThreshold(Duration.ofSeconds(5).toMillis())
+                    )
+                    // Configure a specific processor
+                    .processor("my-processor", processor -> processor
+                        .eventHandlingComponents(components -> components
+                            .autodetected(cfg -> new MyEventHandler())
+                        )
+                        .customized((config, processorConfig) -> processorConfig
+                            .segmentCount(8)  // Override default for this processor
+                            .eventSource(config.getComponent(StreamableEventSource.class))
+                        )
+                    )
+            );
     }
 }
 ----
@@ -363,8 +163,7 @@ Spring Boot properties::
 +
 --
 
-A properties file allows the configuration of some fields on an Event Processor.
-Do note that the Java configuration provides more degrees of freedom.
+Spring Boot uses properties for event processor configuration.
 
 [source,properties]
 ----
@@ -491,8 +290,7 @@ When processing an event, it may be beneficial to retrieve the token belonging t
 First, this can be achieved by adding a parameter of type `TrackingToken` to the event handler.
 This support is mentioned in the xref:messaging-concepts:supported-parameters-annotated-handlers.adoc#supported-parameters-for-event-handlers[Supported Parameters for Event Handlers] section.
 
-Additionally, you can retrieve the token from the resources collection of the xref:messaging-concepts:unit-of-work.adoc[Unit of Work].
-Both the Tracking and Pooled Streaming Event Processor add the current `TrackingToken` under the key `"Processor[{processor-name}]/Token"`.
+Additionally, you can retrieve the token from the resources collection of the xref:messaging-concepts:unit-of-work.adoc[Processing Context] using `TrackingToken.fromContext(context)`.
 ====
 
 === Initial tracking token
@@ -573,63 +371,23 @@ Tracking: Spring Boot::
 @Configuration
 public class AxonConfig {
     // omitting other configuration methods...
-    @Bean
-    public ConfigurerModule initialTrackingTokenConfigurerModule() {
-        TrackingEventProcessorConfiguration tepConfig =
-              TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
-                                                 .andInitialTrackingToken(StreamableMessageSource::createTailToken);
-
-        return configurer -> configurer.eventProcessing(
-              processingConfigurer -> processingConfigurer.registerTrackingEventProcessorConfiguration(
-                      "my-processor", config -> tepConfig
-              )
-        );
-    }
-}
-----
---
-
-Pooled streaming: Configuration API::
-+
---
-
-[source,java]
-----
-public class AxonConfig {
-    // omitting other configuration methods...
-    public void configureInitialTrackingToken(EventProcessingConfigurer processingConfigurer) {
-        EventProcessingConfigurer.PooledStreamingProcessorConfiguration psepConfig =
-                (config, builder) -> builder.initialToken(messageSource -> messageSource.createTokenSince(
-                        messageSource -> messageSource.createTokenAt(Instant.parse("20020-12-01T10:15:30.00Z"))
-                ));
-
-        processingConfigurer.registerPooledStreamingEventProcessorConfiguration("my-processor", psepConfig);
-    }
-}
-----
---
-
-Pooled streaming: Spring Boot::
-+
---
-
-[source,java]
-----
-@Configuration
-public class AxonConfig {
-    // omitting other configuration methods...
-    @Bean
-    public ConfigurerModule initialTrackingTokenConfigurerModule() {
-        EventProcessingConfigurer.PooledStreamingProcessorConfiguration psepConfig =
-              (config, builder) -> builder.initialToken(
-                      messageSource -> messageSource.createTokenSince(Duration.ofDays(31))
-              );
-
-        return configurer -> configurer.eventProcessing(
-              processingConfigurer -> processingConfigurer.registerPooledStreamingEventProcessorConfiguration(
-                      "my-processor", psepConfig
-              )
-        );
+    public void configureInitialToken(EventProcessingConfigurer processingConfigurer) {
+        processingConfigurer
+            .pooledStreaming(pooledStreaming ->
+                pooledStreaming
+                    .processor("my-processor", processor -> processor
+                        .eventHandlingComponents(components -> components
+                            .autodetected(cfg -> new MyEventHandler())
+                        )
+                        .customized((config, processorConfig) -> processorConfig
+                            .initialToken(source -> TrackingToken.LATEST)
+                            // Or use a specific time:
+                            // .initialToken(source -> source.createTokenAt(Instant.parse("2024-12-01T10:15:30.00Z")))
+                            // Or relative time:
+                            // .initialToken(source -> source.createTokenSince(Duration.ofDays(7)))
+                        )
+                    )
+            );
     }
 }
 ----
@@ -713,40 +471,24 @@ Pooled streaming: Configuration API::
 public class AxonConfig {
     // omitting other configuration methods...
     public void configureTokenClaimValues(EventProcessingConfigurer processingConfigurer) {
-        EventProcessingConfigurer.PooledStreamingProcessorConfiguration psepConfig =
-                (config, builder) -> builder.tokenClaimInterval(2000)
-                                            .claimExtensionThreshold(3000);
-
-        processingConfigurer.registerPooledStreamingEventProcessorConfiguration("my-processor", psepConfig);
+        processingConfigurer
+            .pooledStreaming(pooledStreaming ->
+                pooledStreaming
+                    .processor("my-processor", processor -> processor
+                        .eventHandlingComponents(components -> components
+                            .autodetected(cfg -> new MyEventHandler())
+                        )
+                        .customized((config, processorConfig) -> processorConfig
+                            .tokenClaimInterval(Duration.ofSeconds(2).toMillis())
+                            .claimExtensionThreshold(Duration.ofSeconds(3).toMillis())
+                        )
+                    )
+            );
     }
 }
 ----
 --
 
-Pooled streaming: Spring Boot::
-+
---
-
-[source,java]
-----
-@Configuration
-public class AxonConfig {
-    // omitting other configuration methods...
-    @Bean
-    public ConfigurerModule tokenClaimValuesConfigurerModule() {
-        EventProcessingConfigurer.PooledStreamingProcessorConfiguration psepConfig =
-              (config, builder) -> builder.tokenClaimInterval(2000)
-                                          .claimExtensionThreshold(3000);
-
-        return configurer -> configurer.eventProcessing(
-              processingConfigurer -> processingConfigurer.registerPooledStreamingEventProcessorConfiguration(
-                      "my-processor", psepConfig
-              )
-        );
-    }
-}
-----
---
 ====
 
 [[token-stealing]]
@@ -913,28 +655,6 @@ public class AxonConfig {
     }
 }
 ----
-
-Alternatively, inject the `EventProcessingConfigurer`, which allows more fine-grained customization:
-
-[source,java]
-----
-@Configuration
-public class AxonConfig {
-    // omitting other configuration methods...
-    @Bean
-    public ConfigurerModule tokenStoreConfigurerModule() {
-        TokenStore tokenStore = JdbcTokenStore.builder()
-                                              // …
-                                              .build();
-
-        return configurer -> configurer.eventProcessing(
-              processingConfigurer -> processingConfigurer.registerTokenStore(conf -> tokenStore)
-                                                          // or, to define one for a specific processor:
-                                                          .registerTokenStore("my-processor", conf -> tokenStore)
-        );
-    }
-}
-----
 --
 ====
 
@@ -983,83 +703,18 @@ The default number of segments of a `TrackingEventProcessor` is one.
 public class AxonConfig {
     // omitting other configuration methods...
     public void configureSegmentCount(EventProcessingConfigurer processingConfigurer) {
-        TrackingEventProcessorConfiguration tepConfig =
-                TrackingEventProcessorConfiguration.forParallelProcessing(2)
-                                                   .andInitialSegmentsCount(2);
-
-        processingConfigurer.registerTrackingEventProcessorConfiguration("my-processor", config -> tepConfig);
-    }
-}
-----
---
-Tracking: Spring Boot::
-+
---
-
-The default number of segments for the `TrackingEventProcessor` is one.
-
-[source,java]
-----
-@Configuration
-public class AxonConfig {
-    // omitting other configuration methods...
-    @Bean
-    public ConfigurerModule segmentCountConfigurerModule() {
-        TrackingEventProcessorConfiguration tepConfig =
-              TrackingEventProcessorConfiguration.forParallelProcessing(2)
-                                                 .andInitialSegmentsCount(2);
-
-        return configurer -> configurer.eventProcessing(
-              processingConfigurer -> processingConfigurer.registerTrackingEventProcessorConfiguration(
-                      "my-processor", config -> tepConfig
-              )
-        );
-    }
-}
-----
---
-
-Pooled streaming: Configuration API::
-+
---
-
-The default number of segments for the `PooledStreamingEventProcessor` is sixteen.
-
-[source,java]
-----
-public class AxonConfig {
-    // omitting other configuration methods...
-    public void configureSegmentCount(EventProcessingConfigurer processingConfigurer) {
-        EventProcessingConfigurer.PooledStreamingProcessorConfiguration psepConfig =
-                (config, builder) -> builder.initialSegmentCount(32);
-
-        processingConfigurer.registerPooledStreamingEventProcessorConfiguration("my-processor", psepConfig);
-    }
-}
-----
---
-
-Pooled streaming: Spring Boot::
-+
---
-
-The default number of segments for the `PooledStreamingEventProcessor` is sixteen.
-
-[source,java]
-----
-@Configuration
-public class AxonConfig {
-    // omitting other configuration methods...
-    @Bean
-    public ConfigurerModule segmentCountConfigurerModule() {
-        EventProcessingConfigurer.PooledStreamingProcessorConfiguration psepConfig =
-              (config, builder) -> builder.initialSegmentCount(32);
-
-        return configurer -> configurer.eventProcessing(
-              processingConfigurer -> processingConfigurer.registerPooledStreamingEventProcessorConfiguration(
-                      "my-processor", psepConfig
-              )
-        );
+        processingConfigurer
+            .pooledStreaming(pooledStreaming ->
+                pooledStreaming
+                    .processor("my-processor", processor -> processor
+                        .eventHandlingComponents(components -> components
+                            .autodetected(cfg -> new MyEventHandler())
+                        )
+                        .customized((config, processorConfig) -> processorConfig
+                            .segmentCount(32)
+                        )
+                    )
+            );
     }
 }
 ----
@@ -1170,32 +825,6 @@ public class AxonConfig {
 ----
 --
 
-Spring Boot::
-+
---
-
-[source,java]
-----
-@Configuration
-public class AxonConfig {
-    // omitting other configuration methods...
-    @Bean
-    public ConfigurerModule sequencingPolicyConfigurerModule(SequencingPolicy<EventMessage<?>> mySequencingPolicy) {
-        return configurer -> configurer.eventProcessing(
-              processingConfigurer -> processingConfigurer.registerDefaultSequencingPolicy(config -> mySequencingPolicy)
-                                                          // or, to define one for a specific processor:
-                                                          .registerSequencingPolicy("my-processor", config -> mySequencingPolicy)
-        );
-    }
-
-    @Bean
-    public SequencingPolicy<EventMessage<?>> mySequencingPolicy() {
-        return new SequentialPolicy();
-    }
-}
-----
---
-
 Spring Boot properties::
 +
 --
@@ -1238,10 +867,12 @@ public interface SequencingPolicy<T> {
 === Thread configuration
 
 A Streaming Processor cannot process events in parallel without multiple threads configured.
-We can process events in parallel by running <<Multi-node processing,several nodes>> of an application.
-Or by configuring a `StreamingEventProcessor` to use several threads.
-The following section describes the threading differences between the Tracking- and Pooled Streaming Event Processor.
-These sections are followed up with samples on configuring multiple threads for the TEP and PSEP, respectively.
+You can achieve parallel processing by:
+
+- Running <<Multi-node processing,multiple nodes>> of an application
+- Configuring the Pooled Streaming Event Processor to use multiple threads
+
+The following section describes how to configure thread pools for the PSEP.
 
 [NOTE]
 .Thread and Segment Count
@@ -1249,75 +880,6 @@ These sections are followed up with samples on configuring multiple threads for 
 Adjusting the number of threads will not automatically parallelize a Streaming Processor.
 A segment claim <<parallel-processing,is required>> to let a thread process any events.
 Hence, increasing the thread count should be paired with adjusting the segment count.
-====
-
-==== Tracking processor threading
-
-The `TrackingEventProcessor` uses a `ThreadFactory` to start the process of claiming segments.
-It will use a single thread per segment it is able to claim until the processor exhausts the configured amount of threads.
-Each thread will open a stream with the `StreamableMessageSource` and start processing events at their own speed.
-Other segment operations, like <<splitting-and-merging-segments,split and merge>>, are processed by the thread owning the segment operated on.
-
-Since the tracking processor can only claim a single segment per thread, segments may go unprocessed if there are more segments than threads.
-Hence, we recommend setting the number of threads (on every node) higher than or equal to the total number of segments.
-
-To increase event handling throughput, we recommend changing the number of threads.
-How to do this is shown in the following sample:
-
-[tabs]
-====
-Configuration API::
-+
---
-[source,java]
-----
-public class AxonConfig {
-    // omitting other configuration methods...
-    public void configureThreadCount(EventProcessingConfigurer processingConfigurer) {
-        TrackingEventProcessorConfiguration tepConfig =
-                TrackingEventProcessorConfiguration.forParallelProcessing(4)
-                                                   .andInitialSegmentsCount(4);
-
-        processingConfigurer.registerTrackingEventProcessorConfiguration("my-processor", config -> tepConfig);
-    }
-}
-----
---
-
-Spring Boot::
-+
---
-[source,java]
-----
-@Configuration
-public class AxonConfig {
-    // omitting other configuration methods...
-    @Bean
-    public ConfigurerModule threadCountConfigurerModule() {
-        TrackingEventProcessorConfiguration tepConfig =
-              TrackingEventProcessorConfiguration.forParallelProcessing(4)
-                                                 .andInitialSegmentsCount(4);
-
-        return configurer -> configurer.eventProcessing(
-              processingConfigurer -> processingConfigurer.registerTrackingEventProcessorConfiguration(
-                      "my-processor", config -> tepConfig
-              )
-        );
-    }
-}
-----
---
-
-Spring Boot properties::
-+
---
-[source,properties]
-----
-axon.eventhandling.processors.my-processor.mode=tracking
-axon.eventhandling.processors.my-processor.thread-count=4
-axon.eventhandling.processors.my-processor.initial-segment-count=4
-----
---
 ====
 
 ==== Pooled streaming processor threading
@@ -1350,52 +912,24 @@ Configuration API::
 public class AxonConfig {
     // omitting other configuration methods...
     public void configureThreadCount(EventProcessingConfigurer processingConfigurer) {
-        // the "name" is the name of the processor, which can be used to define the thread factory name
-        Function<String, ScheduledExecutorService> coordinatorExecutorBuilder =
-                name -> Executors.newScheduledThreadPool(1, new AxonThreadFactory("Coordinator - " + name));
-
-        Function<String, ScheduledExecutorService> workerExecutorBuilder =
-                name -> Executors.newScheduledThreadPool(16, new AxonThreadFactory("Worker - " + name));
-
-        EventProcessingConfigurer.PooledStreamingProcessorConfiguration psepConfig =
-                (config, builder) -> builder.coordinatorExecutor(coordinatorExecutorBuilder)
-                                            .workerExecutor(workerExecutorBuilder)
-                                            .initialSegmentCount(32);
-
-        processingConfigurer.registerPooledStreamingEventProcessorConfiguration("my-processor", psepConfig);
-    }
-}
-----
---
-
-Spring Boot::
-+
---
-
-[source,java]
-----
-@Configuration
-public class AxonConfig {
-    // omitting other configuration methods...
-    @Bean
-    public ConfigurerModule threadCountConfigurerModule() {
-        // the "name" is the name of the processor, which can be used to define the thread factory name
-        Function<String, ScheduledExecutorService> coordinatorExecutorBuilder =
-              name -> Executors.newScheduledThreadPool(1, new AxonThreadFactory("Coordinator - " + name));
-
-        Function<String, ScheduledExecutorService> workerExecutorBuilder =
-              name -> Executors.newScheduledThreadPool(16, new AxonThreadFactory("Worker - " + name));
-
-        EventProcessingConfigurer.PooledStreamingProcessorConfiguration psepConfig =
-              (config, builder) -> builder.coordinatorExecutor(coordinatorExecutorBuilder)
-                                          .workerExecutor(workerExecutorBuilder)
-                                          .initialSegmentCount(32);
-
-        return configurer -> configurer.eventProcessing(
-              processingConfigurer -> processingConfigurer.registerPooledStreamingEventProcessorConfiguration(
-                      "my-processor", psepConfig
-              )
-        );
+        processingConfigurer
+            .pooledStreaming(pooledStreaming ->
+                pooledStreaming
+                    .processor("my-processor", processor -> processor
+                        .eventHandlingComponents(components -> components
+                            .autodetected(cfg -> new MyEventHandler())
+                        )
+                        .customized((config, processorConfig) -> processorConfig
+                            .coordinatorExecutor(Executors.newScheduledThreadPool(
+                                1, new AxonThreadFactory("Coordinator - my-processor")
+                            ))
+                            .workerExecutor(Executors.newScheduledThreadPool(
+                                16, new AxonThreadFactory("Worker - my-processor")
+                            ))
+                            .segmentCount(32)
+                        )
+                    )
+            );
     }
 }
 ----
@@ -1415,39 +949,21 @@ axon.eventhandling.processors.my-processor.initial-segment-count=32
 --
 ====
 
-==== Differences between tracking and pooled streaming
+==== `PooledStreamingProcessor` architecture benefits
 
-Based on the threading approaches of the <<Tracking processor threading,tracking processor>> and <<Pooled streaming processor threading,pooled streaming processor>>, there are a couple of differences to note:
+The Pooled Streaming Event Processor's two-pool architecture provides several advantages:
 
-* *Open Event Streams* - The tracking processor will open a stream *per* segment it claims.
-The pooled streaming processor will always open a single event stream and delegate the events to the segment workers.
-Due to this, the tracking processor will use more I/O resources than the pooled streaming processor.
-However, the TEP's segments can move at their own speed as they open a dedicated event stream.
-The PSEP's segments will at least process as fast as the slowest segment in the set.
+* *Single Event Stream* - The PSEP opens only one event stream from the source and distributes events to worker threads.
+This reduces I/O resources compared to opening multiple streams.
 
-* *Segment Claims per Thread* - The tracking processor can only claim a single segment per thread.
-The pooled streaming processor can claim any amount of segments, regardless of the number of threads configured.
-The `maxClaimedSegments` is configurable if required (the defaults is `Short.MAX`).
-The fact the TEP can only claim a single segment per thread highlights a problem of that implementation.
-Events will go unprocessed if there are more segments than threads when using the tracking processor since events belong to a single segment.
-Furthermore, it makes dynamic scaling tougher since you cannot adjust the number of threads at runtime.
-Here we see significant benefits for using the PSEP instead of the TEP since it completely drops the "one segment per thread" policy.
-As such, partial processing is never a problem, the `PooledStreamingEventProcessor` would encounter.
+* *Flexible Segment Claims* - The coordinator thread can claim any number of segments, regardless of the worker thread pool size.
+The `maxClaimedSegments` is configurable (defaults to `Short.MAX_VALUE`).
+This flexibility ensures all segments are processed even when worker threads are limited, eliminating the "unprocessed segments" problem.
 
-* *Thread Pool Configuration* - The tracking processor does not allow sharing a thread pool between different instances.
-For the pooled streaming processor, a `ScheduledExecutorService` is configurable, which allows sharing the executor between different processor instances.
-Thus, the PSEP provides a higher level of flexibility towards optimizing the total amount of threads used within an application.
-The freedom in thread pool configuration is helpful when, for example, the number of different Event Processors in a single application increases.
+* *Shared Thread Pools* - The coordinator and worker thread pools can be shared across multiple processor instances.
+This provides flexibility in optimizing total thread usage, especially when running many event processors in a single application.
 
-[TIP]
-.Which Streaming Processor should I use?
-====
-In most scenarios, the `PooledStreamingEventProcessor` is the recommended processor implementation.
-We conclude this based on the segment-to-thread-count ratio, its ability to share thread pools, and the lower amount of opened event streams.
-
-The `TrackingEventProcessor` will still be ideal if you anticipate the processing speed between segments to differ significantly.
-Also, if the application does not have too many processor instances, the need to share thread pools is loosened.
-====
+* *Dynamic Scaling* - The separation of coordinator and worker pools, combined with flexible segment claims, makes the PSEP well-suited for dynamic scaling scenarios.
 
 ==== Multi-node processing
 
@@ -1853,28 +1369,7 @@ public class AxonConfig {
 }
 ----
 --
-Tracking: Spring Boot::
-+
---
-
-[source,java]
-----
-@Configuration
-public class AxonConfig {
-    // omitting other configuration methods...
-    @Bean
-    public ConfigurerModule trackingProcessorConfigurerModule() {
-        return configurer -> configurer.eventProcessing(
-              processingConfigurer -> processingConfigurer.registerTrackingEventProcessor(
-                      "my-processor", config -> buildMultiStreamableMessageSource(/*...*/)
-              )
-        );
-    }
-}
-----
---
-
-Pooled streaming: Configuration API::
+Tracking: Pooled streaming: Configuration API::
 +
 --
 
@@ -1891,28 +1386,7 @@ public class AxonConfig {
 ----
 --
 
-Pooled streaming: Spring Boot::
-+
---
-
-[source,java]
-----
-@Configuration
-public class AxonConfig {
-    // omitting other configuration methods...
-    @Bean
-    public ConfigurerModule pooledStreamingProcessorConfigurerModule() {
-        return configurer -> configurer.eventProcessing(
-              processingConfigurer -> processingConfigurer.registerPooledStreamingEventProcessor(
-                      "my-processor", config -> buildMultiStreamableMessageSource(/*...*/)
-              )
-        );
-    }
-}
-----
---
-
-Spring Boot properties::
+Pooled streaming: Spring Boot properties::
 +
 --
 
