@@ -104,7 +104,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     private static final String FIRST_TOKEN_QUERY = "SELECT COALESCE(MIN(e.globalIndex) - 1, -1) FROM AggregateEventEntry e";
     private static final String LATEST_TOKEN_QUERY = "SELECT COALESCE(MAX(e.globalIndex), -1) FROM AggregateEventEntry e";
     private static final String TOKEN_AT_QUERY = """
-            SELECT COALESCE(MIN(e.globalIndex) - 1, -1) \
+            SELECT COALESCE(MIN(e.globalIndex) - 1, (SELECT MAX(a.globalIndex) FROM AggregateEventEntry a), -1) \
             FROM AggregateEventEntry e \
             WHERE e.timestamp >= :dateTime""";
     private static final String EVENTS_BY_AGGREGATE_QUERY = """

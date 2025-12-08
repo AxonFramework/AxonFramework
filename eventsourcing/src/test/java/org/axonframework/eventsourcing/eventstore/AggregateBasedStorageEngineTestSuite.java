@@ -605,6 +605,22 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
     }
 
     @Test
+    void tokenAtShouldReturnMaxTokenForFutureTimestamp() throws InterruptedException, ExecutionException {
+        appendEvents(
+            AppendCondition.none(),
+            taggedEventMessage("event-0", TEST_AGGREGATE_TAGS),
+            taggedEventMessage("event-1", OTHER_AGGREGATE_TAGS),
+            taggedEventMessage("event-2", TEST_AGGREGATE_TAGS),
+            taggedEventMessage("event-3", OTHER_AGGREGATE_TAGS),
+            taggedEventMessage("event-4", TEST_AGGREGATE_TAGS),
+            taggedEventMessage("event-5", OTHER_AGGREGATE_TAGS)
+        );
+
+        assertThat(testSubject.tokenAt(Instant.now().plusSeconds(1000), processingContext()).get())
+            .isEqualTo(trackingTokenAt(6));
+    }
+
+    @Test
     @Disabled("Fails for both JPA and Axon on the last await")  // TODO #3855 - When a sourcing completes, the callback should be called per MessageStream contract
     void callbackShouldBeCalledWhenSourcingCompletes() {
         AtomicBoolean called = new AtomicBoolean();
