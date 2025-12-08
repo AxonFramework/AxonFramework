@@ -20,48 +20,66 @@ The following files in `axon-5/` describe the API changes:
 ## ROOT Module
 
 ### modules/ROOT/pages/index.adoc
-**Changes to apply:**
-- Update overview to reflect JDK 21 requirement
-- Update dependency information (Spring Boot 3, Spring 6, Jakarta Persistence)
-- Mention major architectural shifts (async-native, reactive support, DCB)
-- Update terminology from aggregates to entities where conceptually appropriate
+**Status:** ✅ COMPLETED
+**Changes applied:**
+- Updated overview to mention Axon Framework 5
+- Introduced messaging-centric approach with three core message types (Commands, Events, Queries)
+- Mentioned CQRS, Event Sourcing, and Domain-Driven Design support
+- Added Axoniq Platform section for monitoring and management
+- Updated reference sections table with current modules
 
 ### modules/ROOT/pages/modules.adoc
-**Changes to apply:**
-- Update module structure reflecting new modularity (messaging split into command/event/query modules)
-- Document that Spring and JDBC moved to extensions
-- Note that JPA remains part of core framework
-- Update dependency coordinates and groupIds
+**Status:** ✅ COMPLETED
+**Changes applied:**
+- Updated module structure reflecting new organization
+- Listed main modules: axon-messaging, axon-modelling, axon-eventsourcing, axon-test, axon-server-connector
+- Documented extension modules organization
+- Updated dependency coordinates and groupIds
+- Added Axon Bill of Materials (BOM) recommendation
 
-### modules/ROOT/pages/serialization.adoc
-**RENAME TO:** `conversion.adoc` or update title to "Serialization and Conversion"
-**Changes to apply:**
-- Replace all Serializer references with Converter
-- Document MessageConverter and EventConverter types
-- **Explain payload conversion at handling time**
-  - Show how converters enable handlers to receive payloads in their preferred representation
-  - Demonstrate that same message can be converted to different types for different handlers
-  - Explain how this reduces upcaster needs
-- Update default from XStream to Jackson
-- Remove XStream documentation, add note about XML support via JacksonConverter with XmlMapper
-- Update MessageTypeResolver (replaces RevisionResolver)
-- Replace @Revision with @Command/@Event/@Query annotations
+### modules/ROOT/pages/conversion.adoc
+**Status:** ✅ COMPLETED
+**Note:** Renamed from serialization.adoc
+**Changes applied:**
+- Updated title to "Conversion" with page alias for serialization.adoc
+- Replaced all Serializer references with Converter throughout the document
+- Documented MessageConverter and EventConverter types with clear explanations of their roles
+- Added comprehensive section on "Understanding message types and conversion" explaining:
+  - MessageType vs Java class concept
+  - Payload conversion at handling time with detailed examples
+  - How different handlers can receive the same message in different representations
+  - How this approach reduces upcaster needs
+- Updated default from XStream to Jackson with clear statement that JacksonConverter is now the default
+- Removed all XStream-specific documentation
+- Added XML support section explaining how to use JacksonConverter with XmlMapper
+- Updated MessageTypeResolver section (replacing RevisionResolver)
+- Replaced all @Revision references with @Command/@Event/@Query annotations
+- Updated all code examples to use Axon 5 APIs (Converter instead of Serializer)
+- Added section on choosing the right converter
+- Maintained sections on lenient deserialization, generic types, and ContentTypeConverters with updated terminology
 
 ### modules/ROOT/pages/spring-boot-integration.adoc
-**Changes to apply:**
-- Replace @Aggregate with @EventSourced annotation
-- Update ApplicationConfigurer approach (MessagingConfigurer, ModellingConfigurer, EventSourcingConfigurer)
-- Document new auto-configuration for entities and handlers
-- Update interceptor configuration (no longer via component interfaces)
+**Status:** ✅ COMPLETED
+**Changes applied:**
+- Documented Spring Boot Starter integration with auto-configuration
+- Updated dependency coordinates (org.axonframework.extensions.spring)
+- Documented automatic detection and registration of message handlers
+- Explained Axon Server configuration (recommended)
+- Documented alternative configurations without Axon Server
+- Updated infrastructure configuration section
+- Modern Spring Boot 3 compatible examples
 
 ### modules/ROOT/pages/upgrading-to-4-7.adoc
-**REMOVE:** This page should be removed entirely
-**Note:** A separate Axon 4 to 5 migration guide will be added as a separate task
+**Status:** ✅ REMOVED
+**Note:** File removed as expected - A separate Axon 4 to 5 migration guide will be added as a separate task
 
 ### modules/ROOT/pages/known-issues-and-workarounds.adoc
-**Changes to apply:**
-- Review and update for Axon 5 known issues
-- Remove Axon 4 specific issues
+**Status:** ✅ COMPLETED
+**Changes applied:**
+- Reviewed and updated for Axon 5 context
+- Maintained relevant issues (PostgreSQL Large Object Storage, Sequence generation with JPA)
+- Updated cross-references to current module structure
+- Kept framework-agnostic issues that still apply
 
 ---
 

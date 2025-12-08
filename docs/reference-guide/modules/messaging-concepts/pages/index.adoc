@@ -112,4 +112,4 @@ you can monitor the flow of messages in your application as you can see in the i
 
 image::axoniq-console-flow.gif[alt="Animated graphic of message flow in Axoniq Platform"]
 
-Besides seeing the flow, every message handler is individually monitored, providing deep insight into the performance and behavior of your application. For more information, see the xref:axoniq-platform-reference:ROOT:index.adoc[Axoniq Platform Reference Guide] or link:https://console.axoniq.io[sign up directly].
+Besides seeing the flow, every message handler is individually monitored, providing deep insight into the performance and behavior of your application. For more information, see the xref:axoniq-platform-reference:ROOT:index.adoc[Axoniq Platform Reference Guide] or link:https://platform.axoniq.io[sign up directly].
