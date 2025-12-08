@@ -23,6 +23,7 @@ import org.axonframework.messaging.commandhandling.CommandResultMessage;
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.conversion.MessageConverter;
 import org.axonframework.messaging.eventhandling.EventSink;
 import org.axonframework.test.matchers.PayloadMatcher;
 import org.hamcrest.CoreMatchers;
@@ -98,15 +99,20 @@ class AxonTestThenCommand
         expectedMatcher.describeTo(expectedDescription);
         if (actualException != null) {
             reporter.reportUnexpectedException(actualException, expectedDescription);
-        } else if (!verifyPayloadEquality(expectedPayload, actualResult.payload())) {
-            PayloadMatcher<CommandResultMessage> actualMatcher =
-                    new PayloadMatcher<>(CoreMatchers.equalTo(actualResult.payload()));
-            actualMatcher.describeTo(actualDescription);
-            reporter.reportWrongResult(actualDescription, expectedDescription);
+        } else {
+            var messageConverter = configuration.getComponent(MessageConverter.class);
+            var convertedPayload = actualResult.payloadAs(expectedPayload.getClass(), messageConverter);
+            if (!verifyPayloadEquality(expectedPayload, convertedPayload)) {
+                PayloadMatcher<CommandResultMessage> actualMatcher =
+                        new PayloadMatcher<>(CoreMatchers.equalTo(convertedPayload));
+                actualMatcher.describeTo(actualDescription);
+                reporter.reportWrongResult(actualDescription, expectedDescription);
+            }
         }
         return this;
     }
 
+    @Deprecated(since = "5.1.0", forRemoval = true)
     @Override
     public AxonTestPhase.Then.Command resultMessagePayloadSatisfies(@Nonnull Consumer<Object> consumer) {
         StringDescription expectedDescription = new StringDescription();
@@ -116,6 +122,26 @@ class AxonTestThenCommand
         try {
             var payload = actualResult.payload();
             consumer.accept(payload);
+        } catch (AssertionError e) {
+            reporter.reportWrongResult(actualResult.payload(),
+                                       "Result message to satisfy custom assertions: " + e.getMessage());
+        }
+        return this;
+    }
+
+    @Override
+    public <T> AxonTestPhase.Then.Command resultMessagePayloadSatisfies(
+            @Nonnull Class<T> type,
+            @Nonnull Consumer<T> consumer
+    ) {
+        StringDescription expectedDescription = new StringDescription();
+        if (actualException != null) {
+            reporter.reportUnexpectedException(actualException, expectedDescription);
+        }
+        try {
+            var messageConverter = configuration.getComponent(MessageConverter.class);
+            T convertedPayload = actualResult.payloadAs(type, messageConverter);
+            consumer.accept(convertedPayload);
         } catch (AssertionError e) {
             reporter.reportWrongResult(actualResult.payload(),
                                        "Result message to satisfy custom assertions: " + e.getMessage());

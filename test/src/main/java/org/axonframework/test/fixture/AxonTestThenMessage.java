@@ -58,7 +58,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
 
     protected final Reporter reporter = new Reporter();
 
-    private final AxonConfiguration configuration;
+    protected final AxonConfiguration configuration;
     private final AxonTestFixture.Customization customization;
     private final RecordingEventSink eventSink;
     private final RecordingCommandBus commandBus;
