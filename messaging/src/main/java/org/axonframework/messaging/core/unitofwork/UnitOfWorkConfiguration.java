@@ -38,7 +38,7 @@ import java.util.stream.Stream;
  * @author John Hendrikx
  * @since 5.0.0
  */
-public record UnitOfWorkConfiguration(@Nonnull Executor workScheduler, boolean allowAsyncProcessing, List<Consumer<ProcessingLifecycle>> processingLifecycleEnhancers) {
+public record UnitOfWorkConfiguration(@Nonnull Executor workScheduler, boolean allowAsyncProcessing, @Nonnull List<Consumer<ProcessingLifecycle>> processingLifecycleEnhancers) {
 
     /**
      * Creates default configuration with direct execution.
