@@ -59,9 +59,7 @@ If Axon Server is not available or disabled, Axon will use JPA-based implementat
 
 **Extension-based implementations**::
 Other extensions can provide additional implementations:
-* MongoDB event store (via the Mongo extension)
-* Kafka event distribution (via the Kafka extension)
-* AMQP event distribution (via the AMQP extension)
+* PostgreSQL event store (via the PostgreSQL extension)
 
 == Component detection
 
