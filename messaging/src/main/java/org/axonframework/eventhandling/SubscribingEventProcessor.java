@@ -31,6 +31,7 @@ import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.tracing.SpanFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import javax.annotation.Nonnull;
@@ -125,15 +126,31 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
     /**
      * Process the given messages. A Unit of Work must be created for this processing.
      * <p>
-     * This implementation creates a Batching unit of work for the given batch of {@code eventMessages}.
+     * This implementation first filters the given {@code eventMessages} to only include messages that can be handled
+     * by the configured {@link EventHandlerInvoker}. Messages that cannot be handled are reported as ignored via
+     * {@link #reportIgnored(EventMessage)}, notifying any configured {@link MessageMonitor}.
+     * <p>
+     * If there are messages that can be handled, a {@link BatchingUnitOfWork} is created for the filtered batch
+     * and processing is delegated to it.
      *
-     * @param eventMessages The messages to process
+     * @param eventMessages The messages to process.
      */
     protected void process(List<? extends EventMessage<?>> eventMessages) {
         try {
-            BatchingUnitOfWork<? extends EventMessage<?>> unitOfWork = new BatchingUnitOfWork<>(eventMessages);
+            List<EventMessage<?>> batch = new ArrayList<>();
+            for (EventMessage<?> eventMessage : eventMessages) {
+                if (canHandle(eventMessage, Segment.ROOT_SEGMENT)) {
+                    batch.add(eventMessage);
+                } else {
+                    reportIgnored(eventMessage);
+                }
+            }
+            if (batch.isEmpty()) {
+                return;
+            }
+            BatchingUnitOfWork<EventMessage<?>> unitOfWork = new BatchingUnitOfWork<>(batch);
             unitOfWork.attachTransaction(transactionManager);
-            processInUnitOfWork(eventMessages, unitOfWork);
+            processInUnitOfWork(batch, unitOfWork);
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
