@@ -36,7 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * correctly verify command return values, including automatic payload conversion.
  *
  * @author Mateusz Nowak
- * @since 5.0.0
+ * @since 5.1.0
  */
 @Testcontainers
 class AxonTestFixtureStatelessAnnotatedCommandHandlerIntegrationTest {
