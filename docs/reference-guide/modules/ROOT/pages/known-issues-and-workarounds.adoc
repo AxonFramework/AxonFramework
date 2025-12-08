@@ -21,7 +21,13 @@ When looking to provide a pull request, be sure to adjust link:https://github.co
 
 == PostgreSQL and large object storage
 
-When storing the serialized formats of, for example, xref:axon-framework-reference:events:event-processors/streaming.adoc#tracking-tokens[tokens], xref:axon-framework-reference:sagas:index.adoc[sagas], xref:axon-framework-reference:tuning:event-snapshots.adoc[snapshots], or xref:axon-framework-reference:events:infrastructure.adoc[events], it is good to know Axon uses JPAs `@Lob` annotation for these columns.
+[TIP]
+.PostgreSQL Extension
+====
+You can use Axoniq's PostgreSQL Extension instead of setting up PostgreSQL yourself as a event storage solution. For more information, please check the repository link:https://github.com/AxonIQ/extension-postgresql[here.]
+====
+
+When storing the serialized formats of, for example, xref:axon-framework-reference:events:event-processors/streaming.adoc#tracking-tokens[tokens], xref:axon-framework-reference:tuning:event-snapshots.adoc[snapshots], or xref:axon-framework-reference:events:infrastructure.adoc[events], it is good to know Axon uses JPAs `@Lob` annotation for these columns.
 
 This choice combined with link:https://www.postgresql.org/[PostgreSQL] and Hibernate, causes unexpected behavior for most.
 

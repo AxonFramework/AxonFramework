@@ -1,19 +1,19 @@
 = Introduction
 :page-aliases: introduction.adoc
 
-This reference guide covers Axon Framework 5, which takes a messaging-centric approach to building applications.
+This reference guide covers Axon Framework, which takes a messaging-centric approach to building applications.
 
 Axon Framework helps you build applications around three core message types:
 
-* **Commands** - Messages that express intent to change the system state
-* **Events** - Messages that represent facts about what happened in the system
-* **Queries** - Messages that request information from the system
+* **Commands** - Messages that express intent to change the system state.
+* **Events** - Messages that represent facts about what happened in the system.
+* **Queries** - Messages that request information from the system.
 
 These messages are equally important in Axon Framework, enabling you to build applications based on link:https://www.axoniq.io/concepts/cqrs-and-event-sourcing[CQRS and Event Sourcing] patterns.
 Axon also supports link:https://www.axoniq.io/concepts/domain-driven-design[Domain-Driven Design] practices by providing tools for building entities and managing domain logic.
 
-[[console]]
-== New: Easy monitoring and management
+[[platform]]
+== Easy monitoring and management
 Axoniq Platform makes it easy to monitor and manage your Axon Framework applications. It provides insights into the performance and behavior of your application, and allows you to manage your application's event processors.
 You can also get scalable xref:axon-server-reference::index.adoc[Axon Server] licenses with scalable pricing, and manage your Axon Server instances.
 
