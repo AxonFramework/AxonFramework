@@ -427,22 +427,43 @@ The following files in `axon-5/` describe the API changes:
 ## Queries Module
 
 ### modules/queries/pages/index.adoc
-**Changes to apply:**
-- Remove scatter-gather query documentation entirely
-- Document MessageStream return types
-- Overview of async-native querying
-- Introduce QueryDispatcher concept
+**Status:** ✅ COMPLETED
+**Changes applied:**
+- Removed scatter-gather query documentation entirely
+- Added overview of async-native querying with CompletableFuture and Publisher
+- Documented MessageType-based routing (qualified name + version)
+- Updated query type list to remove scatter-gather, emphasize point-to-point, subscription, and streaming queries
+- Improved section descriptions with Publisher integration details
+- Style guide compliance verified
 
 ### modules/queries/pages/configuration.adoc
-**Changes to apply:**
-- Update QueryBus/QueryGateway configuration
-- Document QueryHandlingComponent registration
-- Update interceptor registration patterns
+**Status:** ✅ COMPLETED
+**Changes applied:**
+- Updated to use MessagingConfigurer API for configuration
+- Documented QueryHandlingModule registration approach
+- Added comprehensive examples for Configuration API and Spring Boot
+- Documented QueryBus configuration (AxonServerQueryBus and SimpleQueryBus)
+- Documented QueryGateway configuration with auto-configuration details
+- Updated interceptor registration patterns (dispatch and handler interceptors)
+- Added complete code examples for both configuration approaches
+- Removed scatter-gather query references
+- Style guide compliance verified
 
 ### modules/queries/pages/implementations.adoc
-**Changes to apply:**
-- Update QueryBus implementations
-- Document subscription query infrastructure changes
+**Status:** ✅ COMPLETED
+**Changes applied:**
+- Updated QueryGateway section to document async-native operations
+- Documented query() and queryMany() methods with CompletableFuture
+- Documented streamingQuery() with Publisher
+- Documented subscriptionQuery() with Publisher combining initial result and updates
+- Updated AxonServerQueryBus section with distributed query handling features
+- Updated SimpleQueryBus section with local query handling details
+- Added comprehensive subscription query infrastructure section:
+  - QueryUpdateEmitter with context-aware usage pattern
+  - Subscription lifecycle documentation
+  - Update buffer configuration and management
+  - Code examples for client-side subscription queries with Reactor
+- Style guide compliance verified
 
 ### modules/queries/pages/query-dispatchers.adoc
 **Status:** ✅ COMPLETED
@@ -477,18 +498,30 @@ The following files in `axon-5/` describe the API changes:
 - Style guide compliance verified (heading capitalization, API/HTTP capitalization)
 
 ### modules/queries/pages/query-handlers.adoc
-**Changes to apply:**
-- Document ProcessingContext injection (mandatory - always available in handlers)
-- Show ProcessingContext must be passed to components during handling
-- **Document message type concept**: Java class is no longer message identity
-  - Explain MessageType (QualifiedName + version) as message identifier
-  - Show handlers declare type via @Query annotation or parameter type
-  - Explain payload conversion at handling time
-- Update MessageStream return types
-- Document QueryHandlerName (combines query name and response name)
-- Update parameter injection examples
-- Remove ResponseType from examples
-- Document query name resolution (@Query annotation, qualified names)
+**Status:** ✅ COMPLETED
+**Changes applied:**
+- Added overview emphasizing async-native query handling (CompletableFuture, Publisher)
+- Documented message type concept and query name resolution:
+  - Explained MessageType (QualifiedName + version) as message identifier
+  - Documented @Query annotation usage with namespace, name, and version
+  - Showed how handlers declare types via @Query annotation or parameter type
+  - Explained payload conversion at handling time
+  - Demonstrated how different handlers can receive same query in different representations
+  - Explained reduction in need for upcasters
+- Added comprehensive parameter injection section:
+  - ProcessingContext injection (mandatory - always available in handlers)
+  - Showed ProcessingContext must be passed to components during handling
+  - Documented QueryUpdateEmitter creation from ProcessingContext (context-aware)
+  - Added WARNING about QueryUpdateEmitter injection (must use forContext(), not field injection)
+  - Documented other parameters (Metadata, @MetadataValue, Message)
+- Updated query handler return values:
+  - Removed ResponseType references throughout
+  - Updated to use query() for single results, queryMany() for multiple results
+  - Added CompletableFuture as async return type option
+  - Added streaming query return values section (Publisher, Flux)
+  - Documented that streaming queries allow efficient handling of large result sets
+- Added code examples throughout showing ProcessingContext usage and correlation
+- Style guide compliance verified
 
 ---
 
