@@ -112,6 +112,7 @@ class AxonTestThenCommand
         return this;
     }
 
+    @Deprecated(since = "5.1.0", forRemoval = true)
     @Override
     public AxonTestPhase.Then.Command resultMessagePayloadSatisfies(@Nonnull Consumer<Object> consumer) {
         StringDescription expectedDescription = new StringDescription();

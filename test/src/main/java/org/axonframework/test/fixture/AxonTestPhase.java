@@ -568,7 +568,10 @@ public interface AxonTestPhase {
              * @param consumer Consumes the command result payload. You may place your own assertions here.
              * @return The current Then instance, for fluent interfacing.
              * @see #resultMessagePayloadSatisfies(Class, Consumer)
+             * @deprecated Use {@link #resultMessagePayloadSatisfies(Class, Consumer)} instead, which automatically
+             * handles payload conversion for distributed setups where conversion is necessary.
              */
+            @Deprecated(since = "5.1.0", forRemoval = true)
             Command resultMessagePayloadSatisfies(@Nonnull Consumer<Object> consumer);
 
             /**
