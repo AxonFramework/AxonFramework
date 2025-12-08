@@ -16,12 +16,11 @@
 
 package org.axonframework.eventsourcing.eventstore.inmemory;
 
-import org.axonframework.eventsourcing.eventstore.StorageEngineBackedEventStore;
 import org.axonframework.eventsourcing.eventstore.StorageEngineTestSuite;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 /**
- * Test class validating the {@link StorageEngineBackedEventStore} together with the {@link InMemoryEventStorageEngine}.
+ * Test class validating the {@link InMemoryEventStorageEngine}.
  *
  * @author Steven van Beelen
  */
@@ -35,5 +34,9 @@ class InMemoryEventStorageEngineTest extends StorageEngineTestSuite<InMemoryEven
     @Override
     protected ProcessingContext processingContext() {
         return null;
+    }
+
+    @Override  // disable this unsupported scenario
+    protected void twoIndependentStorageEnginesShouldSeeEachOthersAppends() {
     }
 }
