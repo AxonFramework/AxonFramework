@@ -532,8 +532,11 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     private void onAppendDetected() {
 
         /*
-         * The callbacks are coming from ContinuousMessageStream which already
-         * ensures they do not throw exceptions.
+         * When doing (unknown) callbacks that could throw exceptions, those may kill essential threads
+         * or otherwise interrupt other important code. Normally, you'd protect that by catching exceptions
+         * and logging them only, but in this case, ContinuousMessageStream already takes care of that
+         * for us. If that ever changes, this code should be updated as we do rely on the fact that it
+         * won't throw exceptions.
          */
 
         for (Runnable callback : streamCallbacks.values()) {
