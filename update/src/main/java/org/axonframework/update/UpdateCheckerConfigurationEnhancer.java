@@ -38,7 +38,16 @@ import static org.axonframework.common.configuration.ComponentDefinition.ofType;
  */
 @Internal
 public class UpdateCheckerConfigurationEnhancer implements ConfigurationEnhancer {
+
     private static final Logger logger = LoggerFactory.getLogger(UpdateCheckerConfigurationEnhancer.class);
+
+    /**
+     * The order of {@code this} enhancer compared to others, equal to {@link Integer#MAX_VALUE}.
+     * <p>
+     * Setting it to {@link Integer#MAX_VALUE} ensures this enhancer runs last, allowing users to override components
+     * such as the {@link UpdateCheckerReporter}.
+     */
+    public static final int ENHANCER_ORDER = Integer.MAX_VALUE;
 
     @Override
     public void enhance(@Nonnull ComponentRegistry componentRegistry) {
@@ -60,7 +69,8 @@ public class UpdateCheckerConfigurationEnhancer implements ConfigurationEnhancer
                          .registerIfNotPresent(ofType(UpdateChecker.class)
                                                        .withBuilder(c -> new UpdateChecker(
                                                                c.getComponent(UpdateCheckerHttpClient.class),
-                                                               c.getComponent(UpdateCheckerReporter.class)
+                                                               c.getComponent(UpdateCheckerReporter.class),
+                                                               c.getComponent(UsagePropertyProvider.class)
                                                        ))
                                                        .onStart(Phase.EXTERNAL_CONNECTIONS, UpdateChecker::start)
                                                        .onShutdown(Phase.EXTERNAL_CONNECTIONS, UpdateChecker::stop));
@@ -68,7 +78,6 @@ public class UpdateCheckerConfigurationEnhancer implements ConfigurationEnhancer
 
     @Override
     public int order() {
-        // Ensure this runs last so users can override components such as the UpdateCheckerReporter
-        return Integer.MAX_VALUE;
+        return ENHANCER_ORDER;
     }
 }

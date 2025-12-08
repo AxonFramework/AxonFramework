@@ -148,9 +148,8 @@ When building Axon Framework applications, you will typically see a flow of mess
 3. Events are handled by event handlers, which can update read models or trigger further processing
 4. Read models can be queried using query messages
 
-Using xref:axoniq-console-reference:ROOT:index.adoc[AxonIQ Platform], you can monitor the flow of messages in your application as you can see in the image below.
+Using xref:axoniq-platform-reference:ROOT:index.adoc[Axoniq Platform], you can monitor the flow of messages in your application as you can see in the image below.
 
-image::axoniq-console-flow.gif[alt="Animated graphic of message flow in AxonIQ Console"]
+image::axoniq-console-flow.gif[alt="Animated graphic of message flow in Axoniq Platform"]
 
-Besides seeing the flow, every message handler is individually monitored, providing deep insight into the performance and behavior of your application.
-For more information, see the xref:axoniq-console-reference:ROOT:index.adoc[AxonIQ Console Reference Guide] or link:https://console.axoniq.io[sign up directly].
+Besides seeing the flow, every message handler is individually monitored, providing deep insight into the performance and behavior of your application. For more information, see the xref:axoniq-platform-reference:ROOT:index.adoc[Axoniq Platform Reference Guide] or link:https://platform.axoniq.io[sign up directly].

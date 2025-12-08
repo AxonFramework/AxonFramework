@@ -16,7 +16,9 @@
 
 package org.axonframework.messaging.core.annotation;
 
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.interception.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.core.interception.annotation.MessageInterceptingMember;
 import org.axonframework.messaging.core.interception.annotation.NoMoreInterceptors;
@@ -36,7 +38,6 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.util.Collections.emptySet;
 import static java.util.Collections.emptySortedSet;
@@ -50,15 +51,13 @@ import static org.axonframework.messaging.core.annotation.MessageStreamResolverU
  * @author Allard Buijze
  * @since 3.0.0
  */
+@Internal
 public class AnnotatedHandlerInspector<T> {
 
     private final Class<T> inspectedType;
-    private final ParameterResolverFactory parameterResolverFactory;
-    private final Map<Class<?>, AnnotatedHandlerInspector<?>> registry;
     private final List<AnnotatedHandlerInspector<? super T>> superClassInspectors;
     private final List<AnnotatedHandlerInspector<? extends T>> subClassInspectors;
     private final Map<Class<?>, SortedSet<MessageHandlingMember<? super T>>> handlers;
-    private final HandlerDefinition handlerDefinition;
     private final Map<Class<?>, MessageHandlerInterceptorMemberChain<T>> interceptorChains;
     private final Map<Class<?>, SortedSet<MessageHandlingMember<? super T>>> interceptors;
 
@@ -69,11 +68,8 @@ public class AnnotatedHandlerInspector<T> {
                                       Map<Class<?>, AnnotatedHandlerInspector<?>> registry,
                                       List<AnnotatedHandlerInspector<? extends T>> subClassInspectors) {
         this.inspectedType = inspectedType;
-        this.parameterResolverFactory = parameterResolverFactory;
-        this.registry = registry;
         this.superClassInspectors = new ArrayList<>(superClassInspectors);
         this.handlers = new HashMap<>();
-        this.handlerDefinition = handlerDefinition;
         this.subClassInspectors = subClassInspectors;
         this.interceptorChains = new ConcurrentHashMap<>();
         this.interceptors = new ConcurrentHashMap<>();
@@ -135,6 +131,7 @@ public class AnnotatedHandlerInspector<T> {
      * @param <T>                      the handler's type
      * @return a new inspector instance for the inspected class
      */
+    // TODO #3936 Clean-up methods only used by stashed code
     public static <T> AnnotatedHandlerInspector<T> inspectType(Class<T> handlerType,
                                                                ParameterResolverFactory parameterResolverFactory,
                                                                HandlerDefinition handlerDefinition,
@@ -160,7 +157,7 @@ public class AnnotatedHandlerInspector<T> {
                                                               registry,
                                                               declaredSubtypes));
         }
-        //noinspection unchecked
+
         return (AnnotatedHandlerInspector<T>) registry.get(inspectedType);
     }
 
@@ -213,7 +210,7 @@ public class AnnotatedHandlerInspector<T> {
             handlerDefinition.createHandler(inspectedType,
                                             method,
                                             parameterResolverFactory,
-                                            result -> resolveToStream(result, new ClassBasedMessageTypeResolver()))
+                                            result -> resolveToStream(result, new AnnotationMessageTypeResolver()))
                              .ifPresent(h -> registerHandler(inspectedType, h));
         }
 
@@ -266,6 +263,29 @@ public class AnnotatedHandlerInspector<T> {
     }
 
     /**
+     * Returns a list of detected members of given {@code type}, that can handle messages of {@code messageType}. The
+     * list is further filtered to exclude any duplicate members that resolve to the same {@link Executable}.
+     *
+     * @param type a type of inspected entity
+     * @param messageType a message type the returned handlers must be able to handle
+     * @return a list of unique detected message handlers for given {@code type}, that can handle messages of {@code messageType}
+     */
+    public List<MessageHandlingMember<? super T>> getUniqueHandlers(Class<?> type, Class<? extends Message> messageType) {
+        SortedSet<MessageHandlingMember<? super T>> set = handlers.getOrDefault(type, emptySortedSet());
+        Set<ExecutableSignature> seenMethods = new HashSet<>();
+
+        // Note: this is a stateful stream, do not change the order of the filter conditions as otherwise
+        // a method that belongs to a different message type may filter out methods that belong to the correct
+        // message type.
+        return set.stream()
+            .filter(member -> member.canHandleMessageType(messageType))
+            .filter(member -> seenMethods.add(
+                member.unwrap(Executable.class).map(ExecutableSignature::of).orElseThrow()  // there is always an executable
+            ))
+            .toList();
+    }
+
+    /**
      * Returns an Interceptor Chain of annotated interceptor methods defined on the given {@code type}. The given chain
      * will invoke all relevant interceptors in an order defined by the handler definition.
      *
@@ -287,6 +307,7 @@ public class AnnotatedHandlerInspector<T> {
      *
      * @return a map of handlers per type
      */
+    // TODO #3936 Clean-up methods only used by stashed code
     public Map<Class<?>, SortedSet<MessageHandlingMember<? super T>>> getAllHandlers() {
         return Collections.unmodifiableMap(handlers);
     }
@@ -298,6 +319,7 @@ public class AnnotatedHandlerInspector<T> {
      *
      * @return a map of interceptors per type
      */
+    // TODO #3936 Clean-up methods only used by stashed code
     public Map<Class<?>, SortedSet<MessageHandlingMember<? super T>>> getAllInterceptors() {
         return Collections.unmodifiableMap(interceptors);
     }
@@ -307,6 +329,7 @@ public class AnnotatedHandlerInspector<T> {
      *
      * @return a {@link Set} of all types which have been inspected for handlers
      */
+    // TODO #3936 Clean-up methods only used by stashed code
     public Set<Class<?>> getAllInspectedTypes() {
         Set<Class<?>> inspectedTypes = new HashSet<>();
         inspectedTypes.add(inspectedType);
@@ -317,5 +340,11 @@ public class AnnotatedHandlerInspector<T> {
                             .map(AnnotatedHandlerInspector::getAllInspectedTypes)
                             .forEach(inspectedTypes::addAll);
         return Collections.unmodifiableSet(inspectedTypes);
+    }
+
+    record ExecutableSignature(String name, List<Class<?>> parameterTypes) {
+        static ExecutableSignature of(Executable e) {
+            return new ExecutableSignature(e.getName(), List.of(e.getParameterTypes()));
+        }
     }
 }

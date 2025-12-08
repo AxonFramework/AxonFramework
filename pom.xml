@@ -20,7 +20,7 @@
 
     <groupId>org.axonframework</groupId>
     <artifactId>axon</artifactId>
-    <version>5.0.1-SNAPSHOT</version>
+    <version>5.1.0-SNAPSHOT</version>
 
     <modules>
         <module>build/parent</module>
@@ -84,7 +84,7 @@
         <central-publishing-maven-plugin.version>0.9.0</central-publishing-maven-plugin.version>
         <eclipse.transformer-maven-plugin.version>1.0.0</eclipse.transformer-maven-plugin.version>
         <jacoco-maven.version>0.8.14</jacoco-maven.version>
-        <maven-assembly.version>3.7.1</maven-assembly.version>
+        <maven-assembly.version>3.8.0</maven-assembly.version>
         <maven-clean.version>3.5.0</maven-clean.version>
         <maven-compiler.version>3.14.1</maven-compiler.version>
         <maven-enforcer.version>3.6.2</maven-enforcer.version>
@@ -94,9 +94,9 @@
         <maven-jar.version>3.5.0</maven-jar.version>
         <maven-javadoc.version>3.12.0</maven-javadoc.version>
         <maven-release.version>3.2.0</maven-release.version>
-        <maven-source.version>3.3.1</maven-source.version>
+        <maven-source.version>3.4.0</maven-source.version>
         <maven-surefire.version>3.5.4</maven-surefire.version>
-        <maven-resources.version>3.3.1</maven-resources.version>
+        <maven-resources.version>3.4.0</maven-resources.version>
     </properties>
 
     <!-- Framework dependencies are managed in axon-parent -->
@@ -187,6 +187,18 @@
             </activation>
             <modules>
                 <module>build/coverage-report</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>examples</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+                <property>
+                    <name>examples</name>
+                </property>
+            </activation>
+            <modules>
+                <module>examples</module>
             </modules>
         </profile>
 

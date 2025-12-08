@@ -153,22 +153,24 @@ class MergeTask extends CoordinatorTask {
                                   Segment thatSegment, TrackingToken thatToken) {
         try {
             Segment mergedSegment = thisSegment.mergedWith(thatSegment);
-            // We want to keep the token with the segmentId obtained by the merge operation, and to delete the other
-            int tokenToDelete = mergedSegment.getSegmentId() == thisSegment.getSegmentId()
-                    ? thatSegment.getSegmentId() : thisSegment.getSegmentId();
             TrackingToken mergedToken = thatSegment.getSegmentId() < thisSegment.getSegmentId()
                     ? MergedTrackingToken.merged(thatToken, thisToken)
                     : MergedTrackingToken.merged(thisToken, thatToken);
 
             joinAndUnwrap(unitOfWorkFactory.create().executeWithResult(
-                    context -> tokenStore.deleteToken(name, tokenToDelete, context)
-                                         .thenCompose(result -> tokenStore.storeToken(mergedToken,
-                                                                                      name,
-                                                                                      mergedSegment.getSegmentId(),
-                                                                                      context))
-                                         .thenCompose(result -> tokenStore.releaseClaim(name,
-                                                                                        mergedSegment.getSegmentId(),
-                                                                                        context))
+                    context -> tokenStore.deleteToken(name, thisSegment.getSegmentId(), context)
+                                         .thenCompose(result -> tokenStore.deleteToken(name, thatSegment.getSegmentId(), context))
+                                         .thenCompose(result -> tokenStore.initializeSegment(
+                                             mergedToken,
+                                             name,
+                                             mergedSegment,
+                                             context
+                                         ))
+                                         .thenCompose(result -> tokenStore.releaseClaim(
+                                             name,
+                                             mergedSegment.getSegmentId(),
+                                             context
+                                         ))
             ));
 
             logger.info("Processor [{}] successfully merged {} with {} into {}.",
