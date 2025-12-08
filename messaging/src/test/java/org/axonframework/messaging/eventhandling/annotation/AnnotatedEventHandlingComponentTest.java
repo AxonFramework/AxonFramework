@@ -624,7 +624,18 @@ class AnnotatedEventHandlingComponentTest {
         }
 
         @Nested
-        class AndOverriddenButNotAnnotatedInASubclass {
+        class WhenNotOverriddenInSubclass {
+            class U extends T {
+            }
+
+            @Test
+            void shouldCallHandlerOnlyOnce() {
+                assertCalledOnlyOnce(new U());
+            }
+        }
+
+        @Nested
+        class WhenOverriddenButNotAnnotatedInASubclass {
             class U extends T {
                 @Override
                 public void handle(Integer event) {
@@ -668,7 +679,7 @@ class AnnotatedEventHandlingComponentTest {
         }
 
         @Nested
-        class AndOverriddenButNotAnnotatedInASubclass {
+        class WhenOverriddenButNotAnnotatedInASubclass {
             class U extends T {
                 @Override
                 public void handle(Integer event) {

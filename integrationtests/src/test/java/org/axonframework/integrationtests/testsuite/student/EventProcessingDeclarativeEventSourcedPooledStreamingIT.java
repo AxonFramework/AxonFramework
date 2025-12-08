@@ -112,8 +112,7 @@ public class EventProcessingDeclarativeEventSourcedPooledStreamingIT extends Abs
                                     studentId);
                             if (readModel.courses.size() >= 3) {
                                 var commandGateway = context.component(CommandGateway.class);
-                                var cr = commandGateway.send(new SendMaxCoursesNotificationCommand(studentId), context);
-                                return MessageStream.fromFuture(cr.getResultMessage()).ignoreEntries().cast();
+                                commandGateway.send(new SendMaxCoursesNotificationCommand(studentId), context);
                             }
                             return MessageStream.empty();
                         }

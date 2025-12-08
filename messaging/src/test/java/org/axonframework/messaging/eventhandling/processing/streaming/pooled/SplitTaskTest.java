@@ -82,12 +82,24 @@ class SplitTaskTest {
         when(workPackage.abort(null)).thenReturn(emptyCompletedFuture());
         when(tokenStore.fetchToken(eq(PROCESSOR_NAME), eq(SEGMENT_ID), any()))
                 .thenReturn(completedFuture(testTokenToSplit));
-        when(tokenStore.initializeSegment(any(), anyString(), any(Segment.class), any())).thenReturn(emptyCompletedFuture());
-        when(tokenStore.releaseClaim(any(), anyInt(), any())).thenReturn(emptyCompletedFuture());
+        when(tokenStore.initializeSegment(any(), eq(PROCESSOR_NAME), eq(new Segment(0, 1)), any()))
+                .thenReturn(emptyCompletedFuture());
+        when(tokenStore.initializeSegment(any(), eq(PROCESSOR_NAME), eq(new Segment(1, 1)), any()))
+                .thenReturn(emptyCompletedFuture());
+        when(tokenStore.releaseClaim(eq(PROCESSOR_NAME), anyInt(), any()))
+                .thenReturn(emptyCompletedFuture());
+        when(tokenStore.deleteToken(eq(PROCESSOR_NAME), eq(Segment.ROOT_SEGMENT.getSegmentId()), any()))
+                .thenReturn(emptyCompletedFuture());
+
         workPackages.put(SEGMENT_ID, workPackage);
 
         testSubject.run();
 
+        // original token must be reinitialized (due to mask change):
+        verify(tokenStore).initializeSegment(eq(expectedOriginal.getTrackingToken()),
+                                             eq(PROCESSOR_NAME),
+                                             eq(expectedOriginal.getSegment()),
+                                             any());
         verify(tokenStore).initializeSegment(eq(expectedSplit.getTrackingToken()),
                                              eq(PROCESSOR_NAME),
                                              eq(expectedSplit.getSegment()),
@@ -112,11 +124,22 @@ class SplitTaskTest {
                 .thenReturn(completedFuture(Segment.ROOT_SEGMENT));
         when(tokenStore.fetchToken(eq(PROCESSOR_NAME), eq(SEGMENT_ID), any()))
                 .thenReturn(completedFuture(testTokenToSplit));
-        when(tokenStore.initializeSegment(any(), anyString(), any(Segment.class), any())).thenReturn(emptyCompletedFuture());
-        when(tokenStore.releaseClaim(any(), anyInt(), any())).thenReturn(emptyCompletedFuture());
+        when(tokenStore.initializeSegment(any(), eq(PROCESSOR_NAME), eq(new Segment(0, 1)), any()))
+                .thenReturn(emptyCompletedFuture());
+        when(tokenStore.initializeSegment(any(), eq(PROCESSOR_NAME), eq(new Segment(1, 1)), any()))
+                .thenReturn(emptyCompletedFuture());
+        when(tokenStore.releaseClaim(eq(PROCESSOR_NAME), eq(Segment.ROOT_SEGMENT.getSegmentId()), any()))
+                .thenReturn(emptyCompletedFuture());
+        when(tokenStore.deleteToken(eq(PROCESSOR_NAME), eq(Segment.ROOT_SEGMENT.getSegmentId()), any()))
+                .thenReturn(emptyCompletedFuture());
 
         testSubject.run();
 
+        // original token must be reinitialized (due to mask change):
+        verify(tokenStore).initializeSegment(eq(expectedOriginal.getTrackingToken()),
+                                             eq(PROCESSOR_NAME),
+                                             eq(expectedOriginal.getSegment()),
+                                             any());
         verify(tokenStore).initializeSegment(eq(expectedSplit.getTrackingToken()),
                                              eq(PROCESSOR_NAME),
                                              eq(expectedSplit.getSegment()),
