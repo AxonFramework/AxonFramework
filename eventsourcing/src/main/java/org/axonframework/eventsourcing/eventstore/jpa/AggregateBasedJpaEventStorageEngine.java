@@ -43,6 +43,7 @@ import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.LegacyResources;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.SimpleEntry;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
@@ -375,7 +376,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
         GapAwareTrackingToken trackingToken = tokenOperations.assertGapAwareTrackingToken(condition.position());
 
         return new ContinuousMessageStream<TokenAndEvent>(
-                last -> queryTokensAndEventsBy(last == null ? trackingToken : last.token),
+                last -> queryTokensAndEventsBy(last == null ? trackingToken : last.token, condition),
                 tae -> new SimpleEntry<>(convertToEventMessage(tae.event), buildTrackedContext(tae)),
                 (ms, r) -> {
                     streamCallbacks.put(ms, r);
@@ -385,7 +386,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
         );
     }
 
-    private List<TokenAndEvent> queryTokensAndEventsBy(TrackingToken start) {
+    private List<TokenAndEvent> queryTokensAndEventsBy(TrackingToken start, StreamingCondition condition) {
         Assert.isTrue(
                 start == null || start instanceof GapAwareTrackingToken,
                 () -> String.format("Token [%s] is of the wrong type. Expected [%s]",
@@ -399,8 +400,16 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
         GapAwareTrackingToken token = cleanedToken;
         Instant gapTimeoutThreshold = tokenOperations.gapTimeoutThreshold();
         for (AggregateEventEntry event : events) {
-            token = calculateToken(token, event.globalIndex(), event.timestamp(), gapTimeoutThreshold);
-            result.add(new TokenAndEvent(token, event));
+            String type = event.aggregateType();
+            String identifier = event.aggregateIdentifier();
+
+            // A null type or identifier is allowed, but those cannot form a valid tag:
+            Set<Tag> tags = type == null || identifier == null ? Set.of() : Set.of(new Tag(type, identifier));
+
+            if (condition.matches(new QualifiedName(event.type()), tags)) {
+                token = calculateToken(token, event.globalIndex(), event.timestamp(), gapTimeoutThreshold);
+                result.add(new TokenAndEvent(token, event));
+            }
         }
         return result;
     }

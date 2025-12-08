@@ -192,6 +192,66 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
     }
 
     @Test
+    void streamingWithTagConditionShouldSkipNonMatchingMessages() {
+        TaggedEventMessage<?> expectedEventOne = taggedEventMessage("event-0", TEST_AGGREGATE_TAGS);
+        TaggedEventMessage<?> expectedEventTwo = taggedEventMessage("event-1", TEST_AGGREGATE_TAGS);
+        TaggedEventMessage<?> expectedEventThree = taggedEventMessage("event-4", TEST_AGGREGATE_TAGS);
+        // Ensure there are "gaps" in the global stream based on events not matching the condition.
+        appendEvents(
+            AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
+            expectedEventOne,
+            expectedEventTwo,
+            taggedEventMessage("event-2", Set.of()),
+            taggedEventMessage("event-3", OTHER_AGGREGATE_TAGS),
+            expectedEventThree,
+            taggedEventMessage("event-5", OTHER_AGGREGATE_TAGS),
+            taggedEventMessage("event-6", OTHER_AGGREGATE_TAGS)
+        );
+
+        MessageStream<EventMessage> result =
+                testSubject.stream(
+                    StreamingCondition.conditionFor(trackingTokenAt(0), EventCriteria.havingTags(TEST_AGGREGATE_TAGS)),
+                    processingContext()
+                );
+
+        StepVerifier.create(FluxUtils.of(result))
+                    .assertNext(entry -> assertTrackedEntry(entry, expectedEventOne.event(), 1))
+                    .assertNext(entry -> assertTrackedEntry(entry, expectedEventTwo.event(), 2))
+                    .assertNext(entry -> assertTrackedEntry(entry, expectedEventThree.event(), 5))
+                    .thenCancel().verify();
+    }
+
+    @Test
+    void streamingWithTypeConditionShouldSkipNonMatchingMessages() {
+        TaggedEventMessage<?> msg1 = taggedEventMessage("event-1", TEST_AGGREGATE_TAGS, "create");
+        TaggedEventMessage<?> msg2 = taggedEventMessage("event-2", TEST_AGGREGATE_TAGS, "update");
+        TaggedEventMessage<?> msg3 = taggedEventMessage("event-3", Set.of(), "create");
+        TaggedEventMessage<?> msg4 = taggedEventMessage("event-4", OTHER_AGGREGATE_TAGS, "update");
+        TaggedEventMessage<?> msg5 = taggedEventMessage("event-5", TEST_AGGREGATE_TAGS, "update");
+        TaggedEventMessage<?> msg6 = taggedEventMessage("event-6", OTHER_AGGREGATE_TAGS, "update");
+        TaggedEventMessage<?> msg7 = taggedEventMessage("event-7", OTHER_AGGREGATE_TAGS, "delete");
+
+        appendEvents(
+            AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
+            msg1, msg2, msg3, msg4, msg5, msg6, msg7
+        );
+
+        MessageStream<EventMessage> result =
+                testSubject.stream(
+                    StreamingCondition.conditionFor(trackingTokenAt(0), EventCriteria.havingAnyTag().andBeingOneOfTypes("update", "delete")),
+                    processingContext()
+                );
+
+        StepVerifier.create(FluxUtils.of(result))
+                    .assertNext(entry -> assertTrackedEntry(entry, msg2.event(), 2))
+                    .assertNext(entry -> assertTrackedEntry(entry, msg4.event(), 4))
+                    .assertNext(entry -> assertTrackedEntry(entry, msg5.event(), 5))
+                    .assertNext(entry -> assertTrackedEntry(entry, msg6.event(), 6))
+                    .assertNext(entry -> assertTrackedEntry(entry, msg7.event(), 7))
+                    .thenCancel().verify();
+    }
+
+    @Test
     void streamingAfterLastPositionReturnsEmptyStream() {
         EventCriteria expectedCriteria = TEST_AGGREGATE_CRITERIA;
         TaggedEventMessage<?> expectedEventOne = taggedEventMessage("event-0", TEST_AGGREGATE_TAGS);
@@ -649,9 +709,17 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
         return taggedEventMessage(payload, tags, Metadata.emptyInstance());
     }
 
+    protected static TaggedEventMessage<?> taggedEventMessage(String payload, Set<Tag> tags, String messageType) {
+        return taggedEventMessage(payload, tags, messageType, Metadata.emptyInstance());
+    }
+
     protected static TaggedEventMessage<?> taggedEventMessage(String payload, Set<Tag> tags, Metadata metadata) {
+        return taggedEventMessage(payload, tags, "event", metadata);
+    }
+
+    protected static TaggedEventMessage<?> taggedEventMessage(String payload, Set<Tag> tags, String messageType, Metadata metadata) {
         return new GenericTaggedEventMessage<>(
-                new GenericEventMessage(new MessageType("event"), payload, metadata),
+                new GenericEventMessage(new MessageType(messageType), payload, metadata),
                 tags
         );
     }
