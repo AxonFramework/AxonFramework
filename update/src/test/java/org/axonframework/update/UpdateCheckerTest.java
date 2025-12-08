@@ -17,10 +17,11 @@
 package org.axonframework.update;
 
 import org.axonframework.update.api.UpdateCheckResponse;
+import org.axonframework.update.configuration.UsagePropertyProvider;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.junit.jupiter.api.extension.*;
+import org.mockito.*;
+import org.mockito.junit.jupiter.*;
 
 import java.time.Duration;
 import java.util.List;
@@ -41,11 +42,15 @@ class UpdateCheckerTest {
     @Mock
     private UpdateCheckerReporter reporter;
 
+    @Mock
+    private UsagePropertyProvider usagePropertyProvider;
+
     private UpdateChecker updateChecker;
 
     @BeforeEach
     void setUp() {
-        updateChecker = new UpdateChecker(httpClient, reporter);
+        when(usagePropertyProvider.getDisabled()).thenReturn(false);
+        updateChecker = new UpdateChecker(httpClient, reporter, usagePropertyProvider);
     }
 
     @AfterEach
@@ -139,5 +144,24 @@ class UpdateCheckerTest {
 
         // Cleanup
         updateChecker.stop();
+    }
+
+    @Test
+    void shouldNotStartWhenDisabled() {
+        // Given
+        when(usagePropertyProvider.getDisabled()).thenReturn(true);
+        UpdateChecker disabledChecker = new UpdateChecker(httpClient, reporter, usagePropertyProvider);
+
+        // When
+        disabledChecker.start();
+
+        // Then
+        // Wait a bit to ensure no requests are made
+        await().during(Duration.ofMillis(500))
+               .atMost(Duration.ofSeconds(1))
+               .untilAsserted(() -> verify(httpClient, never()).sendRequest(any(), anyBoolean()));
+
+        // Cleanup
+        disabledChecker.stop();
     }
 }

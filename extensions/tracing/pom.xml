@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.axonframework.extensions</groupId>
         <artifactId>axon-extensions</artifactId>
-        <version>5.0.1-SNAPSHOT</version>
+        <version>5.1.0-SNAPSHOT</version>
     </parent>
 
     <groupId>org.axonframework.extensions.tracing</groupId>

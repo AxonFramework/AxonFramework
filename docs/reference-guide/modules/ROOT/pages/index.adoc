@@ -14,12 +14,12 @@ Axon also supports link:https://www.axoniq.io/concepts/domain-driven-design[Doma
 
 [[console]]
 == New: Easy monitoring and management
-Axoniq Platform is the platform to monitor and manage your Axon Framework applications. It provides insights into the performance and behavior of your application, and allows you to manage your application's event processors.
+Axoniq Platform makes it easy to monitor and manage your Axon Framework applications. It provides insights into the performance and behavior of your application, and allows you to manage your application's event processors.
 You can also get scalable xref:axon-server-reference::index.adoc[Axon Server] licenses with scalable pricing, and manage your Axon Server instances.
 
-image::axoniq-console-teaser.png[alt="Statistics measured in Axoniq Platform"]
+image::axoniq-console-teaser.png[alt="Statistics measured on Axoniq Platform"]
 
-For more information, see the xref:axoniq-console-reference:ROOT:index.adoc[Axoniq Platform Reference Guide] or link:https://platform.axoniq.io[sign up directly].
+For more information, see the xref:axoniq-platform-reference:ROOT:index.adoc[Axoniq Platform Reference] or link:https://platform.axoniq.io[sign up directly].
 
 == Reference sections
 A summary of the various subsections is given below.

@@ -17,14 +17,11 @@ How to configure and specifics on the query gateway and bus implementations are 
 The `QueryBus` is the mechanism that dispatches queries to query handlers.
 Queries are registered using the query name.
 
-[IMPORTANT]
+[NOTE]
 ====
-**Axon 5 removed scatter-gather query support.**
+For those familiar with previous iterations of Axon Framework, it does not support scatter-gather queries where multiple handlers respond to the same query. If you rely heavily on scatter-gather queries, please provide feedback at https://github.com/AxonFramework/AxonFramework/issues/3689[this GitHub issue].
 
-In Axon 4, it was possible to register multiple handlers for the same request-response combination and use scatter-gather queries to collect responses from all handlers.
-This feature has been removed due to limited use.
-
-If you rely on scatter-gather queries, please provide feedback at https://github.com/AxonFramework/AxonFramework/issues/3689[this GitHub issue].
+As a workaround, if you need to collect information from multiple sources, consider using multiple separate queries or implementing an aggregating query handler that coordinates the data collection internally.
 ====
 
 The `QueryGateway` is a convenient interface towards the query dispatching mechanism.
@@ -48,25 +45,44 @@ Axon Framework supports three types of queries:
 
 A point-to-point query represents a query request to a single query handler.
 If no handler is found for a given query, a `NoHandlerForQueryException` is thrown.
-When multiple handlers are available for the same query, the query is routed to one of them.
 
 === Query handler example
 
-Here's a simple query handler:
+First, define the query message with the `@Query` annotation:
+
+[source,java]
+----
+import org.axonframework.messaging.queryhandling.annotation.Query;
+
+@Query(namespace = "inventory", name = "FetchItems")
+public class FetchItemsQuery {
+    private final String criteria;
+
+    public FetchItemsQuery(String criteria) {
+        this.criteria = criteria;
+    }
+
+    public String getCriteria() {
+        return criteria;
+    }
+}
+----
+
+Then write the query handler:
 
 [source,java]
 ----
 @QueryHandler // <1>
-public List<String> query(FetchItemsQuery query) {
+public List<String> query(FetchItemsQuery query) { // <2>
     // return the query result based on given criteria
     return repository.findItems(query.getCriteria());
 }
 ----
 
-<1> By default, the name of the query is the fully qualified class name of the query payload (`FetchItemsQuery` in our case).
-You can override this behavior by setting the `queryName` attribute of the `@QueryHandler` annotation.
+<1> The `@QueryHandler` annotation marks this method as a query handler.
+<2> The first parameter must be the `@Query` annotated message class. The handler will process queries matching the query name defined by the `@Query` annotation (`inventory.FetchItems` in this case). If you want to use a different parameter type (for example, `Map<String, Object>`), you **must** specify `queryName` in the `@QueryHandler` annotation.
 
-=== Dispatching with QueryGateway
+=== Dispatching with `QueryGateway`
 
 To query our view model using the `QueryGateway`:
 
@@ -109,7 +125,7 @@ The result is returned asynchronously regardless of the QueryBus implementation.
 However, if a `@QueryHandler` annotated function's return type is `CompletableFuture`, the result will be fully asynchronous.
 ====
 
-=== Dispatching with ProcessingContext
+=== Dispatching with `ProcessingContext`
 
 When dispatching queries from within a message handler (such as an event handler or command handler), you should provide the `ProcessingContext` to maintain correlation data:
 
@@ -348,7 +364,7 @@ If we used a point-to-point query with `queryMany`, we would get an extensive li
 This result can potentially cause a buffer overflow or maximum message size violation.
 Instead, we use `streamingQuery`, which converts our response to a stream and chunks the result into smaller messages containing the `CardSummary` instances.
 
-=== Native streaming with Flux
+=== Native streaming with `Flux`
 
 For fine-grained control of the producing stream, you can use Project Reactor's `Flux` as the return type:
 

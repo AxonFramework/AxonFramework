@@ -1,4 +1,4 @@
-= Command dispatchers
+= Command Dispatchers
 :navtitle: Dispatching
 
 The xref:command-handlers.adoc[Command handlers] pages provide the background on how to handle command messages in your application.

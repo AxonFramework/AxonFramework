@@ -26,6 +26,11 @@ import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Test class validating the {@link PropertyFileUsagePropertyProvider}.
+ *
+ * @author Mitchell Herrijgers
+ */
 class PropertyFileUsagePropertyProviderTest {
 
     private final PropertyFileUsagePropertyProvider provider = new PropertyFileUsagePropertyProvider();
@@ -80,6 +85,7 @@ class PropertyFileUsagePropertyProviderTest {
             props.load(in);
         }
         assertEquals(DefaultUsagePropertyProvider.INSTANCE.getUrl(), props.getProperty("telemetry_url"));
-        assertEquals(String.valueOf(DefaultUsagePropertyProvider.INSTANCE.getDisabled()), props.getProperty("opted_out"));
+        assertEquals(String.valueOf(DefaultUsagePropertyProvider.INSTANCE.getDisabled()),
+                     props.getProperty("disabled"));
     }
 }
