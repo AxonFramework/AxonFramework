@@ -29,19 +29,35 @@ See xref:anatomy-message.adoc#message-identifier[Message identifier] for details
 .All messages are immutable
 ====
 All messages are immutable.
-Storing data in a message means creating a new message based on the previous one, with extra information added to it.
+Storing additional data in a message means creating a new message based on the previous one, with extra information added to it.
 This guarantees that messages are safe to use in a multi-threaded and distributed environment.
 ====
 
+[#commands]
 == Commands
 
 Commands describe an intent to change the application's state.
-They are implemented as POJOs that are wrapped in a `CommandMessage`.
+They are implemented as POJOs that are wrapped in a `CommandMessage`.Axon Framework refers to your command as the "command payload." Thus, to retrieve it from a `CommandMessage` you use the `CommandMessage#payload` method.
 
 Commands always have exactly one destination.
 While the sender does not care which component handles the command or where that component resides, it may want to know the outcome.
 Command messages sent over the command bus allow for a result to be returned.
 
+Next to the command payload, you can store information in the metadata of a command message.
+The intent of the metadata is to store additional information about a command that is not primarily intended as business information.
+Auditing information is a typical example - it allows you to see under which circumstances an command was raised, such as the user account that triggered the processing, or the name of the machine that processed the event.
+
+[TIP]
+.Do not base business decisions on metadata
+====
+In general, you should not base business decisions on information in the metadata of command messages.
+If that is the case, you might have information attached that should really be part of the command itself instead.
+Metadata is typically used for reporting, auditing, and tracing.
+====
+
+For more on command messages, command handlers, and command-specific configuration options, be sure to read the xref:commands:index.adoc[commands] chapter.
+
+[#events]
 == Events
 
 Events are objects that describe something that has occurred in the application.
@@ -59,19 +75,9 @@ This makes the identifier readily available to all event handlers and ensures yo
 ====
 
 The original event object is stored as the payload of an `EventMessage`.
-Next to the payload, you can store information in the metadata of an event message.
-The intent of the metadata is to store additional information about an event that is not primarily intended as business information.
-Auditing information is a typical example - it allows you to see under which circumstances an event was raised, such as the user account that triggered the processing, or the name of the machine that processed the event.
+Next to the payload, you can store information in the metadata of an event message, similarly as with <<commands,commands>>.
 
-[TIP]
-.Do not base business decisions on metadata
-====
-In general, you should not base business decisions on information in the metadata of event messages.
-If that is the case, you might have information attached that should really be part of the event itself instead.
-Metadata is typically used for reporting, auditing, and tracing.
-====
-
-Although not enforced, it is good practice to make domain events immutable, preferably by making all fields final and by initializing the event within the constructor.
+Although not enforced, it is good practice to make domain events immutable, preferably by making all fields final and by initializing the event within the constructor. Utilizing Java's `record` or the Kotlin `data class` will similarly be helpful to construct immutable messages.
 Consider using a builder pattern if event construction is too cumbersome.
 
 [TIP]
@@ -86,15 +92,26 @@ Other listeners do care about the intent and these will listen to the concrete s
 image::state-change-intent.png[Adding intent to events]
 ====
 
-When dispatching an event on the event bus, you need to wrap it in an event message.
+When publishing an event on the event bus, you need to wrap it in an event message.
 The `GenericEventMessage` is an implementation that allows you to wrap your event in a message using its constructor.
-Axon will automatically wrap events in `EventMessage` instances when they are published.
+Axon will automatically wrap events in `EventMessage` instances when they are published through the `EventGateway` and `EventAppender`.
 
+For more on event messages, event handlers, event processing, and event-specific configuration options, be sure to read the xref:events:index.adoc[events] chapter.
+
+[#queries]
 == Queries
 
-Queries describe a request for information or state.
-A query can have multiple handlers.
-When dispatching queries, the client indicates whether it wants a result from one handler or from all available query handlers.
+Queries describe a request for information or state. Just as <<commands,commands>>, queries have one destination. Where they differ is their focus on providing the requesting data back to those that dispatched a query.
+In fact, you could say it is "all about the response."
+
+Queries can be dispatched on the query bus using several mechanism, like:
+
+1. Direct query with a single response.
+2. Direct query with many responses.
+3. Streaming query for a **lot** of responses.
+4. Subscription queries, to maintain an open subscription with responses.
+
+Just as commands and <<events,events>>, queries have a type, payload, metadata, and identifier.
 
 == Async-native messaging
 
@@ -102,12 +119,15 @@ Axon Framework is built with asynchronous processing at its core.
 This means the framework handles asynchronous operations throughout, without requiring you to deal with asynchronous programming details at every turn.
 
 The framework uses `CompletableFuture` for asynchronous results and provides abstractions that work seamlessly in both synchronous and asynchronous contexts.
-When you send a command or dispatch a query, the framework handles the complexity of async processing for you.
+Thus, when you send a command or dispatch a query, the framework handles the complexity of async processing for you.
 
-=== `MessageStream`
+There are two key components in Axon Framework that enable it to be async-native. These are the <<message_stream,Message Stream>> and <<processing_context,Processing Context>>.
+
+[#message_stream]
+=== Message Stream
 
 The `MessageStream` is a key abstraction that allows you to work with messages in both imperative and reactive styles.
-It is the return type for message handlers and event store operations.
+It is **the** return type for message handlers and event store operations.
 
 A `MessageStream` can represent:
 
@@ -126,7 +146,8 @@ You can create a `MessageStream` using factory methods like:
 
 The `MessageStream` abstraction allows the framework to support both traditional imperative code and reactive programming styles without forcing you to choose one approach exclusively.
 
-=== `ProcessingContext`
+[#processing_context]
+=== Processing Context
 
 When Axon processes a message, it creates a `ProcessingContext` that travels with the message throughout its handling.
 This context:
@@ -143,10 +164,10 @@ See xref:processing-context.adoc[`ProcessingContext`] for more details.
 
 When building Axon Framework applications, you will typically see a flow of messages:
 
-1. Commands are sent to the command bus, which dispatches them to the appropriate command handler
-2. The command handler processes the command and may publish events
-3. Events are handled by event handlers, which can update read models or trigger further processing
-4. Read models can be queried using query messages
+1. Commands are sent to the command bus, which dispatches them to the appropriate command handler.
+2. The command handler processes the command and may publish events.
+3. Events are handled by event handlers, which can update read models or trigger further processing.
+4. Read models can be queried using query messages.
 
 Using xref:axoniq-platform-reference:ROOT:index.adoc[Axoniq Platform], you can monitor the flow of messages in your application as you can see in the image below.
 
