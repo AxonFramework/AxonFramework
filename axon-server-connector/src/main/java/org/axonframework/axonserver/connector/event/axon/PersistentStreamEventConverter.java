@@ -151,9 +151,12 @@ public class PersistentStreamEventConverter implements DescribableComponent {
      */
     private EventMessage convertEventMessage(Event event) {
         SerializedObject payload = event.getPayload();
+        String revision = payload.getRevision();
+        // MessageType requires non-empty version, use default if revision is empty/null
+        String version = (revision == null || revision.isEmpty()) ? MessageType.DEFAULT_VERSION : revision;
         return new GenericEventMessage(
                 event.getMessageIdentifier(),
-                new MessageType(payload.getType(), payload.getRevision()),
+                new MessageType(payload.getType(), version),
                 payload.getData().toByteArray(),
                 new Metadata(MetadataConverter.convertMetadataValuesToGrpc(event.getMetaDataMap())),
                 Instant.ofEpochMilli(event.getTimestamp())
