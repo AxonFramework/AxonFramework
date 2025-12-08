@@ -1,21 +1,20 @@
 = Anatomy of a Message
 
 In Axon, all communication between components is done with explicit messages, represented by the `Message` interface.
-A `Message` consists of a message type, payload, and metadata.
+A `Message` consists of a message type, payload, metadata, and an identifier.
 
 [[message_type]]
 == Message type
 
 Every message in Axon Framework has a `MessageType`, which identifies what type of message it is - what structure and content you can expect.
-This is a fundamental shift from how message types were identified in earlier versions of the framework.
 
 The `MessageType` consists of two parts:
 
-1. A `QualifiedName` - The business or domain name of the message type
-2. A `version` - The version of the message structure
+1. A `QualifiedName` - The business or domain name of the message type.
+2. A `version` - The version of the message structure.
 
 This decouples the message type from its Java class representation.
-**The Java class is no longer used to identify the type of a message.**
+**The Java class is not used to identify the type of a message.**
 Instead, the `MessageType` identifies what structure the message has, independent of which Java class is used to represent it.
 
 Many messages can have the same `MessageType` - it's a type identifier, not an instance identifier.
@@ -25,14 +24,15 @@ For example, all "OrderPlaced v1.0" events share the same `MessageType`, even th
 
 This approach provides several advantages:
 
-* **Flexibility in representation**: Different services can use different Java classes to represent the same message type
-* **Decoupling**: Services don't need to share concrete message class implementations
-* **Business alignment**: Message names can reflect business terminology rather than technical class names
-* **Version management**: All message types (commands, events, queries) can be versioned consistently
+* **Flexibility in representation**: Different services can use different Java classes to represent the same message type.
+* **Decoupling**: Services don't need to share concrete message class implementations.
+* **Business alignment**: Message names can reflect business terminology rather than technical class names.
+* **Version management**: All message types (commands, events, queries) can be versioned consistently.
 
 === Defining message types
 
-You define message types using the `@Command`, `@Event`, or `@Query` annotations on your message classes:
+The component in charge of deciding on the `MessageType`, is the `MessageTypeResolver`. The default `MessageTypeResolver` checks for message-specific annotation.
+These annotations are the `@Command`, `@Event`, or `@Query` annotation, which you can attach on your classes:
 
 [source,java]
 ----
@@ -62,9 +62,8 @@ They make it immediately clear that a class represents a command, event, or quer
 === Payload conversion at handling time
 
 Because message identity is decoupled from Java classes, **payloads are converted to the handler's expected type at handling time**.
-This is a significant shift from earlier versions where the message had to match the handler's Java class exactly.
 
-Different handlers can receive the same message in different Java representations:
+This means different handlers can receive the same message in different Java representations:
 
 [source,java]
 ----
@@ -92,7 +91,7 @@ The message identifier remains the same throughout - it's still the same message
 
 [NOTE]
 ====
-When the first parameter of your handler is not annotated with `@Event` (or `@Command`, `@Query`), you must specify the `messageType` attribute on the handler annotation.
+When the first parameter of your handler is not annotated with `@Event` (or `@Command`, `@Query`) or does not represent the fully qualified class name of the message, you must specify the message name attribute on the handler annotation.
 This tells Axon which message type the handler should receive.
 ====
 
@@ -110,16 +109,16 @@ You can access the payload in different ways:
 
 [source,java]
 ----
-Message message = // ... obtain message
+public void retrievePayload(Message message) {
+    // Get the payload as-is
+    Object payload = message.payload();
 
-// Get the payload as-is
-Object payload = message.payload();
+    // Get the payload converted to a specific type
+    OrderPlacedEvent event = message.payloadAs(OrderPlacedEvent.class);
 
-// Get the payload converted to a specific type
-OrderPlacedEvent event = message.payloadAs(OrderPlacedEvent.class);
-
-// Get the payload type
-Class<?> type = message.payloadType();
+    // Get the payload type
+    Class<?> type = message.payloadType();
+}
 ----
 
 The `payloadAs(Type)` method converts the payload to the required type at the moment you need it.
@@ -129,7 +128,9 @@ If you need explicit control over conversion, you can provide a converter:
 
 [source,java]
 ----
-OrderPlacedEvent event = message.payloadAs(OrderPlacedEvent.class, customConverter);
+public void retrieveConvertedPayload(Message message, Converter converter) {
+    OrderPlacedEvent payload = message.payloadAs(OrderPlacedEvent.class, converter);
+}
 ----
 
 This is useful when you need the same message in different formats at different points in your processing logic.
@@ -140,13 +141,13 @@ If you need to convert a message's payload for downstream processing, use `withC
 
 [source,java]
 ----
-EventMessage originalMessage = // ... event with domain object payload
-
-// Create a new message with JSON payload
-EventMessage jsonMessage = originalMessage.withConvertedPayload(
-    JsonNode.class,
-    converter
-);
+public void convertEventPayload(EventMessage event, Converter converter) {
+    // Create a new message with JSON payload
+    EventMessage jsonMessage = event.withConvertedPayload(
+            JsonNode.class,
+            converter
+    );
+}
 ----
 
 This creates a new `Message` instance with the converted payload, leaving the original message unchanged.
@@ -162,6 +163,11 @@ In Axon, metadata is represented as a `Map<String, String>`.
 This simplifies serialization and aligns with how most systems and frameworks handle metadata.
 
 Metadata is immutable - mutating methods create and return a new instance instead of modifying an existing one.
+
+[TIP]
+====
+When more complex metadata value are required, you can use Axon's `Converter` to convert the value to a `String` before adding it to the `Metadata`. Just don't forget to convert it back to the value you require on the other end!
+====
 
 === Creating metadata
 
@@ -210,6 +216,8 @@ Because metadata values must be Strings, you need to convert any non-String valu
 Metadata metadata = Metadata.with("count", String.valueOf(42))
                             .and("enabled", String.valueOf(true));
 ----
+
+Know that you can always use Axon's `Converter` to convert the values!
 ====
 
 == Message-specific data
@@ -218,8 +226,10 @@ Different message types provide additional information beyond payload and metada
 
 For example:
 
-* An `EventMessage` provides a `timestamp()` representing when the event occurred
-* A `CommandMessage` provides a `routingKey()` used to route the command to the correct handler instance
+* An `EventMessage` provides a `timestamp()` representing when the event occurred.
+* A `CommandMessage` provides a `routingKey()` used to route the command to the correct handler instance. Especially important in distributed environments.
+* A `CommandMessage` and `QueryMessage` provide a `priority()` used to signal the importance of the command/query with the handling system.
+
 
 [source,java]
 ----
@@ -241,9 +251,9 @@ The identifier remains constant even if the message is represented in different 
 
 Two messages with the same identifier represent the same conceptual message, even if:
 
-* Their payloads are represented using different Java classes (for example, domain object vs JSON)
-* They have different metadata
-* They exist in different services or contexts
+* Their payloads are represented using different Java classes (for example, domain object vs JSON).
+* They have different metadata.
+* They exist in different services or contexts.
 
 [source,java]
 ----
@@ -263,29 +273,22 @@ While Axon typically creates messages for you based on method return values and 
 
 [source,java]
 ----
-// Create an event message
-MessageType orderPlacedType = MessageType.of(
-    QualifiedName.of("com.example.orders", "OrderPlaced"),
-    "1.0"
-);
-
-EventMessage event = new GenericEventMessage(
-    orderPlacedType,
-    new OrderPlacedEvent(orderId, amount),
-    Metadata.with("userId", "user-123")
-);
+public EventMessage constructEvent(String orderId,
+                                   double amount) {
+    // Create an event message
+    MessageType orderPlacedType = new MessageType(
+            new QualifiedName("com.example.orders", "OrderPlaced"),
+            "1.0"
+    );
+    return new GenericEventMessage(
+            orderPlacedType,
+            new OrderPlacedEvent(orderId, amount),
+            Metadata.with("userId", "user-123")
+    );
+}
 ----
 
-However, when you use the `@Command`, `@Event`, or `@Query` annotations on your message classes, Axon derives the `MessageType` automatically, so you typically don't need to construct `MessageType` instances yourself.
-
-== Method naming
-
-Message methods use simple accessor naming without the "get" prefix:
-
-* `message.identifier()` - Returns the message identifier
-* `message.type()` - Returns the MessageType
-* `message.payload()` - Returns the payload
-* `message.payloadType()` - Returns the payload's Java type
-* `message.metadata()` - Returns the metadata
-* `event.timestamp()` - Returns when an event occurred
-* `command.routingKey()` - Returns the command routing key (Optional<String>)
+[WARNING]
+====
+Axon's infrastructure components that construct `Messages` for you know to look for annotations like `@Command`, `@Event`, or `@Query`. If you construct a `Message` yourself it becomes your responsibility to derive the right `MessageType`! You can either use the `MessageType` construct for this or the `MessageTypeResolver`. The latter is the infrastructure component Axon Framework uses to derive `MessageTypes` throughout.
+====
