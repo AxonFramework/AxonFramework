@@ -19,9 +19,9 @@ Queries are registered using the query name.
 
 [NOTE]
 ====
-Axon Framework does not support scatter-gather queries where multiple handlers respond to the same query. Each query name can have only one registered handler.
+For those familiar with previous iterations of Axon Framework, it does not support scatter-gather queries where multiple handlers respond to the same query. If you rely heavily on scatter-gather queries, please provide feedback at https://github.com/AxonFramework/AxonFramework/issues/3689[this GitHub issue].
 
-If you need to collect information from multiple sources, consider using multiple separate queries or implementing an aggregating query handler that coordinates the data collection internally.
+As a workaround, if you need to collect information from multiple sources, consider using multiple separate queries or implementing an aggregating query handler that coordinates the data collection internally.
 ====
 
 The `QueryGateway` is a convenient interface towards the query dispatching mechanism.
