@@ -32,7 +32,7 @@ import org.springframework.context.annotation.Role;
  * @since 3.0.4
  */
 @AutoConfiguration
-public class InfrastructureConfiguration {
+public class InfrastructureAutoConfiguration {
 
     /**
      * Provides Spring message handler lookup.

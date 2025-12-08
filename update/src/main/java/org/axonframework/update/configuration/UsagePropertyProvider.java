@@ -18,6 +18,8 @@ package org.axonframework.update.configuration;
 
 import org.axonframework.common.annotation.Internal;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -25,8 +27,8 @@ import java.util.List;
  * implementations to provide properties such as whether the collection is disabled and the URL for the collection
  * endpoint.
  * <p>
- * To use this, please {@link #create()} to obtain an instance that combines multiple property providers, such as
- * command line, property file, and default providers.
+ * To use this, please {@link #create(UsagePropertyProvider...)} to obtain an instance that combines multiple property
+ * providers, such as command line, property file, and default providers.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0
@@ -49,27 +51,31 @@ public interface UsagePropertyProvider {
     String getUrl();
 
     /**
-     * Returns the priority of this property provider. Higher values indicate higher priority.
-     * Providers with higher priority will be checked first when retrieving properties.
+     * Returns the priority of this property provider. Higher values indicate higher priority. Providers with higher
+     * priority will be checked first when retrieving properties.
      *
      * @return An {@code int} representing the priority of this provider.
      */
     int priority();
 
     /**
-     * Creates a new instance of {@code UsagePropertyProvider} that combines multiple property providers.
-     * The providers are sorted by their priority, with the highest priority provider checked first.
+     * Creates a new instance of {@code UsagePropertyProvider} that combines multiple property providers. The providers
+     * are sorted by their priority, with the highest priority provider checked first.
      *
+     * @param additionalProviders Additional {@code UsagePropertyProviders} that should be attached to the default
+     *                            {@link CommandLineUsagePropertyProvider},
+     *                            {@link EnvironmentVariableUsagePropertyProvider},
+     *                            {@link PropertyFileUsagePropertyProvider}, and {@link DefaultUsagePropertyProvider}.
      * @return A new {@code UsagePropertyProvider} instance.
      */
-    static UsagePropertyProvider create() {
-        return new HierarchicalUsagePropertyProvider(
-                List.of(
-                        new CommandLineUsagePropertyProvider(),
-                        new EnvironmentVariableUsagePropertyProvider(),
-                        new PropertyFileUsagePropertyProvider(),
-                        DefaultUsagePropertyProvider.INSTANCE
-                )
-        );
+    static UsagePropertyProvider create(UsagePropertyProvider... additionalProviders) {
+        List<UsagePropertyProvider> providers = new ArrayList<>(Arrays.asList(
+                new CommandLineUsagePropertyProvider(),
+                new EnvironmentVariableUsagePropertyProvider(),
+                new PropertyFileUsagePropertyProvider(),
+                DefaultUsagePropertyProvider.INSTANCE
+        ));
+        providers.addAll(Arrays.asList(additionalProviders));
+        return new HierarchicalUsagePropertyProvider(providers);
     }
 }

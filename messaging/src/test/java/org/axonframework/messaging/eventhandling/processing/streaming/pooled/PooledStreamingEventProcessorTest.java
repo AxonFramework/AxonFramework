@@ -1173,6 +1173,70 @@ class PooledStreamingEventProcessorTest {
                     () -> assertNotNull(testSubject.processingStatus().get(1))
             );
         }
+
+        @Test
+        void splitAndMergeSegmentOfGroupOf4() {
+            // given
+            int testSegmentId = 2;
+            int splitSegmentId = 6;  // splitting segment 2 when there are 4 segments results in a new segment 6/7
+            int testTokenClaimInterval = 500;
+
+            withTestSubject(
+                    List.of(),
+                    c -> c.initialSegmentCount(4).tokenClaimInterval(testTokenClaimInterval)
+            );
+
+            // when
+            startEventProcessor();
+
+            // wait until the segment we want to split is in use, and verify all segments are correct in the token store:
+            await().untilAsserted(() -> {
+                assertNotNull(testSubject.processingStatus().get(testSegmentId));
+                assertThat(tokenStore.fetchSegments(PROCESSOR_NAME, null).join())
+                    .containsExactlyInAnyOrder(
+                        new Segment(0, 3),
+                        new Segment(1, 3),
+                        new Segment(2, 3),
+                        new Segment(3, 3)
+                    );
+            });
+
+            // split segment:
+            boolean success = testSubject.splitSegment(testSegmentId).join();
+
+            assertThat(success).isTrue();
+
+            // wait until the two split segments are in use, and verify all segments are correct in the token store:
+            await().untilAsserted(() -> {
+                assertNotNull(testSubject.processingStatus().get(testSegmentId));
+                assertNotNull(testSubject.processingStatus().get(splitSegmentId));
+                assertThat(tokenStore.fetchSegments(PROCESSOR_NAME, null).join())
+                    .containsExactlyInAnyOrder(
+                        new Segment(0, 3),
+                        new Segment(1, 3),
+                        new Segment(3, 3),
+                        new Segment(2, 7),
+                        new Segment(6, 7)
+                    );
+            });
+
+            // merge segment:
+            success = testSubject.mergeSegment(1).join();
+
+            assertThat(success).isTrue();
+
+            // wait until the merged segments is in use, and verify all segments are correct in the token store:
+            await().untilAsserted(() -> {
+                assertNotNull(testSubject.processingStatus().get(1));
+                assertThat(tokenStore.fetchSegments(PROCESSOR_NAME, null).join())
+                    .containsExactlyInAnyOrder(
+                        new Segment(0, 3),
+                        new Segment(1, 1),
+                        new Segment(2, 7),
+                        new Segment(6, 7)
+                    );
+            });
+        }
     }
 
     @Nested
