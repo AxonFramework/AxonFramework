@@ -192,6 +192,36 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
     }
 
     @Test
+    void streamingWithTagConditionShouldSkipNonMatchingMessages() {
+        TaggedEventMessage<?> expectedEventOne = taggedEventMessage("event-0", TEST_AGGREGATE_TAGS);
+        TaggedEventMessage<?> expectedEventTwo = taggedEventMessage("event-1", TEST_AGGREGATE_TAGS);
+        TaggedEventMessage<?> expectedEventThree = taggedEventMessage("event-4", TEST_AGGREGATE_TAGS);
+        // Ensure there are "gaps" in the global stream based on events not matching the condition.
+        appendEvents(
+            AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
+            expectedEventOne,
+            expectedEventTwo,
+            taggedEventMessage("event-2", Set.of()),
+            taggedEventMessage("event-3", OTHER_AGGREGATE_TAGS),
+            expectedEventThree,
+            taggedEventMessage("event-5", OTHER_AGGREGATE_TAGS),
+            taggedEventMessage("event-6", OTHER_AGGREGATE_TAGS)
+        );
+
+        MessageStream<EventMessage> result =
+                testSubject.stream(
+                    StreamingCondition.conditionFor(trackingTokenAt(0), EventCriteria.havingTags(TEST_AGGREGATE_TAGS)),
+                    processingContext()
+                );
+
+        StepVerifier.create(FluxUtils.of(result))
+                    .assertNext(entry -> assertTrackedEntry(entry, expectedEventOne.event(), 1))
+                    .assertNext(entry -> assertTrackedEntry(entry, expectedEventTwo.event(), 2))
+                    .assertNext(entry -> assertTrackedEntry(entry, expectedEventThree.event(), 5))
+                    .thenCancel().verify();
+    }
+
+    @Test
     void streamingAfterLastPositionReturnsEmptyStream() {
         EventCriteria expectedCriteria = TEST_AGGREGATE_CRITERIA;
         TaggedEventMessage<?> expectedEventOne = taggedEventMessage("event-0", TEST_AGGREGATE_TAGS);
