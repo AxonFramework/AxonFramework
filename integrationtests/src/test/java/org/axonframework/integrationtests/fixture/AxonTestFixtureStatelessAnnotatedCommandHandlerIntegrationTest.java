@@ -29,8 +29,11 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Integration test for {@link AxonTestFixture} with a stateless annotated command handler
- * using a real Axon Server via testcontainers.
+ * Integration test validating command handler result message assertions in {@link AxonTestFixture}
+ * when using stateless annotated command handlers with a real Axon Server via testcontainers.
+ * <p>
+ * Specifically tests that {@code resultMessagePayload} and {@code resultMessagePayloadSatisfies}
+ * correctly verify command return values, including automatic payload conversion.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
