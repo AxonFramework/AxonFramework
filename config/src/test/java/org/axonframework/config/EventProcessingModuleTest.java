@@ -1728,6 +1728,11 @@ class EventProcessingModuleTest {
         public void handle(Boolean event) {
             throw new IllegalStateException();
         }
+
+        @EventHandler
+        public void handle(String event) {
+            // Handler for String events used by configureSpanFactory test
+        }
     }
 
     @SuppressWarnings("unused")
