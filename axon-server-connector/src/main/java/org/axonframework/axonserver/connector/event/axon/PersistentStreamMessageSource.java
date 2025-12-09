@@ -26,7 +26,9 @@ import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.SubscribableEventSource;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -146,6 +148,8 @@ public class PersistentStreamMessageSource implements SubscribableEventSource, D
     public Registration subscribe(
             @Nonnull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer
     ) {
+        Objects.requireNonNull(eventsBatchConsumer, "eventsBatchConsumer must not be null");
+
         synchronized (this) {
             boolean noConsumer = this.consumer.equals(NO_OP_CONSUMER);
             if (noConsumer) {
@@ -155,10 +159,13 @@ public class PersistentStreamMessageSource implements SubscribableEventSource, D
                                                        .map(MessageStream.Entry::message)
                                                        .toList();
 
-                    // Pass null ProcessingContext - the SubscribingEventProcessor will create its own UnitOfWork.
-                    // The TrackingToken is available in each Entry's context if needed by downstream handlers,
-                    // but for subscribing processors it's not typically required.
-                    eventsBatchConsumer.apply(events, null).join();
+                    // Only call consumer if there are events
+                    if (!events.isEmpty()) {
+                        // Pass null ProcessingContext - the SubscribingEventProcessor will create its own UnitOfWork.
+                        // The TrackingToken is available in each Entry's context if needed by downstream handlers,
+                        // but for subscribing processors it's not typically required.
+                        eventsBatchConsumer.apply(events, null).join();
+                    }
                 });
                 this.consumer = eventsBatchConsumer;
             } else {
@@ -178,6 +185,43 @@ public class PersistentStreamMessageSource implements SubscribableEventSource, D
                 return true;
             }
         };
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This implementation filters events by their {@link EventMessage#type() type}. Since persistent streams
+     * from Axon Server do not provide tags on the client side after conversion, tag-based filtering passes
+     * an empty set for tags to the {@link EventCriteria#matches(org.axonframework.messaging.core.QualifiedName, java.util.Set) matches} method.
+     */
+    @Override
+    public Registration subscribe(
+            @Nonnull EventCriteria criteria,
+            @Nonnull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer
+    ) {
+        Objects.requireNonNull(criteria, "EventCriteria must not be null");
+        Objects.requireNonNull(eventsBatchConsumer, "eventsBatchConsumer must not be null");
+
+        // Wrap the consumer with filtering logic
+        BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> filteringConsumer =
+                (events, context) -> {
+                    // Filter events by criteria
+                    // Note: Persistent streams from Axon Server don't provide tags client-side,
+                    // so we pass empty tags for filtering. Filtering is primarily by event type.
+                    List<? extends EventMessage> filteredEvents = events.stream()
+                            .filter(event -> criteria.matches(
+                                    event.type().qualifiedName(),
+                                    Collections.emptySet()
+                            ))
+                            .toList();
+
+                    if (filteredEvents.isEmpty()) {
+                        return CompletableFuture.completedFuture(null);
+                    }
+                    return eventsBatchConsumer.apply(filteredEvents, context);
+                };
+
+        return subscribe(filteringConsumer);
     }
 
     @Override
