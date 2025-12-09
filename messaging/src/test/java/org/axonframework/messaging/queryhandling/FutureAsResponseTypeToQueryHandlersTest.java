@@ -25,6 +25,9 @@ import org.axonframework.messaging.core.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.queryhandling.annotation.AnnotatedQueryHandlingComponent;
 import org.axonframework.messaging.queryhandling.annotation.QueryHandler;
 import org.axonframework.conversion.PassThroughConverter;
+import org.axonframework.messaging.core.annotation.AnnotationMessageTypeResolver;
+import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
 import org.junit.jupiter.api.*;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
@@ -61,8 +64,13 @@ class FutureAsResponseTypeToQueryHandlersTest {
         queryBus = QueryBusTestUtils.aQueryBus();
 
         MyQueryHandler myQueryHandler = new MyQueryHandler();
-        QueryHandlingComponent queryHandlingComponent =
-                new AnnotatedQueryHandlingComponent<>(myQueryHandler, new DelegatingMessageConverter(PassThroughConverter.INSTANCE));
+        QueryHandlingComponent queryHandlingComponent = new AnnotatedQueryHandlingComponent<>(
+                myQueryHandler,
+                ClasspathParameterResolverFactory.forClass(myQueryHandler.getClass()),
+                ClasspathHandlerDefinition.forClass(myQueryHandler.getClass()),
+                new AnnotationMessageTypeResolver(),
+                new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
+        );
         queryBus.subscribe(queryHandlingComponent);
     }
 
