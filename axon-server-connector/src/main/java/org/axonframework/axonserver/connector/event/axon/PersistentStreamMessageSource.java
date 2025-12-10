@@ -46,8 +46,27 @@ import java.util.function.Predicate;
  * <ul>
  *   <li>Converting events using {@link PersistentStreamEventConverter}</li>
  *   <li>Providing {@link TrackingToken} via the event entry's Context</li>
- *   <li>Supporting optional client-side event filtering</li>
+ *   <li>Providing aggregate resources (identifier, type, sequence number) in Context for legacy aggregate-based events</li>
+ *   <li>Supporting client-side event filtering via {@link EventCriteria}</li>
  * </ul>
+ * <p>
+ * <b>Filtering Limitations:</b>
+ * <p>
+ * The {@link #subscribe(EventCriteria, BiFunction)} method supports filtering by event
+ * {@link EventMessage#type() type} only. <b>Tag-based filtering is not currently supported</b> because persistent
+ * stream events from Axon Server do not expose tags on the client side after conversion. Tags are resolved and
+ * stored server-side during event publishing.
+ * <p>
+ * For aggregate-based events (legacy approach), aggregate information is available in the event's
+ * {@link org.axonframework.messaging.core.Context Context} via
+ * {@link org.axonframework.messaging.core.LegacyResources LegacyResources} keys:
+ * <ul>
+ *   <li>{@code LegacyResources.AGGREGATE_IDENTIFIER_KEY} - the aggregate identifier</li>
+ *   <li>{@code LegacyResources.AGGREGATE_TYPE_KEY} - the aggregate type</li>
+ *   <li>{@code LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY} - the aggregate sequence number</li>
+ * </ul>
+ * However, this information is not automatically used for tag-based filtering. If tag-based filtering is required,
+ * consider applying filters at the Axon Server level using persistent stream configuration.
  *
  * @author Marc Gathier
  * @author Mateusz Nowak

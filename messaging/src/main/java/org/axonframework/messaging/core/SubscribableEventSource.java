@@ -37,6 +37,23 @@ import java.util.function.BiFunction;
  * {@link #subscribe(EventCriteria, BiFunction)} method. By default, this method filters events based on the criteria
  * before passing them to the consumer. Implementations can override this behavior to optimize filtering at the source.
  * <p>
+ * <b>Filtering Limitations:</b>
+ * <p>
+ * The default implementation of {@link #subscribe(EventCriteria, BiFunction)} only supports filtering by event
+ * {@link EventMessage#type() type}. Tag-based filtering is <b>not supported</b> at the client side because
+ * {@link EventMessage} does not expose tags directly. Tags are typically resolved and associated with events
+ * during publishing and stored server-side.
+ * <p>
+ * For aggregate-based events (legacy approach), aggregate information such as aggregate identifier, type, and
+ * sequence number may be available in the event's processing context via {@code LegacyResources}, but these
+ * are not automatically used for tag-based filtering.
+ * <p>
+ * To enable tag-based filtering, implementations should either:
+ * <ul>
+ *     <li>Apply filtering at the server/source level where tags are available</li>
+ *     <li>Override {@link #subscribe(EventCriteria, BiFunction)} with access to tag information</li>
+ * </ul>
+ * <p>
  * This interface is the replacement for the deprecated {@link SubscribableEventSource},
  * focusing specifically on event message handling.
  *

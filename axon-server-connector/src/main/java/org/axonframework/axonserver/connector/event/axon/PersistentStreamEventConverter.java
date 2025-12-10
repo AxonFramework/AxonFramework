@@ -22,19 +22,21 @@ import io.axoniq.axonserver.grpc.event.EventWithToken;
 import io.axoniq.axonserver.grpc.streams.PersistentStreamEvent;
 import jakarta.annotation.Nonnull;
 import org.axonframework.axonserver.connector.MetadataConverter;
+import org.axonframework.common.StringUtils;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
+import org.axonframework.messaging.core.Context;
+import org.axonframework.messaging.core.LegacyResources;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.core.SimpleEntry;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
-import org.axonframework.messaging.core.Context;
-import org.axonframework.messaging.core.MessageStream;
-import org.axonframework.messaging.core.MessageType;
-import org.axonframework.messaging.core.Metadata;
-import org.axonframework.messaging.core.SimpleEntry;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -82,8 +84,16 @@ public class PersistentStreamEventConverter implements DescribableComponent {
      *     <li>Creates an appropriate {@link TrackingToken} - either a {@link GlobalSequenceTrackingToken}
      *         or a {@link ReplayToken} if the event is marked as a replay</li>
      *     <li>Converts the event payload, metadata, and other properties into an {@link EventMessage}</li>
-     *     <li>Wraps everything into a {@link SimpleEntry} with the token in the {@link Context}</li>
+     *     <li>Wraps everything into a {@link SimpleEntry} with the token and aggregate info in the {@link Context}</li>
      * </ol>
+     * <p>
+     * The resulting {@link Context} will contain:
+     * <ul>
+     *     <li>{@link TrackingToken#RESOURCE_KEY} - the tracking token for stream positioning</li>
+     *     <li>{@link LegacyResources#AGGREGATE_IDENTIFIER_KEY} - the aggregate identifier (if present in the event)</li>
+     *     <li>{@link LegacyResources#AGGREGATE_TYPE_KEY} - the aggregate type (if present in the event)</li>
+     *     <li>{@link LegacyResources#AGGREGATE_SEQUENCE_NUMBER_KEY} - the aggregate sequence number (if present)</li>
+     * </ul>
      *
      * @param persistentStreamEvent The persistent stream event from Axon Server to convert.
      * @return A {@link MessageStream.Entry} containing the converted event and tracking token in context.
@@ -93,11 +103,35 @@ public class PersistentStreamEventConverter implements DescribableComponent {
         Objects.requireNonNull(persistentStreamEvent, "PersistentStreamEvent must not be null");
 
         EventWithToken eventWithToken = persistentStreamEvent.getEvent();
+        Event event = eventWithToken.getEvent();
         TrackingToken trackingToken = createTrackingToken(persistentStreamEvent);
-        EventMessage eventMessage = convertEventMessage(eventWithToken.getEvent());
-        Context context = Context.with(TrackingToken.RESOURCE_KEY, trackingToken);
+        EventMessage eventMessage = convertEventMessage(event);
+        Context context = buildContext(trackingToken, event);
 
         return new SimpleEntry<>(eventMessage, context);
+    }
+
+    /**
+     * Builds a {@link Context} containing the tracking token and aggregate information from the event.
+     * <p>
+     * Aggregate resources are only added if the event has a non-empty aggregate identifier.
+     *
+     * @param trackingToken The tracking token to include in the context.
+     * @param event         The gRPC event containing aggregate information.
+     * @return A context with the tracking token and any available aggregate resources.
+     */
+    private Context buildContext(TrackingToken trackingToken, Event event) {
+        Context context = Context.with(TrackingToken.RESOURCE_KEY, trackingToken);
+
+        // Add aggregate resources if present (for legacy aggregate-based events)
+        if (StringUtils.nonEmptyOrNull(event.getAggregateIdentifier())) {
+            context = context
+                    .withResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY, event.getAggregateIdentifier())
+                    .withResource(LegacyResources.AGGREGATE_TYPE_KEY, event.getAggregateType())
+                    .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY, event.getAggregateSequenceNumber());
+        }
+
+        return context;
     }
 
     /**
