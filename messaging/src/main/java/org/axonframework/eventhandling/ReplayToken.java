@@ -288,20 +288,22 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
     public TrackingToken advancedTo(TrackingToken newToken) {
         if (this.tokenAtReset == null
                 || (newToken.covers(WrappedToken.unwrapUpperBound(this.tokenAtReset))
-                && !tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken)))) {
-            // we're done replaying
+                && !tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken))
+                && !isAtSamePosition(newToken, tokenAtReset))) {
+            // we're done replaying - newToken has PASSED tokenAtReset (not just at same position)
             // if the token at reset was a wrapped token itself, we'll need to use that one to maintain progress.
             if (tokenAtReset instanceof WrappedToken) {
                 return ((WrappedToken) tokenAtReset).advancedTo(newToken);
             }
             return newToken;
         } else if (!newToken.covers(WrappedToken.unwrapUpperBound(tokenAtReset))
-                || tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken))) {
+                || isAtSamePosition(newToken, tokenAtReset)) {
             // We're still in replay if EITHER:
             // - newToken hasn't reached tokenAtReset yet (first condition), OR
             // - newToken is at the same position as tokenAtReset (second condition)
-            // The OR is needed because the first condition uses covers() which may return false
+            // The second condition is needed because the first uses covers() which may return false
             // for same-position tokens with different gaps (see GapAwareTrackingToken#covers).
+            // When at the same position, the current event was processed before reset, so it's a replay.
             return new ReplayToken(tokenAtReset, newToken, context, true);
         } else {
             // we're getting an event that we didn't have before, but we haven't finished replaying either
@@ -338,6 +340,16 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
 
     private boolean isReplay() {
         return lastMessageWasReplay;
+    }
+
+    /**
+     * Checks if two tokens are at the same position by comparing their position values.
+     * This is used to determine if the current event is at the boundary of replay completion.
+     */
+    private static boolean isAtSamePosition(TrackingToken token1, TrackingToken token2) {
+        return token1.position().isPresent()
+                && token2.position().isPresent()
+                && token1.position().getAsLong() == token2.position().getAsLong();
     }
 
     @Override
