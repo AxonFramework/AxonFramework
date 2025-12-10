@@ -295,8 +295,13 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
                 return ((WrappedToken) tokenAtReset).advancedTo(newToken);
             }
             return newToken;
-        } else if (!newToken.covers(WrappedToken.unwrapUpperBound(tokenAtReset))) {
-            // we're still well behind - newToken hasn't caught up to tokenAtReset yet
+        } else if (!newToken.covers(WrappedToken.unwrapUpperBound(tokenAtReset))
+                || tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken))) {
+            // We're still in replay if EITHER:
+            // - newToken hasn't reached tokenAtReset yet (first condition), OR
+            // - newToken is at the same position as tokenAtReset (second condition)
+            // The OR is needed because the first condition uses covers() which may return false
+            // for same-position tokens with different gaps (see GapAwareTrackingToken#covers).
             return new ReplayToken(tokenAtReset, newToken, context, true);
         } else {
             // we're getting an event that we didn't have before, but we haven't finished replaying either

@@ -245,5 +245,47 @@ class ReplayTokenTest {
             assertTrue(ReplayToken.isReplay(advancedToken),
                        "Should still be in replay mode");
         }
+
+        /**
+         * Tests that when both tokens have the same index AND same gaps, we're still in replay.
+         * This is the "just reached the reset position" scenario.
+         */
+        @Test
+        void advancedToShouldRemainInReplayWhenAtSamePositionWithSameGaps() {
+            // Token at reset: index 6 with gap at position 1
+            GapAwareTrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(6, Collections.singleton(1L));
+
+            TrackingToken replayToken = ReplayToken.createReplayToken(tokenAtReset, null);
+
+            // Advance to the exact same position with same gaps
+            GapAwareTrackingToken sameToken = GapAwareTrackingToken.newInstance(6, Collections.singleton(1L));
+            TrackingToken advancedToken = ((ReplayToken) replayToken).advancedTo(sameToken);
+
+            // Should still be in replay - we're at the boundary, processing the last replay event
+            assertTrue(advancedToken instanceof ReplayToken,
+                       "Should still be a ReplayToken when at exact same position");
+            assertTrue(ReplayToken.isReplay(advancedToken),
+                       "Should still be in replay mode when at the reset position (boundary)");
+        }
+
+        /**
+         * Tests that when newToken has same index but filled a gap that tokenAtReset had,
+         * we exit replay because a new event (the filled gap) was processed.
+         */
+        @Test
+        void advancedToShouldExitReplayWhenSameIndexButGapWasFilled() {
+            // Token at reset: index 6 with gap at position 1
+            GapAwareTrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(6, Collections.singleton(1L));
+
+            TrackingToken replayToken = ReplayToken.createReplayToken(tokenAtReset, null);
+
+            // Advance to same index but WITHOUT the gap - meaning we saw event 1 which is NEW
+            GapAwareTrackingToken filledGapToken = GapAwareTrackingToken.newInstance(6, emptySet());
+            TrackingToken advancedToken = ((ReplayToken) replayToken).advancedTo(filledGapToken);
+
+            // Should exit replay - we've caught up AND saw a new event (the one that filled the gap)
+            assertFalse(ReplayToken.isReplay(advancedToken),
+                        "Should exit replay mode because we saw a new event (filled gap at position 1)");
+        }
     }
 }
