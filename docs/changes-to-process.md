@@ -633,82 +633,198 @@ The following files in `axon-5/` describe the API changes:
 ## Messaging Concepts Module
 
 ### modules/messaging-concepts/pages/index.adoc
-**Changes to apply:**
-- Update to reflect async-native messaging
-- Introduce MessageStream concept
-- Document reactive programming support
-- Update terminology for ProcessingContext
+**Status:** ✅ COMPLETED
+**Changes applied:**
+- Updated to reflect async-native messaging with dedicated section
+- Introduced MessageStream concept with factory methods and usage examples
+- Documented reactive programming support (imperative and reactive styles)
+- Updated terminology for ProcessingContext with overview section
+- Fixed MessageType vs class name issue - now correctly states MessageType identifies message structure
+- Updated aggregate → entity terminology throughout
+- Removed reference to GenericEventMessage.asEventMessage() (removed in Axon 5)
+- Added "Understanding messages" section explaining message type, payload, metadata, and identifier
+- Reorganized content for better flow
+- Cross-referenced anatomy-message.adoc for detailed explanations
+- Updated AxonIQ Platform references to AxonIQ Console
 
 ### modules/messaging-concepts/pages/anatomy-message.adoc
-**Changes to apply:**
-- **Document MessageType and QualifiedName as primary message identity**
-  - Explain fundamental shift: Java class is no longer message identity
+**Status:** ✅ COMPLETED
+**Changes applied:**
+- Documented MessageType and QualifiedName as primary message identity
+  - Explained fundamental shift: Java class is no longer message identity
   - MessageType = QualifiedName + version
   - Decouples message identity from Java representation
   - Enables payload conversion at handling time
-- Update Metadata to String-only values
-- Remove factory method references (GenericMessage.asMessage)
-- Document message method renames (getIdentifier to identifier, etc.)
-- Update serialization to conversion flow (payloadAs, withConvertedPayload)
-- Document @Command, @Event, @Query annotations for message types
-- Explain how this reduces need for upcasters
+- Updated Metadata to String-only values (Map<String, String>)
+- Removed factory method references (GenericMessage.asMessage no longer exists)
+- Documented message method renames (identifier(), payload(), metadata(), type(), etc.)
+- Updated serialization to conversion flow (payloadAs, withConvertedPayload)
+- Documented @Command, @Event, @Query annotations for defining message types
+  - Explained namespace, name, and version parameters
+  - Showed default behavior (uses FQCN if not annotated)
+- Explained how payload conversion reduces need for upcasters
+- Added comprehensive code examples throughout
+- Reorganized content for better flow and understanding
 
 ### modules/messaging-concepts/pages/exception-handling.adoc
-**Changes to apply:**
-- Update exception handling patterns with ProcessingContext
-- Remove RollbackConfiguration references
-- Document error handling with ProcessingLifecycle (onError, whenComplete, doFinally)
-- Update interceptor-based error handling
+**Status:** ✅ COMPLETED
+**Changes applied:**
+- Added major section on "Results vs exceptions" philosophy:
+  - Explained that exceptions lose value in distributed systems
+  - Emphasized using result objects for expected failures
+  - Reserved exceptions for truly exceptional circumstances
+  - Provided clear guidance on when to use each approach
+  - Added practical code examples for both patterns
+- Updated exception handling in distributed scenarios
+- Documented HandlerExecutionException details map for structured error information
+- Added TIP encouraging consideration of results vs exceptions
+- Kept existing content about HandlerExecutionException and @ExceptionHandler
+- Simplified interceptor-based error handling section
+- Added reference to unit-of-work.adoc for ProcessingContext lifecycle details
+- No RollbackConfiguration references found (already removed)
+- Focused content on exception handling philosophy and practices rather than lifecycle callbacks
 
 ### modules/messaging-concepts/pages/message-correlation.adoc
-**Changes to apply:**
-- Update correlation data handling (traceId, correlationId, causationId terminology changes)
-- Document MessageOriginProvider changes
-- Update metadata propagation with ProcessingContext
-- Document correlation in distributed scenarios
+**Status:** ✅ COMPLETED
+**Changes applied:**
+- Updated correlation terminology to align with industry standards:
+  - Old `traceId` → New `correlationId` (root/original message)
+  - Old `correlationId` → New `causationId` (immediate parent message)
+  - Added IMPORTANT callout explaining the terminology change
+- Added "Understanding correlation" section with visual example showing message chain
+- Documented updated MessageOriginProvider with correct correlationId and causationId
+- Updated metadata type from Map<String, Object> to Map<String, String>
+- Updated references from UnitOfWork to ProcessingContext
+- Added comprehensive code examples showing correlation flow through message chains
+- Added "Correlation in distributed scenarios" section:
+  - Explained use cases (tracing, logging, debugging, monitoring)
+  - Connected to observability tools (Zipkin, Jaeger, OpenTelemetry)
+- Updated all code examples to use correct return types and method signatures
+- Clarified that correlation data providers should not return null
 
 ### modules/messaging-concepts/pages/message-intercepting.adoc
-**Changes to apply:**
-- Update interceptor interfaces (ProcessingContext parameter, chain parameter)
-- Document MessageStream return types from interceptors
-- Update dispatch interceptor result handling capability
-- Document interceptor registration via ApplicationConfigurer (not component interfaces)
-- Remove MessageDispatchInterceptorSupport/MessageHandlerInterceptorSupport
-- Update Spring Boot auto-configuration for interceptors
-- Show before-and-after interception patterns
+**Status:** ✅ COMPLETED
+**Changes applied:**
+- Complete rewrite with correct Axon 5 interceptor API:
+  - MessageDispatchInterceptor: interceptOnDispatch(message, context, chain) returns MessageStream
+  - MessageHandlerInterceptor: interceptOnHandle(message, context, chain) returns MessageStream
+- Updated chain types: MessageDispatchInterceptorChain, MessageHandlerInterceptorChain
+- Documented ProcessingContext parameter throughout (nullable for dispatch interceptors)
+- Showed MessageStream return types in all examples
+- Updated all code examples to use new API signatures
+- Removed UnitOfWork references, replaced with ProcessingContext
+- Documented using ProcessingContext for lifecycle callbacks (whenComplete, onError)
+- Updated configuration examples to use MessagingConfigurer
+- Kept @ExceptionHandler content (relatively unchanged)
+- Showed command, event, and query interceptor examples for both dispatch and handler types
+- Updated structural validation section
+- Maintained annotated @MessageHandlerInterceptor content with correct patterns
 
 ### modules/messaging-concepts/pages/supported-parameters-annotated-handlers.adoc
-**Changes to apply:**
-- Add ProcessingContext as injectable parameter
-- Add EventAppender, CommandDispatcher, QueryDispatcher parameters
-- Remove UnitOfWork parameter
-- Update Message method names in examples
-- Document Converter parameter options
+**Status:** ✅ COMPLETED
+**Changes applied:**
+- Replaced all UnitOfWork references with ProcessingContext
+- Added ProcessingContext as injectable parameter in all handler types
+- Added EventAppender parameter (available in command and event handlers)
+- Added CommandDispatcher parameter (available in all handler types)
+- Added QueryUpdateEmitter parameter (available in query handlers)
+- Updated InterceptorChain to MessageHandlerInterceptorChain
+- Added @AggregateType parameter (available in all handler types)
+- Added @ReplayContext parameter (available in event handlers during replay)
+- Removed DeadLetter parameter (not verified in Axon 5 implementation)
+- Removed ScopeDescriptor reference (moved to legacy/stash, deadlines not available in 5.0)
+- Fixed typo: Changed "CommandMessage" to "EventMessage" in event handler description
+- Updated all message method name descriptions to current Axon 5 APIs
+- Clarified when parameters are available (for example, @SequenceNumber and @SourceId only for aggregate-sourced events)
+- Verified all parameter types against actual ParameterResolverFactory implementations in codebase
+- Added comprehensive code examples section demonstrating:
+  - ProcessingContext usage with cleanup actions
+  - EventAppender for publishing follow-up events
+  - Event handler with metadata and aggregate information
+  - QueryUpdateEmitter for subscription queries
+  - CommandDispatcher for command orchestration
+  - ReplayContext handling during event replay
+- Updated language throughout to be clearer and more concise
 
 ### modules/messaging-concepts/pages/timeouts.adoc
-**Changes to apply:**
-- Update timeout handling with async APIs
-- Document CompletableFuture timeout patterns
-- **Highlight framework support for async processing:**
-  - Many libraries (especially Spring) have excellent async support
-  - Can return CompletableFuture, Mono, or Flux from controllers/handlers
-  - Framework handles async processing and timeout management automatically
-  - Show Spring WebFlux/WebMVC async controller examples
-  - Explain how framework timeout configuration integrates with Axon's async operations
-- Update examples showing both manual timeout handling and framework-managed approaches
+**Status:** ✅ COMPLETED
+**Changes applied:**
+- Updated introduction to emphasize async-native design and ProcessingContext
+- Replaced all UnitOfWork references with ProcessingContext
+- Removed @DeadlineHandler references (deadlines not available in Axon 5.0)
+- Removed deadline manager configuration properties
+- Updated section title from "Unit of work timeouts" to "Processing context timeouts"
+- Added comprehensive "Async processing and timeouts" section covering:
+  - CompletableFuture timeout patterns with `.orTimeout()` and `.exceptionally()`
+  - Framework-managed timeouts with Spring WebMVC (`@Async`)
+  - Spring WebFlux reactive timeout examples with `Mono.timeout()`
+  - Multiple timeout strategies:
+    - Fail fast for user-facing operations
+    - Long-running background operations
+    - Retry with exponential backoff
+  - Best practices for choosing appropriate timeouts
+- Added practical code examples demonstrating:
+  - Application-level timeout handling with CompletableFuture
+  - Spring Boot automatic async timeout management
+  - Reactive timeout handling with WebFlux
+  - Synchronous blocking with timeout
+  - Background processing timeout strategies
+- Updated all code examples to use CommandDispatcher instead of CommandGateway
+- Emphasized separation between handler timeouts and transaction/processing timeouts
+- Provided clear guidance on when to use different timeout approaches
 
-### modules/messaging-concepts/pages/unit-of-work.adoc
-**MAJOR REWRITE:**
-**Changes to apply:**
-- Replace UnitOfWork with ProcessingContext and ProcessingLifecycle
-- Remove CurrentUnitOfWork references (no longer exists)
-- Document phase changes (pre/post-invocation, prepare-commit, commit, after-commit)
-- Document resource management via ProcessingContext
-- Document lifecycle actions (onError, whenComplete, doFinally)
-- Remove nesting functionality
-- Document that UoW no longer revolves around a Message
-- Update all code examples
-- Document async-native flow with CompletableFuture
+### modules/messaging-concepts/pages/unit-of-work.adoc → processing-context.adoc
+**Status:** ✅ COMPLETED (MAJOR REWRITE)
+**Changes applied:**
+- **Renamed file** from `unit-of-work.adoc` to `processing-context.adoc` with page alias for backward compatibility
+- **Updated all xrefs** across the entire reference guide to point to `processing-context.adoc`
+- **Complete rewrite** focusing on ProcessingContext as the core abstraction for managing message processing lifecycle
+- **Documented ProcessingLifecycle phases** with detailed explanation:
+  - Pre-Invocation (-10000)
+  - Invocation (0)
+  - Post-Invocation (10000)
+  - Prepare-Commit (20000)
+  - Commit (30000)
+  - After-Commit (40000)
+- **Documented phase execution rules**: sequential phase execution, parallel actions within phases, failure handling
+- **Documented lifecycle registration methods**: Both async (`on*`) and sync (`runOn*`) variants for all phases
+- **Documented error and completion handlers**: `onError()`, `whenComplete()`, `doFinally()`
+- **Replaced all UnitOfWork references** with ProcessingContext throughout
+- **Removed CurrentUnitOfWork references** - documented that thread-local access no longer exists
+- **Documented type-safe resource management** using `ResourceKey<T>`:
+  - `putResource()`, `getResource()`, `containsResource()`
+  - `computeResourceIfAbsent()`, `updateResource()`, `removeResource()`
+  - Complete resource lifecycle patterns with code examples
+- **Documented accessing framework components** via `component(Class<T>)` method
+- **Documented accessing current message** via `Message.fromContext(context)`
+- **Removed nesting functionality** - documented that contexts are independent, no `root()` equivalent
+- **Documented context propagation** when dispatching messages:
+  - Using EventAppender (automatic context propagation)
+  - Using CommandDispatcher (explicit context passing)
+  - Creating branched contexts with `withResource()`
+- **Documented transaction management** integration with ProcessingContext
+- **Documented rollback configuration** options
+- **Added comprehensive code examples** demonstrating:
+  - Injecting ProcessingContext in handlers
+  - Registering lifecycle callbacks
+  - Resource management patterns
+  - Transaction interceptor implementation
+  - Error handling patterns
+  - Context propagation patterns
+- **Added advanced usage section** covering:
+  - Custom phases
+  - Checking lifecycle state
+  - Testing with StubProcessingContext
+- **Added complete migration guide** from Axon 4 UnitOfWork with side-by-side comparison table
+- **Documented key architectural changes**:
+  - No thread-local access
+  - No nesting support
+  - Async-native with CompletableFuture
+  - Type-safe resource keys
+  - Message as resource (context doesn't revolve around single message)
+- **Added best practices section** with 7 key recommendations
+- **Updated Spring Boot and Axon Configuration examples** for transaction management
+- All examples use correct Axon 5 APIs and patterns
 
 ---
 

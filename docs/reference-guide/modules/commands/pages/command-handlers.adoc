@@ -442,7 +442,7 @@ The annotation is required by Axon Framework to be able to differentiate between
 <3> A static command handler must be used for the creation command, since no instance exists to handle it yet.
 Once the event is published, future loads will use the `@EntityCreator` to create the instance from that event.
 
-[WARN]
+[WARNING]
 ====
 Use `@InjectEntityId` to disambiguate the entity identifier from the event payload.
 Without this annotation, the first parameter is assumed to be the event payload.

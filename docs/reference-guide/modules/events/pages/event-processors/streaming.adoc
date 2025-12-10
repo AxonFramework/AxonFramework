@@ -491,7 +491,7 @@ When processing an event, it may be beneficial to retrieve the token belonging t
 First, this can be achieved by adding a parameter of type `TrackingToken` to the event handler.
 This support is mentioned in the xref:messaging-concepts:supported-parameters-annotated-handlers.adoc#supported-parameters-for-event-handlers[Supported Parameters for Event Handlers] section.
 
-Additionally, you can retrieve the token from the resources collection of the xref:messaging-concepts:unit-of-work.adoc[Unit of Work].
+Additionally, you can retrieve the token from the resources collection of the xref:messaging-concepts:processing-context.adoc[Unit of Work].
 Both the Tracking and Pooled Streaming Event Processor add the current `TrackingToken` under the key `"Processor[{processor-name}]/Token"`.
 ====
 
@@ -791,7 +791,7 @@ The consequence of token stealing is that an event may be handled twice (or more
 When a thread steals a token, the original thread was _already_ processing events from the token's position.
 To protect against doubling event handling, Axon Framework will combine committing the event handling task with updating the token.
 As the token claim is required to update the token, the original thread will fail the update.
-Following this, a rollback occurs on the xref:messaging-concepts:unit-of-work.adoc[Unit of Work], resolving most issues arising from token stealing.
+Following this, a rollback occurs on the xref:messaging-concepts:processing-context.adoc[Unit of Work], resolving most issues arising from token stealing.
 
 The ability to rollback event handling tasks sheds light on the consequences of token stealing.
 Most event processors project events into a projection stored within a database.
