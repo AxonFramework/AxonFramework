@@ -208,6 +208,96 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
         return mergedIndex;
     }
 
+    /**
+     * Checks if this token "covers" another token, meaning this token has seen all events
+     * that the other token has seen.
+     * <p>
+     * The check is performed in three steps:
+     * <ol>
+     *     <li><b>Index check:</b> {@code otherToken.index <= this.index}<br>
+     *         This token's index must be at least as high as the other token's index.</li>
+     *     <li><b>Gap-at-index check:</b> {@code !this.gaps.contains(otherToken.index)}<br>
+     *         This token must have actually seen the event at the other token's index position
+     *         (i.e., it cannot have a gap there).</li>
+     *     <li><b>Gap containment check:</b> {@code otherToken.gaps.containsAll(this.gaps.headSet(otherToken.index))}<br>
+     *         Any gaps this token has (below the other token's index) must also be gaps in the other token.
+     *         If the other token has seen an event that this token has as a gap, then this token
+     *         cannot cover it.</li>
+     * </ol>
+     * <p>
+     * <b>Example 1 - Simple coverage:</b>
+     * <pre>
+     * Token A: index=5, gaps=[]      (has seen: 0, 1, 2, 3, 4, 5)
+     * Token B: index=3, gaps=[]      (has seen: 0, 1, 2, 3)
+     *
+     * A.covers(B)?
+     *   - Check 1: 3 &lt;= 5           → true
+     *   - Check 2: ![].contains(3)  → true
+     *   - Check 3: [].containsAll([].headSet(3)) → [].containsAll([]) → true
+     *   Result: true (A has seen everything B has seen)
+     * </pre>
+     * <p>
+     * <b>Example 2 - Gap prevents coverage:</b>
+     * <pre>
+     * Token A: index=5, gaps=[3]     (has seen: 0, 1, 2, 4, 5 - missing 3)
+     * Token B: index=4, gaps=[]      (has seen: 0, 1, 2, 3, 4)
+     *
+     * A.covers(B)?
+     *   - Check 1: 4 &lt;= 5           → true
+     *   - Check 2: ![3].contains(4) → true
+     *   - Check 3: [].containsAll([3].headSet(4)) → [].containsAll([3]) → false
+     *   Result: false (B has seen event 3, but A hasn't)
+     * </pre>
+     * <p>
+     * <b>Example 3 - Both have same gap:</b>
+     * <pre>
+     * Token A: index=5, gaps=[2]     (has seen: 0, 1, 3, 4, 5)
+     * Token B: index=4, gaps=[2]     (has seen: 0, 1, 3, 4)
+     *
+     * A.covers(B)?
+     *   - Check 1: 4 &lt;= 5           → true
+     *   - Check 2: ![2].contains(4) → true
+     *   - Check 3: [2].containsAll([2].headSet(4)) → [2].containsAll([2]) → true
+     *   Result: true (both are missing event 2, so A covers B)
+     * </pre>
+     * <p>
+     * <b>Example 4 - Gap at other's index:</b>
+     * <pre>
+     * Token A: index=5, gaps=[3]     (has seen: 0, 1, 2, 4, 5)
+     * Token B: index=3, gaps=[]      (has seen: 0, 1, 2, 3)
+     *
+     * A.covers(B)?
+     *   - Check 1: 3 &lt;= 5           → true
+     *   - Check 2: ![3].contains(3) → false
+     *   Result: false (A has a gap at position 3, so it hasn't seen B's latest event)
+     * </pre>
+     * <p>
+     * <b>Example 5 - Replay scenario (used by {@link ReplayToken#advancedTo(TrackingToken)}):</b>
+     * <p>
+     * During replay, the token at reset may have gaps that the new token doesn't have yet.
+     * This affects the direction of the {@code covers()} check in replay detection.
+     * <pre>
+     * tokenAtReset: index=6, gaps=[1]   (was at position 6 before reset, with gap at 1)
+     * newToken:     index=2, gaps=[]    (currently replaying at position 2, no gaps yet)
+     *
+     * tokenAtReset.covers(newToken)?
+     *   - Check 1: 2 &lt;= 6             → true
+     *   - Check 2: ![1].contains(2)   → true
+     *   - Check 3: [].containsAll([1]) → false (newToken doesn't have gap at 1)
+     *   Result: false
+     *
+     * newToken.covers(tokenAtReset)?
+     *   - Check 1: 6 &lt;= 2             → false
+     *   Result: false (index check fails immediately)
+     *
+     * For replay detection, checking !newToken.covers(tokenAtReset) correctly identifies
+     * that we're still behind (position 2 hasn't reached position 6), regardless of gap differences.
+     * </pre>
+     *
+     * @param other the token to compare against
+     * @return {@code true} if this token has seen all events the other token has seen, {@code false} otherwise
+     * @see ReplayToken#advancedTo(TrackingToken)
+     */
     @Override
     public boolean covers(TrackingToken other) {
         Assert.isTrue(other instanceof GapAwareTrackingToken, () -> "Incompatible token type provided.");

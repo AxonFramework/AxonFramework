@@ -125,9 +125,27 @@ public class MultiSourceTrackingToken implements TrackingToken, Serializable {
      * in the {@code other} token. If the two tokens contain different number of constituent tokens, or have the same number but
      * different names, then these two {@link MultiSourceTrackingToken}s must be tracking different
      * {@code MultiStreamableMessageSource}s.
+     * <p>
+     * This method delegates the {@code covers()} check to each constituent token. It returns {@code true} only if
+     * all constituent tokens in this {@link MultiSourceTrackingToken} cover their corresponding tokens in the other.
+     * <p>
+     * <b>Example - Replay scenario (used by {@link ReplayToken#advancedTo(TrackingToken)}):</b>
+     * <pre>
+     * tokenAtReset: {A: index=6, gaps=[1], B: index=4, gaps=[1]}
+     * newToken:     {A: index=2, gaps=[],  B: index=1, gaps=[]}
+     *
+     * newToken.covers(tokenAtReset)?
+     *   - A: Does index=2 cover index=6? → false (2 &lt;= 6 fails)
+     *   Result: false (first constituent fails, so entire check fails)
+     *
+     * For replay detection, checking !newToken.covers(tokenAtReset) correctly identifies
+     * that we're still behind, since at least one stream hasn't caught up yet.
+     * </pre>
      *
      * @param other The token to compare to this one
      * @return {@code true} if this token covers the other, otherwise {@code false}
+     * @see GapAwareTrackingToken#covers(TrackingToken)
+     * @see ReplayToken#advancedTo(TrackingToken)
      */
     @Override
     public boolean covers(TrackingToken other) {

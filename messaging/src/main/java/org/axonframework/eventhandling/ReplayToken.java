@@ -249,6 +249,41 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
         return currentToken;
     }
 
+    /**
+     * Advances this {@link ReplayToken} to the given {@code newToken} position, determining whether
+     * the processor is still in replay mode or has caught up to the position it was at before reset.
+     * <p>
+     * This method evaluates three possible scenarios:
+     * <ol>
+     *     <li><b>Replay complete:</b> If {@code newToken} covers {@code tokenAtReset}, the replay is finished
+     *         and the method returns the unwrapped token (no longer a {@link ReplayToken}).</li>
+     *     <li><b>Still in replay:</b> If {@code newToken} has not yet reached {@code tokenAtReset},
+     *         returns a new {@link ReplayToken} with {@code lastMessageWasReplay = true}.</li>
+     *     <li><b>New event during replay:</b> If {@code newToken} has reached the reset position but
+     *         contains events that weren't present before (e.g., filled gaps), returns a new
+     *         {@link ReplayToken} with {@code lastMessageWasReplay = false}.</li>
+     * </ol>
+     * <p>
+     * <b>Note:</b> The behavior of this method depends on the {@link TrackingToken#covers(TrackingToken)}
+     * implementation of the underlying token type. Different token implementations may have different
+     * semantics for what "covers" means. See the documentation of specific token implementations for details:
+     * <ul>
+     *     <li>{@link GapAwareTrackingToken#covers(TrackingToken)} - considers both index and gap containment</li>
+     *     <li>{@link MultiSourceTrackingToken#covers(TrackingToken)} - delegates to constituent tokens</li>
+     *     <li>{@link GlobalSequenceTrackingToken#covers(TrackingToken)} - simple position comparison</li>
+     * </ul>
+     * <p>
+     * This method checks {@code !newToken.covers(tokenAtReset)} to determine if replay is still in progress.
+     * This direction of comparison is important for correct behavior with {@link GapAwareTrackingToken},
+     * where gap differences between tokens could otherwise cause incorrect replay detection.
+     *
+     * @param newToken the token representing the new position to advance to
+     * @return the advanced token - either a new {@link ReplayToken} if still replaying,
+     *         or the unwrapped token if replay is complete
+     * @see TrackingToken#covers(TrackingToken)
+     * @see GapAwareTrackingToken#covers(TrackingToken)
+     * @see MultiSourceTrackingToken#covers(TrackingToken)
+     */
     @Override
     public TrackingToken advancedTo(TrackingToken newToken) {
         if (this.tokenAtReset == null
