@@ -1,14 +1,267 @@
-= Testing
-:page-aliases: README.adoc
+= Testing Axon Applications
+:navtitle: Testing
 
-The Axon Framework provides a complete test module to help unit test your Axon application. This includes capabilities test your Commands/Events and Sagas. This section of the reference guide intends to cover in detail the capabilities that the Axon Framework provides to help facilitate testing.‌
+Testing is a critical part of developing reliable Axon applications.
+The Axon Framework testing module provides comprehensive tools for testing your command handlers, event handlers, entities, and complete message flows.
 
-A summary of the various sub-sections is given below.
+== Introduction
 
-[cols="<,<"]
-|===
-|Sub-Section |Purpose 
+Axon Framework's testing support is built on a simple principle: use the same configuration in your tests as you do in production.
+This approach eliminates duplicate configuration and ensures your tests accurately reflect your production setup.
 
-|​xref:commands-events.adoc[Commands / Events​] |Capabilities provided by the Axon Framework to test Commands/Events
-|​xref:sagas-1.adoc[Sagas​] |Capabilities provided by the Axon Framework to test Sagas
-|===
+The `AxonTestFixture` is the main entry point for testing Axon applications.
+It uses the same `ApplicationConfigurer` that you use to configure your production application, providing consistency between test and production environments.
+
+Key benefits:
+
+* **No duplicate configuration** - Reuse your production configuration in tests
+* **Unit and integration testing** - Test individual handlers or complete message flows
+* **Given-When-Then style** - Clear, readable test structure
+* **Type-safe API** - Compile-time safety for test phases
+* **Rich assertions** - Comprehensive validation of events, commands, and results
+
+== Testing capabilities overview
+
+The Axon testing module supports testing all aspects of your Axon application:
+
+**Command handler testing**::
+Test command handling logic, validation rules, and state changes.
+Verify that commands produce the expected events and results.
+
+**Event handler testing**::
+Test event handling and side effects.
+Verify that events trigger the correct commands, queries, or additional events.
+
+**Entity testing**::
+Test event-sourced and state-stored entities.
+Verify state transitions and business logic.
+
+**Query handler testing**::
+Test query handling and result generation.
+Verify query responses and subscription query updates.
+
+**Integration testing**::
+Test complete message flows with real infrastructure components.
+Verify end-to-end behavior including serialization, event storage, and processors.
+
+**Side effect testing**::
+Validate commands and events dispatched as side effects during message handling.
+
+== Testing approach
+
+Axon tests follow a three-phase pattern that makes tests clear and easy to understand:
+
+**Given** (setup)::
+Define the initial state before testing.
+Publish events or dispatch commands to set up the scenario.
+
+**When** (action)::
+Execute the action being tested.
+Dispatch a command, publish an event, or explicitly do nothing.
+
+**Then** (verification)::
+Verify the results.
+Check for expected events, commands, exceptions, or query results.
+
+This pattern provides a clear structure for all types of tests:
+
+[source,java]
+----
+var fixture = AxonTestFixture.with(configurer);
+
+fixture.given()
+       .event(new AccountCreatedEvent("account-1", 500.00))
+       .when()
+       .command(new WithdrawMoneyCommand("account-1", 100.00))
+       .then()
+       .success()
+       .events(new MoneyWithdrawnEvent("account-1", 100.00));
+----
+
+== Quick example
+
+Here's a complete example testing an entity's command handling:
+
+[source,java]
+----
+import org.axonframework.test.fixture.AxonTestFixture;
+import org.junit.jupiter.api.*;
+
+class AccountTest {
+
+    private AxonTestFixture fixture;
+
+    @BeforeEach
+    void setUp() {
+        var configurer = EventSourcingConfigurer.create()
+            .registerEntity(EventSourcedEntityModule.autodetected(String.class, Account.class));
+
+        fixture = AxonTestFixture.with(configurer);
+    }
+
+    @Test
+    void testWithdrawMoney() {
+        fixture.given()
+               .event(new AccountCreatedEvent("account-1", 500.00))
+               .when()
+               .command(new WithdrawMoneyCommand("account-1", 100.00))
+               .then()
+               .success()
+               .events(new MoneyWithdrawnEvent("account-1", 100.00));
+    }
+
+    @Test
+    void testWithdrawInsufficientBalance() {
+        fixture.given()
+               .event(new AccountCreatedEvent("account-1", 50.00))
+               .when()
+               .command(new WithdrawMoneyCommand("account-1", 100.00))
+               .then()
+               .exception(InsufficientBalanceException.class)
+               .noEvents();
+    }
+
+    @AfterEach
+    void tearDown() {
+        fixture.stop();
+    }
+}
+----
+
+== Module contents
+
+This module covers everything you need to test Axon applications:
+
+xref:testing-with-axon-test-fixture.adoc[]::
+Comprehensive guide to using `AxonTestFixture` for testing.
+Learn about the Given-When-Then phases, creating fixtures, and all available assertions.
+
+xref:field-filters.adoc[]::
+Customize message equality comparison for tests.
+Handle non-deterministic fields like timestamps and UUIDs.
+
+xref:advanced-testing.adoc[]::
+Advanced testing techniques including custom matchers, integration testing, testing queries, and Spring Boot integration.
+
+xref:upgrading-from-axon-4.adoc[]::
+For users upgrading from Axon 4, learn what's changed in testing and how to migrate your existing tests.
+
+== Getting started
+
+If you're new to testing with Axon Framework, start with xref:testing-with-axon-test-fixture.adoc[Testing with AxonTestFixture].
+
+If you're upgrading from Axon 4, see xref:upgrading-from-axon-4.adoc[Upgrading from Axon 4] for a migration guide.
+
+== Where to get the Configurer
+
+The `AxonTestFixture` requires an `ApplicationConfigurer` (or one of its subtypes: `ModellingConfigurer`, `EventSourcingConfigurer`).
+
+There are two common approaches:
+
+**1. Reuse production configuration**
+
+This is the recommended approach because it ensures your tests use the same configuration as production.
+
+**With Spring Boot:**
+
+When using Spring Boot, the configurer is automatically created by the Spring Boot integration.
+Inject it as a bean into your test for realistic integration testing:
+
+[source,java]
+----
+import org.axonframework.test.server.AxonServerContainer;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+
+@SpringBootTest
+@Testcontainers
+class AccountTest {
+
+    @Container
+    @ServiceConnection
+    static AxonServerContainer axonServer = new AxonServerContainer();
+
+    @Autowired
+    private ApplicationConfigurer configurer;
+
+    private AxonTestFixture fixture;
+
+    @BeforeEach
+    void setUp() {
+        fixture = AxonTestFixture.with(configurer);
+    }
+
+    @Test
+    void testWithdrawMoney() {
+        fixture.given()
+               .event(new AccountCreatedEvent("account-1", 500.00))
+               .when()
+               .command(new WithdrawMoneyCommand("account-1", 100.00))
+               .then()
+               .success()
+               .events(new MoneyWithdrawnEvent("account-1", 100.00));
+    }
+
+    @AfterEach
+    void tearDown() {
+        fixture.stop();
+    }
+}
+----
+
+The `AxonServerContainer` starts an Axon Server instance in a Docker container for realistic integration testing.
+The `@ServiceConnection` annotation (Spring Boot 3.1+) automatically configures the Axon Server connection.
+
+**Without Spring (plain Java):**
+
+If your production code uses a static configuration method:
+
+[source,java]
+----
+// Production configuration
+public class AxonConfig {
+    public static EventSourcingConfigurer configurer() {
+        return EventSourcingConfigurer.create()
+            .registerEntity(EventSourcedEntityModule.autodetected(String.class, Account.class))
+            .registerCommandHandler(MyCommandHandler.class);
+    }
+}
+
+// Test
+@Test
+void testWithProductionConfig() {
+    var fixture = AxonTestFixture.with(AxonConfig.configurer());
+    // ... test ...
+}
+----
+
+**2. Create a test-specific configurer**
+
+For focused unit tests, create a minimal configurer with only the components you need:
+
+[source,java]
+----
+@BeforeEach
+void setUp() {
+    var configurer = EventSourcingConfigurer.create()
+        .registerEntity(EventSourcedEntityModule.autodetected(String.class, Account.class));
+
+    fixture = AxonTestFixture.with(configurer);
+}
+----
+
+**Available configurers:**
+
+* `MessagingConfigurer.create()` - For testing messaging infrastructure
+* `ModellingConfigurer.create()` - For testing domain modeling
+* `EventSourcingConfigurer.create()` - For testing event-sourced entities (most common)
+
+[TIP]
+====
+For more Spring Boot testing examples including mocking beans and accessing Spring components, see xref:advanced-testing.adoc#testing-with-spring-boot[Testing with Spring Boot].
+====
+
+For comprehensive examples and detailed API documentation, continue to xref:testing-with-axon-test-fixture.adoc[Testing with AxonTestFixture].
