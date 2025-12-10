@@ -140,21 +140,11 @@ class ReplayTokenTest {
         assertEquals(startPosition, ((ReplayToken) result).getCurrentToken());
     }
 
-    /**
-     * Tests for issue #3604: DisallowReplay might not work as expected when gaps are present.
-     *
-     * @see <a href="https://github.com/AxonFramework/AxonFramework/issues/3604">GitHub Issue #3604</a>
-     */
     @Nested
-    class Issue3604DisallowReplayWithGaps {
+    class ReplayTokenFromGapAwareTrackingToken {
 
-        /**
-         * When tokenAtReset has gaps but the newToken during replay does not have those gaps,
-         * the replay detection can incorrectly conclude that replay is complete.
-         */
         @Test
         void advancedToShouldRemainInReplayWhenTokenAtResetHasGapsAndNewTokenDoesNot() {
-            // Scenario from issue #3604:
             // tokenAtReset: Index 6, Gaps [1]
             // newToken during replay: Index 2, Gaps []
             //
