@@ -2,8 +2,13 @@
 :page-aliases: unit-of-work.adoc
 
 The `ProcessingContext` is the core abstraction for managing the lifecycle of message processing in Axon Framework.
-It coordinates all actions performed during the processing of a message—whether it's a command, event, or query.
+It coordinates all actions performed during the processing of a message, regardless of whether it's a command, event, or query. As such, it is constructed by **any** message handling component in Axon Framework, so that you don't have to.
 While you're unlikely to interact with it directly in most cases, understanding the `ProcessingContext` helps you leverage Axon's lifecycle management capabilities when needed.
+
+[WARNING]
+====
+As stated directly above, you are unlikely to interact with the `ProcessingContext` in the majority of cases. Default Axon Framework usage through message handlers means you mostly only ever have to pass it along. If you do need use to it, for whatever reason, be certain to clearly read the documentation below and ask questions when in doubt.
+====
 
 == Overview
 
@@ -15,16 +20,16 @@ When Axon processes a message, it creates a `ProcessingContext` that:
 * **Provides access to framework components** from the configuration
 * **Supports async-native processing** with `CompletableFuture`-based APIs
 
-The `ProcessingContext` ensures that message processing is atomic—either completed successfully or rolled back entirely if something goes wrong.
+The `ProcessingContext` ensures that message processing is atomic. Processing either completes successfully or is rolled back entirely if something goes wrong.
 
 [TIP]
 ====
 In most cases, Axon's building blocks automatically manage the `ProcessingContext` for you.
 You typically only need to interact with it when:
 
-* Registering lifecycle callbacks for cleanup or transaction management
-* Managing custom resources that span multiple processing steps
-* Implementing advanced interceptors or custom infrastructure components
+* Registering lifecycle callbacks for cleanup or transaction management **not** supported by Axon Framework out of the box.
+* Managing custom resources that span multiple processing steps.
+* Implementing advanced interceptors or custom infrastructure components.
 ====
 
 == Accessing the processing context
@@ -34,7 +39,8 @@ The `ProcessingContext` is injected as a parameter in your message handlers:
 [source,java]
 ----
 @CommandHandler
-public OrderResult handle(PlaceOrderCommand command, ProcessingContext context) {
+public OrderResult handle(PlaceOrderCommand command,
+                          ProcessingContext context) {
     // Access the context to register callbacks, manage resources, etc.
     context.onCommit(ctx -> {
         logger.info("Order placed successfully");
@@ -45,20 +51,14 @@ public OrderResult handle(PlaceOrderCommand command, ProcessingContext context) 
 }
 
 @EventHandler
-public void on(OrderPlacedEvent event, ProcessingContext context) {
+public void on(OrderPlacedEvent event,
+               ProcessingContext context) {
     // Register cleanup action
     context.doFinally(ctx -> releaseResources());
 
     updateProjection(event);
 }
 ----
-
-[NOTE]
-====
-Unlike Axon 4's `UnitOfWork`, there is **no thread-local access** to the `ProcessingContext`.
-The old `CurrentUnitOfWork.get()` pattern no longer exists.
-The context must be explicitly passed as a parameter where needed.
-====
 
 == Processing lifecycle
 
@@ -100,10 +100,10 @@ The processing lifecycle consists of these phases, executed in order:
 
 === Phase execution rules
 
-* **Sequential execution**: Phases execute strictly in order from lowest to highest
-* **Parallel actions**: Multiple actions within the same phase may execute in parallel
-* **Phase completion**: All actions in a phase must complete before moving to the next phase
-* **Failure handling**: If any action fails, subsequent phases are skipped and error handlers execute
+* **Sequential execution**: Phases execute strictly in order from lowest to highest.
+* **Parallel actions**: Multiple actions within the same phase may execute in parallel.
+* **Phase completion**: All actions in a phase must complete before moving to the next phase.
+* **Failure handling**: If any action fails, subsequent phases are skipped and error handlers execute.
 
 === Registering lifecycle actions
 
@@ -112,20 +112,19 @@ You can register actions to execute in any phase:
 [source,java]
 ----
 @CommandHandler
-public void handle(CreateOrderCommand command, ProcessingContext context) {
-    // Async action - returns CompletableFuture
-    context.onCommit(ctx -> {
-        return saveToDatabase(order)
-            .thenApply(result -> {
+public void handle(CreateOrderCommand command,
+                   ProcessingContext context) {
+    // Asynchronous action registration...
+    context.onCommit(
+            ctx -> saveToDatabase(order).thenApply(result -> {
                 logger.info("Order saved: {}", result);
                 return null;
-            });
-    });
-
-    // Sync action - no return value
-    context.runOnAfterCommit(ctx -> {
-        notificationService.sendOrderConfirmation(command.getOrderId());
-    });
+            })
+    );
+    // Synchronous action registration...
+    context.runOnAfterCommit(
+            ctx -> notificationService.sendOrderConfirmation(command.orderId())
+    );
 }
 ----
 
@@ -138,31 +137,35 @@ Available lifecycle methods:
 
 [source,java]
 ----
-// Async variants
-context.onPreInvocation(ctx -> doAsyncSetup())
-context.onInvocation(ctx -> handleAsync())
-context.onPostInvocation(ctx -> doAsyncPostProcessing())
-context.onPrepareCommit(ctx -> validateBeforeCommit())
-context.onCommit(ctx -> commitTransaction())
-context.onAfterCommit(ctx -> sendNotifications())
+public void registerPhaseHandlers(ProcessingContext context) {
+    // Async variants
+    context.onPreInvocation(ctx -> doAsyncSetup());
+    context.onInvocation(ctx -> handleAsync())
+    context.onPostInvocation(ctx -> doAsyncPostProcessing());
+    context.onPrepareCommit(ctx -> validateBeforeCommit());
+    context.onCommit(ctx -> commitTransaction());
+    context.onAfterCommit(ctx -> sendNotifications());
 
-// Sync variants
-context.runOnPreInvocation(ctx -> doSetup())
-context.runOnInvocation(ctx -> handleSync())
-context.runOnPostInvocation(ctx -> doPostProcessing())
-context.runOnPrepareCommit(ctx -> validate())
-context.runOnCommit(ctx -> commit())
-context.runOnAfterCommit(ctx -> notify())
+    // Sync variants
+    context.runOnPreInvocation(ctx -> doSetup());
+    context.runOnInvocation(ctx -> handleSync());
+    context.runOnPostInvocation(ctx -> doPostProcessing());
+    context.runOnPrepareCommit(ctx -> validate());
+    context.runOnCommit(ctx -> commit());
+    context.runOnAfterCommit(ctx -> notify());
+}
 ----
 
-For synchronous actions that need to return a value, wrap them in a `CompletableFuture`:
+For synchronous actions that need to return a value to be passed to a following step, wrap the result in a `CompletableFuture`:
 
 [source,java]
 ----
-context.onCommit(ctx -> {
-    String result = performSyncOperation();
-    return CompletableFuture.completedFuture(result);
-});
+public void registerSyncResultHandlerInFuture(ProcessingContext context) {
+    context.onCommit(ctx -> {
+        String result = performSyncOperation();
+        return CompletableFuture.completedFuture(result);
+    });
+}
 ----
 
 === Error and completion handlers
@@ -198,21 +201,21 @@ public void on(OrderPlacedEvent event, ProcessingContext context) {
 
 **Execution order for error scenarios:**
 
-1. Normal phases execute until one fails
-2. `onError` handlers execute
-3. `whenComplete` handlers are **skipped**
-4. `doFinally` handlers execute
+1. Normal phases execute until one fails, then
+2. `onError` handlers execute, then
+3. `whenComplete` handlers are **skipped**, then
+4. `doFinally` handlers execute.
 
 **Execution order for success scenarios:**
 
-1. All normal phases execute successfully
-2. `onError` handlers are **skipped**
-3. `whenComplete` handlers execute
-4. `doFinally` handlers execute
+1. All normal phases execute successfully, then
+2. `onError` handlers are **skipped**, then
+3. `whenComplete` handlers execute, then
+4. `doFinally` handlers execute.
 
 == Resource management
 
-The `ProcessingContext` provides type-safe resource management for storing and retrieving resources needed during message processing.
+The `ProcessingContext` provides type-safe resource management for storing and retrieving resources needed during message processing. This allows Axon Framework to add resources in an early phase of the `ProcessingContext`, which is then accessed during a later phase of the context's lifecycle.
 
 === Resource keys
 
@@ -220,6 +223,8 @@ Resources are identified using type-safe keys:
 
 [source,java]
 ----
+import org.axonframework.messaging.core.Context.ResourceKey;
+
 // Define resource keys
 ResourceKey<EntityManager> EM_KEY = ResourceKey.withLabel("EntityManager");
 ResourceKey<Connection> DB_CONN = ResourceKey.withLabel("DatabaseConnection");
@@ -247,8 +252,9 @@ public void handle(CreateOrderCommand command, ProcessingContext context) {
     }
 
     // Get or create resource (compute if absent)
-    Connection conn = context.computeResourceIfAbsent(DB_CONN,
-        () -> dataSource.getConnection());
+    Connection conn = context.computeResourceIfAbsent(
+            DB_CONN, () -> dataSource.getConnection()
+    );
 
     // Register cleanup
     context.doFinally(ctx -> {
@@ -266,17 +272,19 @@ A common pattern for managing resources:
 
 [source,java]
 ----
+// Note that this is an advanced example!
+// Axon Framework typically deals with transaction and connection details for you, so you don't have too.
+// That makes thi example useful ONLY if you are using a storage solution that is not supported by Axon Framework out of the box.
 public class TransactionInterceptor implements MessageHandlerInterceptor<CommandMessage> {
 
-    private static final ResourceKey<Transaction> TX_KEY =
-        ResourceKey.withLabel("Transaction");
+    private static final ResourceKey<Transaction> TX_KEY = ResourceKey.withLabel("Transaction");
 
     @Override
     public MessageStream<?> interceptOnHandle(
-            CommandMessage message,
+            CommandMessage command,
             ProcessingContext context,
-            MessageHandlerInterceptorChain<CommandMessage> chain) {
-
+            MessageHandlerInterceptorChain<CommandMessage> chain
+    ) {
         // Create resource in pre-invocation
         context.runOnPreInvocation(ctx -> {
             Transaction tx = transactionManager.beginTransaction();
@@ -305,7 +313,7 @@ public class TransactionInterceptor implements MessageHandlerInterceptor<Command
             }
         });
 
-        return chain.proceed(message, context);
+        return chain.proceed(command, context);
     }
 }
 ----
@@ -316,17 +324,42 @@ You can update existing resources using the update method:
 
 [source,java]
 ----
-// Update resource using a function
-context.updateResource(TAGS, tags -> {
-    if (tags == null) {
-        tags = new ArrayList<>();
-    }
-    tags.add("processed");
-    return tags;
-});
+@EventHandler
+public void on(OrderPlacedEvent event, ProcessingContext context) {
+    // Process event...
+    // and update resource using a function
+    context.updateResource(TAGS, tags -> {
+        if (tags == null) {
+            tags = new ArrayList<>();
+        }
+        tags.add("processed");
+        return tags;
+    });
+}
 ----
 
-== Accessing framework components
+=== Accessing the current message
+
+One of the default resources Axon Framework adds for you to the `ProcessingContext`, is the entire `Message`:
+
+[source,java]
+----
+@CommandHandler
+public void handle(MyCommand command, ProcessingContext context) {
+    // Retrieve the current message
+    Message message = Message.fromContext(context);
+
+    // Cast to specific message type if needed
+    CommandMessage commandMessage = (CommandMessage) message;
+
+    // Access message properties
+    String messageId = message.identifier();
+    Metadata metadata = message.metadata();
+    Instant timestamp = ((EventMessage) message).timestamp(); // For events
+}
+----
+
+== Accessing configured components
 
 The `ProcessingContext` provides access to components registered in the Axon Framework configuration:
 
@@ -348,108 +381,9 @@ public void on(OrderPlacedEvent event, ProcessingContext context) {
 
 This is particularly useful in interceptors or custom infrastructure components where you need to access framework services.
 
-== Accessing the current message
-
-The message being processed is stored as a resource in the context:
-
-[source,java]
-----
-@CommandHandler
-public void handle(MyCommand command, ProcessingContext context) {
-    // Retrieve the current message
-    Message message = Message.fromContext(context);
-
-    // Cast to specific message type if needed
-    CommandMessage commandMessage = (CommandMessage) message;
-
-    // Access message properties
-    String messageId = message.identifier();
-    Metadata metadata = message.metadata();
-    Instant timestamp = ((EventMessage) message).timestamp(); // For events
-}
-----
-
-[NOTE]
-====
-Unlike Axon 4, the `ProcessingContext` doesn't revolve around a single message.
-The message is just one resource stored in the context, allowing the context to be used for any processing scope, including batch processing or streaming scenarios.
-====
-
-== Transaction management
-
-Axon Framework uses the `ProcessingContext` to attach transactions to message processing.
-Many components allow you to configure a `TransactionManager`:
-
-* `CommandBus` implementations
-* `QueryBus` implementations
-* Event processors
-
-The transaction manager creates transactions that are bound to the processing context lifecycle.
-
-=== Configuring transaction management
-
-[tabs]
-====
-Spring Boot::
-+
-[source,java]
-----
-@Configuration
-public class AxonConfig {
-
-    @Bean
-    public TransactionManager transactionManager(PlatformTransactionManager ptm) {
-        return new SpringTransactionManager(ptm);
-    }
-}
-
-// Spring Boot auto-configuration will automatically use this
-// transaction manager for all message processing
-----
-
-Axon Configuration::
-+
-[source,java]
-----
-MessagingConfigurer.create()
-    .registerCommandBusTransactionManager(config ->
-        new MyTransactionManager()
-    )
-    .registerEventProcessorTransactionManager("myProcessor", config ->
-        new MyTransactionManager()
-    )
-    .build();
-----
-====
-
-=== How transactions work with the processing context
-
-When a transaction manager is configured:
-
-1. **Pre-Invocation**: Transaction is started and attached to the context as a resource
-2. **Invocation**: Your handler executes within the transaction
-3. **Commit**: Transaction is committed if processing succeeds
-4. **Error**: Transaction is rolled back if processing fails
-5. **Cleanup**: Transaction resources are released
-
-=== Rollback configuration
-
-You can configure when the processing context should trigger a rollback:
-
-[source,java]
-----
-// Configuration options:
-RollbackConfigurationType.NEVER               // Never rollback
-RollbackConfigurationType.ANY_THROWABLE       // Rollback on any exception
-RollbackConfigurationType.UNCHECKED_EXCEPTIONS // Rollback on RuntimeException and Error
-RollbackConfigurationType.RUNTIME_EXCEPTION   // Rollback on RuntimeException only
-----
-
-The default is `ANY_THROWABLE`, meaning any exception will trigger a rollback.
-
 == Context propagation
 
-When dispatching new messages from within a handler, you can propagate the context to maintain correlation and share resources.
+When dispatching new messages from within a handler, it is strongly recommended you do some from _with_ the active `ProcessingContext` to maintain xref:message-correlation.adoc[correlation data] and share resources.
 
 === Using `EventAppender`
 
@@ -459,12 +393,10 @@ When dispatching new messages from within a handler, you can propagate the conte
 ----
 @CommandHandler
 public void handle(PlaceOrderCommand command,
-                  EventAppender eventAppender,
-                  ProcessingContext context) {
+                   EventAppender appender) {
     // EventAppender uses the context automatically
-    eventAppender.append(new OrderPlacedEvent(command.getOrderId()));
-
     // Metadata and correlation data from context are propagated
+    appender.append(new OrderPlacedEvent(command.getOrderId()));
 }
 ----
 
@@ -513,29 +445,36 @@ public void on(OrderCreatedEvent event, ProcessingContext context) {
 }
 ----
 
-[IMPORTANT]
-====
-Unlike Axon 4's `UnitOfWork.root()`, there is **no nesting** of processing contexts in Axon 5.
-Each context is independent.
-Use resource propagation via `withResource()` when you need to share data between contexts.
-====
-
 == Advanced usage
+
+Although using the `ProcessingContext` directly already counts as an advanced use case for the typical Axon Framework users, there are even more advanced usages when you are interacting with it directly.
 
 === Custom phases
 
-You can define custom phases to insert logic at specific points in the lifecycle:
+You can define custom phases to insert logic at specific points in the lifecycle. As Axon Framework itself will never use your custom phases to register operation, you are certain **your** tasks are the only ones running during that point in time:
 
 [source,java]
 ----
-// Define custom phase between pre-invocation and invocation
-Phase customPhase = () -> -5000;  // Order between -10000 and 0
+class CustomPhaseInterceptor implements MessageHandlerInterceptor<Message> {
 
-context.on(customPhase, ctx -> {
-    // Custom logic here
-    performCustomSetup();
-    return CompletableFuture.completedFuture(null);
-});
+    @Nonnull
+    @Override
+    public MessageStream<?> interceptOnHandle(
+            @Nonnull Message message,
+            @Nonnull ProcessingContext context,
+            @Nonnull MessageHandlerInterceptorChain<Message> chain
+    ) {
+        // Order between PRE_INVOCATION (order = -10000) and INVOCATION (order = 0) phase.
+        ProcessingLifecycle.Phase customPhase = () -> -5000;
+
+        context.on(customPhase, ctx -> {
+            // Custom logic here
+            performCustomSetup();
+            return CompletableFuture.completedFuture(null);
+        });
+        return chain.proceed(message, context);
+    }
+}
 ----
 
 === Checking lifecycle state
@@ -544,20 +483,24 @@ You can query the current state of the processing context:
 
 [source,java]
 ----
-if (context.isStarted()) {
-    // Processing has started
-}
+@EventHandler
+public void on(OrderPlacedEvent event, ProcessingContext context) {
+    if (context.isStarted()) {
+        // Processing has started
+    }
 
-if (context.isError()) {
-    // An error occurred during processing
-}
+    if (context.isError()) {
+        // An error occurred during processing
+    }
 
-if (context.isCommitted()) {
-    // Processing committed successfully
-}
+    if (context.isCommitted()) {
+        // Processing committed successfully
+    }
 
-if (context.isCompleted()) {
-    // Processing completed (success or failure)
+    if (context.isCompleted()) {
+        // Processing completed (success or failure)
+    }
+    // Process event...
 }
 ----
 
@@ -567,90 +510,21 @@ For testing, you can create stub contexts:
 
 [source,java]
 ----
-// Create context with a message
-ProcessingContext context = StubProcessingContext.forMessage(commandMessage);
+void testWithStubProcessingContext() {
+    CommandMessage command = new GenericCommandMessage(new MessageType("command"), new PlaceOrderCommand());
+    // Create context with a message
+    ProcessingContext contextMessageOnly = StubProcessingContext.forMessage(command);
 
-// Create context with mocked components
-ProcessingContext context = StubProcessingContext.withComponent(
-    CommandGateway.class,
-    mockGateway
-);
+    CommandGateway mockGateway = mock(CommandGateway.class);
+    // Create context with mocked components
+    ProcessingContext context = StubProcessingContext.withComponent(
+            CommandGateway.class,
+            mockGateway
+    ).withMessage(command);
 
-// Manually advance to specific phase for testing
-StubProcessingContext stub = new StubProcessingContext();
-stub.onCommit(ctx -> verifyCommit());
-stub.moveToPhase(DefaultPhases.COMMIT).join();
+    // Manually advance to specific phase for testing
+    StubProcessingContext stub = new StubProcessingContext();
+    stub.onCommit(ctx -> verifyCommitPhase());
+    stub.moveToPhase(ProcessingLifecycle.DefaultPhases.COMMIT).join();
+}
 ----
-
-== Migration from Axon 4
-
-If you're migrating from Axon 4's `UnitOfWork`, here are the key differences:
-
-[cols="2,2,3"]
-|===
-|Axon 4 UnitOfWork |Axon 5 ProcessingContext |Notes
-
-|`CurrentUnitOfWork.get()`
-|Inject as parameter
-|No thread-local access
-
-|`uow.onPrepareCommit()`
-|`context.onPrepareCommit()`
-|Same phase, async by default
-
-|`uow.onCommit()`
-|`context.onCommit()`
-|Same phase, async by default
-
-|`uow.afterCommit()`
-|`context.onAfterCommit()`
-|Renamed for clarity
-
-|`uow.onRollback()`
-|`context.onError()`
-|Receives phase and error information
-
-|`uow.onCleanup()`
-|`context.doFinally()`
-|Renamed for clarity
-
-|`uow.getOrComputeResource("key", supplier)`
-|`context.computeResourceIfAbsent(ResourceKey.withLabel("key"), supplier)`
-|Type-safe resource keys
-
-|`uow.getMessage()`
-|`Message.fromContext(context)`
-|Message is now just a resource
-
-|`uow.root()`
-|No equivalent
-|No nesting support
-
-|Thread-local storage
-|Explicit parameter passing
-|More explicit, works with async
-|===
-
-Key architectural changes:
-
-* **No thread-local access** - Context must be passed explicitly
-* **No nesting** - Each context is independent
-* **Async-native** - All lifecycle methods return `CompletableFuture`
-* **Type-safe resources** - Uses `ResourceKey<T>` instead of string keys
-* **Message as resource** - The context doesn't revolve around a single message
-
-== Best practices
-
-1. **Register cleanup actions**: Always use `doFinally()` to release resources, as it executes regardless of success or failure.
-
-2. **Use typed resource keys**: Define `ResourceKey<T>` constants for all your resources to ensure type safety.
-
-3. **Return CompletableFutures**: For async actions in lifecycle callbacks, return a proper `CompletableFuture`. For sync actions, use the `runOn*` variants.
-
-4. **Keep handlers focused**: Don't perform complex lifecycle management in handlers. Use interceptors for cross-cutting concerns.
-
-5. **Propagate context**: When dispatching new messages, pass the context to maintain correlation and resource access.
-
-6. **Test with stubs**: Use `StubProcessingContext` in tests to verify lifecycle callback behavior.
-
-7. **Document resource lifecycles**: Clearly document when resources are created, used, and released, especially in shared infrastructure code.
