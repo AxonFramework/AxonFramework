@@ -5,5 +5,6 @@
 ** xref:messaging-concepts:message-intercepting.adoc[]
 ** xref:messaging-concepts:supported-parameters-annotated-handlers.adoc[]
 ** xref:messaging-concepts:exception-handling.adoc[]
+// ** xref:messaging-concepts:annotated-exception-handling.adoc[] - TODO - https://github.com/AxonFramework/AxonFramework/issues/3062
 ** xref:messaging-concepts:processing-context.adoc[]
 ** xref:messaging-concepts:timeouts.adoc[]
