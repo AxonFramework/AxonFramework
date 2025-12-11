@@ -35,6 +35,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import org.axonframework.messaging.core.LegacyResources;
+
 /**
  * Test class for {@link PersistentStreamEventConverter}.
  *
@@ -154,6 +156,81 @@ class PersistentStreamEventConverterTest {
             assertThatThrownBy(() -> testSubject.convert(null))
                     .isInstanceOf(NullPointerException.class)
                     .hasMessageContaining("PersistentStreamEvent must not be null");
+        }
+
+        @Test
+        void includesAggregateResourcesInContextForAggregateEvents() {
+            // given
+            String messageId = UUID.randomUUID().toString();
+            String aggregateId = "order-12345";
+            String aggregateType = "OrderAggregate";
+            long sequenceNumber = 42L;
+            long token = 100L;
+
+            Event event = Event.newBuilder()
+                    .setMessageIdentifier(messageId)
+                    .setTimestamp(System.currentTimeMillis())
+                    .setAggregateIdentifier(aggregateId)
+                    .setAggregateType(aggregateType)
+                    .setAggregateSequenceNumber(sequenceNumber)
+                    .setPayload(SerializedObject.newBuilder()
+                            .setType("TestEvent")
+                            .setRevision("1.0")
+                            .build())
+                    .build();
+
+            EventWithToken eventWithToken = EventWithToken.newBuilder()
+                    .setToken(token)
+                    .setEvent(event)
+                    .build();
+
+            PersistentStreamEvent persistentStreamEvent = PersistentStreamEvent.newBuilder()
+                    .setEvent(eventWithToken)
+                    .setReplay(false)
+                    .build();
+
+            // when
+            MessageStream.Entry<EventMessage> result = testSubject.convert(persistentStreamEvent);
+
+            // then
+            assertThat(result.getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY)).isEqualTo(aggregateId);
+            assertThat(result.getResource(LegacyResources.AGGREGATE_TYPE_KEY)).isEqualTo(aggregateType);
+            assertThat(result.<Long>getResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY)).isEqualTo(sequenceNumber);
+        }
+
+        @Test
+        void doesNotIncludeAggregateResourcesForNonAggregateEvents() {
+            // given
+            String messageId = UUID.randomUUID().toString();
+            long token = 100L;
+
+            Event event = Event.newBuilder()
+                    .setMessageIdentifier(messageId)
+                    .setTimestamp(System.currentTimeMillis())
+                    // No aggregate identifier set
+                    .setPayload(SerializedObject.newBuilder()
+                            .setType("TestEvent")
+                            .setRevision("1.0")
+                            .build())
+                    .build();
+
+            EventWithToken eventWithToken = EventWithToken.newBuilder()
+                    .setToken(token)
+                    .setEvent(event)
+                    .build();
+
+            PersistentStreamEvent persistentStreamEvent = PersistentStreamEvent.newBuilder()
+                    .setEvent(eventWithToken)
+                    .setReplay(false)
+                    .build();
+
+            // when
+            MessageStream.Entry<EventMessage> result = testSubject.convert(persistentStreamEvent);
+
+            // then
+            assertThat(result.<String>getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY)).isNull();
+            assertThat(result.<String>getResource(LegacyResources.AGGREGATE_TYPE_KEY)).isNull();
+            assertThat(result.<Long>getResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY)).isNull();
         }
     }
 
