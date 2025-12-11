@@ -286,6 +286,20 @@ class ReplayTokenTest {
                         "Should have exited replay mode since index 7 covers index 6");
         }
 
+        @Test
+        void advancedToShouldKeepReplayWhenGlobalSequenceTokenReachesSameIndex() {
+            GlobalSequenceTrackingToken tokenAtReset = new GlobalSequenceTrackingToken(6);
+
+            TrackingToken replayToken = ReplayToken.createReplayToken(tokenAtReset, null);
+
+            // Advance to the same index as tokenAtReset
+            GlobalSequenceTrackingToken newToken = new GlobalSequenceTrackingToken(6);
+            TrackingToken advancedToken = ((ReplayToken) replayToken).advancedTo(newToken);
+
+            assertTrue(ReplayToken.isReplay(advancedToken),
+                        "Should have exited replay mode since newToken (index 6) covers tokenAtReset (index 6)");
+        }
+
         /**
          * Tests that advancing through gaps correctly maintains replay status.
          * When we process an event that fills a gap in the tokenAtReset, we should still be in replay

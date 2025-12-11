@@ -260,7 +260,9 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
                 return ((WrappedToken) tokenAtReset).advancedTo(newToken);
             }
             return newToken;
-        } else if (tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken))) {
+//        } else if (tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken))) { // Have I seen all events they've seen?
+//        } else if (!newToken.covers(WrappedToken.unwrapUpperBound(tokenAtReset))) { // Am I still behind where I was before reset?
+        } else if (tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken)) || !newToken.covers(WrappedToken.unwrapUpperBound(tokenAtReset))) { // Have I seen all events they've seen?
             // we're still well behind
             return new ReplayToken(tokenAtReset, newToken, context, true);
         } else {
