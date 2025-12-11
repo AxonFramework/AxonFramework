@@ -251,30 +251,50 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
 
     @Override
     public TrackingToken advancedTo(TrackingToken newToken) {
-        if (this.tokenAtReset == null
-                || (newToken.covers(WrappedToken.unwrapUpperBound(this.tokenAtReset))
-                && !tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken)))) {
+        TrackingToken unwrappedTokenAtReset = WrappedToken.unwrapUpperBound(this.tokenAtReset);
+        TrackingToken unwrappedNewToken = WrappedToken.unwrapLowerBound(newToken);
+
+        // Case 1: No reset tracking
+        if (this.tokenAtReset == null) {
+            return newToken;
+        }
+
+        // Case 2: Strictly past reset position (newToken.index > tokenAtReset.index)
+        // Use overlaps() to distinguish "past" from "at same position with different gaps"
+        if (newToken.covers(unwrappedTokenAtReset) && !unwrappedNewToken.overlaps(unwrappedTokenAtReset)) {
             // we're done replaying
             // if the token at reset was a wrapped token itself, we'll need to use that one to maintain progress.
             if (tokenAtReset instanceof WrappedToken) {
                 return ((WrappedToken) tokenAtReset).advancedTo(newToken);
             }
             return newToken;
-//        } else if (tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken))) { // Have I seen all events they've seen?
-//        } else if (!newToken.covers(WrappedToken.unwrapUpperBound(tokenAtReset))) { // Am I still behind where I was before reset?
-        } else if (tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken)) || !newToken.covers(WrappedToken.unwrapUpperBound(tokenAtReset))) { // Have I seen all events they've seen?
-            // we're still well behind
-            return new ReplayToken(tokenAtReset, newToken, context, true);
-        } else {
-            // we're getting an event that we didn't have before, but we haven't finished replaying either
-            if (tokenAtReset instanceof WrappedToken) {
-                return new ReplayToken(tokenAtReset.upperBound(newToken),
-                                       ((WrappedToken) tokenAtReset).advancedTo(newToken),
-                                       context,
-                                       false);
-            }
-            return new ReplayToken(tokenAtReset.upperBound(newToken), newToken, context, false);
         }
+
+        // Case 3: Same position as reset (newToken.index == tokenAtReset.index)
+        // Event at this index was seen before reset (index is never in gaps by definition)
+        if (unwrappedNewToken.overlaps(unwrappedTokenAtReset)) {
+            return new ReplayToken(tokenAtReset, newToken, context, true);
+        }
+
+        // Case 4: Behind reset position and event position was seen before reset
+        // Use coversPosition() instead of covers() to handle gap mismatch correctly:
+        // - coversPosition() returns true if the position was seen (ignoring gap containment)
+        // - This correctly marks events as replay even when gaps differ
+        // - Events at gap positions return false (not seen before) and fall through to Case 5
+        if (unwrappedTokenAtReset.coversPosition(unwrappedNewToken)) {
+            // Position was seen before reset - this is a replay
+            return new ReplayToken(tokenAtReset, newToken, context, true);
+        }
+
+        // Case 5: Event at a gap position (position was NOT seen before reset)
+        // This is a new event that wasn't processed before the reset
+        if (tokenAtReset instanceof WrappedToken) {
+            return new ReplayToken(tokenAtReset.upperBound(newToken),
+                                   ((WrappedToken) tokenAtReset).advancedTo(newToken),
+                                   context,
+                                   false);
+        }
+        return new ReplayToken(tokenAtReset.upperBound(newToken), newToken, context, false);
     }
 
     @Override

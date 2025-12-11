@@ -226,6 +226,44 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
+     * For {@link GapAwareTrackingToken}, two tokens overlap if they have the same index,
+     * regardless of any differences in their gaps.
+     */
+    @Override
+    public boolean overlaps(TrackingToken other) {
+        Assert.isTrue(other instanceof GapAwareTrackingToken, () -> "Incompatible token type provided.");
+        GapAwareTrackingToken otherToken = (GapAwareTrackingToken) other;
+        return this.index == otherToken.index;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * For {@link GapAwareTrackingToken}, this checks if the other token's index was seen by this token,
+     * without requiring gap containment. Specifically:
+     * <ul>
+     *   <li>The other token's index must be at or before this token's index</li>
+     *   <li>The other token's index must not be a gap in this token</li>
+     * </ul>
+     * <p>
+     * Unlike {@link #covers(TrackingToken)}, this does NOT check if the other token's gaps
+     * contain all of this token's gaps. This is useful for replay detection where we need
+     * to know if a specific event position was processed, regardless of gap differences.
+     */
+    @Override
+    public boolean coversPosition(TrackingToken other) {
+        Assert.isTrue(other instanceof GapAwareTrackingToken, () -> "Incompatible token type provided.");
+        GapAwareTrackingToken otherToken = (GapAwareTrackingToken) other;
+
+        // Check 1: other's index must be at or before this index
+        // Check 2: other's index must not be a gap in this token
+        // (Skip Check 3: gap containment - not needed for position coverage)
+        return otherToken.index <= this.index && !this.gaps.contains(otherToken.index);
+    }
+
+    /**
      * Check if this token contains one ore more gaps.
      *
      * @return {@code true} if this token contains gaps, {@code false} otherwise

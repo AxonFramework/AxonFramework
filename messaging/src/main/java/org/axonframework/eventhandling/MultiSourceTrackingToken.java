@@ -155,6 +155,37 @@ public class MultiSourceTrackingToken implements TrackingToken, Serializable {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
+     * For {@link MultiSourceTrackingToken}, two tokens overlap if all their constituent tokens overlap.
+     * This means each stream must be at the same position in both tokens.
+     */
+    @Override
+    public boolean overlaps(TrackingToken other) {
+        Assert.isTrue(other instanceof MultiSourceTrackingToken, () -> "Incompatible token type provided.");
+
+        MultiSourceTrackingToken otherMultiToken = (MultiSourceTrackingToken) other;
+
+        Assert.isTrue(otherMultiToken.trackingTokens.keySet().equals(this.trackingTokens.keySet()),
+                      () -> "MultiSourceTrackingTokens contain different keys");
+
+        for (Map.Entry<String, TrackingToken> trackingTokenEntry : trackingTokens.entrySet()) {
+            TrackingToken constituent = trackingTokenEntry.getValue();
+            TrackingToken otherConstituent = otherMultiToken.trackingTokens.get(trackingTokenEntry.getKey());
+            if (constituent == null && otherConstituent == null) {
+                continue;
+            }
+            if (constituent == null || otherConstituent == null) {
+                return false;
+            }
+            if (!constituent.overlaps(otherConstituent)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
      * Advances a single token within the tokenMap
      *
      * @param streamName        the stream/source which is being advanced

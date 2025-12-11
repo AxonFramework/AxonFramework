@@ -112,6 +112,19 @@ public class GlobalSequenceTrackingToken implements TrackingToken, Comparable<Gl
         return otherToken == null || otherToken.globalIndex <= this.globalIndex;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * For {@link GlobalSequenceTrackingToken}, two tokens overlap if they have the same global index.
+     */
+    @Override
+    public boolean overlaps(TrackingToken other) {
+        isTrue(other instanceof GlobalSequenceTrackingToken,
+               () -> "Incompatible token type provided:" + (other != null ? other.getClass().getSimpleName() : "null"));
+        GlobalSequenceTrackingToken otherToken = (GlobalSequenceTrackingToken) other;
+        return this.globalIndex == otherToken.globalIndex;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
