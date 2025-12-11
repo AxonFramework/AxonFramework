@@ -251,20 +251,24 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
 
     @Override
     public TrackingToken advancedTo(TrackingToken newToken) {
+        TrackingToken unwrappedNewToken = WrappedToken.unwrapLowerBound(newToken);
+        TrackingToken unwrappedTokenAtReset = WrappedToken.unwrapUpperBound(this.tokenAtReset);
+
         if (this.tokenAtReset == null
-                || (newToken.covers(WrappedToken.unwrapUpperBound(this.tokenAtReset))
-                && !tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken)))) {
+                || (newToken.covers(unwrappedTokenAtReset)
+                && !tokenAtReset.processed(unwrappedNewToken))) {
             // we're done replaying
             // if the token at reset was a wrapped token itself, we'll need to use that one to maintain progress.
             if (tokenAtReset instanceof WrappedToken) {
                 return ((WrappedToken) tokenAtReset).advancedTo(newToken);
             }
             return newToken;
-        } else if (tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken))) {
-            // we're still well behind
+        } else if (tokenAtReset.processed(unwrappedNewToken)) {
+            // we're still well behind - the event at newToken's position was processed before reset
             return new ReplayToken(tokenAtReset, newToken, context, true);
         } else {
             // we're getting an event that we didn't have before, but we haven't finished replaying either
+            // (the event's position was a gap in tokenAtReset, meaning it wasn't processed before reset)
             if (tokenAtReset instanceof WrappedToken) {
                 return new ReplayToken(tokenAtReset.upperBound(newToken),
                                        ((WrappedToken) tokenAtReset).advancedTo(newToken),

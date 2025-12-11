@@ -226,6 +226,34 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
+     * For {@link GapAwareTrackingToken}, this method checks whether the event at the position represented by
+     * {@code other} was actually processed by this token. Unlike {@link #covers(TrackingToken)}, this method
+     * ignores differences in gap sets between the two tokens - it only checks if:
+     * <ol>
+     *     <li>The other token's index is within this token's range (i.e., {@code other.index <= this.index})</li>
+     *     <li>The other token's index is not in this token's gaps (i.e., it was actually processed)</li>
+     * </ol>
+     * <p>
+     * This is particularly useful in replay scenarios where gaps might have been filled during replay,
+     * causing the gap sets to differ even though the position itself was processed before the reset.
+     *
+     * @param other The token representing the position to check
+     * @return {@code true} if this token has processed the event at the position represented by {@code other},
+     *         otherwise {@code false}
+     * @since 4.11.0
+     */
+    @Override
+    public boolean processed(TrackingToken other) {
+        Assert.isTrue(other instanceof GapAwareTrackingToken, () -> "Incompatible token type provided.");
+        GapAwareTrackingToken otherToken = (GapAwareTrackingToken) other;
+
+        return otherToken.index <= this.index
+                && !this.gaps.contains(otherToken.index);
+    }
+
+    /**
      * Check if this token contains one ore more gaps.
      *
      * @return {@code true} if this token contains gaps, {@code false} otherwise

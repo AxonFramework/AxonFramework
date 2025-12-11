@@ -822,29 +822,30 @@ class ReplayTokenTest {
 
         /**
          * When newToken has the same index as tokenAtReset but tokenAtReset has gaps,
-         * replay should still be in progress because we processed the last event. Then Index 7 will be without.
+         * replay should still be in progress because we're at the reset position.
+         * Event 6 WAS processed before reset, so it's a replay.
          */
         @Test
         void advancedToShouldRemainInReplayWhenNewTokenHasSameIndexButTokenAtResetHasGaps() {
             // tokenAtReset: Index 6, Gaps [2]
             // newToken during replay: Index 6, Gaps []
             //
-            // The newToken has the same index (6) as tokenAtReset, but tokenAtReset
-            // has a gap at position 2 that the newToken doesn't have.
-            // This means the event at position 2 was never processed before reset,
-            // so during replay we're seeing it for the first time - it should be
-            // treated as a replay event.
+            // The newToken has the same index (6) as tokenAtReset.
+            // Event 6 WAS processed before reset (it's not in the gaps),
+            // so it should be marked as a replay.
+            // The gap at position 2 was filled during replay, but that doesn't
+            // change the fact that event 6 was already seen before reset.
             GapAwareTrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(6, Collections.singleton(2L));
             GapAwareTrackingToken newToken = GapAwareTrackingToken.newInstance(6, emptySet());
 
             TrackingToken replayToken = ReplayToken.createReplayToken(tokenAtReset, null);
             TrackingToken advancedToken = ((ReplayToken) replayToken).advancedTo(newToken);
 
-            // The newToken covers tokenAtReset (same index, no gaps vs gap at 2)
-            // so it should exit replay mode - this is the correct behavior
-            // because index 6 with no gaps means we've processed everything up to 6
-            assertFalse(ReplayToken.isReplay(advancedToken),
-                    "Should have exited replay mode since newToken (index 6, no gaps) covers tokenAtReset (index 6, gap at 2)");
+            // Should still be in replay mode - event 6 was processed before reset
+            assertInstanceOf(ReplayToken.class, advancedToken,
+                    "Should still be a ReplayToken at the reset index");
+            assertTrue(ReplayToken.isReplay(advancedToken),
+                    "Event 6 was processed before reset, should be marked as replay");
         }
 
         @Test
@@ -869,7 +870,7 @@ class ReplayTokenTest {
         }
 
         /**
-         * Test with MultiSourceTrackingToken scenario as described in the issue.
+         * Test with MultiSourceTrackingToken scenario.
          * <p>
          * During reset:
          * - A: Index 6, Gaps [1]
@@ -879,11 +880,12 @@ class ReplayTokenTest {
          * - A: Index 2, Gaps []
          * - B: Index 1, Gaps []
          * <p>
-         * Due to the missing gaps in the new token, ReplayToken incorrectly determines
-         * that lastMessageWasReplay should be false.
+         * Source B's newToken is at index 1, which IS in the gaps of tokenAtReset for B.
+         * This means event 1 for source B was NOT processed before reset - it's a new event.
+         * Therefore, this should NOT be marked as a replay.
          */
         @Test
-        void advancedToShouldRemainInReplayWithMultiSourceTrackingTokenWhenGapsAreMissing() {
+        void advancedToShouldNotBeReplayWhenNewTokenIsAtGapPosition() {
             // Setup MultiSourceTrackingToken at reset with gaps
             Map<String, TrackingToken> tokensAtReset = new HashMap<>();
             tokensAtReset.put("A", GapAwareTrackingToken.newInstance(6, Collections.singleton(1L)));
@@ -892,21 +894,52 @@ class ReplayTokenTest {
 
             // Create replay token starting from the beginning
             TrackingToken replayToken = ReplayToken.createReplayToken(multiTokenAtReset, null);
-            assertTrue(replayToken instanceof ReplayToken);
+            assertInstanceOf(ReplayToken.class, replayToken);
 
-            // Simulate advancing during replay with a token that has no gaps
+            // Simulate advancing during replay with a token where B is at a gap position
             Map<String, TrackingToken> newTokens = new HashMap<>();
-            newTokens.put("A", GapAwareTrackingToken.newInstance(2, emptySet()));
-            newTokens.put("B", GapAwareTrackingToken.newInstance(1, emptySet()));
+            newTokens.put("A", GapAwareTrackingToken.newInstance(2, emptySet())); // Index 2 was processed before (not in gaps)
+            newTokens.put("B", GapAwareTrackingToken.newInstance(1, emptySet())); // Index 1 was NOT processed before (in gaps!)
             MultiSourceTrackingToken newMultiToken = new MultiSourceTrackingToken(newTokens);
 
             TrackingToken advancedToken = ((ReplayToken) replayToken).advancedTo(newMultiToken);
 
-            // The token should still indicate replay is in progress
-            assertTrue(advancedToken instanceof ReplayToken,
+            // Should still be in replay MODE (not exited yet), but this specific event is NOT a replay
+            // because source B's event at index 1 was never processed before reset
+            assertInstanceOf(ReplayToken.class, advancedToken,
+                    "Should still be a ReplayToken since we haven't caught up to reset position");
+            assertFalse(ReplayToken.isReplay(advancedToken),
+                    "Should NOT be marked as replay - source B's event at index 1 was a gap (never processed before reset)");
+        }
+
+        /**
+         * Test with MultiSourceTrackingToken where all positions were processed before reset.
+         */
+        @Test
+        void advancedToShouldBeReplayWithMultiSourceTrackingTokenWhenAllPositionsWereProcessed() {
+            // Setup MultiSourceTrackingToken at reset with gaps
+            Map<String, TrackingToken> tokensAtReset = new HashMap<>();
+            tokensAtReset.put("A", GapAwareTrackingToken.newInstance(6, Collections.singleton(1L)));
+            tokensAtReset.put("B", GapAwareTrackingToken.newInstance(4, Collections.singleton(1L)));
+            MultiSourceTrackingToken multiTokenAtReset = new MultiSourceTrackingToken(tokensAtReset);
+
+            // Create replay token starting from the beginning
+            TrackingToken replayToken = ReplayToken.createReplayToken(multiTokenAtReset, null);
+            assertInstanceOf(ReplayToken.class, replayToken);
+
+            // Simulate advancing during replay with positions that WERE processed before reset
+            Map<String, TrackingToken> newTokens = new HashMap<>();
+            newTokens.put("A", GapAwareTrackingToken.newInstance(2, emptySet())); // Index 2 was processed before (not in gaps)
+            newTokens.put("B", GapAwareTrackingToken.newInstance(2, emptySet())); // Index 2 was processed before (not in gaps)
+            MultiSourceTrackingToken newMultiToken = new MultiSourceTrackingToken(newTokens);
+
+            TrackingToken advancedToken = ((ReplayToken) replayToken).advancedTo(newMultiToken);
+
+            // Both positions were processed before reset, so this IS a replay
+            assertInstanceOf(ReplayToken.class, advancedToken,
                     "Should still be a ReplayToken since we haven't caught up to reset position");
             assertTrue(ReplayToken.isReplay(advancedToken),
-                    "Should still be in replay mode - events at index 2/1 were already processed before reset at index 6/4");
+                    "Should be marked as replay - both source positions were processed before reset");
         }
 
         /**

@@ -68,4 +68,27 @@ public interface TrackingToken {
         return OptionalLong.empty();
     }
 
+    /**
+     * Indicates whether this token has processed the event at the position represented by the {@code other}
+     * token. This method is similar to {@link #covers(TrackingToken)} but focuses solely on whether the specific
+     * position was processed, ignoring differences in how the tokens arrived at their current state.
+     * <p>
+     * This distinction is important for gap-aware tokens where an event might be within the index range but was never
+     * actually processed (i.e., it was a gap). In such cases, {@code covers()} might return {@code false} due to
+     * gap set differences even though the position itself was processed, while this method correctly identifies
+     * whether the specific position was processed.
+     * <p>
+     * For most token implementations, this method behaves identically to {@link #covers(TrackingToken)}.
+     * Gap-aware implementations should override this to check only position coverage without requiring
+     * gap set compatibility.
+     *
+     * @param other The token representing the position to check
+     * @return {@code true} if this token has processed the event at the position represented by {@code other},
+     *         otherwise {@code false}
+     * @since 4.11.0
+     */
+    default boolean processed(TrackingToken other) {
+        return covers(other);
+    }
+
 }

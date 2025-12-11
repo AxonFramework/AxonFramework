@@ -155,6 +155,42 @@ public class MultiSourceTrackingToken implements TrackingToken, Serializable {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
+     * For {@link MultiSourceTrackingToken}, this method delegates to each constituent token's
+     * {@link TrackingToken#processed(TrackingToken)} method. Returns {@code true} only if all constituent tokens
+     * have processed the events at the positions represented by their counterparts in the {@code other} token.
+     *
+     * @param other The token representing the positions to check
+     * @return {@code true} if all constituent tokens have processed the events at the positions represented by
+     *         their counterparts in {@code other}, otherwise {@code false}
+     * @since 4.11.0
+     */
+    @Override
+    public boolean processed(TrackingToken other) {
+        Assert.isTrue(other instanceof MultiSourceTrackingToken, () -> "Incompatible token type provided.");
+
+        MultiSourceTrackingToken otherMultiToken = (MultiSourceTrackingToken) other;
+
+        Assert.isTrue(otherMultiToken.trackingTokens.keySet().equals(this.trackingTokens.keySet()),
+                      () -> "MultiSourceTrackingTokens contain different keys");
+
+        for (Map.Entry<String, TrackingToken> trackingTokenEntry : trackingTokens.entrySet()) {
+            TrackingToken constituent = trackingTokenEntry.getValue();
+            TrackingToken otherConstituent = otherMultiToken.trackingTokens.get(trackingTokenEntry.getKey());
+            if (constituent == null) {
+                if (otherConstituent != null) {
+                    return false;
+                }
+            } else if (otherConstituent != null && !constituent.processed(otherConstituent)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * Advances a single token within the tokenMap
      *
      * @param streamName        the stream/source which is being advanced
