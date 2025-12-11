@@ -19,12 +19,13 @@ package org.axonframework.extension.springboot.autoconfig;
 import org.axonframework.extension.spring.config.EventProcessorSettings;
 import org.axonframework.extension.springboot.EventProcessorProperties;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.context.properties.bind.Bindable;
+import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.core.env.Environment;
 
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Auto configuration for event processors.
@@ -34,34 +35,29 @@ import java.util.stream.Collectors;
  * @since 4.0
  */
 @AutoConfiguration
-@EnableConfigurationProperties(EventProcessorProperties.class)
+@AutoConfigureAfter(name = {
+        // Ensure Boot’s config props infra is in place
+        "org.springframework.boot.autoconfigure.context.ConfigurationPropertiesAutoConfiguration",
+        // In Servlet mode, ensure Tomcat + MVC complete first (no CNFE in WebFlux because name-based)
+        "org.springframework.boot.autoconfigure.web.servlet.ServletWebServerFactoryAutoConfiguration",
+        "org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration"
+})
 public class EventProcessingAutoConfiguration {
 
-    /**
-     * Constructs event processing settings.
-     *
-     * @param properties event processor properties.
-     * @return event processor settings keyed by processor name.
-     */
     @Bean
-    public EventProcessorSettings.MapWrapper eventProcessorSettings(@Lazy EventProcessorProperties properties) {
+    public EventProcessorSettings.MapWrapper eventProcessorSettings(Environment environment) {
+        Binder binder = Binder.get(environment);
 
-        Map<String, EventProcessorSettings> map = properties
-                .getProcessors()
-                .entrySet()
-                .stream()
-                .collect(
-                        Collectors.toMap(
-                                java.util.Map.Entry::getKey,
-                                java.util.Map.Entry::getValue
-                        )
-                );
-        // supply a default setting
-        // this gives us the location for the default values, and allows to overwrite them
-        // via properties by the user.
-        if (!map.containsKey(EventProcessorSettings.DEFAULT)) {
-            map.put(EventProcessorSettings.DEFAULT, new EventProcessorProperties.ProcessorSettings());
-        }
+        // Bind the same structure that EventProcessorProperties would expose
+        Map<String, EventProcessorProperties.ProcessorSettings> raw =
+                binder.bind("axon.eventhandling.processors",
+                            Bindable.mapOf(String.class, EventProcessorProperties.ProcessorSettings.class))
+                      .orElseGet(java.util.HashMap::new);
+
+        Map<String, EventProcessorSettings> map = new java.util.HashMap<>(raw);
+        // Retain the default behavior
+        map.putIfAbsent(EventProcessorSettings.DEFAULT, new EventProcessorProperties.ProcessorSettings());
+
         return new EventProcessorSettings.MapWrapper(map);
     }
 }
