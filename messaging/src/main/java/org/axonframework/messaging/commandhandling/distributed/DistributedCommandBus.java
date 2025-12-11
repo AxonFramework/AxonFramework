@@ -18,14 +18,15 @@ package org.axonframework.messaging.commandhandling.distributed;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.FutureUtils;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.common.util.PriorityRunnable;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.CommandHandler;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandResultMessage;
-import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.common.util.PriorityRunnable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,7 +85,7 @@ public class DistributedCommandBus implements CommandBus {
                                            @Nonnull CommandHandler handler) {
         CommandHandler commandHandler = Objects.requireNonNull(handler, "The given handler cannot be null.");
         localSegment.subscribe(name, commandHandler);
-        connector.subscribe(name, loadFactor);
+        FutureUtils.joinAndUnwrap(connector.subscribe(name, loadFactor));
         return this;
     }
 

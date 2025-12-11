@@ -20,8 +20,11 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageHandler;
 import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.annotation.AnnotatedHandlerInspector;
+import org.axonframework.messaging.core.annotation.AnnotationMessageTypeResolver;
 import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.core.annotation.HandlerDefinition;
 import org.axonframework.messaging.core.annotation.MessageHandlingMember;
@@ -53,6 +56,7 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
 
     private final T target;
     private final AnnotatedHandlerInspector<T> model;
+    private final MessageTypeResolver messageTypeResolver;
     private final EventHandlingComponent delegate;
 
     /**
@@ -117,7 +121,8 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
                 delegate,
                 AnnotatedHandlerInspector.inspectType((Class<T>) annotatedEventHandler.getClass(),
                                                       parameterResolverFactory,
-                                                      handlerDefinition)
+                                                      handlerDefinition),
+                new AnnotationMessageTypeResolver()
         );
     }
 
@@ -132,10 +137,12 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
      */
     private AnnotatedEventHandlingComponent(@Nonnull T annotatedEventHandler,
                                             @Nonnull EventHandlingComponent delegate,
-                                            @Nonnull AnnotatedHandlerInspector<T> model
+                                            @Nonnull AnnotatedHandlerInspector<T> model,
+                                           @Nonnull MessageTypeResolver messageTypeResolver
     ) {
         this.target = requireNonNull(annotatedEventHandler, "The Annotated Event Handler may not be null");
         this.model = requireNonNull(model, "The Annotated Handler Inspector may not be null");
+        this.messageTypeResolver = requireNonNull(messageTypeResolver, "The MessageTypeResolver may not be null.");
         this.delegate = delegate;
 
         initializeHandlersBasedOnModel();
@@ -150,7 +157,7 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
         QualifiedName qualifiedName = handler.unwrap(MethodEventHandlerDefinition.MethodEventMessageHandlingMember.class)
                                              .map(EventHandlingMember::eventName)
                                              .map(QualifiedName::new)
-                                             .orElseGet(() -> new QualifiedName(payloadType));
+                                             .orElseGet(() -> messageTypeResolver.resolveOrThrow(payloadType).qualifiedName());
         MessageHandlerInterceptorMemberChain<T> interceptorChain = model.chainedInterceptor(target.getClass());
         delegate.subscribe(
                 qualifiedName,

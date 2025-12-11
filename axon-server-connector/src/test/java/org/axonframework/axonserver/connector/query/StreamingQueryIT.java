@@ -22,6 +22,9 @@ import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.annotation.AnnotationMessageTypeResolver;
+import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.core.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.queryhandling.GenericQueryMessage;
 import org.axonframework.messaging.queryhandling.QueryBus;
@@ -120,8 +123,14 @@ class StreamingQueryIT {
         nonStreamingSenderQueryBus =
                 axonServerQueryBus(senderLocalSegment, nonStreamingAxonServerAddress);
 
-        QueryHandlingComponent queryHandlingComponent =
-                new AnnotatedQueryHandlingComponent<>(new MyQueryHandler(), new DelegatingMessageConverter(PassThroughConverter.INSTANCE));
+        MyQueryHandler handler = new MyQueryHandler();
+        QueryHandlingComponent queryHandlingComponent = new AnnotatedQueryHandlingComponent<>(
+                handler,
+                ClasspathParameterResolverFactory.forClass(handler.getClass()),
+                ClasspathHandlerDefinition.forClass(handler.getClass()),
+                new AnnotationMessageTypeResolver(),
+                new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
+        );
         handlerQueryBus.subscribe(queryHandlingComponent);
         nonStreamingHandlerQueryBus.subscribe(queryHandlingComponent);
     }

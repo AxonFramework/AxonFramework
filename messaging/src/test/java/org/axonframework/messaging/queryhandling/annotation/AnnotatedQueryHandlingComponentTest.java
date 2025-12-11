@@ -21,7 +21,12 @@ import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageStream.Entry;
 import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.annotation.AnnotationMessageTypeResolver;
+import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.core.annotation.UnsupportedHandlerException;
 import org.axonframework.messaging.core.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -58,21 +63,37 @@ class AnnotatedQueryHandlingComponentTest {
 
     @BeforeEach
     void setUp() {
-        testSubject = new AnnotatedQueryHandlingComponent<>(new MyQueryHandler(),
-                                                            new DelegatingMessageConverter(PassThroughConverter.INSTANCE));
+        MyQueryHandler handler = new MyQueryHandler();
+        testSubject = new AnnotatedQueryHandlingComponent<>(
+                handler,
+                ClasspathParameterResolverFactory.forClass(handler.getClass()),
+                ClasspathHandlerDefinition.forClass(handler.getClass()),
+                new AnnotationMessageTypeResolver(),
+                new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
+        );
     }
 
     @Test
     void subscribeFailsForHandlerWithInvalidParameters() {
+        FaultyParameterOrderQueryHandler handler = new FaultyParameterOrderQueryHandler();
         assertThatThrownBy(() -> new AnnotatedQueryHandlingComponent<>(
-                new FaultyParameterOrderQueryHandler(), new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
+                handler,
+                ClasspathParameterResolverFactory.forClass(handler.getClass()),
+                ClasspathHandlerDefinition.forClass(handler.getClass()),
+                new AnnotationMessageTypeResolver(),
+                new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
         )).isInstanceOf(UnsupportedHandlerException.class);
     }
 
     @Test
     void subscribeFailsForHandlerWithVoidReturnType() {
+        VoidReturnTypeQueryHandler handler = new VoidReturnTypeQueryHandler();
         assertThatThrownBy(() -> new AnnotatedQueryHandlingComponent<>(
-                new VoidReturnTypeQueryHandler(), new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
+                handler,
+                ClasspathParameterResolverFactory.forClass(handler.getClass()),
+                ClasspathHandlerDefinition.forClass(handler.getClass()),
+                new AnnotationMessageTypeResolver(),
+                new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
         )).isInstanceOf(UnsupportedHandlerException.class);
     }
 
@@ -484,8 +505,11 @@ class AnnotatedQueryHandlingComponentTest {
 
     private void assertCalledOnlyOnce(Object handlerInstance) {
         AnnotatedQueryHandlingComponent<?> testSubject = new AnnotatedQueryHandlingComponent<>(
-            handlerInstance,
-            new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
+                handlerInstance,
+                ClasspathParameterResolverFactory.forClass(handlerInstance.getClass()),
+                ClasspathHandlerDefinition.forClass(handlerInstance.getClass()),
+                new AnnotationMessageTypeResolver(),
+                new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
         );
 
         QueryMessage testQuery = new GenericQueryMessage(new MessageType("call-counter"), 42);
@@ -507,8 +531,11 @@ class AnnotatedQueryHandlingComponentTest {
 
     private void assertNotCalled(Object handlerInstance) {
         AnnotatedQueryHandlingComponent<?> testSubject = new AnnotatedQueryHandlingComponent<>(
-            handlerInstance,
-            new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
+                handlerInstance,
+                ClasspathParameterResolverFactory.forClass(handlerInstance.getClass()),
+                ClasspathHandlerDefinition.forClass(handlerInstance.getClass()),
+                new AnnotationMessageTypeResolver(),
+                new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
         );
 
         QueryMessage testQuery = new GenericQueryMessage(new MessageType("call-counter"), 42);
@@ -586,5 +613,75 @@ class AnnotatedQueryHandlingComponentTest {
         @QueryHandler
         public void echo(String echo) {
         }
+    }
+
+    @Test
+    void messageTypeResolverIsUsedWhenProvidedAndQueryNameMatchesFullyQualifiedClassName() {
+        // given...
+        // Create a handler where the queryName uses the default (which would be the payload type's fully qualified name)
+        class HandlerWithDefaultQueryName {
+            @QueryHandler
+            public String handle(String query) {
+                return "result";
+            }
+        }
+
+        MessageTypeResolver customResolver = payloadType -> {
+            if (payloadType == String.class) {
+                return Optional.of(new MessageType(new QualifiedName("custom.resolved.query")));
+            }
+            return Optional.empty();
+        };
+
+        HandlerWithDefaultQueryName handler = new HandlerWithDefaultQueryName();
+        AnnotatedQueryHandlingComponent<?> testSubject = new AnnotatedQueryHandlingComponent<>(
+                handler,
+                ClasspathParameterResolverFactory.forClass(handler.getClass()),
+                ClasspathHandlerDefinition.forClass(handler.getClass()),
+                customResolver,
+                new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
+        );
+
+        // then... the resolver should be used since no custom queryName was specified
+        assertThat(testSubject.supportedQueries()).contains(new QualifiedName("custom.resolved.query"));
+    }
+
+    @Test
+    void queryNameFromAnnotationIsUsedWhenItDoesNotMatchFullyQualifiedClassName() {
+        // given...
+        // The MyQueryHandler uses custom query names like "echo", "faulty", etc.
+        // which don't match the payload type's fully qualified class name
+        MyQueryHandler handler = new MyQueryHandler();
+        MessageTypeResolver customResolver = payloadType ->
+                Optional.of(new MessageType(new QualifiedName("should.not.be.used")));
+
+        AnnotatedQueryHandlingComponent<?> testSubject = new AnnotatedQueryHandlingComponent<>(
+                handler,
+                ClasspathParameterResolverFactory.forClass(handler.getClass()),
+                ClasspathHandlerDefinition.forClass(handler.getClass()),
+                customResolver,
+                new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
+        );
+
+        // then... annotation names should be used, not the resolver
+        assertThat(testSubject.supportedQueries()).contains(new QualifiedName("echo"));
+        assertThat(testSubject.supportedQueries()).doesNotContain(new QualifiedName("should.not.be.used"));
+    }
+
+    @Test
+    void queryNameFromAnnotationIsUsedWithAnnotationMessageTypeResolver() {
+        // given...
+        // When using AnnotationMessageTypeResolver, custom query names should be preserved
+        MyQueryHandler handler = new MyQueryHandler();
+        AnnotatedQueryHandlingComponent<?> testSubject = new AnnotatedQueryHandlingComponent<>(
+                handler,
+                ClasspathParameterResolverFactory.forClass(handler.getClass()),
+                ClasspathHandlerDefinition.forClass(handler.getClass()),
+                new AnnotationMessageTypeResolver(),
+                new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
+        );
+
+        // then... annotation names should be used since they don't match the fully qualified class name
+        assertThat(testSubject.supportedQueries()).contains(new QualifiedName("echo"));
     }
 }
