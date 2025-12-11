@@ -65,6 +65,7 @@ import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.StreamSupport.stream;
+import static org.axonframework.common.ReflectionUtils.collectSealedHierarchyIfSealed;
 import static org.axonframework.messaging.core.annotation.AnnotatedHandlerInspector.inspectType;
 
 /**
@@ -134,6 +135,40 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
                                               messageConverter,
                                               eventConverter,
                                               List.of());
+    }
+
+    /**
+     * Instantiate an annotated {@link EntityMetamodel} of a polymorphic sealed entity type. At least one concrete type must
+     * exist, as this metamodel is meant to describe a polymorphic entity type with multiple concrete
+     * implementations.
+     *
+     * @param entityType               The polymorphic sealed entity type this metamodel describes.
+     * @param parameterResolverFactory The {@link ParameterResolverFactory} to use for resolving parameters.
+     * @param messageTypeResolver      The {@link MessageTypeResolver} to use for resolving message types from payload
+     *                                 classes.
+     * @param messageConverter         The converter used to convert the {@link CommandMessage#payload()} to the desired
+     *                                 format.
+     * @param eventConverter           The event converter used to convert the {@link EventMessage#payload()} to the
+     *                                 desired format.
+     * @param <E>                      The type of the polymorphic entity.
+     * @return An annotated {@link EntityMetamodel} backed by a {@link PolymorphicEntityMetamodel} for the given entity
+     * type.
+     * @see AnnotatedEntityMetamodel#forPolymorphicType(Class, Set, ParameterResolverFactory, MessageTypeResolver, MessageConverter, EventConverter)
+     */
+    public static <E> AnnotatedEntityMetamodel<E> forPolymorphicSealedType(
+            @Nonnull Class<E> entityType,
+            @Nonnull ParameterResolverFactory parameterResolverFactory,
+            @Nonnull MessageTypeResolver messageTypeResolver,
+            @Nonnull MessageConverter messageConverter,
+            @Nonnull EventConverter eventConverter
+    ) {
+        Assert.isTrue(entityType.isSealed(), () -> "The entity type [" + entityType + "] is not sealed.");
+        return forPolymorphicType(entityType,
+                                  collectSealedHierarchyIfSealed(entityType),
+                                  parameterResolverFactory,
+                                  messageTypeResolver,
+                                  messageConverter,eventConverter
+        );
     }
 
     /**
@@ -233,6 +268,7 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
         AnnotatedHandlerInspector<E> inspected = inspectType(entityType, parameterResolverFactory,
                                                              ClasspathHandlerDefinition.forClass(entityType),
                                                              collectSealedHierarchyIfSealed(entityType));
+
         var builder = PolymorphicEntityMetamodel.forSuperType(entityType);
         builder.entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(entityType,
                                                                            inspected,
@@ -511,50 +547,4 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
         return messageConverter;
     }
 
-    /**
-     * Collects all concrete types from a sealed hierarchy if the given type is sealed. Returns an empty set if the type
-     * is not sealed.
-     * <p>
-     * This is essential for polymorphic entity support where event handlers may be defined on concrete implementations
-     * of a sealed interface. The {@link AnnotatedHandlerInspector} needs to know about all concrete types upfront to
-     * discover their handlers.
-     *
-     * @param rootType The root type to scan for sealed hierarchy.
-     * @param <T>      The type parameter.
-     * @return A set of all concrete types in the hierarchy, or an empty set if the type is not sealed.
-     */
-    private static <T> Set<Class<? extends T>> collectSealedHierarchyIfSealed(@Nonnull Class<T> rootType) {
-        if (!rootType.isSealed()) {
-            return Set.of();
-        }
-        Set<Class<? extends T>> result = new HashSet<>();
-        collectSealedHierarchyRecursive(rootType, result);
-        return result;
-    }
-
-    /**
-     * Recursively collects all concrete types from a sealed hierarchy.
-     *
-     * @param type        The current type to scan.
-     * @param accumulator The set to accumulate concrete types into.
-     * @param <T>         The root type parameter.
-     */
-    @SuppressWarnings("unchecked")
-    private static <T> void collectSealedHierarchyRecursive(@Nonnull Class<T> type,
-                                                            @Nonnull Set<Class<? extends T>> accumulator) {
-        if (type.isSealed()) {
-            Class<?>[] permittedSubclasses = type.getPermittedSubclasses();
-            if (permittedSubclasses != null) {
-                for (Class<?> subclass : permittedSubclasses) {
-                    // Recursively scan if the subclass is also sealed
-                    if (subclass.isSealed()) {
-                        collectSealedHierarchyRecursive((Class<T>) subclass, accumulator);
-                    } else {
-                        // Add concrete types to the accumulator
-                        accumulator.add((Class<? extends T>) subclass);
-                    }
-                }
-            }
-        }
-    }
 }

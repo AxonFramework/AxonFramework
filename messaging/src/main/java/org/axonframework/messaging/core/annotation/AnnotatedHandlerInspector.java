@@ -131,7 +131,6 @@ public class AnnotatedHandlerInspector<T> {
      * @param <T>                      the handler's type
      * @return a new inspector instance for the inspected class
      */
-    // TODO #3936 Clean-up methods only used by stashed code
     public static <T> AnnotatedHandlerInspector<T> inspectType(Class<T> handlerType,
                                                                ParameterResolverFactory parameterResolverFactory,
                                                                HandlerDefinition handlerDefinition,

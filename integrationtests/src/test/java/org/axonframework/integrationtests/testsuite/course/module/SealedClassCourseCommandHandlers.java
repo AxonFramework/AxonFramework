@@ -39,13 +39,8 @@ public class SealedClassCourseCommandHandlers {
         appender.append(new CoursePublished(cmd.courseId()));
     }
 
-    @EventSourcedEntity(tagKey = "Course",
-            concreteTypes = {CourseState.InitialCourse.class,
-                    CourseState.CreatedCourse.class,
-                    CourseState.PublishedCourse.class})
-    public sealed interface CourseState permits
-            CourseState.InitialCourse, CourseState.CreatedCourse,
-            CourseState.PublishedCourse {
+    @EventSourcedEntity(tagKey = "Course")
+    public sealed interface CourseState {
 
         @EntityCreator
         static CourseState create() {

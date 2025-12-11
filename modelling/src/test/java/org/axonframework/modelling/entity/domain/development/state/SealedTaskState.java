@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.entity.domain.development;
+package org.axonframework.modelling.entity.domain.development.state;
 
 import org.axonframework.messaging.eventhandling.annotation.EventHandler;
 import org.axonframework.modelling.entity.domain.development.events.TaskAssigned;
 import org.axonframework.modelling.entity.domain.development.events.TaskCompleted;
 import org.axonframework.modelling.entity.domain.development.events.TaskCreated;
 
-public sealed interface TaskState
-        permits TaskState.InitialTask, TaskState.CreatedTask, TaskState.AssignedTask, TaskState.CompletedTask {
+public sealed interface SealedTaskState {
 
-    record InitialTask() implements TaskState {
+    record InitialTask() implements SealedTaskState {
 
         @EventHandler
         private CreatedTask on(TaskCreated event) {
@@ -32,7 +31,7 @@ public sealed interface TaskState
         }
     }
 
-    record CreatedTask(String taskId) implements TaskState {
+    record CreatedTask(String taskId) implements SealedTaskState {
 
         @EventHandler
         private AssignedTask on(TaskAssigned event) {
@@ -40,7 +39,7 @@ public sealed interface TaskState
         }
     }
 
-    record AssignedTask(String taskId, String assignee) implements TaskState {
+    record AssignedTask(String taskId, String assignee) implements SealedTaskState {
 
         @EventHandler
         private CompletedTask on(TaskCompleted event) {
@@ -48,7 +47,7 @@ public sealed interface TaskState
         }
     }
 
-    record CompletedTask(String taskId, String resolution) implements TaskState {
+    record CompletedTask(String taskId, String resolution) implements SealedTaskState {
 
     }
 }

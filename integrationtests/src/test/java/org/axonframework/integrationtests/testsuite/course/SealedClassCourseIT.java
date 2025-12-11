@@ -23,13 +23,16 @@ import org.axonframework.integrationtests.testsuite.AbstractAxonServerIT;
 import org.axonframework.integrationtests.testsuite.course.commands.CreateCourse;
 import org.axonframework.integrationtests.testsuite.course.commands.PublishCourse;
 import org.axonframework.integrationtests.testsuite.course.module.SealedClassCourseCommandHandlers;
+import org.axonframework.integrationtests.testsuite.course.module.SealedClassCourseCommandHandlers.CourseState.PublishedCourse;
 import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.messaging.core.unitofwork.UnitOfWork;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.axonframework.modelling.StateManager;
 import org.junit.jupiter.api.*;
 
-public class SealedClassCourseIT extends AbstractAxonServerIT {
+import static org.junit.jupiter.api.Assertions.*;
+
+class SealedClassCourseIT extends AbstractAxonServerIT {
 
     protected UnitOfWorkFactory unitOfWorkFactory;
 
@@ -50,7 +53,7 @@ public class SealedClassCourseIT extends AbstractAxonServerIT {
     }
 
     @BeforeEach
-    public void doStartApp() {
+    void doStartApp() {
         super.startApp();
         unitOfWorkFactory = startedConfiguration.getComponent(UnitOfWorkFactory.class);
     }
@@ -66,12 +69,14 @@ public class SealedClassCourseIT extends AbstractAxonServerIT {
 
         // assert
         UnitOfWork uow = unitOfWorkFactory.create();
-        Assertions.assertTrue(uow.executeWithResult(ctx -> ctx.component(StateManager.class)
-                                                              .repository(SealedClassCourseCommandHandlers.CourseState.class,
-                                                                          String.class)
-                                                              .load(courseId, ctx)
-                                                              .thenApply(stringCourseStateManagedEntity -> stringCourseStateManagedEntity.entity() instanceof SealedClassCourseCommandHandlers.CourseState.PublishedCourse))
-                                 .join());
+        assertTrue(uow.executeWithResult(ctx -> ctx.component(StateManager.class)
+                                                   .repository(SealedClassCourseCommandHandlers.CourseState.class,
+                                                               String.class)
+                                                   .load(courseId, ctx)
+                                                   .thenApply(cs ->
+                                                                      cs.entity() instanceof PublishedCourse)
+                      )
+                      .join(), "Expected state to be instance of PublishedCourse");
     }
 
     private void sendCommand(Object command) {

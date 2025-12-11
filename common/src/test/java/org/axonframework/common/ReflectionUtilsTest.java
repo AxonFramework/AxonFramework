@@ -16,6 +16,7 @@
 
 package org.axonframework.common;
 
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Constructor;
@@ -26,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.axonframework.common.ReflectionUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -333,6 +335,25 @@ class ReflectionUtilsTest {
         Method getURLMethod = SomeTypeWithSetters.class.getDeclaredMethod("getURL");
         assertEquals("URL", ReflectionUtils.fieldNameFromMember(getURLMethod));
     }
+
+    @Nested
+    class CollectSealedHierarchyIfSealedTest {
+
+        sealed interface Foo {
+            record Bar() implements Foo {}
+        }
+
+        @Test
+        void emptyWhenTypeIsNotSealed() {
+            assertThat(collectSealedHierarchyIfSealed(Object.class)).isEmpty();
+        }
+
+        @Test
+        void returnsSubclassesWhenTypeIsSealed() {
+            assertThat(collectSealedHierarchyIfSealed(Foo.class)).containsExactly(Foo.Bar.class);
+        }
+    }
+
 
     private static class SomeTypeWithSetters {
         private String field1;

@@ -32,11 +32,13 @@ import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
@@ -581,6 +583,50 @@ public final class ReflectionUtils {
             default -> throw new AxonConfigurationException(
                     format("Member [%s] is not a field or method", member)
             );
+        }
+    }
+
+
+    /**
+     * Collects all concrete types from a sealed hierarchy if the given type is sealed. Returns an empty set if the type
+     * is not sealed.
+     *
+     * @param rootType The root type to scan for sealed hierarchy.
+     * @param <T>      The type parameter.
+     * @return A set of all concrete types in the hierarchy, or an empty set if the type is not sealed.
+     */
+    public static <T> Set<Class<? extends T>> collectSealedHierarchyIfSealed(@Nonnull Class<T> rootType) {
+        if (!rootType.isSealed()) {
+            return Set.of();
+        }
+        Set<Class<? extends T>> result = new HashSet<>();
+        collectSealedHierarchyRecursive(rootType, result);
+        return result;
+    }
+
+    /**
+     * Recursively collects all concrete types from a sealed hierarchy.
+     *
+     * @param type        The current type to scan.
+     * @param accumulator The set to accumulate concrete types into.
+     * @param <T>         The root type parameter.
+     */
+    @SuppressWarnings("unchecked")
+    private static <T> void collectSealedHierarchyRecursive(@Nonnull Class<T> type,
+                                                            @Nonnull Set<Class<? extends T>> accumulator) {
+        if (type.isSealed()) {
+            Class<?>[] permittedSubclasses = type.getPermittedSubclasses();
+            if (permittedSubclasses != null) {
+                for (Class<?> subclass : permittedSubclasses) {
+                    // Recursively scan if the subclass is also sealed
+                    if (subclass.isSealed()) {
+                        collectSealedHierarchyRecursive((Class<T>) subclass, accumulator);
+                    } else {
+                        // Add concrete types to the accumulator
+                        accumulator.add((Class<? extends T>) subclass);
+                    }
+                }
+            }
         }
     }
 
