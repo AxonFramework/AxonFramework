@@ -140,6 +140,9 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
      * @param startPosition The position where the token should be reset to and start replaying from
      * @param resetContext  The context given to the reset, may be null
      * @return A token that represents a reset to the {@code startPosition} until the provided {@code tokenAtReset}
+     * @throws IllegalArgumentException if {@code startPosition} is not covered by {@code tokenAtReset}, which indicates
+     *                                  an invalid reset operation where the startPosition has gaps for events that were
+     *                                  already processed before the reset
      */
     public static TrackingToken createReplayToken(
             TrackingToken tokenAtReset,
@@ -152,8 +155,17 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
         if (tokenAtReset instanceof ReplayToken) {
             return createReplayToken(((ReplayToken) tokenAtReset).tokenAtReset, startPosition, resetContext);
         }
-        if (startPosition != null && startPosition.covers(WrappedToken.unwrapLowerBound(tokenAtReset))) {
+        TrackingToken unwrappedTokenAtReset = WrappedToken.unwrapLowerBound(tokenAtReset);
+        if (startPosition != null && startPosition.covers(unwrappedTokenAtReset)) {
             return startPosition;
+        }
+        if (startPosition != null && !tokenAtReset.covers(startPosition)) {
+            throw new IllegalArgumentException(
+                    "The startPosition must be before or at the tokenAtReset position. "
+                            + "startPosition [" + startPosition + "] is not covered by tokenAtReset [" + tokenAtReset + "]. "
+                            + "This typically indicates an invalid reset operation where the startPosition has gaps "
+                            + "for events that were already processed before the reset."
+            );
         }
         return new ReplayToken(tokenAtReset, startPosition, resetContext);
     }
