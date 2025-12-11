@@ -28,7 +28,7 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
 import java.util.Objects;
 
-import static org.axonframework.common.Priority.LOW;
+import static org.axonframework.common.Priority.LOWER;
 
 /**
  * A {@code ParameterResolverFactory} implementation that resolves parameters from available components in the
@@ -39,7 +39,7 @@ import static org.axonframework.common.Priority.LOW;
  * @author Allard Buijze
  * @since 3.0.2
  */
-@Priority(LOW)
+@Priority(LOWER)
 public class ConfigurationParameterResolverFactory implements ParameterResolverFactory {
 
     private final Configuration configuration;
