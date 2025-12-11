@@ -28,13 +28,16 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventstreaming.EventCriteria;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
+
+import org.axonframework.messaging.core.LegacyResources;
+import org.axonframework.messaging.eventstreaming.Tag;
 
 /**
  * A {@link SubscribableEventSource} that receives events from a persistent stream from Axon Server.
@@ -45,17 +48,20 @@ import java.util.function.Predicate;
  * This implementation bridges the Axon Server persistent stream with the Axon Framework 5 async-native API by:
  * <ul>
  *   <li>Converting events using {@link PersistentStreamEventConverter}</li>
- *   <li>Providing {@link TrackingToken} via the event entry's Context</li>
+ *   <li>Providing {@link org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken TrackingToken} via the event entry's Context</li>
  *   <li>Providing aggregate resources (identifier, type, sequence number) in Context for legacy aggregate-based events</li>
  *   <li>Supporting client-side event filtering via {@link EventCriteria}</li>
  * </ul>
  * <p>
- * <b>Filtering Limitations:</b>
+ * <b>Filtering Support:</b>
  * <p>
- * The {@link #subscribe(EventCriteria, BiFunction)} method supports filtering by event
- * {@link EventMessage#type() type} only. <b>Tag-based filtering is not currently supported</b> because persistent
- * stream events from Axon Server do not expose tags on the client side after conversion. Tags are resolved and
- * stored server-side during event publishing.
+ * The {@link #subscribe(EventCriteria, BiFunction)} method supports filtering by:
+ * <ul>
+ *   <li><b>Event type</b> - using {@link EventMessage#type()}</li>
+ *   <li><b>Aggregate-based tags</b> - for legacy aggregate events, a {@link Tag} is automatically constructed
+ *       from the aggregate type (as key) and aggregate identifier (as value) stored in the event's
+ *       {@link org.axonframework.messaging.core.Context Context}</li>
+ * </ul>
  * <p>
  * For aggregate-based events (legacy approach), aggregate information is available in the event's
  * {@link org.axonframework.messaging.core.Context Context} via
@@ -65,8 +71,10 @@ import java.util.function.Predicate;
  *   <li>{@code LegacyResources.AGGREGATE_TYPE_KEY} - the aggregate type</li>
  *   <li>{@code LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY} - the aggregate sequence number</li>
  * </ul>
- * However, this information is not automatically used for tag-based filtering. If tag-based filtering is required,
- * consider applying filters at the Axon Server level using persistent stream configuration.
+ * <p>
+ * <b>Note:</b> Generic tag-based filtering (tags not derived from aggregates) is <b>not supported</b> because
+ * persistent stream events from Axon Server do not expose arbitrary tags on the client side after conversion.
+ * For such filtering, apply filters at the Axon Server level using persistent stream configuration.
  *
  * @author Marc Gathier
  * @author Mateusz Nowak
@@ -209,9 +217,12 @@ public class PersistentStreamMessageSource implements SubscribableEventSource, D
     /**
      * {@inheritDoc}
      * <p>
-     * This implementation filters events by their {@link EventMessage#type() type}. Since persistent streams
-     * from Axon Server do not provide tags on the client side after conversion, tag-based filtering passes
-     * an empty set for tags to the {@link EventCriteria#matches(org.axonframework.messaging.core.QualifiedName, java.util.Set) matches} method.
+     * This implementation filters events by their {@link EventMessage#type() type} and, for aggregate-based events,
+     * constructs tags from the aggregate type and identifier stored in the event's {@link org.axonframework.messaging.core.Context Context}.
+     * <p>
+     * For legacy aggregate-based events, a {@link Tag} is created with the aggregate type as key and aggregate
+     * identifier as value (e.g., {@code Tag("OrderAggregate", "order-123")}). This enables filtering by aggregate
+     * when using {@link EventCriteria#havingTags(String, String)}.
      */
     @Override
     public Registration subscribe(
@@ -221,26 +232,47 @@ public class PersistentStreamMessageSource implements SubscribableEventSource, D
         Objects.requireNonNull(criteria, "EventCriteria must not be null");
         Objects.requireNonNull(eventsBatchConsumer, "eventsBatchConsumer must not be null");
 
-        // Wrap the consumer with filtering logic
-        BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> filteringConsumer =
-                (events, context) -> {
-                    // Filter events by criteria
-                    // Note: Persistent streams from Axon Server don't provide tags client-side,
-                    // so we pass empty tags for filtering. Filtering is primarily by event type.
-                    List<? extends EventMessage> filteredEvents = events.stream()
-                            .filter(event -> criteria.matches(
-                                    event.type().qualifiedName(),
-                                    Collections.emptySet()
-                            ))
+        synchronized (this) {
+            boolean noConsumer = this.consumer.equals(NO_OP_CONSUMER);
+            if (noConsumer) {
+                persistentStreamConnection.open(entries -> {
+                    // Filter entries by criteria, using aggregate info from Context to build tags
+                    List<EventMessage> filteredEvents = entries.stream()
+                            .filter(entry -> {
+                                String type = entry.getResource(LegacyResources.AGGREGATE_TYPE_KEY);
+                                String identifier = entry.getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY);
+                                Set<Tag> tags = (type == null || identifier == null)
+                                        ? Set.of()
+                                        : Set.of(new Tag(type, identifier));
+
+                                return criteria.matches(entry.message().type().qualifiedName(), tags);
+                            })
+                            .map(MessageStream.Entry::message)
                             .toList();
 
-                    if (filteredEvents.isEmpty()) {
-                        return CompletableFuture.completedFuture(null);
+                    // Only call consumer if there are events after filtering
+                    if (!filteredEvents.isEmpty()) {
+                        eventsBatchConsumer.apply(filteredEvents, null).join();
                     }
-                    return eventsBatchConsumer.apply(filteredEvents, context);
-                };
-
-        return subscribe(filteringConsumer);
+                });
+                this.consumer = eventsBatchConsumer;
+            } else {
+                boolean sameConsumer = this.consumer.equals(eventsBatchConsumer);
+                if (!sameConsumer) {
+                    throw new IllegalStateException(
+                            String.format(
+                                    "%s: Cannot subscribe to PersistentStreamMessageSource with another consumer: there is already an active subscription.",
+                                    name));
+                }
+            }
+        }
+        return () -> {
+            synchronized (this) {
+                persistentStreamConnection.close();
+                this.consumer = NO_OP_CONSUMER;
+                return true;
+            }
+        };
     }
 
     @Override
