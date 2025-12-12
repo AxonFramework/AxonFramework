@@ -384,9 +384,6 @@ class ReplayTokenTest {
             TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(7L, 8L));
             ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
 
-            // Advance to position 6
-            replayToken = (ReplayToken) replayToken.advancedTo(GapAwareTrackingToken.newInstance(6, emptySet()));
-
             // Event at index 7 - this was a gap, never processed before reset
             TrackingToken newToken = GapAwareTrackingToken.newInstance(7, emptySet());
             TrackingToken result = replayToken.advancedTo(newToken);
@@ -402,9 +399,6 @@ class ReplayTokenTest {
             TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(7L, 8L));
             ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
 
-            // Advance to position 6
-            replayToken = (ReplayToken) replayToken.advancedTo(GapAwareTrackingToken.newInstance(6, emptySet()));
-
             // Event at index 9 - after the gaps but before reset index, WAS processed before
             // Note: newToken has gaps 7,8 because they weren't seen yet during this replay
             TrackingToken newToken = GapAwareTrackingToken.newInstance(9, setOf(7L, 8L));
@@ -415,29 +409,12 @@ class ReplayTokenTest {
                        "Event at index 9 was processed before reset, should be a replay");
         }
 
-        /**
-         * BUG SCENARIO: Gaps in tokenAtReset are filled during replay.
-         * <p>
-         * When tokenAtReset has gaps (e.g., {7,8}) but those gaps get filled during replay,
-         * the currentToken will have no gaps. This causes tokenAtReset.covers(newToken) to
-         * return false for events that WERE processed before reset, incorrectly marking them
-         * as non-replay.
-         */
         @Test
         void eventPreviouslyProcessedShouldBeReplayEvenWhenGapsFilledDuringReplay() {
             // tokenAtReset at index 10 with gaps at 7,8
             // Before reset, processor saw: 0,1,2,3,4,5,6,9,10 (NOT 7,8)
             TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(7L, 8L));
-            ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
-
-            // During replay, gaps 7 and 8 get filled (events now exist in store)
-            // Process events 0-8 sequentially (gaps filled!)
-            TrackingToken currentToken = replayToken;
-            for (int i = 0; i <= 8; i++) {
-                currentToken = ((ReplayToken) currentToken).advancedTo(
-                        GapAwareTrackingToken.newInstance(i, emptySet())
-                );
-            }
+            TrackingToken currentToken = ReplayToken.createReplayToken(tokenAtReset, null);
 
             // Now event 9 arrives - currentToken has NO gaps (they were filled)
             // Event 9 WAS processed before reset, so it SHOULD be a replay
@@ -445,11 +422,6 @@ class ReplayTokenTest {
             TrackingToken result = ((ReplayToken) currentToken).advancedTo(newToken);
 
             assertInstanceOf(ReplayToken.class, result, "Should still be in replay mode");
-            // THIS TEST EXPOSES THE BUG:
-            // tokenAtReset.covers(newToken) returns false because:
-            // - newToken.gaps is empty
-            // - tokenAtReset.gaps is {7,8}
-            // - newToken.gaps.containsAll(tokenAtReset.gaps.headSet(9)) -> {}.containsAll({7,8}) -> false
             assertTrue(ReplayToken.isReplay(result),
                        "Event 9 was processed before reset, should be marked as replay even though gaps were filled");
         }
@@ -458,16 +430,9 @@ class ReplayTokenTest {
         void eventAtResetIndexShouldBeReplayEvenWhenGapsFilledDuringReplay() {
             // tokenAtReset at index 10 with gaps at 7,8
             TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(7L, 8L));
-            ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
+            TrackingToken currentToken = ReplayToken.createReplayToken(tokenAtReset, null);
 
             // During replay, gaps get filled, process 0-9
-            TrackingToken currentToken = replayToken;
-            for (int i = 0; i <= 9; i++) {
-                currentToken = ((ReplayToken) currentToken).advancedTo(
-                        GapAwareTrackingToken.newInstance(i, emptySet())
-                );
-            }
-
             // Event 10 - at reset index, WAS processed before reset
             TrackingToken newToken = GapAwareTrackingToken.newInstance(10, emptySet());
             TrackingToken result = ((ReplayToken) currentToken).advancedTo(newToken);
@@ -481,10 +446,9 @@ class ReplayTokenTest {
         void replayEndsAfterResetIndexEvenWhenGapsWereFilledDuringReplay() {
             // tokenAtReset at index 10 with gaps at 7,8
             TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(7L, 8L));
-            ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
 
             // During replay, gaps get filled, process 0-10
-            TrackingToken currentToken = replayToken;
+            TrackingToken currentToken = ReplayToken.createReplayToken(tokenAtReset, null);
             for (int i = 0; i <= 10; i++) {
                 currentToken = ((ReplayToken) currentToken).advancedTo(
                         GapAwareTrackingToken.newInstance(i, emptySet())
@@ -499,6 +463,20 @@ class ReplayTokenTest {
                         "Event 11 was never processed before reset, should not be a replay");
         }
 
+        @Test
+        void replayEndsAfterResetIndexEvenWhenGapsWereNotFilledDuringReplay() {
+            // tokenAtReset at index 10 with gaps at 7,8
+            TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(7L, 8L));
+            TrackingToken currentToken = ReplayToken.createReplayToken(tokenAtReset, null);
+
+            // Event 11 - after reset index, never processed before
+            TrackingToken newToken = GapAwareTrackingToken.newInstance(11, setOf(7L, 8L));
+            TrackingToken result = ((ReplayToken) currentToken).advancedTo(newToken);
+
+            assertFalse(ReplayToken.isReplay(result),
+                    "Event 11 was never processed before reset, should not be a replay");
+        }
+
         /**
          * BUG SCENARIO: Only some gaps filled during replay.
          */
@@ -506,11 +484,10 @@ class ReplayTokenTest {
         void eventPreviouslyProcessedShouldBeReplayWhenOnlySomeGapsFilled() {
             // tokenAtReset at index 10 with gaps at 7,8
             TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(7L, 8L));
-            ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
 
             // During replay, only gap 7 gets filled (8 is still missing)
             // Process 0-7, then jump to 9
-            TrackingToken currentToken = replayToken;
+            TrackingToken currentToken = ReplayToken.createReplayToken(tokenAtReset, null);
             for (int i = 0; i <= 7; i++) {
                 currentToken = ((ReplayToken) currentToken).advancedTo(
                         GapAwareTrackingToken.newInstance(i, emptySet())
@@ -523,8 +500,6 @@ class ReplayTokenTest {
             TrackingToken result = ((ReplayToken) currentToken).advancedTo(newToken);
 
             assertInstanceOf(ReplayToken.class, result);
-            // Event 9 was processed before reset, should be replay
-            // BUG: tokenAtReset.covers(newToken) may fail because gap sets don't match
             assertTrue(ReplayToken.isReplay(result),
                        "Event 9 was processed before reset, should be replay even with partial gap fill");
         }
@@ -554,17 +529,9 @@ class ReplayTokenTest {
             TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(9L));
             ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
 
-            // Advance through 0-8 (gap 9 still not filled)
-            TrackingToken currentToken = replayToken;
-            for (int i = 0; i <= 8; i++) {
-                currentToken = ((ReplayToken) currentToken).advancedTo(
-                        GapAwareTrackingToken.newInstance(i, emptySet())
-                );
-            }
-
             // Now gap 9 gets filled during replay
             TrackingToken token9 = GapAwareTrackingToken.newInstance(9, emptySet());
-            TrackingToken resultAt9 = ((ReplayToken) currentToken).advancedTo(token9);
+            TrackingToken resultAt9 = replayToken.advancedTo(token9);
 
             assertInstanceOf(ReplayToken.class, resultAt9);
             // Event 9 was NOT processed before reset (was a gap), so should NOT be replay
@@ -605,10 +572,6 @@ class ReplayTokenTest {
             assertTrue(ReplayToken.isReplay(result5), "Event 5 was processed, should be replay");
         }
 
-        /**
-         * BUG SCENARIO: All gaps filled, then process event at reset index.
-         * This is the clearest demonstration of the bug.
-         */
         @Test
         void allGapsFilledThenEventAtResetIndex() {
             // tokenAtReset at index 5 with gap at 3
@@ -617,20 +580,12 @@ class ReplayTokenTest {
             ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
 
             // Process 0,1,2,3 (gap filled!)
-            TrackingToken currentToken = replayToken;
-            for (int i = 0; i <= 3; i++) {
-                currentToken = ((ReplayToken) currentToken).advancedTo(
-                        GapAwareTrackingToken.newInstance(i, emptySet())
-                );
-            }
-
             // Process 4 - was processed before reset
             // currentToken now is GapAwareTrackingToken(3, {}) - no gaps!
             TrackingToken token4 = GapAwareTrackingToken.newInstance(4, emptySet());
-            TrackingToken resultAt4 = ((ReplayToken) currentToken).advancedTo(token4);
+            TrackingToken resultAt4 = replayToken.advancedTo(token4);
 
             assertInstanceOf(ReplayToken.class, resultAt4, "Should still be in replay mode");
-            // BUG: tokenAtReset.covers(token4) checks if {}.containsAll({3}.headSet(4)) = {}.containsAll({3}) = false
             assertTrue(ReplayToken.isReplay(resultAt4),
                        "Event 4 was processed before reset, should be marked as replay");
 
@@ -641,35 +596,6 @@ class ReplayTokenTest {
             assertInstanceOf(ReplayToken.class, resultAt5, "Should still be in replay mode at reset index");
             assertTrue(ReplayToken.isReplay(resultAt5),
                        "Event 5 was processed before reset, should be marked as replay");
-        }
-
-        /**
-         * Direct test of the covers() behavior that causes the bug.
-         * This test documents exactly what GapAwareTrackingToken.covers() does with gaps.
-         */
-        @Test
-        void coversMethodBehaviorWithGaps() {
-            // tokenAtReset at index 5 with gap at 3
-            GapAwareTrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(5, setOf(3L));
-
-            // Token at position 4 WITHOUT gap at 3 (gap was filled)
-            GapAwareTrackingToken tokenWithoutGap = GapAwareTrackingToken.newInstance(4, emptySet());
-
-            // Token at position 4 WITH gap at 3 (gap not filled)
-            GapAwareTrackingToken tokenWithGap = GapAwareTrackingToken.newInstance(4, setOf(3L));
-
-            // This documents the current behavior:
-            // covers() requires: newToken.gaps.containsAll(tokenAtReset.gaps.headSet(newToken.index))
-            // For tokenWithoutGap: {}.containsAll({3}.headSet(4)) = {}.containsAll({3}) = false
-            // For tokenWithGap: {3}.containsAll({3}.headSet(4)) = {3}.containsAll({3}) = true
-
-            // Current behavior - tokenAtReset does NOT cover tokenWithoutGap because gaps don't match
-            assertFalse(tokenAtReset.covers(tokenWithoutGap),
-                        "Current behavior: tokenAtReset does NOT cover token when gaps were filled");
-
-            // Current behavior - tokenAtReset DOES cover tokenWithGap because gaps match
-            assertTrue(tokenAtReset.covers(tokenWithGap),
-                       "Current behavior: tokenAtReset covers token when gaps match");
         }
 
         /**

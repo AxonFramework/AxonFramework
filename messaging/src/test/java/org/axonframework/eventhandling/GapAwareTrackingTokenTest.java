@@ -206,6 +206,31 @@ class GapAwareTrackingTokenTest {
     }
 
     @Test
+    void coversMethodBehaviorWithGaps() {
+        // tokenAtReset at index 5 with gap at 3
+        GapAwareTrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(5, asTreeSet(3L));
+
+        // Token at position 4 WITHOUT gap at 3 (gap was filled)
+        GapAwareTrackingToken tokenWithoutGap = GapAwareTrackingToken.newInstance(4, emptySet());
+
+        // Token at position 4 WITH gap at 3 (gap not filled)
+        GapAwareTrackingToken tokenWithGap = GapAwareTrackingToken.newInstance(4, asTreeSet(3L));
+
+        // This documents the current behavior:
+        // covers() requires: newToken.gaps.containsAll(tokenAtReset.gaps.headSet(newToken.index))
+        // For tokenWithoutGap: {}.containsAll({3}.headSet(4)) = {}.containsAll({3}) = false
+        // For tokenWithGap: {3}.containsAll({3}.headSet(4)) = {3}.containsAll({3}) = true
+
+        // Current behavior - tokenAtReset does NOT cover tokenWithoutGap because gaps don't match
+        assertFalse(tokenAtReset.covers(tokenWithoutGap),
+                "Current behavior: tokenAtReset does NOT cover token when gaps were filled");
+
+        // Current behavior - tokenAtReset DOES cover tokenWithGap because gaps match
+        assertTrue(tokenAtReset.covers(tokenWithGap),
+                "Current behavior: tokenAtReset covers token when gaps match");
+    }
+
+    @Test
     void occurrenceOfInconsistentRangeException() {
         // verifies issue 655 (https://github.com/AxonFramework/AxonFramework/issues/655)
         GapAwareTrackingToken.newInstance(10L, asList(0L, 1L, 2L, 8L, 9L))
