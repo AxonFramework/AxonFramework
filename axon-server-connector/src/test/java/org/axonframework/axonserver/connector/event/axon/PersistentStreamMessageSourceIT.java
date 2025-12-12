@@ -188,7 +188,7 @@ class PersistentStreamMessageSourceIT {
             testSubject = createMessageSource(streamId);
 
             // Only receive OrderCreated events
-            EventCriteria criteria = EventCriteria.beingOneOfTypes(new QualifiedName("OrderCreated"));
+            EventCriteria criteria = EventCriteria.havingAnyTag().andBeingOneOfTypes(new QualifiedName("OrderCreated"));
 
             // when
             registration = testSubject.subscribe(criteria, consumer);
