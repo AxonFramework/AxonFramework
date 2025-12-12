@@ -343,4 +343,123 @@ class MultiSourceTrackingTokenTest {
 
         assertNotEquals(newMultiToken, testSubject);
     }
+
+    @Nested
+    class Processed {
+
+        @Test
+        void processedReturnsTrueWhenAllConstituentsProcessed() {
+            Map<String, TrackingToken> tokenMap = new HashMap<>();
+            tokenMap.put("token1", new GlobalSequenceTrackingToken(10));
+            tokenMap.put("token2", new GlobalSequenceTrackingToken(5));
+            MultiSourceTrackingToken token = new MultiSourceTrackingToken(tokenMap);
+
+            Map<String, TrackingToken> otherMap = new HashMap<>();
+            otherMap.put("token1", new GlobalSequenceTrackingToken(5));
+            otherMap.put("token2", new GlobalSequenceTrackingToken(3));
+            MultiSourceTrackingToken other = new MultiSourceTrackingToken(otherMap);
+
+            assertTrue(token.processed(other));
+        }
+
+        @Test
+        void processedReturnsFalseWhenAnyConstituentNotProcessed() {
+            Map<String, TrackingToken> tokenMap = new HashMap<>();
+            tokenMap.put("token1", new GlobalSequenceTrackingToken(5));
+            tokenMap.put("token2", new GlobalSequenceTrackingToken(5));
+            MultiSourceTrackingToken token = new MultiSourceTrackingToken(tokenMap);
+
+            Map<String, TrackingToken> otherMap = new HashMap<>();
+            otherMap.put("token1", new GlobalSequenceTrackingToken(10)); // Beyond token1's range
+            otherMap.put("token2", new GlobalSequenceTrackingToken(3));
+            MultiSourceTrackingToken other = new MultiSourceTrackingToken(otherMap);
+
+            assertFalse(token.processed(other));
+        }
+
+        @Test
+        void processedWithGapAwareConstituentsIgnoresGapSetDifferences() {
+            Map<String, TrackingToken> tokenMap = new HashMap<>();
+            // token1 has gaps [3, 4] below the other's index of 8
+            tokenMap.put("token1", GapAwareTrackingToken.newInstance(10, java.util.Arrays.asList(3L, 4L)));
+            tokenMap.put("token2", new GlobalSequenceTrackingToken(5));
+            MultiSourceTrackingToken token = new MultiSourceTrackingToken(tokenMap);
+
+            Map<String, TrackingToken> otherMap = new HashMap<>();
+            // other has no gaps at index 8, but token1 has gaps [3, 4] below index 8
+            // covers() would fail because other.gaps ({}) doesn't contain token.gaps.headSet(8) = {3, 4}
+            otherMap.put("token1", GapAwareTrackingToken.newInstance(8, Collections.emptyList()));
+            otherMap.put("token2", new GlobalSequenceTrackingToken(3));
+            MultiSourceTrackingToken other = new MultiSourceTrackingToken(otherMap);
+
+            // covers() fails due to gap set incompatibility
+            assertFalse(token.covers(other));
+            // processed() succeeds because position 8 was processed by token1 (8 <= 10 and not in gaps)
+            assertTrue(token.processed(other));
+        }
+
+        @Test
+        void processedReturnsFalseWhenConstituentPositionIsInGap() {
+            Map<String, TrackingToken> tokenMap = new HashMap<>();
+            tokenMap.put("token1", GapAwareTrackingToken.newInstance(10, Collections.singletonList(7L)));
+            tokenMap.put("token2", new GlobalSequenceTrackingToken(5));
+            MultiSourceTrackingToken token = new MultiSourceTrackingToken(tokenMap);
+
+            Map<String, TrackingToken> otherMap = new HashMap<>();
+            // Position 7 is in token1's gaps - never processed
+            otherMap.put("token1", GapAwareTrackingToken.newInstance(7, Collections.emptyList()));
+            otherMap.put("token2", new GlobalSequenceTrackingToken(3));
+            MultiSourceTrackingToken other = new MultiSourceTrackingToken(otherMap);
+
+            assertFalse(token.processed(other));
+        }
+
+        @Test
+        void processedWithNullConstituents() {
+            Map<String, TrackingToken> tokenMap = new HashMap<>();
+            tokenMap.put("token1", new GlobalSequenceTrackingToken(10));
+            tokenMap.put("token2", null);
+            MultiSourceTrackingToken token = new MultiSourceTrackingToken(tokenMap);
+
+            Map<String, TrackingToken> otherMap = new HashMap<>();
+            otherMap.put("token1", new GlobalSequenceTrackingToken(5));
+            otherMap.put("token2", null);
+            MultiSourceTrackingToken other = new MultiSourceTrackingToken(otherMap);
+
+            // Both have null for token2, should be treated as processed
+            assertTrue(token.processed(other));
+        }
+
+        @Test
+        void processedReturnsFalseWhenThisHasNullButOtherHasValue() {
+            Map<String, TrackingToken> tokenMap = new HashMap<>();
+            tokenMap.put("token1", new GlobalSequenceTrackingToken(10));
+            tokenMap.put("token2", null);
+            MultiSourceTrackingToken token = new MultiSourceTrackingToken(tokenMap);
+
+            Map<String, TrackingToken> otherMap = new HashMap<>();
+            otherMap.put("token1", new GlobalSequenceTrackingToken(5));
+            otherMap.put("token2", new GlobalSequenceTrackingToken(0)); // token has null, other has value
+            MultiSourceTrackingToken other = new MultiSourceTrackingToken(otherMap);
+
+            assertFalse(token.processed(other));
+        }
+
+        @Test
+        void processedThrowsExceptionForIncompatibleToken() {
+            assertThrows(IllegalArgumentException.class,
+                    () -> testSubject.processed(new GlobalSequenceTrackingToken(0)));
+        }
+
+        @Test
+        void processedThrowsExceptionForMismatchedKeys() {
+            Map<String, TrackingToken> otherMap = new HashMap<>();
+            otherMap.put("token1", new GlobalSequenceTrackingToken(0));
+            otherMap.put("token3", new GlobalSequenceTrackingToken(0)); // Different key
+
+            assertThrows(IllegalArgumentException.class,
+                    () -> testSubject.processed(new MultiSourceTrackingToken(otherMap)));
+        }
+
+    }
 }

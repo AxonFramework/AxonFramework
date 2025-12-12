@@ -59,4 +59,50 @@ class GlobalSequenceTrackingTokenTest {
 
         assertEquals(1L, token.position().getAsLong());
     }
+
+    /**
+     * Tests for the default {@link TrackingToken#processed(TrackingToken)} implementation.
+     * For {@link GlobalSequenceTrackingToken}, processed() delegates to covers() since there are no gaps.
+     */
+    @Nested
+    class Processed {
+
+        @Test
+        void processedReturnsTrueWhenOtherIndexIsLower() {
+            GlobalSequenceTrackingToken token = new GlobalSequenceTrackingToken(10L);
+            GlobalSequenceTrackingToken other = new GlobalSequenceTrackingToken(5L);
+
+            assertTrue(token.processed(other));
+        }
+
+        @Test
+        void processedReturnsTrueWhenOtherIndexIsEqual() {
+            GlobalSequenceTrackingToken token = new GlobalSequenceTrackingToken(10L);
+            GlobalSequenceTrackingToken other = new GlobalSequenceTrackingToken(10L);
+
+            assertTrue(token.processed(other));
+        }
+
+        @Test
+        void processedReturnsFalseWhenOtherIndexIsHigher() {
+            GlobalSequenceTrackingToken token = new GlobalSequenceTrackingToken(10L);
+            GlobalSequenceTrackingToken other = new GlobalSequenceTrackingToken(15L);
+
+            assertFalse(token.processed(other));
+        }
+
+        @Test
+        void processedBehavesLikeCoversForSimpleTokens() {
+            // For GlobalSequenceTrackingToken (no gaps), processed() should behave exactly like covers()
+            GlobalSequenceTrackingToken token = new GlobalSequenceTrackingToken(10L);
+            GlobalSequenceTrackingToken lower = new GlobalSequenceTrackingToken(5L);
+            GlobalSequenceTrackingToken equal = new GlobalSequenceTrackingToken(10L);
+            GlobalSequenceTrackingToken higher = new GlobalSequenceTrackingToken(15L);
+
+            assertEquals(token.covers(lower), token.processed(lower));
+            assertEquals(token.covers(equal), token.processed(equal));
+            assertEquals(token.covers(higher), token.processed(higher));
+        }
+
+    }
 }

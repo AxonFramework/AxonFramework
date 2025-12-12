@@ -43,7 +43,7 @@ class GapAwareTrackingTokenTest {
     void gapAwareTokenConcurrency() throws InterruptedException {
         AtomicLong counter = new AtomicLong();
         AtomicReference<GapAwareTrackingToken> currentToken = new AtomicReference<>(GapAwareTrackingToken.newInstance(-1,
-                                                                                                                      emptySortedSet()));
+                emptySortedSet()));
 
         ExecutorService executorService = Executors.newCachedThreadPool();
 
@@ -61,7 +61,7 @@ class GapAwareTrackingTokenTest {
         }
         executorService.shutdown();
         assertTrue(executorService.awaitTermination(5, TimeUnit.SECONDS),
-                   "ExecutorService not stopped within expected reasonable time frame");
+                "ExecutorService not stopped within expected reasonable time frame");
 
         for (Future<?> result : results) {
             assertDoesNotThrow(() -> result.get(1, TimeUnit.SECONDS));
@@ -87,7 +87,7 @@ class GapAwareTrackingTokenTest {
     void gapAwareTokenConcurrency_HighConcurrency() throws InterruptedException {
         long counter = 0;
         AtomicReference<GapAwareTrackingToken> currentToken = new AtomicReference<>(GapAwareTrackingToken.newInstance(-1,
-                                                                                                                      emptySortedSet()));
+                emptySortedSet()));
 
         ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
@@ -100,7 +100,7 @@ class GapAwareTrackingTokenTest {
         }
         executorService.shutdown();
         assertTrue(executorService.awaitTermination(5, TimeUnit.SECONDS),
-                   "ExecutorService not stopped within expected reasonable time frame");
+                "ExecutorService not stopped within expected reasonable time frame");
 
         for (Future<?> result : results) {
             assertDoesNotThrow(() -> result.get(1, TimeUnit.SECONDS));
@@ -209,8 +209,8 @@ class GapAwareTrackingTokenTest {
     void occurrenceOfInconsistentRangeException() {
         // verifies issue 655 (https://github.com/AxonFramework/AxonFramework/issues/655)
         GapAwareTrackingToken.newInstance(10L, asList(0L, 1L, 2L, 8L, 9L))
-                             .advanceTo(0L, 5)
-                             .covers(GapAwareTrackingToken.newInstance(0L, emptySet()));
+                .advanceTo(0L, 5)
+                .covers(GapAwareTrackingToken.newInstance(0L, emptySet()));
     }
 
     @Test
@@ -289,6 +289,77 @@ class GapAwareTrackingTokenTest {
         GapAwareTrackingToken token = GapAwareTrackingToken.newInstance(0, emptyList());
         GapAwareTrackingToken advancedToken = token.advanceTo(Long.MAX_VALUE, 1_234);
         assertEquals(1_234, advancedToken.getGaps().size());
+    }
+
+    @Nested
+    class Processed {
+
+        @Test
+        void processedReturnsTrueWhenOtherIndexIsWithinRangeAndNotInGaps() {
+            GapAwareTrackingToken token = GapAwareTrackingToken.newInstance(10, asList(7L, 8L));
+
+            // Index 5 is within range (<=10) and not in gaps [7, 8]
+            GapAwareTrackingToken other = GapAwareTrackingToken.newInstance(5, emptyList());
+            assertTrue(token.processed(other));
+        }
+
+        @Test
+        void processedReturnsTrueWhenOtherIndexEqualsTokenIndex() {
+            GapAwareTrackingToken token = GapAwareTrackingToken.newInstance(10, asList(7L, 8L));
+
+            // Index 10 equals token index and is not in gaps
+            GapAwareTrackingToken other = GapAwareTrackingToken.newInstance(10, emptyList());
+            assertTrue(token.processed(other));
+        }
+
+        @Test
+        void processedReturnsFalseWhenOtherIndexIsInGaps() {
+            GapAwareTrackingToken token = GapAwareTrackingToken.newInstance(10, asList(7L, 8L));
+
+            // Index 7 is in the gaps - this position was never processed
+            GapAwareTrackingToken other = GapAwareTrackingToken.newInstance(7, emptyList());
+            assertFalse(token.processed(other));
+
+            // Index 8 is also in the gaps
+            GapAwareTrackingToken other2 = GapAwareTrackingToken.newInstance(8, emptyList());
+            assertFalse(token.processed(other2));
+        }
+
+        @Test
+        void processedReturnsFalseWhenOtherIndexIsGreaterThanTokenIndex() {
+            GapAwareTrackingToken token = GapAwareTrackingToken.newInstance(10, asList(7L, 8L));
+
+            // Index 11 is beyond the token's range
+            GapAwareTrackingToken other = GapAwareTrackingToken.newInstance(11, emptyList());
+            assertFalse(token.processed(other));
+        }
+
+        @Test
+        void processedIgnoresGapSetDifferences() {
+            // This is the key difference from covers() - processed() ignores gap set compatibility
+            GapAwareTrackingToken token = GapAwareTrackingToken.newInstance(10, asList(3L, 4L));
+
+            // other has no gaps at index 8, but token has gaps [3, 4] below index 8
+            // covers() returns false because other.gaps ({}) doesn't contain token.gaps.headSet(8) = {3, 4}
+            // processed() should return true because index 8 was processed (it's <= 10 and not in gaps)
+            GapAwareTrackingToken other = GapAwareTrackingToken.newInstance(8, emptyList());
+
+            assertFalse(token.covers(other), "covers() should return false due to gap set mismatch");
+            assertTrue(token.processed(other), "processed() should return true - position 8 was processed");
+        }
+
+        @Test
+        void processedWithDifferentGapSetsAtSameIndex() {
+            GapAwareTrackingToken token = GapAwareTrackingToken.newInstance(10, asList(3L, 4L));
+
+            // other at same index but with different gaps - other doesn't have gaps [3, 4]
+            GapAwareTrackingToken other = GapAwareTrackingToken.newInstance(10, emptyList());
+
+            // covers() returns false because other.gaps ({}) doesn't contain token.gaps.headSet(10) = {3, 4}
+            assertFalse(token.covers(other));
+            // processed() returns true - index 10 is within range and not in gaps
+            assertTrue(token.processed(other));
+        }
     }
 
     private TreeSet<Long> asTreeSet(Long... elements) {
