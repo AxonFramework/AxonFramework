@@ -241,7 +241,8 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
                         scheduler.cancel(new DbSchedulerDeadlineToken(scheduleId));
                     } catch (TaskInstanceNotFoundException e) {
                         // handle gracefully
-                        logger.debug("Attempted to cancel task [{}] which does not exist anymore", scheduleId);
+                        logger.debug("Attempted to cancel task [{}] which does not exist. The task may have already " +
+                                "been canceled or the given schedule identifier is incorrect.", scheduleId);
                     }
                 })
         );
