@@ -66,14 +66,15 @@ public class AxonServerContainerUtils {
      * @param hostname       The hostname of the Axon Server instance to initiate the cluster for.
      * @param port           The port of the Axon Server instance to initiate the cluster for.
      * @param shouldBeReused If set to {@code true}, ensure the cluster is not accidentally initialized twice.
+     * @param dcbContext A {@code boolean} stating whether a DCB or non-DCB context is being created.
      * @throws IOException When there are issues with the HTTP connection to the Axon Server instance at the given
      *                     {@code hostname} and {@code port}.
      */
-    public static void initCluster(String hostname, int port, boolean shouldBeReused) throws IOException {
+    public static void initCluster(String hostname, int port, boolean shouldBeReused, boolean dcbContext) throws IOException {
         if (shouldBeReused && initialized(hostname, port)) {
             return;
         }
-        final URL url = URI.create(String.format("http://%s:%d/v2/cluster/init", hostname, port)).toURL();
+        final URL url = URI.create(String.format("http://%s:%d/v2/cluster/init?dcb=%s", hostname, port, dcbContext)).toURL();
         HttpURLConnection connection = null;
         try {
             connection = (HttpURLConnection) url.openConnection();
