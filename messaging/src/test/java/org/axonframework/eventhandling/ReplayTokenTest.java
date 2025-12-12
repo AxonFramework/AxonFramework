@@ -985,6 +985,33 @@ class ReplayTokenTest {
             assertFalse(ReplayToken.isReplay(advancedToken),
                     "Should exit replay mode because index 7 is past the reset position of index 6");
         }
+
+        @Test
+        void multiSourceTrackingTokenAndFilledGaps() {
+            Map<String, TrackingToken> tokensAtReset = new HashMap<>();
+            tokensAtReset.put("localEventStore", GapAwareTrackingToken.newInstance(11079, setOf(10220L, 10221L, 10222L, 10223L, 10224L, 10225L, 10226L, 10227L, 10228L)));
+            tokensAtReset.put("globalEventStore", GapAwareTrackingToken.newInstance(38341, setOf(37921L, 37922L, 37923L, 37924L, 37925L, 37926L, 37927L)));
+            MultiSourceTrackingToken multiTokenAtReset = new MultiSourceTrackingToken(tokensAtReset);
+
+            Map<String, TrackingToken> startPosition = new HashMap<>();
+            startPosition.put("localEventStore", GapAwareTrackingToken.newInstance(9960, emptySet()));
+            startPosition.put("globalEventStore", GapAwareTrackingToken.newInstance(37192, emptySet()));
+            MultiSourceTrackingToken multiStartPosition = new MultiSourceTrackingToken(startPosition);
+
+            TrackingToken replayToken = ReplayToken.createReplayToken(multiTokenAtReset, multiStartPosition);
+
+            // Advance to this position
+            Map<String, TrackingToken> nextPositions = new HashMap<>();
+            nextPositions.put("localEventStore", GapAwareTrackingToken.newInstance(9961, emptySet()));
+            nextPositions.put("globalEventStore", GapAwareTrackingToken.newInstance(37192, emptySet()));
+            TrackingToken nextToken = new MultiSourceTrackingToken(nextPositions);
+
+            TrackingToken advancedToken = ((ReplayToken) replayToken).advancedTo(nextToken);
+
+            assertInstanceOf(ReplayToken.class, advancedToken);
+            assertTrue(ReplayToken.isReplay(advancedToken));
+        }
+
     }
 
     /**
