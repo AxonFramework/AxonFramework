@@ -389,6 +389,16 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     @Test
+    void deadlineCancellationOnCancelledDeadlineOnSaga() {
+        configuration.eventStore().publish(asEventMessage(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE)));
+        configuration.eventStore().publish(asEventMessage(new CancelCancelledDeadline(IDENTIFIER)));
+
+        assertPublishedEvents(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE),
+                new CancelCancelledDeadline(IDENTIFIER));
+        assertSagaIs(LIVE);
+    }
+
+    @Test
     void deadlineCancellationOnSagaIsCorrectlyTraced() {
         configuration.eventStore().publish(asEventMessage(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE)));
 
@@ -577,6 +587,37 @@ public abstract class AbstractDeadlineManagerTestSuite {
                 return false;
             }
             CancelDeadlineWithinScope that = (CancelDeadlineWithinScope) o;
+            return Objects.equals(id, that.id);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(id);
+        }
+    }
+
+    private static class CancelCancelledDeadline {
+
+        @TargetAggregateIdentifier
+        private final UUID id;
+
+        private CancelCancelledDeadline(UUID id) {
+            this.id = id;
+        }
+
+        public UUID getId() {
+            return id;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            CancelCancelledDeadline that = (CancelCancelledDeadline) o;
             return Objects.equals(id, that.id);
         }
 
@@ -888,18 +929,24 @@ public abstract class AbstractDeadlineManagerTestSuite {
     public static class MySaga {
 
         private transient EventStore eventStore;
+        private String deadlineId;
 
         @StartSaga
         @SagaEventHandler(associationProperty = "id")
         public void on(SagaStartingEvent sagaStartingEvent, DeadlineManager deadlineManager) {
             String deadlineName = "deadlineName";
-            String deadlineId = deadlineManager.schedule(
+            this.deadlineId = deadlineManager.schedule(
                     Duration.ofMillis(DEADLINE_TIMEOUT), deadlineName, new DeadlinePayload(sagaStartingEvent.id)
             );
 
             if (sagaStartingEvent.isCancelBeforeDeadline()) {
                 deadlineManager.cancelSchedule(deadlineName, deadlineId);
             }
+        }
+
+        @SagaEventHandler(associationProperty = "id")
+        public void on(CancelCancelledDeadline event, DeadlineManager deadlineManager) {
+            deadlineManager.cancelSchedule("deadlineName", this.deadlineId);
         }
 
         @SagaEventHandler(associationProperty = "id")
