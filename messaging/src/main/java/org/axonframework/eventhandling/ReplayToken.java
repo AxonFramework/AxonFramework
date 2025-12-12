@@ -255,8 +255,8 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
         TrackingToken unwrappedTokenAtReset = WrappedToken.unwrapUpperBound(this.tokenAtReset);
 
         if (this.tokenAtReset == null
-                || (newToken.covers(unwrappedTokenAtReset)
-                && !tokenAtReset.processed(unwrappedNewToken))) {
+                || (newToken.processed(unwrappedTokenAtReset) // Has newToken reached/passed the tokenAtReset position?
+                && !tokenAtReset.processed(unwrappedNewToken))) { // Was the event at newToken's position NOT processed before reset
             // we're done replaying
             // if the token at reset was a wrapped token itself, we'll need to use that one to maintain progress.
             if (tokenAtReset instanceof WrappedToken) {
