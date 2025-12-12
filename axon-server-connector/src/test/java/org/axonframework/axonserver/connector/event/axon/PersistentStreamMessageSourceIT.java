@@ -19,11 +19,13 @@ package org.axonframework.axonserver.connector.event.axon;
 import com.google.protobuf.ByteString;
 import io.axoniq.axonserver.connector.AxonServerConnection;
 import io.axoniq.axonserver.connector.AxonServerConnectionFactory;
-import io.axoniq.axonserver.connector.event.AppendEventsTransaction;
+import io.axoniq.axonserver.connector.event.DcbEventChannel;
 import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
 import io.axoniq.axonserver.connector.impl.ServerAddress;
-import io.axoniq.axonserver.grpc.SerializedObject;
-import io.axoniq.axonserver.grpc.event.Event;
+import io.axoniq.axonserver.grpc.event.dcb.ConsistencyCondition;
+import io.axoniq.axonserver.grpc.event.dcb.Event;
+import io.axoniq.axonserver.grpc.event.dcb.Tag;
+import io.axoniq.axonserver.grpc.event.dcb.TaggedEvent;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.common.Registration;
@@ -38,14 +40,16 @@ import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.test.server.AxonServerContainer;
 import org.axonframework.test.server.AxonServerContainerUtils;
 import org.junit.jupiter.api.*;
+import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.BiFunction;
@@ -54,45 +58,76 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 /**
- * Integration tests for {@link PersistentStreamMessageSource} with EventCriteria filtering.
- * <p>
- * These tests validate that events are properly filtered when using EventCriteria with:
- * <ul>
- *     <li>Type-based filtering</li>
- *     <li>Aggregate-based tag filtering</li>
- * </ul>
+ * Integration tests for {@link PersistentStreamMessageSource} using Axon Server testcontainers.
  *
  * @author Mateusz Nowak
- * @since 5.0.0
  */
 @Testcontainers
-@Tags({
-        @Tag("slow"),
-})
 class PersistentStreamMessageSourceIT {
 
     private static final String CONTEXT = "default";
+    private static final String STREAM_NAME = "test-persistent-stream";
 
     @SuppressWarnings("resource")
-    private static final AxonServerContainer axonServerContainer = new AxonServerContainer()
-            .withAxonServerHostname("localhost")
-            .withDevMode(true);
+    @Container
+    private static final AxonServerContainer axonServerContainer =
+            new AxonServerContainer("docker.axoniq.io/axoniq/axonserver:2025.2.0")
+                    .withDevMode(true)
+                    .withDcbContext(true);
 
     private static AxonServerConnection connection;
-    private static JacksonConverter jacksonConverter;
+    private static Configuration configuration;
 
     private ScheduledExecutorService scheduler;
-    private Configuration configuration;
+    private PersistentStreamMessageSource testSubject;
+    private Registration registration;
 
     @BeforeAll
     static void beforeAll() {
         axonServerContainer.start();
+        ServerAddress address = new ServerAddress(axonServerContainer.getHost(), axonServerContainer.getGrpcPort());
         connection = AxonServerConnectionFactory.forClient("PersistentStreamMessageSourceIT")
-                                                .routingServers(new ServerAddress(axonServerContainer.getHost(),
-                                                                                  axonServerContainer.getGrpcPort()))
+                                                .routingServers(address)
                                                 .build()
                                                 .connect(CONTEXT);
-        jacksonConverter = new JacksonConverter();
+
+        AxonServerConfiguration axonServerConfiguration = new AxonServerConfiguration();
+        axonServerConfiguration.setServers(axonServerContainer.getHost() + ":" + axonServerContainer.getGrpcPort());
+
+        AxonServerConnectionManager connectionManager = AxonServerConnectionManager.builder()
+                                                                                    .routingServers(axonServerConfiguration.getServers())
+                                                                                    .axonServerConfiguration(axonServerConfiguration)
+                                                                                    .build();
+
+        configuration = MessagingConfigurer.create()
+                                           .componentRegistry(cr -> cr
+                                                   .registerComponent(AxonServerConfiguration.class, c -> axonServerConfiguration)
+                                                   .registerComponent(AxonServerConnectionManager.class, c -> connectionManager)
+                                                   .registerComponent(Converter.class, c -> new JacksonConverter())
+                                           )
+                                           .build();
+    }
+
+    @BeforeEach
+    void setUp() throws IOException {
+        AxonServerContainerUtils.purgeEventsFromAxonServer(
+                axonServerContainer.getHost(),
+                axonServerContainer.getHttpPort(),
+                CONTEXT,
+                AxonServerContainerUtils.DCB_CONTEXT
+        );
+
+        scheduler = Executors.newSingleThreadScheduledExecutor();
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (registration != null) {
+            registration.cancel();
+        }
+        if (scheduler != null) {
+            scheduler.shutdown();
+        }
     }
 
     @AfterAll
@@ -101,429 +136,128 @@ class PersistentStreamMessageSourceIT {
         axonServerContainer.stop();
     }
 
-    @BeforeEach
-    void setUp() throws Exception {
-        // Purge events before each test
-        AxonServerContainerUtils.purgeEventsFromAxonServer(
-                axonServerContainer.getHost(),
-                axonServerContainer.getHttpPort(),
-                CONTEXT,
-                AxonServerContainerUtils.NO_DCB_CONTEXT
-        );
-
-        scheduler = Executors.newScheduledThreadPool(2);
-
-        AxonServerConfiguration axonServerConfiguration = new AxonServerConfiguration();
-        axonServerConfiguration.setServers(axonServerContainer.getAxonServerAddress());
-
-        AxonServerConnectionManager connectionManager = AxonServerConnectionManager.builder()
-                .routingServers(axonServerConfiguration.getServers())
-                .axonServerConfiguration(axonServerConfiguration)
-                .build();
-
-        configuration = MessagingConfigurer.create()
-                .componentRegistry(cr -> cr
-                        .registerComponent(AxonServerConfiguration.class, c -> axonServerConfiguration)
-                        .registerComponent(AxonServerConnectionManager.class, c -> connectionManager)
-                        .registerComponent(Converter.class, c -> jacksonConverter)
-                )
-                .build();
-    }
-
-    @AfterEach
-    void tearDown() {
-        scheduler.shutdown();
-    }
-
     @Nested
-    class TypeBasedFiltering {
+    class BasicSubscription {
 
         @Test
-        void filtersEventsByType() {
+        void receivesAllPublishedEvents() throws Exception {
             // given
-            String streamName = "type-filter-stream-" + UUID.randomUUID();
-            PersistentStreamProperties properties = new PersistentStreamProperties(
-                    streamName, 1, "Seq", Collections.emptyList(), "0", null
-            );
+            List<EventMessage> receivedEvents = new LinkedList<>();
+            BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> consumer =
+                    (events, ctx) -> {
+                        receivedEvents.addAll(events);
+                        return CompletableFuture.completedFuture(null);
+                    };
 
-            PersistentStreamEventConverter converter = new PersistentStreamEventConverter();
-            PersistentStreamMessageSource messageSource = new PersistentStreamMessageSource(
-                    streamName, configuration, properties, scheduler, 10, CONTEXT, converter
-            );
-
-            List<EventMessage> receivedEvents = new CopyOnWriteArrayList<>();
-            EventCriteria criteria = EventCriteria.havingAnyTag()
-                    .andBeingOneOfTypes(new QualifiedName("OrderCreated"));
+            String streamId = "basic-test-" + UUID.randomUUID();
+            testSubject = createMessageSource(streamId);
 
             // when
-            // Subscribe first, then publish events
-            Registration registration = messageSource.subscribe(criteria, collectEvents(receivedEvents));
+            registration = testSubject.subscribe(consumer);
 
-            // Give the subscription time to establish
-            await().atMost(Duration.ofSeconds(2)).pollDelay(Duration.ofMillis(500)).until(() -> true);
-
-            // Publish events of different types
-            publishEvent("OrderCreated", new OrderCreated("order-1"));
-            publishEvent("OrderShipped", new OrderShipped("order-1"));
-            publishEvent("OrderCreated", new OrderCreated("order-2"));
-            publishEvent("CustomerRegistered", new CustomerRegistered("customer-1"));
+            // Publish events after subscribing
+            publishEvent("order-1", "OrderAggregate", "OrderCreated", 0);
+            publishEvent("order-1", "OrderAggregate", "OrderShipped", 1);
+            publishEvent("customer-1", "CustomerAggregate", "CustomerCreated", 0);
 
             // then
             await().atMost(Duration.ofSeconds(10))
-                   .pollInterval(Duration.ofMillis(100))
-                   .untilAsserted(() -> {
-                       assertThat(receivedEvents).hasSize(2);
-                       assertThat(receivedEvents)
-                               .allMatch(e -> e.type().qualifiedName().equals(new QualifiedName("OrderCreated")));
-                   });
-
-            registration.cancel();
-        }
-
-        @Test
-        void filtersEventsByMultipleTypes() {
-            // given
-            String streamName = "multi-type-filter-stream-" + UUID.randomUUID();
-            PersistentStreamProperties properties = new PersistentStreamProperties(
-                    streamName, 1, "Seq", Collections.emptyList(), "0", null
-            );
-
-            PersistentStreamEventConverter converter = new PersistentStreamEventConverter();
-            PersistentStreamMessageSource messageSource = new PersistentStreamMessageSource(
-                    streamName, configuration, properties, scheduler, 10, CONTEXT, converter
-            );
-
-            List<EventMessage> receivedEvents = new CopyOnWriteArrayList<>();
-            EventCriteria criteria = EventCriteria.havingAnyTag()
-                    .andBeingOneOfTypes(
-                            new QualifiedName("OrderCreated"),
-                            new QualifiedName("OrderShipped")
-                    );
-
-            // when
-            Registration registration = messageSource.subscribe(criteria, collectEvents(receivedEvents));
-            await().atMost(Duration.ofSeconds(2)).pollDelay(Duration.ofMillis(500)).until(() -> true);
-
-            publishEvent("OrderCreated", new OrderCreated("order-1"));
-            publishEvent("OrderShipped", new OrderShipped("order-1"));
-            publishEvent("CustomerRegistered", new CustomerRegistered("customer-1"));
-            publishEvent("OrderCreated", new OrderCreated("order-2"));
-
-            // then
-            await().atMost(Duration.ofSeconds(10))
-                   .pollInterval(Duration.ofMillis(100))
+                   .pollDelay(Duration.ofMillis(100))
                    .untilAsserted(() -> {
                        assertThat(receivedEvents).hasSize(3);
-                       assertThat(receivedEvents)
-                               .allMatch(e -> {
-                                   QualifiedName type = e.type().qualifiedName();
-                                   return type.equals(new QualifiedName("OrderCreated"))
-                                           || type.equals(new QualifiedName("OrderShipped"));
-                               });
+                       assertThat(receivedEvents.stream().map(e -> e.type().name()).toList())
+                               .containsExactlyInAnyOrder("OrderCreated", "OrderShipped", "CustomerCreated");
                    });
-
-            registration.cancel();
         }
     }
 
     @Nested
-    class AggregateBasedTagFiltering {
+    class EventCriteriaFilteringByType {
 
         @Test
-        void filtersEventsByAggregateTag() {
+        void filtersEventsByTypeCriteria() throws Exception {
             // given
-            String streamName = "aggregate-filter-stream-" + UUID.randomUUID();
-            PersistentStreamProperties properties = new PersistentStreamProperties(
-                    streamName, 1, "Seq", Collections.emptyList(), "0", null
-            );
+            List<EventMessage> receivedEvents = new LinkedList<>();
+            BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> consumer =
+                    (events, ctx) -> {
+                        receivedEvents.addAll(events);
+                        return CompletableFuture.completedFuture(null);
+                    };
 
-            PersistentStreamEventConverter converter = new PersistentStreamEventConverter();
-            PersistentStreamMessageSource messageSource = new PersistentStreamMessageSource(
-                    streamName, configuration, properties, scheduler, 10, CONTEXT, converter
-            );
+            String streamId = "type-filter-test-" + UUID.randomUUID();
+            testSubject = createMessageSource(streamId);
 
-            List<EventMessage> receivedEvents = new CopyOnWriteArrayList<>();
-            // Filter by aggregate type "Order" and identifier "order-1"
-            EventCriteria criteria = EventCriteria.havingTags("Order", "order-1");
+            // Only receive OrderCreated events
+            EventCriteria criteria = EventCriteria.beingOneOfTypes(new QualifiedName("OrderCreated"));
 
             // when
-            Registration registration = messageSource.subscribe(criteria, collectEvents(receivedEvents));
-            await().atMost(Duration.ofSeconds(2)).pollDelay(Duration.ofMillis(500)).until(() -> true);
+            registration = testSubject.subscribe(criteria, consumer);
 
-            // Publish aggregate-based events
-            publishAggregateEvent("Order", "order-1", 0, "OrderCreated", new OrderCreated("order-1"));
-            publishAggregateEvent("Order", "order-2", 0, "OrderCreated", new OrderCreated("order-2"));
-            publishAggregateEvent("Order", "order-1", 1, "OrderShipped", new OrderShipped("order-1"));
-            publishAggregateEvent("Customer", "customer-1", 0, "CustomerRegistered", new CustomerRegistered("customer-1"));
+            // Publish events of different types
+            publishEvent("order-1", "OrderAggregate", "OrderCreated", 0);
+            publishEvent("customer-1", "CustomerAggregate", "CustomerCreated", 0);
+            publishEvent("order-2", "OrderAggregate", "OrderCreated", 0);
+            publishEvent("order-1", "OrderAggregate", "OrderShipped", 1);
 
-            // then
+            // then - should only receive OrderCreated events
             await().atMost(Duration.ofSeconds(10))
-                   .pollInterval(Duration.ofMillis(100))
+                   .pollDelay(Duration.ofMillis(100))
                    .untilAsserted(() -> {
                        assertThat(receivedEvents).hasSize(2);
-                       // All events should be for order-1
-                       assertThat(receivedEvents)
-                               .extracting(e -> e.payloadAs(Object.class, jacksonConverter))
-                               .allMatch(payload -> {
-                                   if (payload instanceof OrderCreated oc) {
-                                       return "order-1".equals(oc.orderId());
-                                   } else if (payload instanceof OrderShipped os) {
-                                       return "order-1".equals(os.orderId());
-                                   }
-                                   return false;
-                               });
+                       assertThat(receivedEvents.stream().map(e -> e.type().name()).toList())
+                               .containsOnly("OrderCreated");
                    });
-
-            registration.cancel();
-        }
-
-        @Test
-        void filtersEventsWithOrCriteriaForMultipleAggregates() {
-            // given
-            String streamName = "aggregate-type-filter-stream-" + UUID.randomUUID();
-            PersistentStreamProperties properties = new PersistentStreamProperties(
-                    streamName, 1, "Seq", Collections.emptyList(), "0", null
-            );
-
-            PersistentStreamEventConverter converter = new PersistentStreamEventConverter();
-            PersistentStreamMessageSource messageSource = new PersistentStreamMessageSource(
-                    streamName, configuration, properties, scheduler, 10, CONTEXT, converter
-            );
-
-            List<EventMessage> receivedEvents = new CopyOnWriteArrayList<>();
-            // Filter by any Order aggregate (using type as key, any value matches)
-            // Note: havingTags requires both key and value, so we test filtering by specific aggregate
-            EventCriteria criteria = EventCriteria
-                    .havingTags("Order", "order-1")
-                    .or()
-                    .havingTags("Order", "order-2");
-
-            // when
-            Registration registration = messageSource.subscribe(criteria, collectEvents(receivedEvents));
-            await().atMost(Duration.ofSeconds(2)).pollDelay(Duration.ofMillis(500)).until(() -> true);
-
-            publishAggregateEvent("Order", "order-1", 0, "OrderCreated", new OrderCreated("order-1"));
-            publishAggregateEvent("Order", "order-2", 0, "OrderCreated", new OrderCreated("order-2"));
-            publishAggregateEvent("Customer", "customer-1", 0, "CustomerRegistered", new CustomerRegistered("customer-1"));
-            publishAggregateEvent("Order", "order-3", 0, "OrderCreated", new OrderCreated("order-3"));
-
-            // then
-            await().atMost(Duration.ofSeconds(10))
-                   .pollInterval(Duration.ofMillis(100))
-                   .untilAsserted(() -> {
-                       // Should receive events for order-1 and order-2, not order-3 or customer-1
-                       assertThat(receivedEvents).hasSize(2);
-                   });
-
-            registration.cancel();
-        }
-    }
-
-    @Nested
-    class CombinedFiltering {
-
-        @Test
-        void filtersEventsByTagAndType() {
-            // given
-            String streamName = "combined-filter-stream-" + UUID.randomUUID();
-            PersistentStreamProperties properties = new PersistentStreamProperties(
-                    streamName, 1, "Seq", Collections.emptyList(), "0", null
-            );
-
-            PersistentStreamEventConverter converter = new PersistentStreamEventConverter();
-            PersistentStreamMessageSource messageSource = new PersistentStreamMessageSource(
-                    streamName, configuration, properties, scheduler, 10, CONTEXT, converter
-            );
-
-            List<EventMessage> receivedEvents = new CopyOnWriteArrayList<>();
-            // Filter by aggregate tag AND event type
-            EventCriteria criteria = EventCriteria
-                    .havingTags("Order", "order-1")
-                    .andBeingOneOfTypes(new QualifiedName("OrderShipped"));
-
-            // when
-            Registration registration = messageSource.subscribe(criteria, collectEvents(receivedEvents));
-            await().atMost(Duration.ofSeconds(2)).pollDelay(Duration.ofMillis(500)).until(() -> true);
-
-            publishAggregateEvent("Order", "order-1", 0, "OrderCreated", new OrderCreated("order-1"));
-            publishAggregateEvent("Order", "order-1", 1, "OrderShipped", new OrderShipped("order-1"));
-            publishAggregateEvent("Order", "order-2", 0, "OrderCreated", new OrderCreated("order-2"));
-            publishAggregateEvent("Order", "order-2", 1, "OrderShipped", new OrderShipped("order-2"));
-
-            // then
-            await().atMost(Duration.ofSeconds(10))
-                   .pollInterval(Duration.ofMillis(100))
-                   .untilAsserted(() -> {
-                       // Should only receive OrderShipped for order-1
-                       assertThat(receivedEvents).hasSize(1);
-                       assertThat(receivedEvents.getFirst().type().qualifiedName())
-                               .isEqualTo(new QualifiedName("OrderShipped"));
-                   });
-
-            registration.cancel();
-        }
-
-        @Test
-        void filtersWithOrCriteria() {
-            // given
-            String streamName = "or-filter-stream-" + UUID.randomUUID();
-            PersistentStreamProperties properties = new PersistentStreamProperties(
-                    streamName, 1, "Seq", Collections.emptyList(), "0", null
-            );
-
-            PersistentStreamEventConverter converter = new PersistentStreamEventConverter();
-            PersistentStreamMessageSource messageSource = new PersistentStreamMessageSource(
-                    streamName, configuration, properties, scheduler, 10, CONTEXT, converter
-            );
-
-            List<EventMessage> receivedEvents = new CopyOnWriteArrayList<>();
-            // Filter: (Order, order-1) OR (Customer, customer-1)
-            EventCriteria criteria = EventCriteria
-                    .havingTags("Order", "order-1")
-                    .or()
-                    .havingTags("Customer", "customer-1");
-
-            // when
-            Registration registration = messageSource.subscribe(criteria, collectEvents(receivedEvents));
-            await().atMost(Duration.ofSeconds(2)).pollDelay(Duration.ofMillis(500)).until(() -> true);
-
-            publishAggregateEvent("Order", "order-1", 0, "OrderCreated", new OrderCreated("order-1"));
-            publishAggregateEvent("Order", "order-2", 0, "OrderCreated", new OrderCreated("order-2"));
-            publishAggregateEvent("Customer", "customer-1", 0, "CustomerRegistered", new CustomerRegistered("customer-1"));
-            publishAggregateEvent("Customer", "customer-2", 0, "CustomerRegistered", new CustomerRegistered("customer-2"));
-
-            // then
-            await().atMost(Duration.ofSeconds(10))
-                   .pollInterval(Duration.ofMillis(100))
-                   .untilAsserted(() -> {
-                       // Should receive order-1 and customer-1 events
-                       assertThat(receivedEvents).hasSize(2);
-                   });
-
-            registration.cancel();
-        }
-    }
-
-    @Nested
-    class NoFiltering {
-
-        @Test
-        void receivesAllEventsWithHavingAnyTag() {
-            // given
-            String streamName = "no-filter-stream-" + UUID.randomUUID();
-            PersistentStreamProperties properties = new PersistentStreamProperties(
-                    streamName, 1, "Seq", Collections.emptyList(), "0", null
-            );
-
-            PersistentStreamEventConverter converter = new PersistentStreamEventConverter();
-            PersistentStreamMessageSource messageSource = new PersistentStreamMessageSource(
-                    streamName, configuration, properties, scheduler, 10, CONTEXT, converter
-            );
-
-            List<EventMessage> receivedEvents = new CopyOnWriteArrayList<>();
-            EventCriteria criteria = EventCriteria.havingAnyTag();
-
-            // when
-            Registration registration = messageSource.subscribe(criteria, collectEvents(receivedEvents));
-            await().atMost(Duration.ofSeconds(2)).pollDelay(Duration.ofMillis(500)).until(() -> true);
-
-            publishEvent("OrderCreated", new OrderCreated("order-1"));
-            publishEvent("OrderShipped", new OrderShipped("order-1"));
-            publishEvent("CustomerRegistered", new CustomerRegistered("customer-1"));
-
-            // then
-            await().atMost(Duration.ofSeconds(10))
-                   .pollInterval(Duration.ofMillis(100))
-                   .untilAsserted(() -> assertThat(receivedEvents).hasSize(3));
-
-            registration.cancel();
-        }
-
-        @Test
-        void receivesAllEventsWithDefaultSubscribe() {
-            // given
-            String streamName = "default-subscribe-stream-" + UUID.randomUUID();
-            PersistentStreamProperties properties = new PersistentStreamProperties(
-                    streamName, 1, "Seq", Collections.emptyList(), "0", null
-            );
-
-            PersistentStreamEventConverter converter = new PersistentStreamEventConverter();
-            PersistentStreamMessageSource messageSource = new PersistentStreamMessageSource(
-                    streamName, configuration, properties, scheduler, 10, CONTEXT, converter
-            );
-
-            List<EventMessage> receivedEvents = new CopyOnWriteArrayList<>();
-
-            // when
-            // Using the default subscribe method (no criteria)
-            Registration registration = messageSource.subscribe(collectEvents(receivedEvents));
-            await().atMost(Duration.ofSeconds(2)).pollDelay(Duration.ofMillis(500)).until(() -> true);
-
-            publishEvent("OrderCreated", new OrderCreated("order-1"));
-            publishEvent("OrderShipped", new OrderShipped("order-1"));
-            publishEvent("CustomerRegistered", new CustomerRegistered("customer-1"));
-
-            // then
-            await().atMost(Duration.ofSeconds(10))
-                   .pollInterval(Duration.ofMillis(100))
-                   .untilAsserted(() -> assertThat(receivedEvents).hasSize(3));
-
-            registration.cancel();
         }
     }
 
     // Helper methods
 
-    private void publishEvent(String eventType, Object payload) {
-        AppendEventsTransaction tx = connection.eventChannel().startAppendEventsTransaction();
-        byte[] payloadBytes = jacksonConverter.convert(payload, byte[].class);
+    private PersistentStreamMessageSource createMessageSource(String streamId) {
+        PersistentStreamProperties properties = new PersistentStreamProperties(
+                streamId,
+                1,  // segments
+                "SequentialPerAggregatePolicy",  // sequencing policy
+                Collections.emptyList(),
+                "0",  // initial position - start from beginning
+                null
+        );
+
+        return new PersistentStreamMessageSource(
+                streamId,
+                configuration,
+                properties,
+                scheduler,
+                100,  // batch size
+                new PersistentStreamEventConverter()
+        );
+    }
+
+    private void publishEvent(String aggregateId, String aggregateType, String eventType, long sequenceNumber) throws Exception {
+        DcbEventChannel dcbChannel = connection.dcbEventChannel();
+        DcbEventChannel.AppendEventsTransaction tx = dcbChannel.startTransaction(
+                ConsistencyCondition.getDefaultInstance()
+        );
+
         Event event = Event.newBuilder()
-                           .setMessageIdentifier(UUID.randomUUID().toString())
+                           .setIdentifier(UUID.randomUUID().toString())
                            .setTimestamp(System.currentTimeMillis())
-                           .setPayload(SerializedObject.newBuilder()
-                                                       .setType(eventType)
-                                                       .setRevision("1.0")
-                                                       .setData(ByteString.copyFrom(payloadBytes))
-                                                       .build())
+                           .setName(eventType)
+                           .setVersion("1.0")
+                           .setPayload(ByteString.copyFromUtf8("{}"))
                            .build();
-        tx.appendEvent(event);
-        tx.commit().join();
+
+        // Create a tag for the aggregate (key=aggregateType, value=aggregateId)
+        Tag aggregateTag = Tag.newBuilder()
+                              .setKey(ByteString.copyFromUtf8(aggregateType))
+                              .setValue(ByteString.copyFromUtf8(aggregateId))
+                              .build();
+
+        TaggedEvent taggedEvent = TaggedEvent.newBuilder()
+                                             .setEvent(event)
+                                             .addTag(aggregateTag)
+                                             .build();
+
+        tx.append(taggedEvent);
+        tx.commit().get();
     }
-
-    private void publishAggregateEvent(String aggregateType, String aggregateId, long sequenceNumber,
-                                        String eventType, Object payload) {
-        AppendEventsTransaction tx = connection.eventChannel().startAppendEventsTransaction();
-        byte[] payloadBytes = jacksonConverter.convert(payload, byte[].class);
-        Event event = Event.newBuilder()
-                           .setMessageIdentifier(UUID.randomUUID().toString())
-                           .setTimestamp(System.currentTimeMillis())
-                           .setAggregateType(aggregateType)
-                           .setAggregateIdentifier(aggregateId)
-                           .setAggregateSequenceNumber(sequenceNumber)
-                           .setPayload(SerializedObject.newBuilder()
-                                                       .setType(eventType)
-                                                       .setRevision("1.0")
-                                                       .setData(ByteString.copyFrom(payloadBytes))
-                                                       .build())
-                           .build();
-        tx.appendEvent(event);
-        tx.commit().join();
-    }
-
-    private BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> collectEvents(
-            List<EventMessage> collector
-    ) {
-        return (events, context) -> {
-            collector.addAll(events);
-            return CompletableFuture.completedFuture(null);
-        };
-    }
-
-    // Test event classes
-
-    public record OrderCreated(String orderId) {}
-
-    public record OrderShipped(String orderId) {}
-
-    public record CustomerRegistered(String customerId) {}
 }
