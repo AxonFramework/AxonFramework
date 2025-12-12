@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.entity.domain.development;
+package org.axonframework.integrationtests.testsuite.course.commands;
 
-public class InternalProject extends Project {
-    public InternalProject(String projectId, String name) {
-        super(projectId, name);
-    }
+import org.axonframework.modelling.annotation.TargetEntityId;
+
+public record CreateCourse(@TargetEntityId String courseId) {
+
 }

@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package org.axonframework.integrationtests.testsuite.course.module;
+package org.axonframework.integrationtests.testsuite.course.commands;
 
-public record CreateCourse(String courseId) {
+import org.axonframework.modelling.annotation.TargetEntityId;
+
+public record PublishCourse(@TargetEntityId String courseId) {
 
 }
