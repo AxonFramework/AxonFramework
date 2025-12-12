@@ -17,6 +17,9 @@
 package org.axonframework.messaging.eventhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.messaging.eventhandling.replay.ResetContext;
+import org.axonframework.messaging.eventhandling.replay.ResetHandler;
+import org.axonframework.messaging.eventhandling.replay.ResetHandlerRegistry;
 import org.axonframework.messaging.eventhandling.sequencing.HierarchicalSequencingPolicy;
 import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
 import org.axonframework.messaging.eventhandling.sequencing.SequentialPerAggregatePolicy;
@@ -50,6 +53,8 @@ public class SimpleEventHandlingComponent implements EventHandlingComponent {
     private final ConcurrentHashMap<QualifiedName, List<EventHandler>> eventHandlers = new ConcurrentHashMap<>();
     private final SequencingPolicy sequencingPolicy;
 
+    private final Set<ResetHandler> resetHandlers = ConcurrentHashMap.newKeySet();
+
     /**
      * Initializes a {@code SimpleEventHandlingComponent} with no {@link EventHandler}s and default
      * {@link SequentialPolicy}.
@@ -80,6 +85,7 @@ public class SimpleEventHandlingComponent implements EventHandlingComponent {
             );
         }
         MessageStream<Message> result = MessageStream.empty();
+
         for (var handler : handlers) {
             var handlerResult = handler.handle(event, context);
             result = result.concatWith(handlerResult);
@@ -147,5 +153,25 @@ public class SimpleEventHandlingComponent implements EventHandlingComponent {
                        .findFirst()
                        .map(component -> component.sequenceIdentifierFor(event, context))
                        .orElse(sequencingPolicy.getSequenceIdentifierFor(event, context).get());
+    }
+
+    @Nonnull
+    @Override
+    public MessageStream.Empty<Message> handle(@Nonnull ResetContext resetContext, @Nonnull ProcessingContext context) {
+        MessageStream<Message> result = MessageStream.empty();
+
+        for (ResetHandler handler : resetHandlers) {
+            MessageStream<Message> handlerResult = handler.handle(resetContext, context);
+            result = result.concatWith(handlerResult);
+        }
+
+        return result.ignoreEntries().cast();
+    }
+
+    @Nonnull
+    @Override
+    public ResetHandlerRegistry subscribe(@Nonnull ResetHandler resetHandler) {
+        resetHandlers.add(resetHandler);
+        return this;
     }
 }
