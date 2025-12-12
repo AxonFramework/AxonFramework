@@ -20,21 +20,29 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.eventhandling.AnnotationEventHandlerAdapter;
 import org.axonframework.eventhandling.DefaultEventProcessorSpanFactory;
 import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
-import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.integrationtests.utils.EventTestUtils;
+import org.axonframework.messaging.annotation.MessageIdentifier;
+import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
+import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -42,6 +50,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Test class validating the {@link SubscribingEventProcessor}.
+ *
+ * @author Jacek Poreda
+ */
 class SubscribingEventProcessorTest {
 
     private SubscribingEventProcessor testSubject;
@@ -119,7 +132,7 @@ class SubscribingEventProcessorTest {
     void buildWithNullTransactionManagerThrowsAxonConfigurationException() {
         SubscribingEventProcessor.Builder builder = SubscribingEventProcessor.builder();
 
-        assertThrows(AxonConfigurationException.class,  () -> builder.transactionManager(null));
+        assertThrows(AxonConfigurationException.class, () -> builder.transactionManager(null));
     }
 
     @Test
@@ -165,14 +178,74 @@ class SubscribingEventProcessorTest {
         assertEquals(2, ignoredCount.get(), "Expected ignored count to be 2");
     }
 
+    @Test
+    void annotatedInterceptorIsNotInvokedForEventsWithoutAnEventHandler() {
+        // given...
+        Set<String> interceptedEvents = new HashSet<>();
+        Set<String> handledEvents = new HashSet<>();
+        AnnotationEventHandlerAdapter eventHandlerAdapter =
+                new AnnotationEventHandlerAdapter(new EventHandlerWithInterceptor(interceptedEvents, handledEvents));
+        EventHandlerInvoker testInvoker = SimpleEventHandlerInvoker.builder()
+                                                                   .eventHandlers(eventHandlerAdapter)
+                                                                   .build();
+        EventBus testBus = EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build();
+        SubscribingEventProcessor testSubjectWithoutMocks = SubscribingEventProcessor.builder()
+                                                                                     .name("test")
+                                                                                     .eventHandlerInvoker(testInvoker)
+                                                                                     .messageSource(testBus)
+                                                                                     .build();
+        testSubjectWithoutMocks.start();
+        // when publishing an event without a handler...
+        testBus.publish(new GenericEventMessage<>(new SomeNotHandledEvent()));
+        // then the annotated handler and annotated interceptor are not invoked...
+        assertTrue(interceptedEvents.isEmpty());
+        assertTrue(handledEvents.isEmpty());
+        // when publishing an event WITH a handler...
+        testBus.publish(new GenericEventMessage<>(new SomeHandledEvent()));
+        // then the annotated handler and annotated interceptor are invoked...
+        assertFalse(interceptedEvents.isEmpty());
+        assertFalse(handledEvents.isEmpty());
+        assertTrue((interceptedEvents.containsAll(handledEvents)));
+    }
+
     static class TestingTransactionManager implements TransactionManager {
+
         private boolean started;
 
         @Override
         public Transaction startTransaction() {
-            started  = true;
+            started = true;
             return NoTransactionManager.INSTANCE.startTransaction();
         }
     }
 
+    static class EventHandlerWithInterceptor {
+
+        private final Set<String> interceptedEvents;
+        private final Set<String> handledEvents;
+
+        EventHandlerWithInterceptor(Set<String> interceptedEvents,
+                                    Set<String> handledEvents) {
+            this.interceptedEvents = interceptedEvents;
+            this.handledEvents = handledEvents;
+        }
+
+        @MessageHandlerInterceptor
+        public void intercept(EventMessage<?> event) {
+            interceptedEvents.add(event.getIdentifier());
+        }
+
+        @EventHandler
+        public void on(SomeHandledEvent event, @MessageIdentifier String messageId) {
+            handledEvents.add(messageId);
+        }
+    }
+
+    static class SomeHandledEvent {
+
+    }
+
+    static class SomeNotHandledEvent {
+
+    }
 }
