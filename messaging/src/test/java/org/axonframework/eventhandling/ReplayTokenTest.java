@@ -1117,6 +1117,125 @@ class ReplayTokenTest {
         }
     }
 
+    /**
+     * Tests for {@link ReplayToken#processed(TrackingToken)}.
+     * The processed() method on ReplayToken delegates to tokenAtReset.processed() to check
+     * if a position was processed before the reset.
+     */
+    @Nested
+    class Processed {
+
+        @Test
+        void processedReturnsTrueWhenPositionWasProcessedBeforeReset() {
+            // tokenAtReset at index 10, no gaps - processed events 0-10
+            TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, emptySet());
+            ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
+
+            // Position 5 was processed before reset
+            TrackingToken other = GapAwareTrackingToken.newInstance(5, emptySet());
+            assertTrue(replayToken.processed(other));
+        }
+
+        @Test
+        void processedReturnsFalseWhenPositionWasNotProcessedBeforeReset() {
+            // tokenAtReset at index 10, no gaps
+            TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, emptySet());
+            ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
+
+            // Position 15 was NOT processed before reset (beyond index)
+            TrackingToken other = GapAwareTrackingToken.newInstance(15, emptySet());
+            assertFalse(replayToken.processed(other));
+        }
+
+        @Test
+        void processedReturnsFalseWhenPositionWasInGapBeforeReset() {
+            // tokenAtReset at index 10 with gaps at 7, 8 - never processed events 7, 8
+            TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(7L, 8L));
+            ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
+
+            // Position 7 was a gap - NOT processed before reset
+            TrackingToken other = GapAwareTrackingToken.newInstance(7, emptySet());
+            assertFalse(replayToken.processed(other));
+        }
+
+        @Test
+        void processedIgnoresGapSetDifferencesLikeTokenAtReset() {
+            // tokenAtReset at index 10 with gaps at 3, 4
+            TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(3L, 4L));
+            ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
+
+            // other at index 8 with no gaps - gap sets don't match
+            // covers() would return false, but processed() should return true
+            TrackingToken other = GapAwareTrackingToken.newInstance(8, emptySet());
+
+            // Verify tokenAtReset.covers() fails due to gap mismatch
+            assertFalse(tokenAtReset.covers(other));
+            // But processed() should succeed - position 8 was processed (not in gaps)
+            assertTrue(replayToken.processed(other));
+        }
+
+        @Test
+        void processedReturnsFalseWhenTokenAtResetIsNull() {
+            // Create a ReplayToken with null tokenAtReset (edge case)
+            ReplayToken replayToken = new ReplayToken(null, new GlobalSequenceTrackingToken(5), null);
+
+            TrackingToken other = new GlobalSequenceTrackingToken(3);
+            assertFalse(replayToken.processed(other));
+        }
+
+        @Test
+        void processedReturnsTrueWhenOtherIsNull() {
+            TrackingToken tokenAtReset = new GlobalSequenceTrackingToken(10);
+            ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
+
+            assertTrue(replayToken.processed(null));
+        }
+
+        @Test
+        void processedUnwrapsOtherReplayToken() {
+            // tokenAtReset at index 10
+            TrackingToken tokenAtReset = new GlobalSequenceTrackingToken(10);
+            ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
+
+            // other is also a ReplayToken wrapping position 5
+            TrackingToken otherInner = new GlobalSequenceTrackingToken(5);
+            ReplayToken otherReplay = (ReplayToken) ReplayToken.createReplayToken(
+                    new GlobalSequenceTrackingToken(20), otherInner);
+
+            // Should check if position 5 (currentToken of otherReplay) was processed
+            assertTrue(replayToken.processed(otherReplay));
+        }
+
+        @Test
+        void processedWithGlobalSequenceTrackingToken() {
+            TrackingToken tokenAtReset = new GlobalSequenceTrackingToken(10);
+            ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
+
+            // Position within range
+            assertTrue(replayToken.processed(new GlobalSequenceTrackingToken(5)));
+            assertTrue(replayToken.processed(new GlobalSequenceTrackingToken(10)));
+
+            // Position beyond range
+            assertFalse(replayToken.processed(new GlobalSequenceTrackingToken(11)));
+        }
+
+        @Test
+        void processedDelegatesToTokenAtResetNotCurrentToken() {
+            // This test verifies that processed() uses tokenAtReset, not currentToken
+            TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(7L));
+            TrackingToken currentToken = GapAwareTrackingToken.newInstance(5, emptySet());
+            ReplayToken replayToken = new ReplayToken(tokenAtReset, currentToken, null);
+
+            // Position 8 - beyond currentToken (5) but within tokenAtReset (10) and not in gaps
+            TrackingToken other = GapAwareTrackingToken.newInstance(8, emptySet());
+
+            // If processed() used currentToken, it would return false (8 > 5)
+            // But it should use tokenAtReset, so it returns true (8 <= 10, not in gaps)
+            assertTrue(replayToken.processed(other),
+                    "processed() should delegate to tokenAtReset, not currentToken");
+        }
+    }
+
     private static Set<Long> setOf(Long... values) {
         return new HashSet<>(Arrays.asList(values));
     }

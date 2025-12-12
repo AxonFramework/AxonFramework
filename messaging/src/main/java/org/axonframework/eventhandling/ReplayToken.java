@@ -312,6 +312,40 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
         return currentToken != null && currentToken.covers(other);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * For {@link ReplayToken}, this method checks whether the position represented by {@code other} was processed
+     * before the reset. This delegates to the {@code tokenAtReset}'s {@link TrackingToken#processed(TrackingToken)}
+     * method, as that token represents what was processed before the replay started.
+     * <p>
+     * This is the key method for replay detection: if this method returns {@code true}, the event at the given
+     * position is a replay (it was already processed before the reset). If it returns {@code false}, the event
+     * is either new (beyond the reset position) or was a gap that got filled during replay.
+     * <p>
+     * Note that this differs from {@link #covers(TrackingToken)}, which delegates to {@code currentToken.covers()}
+     * and represents the current progress during replay. In contrast, {@code processed()} answers the question
+     * "was this event seen before the reset?" which is the semantically meaningful question for replay detection.
+     *
+     * @param other The token representing the position to check
+     * @return {@code true} if the position was processed before the reset (i.e., it's a replay),
+     *         {@code false} otherwise
+     * @since 4.11.0
+     */
+    @Override
+    public boolean processed(TrackingToken other) {
+        if (tokenAtReset == null) {
+            return false;
+        }
+        TrackingToken otherToCheck = other instanceof ReplayToken
+                ? ((ReplayToken) other).currentToken
+                : other;
+        if (otherToCheck == null) {
+            return true;
+        }
+        return tokenAtReset.processed(otherToCheck);
+    }
+
     private boolean isReplay() {
         return lastMessageWasReplay;
     }
