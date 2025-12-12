@@ -318,7 +318,7 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
      * @param other The token representing the position to check
      * @return {@code true} if the position was processed before the reset (i.e., it's a replay),
      *         {@code false} otherwise
-     * @since 4.11.0
+     * @since 4.12.3
      */
     @Override
     public boolean processed(TrackingToken other) {

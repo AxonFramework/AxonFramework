@@ -242,7 +242,7 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
      * @param other The token representing the position to check
      * @return {@code true} if this token has processed the event at the position represented by {@code other},
      *         otherwise {@code false}
-     * @since 4.11.0
+     * @since 4.12.3
      */
     @Override
     public boolean processed(TrackingToken other) {

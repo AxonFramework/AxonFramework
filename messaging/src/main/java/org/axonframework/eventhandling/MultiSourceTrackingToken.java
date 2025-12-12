@@ -164,7 +164,7 @@ public class MultiSourceTrackingToken implements TrackingToken, Serializable {
      * @param other The token representing the positions to check
      * @return {@code true} if all constituent tokens have processed the events at the positions represented by
      *         their counterparts in {@code other}, otherwise {@code false}
-     * @since 4.11.0
+     * @since 4.12.3
      */
     @Override
     public boolean processed(TrackingToken other) {
