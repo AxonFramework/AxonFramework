@@ -17,15 +17,7 @@
 package org.axonframework.eventhandling.pooled;
 
 import org.axonframework.common.transaction.NoTransactionManager;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.GenericTrackedEventMessage;
-import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
-import org.axonframework.eventhandling.ReplayToken;
-import org.axonframework.eventhandling.Segment;
-import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventhandling.TrackerStatus;
-import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -45,6 +37,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.axonframework.utils.AssertUtils.assertWithin;
 import static org.junit.jupiter.api.Assertions.*;
@@ -143,6 +137,76 @@ class WorkPackageTest {
 
         assertEquals(expectedToken, testSubject.lastDeliveredToken());
     }
+
+    @Test
+    void scheduleEventUpdatesLastDeliveredToken2() {
+        GapAwareTrackingToken tokenAtReset = new GapAwareTrackingToken(5L, Collections.singletonList(3L));
+        WorkPackage testSubjectGapAware =
+                testSubjectBuilder.initialToken(ReplayToken.createReplayToken(tokenAtReset))
+                        .build();
+
+        TrackingToken replayToken = ReplayToken.createReplayToken(tokenAtReset, new GapAwareTrackingToken(3L, Collections.emptySet()));
+        TrackedEventMessage<String> replayEvent =
+                new GenericTrackedEventMessage<>(replayToken, GenericEventMessage.asEventMessage("some-event"));
+        testSubjectGapAware.scheduleEvent(replayEvent);
+
+        assertEquals(replayToken, testSubjectGapAware.lastDeliveredToken());
+    }
+
+    // BUG - duplicated handling???
+    @Disabled // is it possible
+    @Test
+    void scheduleEventUpdatesLastDeliveredToken3() {
+        GapAwareTrackingToken tokenAtReset = new GapAwareTrackingToken(5L, Collections.singletonList(3L));
+        WorkPackage testSubjectGapAware =
+                testSubjectBuilder.initialToken(tokenAtReset)
+                        .build();
+
+        assertEquals(tokenAtReset, testSubjectGapAware.lastDeliveredToken());
+
+
+        TrackingToken nextToken = new GapAwareTrackingToken(4L, Collections.emptySet());
+        TrackedEventMessage<String> replayEvent =
+                new GenericTrackedEventMessage<>(nextToken, GenericEventMessage.asEventMessage("some-event"));
+        testSubjectGapAware.scheduleEvent(replayEvent);
+
+        assertEquals(nextToken, testSubjectGapAware.lastDeliveredToken());
+    }
+
+    @Test
+    void scheduleEventUpdatesLastDeliveredToken5() {
+        GapAwareTrackingToken tokenAtReset = new GapAwareTrackingToken(5L, Stream.of(3L, 4L).collect(Collectors.toList()));
+        WorkPackage testSubjectGapAware =
+                testSubjectBuilder.initialToken(tokenAtReset)
+                        .build();
+
+        assertEquals(tokenAtReset, testSubjectGapAware.lastDeliveredToken());
+
+
+        TrackingToken nextToken = new GapAwareTrackingToken(4L, Stream.of(3L).collect(Collectors.toList()));
+        TrackedEventMessage<String> replayEvent =
+                new GenericTrackedEventMessage<>(nextToken, GenericEventMessage.asEventMessage("some-event"));
+        testSubjectGapAware.scheduleEvent(replayEvent);
+
+        assertEquals(nextToken, testSubjectGapAware.lastDeliveredToken());
+    }
+
+    @Test
+    void scheduleEventUpdatesLastDeliveredToken4() {
+        GapAwareTrackingToken tokenAtReset = new GapAwareTrackingToken(5L, Collections.emptySet());
+        WorkPackage testSubjectGapAware =
+                testSubjectBuilder.initialToken(tokenAtReset)
+                        .build();
+
+        TrackingToken nextToken = new GapAwareTrackingToken(4L, Collections.emptySet());
+        TrackedEventMessage<String> replayEvent =
+                new GenericTrackedEventMessage<>(nextToken, GenericEventMessage.asEventMessage("some-event"));
+        testSubjectGapAware.scheduleEvent(replayEvent);
+
+        assertEquals(tokenAtReset, testSubjectGapAware.lastDeliveredToken());
+    }
+
+
 
     @Test
     void scheduleEventFailsOnEventValidator() throws ExecutionException, InterruptedException {
