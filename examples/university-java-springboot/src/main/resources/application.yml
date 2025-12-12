@@ -2,6 +2,8 @@ spring:
   docker:
     compose:
       file: file:examples/docker-compose.yaml
+  main:
+    web-application-type: reactive
 axon:
   server:
     enabled: true
