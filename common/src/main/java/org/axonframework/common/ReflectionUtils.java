@@ -39,9 +39,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.lang.String.format;
+import static java.util.stream.StreamSupport.stream;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
@@ -586,6 +589,55 @@ public final class ReflectionUtils {
         }
     }
 
+    /**
+     * Each property of a record has both a backing {@link Field} and a {@link Method} (the accessor). This method
+     * filters out the fields that have a corresponding method, as these would result in duplicate child entity
+     * otherwise.
+     *
+     * @param methods The list of methods to check against the fields.
+     * @return <code>true</code> if the field is not duplicated by a given method
+     */
+    private static Predicate<Field> deduplicateRecordFields(List<Method> methods) {
+        return field -> methods
+                             .stream()
+                             .noneMatch(method -> method.getName().equals(field.getName())
+                                     && method.getParameterCount() == 0
+                                     && method.getReturnType().equals(field.getType()));
+    }
+
+    /**
+     * Collects all {@link Member}s of type {@link Field} and {@link Method} for given type in one single list.
+     * If the given type is a record, the record-style getters are deduplicated.
+     *
+     * @param type the type which fields and methods are collectd
+     * @return list of all found fields and messages
+     * @see #collectAnnotatedMethodsAndFields(Class, Predicate)
+     */
+    public static List<? extends Member> collectAnnotatedMethodsAndFields(Class<?> type) {
+        return collectAnnotatedMethodsAndFields(type, it -> true);
+    }
+
+    /**
+     * Collects all {@link Member}s of type {@link Field} and {@link Method} which match the given filter
+     * for a given type in one single list.
+     * If the given type is a record, the record-style getters are deduplicated.
+     *
+     * @param type the type which fields and methods are collectd
+     * @param filter a filter that only keeps matching members
+     * @return list of all found fields and messages
+     */
+    public static List<? extends Member> collectAnnotatedMethodsAndFields(Class<?> type,
+                                                                                   Predicate<Member> filter) {
+        List<Method> methods = stream(ReflectionUtils.methodsOf(type).spliterator(), false).toList();
+        var deduplicateFilter = deduplicateRecordFields(methods);
+
+        var fields = stream(ReflectionUtils.fieldsOf(type).spliterator(), false)
+                .filter(deduplicateFilter);
+
+        return Stream.concat(fields, methods.stream())
+                     .filter(filter)
+                     .toList();
+    }
 
     /**
      * Collects all concrete types from a sealed hierarchy if the given type is sealed. Returns an empty set if the type

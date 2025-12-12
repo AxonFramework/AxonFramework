@@ -16,7 +16,9 @@
 
 package org.axonframework.modelling.entity.domain.development.state;
 
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
 import org.axonframework.messaging.eventhandling.annotation.EventHandler;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 import org.axonframework.modelling.entity.domain.development.events.TaskAssigned;
 import org.axonframework.modelling.entity.domain.development.events.TaskCompleted;
 import org.axonframework.modelling.entity.domain.development.events.TaskCreated;
@@ -25,6 +27,11 @@ import org.axonframework.modelling.entity.domain.development.events.TaskCreated;
  * Example for polymorphy without sealed interface.
  */
 public interface TaskState {
+
+    @CommandHandler
+    default void handle(CreatedTask cmd, EventAppender appender) {
+        // command handling logic
+    }
 
     record InitialTask() implements TaskState {
 

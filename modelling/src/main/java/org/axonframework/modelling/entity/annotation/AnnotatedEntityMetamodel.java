@@ -20,7 +20,6 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.conversion.ConversionException;
@@ -49,13 +48,11 @@ import org.axonframework.modelling.entity.child.EntityChildMetamodel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -64,8 +61,9 @@ import java.util.ServiceLoader;
 import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.StreamSupport.stream;
+import static org.axonframework.common.ReflectionUtils.collectAnnotatedMethodsAndFields;
 import static org.axonframework.common.ReflectionUtils.collectSealedHierarchyIfSealed;
+import static org.axonframework.common.annotation.AnnotationUtils.isAnnotatedWith;
 import static org.axonframework.messaging.core.annotation.AnnotatedHandlerInspector.inspectType;
 
 /**
@@ -138,8 +136,8 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
     }
 
     /**
-     * Instantiate an annotated {@link EntityMetamodel} of a polymorphic sealed entity type. At least one concrete type must
-     * exist, as this metamodel is meant to describe a polymorphic entity type with multiple concrete
+     * Instantiate an annotated {@link EntityMetamodel} of a polymorphic sealed entity type. At least one concrete type
+     * must exist, as this metamodel is meant to describe a polymorphic entity type with multiple concrete
      * implementations.
      *
      * @param entityType               The polymorphic sealed entity type this metamodel describes.
@@ -153,7 +151,8 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
      * @param <E>                      The type of the polymorphic entity.
      * @return An annotated {@link EntityMetamodel} backed by a {@link PolymorphicEntityMetamodel} for the given entity
      * type.
-     * @see AnnotatedEntityMetamodel#forPolymorphicType(Class, Set, ParameterResolverFactory, MessageTypeResolver, MessageConverter, EventConverter)
+     * @see AnnotatedEntityMetamodel#forPolymorphicType(Class, Set, ParameterResolverFactory, MessageTypeResolver,
+     * MessageConverter, EventConverter)
      */
     public static <E> AnnotatedEntityMetamodel<E> forPolymorphicSealedType(
             @Nonnull Class<E> entityType,
@@ -167,7 +166,7 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
                                   collectSealedHierarchyIfSealed(entityType),
                                   parameterResolverFactory,
                                   messageTypeResolver,
-                                  messageConverter,eventConverter
+                                  messageConverter, eventConverter
         );
     }
 
@@ -265,9 +264,16 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
 
     private EntityMetamodel<E> initializePolymorphicMetamodel(Class<E> entityType,
                                                               Set<Class<? extends E>> concreteTypes) {
-        AnnotatedHandlerInspector<E> inspected = inspectType(entityType, parameterResolverFactory,
-                                                             ClasspathHandlerDefinition.forClass(entityType),
-                                                             collectSealedHierarchyIfSealed(entityType));
+        // #3784: inspection of concrete (sub) types does not work with EntityMembers, thats why we need to
+        // differentiate here.
+        var hasMemberEntities = !collectAnnotatedMethodsAndFields(entityType, isAnnotatedWith(EntityMember.class))
+                                        .isEmpty();
+        AnnotatedHandlerInspector<E> inspected = inspectType(
+                entityType,
+                parameterResolverFactory,
+                ClasspathHandlerDefinition.forClass(entityType),
+                hasMemberEntities ? Collections.emptySet() : concreteTypes
+        );
 
         var builder = PolymorphicEntityMetamodel.forSuperType(entityType);
         builder.entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(entityType,
@@ -381,33 +387,10 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
     private void initializeChildren(EntityMetamodelBuilder<E> builder) {
         ServiceLoader<EntityChildModelDefinition> childEntityDefinitions =
                 ServiceLoader.load(EntityChildModelDefinition.class, entityType.getClassLoader());
-        List<Method> methods = stream(ReflectionUtils.methodsOf(entityType).spliterator(), false).toList();
-        List<Field> fields = stream(ReflectionUtils.fieldsOf(entityType).spliterator(), false).toList();
 
-        methods.forEach(method -> createOptionalChildForMember(builder, method, childEntityDefinitions));
-
-        if (entityType.isRecord()) {
-            fields = deduplicateRecordFields(fields, methods);
-        }
-        fields.forEach(field -> createOptionalChildForMember(builder, field, childEntityDefinitions));
-    }
-
-    /**
-     * Each property of a record has both a backing {@link Field} and a {@link Method} (the accessor). This method
-     * filters out the fields that have a corresponding method, as these would result in duplicate child entity
-     * otherwise.
-     *
-     * @param fields  The list of fields to deduplicate.
-     * @param methods The list of methods to check against the fields.
-     * @return A list of fields that do not have a corresponding method, thus deduplicated.
-     */
-    private static List<Field> deduplicateRecordFields(List<Field> fields, List<Method> methods) {
-        return fields.stream().filter(field -> methods
-                             .stream()
-                             .noneMatch(method -> method.getName().equals(field.getName())
-                                     && method.getParameterCount() == 0
-                                     && method.getReturnType().equals(field.getType())))
-                     .toList();
+        collectAnnotatedMethodsAndFields(entityType).forEach(
+                it -> createOptionalChildForMember(builder, it, childEntityDefinitions)
+        );
     }
 
     private void createOptionalChildForMember(EntityMetamodelBuilder<E> builder,
@@ -546,5 +529,4 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
     MessageConverter messageConverter() {
         return messageConverter;
     }
-
 }

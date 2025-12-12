@@ -16,11 +16,11 @@
 
 package org.axonframework.common;
 
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -354,6 +354,41 @@ class ReflectionUtilsTest {
         }
     }
 
+    @Nested
+    class CollectAnnotatedMethodsAndFieldsTest {
+
+        static class Foo {
+
+            private String xfield;
+
+            private String xmethod() {
+                return null;
+            }
+        }
+
+        record Bar(String xfield) {
+
+            private String xmethod() {
+                return null;
+            }
+        }
+
+        @Test
+        void findAllMethodsAndFieldsOnSimpleClass() {
+            var members = collectAnnotatedMethodsAndFields(Foo.class, it -> it.getName().startsWith("x"));
+            assertThat(members).hasSize(2);
+            assertThat(members).extracting(Member::getName)
+                    .containsExactlyInAnyOrder("xfield", "xmethod");
+        }
+
+        @Test
+        void findAllMethodsAndFieldsOnRecord() {
+            var members = collectAnnotatedMethodsAndFields(Bar.class, it -> it.getName().startsWith("x"));
+            assertThat(members).hasSize(2);
+            assertThat(members).extracting(Member::getName)
+                    .containsExactlyInAnyOrder("xfield", "xmethod");
+        }
+    }
 
     private static class SomeTypeWithSetters {
         private String field1;
