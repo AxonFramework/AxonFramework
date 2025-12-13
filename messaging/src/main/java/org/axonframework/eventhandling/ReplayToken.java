@@ -251,20 +251,24 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
 
     @Override
     public TrackingToken advancedTo(TrackingToken newToken) {
+        TrackingToken unwrappedNewToken = WrappedToken.unwrapLowerBound(newToken);
+        TrackingToken unwrappedTokenAtReset = WrappedToken.unwrapUpperBound(this.tokenAtReset);
+
         if (this.tokenAtReset == null
-                || (newToken.covers(WrappedToken.unwrapUpperBound(this.tokenAtReset))
-                && !tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken)))) {
+                || (newToken.processed(unwrappedTokenAtReset) // Has newToken reached/passed the tokenAtReset position?
+                && !tokenAtReset.processed(unwrappedNewToken))) { // Was the event at newToken's position NOT processed before reset
             // we're done replaying
             // if the token at reset was a wrapped token itself, we'll need to use that one to maintain progress.
             if (tokenAtReset instanceof WrappedToken) {
                 return ((WrappedToken) tokenAtReset).advancedTo(newToken);
             }
             return newToken;
-        } else if (tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken))) {
-            // we're still well behind
+        } else if (tokenAtReset.processed(unwrappedNewToken)) {
+            // we're still well behind - the event at newToken's position was processed before reset
             return new ReplayToken(tokenAtReset, newToken, context, true);
         } else {
             // we're getting an event that we didn't have before, but we haven't finished replaying either
+            // (the event's position was a gap in tokenAtReset, meaning it wasn't processed before reset)
             if (tokenAtReset instanceof WrappedToken) {
                 return new ReplayToken(tokenAtReset.upperBound(newToken),
                                        ((WrappedToken) tokenAtReset).advancedTo(newToken),
@@ -294,6 +298,40 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
             return currentToken != null && currentToken.covers(((ReplayToken) other).currentToken);
         }
         return currentToken != null && currentToken.covers(other);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * For {@link ReplayToken}, this method checks whether the position represented by {@code other} was processed
+     * before the reset. This delegates to the {@code tokenAtReset}'s {@link TrackingToken#processed(TrackingToken)}
+     * method, as that token represents what was processed before the replay started.
+     * <p>
+     * This is the key method for replay detection: if this method returns {@code true}, the event at the given
+     * position is a replay (it was already processed before the reset). If it returns {@code false}, the event
+     * is either new (beyond the reset position) or was a gap that got filled during replay.
+     * <p>
+     * Note that this differs from {@link #covers(TrackingToken)}, which delegates to {@code currentToken.covers()}
+     * and represents the current progress during replay. In contrast, {@code processed()} answers the question
+     * "was this event seen before the reset?" which is the semantically meaningful question for replay detection.
+     *
+     * @param other The token representing the position to check
+     * @return {@code true} if the position was processed before the reset (i.e., it's a replay),
+     *         {@code false} otherwise
+     * @since 4.12.3
+     */
+    @Override
+    public boolean processed(TrackingToken other) {
+        if (tokenAtReset == null) {
+            return false;
+        }
+        TrackingToken otherToCheck = other instanceof ReplayToken
+                ? ((ReplayToken) other).currentToken
+                : other;
+        if (otherToCheck == null) {
+            return true;
+        }
+        return tokenAtReset.processed(otherToCheck);
     }
 
     private boolean isReplay() {
