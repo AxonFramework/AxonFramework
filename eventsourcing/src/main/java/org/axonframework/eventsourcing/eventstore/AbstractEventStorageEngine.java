@@ -61,8 +61,8 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
     /**
      * Instantiate a {@link AbstractEventStorageEngine} based on the fields contained in the {@link Builder}.
      * <p>
-     * Will assert that the event and snapshot {@link Serializer} are not {@code null}, and will throw an {@link
-     * AxonConfigurationException} if any of them is {@code null}.
+     * Will assert that the event and snapshot {@link Serializer} are not {@code null}, and will throw an
+     * {@link AxonConfigurationException} if any of them is {@code null}.
      *
      * @param builder the {@link Builder} used to instantiate a {@link AbstractEventStorageEngine} instance
      */
@@ -117,7 +117,7 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
      * @param failedEvent The EventMessage that could not be persisted
      */
     protected void handlePersistenceException(Exception exception, EventMessage<?> failedEvent) {
-        String eventDescription = buildExceptionMessage(failedEvent);
+        String eventDescription = buildExceptionMessage(failedEvent, exception);
         if (persistenceExceptionResolver != null && persistenceExceptionResolver.isDuplicateKeyViolation(exception)) {
             if (isFirstDomainEvent(failedEvent)) {
                 throw new AggregateStreamCreationException(eventDescription, exception);
@@ -148,20 +148,23 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
      * @param failedEvent the event to be used for the exception message
      * @return the created exception message
      */
-    private String buildExceptionMessage(EventMessage<?> failedEvent) {
-        String eventDescription = format("An event with identifier [%s] could not be persisted",
-                                         failedEvent.getIdentifier());
+    private String buildExceptionMessage(EventMessage<?> failedEvent, Exception exception) {
+        String eventDescription = format("An event with identifier [%s] could not be persisted, Original message: [%s]",
+                                         failedEvent.getIdentifier(), exception.getMessage());
         if (isFirstDomainEvent(failedEvent)) {
             DomainEventMessage<?> failedDomainEvent = (DomainEventMessage<?>) failedEvent;
             eventDescription = format(
-                    "Cannot reuse aggregate identifier [%s] to create aggregate [%s] since identifiers need to be unique.",
+                    "Cannot reuse aggregate identifier [%s] to create aggregate [%s] since identifiers need to be unique. , Original message: [%s]",
                     failedDomainEvent.getAggregateIdentifier(),
-                    failedDomainEvent.getType());
+                    failedDomainEvent.getType(),
+                    exception.getMessage());
         } else if (failedEvent instanceof DomainEventMessage<?>) {
             DomainEventMessage<?> failedDomainEvent = (DomainEventMessage<?>) failedEvent;
-            eventDescription = format("An event for aggregate [%s] at sequence [%d] was already inserted",
-                                      failedDomainEvent.getAggregateIdentifier(),
-                                      failedDomainEvent.getSequenceNumber());
+            eventDescription = format(
+                    "An event for aggregate [%s] at sequence [%d] was already inserted. Original message: [%s]",
+                    failedDomainEvent.getAggregateIdentifier(),
+                    failedDomainEvent.getSequenceNumber(),
+                    exception.getMessage());
         }
         return eventDescription;
     }
@@ -186,8 +189,8 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
 
     /**
      * Returns a {@link Stream} of serialized event data entries for an aggregate with given {@code identifier}. The
-     * events should be ordered by aggregate sequence number and have a sequence number starting from the given {@code
-     * firstSequenceNumber}.
+     * events should be ordered by aggregate sequence number and have a sequence number starting from the given
+     * {@code firstSequenceNumber}.
      *
      * @param identifier          The identifier of the aggregate to open a stream for
      * @param firstSequenceNumber The sequence number of the first excepted event entry
@@ -273,8 +276,8 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
         }
 
         /**
-         * Sets the {@link EventUpcaster} used to deserialize events of older revisions. Defaults to a {@link
-         * NoOpEventUpcaster}.
+         * Sets the {@link EventUpcaster} used to deserialize events of older revisions. Defaults to a
+         * {@link NoOpEventUpcaster}.
          *
          * @param upcasterChain an {@link EventUpcaster} used to deserialize events of older revisions
          * @return the current Builder instance, for fluent interfacing
@@ -300,11 +303,11 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
         }
 
         /**
-         * Sets the {@link Serializer} used to serialize and deserialize the Event Message's payload and {@link
-         * org.axonframework.messaging.MetaData} with.
+         * Sets the {@link Serializer} used to serialize and deserialize the Event Message's payload and
+         * {@link org.axonframework.messaging.MetaData} with.
          *
-         * @param eventSerializer The serializer to serialize the Event Message's payload and {@link
-         *                        org.axonframework.messaging.MetaData} with
+         * @param eventSerializer The serializer to serialize the Event Message's payload and
+         *                        {@link org.axonframework.messaging.MetaData} with
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder eventSerializer(Serializer eventSerializer) {
@@ -315,8 +318,8 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
 
         /**
          * Sets the {@code snapshotFilter} deciding whether to take a snapshot into account. Can be set to filter out
-         * specific snapshot revisions which should not be applied. Defaults to a {@link Predicate} which returns {@code
-         * true} regardless.
+         * specific snapshot revisions which should not be applied. Defaults to a {@link Predicate} which returns
+         * {@code true} regardless.
          *
          * @param snapshotFilter a {@link Predicate} which decides whether to take a snapshot into account
          * @return the current Builder instance, for fluent interfacing
