@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.conversion.ConversionException;
@@ -61,7 +62,7 @@ import java.util.ServiceLoader;
 import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
-import static org.axonframework.common.ReflectionUtils.collectAnnotatedMethodsAndFields;
+import static org.axonframework.common.ReflectionUtils.collectMethodsAndFields;
 import static org.axonframework.common.ReflectionUtils.collectSealedHierarchyIfSealed;
 import static org.axonframework.common.annotation.AnnotationUtils.isAnnotatedWith;
 import static org.axonframework.messaging.core.annotation.AnnotatedHandlerInspector.inspectType;
@@ -102,7 +103,6 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
     private final List<AnnotatedEntityMetamodel<?>> concreteMetamodels = new LinkedList<>();
     private final List<AnnotatedEntityMetamodel<?>> childMetamodels = new LinkedList<>();
     private final List<QualifiedName> commandsToSkip;
-
 
     /**
      * Instantiate an annotated {@link EntityMetamodel} of a concrete entity type.
@@ -264,10 +264,10 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
 
     private EntityMetamodel<E> initializePolymorphicMetamodel(Class<E> entityType,
                                                               Set<Class<? extends E>> concreteTypes) {
-        // #3784: inspection of concrete (sub) types does not work with EntityMembers, thats why we need to
+        // #3784: inspection of concrete (sub) types does not work with EntityMembers, that's why we need to
         // differentiate here.
-        var hasMemberEntities = !collectAnnotatedMethodsAndFields(entityType, isAnnotatedWith(EntityMember.class))
-                                        .isEmpty();
+        var hasMemberEntities = !ReflectionUtils.collectMatchingMethodsAndFields(entityType, isAnnotatedWith(EntityMember.class))
+                                                .isEmpty();
         AnnotatedHandlerInspector<E> inspected = inspectType(
                 entityType,
                 parameterResolverFactory,
@@ -388,7 +388,7 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
         ServiceLoader<EntityChildModelDefinition> childEntityDefinitions =
                 ServiceLoader.load(EntityChildModelDefinition.class, entityType.getClassLoader());
 
-        collectAnnotatedMethodsAndFields(entityType).forEach(
+        collectMethodsAndFields(entityType).forEach(
                 it -> createOptionalChildForMember(builder, it, childEntityDefinitions)
         );
     }

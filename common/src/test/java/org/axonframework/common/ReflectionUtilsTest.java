@@ -375,7 +375,7 @@ class ReflectionUtilsTest {
 
         @Test
         void findAllMethodsAndFieldsOnSimpleClass() {
-            var members = collectAnnotatedMethodsAndFields(Foo.class, it -> it.getName().startsWith("x"));
+            var members = collectMatchingMethodsAndFields(Foo.class, it -> it.getName().startsWith("x"));
             assertThat(members).hasSize(2);
             assertThat(members).extracting(Member::getName)
                     .containsExactlyInAnyOrder("xfield", "xmethod");
@@ -383,7 +383,7 @@ class ReflectionUtilsTest {
 
         @Test
         void findAllMethodsAndFieldsOnRecord() {
-            var members = collectAnnotatedMethodsAndFields(Bar.class, it -> it.getName().startsWith("x"));
+            var members = collectMatchingMethodsAndFields(Bar.class, it -> it.getName().startsWith("x"));
             assertThat(members).hasSize(2);
             assertThat(members).extracting(Member::getName)
                     .containsExactlyInAnyOrder("xfield", "xmethod");

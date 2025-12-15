@@ -595,39 +595,40 @@ public final class ReflectionUtils {
      * otherwise.
      *
      * @param methods The list of methods to check against the fields.
-     * @return <code>true</code> if the field is not duplicated by a given method
+     * @return {@code true} if the field is not duplicated by a given method
      */
     private static Predicate<Field> deduplicateRecordFields(List<Method> methods) {
         return field -> methods
-                             .stream()
-                             .noneMatch(method -> method.getName().equals(field.getName())
-                                     && method.getParameterCount() == 0
-                                     && method.getReturnType().equals(field.getType()));
+                .stream()
+                .noneMatch(method -> method.getName().equals(field.getName())
+                        && method.getParameterCount() == 0
+                        && method.getReturnType().equals(field.getType()));
     }
 
     /**
-     * Collects all {@link Member}s of type {@link Field} and {@link Method} for given type in one single list.
+     * Collects all {@link Member Members} of type {@link Field} and {@link Method} for given type in one single list.
      * If the given type is a record, the record-style getters are deduplicated.
      *
-     * @param type the type which fields and methods are collectd
-     * @return list of all found fields and messages
-     * @see #collectAnnotatedMethodsAndFields(Class, Predicate)
+     * @param type The type which fields and methods are collected.
+     * @return List of all found fields and messages.
+     * @see #collectMatchingMethodsAndFields(Class, Predicate)
      */
-    public static List<? extends Member> collectAnnotatedMethodsAndFields(Class<?> type) {
-        return collectAnnotatedMethodsAndFields(type, it -> true);
+    @Nonnull
+    public static List<? extends Member> collectMethodsAndFields(@Nonnull Class<?> type) {
+        return collectMatchingMethodsAndFields(type, it -> true);
     }
 
     /**
-     * Collects all {@link Member}s of type {@link Field} and {@link Method} which match the given filter
-     * for a given type in one single list.
-     * If the given type is a record, the record-style getters are deduplicated.
+     * Collects all {@link Member Members} of type {@link Field} and {@link Method} which match the given filter for a
+     * given type in one single list. If the given type is a record, the record-style getters are deduplicated.
      *
-     * @param type the type which fields and methods are collectd
-     * @param filter a filter that only keeps matching members
-     * @return list of all found fields and messages
+     * @param type The type which fields and methods are collected.
+     * @param filter A filter that only keeps matching members.
+     * @return List of all found fields and messages.
      */
-    public static List<? extends Member> collectAnnotatedMethodsAndFields(Class<?> type,
-                                                                                   Predicate<Member> filter) {
+    @Nonnull
+    public static List<? extends Member> collectMatchingMethodsAndFields(@Nonnull Class<?> type,
+                                                                         @Nonnull Predicate<Member> filter) {
         List<Method> methods = stream(ReflectionUtils.methodsOf(type).spliterator(), false).toList();
         var deduplicateFilter = deduplicateRecordFields(methods);
 
@@ -647,6 +648,7 @@ public final class ReflectionUtils {
      * @param <T>      The type parameter.
      * @return A set of all concrete types in the hierarchy, or an empty set if the type is not sealed.
      */
+    @Nonnull
     public static <T> Set<Class<? extends T>> collectSealedHierarchyIfSealed(@Nonnull Class<T> rootType) {
         if (!rootType.isSealed()) {
             return Set.of();

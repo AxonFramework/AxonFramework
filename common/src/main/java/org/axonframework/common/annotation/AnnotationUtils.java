@@ -16,6 +16,7 @@
 
 package org.axonframework.common.annotation;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 
 import java.lang.annotation.Annotation;
@@ -319,10 +320,11 @@ public final class AnnotationUtils {
     /**
      * Creates a {@link Predicate} that checks whether the given {@link Member} is annotated with the given {@code annotationType}.
      *
-     * @param annotationType the annotation type to check
-     * @return predicate
+     * @param annotationType The annotation type to check.
+     * @return Predicate that checks whether the given annotation is present.
      */
-    public static Predicate<Member> isAnnotatedWith(Class<? extends Annotation> annotationType) {
+    @Nonnull
+    public static Predicate<Member> isAnnotatedWith(@Nonnull Class<? extends Annotation> annotationType) {
         return it ->  it instanceof AnnotatedElement &&  isAnnotationPresent((AnnotatedElement)it, annotationType);
     }
 
