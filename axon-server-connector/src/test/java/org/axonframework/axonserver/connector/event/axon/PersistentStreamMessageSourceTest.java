@@ -116,14 +116,12 @@ class PersistentStreamMessageSourceTest {
     @BeforeEach
     void setUp() {
         String streamName = UUID.randomUUID().toString();
-        PersistentStreamEventConverter eventConverter = new PersistentStreamEventConverter();
         messageSource = new PersistentStreamMessageSource(
                 streamName,
                 DEFAULT_CONFIGURATION,
                 new PersistentStreamProperties(streamName, 1, "example", Collections.emptyList(), "HEAD", null),
                 TEST_SCHEDULER,
-                1,
-                eventConverter
+                1
         );
     }
 
@@ -344,7 +342,6 @@ class PersistentStreamMessageSourceTest {
         private final PersistentStreamProperties properties =
                 new PersistentStreamProperties(STREAM_ID, 2, "Seq", Collections.emptyList(), "0", null);
         private final Map<String, MockPersistentStream> mockPersistentStreams = new ConcurrentHashMap<>();
-        private final PersistentStreamEventConverter eventConverter = new PersistentStreamEventConverter();
 
         private PersistentStreamMessageSource testSubject;
 
@@ -377,8 +374,7 @@ class PersistentStreamMessageSourceTest {
                     configurer.build(),
                     properties,
                     scheduler,
-                    100,
-                    eventConverter
+                    100
             );
         }
 

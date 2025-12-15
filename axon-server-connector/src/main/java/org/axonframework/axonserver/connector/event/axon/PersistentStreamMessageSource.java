@@ -17,16 +17,19 @@ package org.axonframework.axonserver.connector.event.axon;
 
 import io.axoniq.axonserver.connector.event.PersistentStream;
 import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
+import io.axoniq.axonserver.grpc.event.Event;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.Registration;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
+import org.axonframework.messaging.core.LegacyResources;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.SubscribableEventSource;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.axonframework.messaging.eventstreaming.Tag;
 
 import java.util.List;
 import java.util.Objects;
@@ -34,10 +37,8 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Predicate;
-
-import org.axonframework.messaging.core.LegacyResources;
-import org.axonframework.messaging.eventstreaming.Tag;
 
 /**
  * A {@link SubscribableEventSource} that receives events from a persistent stream from Axon Server.
@@ -47,7 +48,8 @@ import org.axonframework.messaging.eventstreaming.Tag;
  * <p>
  * This implementation bridges the Axon Server persistent stream with the Axon Framework 5 async-native API by:
  * <ul>
- *   <li>Converting events using {@link PersistentStreamEventConverter}</li>
+ *   <li>Converting events inline using the established pattern from
+ *       {@link org.axonframework.axonserver.connector.event.AxonServerMessageStream}</li>
  *   <li>Providing {@link org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken TrackingToken} via the event entry's Context</li>
  *   <li>Providing aggregate resources (identifier, type, sequence number) in Context for legacy aggregate-based events</li>
  *   <li>Supporting client-side event filtering via {@link EventCriteria}</li>
@@ -99,17 +101,15 @@ public class PersistentStreamMessageSource implements SubscribableEventSource, D
      * @param persistentStreamProperties Properties for the persistent stream.
      * @param scheduler                  Scheduler thread pool to schedule tasks.
      * @param batchSize                  The batch size for collecting events.
-     * @param eventConverter             The converter for transforming persistent stream events.
      */
     public PersistentStreamMessageSource(String name,
                                          Configuration configuration,
                                          PersistentStreamProperties persistentStreamProperties,
                                          ScheduledExecutorService scheduler,
-                                         int batchSize,
-                                         PersistentStreamEventConverter eventConverter) {
-        this(name, configuration, persistentStreamProperties, scheduler, batchSize, null, eventConverter, entry -> true);
+                                         int batchSize) {
+        this(name, configuration, persistentStreamProperties, scheduler, batchSize, null,
+             new PersistentStreamEventConverter(), entry -> true);
     }
-
 
     /**
      * Instantiates a {@code PersistentStreamMessageSource}.
@@ -122,7 +122,30 @@ public class PersistentStreamMessageSource implements SubscribableEventSource, D
      * @param scheduler                  Scheduler thread pool to schedule tasks.
      * @param batchSize                  The batch size for collecting events.
      * @param context                    The context in which this persistent stream exists (or needs to be created).
-     * @param eventConverter             The converter for transforming persistent stream events.
+     */
+    public PersistentStreamMessageSource(String name,
+                                         Configuration configuration,
+                                         PersistentStreamProperties persistentStreamProperties,
+                                         ScheduledExecutorService scheduler,
+                                         int batchSize,
+                                         String context) {
+        this(name, configuration, persistentStreamProperties, scheduler, batchSize, context,
+             new PersistentStreamEventConverter(), entry -> true);
+    }
+
+    /**
+     * Instantiates a {@code PersistentStreamMessageSource} with a custom message converter.
+     *
+     * @param name                       The name of the persistent stream. It's a unique identifier of the
+     *                                   {@link PersistentStream} connection with Axon Server. Usage of the same name
+     *                                   will overwrite the existing connection.
+     * @param configuration              Global configuration of Axon components.
+     * @param persistentStreamProperties Properties for the persistent stream.
+     * @param scheduler                  Scheduler thread pool to schedule tasks.
+     * @param batchSize                  The batch size for collecting events.
+     * @param context                    The context in which this persistent stream exists (or needs to be created).
+     *                                   May be {@code null}.
+     * @param messageConverter           The function to convert Axon Server events to Event Messages.
      */
     public PersistentStreamMessageSource(String name,
                                          Configuration configuration,
@@ -130,8 +153,9 @@ public class PersistentStreamMessageSource implements SubscribableEventSource, D
                                          ScheduledExecutorService scheduler,
                                          int batchSize,
                                          String context,
-                                         PersistentStreamEventConverter eventConverter) {
-        this(name, configuration, persistentStreamProperties, scheduler, batchSize, context, eventConverter, entry -> true);
+                                         Function<Event, EventMessage> messageConverter) {
+        this(name, configuration, persistentStreamProperties, scheduler, batchSize, context,
+             messageConverter, entry -> true);
     }
 
     /**
@@ -146,7 +170,7 @@ public class PersistentStreamMessageSource implements SubscribableEventSource, D
      * @param batchSize                  The batch size for collecting events.
      * @param context                    The context in which this persistent stream exists (or needs to be created).
      *                                   May be {@code null}.
-     * @param eventConverter             The converter for transforming persistent stream events.
+     * @param messageConverter           The function to convert Axon Server events to Event Messages.
      * @param eventFilter                A predicate to filter events after conversion. Events not matching
      *                                   the filter will be excluded from the batch sent to the consumer.
      */
@@ -156,7 +180,7 @@ public class PersistentStreamMessageSource implements SubscribableEventSource, D
                                          ScheduledExecutorService scheduler,
                                          int batchSize,
                                          String context,
-                                         PersistentStreamEventConverter eventConverter,
+                                         Function<Event, EventMessage> messageConverter,
                                          Predicate<MessageStream.Entry<EventMessage>> eventFilter) {
         this.name = Objects.requireNonNull(name, "name must not be null");
         this.persistentStreamConnection = new PersistentStreamConnection(
@@ -166,7 +190,7 @@ public class PersistentStreamMessageSource implements SubscribableEventSource, D
                 scheduler,
                 batchSize,
                 context,
-                eventConverter,
+                messageConverter,
                 eventFilter
         );
     }

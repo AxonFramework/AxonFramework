@@ -18,162 +18,34 @@ package org.axonframework.axonserver.connector.event.axon;
 
 import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.event.Event;
-import io.axoniq.axonserver.grpc.event.EventWithToken;
-import io.axoniq.axonserver.grpc.streams.PersistentStreamEvent;
-import jakarta.annotation.Nonnull;
 import org.axonframework.axonserver.connector.MetadataConverter;
-import org.axonframework.common.StringUtils;
-import org.axonframework.common.annotation.Internal;
-import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.common.infra.DescribableComponent;
-import org.axonframework.messaging.core.Context;
-import org.axonframework.messaging.core.LegacyResources;
-import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.Metadata;
-import org.axonframework.messaging.core.SimpleEntry;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 
 import java.time.Instant;
-import java.util.Objects;
+import java.util.function.Function;
 
 /**
- * Converter for transforming Axon Server's {@link PersistentStreamEvent} objects into Axon Framework's
- * {@link MessageStream.Entry} objects containing {@link EventMessage EventMessages}.
+ * Converter for transforming Axon Server's gRPC {@link Event} objects into Axon Framework's {@link EventMessage}.
  * <p>
- * This converter handles the conversion of gRPC-based persistent stream events received from Axon Server into
- * Axon Framework's domain model. It properly handles:
+ * This converter implements {@code Function<Event, EventMessage>} following the pattern established in
+ * {@link org.axonframework.axonserver.connector.event.AxonServerMessageStream}.
+ * <p>
+ * The converter handles:
  * <ul>
- *     <li>Event payload conversion (as raw bytes)</li>
- *     <li>Metadata conversion</li>
- *     <li>Tracking token creation, including {@link ReplayToken} when events are marked as replay</li>
- *     <li>Pairing the {@link TrackingToken} with the event via {@link Context}</li>
+ *     <li>Event payload conversion (kept as raw bytes for lazy deserialization)</li>
+ *     <li>Metadata conversion via {@link MetadataConverter}</li>
+ *     <li>Message type with version/revision handling</li>
  * </ul>
- * <p>
- * The converter follows the AF5 pattern of pairing {@link TrackingToken} through {@link MessageStream.Entry}'s
- * {@link Context} rather than using the deprecated {@code TrackedEventMessage}.
- * <p>
- * This class is intended for internal use within the persistent stream infrastructure.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
  * @see PersistentStreamConnection
- * @see MessageStream.Entry
+ * @see PersistentStreamMessageSource
  */
-@Internal
-public class PersistentStreamEventConverter implements DescribableComponent {
-
-    /**
-     * Constructs a {@code PersistentStreamEventConverter}.
-     */
-    public PersistentStreamEventConverter() {
-        // Default constructor
-    }
-
-    /**
-     * Converts a {@link PersistentStreamEvent} received from Axon Server into a {@link MessageStream.Entry}
-     * containing an {@link EventMessage}.
-     * <p>
-     * The conversion process:
-     * <ol>
-     *     <li>Extracts the {@link EventWithToken} from the persistent stream event</li>
-     *     <li>Creates an appropriate {@link TrackingToken} - either a {@link GlobalSequenceTrackingToken}
-     *         or a {@link ReplayToken} if the event is marked as a replay</li>
-     *     <li>Converts the event payload, metadata, and other properties into an {@link EventMessage}</li>
-     *     <li>Wraps everything into a {@link SimpleEntry} with the token and aggregate info in the {@link Context}</li>
-     * </ol>
-     * <p>
-     * The resulting {@link Context} will contain:
-     * <ul>
-     *     <li>{@link TrackingToken#RESOURCE_KEY} - the tracking token for stream positioning</li>
-     *     <li>{@link LegacyResources#AGGREGATE_IDENTIFIER_KEY} - the aggregate identifier (if present in the event)</li>
-     *     <li>{@link LegacyResources#AGGREGATE_TYPE_KEY} - the aggregate type (if present in the event)</li>
-     *     <li>{@link LegacyResources#AGGREGATE_SEQUENCE_NUMBER_KEY} - the aggregate sequence number (if present)</li>
-     * </ul>
-     *
-     * @param persistentStreamEvent The persistent stream event from Axon Server to convert.
-     * @return A {@link MessageStream.Entry} containing the converted event and tracking token in context.
-     * @throws NullPointerException if {@code persistentStreamEvent} is {@code null}
-     */
-    public MessageStream.Entry<EventMessage> convert(@Nonnull PersistentStreamEvent persistentStreamEvent) {
-        Objects.requireNonNull(persistentStreamEvent, "PersistentStreamEvent must not be null");
-
-        EventWithToken eventWithToken = persistentStreamEvent.getEvent();
-        Event event = eventWithToken.getEvent();
-        TrackingToken trackingToken = createTrackingToken(persistentStreamEvent);
-        EventMessage eventMessage = convertEventMessage(event);
-        Context context = buildContext(trackingToken, event);
-
-        return new SimpleEntry<>(eventMessage, context);
-    }
-
-    /**
-     * Builds a {@link Context} containing the tracking token and aggregate information from the event.
-     * <p>
-     * Aggregate resources are only added if the event has a non-empty aggregate identifier.
-     *
-     * @param trackingToken The tracking token to include in the context.
-     * @param event         The gRPC event containing aggregate information.
-     * @return A context with the tracking token and any available aggregate resources.
-     */
-    private Context buildContext(TrackingToken trackingToken, Event event) {
-        Context context = Context.with(TrackingToken.RESOURCE_KEY, trackingToken);
-
-        // Add aggregate resources if present (for legacy aggregate-based events)
-        if (StringUtils.nonEmptyOrNull(event.getAggregateIdentifier())) {
-            context = context
-                    .withResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY, event.getAggregateIdentifier())
-                    .withResource(LegacyResources.AGGREGATE_TYPE_KEY, event.getAggregateType())
-                    .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY, event.getAggregateSequenceNumber());
-        }
-
-        return context;
-    }
-
-    /**
-     * Extracts just the {@link EventMessage} from a {@link PersistentStreamEvent} without the tracking token.
-     * <p>
-     * This method is useful when only the event message is needed without the associated tracking context.
-     *
-     * @param persistentStreamEvent The persistent stream event from Axon Server to convert.
-     * @return An {@link EventMessage} containing the converted event data.
-     * @throws NullPointerException if {@code persistentStreamEvent} is {@code null}
-     */
-    public EventMessage convertToEventMessage(@Nonnull PersistentStreamEvent persistentStreamEvent) {
-        Objects.requireNonNull(persistentStreamEvent, "PersistentStreamEvent must not be null");
-        return convertEventMessage(persistentStreamEvent.getEvent().getEvent());
-    }
-
-    /**
-     * Creates the appropriate {@link TrackingToken} for the given persistent stream event.
-     * <p>
-     * If the event is marked as a replay, a {@link ReplayToken} is created that wraps the current position
-     * and indicates the replay context. Otherwise, a simple {@link GlobalSequenceTrackingToken} is returned.
-     *
-     * @param persistentStreamEvent The persistent stream event to create a token for.
-     * @return The appropriate tracking token for the event.
-     */
-    public TrackingToken createTrackingToken(@Nonnull PersistentStreamEvent persistentStreamEvent) {
-        Objects.requireNonNull(persistentStreamEvent, "PersistentStreamEvent must not be null");
-
-        long token = persistentStreamEvent.getEvent().getToken();
-        GlobalSequenceTrackingToken globalToken = new GlobalSequenceTrackingToken(token);
-
-        if (persistentStreamEvent.getReplay()) {
-            // For replay events, create a ReplayToken that indicates we're in replay mode
-            // The "upper bound" is set to token + 1 to indicate where the replay ends
-            return ReplayToken.createReplayToken(
-                    new GlobalSequenceTrackingToken(token + 1),
-                    globalToken
-            );
-        }
-
-        return globalToken;
-    }
+public class PersistentStreamEventConverter implements Function<Event, EventMessage> {
 
     /**
      * Converts the gRPC {@link Event} into an Axon Framework {@link EventMessage}.
@@ -183,10 +55,10 @@ public class PersistentStreamEventConverter implements DescribableComponent {
      * @param event The gRPC event to convert.
      * @return An {@link EventMessage} containing the converted event data.
      */
-    private EventMessage convertEventMessage(Event event) {
+    @Override
+    public EventMessage apply(Event event) {
         SerializedObject payload = event.getPayload();
         String revision = payload.getRevision();
-        // MessageType requires non-empty version, use default if revision is empty/null
         String version = (revision == null || revision.isEmpty()) ? MessageType.DEFAULT_VERSION : revision;
         return new GenericEventMessage(
                 event.getMessageIdentifier(),
@@ -195,10 +67,5 @@ public class PersistentStreamEventConverter implements DescribableComponent {
                 new Metadata(MetadataConverter.convertMetadataValuesToGrpc(event.getMetaDataMap())),
                 Instant.ofEpochMilli(event.getTimestamp())
         );
-    }
-
-    @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
-        descriptor.describeProperty("type", "PersistentStreamEventConverter");
     }
 }
