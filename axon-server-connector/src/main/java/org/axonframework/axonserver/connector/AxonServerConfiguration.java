@@ -23,6 +23,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.lang.management.ManagementFactory;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -1531,238 +1533,273 @@ public class AxonServerConfiguration {
         }
     }
 
-    // TODO #3520 Enable as part of Persistent Streams reintroduction
-//    public static class PersistentStreamSettings {
-//
-//        private static final String DEFAULT_SEQUENCING_POLICY = PersistentStreamSequencingPolicyProvider.SEQUENTIAL_PER_AGGREGATE_POLICY;
-//
-//        /**
-//         * The number of segments for the persistent stream if it needs to be created. Defaults to 1.
-//         */
-//        private int initialSegmentCount = 1;
-//
-//        /**
-//         * The number of threads used to process tasks (e.g. event handling) for the persistent stream. Defaults to 1.
-//         */
-//        private int threadCount = 1;
-//
-//        /**
-//         * The sequencing policy to use for the persistent stream.
-//         * <p>
-//         * Supported sequencing policies are:
-//         * <ul>
-//         *     <li>{@link PersistentStreamSequencingPolicyProvider#SEQUENTIAL_PER_AGGREGATE_POLICY} (default)</li>
-//         *     <li>{@link PersistentStreamSequencingPolicyProvider#FULL_CONCURRENCY_POLICY}</li>
-//         *     <li>{@link PersistentStreamSequencingPolicyProvider#SEQUENTIAL_POLICY}</li>
-//         *     <li>{@link PersistentStreamSequencingPolicyProvider#PROPERTY_SEQUENCING_POLICY}</li>
-//         *     <li>{@link PersistentStreamSequencingPolicyProvider#METADATA_SEQUENCING_POLICY}</li>
-//         * </ul>
-//         */
-//        private String sequencingPolicy = DEFAULT_SEQUENCING_POLICY;
-//
-//        /**
-//         * Parameters specified for the sequencing policy.
-//         */
-//        private List<String> sequencingPolicyParameters = new LinkedList<>();
-//
-//        /**
-//         * Expression to filter out events in a persistent stream, expecting the Axon Server Query Language as its
-//         * syntax.
-//         * <p>
-//         * Note that it is <b>not possible</b> to change the filter once the persistent stream has been created! When
-//         * doing so, Axon Server will typically throw an {@code AXONIQ-0001} exception.
-//         */
-//        private String filter;
-//
-//        /**
-//         * The name for the persistent stream.
-//         */
-//        private String name;
-//
-//        /**
-//         * The maximum number of events to process in a single transaction when reading a persistent stream. Defaults to
-//         * 1.
-//         */
-//        private int batchSize = 1;
-//
-//        /**
-//         * The initial token for the persistent stream. This can be a global sequence in the event store or keyword
-//         * {@code "HEAD"} or {@code "TAIL"}. Defaults to {@code "TAIL"}.
-//         */
-//        private String initialPosition = "TAIL";
-//
-//        /**
-//         * The number of segments for the persistent stream if it needs to be created.
-//         *
-//         * @return the number of segments for the persistent stream if it needs to be created
-//         */
-//        public int getInitialSegmentCount() {
-//            return initialSegmentCount;
-//        }
-//
-//        /**
-//         * Sets the number of segments for the persistent stream if it needs to be created.
-//         *
-//         * @param initialSegmentCount the number of segments
-//         */
-//        public void setInitialSegmentCount(int initialSegmentCount) {
-//            this.initialSegmentCount = initialSegmentCount;
-//        }
-//
-//        /**
-//         * The number of threads used to process tasks (e.g. event handling) for the persistent stream. Defaults to 1.
-//         *
-//         * @return The number of threads used to process tasks (e.g. event handling) for the persistent stream.
-//         */
-//        public int getThreadCount() {
-//            return threadCount;
-//        }
-//
-//        /**
-//         * Sets the number of threads used to process tasks (e.g. event handling) for the persistent stream.
-//         *
-//         * @param threadCount The number of threads used to process tasks (e.g. event handling) for the persistent
-//         *                    stream.
-//         */
-//        public void setThreadCount(int threadCount) {
-//            this.threadCount = threadCount;
-//        }
-//
-//        /**
-//         * The sequencing policy to use for the persistent stream.
-//         *
-//         * @return the sequencing policy name
-//         */
-//        public String getSequencingPolicy() {
-//            return sequencingPolicy;
-//        }
-//
-//        /**
-//         * Sets the sequencing policy to use for the persistent stream.
-//         * <p>
-//         * Supported sequencing policies are:
-//         * <ul>
-//         *     <li>SequentialPerAggregatePolicy (default)</li>
-//         *     <li>FullConcurrencyPolicy</li>
-//         *     <li>SequentialPolicy</li>
-//         *     <li>PropertySequencingPolicy</li>
-//         *     <li>MetadataSequencingPolicy</li>
-//         * </ul>
-//         * </p>
-//         * <p>This value is only used for creating the persistent stream.</p>
-//         *
-//         * @param sequencingPolicy The sequencing policy name.
-//         */
-//        public void setSequencingPolicy(String sequencingPolicy) {
-//            this.sequencingPolicy = sequencingPolicy;
-//        }
-//
-//        /**
-//         * Parameters specified for the sequencing policy.
-//         *
-//         * @return A list of parameters specified for the sequencing policy.
-//         */
-//        public List<String> getSequencingPolicyParameters() {
-//            return sequencingPolicyParameters;
-//        }
-//
-//        /**
-//         * Sets the parameters specified for the sequencing policy.
-//         * <p>
-//         * The <em>PropertySequencingPolicy</em> and <em>MetadataSequencingPolicy</em> require parameters.
-//         * </p>
-//         * <p>This value is only used for creating the persistent stream.</p>
-//         *
-//         * @param sequencingPolicyParameters A list of parameters specified for the sequencing policy.
-//         */
-//        public void setSequencingPolicyParameters(List<String> sequencingPolicyParameters) {
-//            this.sequencingPolicyParameters = sequencingPolicyParameters;
-//        }
-//
-//        /**
-//         * Expression to filter out events in a persistent stream, using Axon Server Query Language as its syntax.
-//         * <p>
-//         * Note that it is <b>not possible</b> to change the filter once the persistent stream has been created! When
-//         * doing so, Axon Server will typically throw an {@code AXONIQ-0001} exception.
-//         *
-//         * @return The filter expression.
-//         */
-//        public String getFilter() {
-//            return filter;
-//        }
-//
-//        /**
-//         * Sets the expression to filter out events in a persistent stream, expecting the Axon Server Query Language as
-//         * its syntax.
-//         * <p>
-//         * Note that it is <b>not possible</b> to change the filter once the persistent stream has been created! When
-//         * doing so, Axon Server will typically throw an {@code AXONIQ-0001} exception.
-//         *
-//         * @param filter The filter expression.
-//         */
-//        public void setFilter(String filter) {
-//            this.filter = filter;
-//        }
-//
-//        /**
-//         * The name for the persistent stream.
-//         *
-//         * @return The given name for a persistent stream.
-//         */
-//        public String getName() {
-//            return name;
-//        }
-//
-//        /**
-//         * Assigns a name for the persistent stream.
-//         * <p>This value is only used for creating the persistent stream.</p>
-//         *
-//         * @param name The given name for a persistent stream.
-//         */
-//        public void setName(String name) {
-//            this.name = name;
-//        }
-//
-//        /**
-//         * The maximum number of events to process in a single transaction when reading a persistent stream.
-//         *
-//         * @return The batch size.
-//         */
-//        public int getBatchSize() {
-//            return batchSize;
-//        }
-//
-//        /**
-//         * Sets the maximum number of events to process in a single transaction when reading a persistent stream. The
-//         * default value is 1.
-//         *
-//         * @param batchSize The batch size.
-//         */
-//        public void setBatchSize(int batchSize) {
-//            this.batchSize = batchSize;
-//        }
-//
-//        /**
-//         * The initial token position for the persistent stream. This can be a global sequence in the event store or the
-//         * keywords {@code "HEAD"} or {@code "TAIL"} for a respective position at the head or tail of the stream.
-//         *
-//         * @return The initial token position.
-//         */
-//        public String getInitialPosition() {
-//            return initialPosition;
-//        }
-//
-//        /**
-//         * Sets the initial token for the persistent stream. The default value is 0, starting the persistent stream from
-//         * the first event in the event store.
-//         * <p>You can use values {@code "HEAD"} or {@code "TAIL"} to start from the head or tail of the event
-//         * stream.</p>
-//         * <p>This value is only used for creating the persistent stream.</p>
-//         *
-//         * @param initialPosition The initial token position.
-//         */
-//        public void setInitialPosition(String initialPosition) {
-//            this.initialPosition = initialPosition;
-//        }
-//    }
+    /**
+     * Configuration settings for persistent streams.
+     * <p>
+     * This class provides configuration properties for persistent streams, including segment count,
+     * sequencing policy, filtering, batch size, and initial position settings.
+     *
+     * @since 5.0.0
+     */
+    public static class PersistentStreamSettings {
+
+        /**
+         * A sequencing policy where all events belonging to the same aggregate are handled sequentially.
+         */
+        public static final String SEQUENTIAL_PER_AGGREGATE_POLICY = "SequentialPerAggregatePolicy";
+
+        /**
+         * A sequencing policy that utilizes values present in the metadata of an event to define the sequence
+         * identifier.
+         */
+        public static final String METADATA_SEQUENCING_POLICY = "MetadataSequencingPolicy";
+
+        /**
+         * A sequencing policy where all events are handled sequentially.
+         */
+        public static final String SEQUENTIAL_POLICY = "SequentialPolicy";
+
+        /**
+         * A sequencing policy where all events are spread out over the available segments, regardless of the sequence
+         * identifier.
+         */
+        public static final String FULL_CONCURRENCY_POLICY = "FullConcurrencyPolicy";
+
+        /**
+         * A sequencing policy that retrieves a value from the event's payload to decide the sequence identifier of the
+         * event.
+         */
+        public static final String PROPERTY_SEQUENCING_POLICY = "PropertySequencingPolicy";
+
+        private static final String DEFAULT_SEQUENCING_POLICY = SEQUENTIAL_PER_AGGREGATE_POLICY;
+
+        /**
+         * The number of segments for the persistent stream if it needs to be created. Defaults to 1.
+         */
+        private int initialSegmentCount = 1;
+
+        /**
+         * The number of threads used to process tasks (e.g. event handling) for the persistent stream. Defaults to 1.
+         */
+        private int threadCount = 1;
+
+        /**
+         * The sequencing policy to use for the persistent stream.
+         * <p>
+         * Supported sequencing policies are:
+         * <ul>
+         *     <li>{@link #SEQUENTIAL_PER_AGGREGATE_POLICY} (default)</li>
+         *     <li>{@link #FULL_CONCURRENCY_POLICY}</li>
+         *     <li>{@link #SEQUENTIAL_POLICY}</li>
+         *     <li>{@link #PROPERTY_SEQUENCING_POLICY}</li>
+         *     <li>{@link #METADATA_SEQUENCING_POLICY}</li>
+         * </ul>
+         */
+        private String sequencingPolicy = DEFAULT_SEQUENCING_POLICY;
+
+        /**
+         * Parameters specified for the sequencing policy.
+         */
+        private List<String> sequencingPolicyParameters = new LinkedList<>();
+
+        /**
+         * Expression to filter out events in a persistent stream, expecting the Axon Server Query Language as its
+         * syntax.
+         * <p>
+         * Note that it is <b>not possible</b> to change the filter once the persistent stream has been created! When
+         * doing so, Axon Server will typically throw an {@code AXONIQ-0001} exception.
+         */
+        private String filter;
+
+        /**
+         * The name for the persistent stream.
+         */
+        private String name;
+
+        /**
+         * The maximum number of events to process in a single transaction when reading a persistent stream. Defaults to
+         * 1.
+         */
+        private int batchSize = 1;
+
+        /**
+         * The initial token for the persistent stream. This can be a global sequence in the event store or keyword
+         * {@code "HEAD"} or {@code "TAIL"}. Defaults to {@code "TAIL"}.
+         */
+        private String initialPosition = "TAIL";
+
+        /**
+         * The number of segments for the persistent stream if it needs to be created.
+         *
+         * @return the number of segments for the persistent stream if it needs to be created
+         */
+        public int getInitialSegmentCount() {
+            return initialSegmentCount;
+        }
+
+        /**
+         * Sets the number of segments for the persistent stream if it needs to be created.
+         *
+         * @param initialSegmentCount the number of segments
+         */
+        public void setInitialSegmentCount(int initialSegmentCount) {
+            this.initialSegmentCount = initialSegmentCount;
+        }
+
+        /**
+         * The number of threads used to process tasks (e.g. event handling) for the persistent stream. Defaults to 1.
+         *
+         * @return The number of threads used to process tasks (e.g. event handling) for the persistent stream.
+         */
+        public int getThreadCount() {
+            return threadCount;
+        }
+
+        /**
+         * Sets the number of threads used to process tasks (e.g. event handling) for the persistent stream.
+         *
+         * @param threadCount The number of threads used to process tasks (e.g. event handling) for the persistent
+         *                    stream.
+         */
+        public void setThreadCount(int threadCount) {
+            this.threadCount = threadCount;
+        }
+
+        /**
+         * The sequencing policy to use for the persistent stream.
+         *
+         * @return the sequencing policy name
+         */
+        public String getSequencingPolicy() {
+            return sequencingPolicy;
+        }
+
+        /**
+         * Sets the sequencing policy to use for the persistent stream.
+         * <p>
+         * Supported sequencing policies are:
+         * <ul>
+         *     <li>SequentialPerAggregatePolicy (default)</li>
+         *     <li>FullConcurrencyPolicy</li>
+         *     <li>SequentialPolicy</li>
+         *     <li>PropertySequencingPolicy</li>
+         *     <li>MetadataSequencingPolicy</li>
+         * </ul>
+         * </p>
+         * <p>This value is only used for creating the persistent stream.</p>
+         *
+         * @param sequencingPolicy The sequencing policy name.
+         */
+        public void setSequencingPolicy(String sequencingPolicy) {
+            this.sequencingPolicy = sequencingPolicy;
+        }
+
+        /**
+         * Parameters specified for the sequencing policy.
+         *
+         * @return A list of parameters specified for the sequencing policy.
+         */
+        public List<String> getSequencingPolicyParameters() {
+            return sequencingPolicyParameters;
+        }
+
+        /**
+         * Sets the parameters specified for the sequencing policy.
+         * <p>
+         * The <em>PropertySequencingPolicy</em> and <em>MetadataSequencingPolicy</em> require parameters.
+         * </p>
+         * <p>This value is only used for creating the persistent stream.</p>
+         *
+         * @param sequencingPolicyParameters A list of parameters specified for the sequencing policy.
+         */
+        public void setSequencingPolicyParameters(List<String> sequencingPolicyParameters) {
+            this.sequencingPolicyParameters = sequencingPolicyParameters;
+        }
+
+        /**
+         * Expression to filter out events in a persistent stream, using Axon Server Query Language as its syntax.
+         * <p>
+         * Note that it is <b>not possible</b> to change the filter once the persistent stream has been created! When
+         * doing so, Axon Server will typically throw an {@code AXONIQ-0001} exception.
+         *
+         * @return The filter expression.
+         */
+        public String getFilter() {
+            return filter;
+        }
+
+        /**
+         * Sets the expression to filter out events in a persistent stream, expecting the Axon Server Query Language as
+         * its syntax.
+         * <p>
+         * Note that it is <b>not possible</b> to change the filter once the persistent stream has been created! When
+         * doing so, Axon Server will typically throw an {@code AXONIQ-0001} exception.
+         *
+         * @param filter The filter expression.
+         */
+        public void setFilter(String filter) {
+            this.filter = filter;
+        }
+
+        /**
+         * The name for the persistent stream.
+         *
+         * @return The given name for a persistent stream.
+         */
+        public String getName() {
+            return name;
+        }
+
+        /**
+         * Assigns a name for the persistent stream.
+         * <p>This value is only used for creating the persistent stream.</p>
+         *
+         * @param name The given name for a persistent stream.
+         */
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        /**
+         * The maximum number of events to process in a single transaction when reading a persistent stream.
+         *
+         * @return The batch size.
+         */
+        public int getBatchSize() {
+            return batchSize;
+        }
+
+        /**
+         * Sets the maximum number of events to process in a single transaction when reading a persistent stream. The
+         * default value is 1.
+         *
+         * @param batchSize The batch size.
+         */
+        public void setBatchSize(int batchSize) {
+            this.batchSize = batchSize;
+        }
+
+        /**
+         * The initial token position for the persistent stream. This can be a global sequence in the event store or the
+         * keywords {@code "HEAD"} or {@code "TAIL"} for a respective position at the head or tail of the stream.
+         *
+         * @return The initial token position.
+         */
+        public String getInitialPosition() {
+            return initialPosition;
+        }
+
+        /**
+         * Sets the initial token for the persistent stream. The default value is 0, starting the persistent stream from
+         * the first event in the event store.
+         * <p>You can use values {@code "HEAD"} or {@code "TAIL"} to start from the head or tail of the event
+         * stream.</p>
+         * <p>This value is only used for creating the persistent stream.</p>
+         *
+         * @param initialPosition The initial token position.
+         */
+        public void setInitialPosition(String initialPosition) {
+            this.initialPosition = initialPosition;
+        }
+    }
 }
