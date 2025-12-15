@@ -1544,34 +1544,26 @@ public class AxonServerConfiguration {
     public static class PersistentStreamSettings {
 
         /**
-         * A sequencing policy where all events belonging to the same aggregate are handled sequentially.
-         */
-        public static final String SEQUENTIAL_PER_AGGREGATE_POLICY = "SequentialPerAggregatePolicy";
-
-        /**
-         * A sequencing policy that utilizes values present in the metadata of an event to define the sequence
-         * identifier.
-         */
-        public static final String METADATA_SEQUENCING_POLICY = "MetadataSequencingPolicy";
-
-        /**
          * A sequencing policy where all events are handled sequentially.
+         * This is the safest option and works for both DCB and non-DCB contexts.
          */
         public static final String SEQUENTIAL_POLICY = "SequentialPolicy";
 
         /**
+         * A sequencing policy where all events belonging to the same aggregate are handled sequentially.
+         * <p>
+         * <b>Note:</b> This policy is only applicable for non-DCB (legacy aggregate-based) contexts.
+         * In DCB contexts, events do not have aggregate identifiers, so this policy will not work as expected.
+         */
+        public static final String SEQUENTIAL_PER_AGGREGATE_POLICY = "SequentialPerAggregatePolicy";
+
+        /**
          * A sequencing policy where all events are spread out over the available segments, regardless of the sequence
-         * identifier.
+         * identifier. Use this when event ordering does not matter and maximum parallelism is desired.
          */
         public static final String FULL_CONCURRENCY_POLICY = "FullConcurrencyPolicy";
 
-        /**
-         * A sequencing policy that retrieves a value from the event's payload to decide the sequence identifier of the
-         * event.
-         */
-        public static final String PROPERTY_SEQUENCING_POLICY = "PropertySequencingPolicy";
-
-        private static final String DEFAULT_SEQUENCING_POLICY = SEQUENTIAL_PER_AGGREGATE_POLICY;
+        private static final String DEFAULT_SEQUENCING_POLICY = SEQUENTIAL_POLICY;
 
         /**
          * The number of segments for the persistent stream if it needs to be created. Defaults to 1.
@@ -1588,11 +1580,9 @@ public class AxonServerConfiguration {
          * <p>
          * Supported sequencing policies are:
          * <ul>
-         *     <li>{@link #SEQUENTIAL_PER_AGGREGATE_POLICY} (default)</li>
-         *     <li>{@link #FULL_CONCURRENCY_POLICY}</li>
-         *     <li>{@link #SEQUENTIAL_POLICY}</li>
-         *     <li>{@link #PROPERTY_SEQUENCING_POLICY}</li>
-         *     <li>{@link #METADATA_SEQUENCING_POLICY}</li>
+         *     <li>{@link #SEQUENTIAL_POLICY} (default) - all events handled sequentially, safest option</li>
+         *     <li>{@link #SEQUENTIAL_PER_AGGREGATE_POLICY} - sequential per aggregate (non-DCB contexts only)</li>
+         *     <li>{@link #FULL_CONCURRENCY_POLICY} - full concurrency, use when ordering doesn't matter</li>
          * </ul>
          */
         private String sequencingPolicy = DEFAULT_SEQUENCING_POLICY;
@@ -1679,13 +1669,10 @@ public class AxonServerConfiguration {
          * <p>
          * Supported sequencing policies are:
          * <ul>
-         *     <li>SequentialPerAggregatePolicy (default)</li>
-         *     <li>FullConcurrencyPolicy</li>
-         *     <li>SequentialPolicy</li>
-         *     <li>PropertySequencingPolicy</li>
-         *     <li>MetadataSequencingPolicy</li>
+         *     <li>SequentialPolicy (default) - all events handled sequentially, safest option</li>
+         *     <li>SequentialPerAggregatePolicy - sequential per aggregate (non-DCB contexts only)</li>
+         *     <li>FullConcurrencyPolicy - full concurrency, use when ordering doesn't matter</li>
          * </ul>
-         * </p>
          * <p>This value is only used for creating the persistent stream.</p>
          *
          * @param sequencingPolicy The sequencing policy name.
