@@ -221,7 +221,7 @@ abstract class AbstractPersistentStreamMessageSourceIT {
     class EmptyEventStream {
 
         @Test
-        void subscriptionRemainsActiveWhenNoEventsPublished() throws Exception {
+        void subscriptionRemainsActiveWhenNoEventsPublished() {
             // given
             List<EventMessage> receivedEvents = new LinkedList<>();
             String streamId = "empty-stream-test-" + UUID.randomUUID();
@@ -230,22 +230,27 @@ abstract class AbstractPersistentStreamMessageSourceIT {
             // when - subscribe but don't publish any events
             registration = testSubject.subscribe(collectingConsumer(receivedEvents));
 
-            // then - wait briefly and verify no events received, subscription still active
-            Thread.sleep(500);
-            assertThat(receivedEvents).isEmpty();
-            assertThat(registration).isNotNull();
+            // then - verify no events received during the wait period, subscription still active
+            await().during(Duration.ofMillis(500))
+                   .atMost(Duration.ofSeconds(2))
+                   .untilAsserted(() -> {
+                       assertThat(receivedEvents).isEmpty();
+                       assertThat(registration).isNotNull();
+                   });
         }
 
         @Test
-        void subscriptionCanBeCancelledWhenNoEventsReceived() throws Exception {
+        void subscriptionCanBeCancelledWhenNoEventsReceived() {
             // given
             List<EventMessage> receivedEvents = new LinkedList<>();
             String streamId = "cancel-empty-test-" + UUID.randomUUID();
             testSubject = createMessageSource(streamId);
 
-            // when - subscribe, wait, then cancel
+            // when - subscribe and verify empty during wait period
             registration = testSubject.subscribe(collectingConsumer(receivedEvents));
-            Thread.sleep(300);
+            await().during(Duration.ofMillis(300))
+                   .atMost(Duration.ofSeconds(2))
+                   .untilAsserted(() -> assertThat(receivedEvents).isEmpty());
 
             // then - cancellation should succeed
             boolean cancelled = registration.cancel();
@@ -260,10 +265,11 @@ abstract class AbstractPersistentStreamMessageSourceIT {
             String streamId = "delayed-events-test-" + UUID.randomUUID();
             testSubject = createMessageSource(streamId);
 
-            // when - subscribe, wait with no events, then publish
+            // when - subscribe and verify no events during initial period
             registration = testSubject.subscribe(collectingConsumer(receivedEvents));
-            Thread.sleep(500);
-            assertThat(receivedEvents).isEmpty();
+            await().during(Duration.ofMillis(500))
+                   .atMost(Duration.ofSeconds(2))
+                   .untilAsserted(() -> assertThat(receivedEvents).isEmpty());
 
             // publish events after delay
             publishEvent("order-1", "OrderAggregate", "OrderCreated", 0);
