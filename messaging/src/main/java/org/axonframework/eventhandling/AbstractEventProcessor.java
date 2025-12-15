@@ -180,8 +180,9 @@ public abstract class AbstractEventProcessor implements EventProcessor {
                     errorHandler.handleError(new ErrorContext(getName(), e, eventMessages));
                 } else {
                     logger.info(
-                            "Exception occurred while processing a message, but unit of work was committed. {}",
-                            e.getClass().getName());
+                            "Exception occurred while processing a message, but unit of work was committed. {}. Original error message: {} ",
+                            e.getClass().getName(),
+                            e.getMessage());
                 }
             }
             return null;
