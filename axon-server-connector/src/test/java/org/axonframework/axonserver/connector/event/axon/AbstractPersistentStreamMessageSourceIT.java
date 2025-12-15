@@ -218,6 +218,69 @@ abstract class AbstractPersistentStreamMessageSourceIT {
     }
 
     @Nested
+    class EmptyEventStream {
+
+        @Test
+        void subscriptionRemainsActiveWhenNoEventsPublished() throws Exception {
+            // given
+            List<EventMessage> receivedEvents = new LinkedList<>();
+            String streamId = "empty-stream-test-" + UUID.randomUUID();
+            testSubject = createMessageSource(streamId);
+
+            // when - subscribe but don't publish any events
+            registration = testSubject.subscribe(collectingConsumer(receivedEvents));
+
+            // then - wait briefly and verify no events received, subscription still active
+            Thread.sleep(500);
+            assertThat(receivedEvents).isEmpty();
+            assertThat(registration).isNotNull();
+        }
+
+        @Test
+        void subscriptionCanBeCancelledWhenNoEventsReceived() throws Exception {
+            // given
+            List<EventMessage> receivedEvents = new LinkedList<>();
+            String streamId = "cancel-empty-test-" + UUID.randomUUID();
+            testSubject = createMessageSource(streamId);
+
+            // when - subscribe, wait, then cancel
+            registration = testSubject.subscribe(collectingConsumer(receivedEvents));
+            Thread.sleep(300);
+
+            // then - cancellation should succeed
+            boolean cancelled = registration.cancel();
+            assertThat(cancelled).isTrue();
+            assertThat(receivedEvents).isEmpty();
+        }
+
+        @Test
+        void receivesEventsAfterPeriodOfNoEvents() throws Exception {
+            // given
+            List<EventMessage> receivedEvents = new LinkedList<>();
+            String streamId = "delayed-events-test-" + UUID.randomUUID();
+            testSubject = createMessageSource(streamId);
+
+            // when - subscribe, wait with no events, then publish
+            registration = testSubject.subscribe(collectingConsumer(receivedEvents));
+            Thread.sleep(500);
+            assertThat(receivedEvents).isEmpty();
+
+            // publish events after delay
+            publishEvent("order-1", "OrderAggregate", "OrderCreated", 0);
+            publishEvent("order-1", "OrderAggregate", "OrderShipped", 1);
+
+            // then - should receive the delayed events
+            await().atMost(Duration.ofSeconds(10))
+                   .pollDelay(Duration.ofMillis(100))
+                   .untilAsserted(() -> {
+                       assertThat(receivedEvents).hasSize(2);
+                       assertThat(receivedEvents.stream().map(e -> e.type().name()).toList())
+                               .containsExactlyInAnyOrder("OrderCreated", "OrderShipped");
+                   });
+        }
+    }
+
+    @Nested
     class EventCriteriaFilteringByType {
 
         @Test
