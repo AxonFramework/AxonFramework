@@ -27,10 +27,8 @@ import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.axonserver.connector.MetadataConverter;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.eventhandling.TerminalEventMessage;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
@@ -50,7 +48,6 @@ import org.axonframework.messaging.eventstreaming.EventCriterion;
 import org.axonframework.messaging.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.MessageStream;
-import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
@@ -202,7 +199,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
 
         MessageStream<EventMessage> source =
                 MessageStream.fromStream(aggregateStream.asStream(),
-                                         this::convertToMessage,
+                                         AggregateEventConverter.INSTANCE,
                                          event -> setMarkerAndBuildContext(event.getAggregateIdentifier(),
                                                                            event.getAggregateSequenceNumber(),
                                                                            event.getAggregateType(),
@@ -238,27 +235,12 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
         TrackingToken trackingToken = condition.position();
         if (trackingToken instanceof GlobalSequenceTrackingToken gtt) {
             return new AxonServerMessageStream(connection.eventChannel().openStream(gtt.getGlobalIndex(), 32),
-                                               this::convertToMessage);
+                                               AggregateEventConverter.INSTANCE);
         } else {
             throw new IllegalArgumentException(
                     "Tracking Token is not of expected type. Must be GlobalTrackingToken. Is: "
                             + trackingToken.getClass().getName());
         }
-    }
-
-    private EventMessage convertToMessage(Event event) {
-        SerializedObject payload = event.getPayload();
-        return new GenericEventMessage(
-                event.getMessageIdentifier(),
-                new MessageType(payload.getType(), payload.getRevision()),
-                payload.getData().toByteArray(),
-                getMetadata(event.getMetaDataMap()),
-                Instant.ofEpochMilli(event.getTimestamp())
-        );
-    }
-
-    private Metadata getMetadata(Map<String, MetaDataValue> metadataMap) {
-        return new Metadata(MetadataConverter.convertMetadataValuesToGrpc(metadataMap));
     }
 
     @Override

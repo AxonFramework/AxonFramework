@@ -29,6 +29,7 @@ import io.axoniq.axonserver.grpc.event.EventWithToken;
 import io.axoniq.axonserver.grpc.streams.PersistentStreamEvent;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.axonserver.connector.event.AggregateEventConverter;
 import org.axonframework.common.configuration.ApplicationConfigurer;
 import org.axonframework.messaging.core.configuration.MessagingConfigurer;
 import org.axonframework.messaging.eventhandling.EventMessage;
@@ -76,7 +77,6 @@ class PersistentStreamConnectionTest {
     private final PersistentStreamProperties properties =
             new PersistentStreamProperties(STREAM_NAME, 2, "Seq", Collections.emptyList(), "0", null);
     private final Map<String, MockPersistentStream> mockPersistentStreams = new ConcurrentHashMap<>();
-    private final PersistentStreamEventConverter eventConverter = new PersistentStreamEventConverter();
 
     private PersistentStreamConnection testSubject;
 
@@ -112,7 +112,7 @@ class PersistentStreamConnectionTest {
                                                      properties,
                                                      scheduler,
                                                      batchSize,
-                                                     eventConverter);
+                                                     AggregateEventConverter.INSTANCE);
     }
 
     @Nested
@@ -225,7 +225,7 @@ class PersistentStreamConnectionTest {
                     scheduler,
                     100,
                     null,
-                    eventConverter,
+                    AggregateEventConverter.INSTANCE,
                     entry -> {
                         TrackingToken token = entry.getResource(TrackingToken.RESOURCE_KEY);
                         if (token instanceof GlobalSequenceTrackingToken gst) {

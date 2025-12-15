@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.axonserver.connector.event.axon;
+package org.axonframework.axonserver.connector.event;
 
 import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.event.Event;
@@ -28,29 +28,49 @@ import java.time.Instant;
 import java.util.function.Function;
 
 /**
- * Converter for transforming Axon Server's gRPC {@link Event} objects into Axon Framework's {@link EventMessage}.
+ * Converter for transforming Axon Server's gRPC {@link Event} objects (aggregate-based) into Axon Framework's
+ * {@link EventMessage}.
  * <p>
- * This converter implements {@code Function<Event, EventMessage>} following the pattern established in
- * {@link org.axonframework.axonserver.connector.event.AxonServerMessageStream}.
+ * This converter implements {@code Function<Event, EventMessage>} and provides a singleton {@link #INSTANCE} for
+ * convenient reuse across components that need to convert aggregate-based events from Axon Server.
  * <p>
  * The converter handles:
  * <ul>
  *     <li>Event payload conversion (kept as raw bytes for lazy deserialization)</li>
  *     <li>Metadata conversion via {@link MetadataConverter}</li>
- *     <li>Message type with version/revision handling</li>
+ *     <li>Message type with version/revision handling (defaults to {@link MessageType#DEFAULT_VERSION} if empty)</li>
+ * </ul>
+ * <p>
+ * This converter is used by:
+ * <ul>
+ *     <li>{@link AggregateBasedAxonServerEventStorageEngine} - for streaming events from the event store</li>
+ *     <li>{@link org.axonframework.axonserver.connector.event.axon.PersistentStreamMessageSource} - for persistent
+ *     stream subscriptions</li>
+ *     <li>{@link AxonServerMessageStream} - for event streaming</li>
  * </ul>
  *
  * @author Mateusz Nowak
  * @since 5.0.0
- * @see PersistentStreamConnection
- * @see PersistentStreamMessageSource
+ * @see TaggedEventConverter
  */
-public class PersistentStreamEventConverter implements Function<Event, EventMessage> {
+public class AggregateEventConverter implements Function<Event, EventMessage> {
+
+    /**
+     * Singleton instance of the converter for convenient reuse.
+     */
+    public static final AggregateEventConverter INSTANCE = new AggregateEventConverter();
+
+    /**
+     * Constructs an {@code AggregateEventConverter}.
+     */
+    public AggregateEventConverter() {
+    }
 
     /**
      * Converts the gRPC {@link Event} into an Axon Framework {@link EventMessage}.
      * <p>
      * The event payload is kept as raw bytes and will be deserialized lazily when accessed.
+     * If the payload revision is {@code null} or empty, {@link MessageType#DEFAULT_VERSION} is used.
      *
      * @param event The gRPC event to convert.
      * @return An {@link EventMessage} containing the converted event data.

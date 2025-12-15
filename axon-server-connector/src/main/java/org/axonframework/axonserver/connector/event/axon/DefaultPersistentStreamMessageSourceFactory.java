@@ -16,6 +16,7 @@
 package org.axonframework.axonserver.connector.event.axon;
 
 import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
+import org.axonframework.axonserver.connector.event.AggregateEventConverter;
 import org.axonframework.common.configuration.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,7 +30,7 @@ import java.util.concurrent.ScheduledExecutorService;
  * {@link PersistentStreamMessageSource} instances.
  * <p>
  * This factory maintains a record of used stream names and provides warning logs when name conflicts occur.
- * Each created {@link PersistentStreamMessageSource} is configured with a {@link PersistentStreamEventConverter}
+ * Each created {@link PersistentStreamMessageSource} is configured with {@link AggregateEventConverter}
  * for proper event conversion following the Axon Framework 5 async-native API patterns.
  *
  * @author Mateusz Nowak
@@ -44,7 +45,7 @@ public class DefaultPersistentStreamMessageSourceFactory implements PersistentSt
      * Creates a new {@code PersistentStreamMessageSource}. This method tracks stream names and logs warnings when name
      * conflicts are detected.
      * <p>
-     * The created message source uses a {@link PersistentStreamEventConverter} for converting Axon Server's
+     * The created message source uses the {@link AggregateEventConverter} for converting Axon Server's
      * persistent stream events into Axon Framework's event messages with proper tracking token and aggregate
      * resource handling.
      *
@@ -73,7 +74,6 @@ public class DefaultPersistentStreamMessageSourceFactory implements PersistentSt
                             + "The new connection will overwrite the existing connection.",
                     name);
         }
-        PersistentStreamEventConverter eventConverter = new PersistentStreamEventConverter();
         return new PersistentStreamMessageSource(
                 name,
                 configuration,
@@ -81,7 +81,7 @@ public class DefaultPersistentStreamMessageSourceFactory implements PersistentSt
                 scheduler,
                 batchSize,
                 context,
-                eventConverter
+                AggregateEventConverter.INSTANCE
         );
     }
 }

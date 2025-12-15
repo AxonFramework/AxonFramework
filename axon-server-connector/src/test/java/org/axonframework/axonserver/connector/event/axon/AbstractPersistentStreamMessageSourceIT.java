@@ -155,7 +155,7 @@ abstract class AbstractPersistentStreamMessageSourceIT {
 
     /**
      * Creates a {@link PersistentStreamMessageSource} with the given stream ID.
-     * Uses the default {@link PersistentStreamEventConverter} for message conversion.
+     * Uses the default {@link org.axonframework.axonserver.connector.event.AggregateEventConverter} for message conversion.
      */
     protected PersistentStreamMessageSource createMessageSource(String streamId) {
         PersistentStreamProperties properties = new PersistentStreamProperties(

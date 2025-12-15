@@ -19,6 +19,7 @@ import io.axoniq.axonserver.connector.event.PersistentStream;
 import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
 import io.axoniq.axonserver.grpc.event.Event;
 import jakarta.annotation.Nonnull;
+import org.axonframework.axonserver.connector.event.AggregateEventConverter;
 import org.axonframework.common.Registration;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -108,7 +109,7 @@ public class PersistentStreamMessageSource implements SubscribableEventSource, D
                                          ScheduledExecutorService scheduler,
                                          int batchSize) {
         this(name, configuration, persistentStreamProperties, scheduler, batchSize, null,
-             new PersistentStreamEventConverter(), entry -> true);
+             AggregateEventConverter.INSTANCE, entry -> true);
     }
 
     /**
@@ -130,7 +131,7 @@ public class PersistentStreamMessageSource implements SubscribableEventSource, D
                                          int batchSize,
                                          String context) {
         this(name, configuration, persistentStreamProperties, scheduler, batchSize, context,
-             new PersistentStreamEventConverter(), entry -> true);
+             AggregateEventConverter.INSTANCE, entry -> true);
     }
 
     /**
