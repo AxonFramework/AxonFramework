@@ -247,18 +247,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
     }
 
     private EventMessage convertToMessage(Event event) {
-        SerializedObject payload = event.getPayload();
-        return new GenericEventMessage(
-                event.getMessageIdentifier(),
-                new MessageType(payload.getType(), payload.getRevision()),
-                payload.getData().toByteArray(),
-                getMetadata(event.getMetaDataMap()),
-                Instant.ofEpochMilli(event.getTimestamp())
-        );
-    }
-
-    private Metadata getMetadata(Map<String, MetaDataValue> metadataMap) {
-        return new Metadata(MetadataConverter.convertMetadataValuesToGrpc(metadataMap));
+        return AggregateEventConverter.INSTANCE.apply(event);
     }
 
     @Override
