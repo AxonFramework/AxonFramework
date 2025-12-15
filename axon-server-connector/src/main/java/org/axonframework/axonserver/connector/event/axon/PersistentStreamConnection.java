@@ -23,23 +23,17 @@ import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
 import io.axoniq.axonserver.connector.event.PersistentStreamSegment;
 import io.axoniq.axonserver.connector.impl.StreamClosedException;
 import io.axoniq.axonserver.grpc.event.Event;
-import io.axoniq.axonserver.grpc.event.EventWithToken;
 import io.axoniq.axonserver.grpc.streams.PersistentStreamEvent;
 import jakarta.annotation.Nonnull;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
-import org.axonframework.common.StringUtils;
+import org.axonframework.axonserver.connector.event.PersistentStreamEventConverter;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
-import org.axonframework.messaging.core.Context;
-import org.axonframework.messaging.core.LegacyResources;
 import org.axonframework.messaging.core.MessageStream;
-import org.axonframework.messaging.core.SimpleEntry;
 import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,6 +64,7 @@ import static io.axoniq.axonserver.connector.event.PersistentStreamSegment.PENDI
  * @author Mateusz Nowak
  * @since 4.10.0
  */
+@Internal
 public class PersistentStreamConnection implements DescribableComponent {
 
     private static final int MAX_RETRY_INTERVAL_SECONDS = 60;
@@ -79,7 +74,7 @@ public class PersistentStreamConnection implements DescribableComponent {
     private final String streamId;
     private final Configuration configuration;
     private final PersistentStreamProperties persistentStreamProperties;
-    private final Function<Event, EventMessage> messageConverter;
+    private final PersistentStreamEventConverter eventConverter;
 
     private final AtomicReference<PersistentStream> persistentStreamHolder = new AtomicReference<>();
 
@@ -137,7 +132,9 @@ public class PersistentStreamConnection implements DescribableComponent {
         this.scheduler = Objects.requireNonNull(scheduler, "scheduler must not be null");
         this.batchSize = batchSize;
         this.defaultContext = defaultContext;
-        this.messageConverter = Objects.requireNonNull(messageConverter, "messageConverter must not be null");
+        this.eventConverter = new PersistentStreamEventConverter(
+                Objects.requireNonNull(messageConverter, "messageConverter must not be null")
+        );
     }
 
 
@@ -378,69 +375,14 @@ public class PersistentStreamConnection implements DescribableComponent {
 
         /**
          * Converts persistent stream events to Axon Framework event entries.
-         * <p>
-         * This method builds the {@link MessageStream.Entry} inline with tracking token and aggregate
-         * resources in the {@link Context}.
          *
          * @param batch The batch of persistent stream events from Axon Server.
          * @return A list of converted event entries.
          */
         private List<MessageStream.Entry<EventMessage>> convert(List<PersistentStreamEvent> batch) {
             return batch.stream()
-                        .map(this::toEntry)
+                        .map(eventConverter)
                         .toList();
-        }
-
-        /**
-         * Converts a {@link PersistentStreamEvent} to a {@link MessageStream.Entry}.
-         * <p>
-         * The resulting {@link Context} contains:
-         * <ul>
-         *   <li>{@link TrackingToken#RESOURCE_KEY} - the tracking token (or ReplayToken if replaying)</li>
-         *   <li>{@link LegacyResources} keys for aggregate info (if present in the event)</li>
-         * </ul>
-         */
-        @Nonnull
-        private MessageStream.Entry<EventMessage> toEntry(PersistentStreamEvent persistentStreamEvent) {
-            EventWithToken eventWithToken = persistentStreamEvent.getEvent();
-            Event event = eventWithToken.getEvent();
-
-            EventMessage message = messageConverter.apply(event);
-            TrackingToken token = createTrackingToken(persistentStreamEvent);
-            Context context = buildContext(token, event);
-
-            return new SimpleEntry<>(message, context);
-        }
-
-        /**
-         * Creates the appropriate {@link TrackingToken} for the given persistent stream event.
-         */
-        private TrackingToken createTrackingToken(PersistentStreamEvent persistentStreamEvent) {
-            long tokenValue = persistentStreamEvent.getEvent().getToken();
-            GlobalSequenceTrackingToken globalToken = new GlobalSequenceTrackingToken(tokenValue);
-
-            if (persistentStreamEvent.getReplay()) {
-                return ReplayToken.createReplayToken(
-                        new GlobalSequenceTrackingToken(tokenValue + 1),
-                        globalToken
-                );
-            }
-            return globalToken;
-        }
-
-        /**
-         * Builds a {@link Context} containing the tracking token and aggregate information from the event.
-         */
-        private Context buildContext(TrackingToken trackingToken, Event event) {
-            Context context = Context.with(TrackingToken.RESOURCE_KEY, trackingToken);
-
-            if (StringUtils.nonEmptyOrNull(event.getAggregateIdentifier())) {
-                context = context
-                        .withResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY, event.getAggregateIdentifier())
-                        .withResource(LegacyResources.AGGREGATE_TYPE_KEY, event.getAggregateType())
-                        .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY, event.getAggregateSequenceNumber());
-            }
-            return context;
         }
     }
 }
