@@ -84,8 +84,13 @@ class LegacyAggregatePersistentStreamMessageSourceIT extends AbstractPersistentS
     }
 
     @Override
-    protected boolean isDcbContext() {
-        return AxonServerContainerUtils.NO_DCB_CONTEXT;
+    protected void purgeEvents() throws Exception {
+        AxonServerContainerUtils.purgeEventsFromAxonServer(
+                axonServerContainer.getHost(),
+                axonServerContainer.getHttpPort(),
+                CONTEXT,
+                AxonServerContainerUtils.NO_DCB_CONTEXT
+        );
     }
 
     @Override

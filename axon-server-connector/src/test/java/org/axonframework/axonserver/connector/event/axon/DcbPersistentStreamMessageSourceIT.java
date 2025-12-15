@@ -76,8 +76,13 @@ class DcbPersistentStreamMessageSourceIT extends AbstractPersistentStreamMessage
     }
 
     @Override
-    protected boolean isDcbContext() {
-        return AxonServerContainerUtils.DCB_CONTEXT;
+    protected void purgeEvents() throws Exception {
+        AxonServerContainerUtils.purgeEventsFromAxonServer(
+                axonServerContainer.getHost(),
+                axonServerContainer.getHttpPort(),
+                CONTEXT,
+                AxonServerContainerUtils.DCB_CONTEXT
+        );
     }
 
     @Override

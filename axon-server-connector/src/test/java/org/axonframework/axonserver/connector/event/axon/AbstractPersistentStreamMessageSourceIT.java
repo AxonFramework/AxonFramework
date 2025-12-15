@@ -35,7 +35,6 @@ import org.axonframework.test.server.AxonServerContainer;
 import org.axonframework.test.server.AxonServerContainerUtils;
 import org.junit.jupiter.api.*;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -82,11 +81,11 @@ abstract class AbstractPersistentStreamMessageSourceIT {
     protected abstract AxonServerContainer getContainer();
 
     /**
-     * Returns whether this is a DCB context.
-     * Use {@link AxonServerContainerUtils#DCB_CONTEXT} for DCB contexts,
-     * or {@link AxonServerContainerUtils#NO_DCB_CONTEXT} for legacy contexts.
+     * Purges events from Axon Server before each test.
+     * Implementations should call {@link AxonServerContainerUtils#purgeEventsFromAxonServer}
+     * with the appropriate context type.
      */
-    protected abstract boolean isDcbContext();
+    protected abstract void purgeEvents() throws Exception;
 
     /**
      * Publishes an event to the event store.
@@ -139,13 +138,8 @@ abstract class AbstractPersistentStreamMessageSourceIT {
     }
 
     @BeforeEach
-    void setUp() throws IOException {
-        AxonServerContainerUtils.purgeEventsFromAxonServer(
-                getContainer().getHost(),
-                getContainer().getHttpPort(),
-                CONTEXT,
-                isDcbContext()
-        );
+    void setUp() throws Exception {
+        purgeEvents();
         scheduler = Executors.newSingleThreadScheduledExecutor();
     }
 
