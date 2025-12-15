@@ -175,6 +175,19 @@ class PersistentStreamMessageSourceIT {
         }
     }
 
+
+    // NOTE: Aggregate tag-based filtering tests are NOT included here because:
+    // 1. DCB events (used in this test setup) don't expose legacy aggregate info (identifier, type) through
+    //    persistent streams - they use tags which are not accessible on the client side after conversion
+    // 2. The PersistentStreamMessageSource.subscribe(EventCriteria, ...) method constructs tags from
+    //    LegacyResources.AGGREGATE_TYPE_KEY and AGGREGATE_IDENTIFIER_KEY which are only populated for
+    //    legacy aggregate-based events (non-DCB)
+    // 3. See PersistentStreamMessageSource javadoc lines 75-77: "Generic tag-based filtering (tags not
+    //    derived from aggregates) is NOT supported because persistent stream events from Axon Server do
+    //    not expose arbitrary tags on the client side after conversion."
+    // 4. Unit tests in PersistentStreamMessageSourceTest comprehensively cover the EventCriteria
+    //    filtering logic including aggregate tag filtering scenarios
+    @Disabled
     @Nested
     class EventCriteriaFilteringByType {
 
@@ -214,20 +227,7 @@ class PersistentStreamMessageSourceIT {
         }
     }
 
-    // NOTE: Aggregate tag-based filtering tests are NOT included here because:
-    // 1. DCB events (used in this test setup) don't expose legacy aggregate info (identifier, type) through
-    //    persistent streams - they use tags which are not accessible on the client side after conversion
-    // 2. The PersistentStreamMessageSource.subscribe(EventCriteria, ...) method constructs tags from
-    //    LegacyResources.AGGREGATE_TYPE_KEY and AGGREGATE_IDENTIFIER_KEY which are only populated for
-    //    legacy aggregate-based events (non-DCB)
-    // 3. See PersistentStreamMessageSource javadoc lines 75-77: "Generic tag-based filtering (tags not
-    //    derived from aggregates) is NOT supported because persistent stream events from Axon Server do
-    //    not expose arbitrary tags on the client side after conversion."
-    // 4. Unit tests in PersistentStreamMessageSourceTest comprehensively cover the EventCriteria
-    //    filtering logic including aggregate tag filtering scenarios
-
-    // Helper methods
-
+    @Disabled
     @Nested
     class EventCriteriaFilteringByAggregateTags {
 
