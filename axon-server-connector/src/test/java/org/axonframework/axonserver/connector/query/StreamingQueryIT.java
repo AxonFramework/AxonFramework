@@ -121,7 +121,8 @@ class StreamingQueryIT {
                 axonServerQueryBus(senderLocalSegment, nonStreamingAxonServerAddress);
 
         QueryHandlingComponent queryHandlingComponent =
-                new AnnotatedQueryHandlingComponent<>(new MyQueryHandler(), new DelegatingMessageConverter(PassThroughConverter.INSTANCE));
+                new AnnotatedQueryHandlingComponent<MyQueryHandler>(new MyQueryHandler(),
+                                                      new DelegatingMessageConverter(PassThroughConverter.INSTANCE));
         handlerQueryBus.subscribe(queryHandlingComponent);
         nonStreamingHandlerQueryBus.subscribe(queryHandlingComponent);
     }
