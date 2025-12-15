@@ -55,16 +55,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 import static io.axoniq.axonserver.connector.event.PersistentStreamSegment.PENDING_WORK_DONE_MARKER;
 
 /**
  * A connection instance receiving events from a persistent stream and passing them in batches to an event consumer.
  * <p>
- * This class manages the connection to Axon Server's persistent stream API and supports client-side event filtering
- * through a configurable predicate. Event conversion is handled via an injected {@code Function<Event, EventMessage>},
- * following the pattern established in {@link org.axonframework.axonserver.connector.event.AxonServerMessageStream}.
+ * This class manages the connection to Axon Server's persistent stream API. Event conversion is handled via an
+ * injected {@code Function<Event, EventMessage>}, following the pattern established in
+ * {@link org.axonframework.axonserver.connector.event.AxonServerMessageStream}.
  * <p>
  * The connection automatically handles reconnection with exponential backoff when the stream is closed unexpectedly.
  *
@@ -82,7 +81,6 @@ public class PersistentStreamConnection implements DescribableComponent {
     private final Configuration configuration;
     private final PersistentStreamProperties persistentStreamProperties;
     private final Function<Event, EventMessage> messageConverter;
-    private final Predicate<MessageStream.Entry<EventMessage>> eventFilter;
 
     private final AtomicReference<PersistentStream> persistentStreamHolder = new AtomicReference<>();
 
@@ -113,7 +111,7 @@ public class PersistentStreamConnection implements DescribableComponent {
                                       ScheduledExecutorService scheduler,
                                       int batchSize,
                                       Function<Event, EventMessage> messageConverter) {
-        this(streamId, configuration, persistentStreamProperties, scheduler, batchSize, null, messageConverter, entry -> true);
+        this(streamId, configuration, persistentStreamProperties, scheduler, batchSize, null, messageConverter);
     }
 
     /**
@@ -124,7 +122,7 @@ public class PersistentStreamConnection implements DescribableComponent {
      * @param persistentStreamProperties Properties for the persistent stream.
      * @param scheduler                  Scheduler thread pool to schedule tasks.
      * @param batchSize                  The batch size for collecting events.
-     * @param defaultContext             The default context to use for the connection.
+     * @param defaultContext             The default context to use for the connection. May be {@code null}.
      * @param messageConverter           The function to convert Axon Server events to Event Messages.
      */
     public PersistentStreamConnection(String streamId,
@@ -134,30 +132,6 @@ public class PersistentStreamConnection implements DescribableComponent {
                                       int batchSize,
                                       String defaultContext,
                                       Function<Event, EventMessage> messageConverter) {
-        this(streamId, configuration, persistentStreamProperties, scheduler, batchSize, defaultContext, messageConverter, entry -> true);
-    }
-
-    /**
-     * Instantiates a connection for a persistent stream with event filtering support.
-     *
-     * @param streamId                   The unique identifier of the persistent stream.
-     * @param configuration              Global configuration of Axon components.
-     * @param persistentStreamProperties Properties for the persistent stream.
-     * @param scheduler                  Scheduler thread pool to schedule tasks.
-     * @param batchSize                  The batch size for collecting events.
-     * @param defaultContext             The default context to use for the connection. May be {@code null}.
-     * @param messageConverter           The function to convert Axon Server events to Event Messages.
-     * @param eventFilter                A predicate to filter events after conversion. Events not matching
-     *                                   the filter will be excluded from the batch sent to the consumer.
-     */
-    public PersistentStreamConnection(String streamId,
-                                      Configuration configuration,
-                                      PersistentStreamProperties persistentStreamProperties,
-                                      ScheduledExecutorService scheduler,
-                                      int batchSize,
-                                      String defaultContext,
-                                      Function<Event, EventMessage> messageConverter,
-                                      Predicate<MessageStream.Entry<EventMessage>> eventFilter) {
         this.streamId = Objects.requireNonNull(streamId, "streamId must not be null");
         this.configuration = Objects.requireNonNull(configuration, "configuration must not be null");
         this.persistentStreamProperties = Objects.requireNonNull(persistentStreamProperties, "persistentStreamProperties must not be null");
@@ -165,7 +139,6 @@ public class PersistentStreamConnection implements DescribableComponent {
         this.batchSize = batchSize;
         this.defaultContext = defaultContext;
         this.messageConverter = Objects.requireNonNull(messageConverter, "messageConverter must not be null");
-        this.eventFilter = Objects.requireNonNull(eventFilter, "eventFilter must not be null");
     }
 
 
@@ -375,7 +348,7 @@ public class PersistentStreamConnection implements DescribableComponent {
         }
 
         private void processBatch(List<PersistentStreamEvent> batch) {
-            List<MessageStream.Entry<EventMessage>> eventEntries = convertAndFilter(batch);
+            List<MessageStream.Entry<EventMessage>> eventEntries = convert(batch);
             if (!eventEntries.isEmpty() && !persistentStreamSegment.isClosed()) {
                 long token = batch.get(batch.size() - 1).getEvent().getToken();
                 consumer.get().accept(eventEntries);
@@ -405,19 +378,18 @@ public class PersistentStreamConnection implements DescribableComponent {
         }
 
         /**
-         * Converts persistent stream events to Axon Framework event entries and applies filtering.
+         * Converts persistent stream events to Axon Framework event entries.
          * <p>
          * This method builds the {@link MessageStream.Entry} inline with tracking token and aggregate
          * resources in the {@link Context}, following the pattern from
          * {@link org.axonframework.axonserver.connector.event.AxonServerMessageStream}.
          *
          * @param batch The batch of persistent stream events from Axon Server.
-         * @return A list of converted and filtered event entries.
+         * @return A list of converted event entries.
          */
-        private List<MessageStream.Entry<EventMessage>> convertAndFilter(List<PersistentStreamEvent> batch) {
+        private List<MessageStream.Entry<EventMessage>> convert(List<PersistentStreamEvent> batch) {
             return batch.stream()
                         .map(this::toEntry)
-                        .filter(eventFilter)
                         .toList();
         }
 

@@ -39,7 +39,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 /**
  * A {@link SubscribableEventSource} that receives events from a persistent stream from Axon Server.
@@ -109,7 +108,7 @@ public class PersistentStreamMessageSource implements SubscribableEventSource, D
                                          ScheduledExecutorService scheduler,
                                          int batchSize) {
         this(name, configuration, persistentStreamProperties, scheduler, batchSize, null,
-             AggregateEventConverter.INSTANCE, entry -> true);
+             AggregateEventConverter.INSTANCE);
     }
 
     /**
@@ -131,7 +130,7 @@ public class PersistentStreamMessageSource implements SubscribableEventSource, D
                                          int batchSize,
                                          String context) {
         this(name, configuration, persistentStreamProperties, scheduler, batchSize, context,
-             AggregateEventConverter.INSTANCE, entry -> true);
+             AggregateEventConverter.INSTANCE);
     }
 
     /**
@@ -155,34 +154,6 @@ public class PersistentStreamMessageSource implements SubscribableEventSource, D
                                          int batchSize,
                                          String context,
                                          Function<Event, EventMessage> messageConverter) {
-        this(name, configuration, persistentStreamProperties, scheduler, batchSize, context,
-             messageConverter, entry -> true);
-    }
-
-    /**
-     * Instantiates a {@code PersistentStreamMessageSource} with event filtering support.
-     *
-     * @param name                       The name of the persistent stream. It's a unique identifier of the
-     *                                   {@link PersistentStream} connection with Axon Server. Usage of the same name
-     *                                   will overwrite the existing connection.
-     * @param configuration              Global configuration of Axon components.
-     * @param persistentStreamProperties Properties for the persistent stream.
-     * @param scheduler                  Scheduler thread pool to schedule tasks.
-     * @param batchSize                  The batch size for collecting events.
-     * @param context                    The context in which this persistent stream exists (or needs to be created).
-     *                                   May be {@code null}.
-     * @param messageConverter           The function to convert Axon Server events to Event Messages.
-     * @param eventFilter                A predicate to filter events after conversion. Events not matching
-     *                                   the filter will be excluded from the batch sent to the consumer.
-     */
-    public PersistentStreamMessageSource(String name,
-                                         Configuration configuration,
-                                         PersistentStreamProperties persistentStreamProperties,
-                                         ScheduledExecutorService scheduler,
-                                         int batchSize,
-                                         String context,
-                                         Function<Event, EventMessage> messageConverter,
-                                         Predicate<MessageStream.Entry<EventMessage>> eventFilter) {
         this.name = Objects.requireNonNull(name, "name must not be null");
         this.persistentStreamConnection = new PersistentStreamConnection(
                 name,
@@ -191,8 +162,7 @@ public class PersistentStreamMessageSource implements SubscribableEventSource, D
                 scheduler,
                 batchSize,
                 context,
-                messageConverter,
-                eventFilter
+                messageConverter
         );
     }
 
