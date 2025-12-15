@@ -95,14 +95,18 @@ class PersistentStreamMessageSourceIT {
         axonServerConfiguration.setServers(axonServerContainer.getHost() + ":" + axonServerContainer.getGrpcPort());
 
         AxonServerConnectionManager connectionManager = AxonServerConnectionManager.builder()
-                                                                                    .routingServers(axonServerConfiguration.getServers())
-                                                                                    .axonServerConfiguration(axonServerConfiguration)
-                                                                                    .build();
+                                                                                   .routingServers(
+                                                                                           axonServerConfiguration.getServers())
+                                                                                   .axonServerConfiguration(
+                                                                                           axonServerConfiguration)
+                                                                                   .build();
 
         configuration = MessagingConfigurer.create()
                                            .componentRegistry(cr -> cr
-                                                   .registerComponent(AxonServerConfiguration.class, c -> axonServerConfiguration)
-                                                   .registerComponent(AxonServerConnectionManager.class, c -> connectionManager)
+                                                   .registerComponent(AxonServerConfiguration.class,
+                                                                      c -> axonServerConfiguration)
+                                                   .registerComponent(AxonServerConnectionManager.class,
+                                                                      c -> connectionManager)
                                                    .registerComponent(Converter.class, c -> new JacksonConverter())
                                            )
                                            .build();
@@ -210,7 +214,99 @@ class PersistentStreamMessageSourceIT {
         }
     }
 
+    // NOTE: Aggregate tag-based filtering tests are NOT included here because:
+    // 1. DCB events (used in this test setup) don't expose legacy aggregate info (identifier, type) through
+    //    persistent streams - they use tags which are not accessible on the client side after conversion
+    // 2. The PersistentStreamMessageSource.subscribe(EventCriteria, ...) method constructs tags from
+    //    LegacyResources.AGGREGATE_TYPE_KEY and AGGREGATE_IDENTIFIER_KEY which are only populated for
+    //    legacy aggregate-based events (non-DCB)
+    // 3. See PersistentStreamMessageSource javadoc lines 75-77: "Generic tag-based filtering (tags not
+    //    derived from aggregates) is NOT supported because persistent stream events from Axon Server do
+    //    not expose arbitrary tags on the client side after conversion."
+    // 4. Unit tests in PersistentStreamMessageSourceTest comprehensively cover the EventCriteria
+    //    filtering logic including aggregate tag filtering scenarios
+
     // Helper methods
+
+    @Nested
+    class EventCriteriaFilteringByAggregateTags {
+
+        @Test
+        void filtersEventsByAggregateTagCriteria() throws Exception {
+            // given
+            List<EventMessage> receivedEvents = new LinkedList<>();
+            BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> consumer =
+                    (events, ctx) -> {
+                        receivedEvents.addAll(events);
+                        return CompletableFuture.completedFuture(null);
+                    };
+
+            String streamId = "aggregate-filter-test-" + UUID.randomUUID();
+            testSubject = createMessageSource(streamId);
+
+            // Only receive events from OrderAggregate with id "order-123"
+            EventCriteria criteria = EventCriteria.havingTags("OrderAggregate", "order-123");
+
+            // when
+            registration = testSubject.subscribe(criteria, consumer);
+
+            // Publish events from different aggregates
+            publishEvent("order-123", "OrderAggregate", "OrderCreated", 0);
+            publishEvent("order-456", "OrderAggregate", "OrderCreated", 0);
+            publishEvent("order-123", "OrderAggregate", "OrderShipped", 1);
+            publishEvent("customer-1", "CustomerAggregate", "CustomerCreated", 0);
+
+            // then - should only receive events from order-123
+            await().atMost(Duration.ofSeconds(10))
+                   .pollDelay(Duration.ofMillis(100))
+                   .untilAsserted(() -> {
+                       assertThat(receivedEvents).hasSize(2);
+                       assertThat(receivedEvents.stream().map(e -> e.type().name()).toList())
+                               .containsExactlyInAnyOrder("OrderCreated", "OrderShipped");
+                   });
+        }
+    }
+
+    @Nested
+    class EventCriteriaCombinedFiltering {
+
+        @Test
+        void filtersEventsByBothTypeAndAggregateTag() throws Exception {
+            // given
+            List<EventMessage> receivedEvents = new LinkedList<>();
+            BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> consumer =
+                    (events, ctx) -> {
+                        receivedEvents.addAll(events);
+                        return CompletableFuture.completedFuture(null);
+                    };
+
+            String streamId = "combined-filter-test-" + UUID.randomUUID();
+            testSubject = createMessageSource(streamId);
+
+            // Only receive OrderCreated events from OrderAggregate with id "order-123"
+            EventCriteria criteria = EventCriteria
+                    .havingTags("OrderAggregate", "order-123")
+                    .andBeingOneOfTypes(new QualifiedName("OrderCreated"));
+
+            // when
+            registration = testSubject.subscribe(criteria, consumer);
+
+            // Publish various events
+            publishEvent("order-123", "OrderAggregate", "OrderCreated", 0);
+            publishEvent("order-123", "OrderAggregate", "OrderShipped", 1);
+            publishEvent("order-456", "OrderAggregate", "OrderCreated", 0);
+            publishEvent("order-123", "OrderAggregate", "OrderCreated", 2);
+
+            // then - should only receive OrderCreated events from order-123
+            await().atMost(Duration.ofSeconds(10))
+                   .pollDelay(Duration.ofMillis(100))
+                   .untilAsserted(() -> {
+                       assertThat(receivedEvents).hasSize(2);
+                       assertThat(receivedEvents).allMatch(e -> e.type().name().equals("OrderCreated"));
+                   });
+        }
+    }
+
 
     private PersistentStreamMessageSource createMessageSource(String streamId) {
         PersistentStreamProperties properties = new PersistentStreamProperties(
@@ -232,7 +328,8 @@ class PersistentStreamMessageSourceIT {
         );
     }
 
-    private void publishEvent(String aggregateId, String aggregateType, String eventType, long sequenceNumber) throws Exception {
+    private void publishEvent(String aggregateId, String aggregateType, String eventType, long sequenceNumber)
+            throws Exception {
         DcbEventChannel dcbChannel = connection.dcbEventChannel();
         DcbEventChannel.AppendEventsTransaction tx = dcbChannel.startTransaction(
                 ConsistencyCondition.getDefaultInstance()
