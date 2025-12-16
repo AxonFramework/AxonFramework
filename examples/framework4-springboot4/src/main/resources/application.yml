@@ -1,6 +1,19 @@
+spring:
+  application:
+    name: springboot4-example
+  docker:
+    compose:
+      enabled: true
+      file:
+        - file:examples/docker-compose.yaml
+
 axon:
   axonserver:
-    enabled: false
+    enabled: true
+    # Be a bit more tolerant while Axon Server comes up
+    connection-timeout: 5000
+    reconnect-initial: 500
+    reconnect-interval: 2000
   serializer:
     general: jackson
     events: jackson
