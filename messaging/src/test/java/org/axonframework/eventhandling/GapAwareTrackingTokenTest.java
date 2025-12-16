@@ -247,6 +247,31 @@ class GapAwareTrackingTokenTest {
         assertEquals(GapAwareTrackingToken.newInstance(15, emptyList()), token5.upperBound(token3));
     }
 
+
+    @Test
+    void upperBoundGaps1() {
+        GapAwareTrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(5, asList(3L, 4L));
+        GapAwareTrackingToken replayToken = GapAwareTrackingToken.newInstance(2, emptyList());
+
+        assertEquals(GapAwareTrackingToken.newInstance(5, asList(3L, 4L)), tokenAtReset.upperBound(replayToken));
+    }
+
+    @Test
+    void upperBoundGaps2() {
+        GapAwareTrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(5, asList(3L, 4L));
+        GapAwareTrackingToken replayToken = GapAwareTrackingToken.newInstance(3, emptyList());
+
+        assertEquals(GapAwareTrackingToken.newInstance(5, singletonList(4L)), tokenAtReset.upperBound(replayToken));
+    }
+
+    @Test
+    void upperBoundGaps3() {
+        GapAwareTrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(5, asList(3L, 4L));
+        GapAwareTrackingToken replayToken = GapAwareTrackingToken.newInstance(4, singletonList(3L));
+
+        assertEquals(GapAwareTrackingToken.newInstance(5, singletonList(3L)), tokenAtReset.upperBound(replayToken));
+    }
+
     @Test
     void gapTruncationRetainsEquality() {
         GapAwareTrackingToken token1 = GapAwareTrackingToken.newInstance(15, asList(14L, 9L, 8L));

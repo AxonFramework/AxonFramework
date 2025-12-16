@@ -221,8 +221,8 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
         }
 
         return otherToken.index <= this.index
-                && !this.gaps.contains(otherToken.index);//;
-//                && otherToken.gaps.containsAll(this.gaps.headSet(otherToken.index));
+                && !this.gaps.contains(otherToken.index)
+                && otherToken.gaps.containsAll(this.gaps.headSet(otherToken.index));
     }
 
     /**
