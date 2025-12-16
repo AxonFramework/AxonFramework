@@ -275,52 +275,49 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
     }
 
     private boolean isReplayFinished(TrackingToken newToken) {
-//        return (newToken.covers(WrappedToken.unwrapUpperBound(this.tokenAtReset))
-//                && !tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken)));
-
         boolean replayIsAfterOrEqualTokenAtReset = replayIsAfterOrEqualTokenAtReset(newToken);
         boolean wasNotProcessedBeforeReplay = wasNotProcessedBeforeReplay(newToken);
         return replayIsAfterOrEqualTokenAtReset && wasNotProcessedBeforeReplay;
     }
 
     private boolean replayIsAfterOrEqualTokenAtReset(TrackingToken newToken) {
-        return upperBoundTokenAtResetOr(newToken).covers(WrappedToken.unwrapUpperBound(this.tokenAtReset));
+        // newToken.covers(tokenAtReset) returns TRUE when newToken.index >= tokenAtReset.index
+        return WrappedToken.unwrapUpperBound(newToken).covers(WrappedToken.unwrapUpperBound(this.tokenAtReset));
     }
 
     private boolean wasNotProcessedBeforeReplay(TrackingToken newToken) {
-        boolean oldResult = !tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken));
-        //return oldResult;
-        boolean newResult = !upperBoundTokenAtResetOr(newToken).covers(WrappedToken.unwrapLowerBound(newToken));
-        // return newResult;
-        if (oldResult != newResult) {
-            System.out.println("wasNotProcessedBeforeReplay | old: " + oldResult + ", new: " + newResult);
-        }
-        return oldResult;
+        return !wasProcessedBeforeReplay(newToken);
     }
 
     private boolean wasProcessedBeforeReplay(TrackingToken newToken) {
-        boolean oldResult = tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken));
-        boolean newResult = wasProcessedBeforeReplayNew(newToken);
-        if (oldResult != newResult) {
-            System.out.println("wasProcessedBeforeReplay | old: " + oldResult + ", new: " + newResult);
-        }
-        return newResult;
-    }
+        TrackingToken unwrappedTokenAtReset = WrappedToken.unwrapUpperBound(tokenAtReset);
+        TrackingToken unwrappedNewToken = WrappedToken.unwrapLowerBound(newToken);
 
-    private boolean wasProcessedBeforeReplayNew(TrackingToken newToken) {
-        if (tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken))) {
+        // Case 1: Original check - works when gaps match or no gaps involved
+        if (unwrappedTokenAtReset.covers(unwrappedNewToken)) {
             return true;
         }
-        TrackingToken tokenAtResetUpper = upperBoundTokenAtResetOr(newToken); // token without gaps
-        if (tokenAtResetUpper.covers(WrappedToken.unwrapLowerBound(newToken))) {
-            return true;
-        }
-        return false;
-    }
 
-    private TrackingToken upperBoundTokenAtResetOr(TrackingToken newToken) {
-        return WrappedToken.unwrapUpperBound(tokenAtReset)
-                .upperBound(WrappedToken.unwrapUpperBound(newToken));
+        // Case 2: Check if past reset position - if newToken has passed tokenAtReset, event was not processed before
+        if (unwrappedNewToken.covers(unwrappedTokenAtReset)) {
+            return false;
+        }
+
+        // Case 3: Ambiguous case - need to distinguish:
+        //   a) Gap position: newToken.index is IN tokenAtReset's gaps → return false
+        //   b) Gaps filled: newToken.index is NOT in gaps, but Check 3 failed → return true
+        //
+        // The key insight: lowerBound(newToken, tokenAtReset) will have a LOWER index if newToken.index
+        // is in tokenAtReset's gaps (because it decrements to avoid the gap).
+        // When we then take upperBound with tokenAtReset and check covers(newToken):
+        //   - Gap position: upperBound covers newToken (because lowerBound index < newToken index)
+        //   - Gaps filled: upperBound does NOT cover newToken (Check 3 fails due to gap mismatch)
+        TrackingToken lowerBound = unwrappedNewToken.lowerBound(unwrappedTokenAtReset);
+        TrackingToken upperBoundWithTokenAtReset = lowerBound.upperBound(unwrappedTokenAtReset);
+
+        // If upperBoundWithTokenAtReset covers newToken, then newToken is at a gap position (NOT processed)
+        // Otherwise, the event was processed before reset (gaps were just filled during replay)
+        return !upperBoundWithTokenAtReset.covers(unwrappedNewToken);
     }
 
     @Override

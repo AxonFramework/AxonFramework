@@ -432,17 +432,17 @@ class ReplayTokenTest {
             TrackingToken resultAt9 = replayToken.advancedTo(token9);
 
             assertInstanceOf(ReplayToken.class, resultAt9);
-            // Event 9 was NOT processed before reset (was a gap), so should be a replay
-            assertTrue(ReplayToken.isReplay(resultAt9),
-                    "Event 9 was a gap before reset, should be marked as replay");
+            // Event 9 was NOT processed before reset (was a gap), so should NOT be marked as replay
+            assertFalse(ReplayToken.isReplay(resultAt9),
+                    "Event 9 was a gap before reset, should NOT be marked as replay");
 
             // Event 10 - was processed before reset
             TrackingToken token10 = GapAwareTrackingToken.newInstance(10, emptySet());
             TrackingToken resultAt10 = ((ReplayToken) resultAt9).advancedTo(token10);
 
             assertInstanceOf(ReplayToken.class, resultAt10);
-            assertFalse(ReplayToken.isReplay(resultAt10),
-                    "Event 10 was processed before reset, should NOT be marked as replay");
+            assertTrue(ReplayToken.isReplay(resultAt10),
+                    "Event 10 was processed before reset, should be marked as replay");
         }
 
         /**
