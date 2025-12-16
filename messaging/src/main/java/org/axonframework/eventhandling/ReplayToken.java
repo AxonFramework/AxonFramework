@@ -279,7 +279,7 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
 //                && !tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken)));
 
         boolean replayIsAfterOrEqualTokenAtReset = replayIsAfterOrEqualTokenAtReset(newToken);
-        boolean wasNotProcessedBeforeReplay = !wasProcessedBeforeReplay(newToken);
+        boolean wasNotProcessedBeforeReplay = wasNotProcessedBeforeReplay(newToken);
         return replayIsAfterOrEqualTokenAtReset && wasNotProcessedBeforeReplay;
     }
 
@@ -287,17 +287,40 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
         return newToken.covers(WrappedToken.unwrapUpperBound(this.tokenAtReset));
     }
 
+    private boolean wasNotProcessedBeforeReplay(TrackingToken newToken) {
+        boolean oldResult = !tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken));
+        //return oldResult;
+        boolean newResult = !upperBoundTokenAtResetOr(newToken).covers(WrappedToken.unwrapLowerBound(newToken));
+        // return newResult;
+        if (oldResult != newResult) {
+            System.out.println("wasNotProcessedBeforeReplay | old: " + oldResult + ", new: " + newResult);
+        }
+        return newResult;
+    }
+
     private boolean wasProcessedBeforeReplay(TrackingToken newToken) {
-//        return tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken));
+        boolean oldResult = tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken));
+        boolean newResult = wasProcessedBeforeReplayNew(newToken);
+        if (oldResult != newResult) {
+            System.out.println("wasProcessedBeforeReplay | old: " + oldResult + ", new: " + newResult);
+        }
+        return newResult;
+    }
+
+    private boolean wasProcessedBeforeReplayNew(TrackingToken newToken) {
         if (tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken))) {
             return true;
         }
-        TrackingToken tokenAtResetUpper = WrappedToken.unwrapUpperBound(tokenAtReset)
-                .upperBound(WrappedToken.unwrapUpperBound(newToken)); // token without gaps
+        TrackingToken tokenAtResetUpper = upperBoundTokenAtResetOr(newToken); // token without gaps
         if (tokenAtResetUpper.covers(WrappedToken.unwrapLowerBound(newToken))) {
             return true;
         }
         return false;
+    }
+
+    private TrackingToken upperBoundTokenAtResetOr(TrackingToken newToken) {
+        return WrappedToken.unwrapUpperBound(tokenAtReset)
+                .upperBound(WrappedToken.unwrapUpperBound(newToken));
     }
 
     @Override
