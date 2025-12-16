@@ -284,7 +284,7 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
     }
 
     private boolean replayIsAfterOrEqualTokenAtReset(TrackingToken newToken) {
-        return newToken.covers(WrappedToken.unwrapUpperBound(this.tokenAtReset));
+        return upperBoundTokenAtResetOr(newToken).covers(WrappedToken.unwrapUpperBound(this.tokenAtReset));
     }
 
     private boolean wasNotProcessedBeforeReplay(TrackingToken newToken) {
@@ -295,7 +295,7 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
         if (oldResult != newResult) {
             System.out.println("wasNotProcessedBeforeReplay | old: " + oldResult + ", new: " + newResult);
         }
-        return newResult;
+        return oldResult;
     }
 
     private boolean wasProcessedBeforeReplay(TrackingToken newToken) {
