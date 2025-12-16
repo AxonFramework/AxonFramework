@@ -185,7 +185,9 @@ public class PersistentStreamMessageSource implements SubscribableEventSource, D
                     if (!events.isEmpty()) {
                         // Pass null ProcessingContext - the SubscribingEventProcessor will create its own UnitOfWork.
                         // The TrackingToken is available in each Entry's context if needed by downstream handlers,
-                        // but for subscribing processors it's not typically required.
+
+                        // todo: I Need more data here!!!! ?!?!?!!?
+                        // in the context I have TrackingToken
                         eventsBatchConsumer.apply(events, null).join();
                     }
                 });
