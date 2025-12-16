@@ -2,6 +2,8 @@ package org.axonframework.examples.sp4;
 
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.examples.sp4.command.CreateCourse;
+import org.axonframework.examples.sp4.event.CourseCreated;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.CreationPolicy;
