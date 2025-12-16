@@ -14,40 +14,43 @@
  * limitations under the License.
  */
 
-package org.axonframework.extension.spring.config;
+package org.axonframework.common.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
-import org.axonframework.common.configuration.BaseModule;
-import org.axonframework.common.configuration.ComponentRegistry;
-import org.axonframework.common.configuration.Configuration;
-import org.axonframework.common.configuration.LifecycleRegistry;
-import org.axonframework.common.configuration.Module;
-import org.axonframework.common.configuration.ModuleBuilder;
 
 import java.util.Optional;
 import java.util.function.Function;
 
 /**
- * This module used in a context of lazy module initialization in Spring
- * and delegates the creation of the module to its build phase.
+ * This module used in a context of lazy module initialization and delegates the creation of the module to its build
+ * phase. Designed for internal usage only.
  * <p>
- * Its usage is required if the module under construction needs to access
- * components and Spring beans during initialization which become available at a later stage.
- * For this purpose, the construction is delayed by encapsulating into a function call,
- * invoked on the module build phase.
+ * Its usage is required if the module under construction needs to access components (via {@link Configuration}) which
+ * become available at a later stage. For this purpose, the construction is delayed by encapsulating into a function
+ * call, invoked on the module build phase.
+ * <p>
+ * This module represents a workaround for the cases above, since the {@link ModuleBuilder} provides no means
+ * to access {@link Configuration} or other components by design.
  *
  * @param <S> Type of module to configure lazily.
  * @author Simon Zambrovski
  * @since 5.0.0
  */
 @Internal
-public class SpringLazyCreatingModule<S extends Module> extends BaseModule<SpringLazyCreatingModule<S>> {
+public class LazyInitializedModule<S extends Module> extends BaseModule<LazyInitializedModule<S>> {
 
     private final Function<Configuration, ModuleBuilder<? extends Module>> moduleBuilder;
     private String moduleName;
 
-    SpringLazyCreatingModule(String name, Function<Configuration, ModuleBuilder<? extends Module>> moduleBuilder) {
+    /**
+     * Constructs the module.
+     *
+     * @param name          A module name used for module description.
+     * @param moduleBuilder A function to be invoked on module build phase, passing the configuration to it.
+     */
+    public LazyInitializedModule(@Nonnull String name,
+                                 @Nonnull Function<Configuration, ModuleBuilder<? extends Module>> moduleBuilder) {
         super(name);
         this.moduleBuilder = moduleBuilder;
     }
