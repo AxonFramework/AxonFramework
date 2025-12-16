@@ -343,6 +343,15 @@ class ReflectionUtilsTest {
             record Bar() implements Foo {}
         }
 
+        sealed interface Level0 {
+            sealed class Level1a implements Level0 {
+                final class Level2a extends Level1a {}
+            }
+            sealed class Level1b implements Level0 {
+                final class Level2b extends Level1b {}
+            }
+        }
+
         @Test
         void emptyWhenTypeIsNotSealed() {
             assertThat(collectSealedHierarchyIfSealed(Object.class)).isEmpty();
@@ -351,6 +360,14 @@ class ReflectionUtilsTest {
         @Test
         void returnsSubclassesWhenTypeIsSealed() {
             assertThat(collectSealedHierarchyIfSealed(Foo.class)).containsExactly(Foo.Bar.class);
+        }
+
+        @Test
+        void returnsRecursiveSubclassesWhenTypeIsSealed() {
+            assertThat(collectSealedHierarchyIfSealed(Level0.class)).containsExactlyInAnyOrder(
+                    Level0.Level1a.Level2a.class,
+                    Level0.Level1b.Level2b.class
+            );
         }
     }
 
