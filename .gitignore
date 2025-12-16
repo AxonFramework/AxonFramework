@@ -8,7 +8,6 @@ axon.iws
 
 # IntelliJ project files
 *.iml
-.idea/
 
 # Eclipse project files
 .classpath
