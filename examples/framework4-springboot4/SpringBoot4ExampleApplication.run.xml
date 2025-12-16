@@ -2,6 +2,7 @@
   <configuration default="false" name="SpringBoot4ExampleApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
     <module name="axon-example-af4-sb4" />
     <option name="SPRING_BOOT_MAIN_CLASS" value="org.axonframework.examples.sp4.SpringBoot4ExampleApplication" />
+    <option name="VM_PARAMETERS" value="-Ddisable-axoniq-console-message=true" />
     <extension name="coverage">
       <pattern>
         <option name="PATTERN" value="org.axonframework.examples.sp4.*" />
