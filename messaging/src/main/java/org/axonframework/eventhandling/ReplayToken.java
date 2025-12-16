@@ -197,8 +197,8 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
      */
     public static boolean isReplay(TrackingToken trackingToken) {
         return WrappedToken.unwrap(trackingToken, ReplayToken.class)
-                           .map(rt -> rt.isReplay())
-                           .orElse(false);
+                .map(rt -> rt.isReplay())
+                .orElse(false);
     }
 
     /**
@@ -214,9 +214,9 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
      */
     public static <T> Optional<T> replayContext(TrackingToken trackingToken, @Nonnull Class<T> contextClass) {
         return WrappedToken.unwrap(trackingToken, ReplayToken.class)
-                           .map(ReplayToken::context)
-                           .filter(c -> c.getClass().isAssignableFrom(contextClass))
-                           .map(contextClass::cast);
+                .map(ReplayToken::context)
+                .filter(c -> c.getClass().isAssignableFrom(contextClass))
+                .map(contextClass::cast);
     }
 
     /**
@@ -227,8 +227,8 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
      */
     public static OptionalLong getTokenAtReset(TrackingToken trackingToken) {
         return WrappedToken.unwrap(trackingToken, ReplayToken.class)
-                           .map(rt -> rt.getTokenAtReset().position())
-                           .orElse(OptionalLong.empty());
+                .map(rt -> rt.getTokenAtReset().position())
+                .orElse(OptionalLong.empty());
     }
 
     /**
@@ -251,28 +251,53 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
 
     @Override
     public TrackingToken advancedTo(TrackingToken newToken) {
-        if (this.tokenAtReset == null
-                || (newToken.covers(WrappedToken.unwrapUpperBound(this.tokenAtReset))
-                && !tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken)))) {
+        if (this.tokenAtReset == null || isReplayFinished(newToken)) {
             // we're done replaying
             // if the token at reset was a wrapped token itself, we'll need to use that one to maintain progress.
             if (tokenAtReset instanceof WrappedToken) {
                 return ((WrappedToken) tokenAtReset).advancedTo(newToken);
             }
             return newToken;
-        } else if (tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken))) {
-            // we're still well behind
-            return new ReplayToken(tokenAtReset, newToken, context, true);
         } else {
-            // we're getting an event that we didn't have before, but we haven't finished replaying either
-            if (tokenAtReset instanceof WrappedToken) {
-                return new ReplayToken(tokenAtReset.upperBound(newToken),
-                                       ((WrappedToken) tokenAtReset).advancedTo(newToken),
-                                       context,
-                                       false);
+            if (wasProcessedBeforeReplay(newToken)) {
+                return new ReplayToken(tokenAtReset.upperBound(newToken), newToken, context, true);
+            } else {
+                // we're getting an event that we didn't have before, but we haven't finished replaying either
+                if (tokenAtReset instanceof WrappedToken) {
+                    return new ReplayToken(tokenAtReset.upperBound(newToken),
+                            ((WrappedToken) tokenAtReset).advancedTo(newToken),
+                            context,
+                            false);
+                }
+                return new ReplayToken(tokenAtReset.upperBound(newToken), newToken, context, false);
             }
-            return new ReplayToken(tokenAtReset.upperBound(newToken), newToken, context, false);
         }
+    }
+
+    private boolean isReplayFinished(TrackingToken newToken) {
+//        return (newToken.covers(WrappedToken.unwrapUpperBound(this.tokenAtReset))
+//                && !tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken)));
+
+        boolean replayIsAfterOrEqualTokenAtReset = replayIsAfterOrEqualTokenAtReset(newToken);
+        boolean wasNotProcessedBeforeReplay = !wasProcessedBeforeReplay(newToken);
+        return replayIsAfterOrEqualTokenAtReset && wasNotProcessedBeforeReplay;
+    }
+
+    private boolean replayIsAfterOrEqualTokenAtReset(TrackingToken newToken) {
+        return newToken.covers(WrappedToken.unwrapUpperBound(this.tokenAtReset));
+    }
+
+    private boolean wasProcessedBeforeReplay(TrackingToken newToken) {
+//        return tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken));
+        if (tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken))) {
+            return true;
+        }
+        TrackingToken tokenAtResetUpper = WrappedToken.unwrapUpperBound(tokenAtReset)
+                .upperBound(WrappedToken.unwrapUpperBound(newToken)); // token without gaps
+        if (tokenAtResetUpper.covers(WrappedToken.unwrapLowerBound(newToken))) {
+            return true;
+        }
+        return false;
     }
 
     @Override

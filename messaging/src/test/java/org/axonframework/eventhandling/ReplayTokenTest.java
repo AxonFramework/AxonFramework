@@ -185,9 +185,6 @@ class ReplayTokenTest {
             TrackingToken tokenAtReset = new GlobalSequenceTrackingToken(7);
             ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
 
-            // Advance through replay
-            replayToken = (ReplayToken) replayToken.advancedTo(new GlobalSequenceTrackingToken(7));
-
             // Event at index 8 - after reset position (new event, never seen before)
             TrackingToken newToken = new GlobalSequenceTrackingToken(8);
             TrackingToken result = replayToken.advancedTo(newToken);
@@ -259,9 +256,6 @@ class ReplayTokenTest {
             TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, emptySet());
             ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
 
-            // Advance to reset position
-            replayToken = (ReplayToken) replayToken.advancedTo(GapAwareTrackingToken.newInstance(10, emptySet()));
-
             // Event at index 11 - after reset position
             TrackingToken newToken = GapAwareTrackingToken.newInstance(11, emptySet());
             TrackingToken result = replayToken.advancedTo(newToken);
@@ -270,7 +264,7 @@ class ReplayTokenTest {
         }
 
         @Test
-        void eventInGapOfTokenAtResetIsNotReplay() {
+        void eventInGapOfTokenAtResetIsReplay() {
             // tokenAtReset at index 10 with gaps at 7,8 - processor saw 0-6,9,10 before reset
             TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(7L, 8L));
             ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
@@ -280,8 +274,8 @@ class ReplayTokenTest {
             TrackingToken result = replayToken.advancedTo(newToken);
 
             assertInstanceOf(ReplayToken.class, result, "Should still be in replay mode");
-            assertFalse(ReplayToken.isReplay(result),
-                    "Event that was in gap of tokenAtReset should NOT be marked as replay");
+            assertTrue(ReplayToken.isReplay(result),
+                    "Event that was in gap of tokenAtReset should be marked as replay");
         }
 
         @Test
@@ -326,6 +320,19 @@ class ReplayTokenTest {
             // During replay, gaps get filled, process 0-9
             // Event 10 - at reset index, WAS processed before reset
             TrackingToken newToken = GapAwareTrackingToken.newInstance(10, emptySet());
+            TrackingToken result = ((ReplayToken) currentToken).advancedTo(newToken);
+
+            assertInstanceOf(ReplayToken.class, result, "Should still be in replay mode at reset index");
+            assertTrue(ReplayToken.isReplay(result),
+                    "Event 10 was processed before reset, should be marked as replay");
+        }
+
+        @Test
+        void eventAtResetIndexShouldBeReplayEvenWhenGapsFilledDuringReplay2() {
+            TrackingToken tokenAtReset = new GlobalSequenceTrackingToken(10);
+            TrackingToken currentToken = ReplayToken.createReplayToken(tokenAtReset, null);
+
+            TrackingToken newToken = new GlobalSequenceTrackingToken(10);
             TrackingToken result = ((ReplayToken) currentToken).advancedTo(newToken);
 
             assertInstanceOf(ReplayToken.class, result, "Should still be in replay mode at reset index");
@@ -714,10 +721,10 @@ class ReplayTokenTest {
             TrackingToken advancedToken = ((ReplayToken) replayToken).advancedTo(newToken);
 
             // Should still be in replay mode - event 6 was processed before reset
-            assertInstanceOf(ReplayToken.class, advancedToken,
-                    "Should still be a ReplayToken at the reset index");
             assertTrue(ReplayToken.isReplay(advancedToken),
                     "Event 6 was processed before reset, should be marked as replay");
+            assertInstanceOf(ReplayToken.class, advancedToken,
+                    "Should still be a ReplayToken at the reset index");
         }
 
         @Test
@@ -780,8 +787,8 @@ class ReplayTokenTest {
             // because source B's event at index 1 was never processed before reset
             assertInstanceOf(ReplayToken.class, advancedToken,
                     "Should still be a ReplayToken since we haven't caught up to reset position");
-            assertFalse(ReplayToken.isReplay(advancedToken),
-                    "Should NOT be marked as replay - source B's event at index 1 was a gap (never processed before reset)");
+            assertTrue(ReplayToken.isReplay(advancedToken),
+                    "Should be marked as replay - source B's event at index 1 was a gap (never processed before reset)");
         }
 
         /**
