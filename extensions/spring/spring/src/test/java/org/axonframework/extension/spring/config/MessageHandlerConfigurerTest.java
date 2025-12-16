@@ -16,6 +16,7 @@
 
 package org.axonframework.extension.spring.config;
 
+import org.axonframework.common.configuration.LazyInitializedModule;
 import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.Module;
@@ -143,9 +144,9 @@ class MessageHandlerConfigurerTest {
         var registeredModules = moduleCaptor.getAllValues();
         assertThat(registeredModules).isNotNull();
         assertThat(registeredModules).hasSize(3);
-        assertThat(registeredModules.get(0)).isInstanceOf(SpringLazyCreatingModule.class);
-        assertThat(registeredModules.get(1)).isInstanceOf(SpringLazyCreatingModule.class);
-        assertThat(registeredModules.get(2)).isInstanceOf(SpringLazyCreatingModule.class);
+        assertThat(registeredModules.get(0)).isInstanceOf(LazyInitializedModule.class);
+        assertThat(registeredModules.get(1)).isInstanceOf(LazyInitializedModule.class);
+        assertThat(registeredModules.get(2)).isInstanceOf(LazyInitializedModule.class);
 
         // since we use lazy initialization, there is no way to get the modules underneath
         // assertThat(registeredModules.get(0)).isInstanceOf(PooledStreamingEventProcessorModule.class);
