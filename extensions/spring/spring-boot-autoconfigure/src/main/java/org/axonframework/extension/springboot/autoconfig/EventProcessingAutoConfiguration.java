@@ -35,13 +35,6 @@ import java.util.Map;
  * @since 4.0
  */
 @AutoConfiguration
-@AutoConfigureAfter(name = {
-        // Ensure Boot’s config props infra is in place
-        "org.springframework.boot.autoconfigure.context.ConfigurationPropertiesAutoConfiguration",
-        // In Servlet mode, ensure Tomcat + MVC complete first (no CNFE in WebFlux because name-based)
-        "org.springframework.boot.autoconfigure.web.servlet.ServletWebServerFactoryAutoConfiguration",
-        "org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration"
-})
 public class EventProcessingAutoConfiguration {
 
     @Bean
