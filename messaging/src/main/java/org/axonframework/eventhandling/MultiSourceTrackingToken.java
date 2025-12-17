@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.axonframework.common.Assert;
@@ -41,6 +42,7 @@ public class MultiSourceTrackingToken implements TrackingToken, Serializable {
     private static final long serialVersionUID = 4541799074835933645L;
 
     @JsonTypeInfo(use = JsonTypeInfo.Id.MINIMAL_CLASS)
+    @JsonInclude(value = JsonInclude.Include.ALWAYS, content = JsonInclude.Include.ALWAYS)
     private final Map<String, TrackingToken> trackingTokens;
 
     /**
