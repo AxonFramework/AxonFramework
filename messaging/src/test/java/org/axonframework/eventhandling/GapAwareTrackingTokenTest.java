@@ -43,7 +43,7 @@ class GapAwareTrackingTokenTest {
     void gapAwareTokenConcurrency() throws InterruptedException {
         AtomicLong counter = new AtomicLong();
         AtomicReference<GapAwareTrackingToken> currentToken = new AtomicReference<>(GapAwareTrackingToken.newInstance(-1,
-                                                                                                                      emptySortedSet()));
+                emptySortedSet()));
 
         ExecutorService executorService = Executors.newCachedThreadPool();
 
@@ -61,7 +61,7 @@ class GapAwareTrackingTokenTest {
         }
         executorService.shutdown();
         assertTrue(executorService.awaitTermination(5, TimeUnit.SECONDS),
-                   "ExecutorService not stopped within expected reasonable time frame");
+                "ExecutorService not stopped within expected reasonable time frame");
 
         for (Future<?> result : results) {
             assertDoesNotThrow(() -> result.get(1, TimeUnit.SECONDS));
@@ -87,7 +87,7 @@ class GapAwareTrackingTokenTest {
     void gapAwareTokenConcurrency_HighConcurrency() throws InterruptedException {
         long counter = 0;
         AtomicReference<GapAwareTrackingToken> currentToken = new AtomicReference<>(GapAwareTrackingToken.newInstance(-1,
-                                                                                                                      emptySortedSet()));
+                emptySortedSet()));
 
         ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
@@ -100,7 +100,7 @@ class GapAwareTrackingTokenTest {
         }
         executorService.shutdown();
         assertTrue(executorService.awaitTermination(5, TimeUnit.SECONDS),
-                   "ExecutorService not stopped within expected reasonable time frame");
+                "ExecutorService not stopped within expected reasonable time frame");
 
         for (Future<?> result : results) {
             assertDoesNotThrow(() -> result.get(1, TimeUnit.SECONDS));
@@ -209,8 +209,8 @@ class GapAwareTrackingTokenTest {
     void occurrenceOfInconsistentRangeException() {
         // verifies issue 655 (https://github.com/AxonFramework/AxonFramework/issues/655)
         GapAwareTrackingToken.newInstance(10L, asList(0L, 1L, 2L, 8L, 9L))
-                             .advanceTo(0L, 5)
-                             .covers(GapAwareTrackingToken.newInstance(0L, emptySet()));
+                .advanceTo(0L, 5)
+                .covers(GapAwareTrackingToken.newInstance(0L, emptySet()));
     }
 
     @Test
@@ -245,6 +245,31 @@ class GapAwareTrackingTokenTest {
         assertEquals(GapAwareTrackingToken.newInstance(15, asList(14L, 9L)), token1.upperBound(token4));
         assertEquals(GapAwareTrackingToken.newInstance(15, asList(14L, 9L, 8L)), token2.upperBound(token4));
         assertEquals(GapAwareTrackingToken.newInstance(15, emptyList()), token5.upperBound(token3));
+    }
+
+
+    @Test
+    void upperBoundGapsKeptIfAfterLowerIndex() {
+        GapAwareTrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(5, asList(3L, 4L));
+        GapAwareTrackingToken replayToken = GapAwareTrackingToken.newInstance(2, emptyList());
+
+        assertEquals(GapAwareTrackingToken.newInstance(5, asList(3L, 4L)), tokenAtReset.upperBound(replayToken));
+    }
+
+    @Test
+    void upperBoundGapsRemovesGapsThatAreAtLowerIndex() {
+        GapAwareTrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(5, asList(3L, 4L));
+        GapAwareTrackingToken replayToken = GapAwareTrackingToken.newInstance(3, emptyList());
+
+        assertEquals(GapAwareTrackingToken.newInstance(5, singletonList(4L)), tokenAtReset.upperBound(replayToken));
+    }
+
+    @Test
+    void upperBoundRemovesGapsAreNoAtLower() {
+        GapAwareTrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(5, asList(3L, 4L));
+        GapAwareTrackingToken replayToken = GapAwareTrackingToken.newInstance(4, singletonList(3L));
+
+        assertEquals(GapAwareTrackingToken.newInstance(5, singletonList(3L)), tokenAtReset.upperBound(replayToken));
     }
 
     @Test
