@@ -251,51 +251,58 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
 
     @Override
     public TrackingToken advancedTo(TrackingToken newToken) {
-        // Compute bounds for comparison
+        // Compute lowerBound = intersection of what both tokens have seen.
+        // Key property: when newToken is at a gap in tokenAtReset, lowerBound "backs off" to a lower index.
         TrackingToken lowerBound = tokenAtReset.lowerBound(newToken);
-        TrackingToken upperBound = tokenAtReset.upperBound(newToken);
 
-        // Check if newToken is at a valid position (not at a gap in tokenAtReset).
-        // When newToken.index is in tokenAtReset's gaps, lowerBound backs off to a lower index,
-        // so newToken.covers(upperBound) becomes false (upperBound has higher index).
-        boolean atValidPosition = newToken.covers(upperBound);
+        // Check if lowerBound equals tokenAtReset (true when newToken.index >= tokenAtReset.index)
+        // This tells us we're at or past the reset boundary.
+        boolean atOrPastBoundary = lowerBound.covers(tokenAtReset) && tokenAtReset.covers(lowerBound);
 
-        // Check if we've reached or passed the reset boundary.
-        // lowerBound.covers(tokenAtReset) is true when lowerBound.index >= tokenAtReset.index,
-        // meaning newToken.index >= tokenAtReset.index (at or past the boundary).
-        boolean atOrPastBoundary = lowerBound.covers(tokenAtReset);
+        // Check if newToken is at a gap position in tokenAtReset.
+        // When at a gap, lowerBound backs off, so newToken will be "ahead" of lowerBound.
+        // Condition: newToken covers lowerBound but lowerBound doesn't cover newToken.
+        // IMPORTANT: This also triggers when past boundary, so we exclude that case.
+        boolean lowerBoundBackedOff = newToken.covers(lowerBound) && !lowerBound.covers(newToken);
+        boolean atGap = lowerBoundBackedOff && !atOrPastBoundary;
 
-        // Check if newToken has caught up to tokenAtReset.
+        // Check if newToken has caught up to or passed tokenAtReset (standard covers check).
+        // This works when gaps match but fails when gaps are filled during replay.
         boolean caughtUp = newToken.covers(tokenAtReset);
 
-        // Determine isReplay:
-        // 1. tokenAtReset.covers(newToken) is true when the event was processed and
-        //    newToken has the same or more gaps. This works for events before the boundary.
-        // 2. If at boundary (atOrPastBoundary) and at valid position (not gap),
-        //    the event at the boundary was processed before reset.
-        // 3. If past boundary, the event was NOT processed (isReplay = false).
+        // Check if strictly past boundary (caughtUp but tokenAtReset doesn't cover newToken).
+        // This indicates newToken.index > tokenAtReset.index with matching gaps.
+        boolean pastBoundary = caughtUp && !tokenAtReset.covers(newToken);
+
+        // Determine isReplay based on whether the event was processed before reset:
+        // - Event at gap position: NOT processed before reset -> NOT a replay
+        // - Event past boundary: NOT processed before reset -> NOT a replay
+        // - Event at or before boundary (not at gap): WAS processed before reset -> IS a replay
         boolean isReplay;
-        if (tokenAtReset.covers(newToken)) {
-            // Event is clearly before the boundary and was processed
-            isReplay = true;
-        } else if (!atValidPosition) {
-            // Event is at a gap position - NOT a replay
+
+        if (pastBoundary) {
+            // Definitively past boundary (gaps match) - exit replay mode
+            return newToken;
+        } else if (atGap) {
+            // Event is at a gap position - was NOT processed before reset
             isReplay = false;
-        } else if (atOrPastBoundary) {
-            // We're at or past the boundary at a valid position.
-            // If we're AT the boundary (not past), isReplay = true.
-            // If we're PAST the boundary, isReplay = false.
-            // Check: if upperBound covers tokenAtReset but tokenAtReset doesn't cover upperBound,
-            // and the failure is due to index (not just gaps), we're past the boundary.
-            // We detect "at boundary" by checking if lowerBound equals tokenAtReset in coverage.
-            isReplay = tokenAtReset.covers(lowerBound) && lowerBound.covers(tokenAtReset);
+        } else if (atOrPastBoundary && lowerBoundBackedOff) {
+            // lowerBound = tokenAtReset AND newToken is ahead of lowerBound
+            // This means newToken.index > tokenAtReset.index (past boundary)
+            // but caughtUp failed due to gap mismatch (gaps were filled during replay).
+            // This event is past the boundary, so NOT a replay.
+            isReplay = false;
         } else {
-            // Before boundary at valid position - this shouldn't happen if first check is complete
+            // Event was processed before reset - IS a replay.
+            // This covers:
+            // - tokenAtReset.covers(newToken) = true (before boundary, gaps match)
+            // - At boundary with any gap state
+            // - Before boundary with gaps filled
             isReplay = true;
         }
 
-        // Exit replay mode when we've caught up and the event is NOT a replay
-        if (caughtUp && !isReplay) {
+        // Exit replay mode when we've caught up (or at/past boundary with gaps filled) and event is not a replay
+        if ((caughtUp || (atOrPastBoundary && lowerBoundBackedOff)) && !isReplay) {
             return newToken;
         }
 
