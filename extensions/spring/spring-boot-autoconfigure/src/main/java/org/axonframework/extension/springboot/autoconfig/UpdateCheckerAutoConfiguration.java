@@ -50,16 +50,14 @@ import static org.axonframework.common.configuration.ComponentDefinition.ofType;
  * @since 4.12.0
  */
 @AutoConfiguration
-@AutoConfigureAfter(EventProcessingAutoConfiguration.class)
 @EnableConfigurationProperties(UpdateCheckerProperties.class)
 public class UpdateCheckerAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    @Primary
     @Conditional(NotTestEnvironmentCondition.class)
     public UsagePropertyProvider usagePropertyProvider(UpdateCheckerProperties properties) {
-        return UsagePropertyProvider.create(properties);
+        return UsagePropertyProvider.create(properties.get());
     }
 
     /**
