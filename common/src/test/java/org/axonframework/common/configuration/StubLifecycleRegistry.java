@@ -14,12 +14,9 @@
  * limitations under the License.
  */
 
-package org.axonframework.common.util;
+package org.axonframework.common.configuration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.configuration.Configuration;
-import org.axonframework.common.configuration.LifecycleHandler;
-import org.axonframework.common.configuration.LifecycleRegistry;
 
 import java.util.HashMap;
 import java.util.List;
