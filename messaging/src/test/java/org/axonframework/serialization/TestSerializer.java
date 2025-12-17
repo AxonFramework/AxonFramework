@@ -17,6 +17,7 @@
 package org.axonframework.serialization;
 
 import com.fasterxml.jackson.annotation.JsonCreator.Mode;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -104,6 +105,18 @@ public enum TestSerializer {
                 JacksonSerializer.builder()
                                  .objectMapper(OnlyAcceptConstructorPropertiesAnnotation.attachTo(new ObjectMapper()))
                                  .build();
+
+        @Override
+        public Serializer getSerializer() {
+            return serializer;
+        }
+    },
+    JACKSON_IGNORE_NULL {
+        private final ObjectMapper objectMapper = new ObjectMapper()
+            .setSerializationInclusion(Include.NON_NULL);
+        private final Serializer serializer = JacksonSerializer.builder()
+                                                               .objectMapper(objectMapper)
+                                                               .build();
 
         @Override
         public Serializer getSerializer() {
