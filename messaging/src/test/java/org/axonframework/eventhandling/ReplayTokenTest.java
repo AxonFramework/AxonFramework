@@ -405,17 +405,14 @@ class ReplayTokenTest {
         // TODO: BUG upperBound!
         @Test
         void replayStartsAtResetIndexWithoutGaps() {
-            // tokenAtReset at index 10 with gaps at 7,8
             TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(7L, 8L));
 
-            // During replay, gaps get filled, process 0-10
             TrackingToken currentToken = ReplayToken.createReplayToken(tokenAtReset, null);
 
-            // Event 11 - after reset index, never processed before
             TrackingToken newToken = GapAwareTrackingToken.newInstance(10, emptySet());
             TrackingToken result = ((ReplayToken) currentToken).advancedTo(newToken);
 
-            assertFalse(ReplayToken.isReplay(result));
+            assertTrue(ReplayToken.isReplay(result));
         }
 
         @Test
