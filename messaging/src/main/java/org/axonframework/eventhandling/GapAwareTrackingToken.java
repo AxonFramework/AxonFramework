@@ -208,6 +208,9 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
         return mergedIndex;
     }
 
+    // THIS: index = 5, gaps = {2}
+    // other: index = 1, gaps = {}
+
     @Override
     public boolean covers(TrackingToken other) {
         Assert.isTrue(other instanceof GapAwareTrackingToken, () -> "Incompatible token type provided.");

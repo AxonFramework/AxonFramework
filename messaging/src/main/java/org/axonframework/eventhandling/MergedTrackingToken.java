@@ -166,6 +166,14 @@ public class MergedTrackingToken implements TrackingToken, Serializable, Wrapped
     }
 
     @Override
+    public boolean processed(TrackingToken other) {
+        if (lowerSegmentToken == null || upperSegmentToken == null) {
+            return other == null;
+        }
+        return lowerSegmentToken.processed(other) && upperSegmentToken.processed(other);
+    }
+
+    @Override
     public TrackingToken advancedTo(TrackingToken newToken) {
         TrackingToken newLowerSegmentToken = doAdvance(lowerSegmentToken, newToken);
         TrackingToken newUpperSegmentToken = doAdvance(upperSegmentToken, newToken);
@@ -207,7 +215,7 @@ public class MergedTrackingToken implements TrackingToken, Serializable, Wrapped
         if (currentToken == null) {
             return newToken;
         } else if (currentToken instanceof WrappedToken) {
-            if (currentToken.covers(newToken)) {
+            if (currentToken.processed(newToken)) {
                 // this segment is still way ahead.
                 return currentToken;
             } else {
