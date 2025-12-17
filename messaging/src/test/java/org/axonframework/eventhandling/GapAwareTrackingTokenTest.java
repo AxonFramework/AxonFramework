@@ -249,7 +249,7 @@ class GapAwareTrackingTokenTest {
 
 
     @Test
-    void upperBoundGaps1() {
+    void upperBoundGapsKeptIfAfterLowerIndex() {
         GapAwareTrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(5, asList(3L, 4L));
         GapAwareTrackingToken replayToken = GapAwareTrackingToken.newInstance(2, emptyList());
 
@@ -257,7 +257,7 @@ class GapAwareTrackingTokenTest {
     }
 
     @Test
-    void upperBoundGaps2() {
+    void upperBoundGapsRemovesGapsThatAreAtLowerIndex() {
         GapAwareTrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(5, asList(3L, 4L));
         GapAwareTrackingToken replayToken = GapAwareTrackingToken.newInstance(3, emptyList());
 
@@ -265,7 +265,7 @@ class GapAwareTrackingTokenTest {
     }
 
     @Test
-    void upperBoundGaps3() {
+    void upperBoundRemovesGapsAreNoAtLower() {
         GapAwareTrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(5, asList(3L, 4L));
         GapAwareTrackingToken replayToken = GapAwareTrackingToken.newInstance(4, singletonList(3L));
 
