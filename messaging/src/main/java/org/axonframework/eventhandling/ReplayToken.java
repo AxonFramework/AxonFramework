@@ -420,7 +420,12 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
         //   tokenAtReset.covers(5) = (7 >= 5) = TRUE → This is a replay
         else if (isBeforeOrEqualTokenAtReset(newToken)) {
             // Create a new ReplayToken with lastMessageWasReplay=true
-            return new ReplayToken(tokenAtReset, newToken, context, true);
+            return new ReplayToken(
+                    tokenAtReset, // we don't do upperBound here, because it's just useful if the lastMessageWasReplay. We pretend in the code we don't know about gaps, but looks like we know
+                    newToken,
+                    context,
+                    true
+            );
         }
 
         // ═══════════════════════════════════════════════════════════════════════════════
