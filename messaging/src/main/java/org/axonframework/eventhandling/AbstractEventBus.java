@@ -119,7 +119,7 @@ public abstract class AbstractEventBus implements EventBus {
         List<? extends EventMessage<?>> eventsWithContext = events
                 .stream()
                 .map(e -> spanFactory.createPublishEventSpan(e)
-                                     .runSupplier(() -> spanFactory.propagateContext(e)))
+                                     .runSupplier(() -> spanFactory.propagateContext((EventMessage<?>)e)))
                 .collect(Collectors.toList());
         List<MessageMonitor.MonitorCallback> ingested = eventsWithContext.stream()
                                                                          .map(messageMonitor::onMessageIngested)

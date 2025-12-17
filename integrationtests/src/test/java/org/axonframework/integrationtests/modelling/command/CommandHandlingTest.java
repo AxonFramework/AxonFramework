@@ -99,9 +99,9 @@ class CommandHandlingTest {
             storedEvents.addAll(events.stream().map(StubEventStore::asDomainEventMessage).collect(Collectors.toList()));
         }
 
-        private static <T> DomainEventMessage<T> asDomainEventMessage(EventMessage<T> event) {
+        private static DomainEventMessage<?> asDomainEventMessage(EventMessage<?> event) {
             return event instanceof DomainEventMessage<?>
-                    ? (DomainEventMessage<T>) event
+                    ? (DomainEventMessage<?>) event
                     : new GenericDomainEventMessage<>(null, event.getIdentifier(), 0L, event, event::getTimestamp);
         }
 
