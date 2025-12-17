@@ -33,8 +33,63 @@ import java.util.OptionalLong;
  * Token keeping track of the position before a reset was triggered. This allows for downstream components to detect
  * messages that are redelivered as part of a replay.
  *
+ * <h2>Overview</h2>
+ * <p>
+ * A ReplayToken wraps two tokens:
+ * <ul>
+ *   <li>{@code tokenAtReset} - The position when reset was triggered (the "high water mark")</li>
+ *   <li>{@code currentToken} - The current processing position during replay</li>
+ * </ul>
+ *
+ * <h2>Key Concepts</h2>
+ * <p>
+ * <b>Replay Detection:</b> The {@link #advancedTo(TrackingToken)} method determines if each event is:
+ * <ul>
+ *   <li><b>Replay</b> - Event was seen before reset ({@code tokenAtReset.covers(newToken) = true})</li>
+ *   <li><b>New</b> - Event was NOT seen before reset ({@code tokenAtReset.covers(newToken) = false})</li>
+ * </ul>
+ *
+ * <h2>The Three Cases in advancedTo()</h2>
+ * <pre>
+ * CASE 1: DONE REPLAYING
+ *   Condition: newToken.covers(tokenAtReset) AND !tokenAtReset.covers(newToken)
+ *   Result: Exit replay mode, return unwrapped newToken
+ *
+ * CASE 2: STILL REPLAYING
+ *   Condition: tokenAtReset.covers(newToken)
+ *   Result: Return ReplayToken with lastMessageWasReplay=true
+ *
+ * CASE 3: PARTIAL CATCH-UP (gaps)
+ *   Condition: Neither Case 1 nor Case 2
+ *   Result: Return ReplayToken with lastMessageWasReplay=false
+ *           (new event during replay - happens when filling gaps)
+ * </pre>
+ *
+ * <h2>Why Case 1 Needs Two Conditions</h2>
+ * <p>
+ * The {@code covers()} method uses {@code >=} semantics. When newToken equals tokenAtReset,
+ * both {@code newToken.covers(tokenAtReset)} AND {@code tokenAtReset.covers(newToken)} are true.
+ * <p>
+ * Using only {@code newToken.covers(tokenAtReset)} would incorrectly exit replay at the boundary.
+ * The second condition {@code !tokenAtReset.covers(newToken)} ensures we only exit when
+ * we're STRICTLY PAST the reset point.
+ *
+ * <h2>Example Timeline (GlobalSequenceTrackingToken)</h2>
+ * <pre>
+ * Events:    [0] [1] [2] [3] [4] [5] [6] [7] [8] [9]
+ *             ←─── SEEN BEFORE RESET ───→│←─ NEW ─→
+ *                                        │
+ *                               tokenAtReset=7
+ *
+ * Event 5: tokenAtReset.covers(5)=TRUE              → Case 2 (replay)
+ * Event 7: covers(7)=TRUE, !covers(7)=FALSE         → Case 2 (replay) ← boundary!
+ * Event 8: covers(7)=TRUE, !covers(8)=TRUE          → Case 1 (exit replay)
+ * </pre>
+ *
  * @author Allard Buijze
  * @since 3.2
+ * @see TrackingToken#covers(TrackingToken)
+ * @see GapAwareTrackingToken
  */
 public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
 
@@ -146,15 +201,43 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
             TrackingToken startPosition,
             Object resetContext
     ) {
+        // ─────────────────────────────────────────────────────────────────────────────
+        // STEP 1: Handle null tokenAtReset
+        // ─────────────────────────────────────────────────────────────────────────────
+        // If there's no token at reset, we have nothing to replay against.
+        // Just return the startPosition directly (no ReplayToken wrapper needed).
+        // Example: First-time processor startup with no prior state.
         if (tokenAtReset == null) {
             return startPosition;
         }
+
+        // ─────────────────────────────────────────────────────────────────────────────
+        // STEP 2: Handle nested ReplayToken (double reset scenario)
+        // ─────────────────────────────────────────────────────────────────────────────
+        // If someone triggers a reset while already in replay mode, we don't want
+        // nested ReplayTokens. Instead, unwrap to the original tokenAtReset.
+        // This ensures we always track against the original "high water mark".
         if (tokenAtReset instanceof ReplayToken) {
             return createReplayToken(((ReplayToken) tokenAtReset).tokenAtReset, startPosition, resetContext);
         }
+
+        // ─────────────────────────────────────────────────────────────────────────────
+        // STEP 3: Check if startPosition already covers tokenAtReset
+        // ─────────────────────────────────────────────────────────────────────────────
+        // If the startPosition has already seen everything that tokenAtReset saw,
+        // there's nothing to replay! Just return startPosition directly.
+        // Example: tokenAtReset=5, startPosition=10 → startPosition.covers(5)=true
+        //          No replay needed since we're starting ahead of the reset point.
         if (startPosition != null && startPosition.covers(WrappedToken.unwrapLowerBound(tokenAtReset))) {
             return startPosition;
         }
+
+        // ─────────────────────────────────────────────────────────────────────────────
+        // STEP 4: Create the ReplayToken
+        // ─────────────────────────────────────────────────────────────────────────────
+        // Normal case: We need to replay from startPosition until we catch up to tokenAtReset.
+        // Example: tokenAtReset=10, startPosition=null (or 0)
+        //          → Events 0-10 will be marked as replays, event 11+ will be new.
         return new ReplayToken(tokenAtReset, startPosition, resetContext);
     }
 
@@ -249,30 +332,145 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
         return currentToken;
     }
 
+    /**
+     * Advances this ReplayToken to a new position, determining whether the event at {@code newToken}
+     * is a replay (previously seen) or a new event.
+     * <p>
+     * This method implements a three-case decision tree:
+     * <ul>
+     *   <li><b>Case 1 (Done Replaying)</b>: The newToken has advanced strictly past tokenAtReset</li>
+     *   <li><b>Case 2 (Still Replaying)</b>: The newToken represents an event that was seen before reset</li>
+     *   <li><b>Case 3 (Partial Catch-up)</b>: The newToken is a NEW event, but we haven't fully caught up yet
+     *       (happens with gaps in GapAwareTrackingToken)</li>
+     * </ul>
+     *
+     * <h3>Understanding the Case 1 Condition</h3>
+     * <pre>
+     * newToken.covers(tokenAtReset)           // Condition A: "Have we reached/passed the reset point?"
+     * && !tokenAtReset.covers(newToken)       // Condition B: "Is this event actually NEW?"
+     * </pre>
+     *
+     * <b>Why do we need BOTH conditions?</b>
+     * <p>
+     * The {@code covers()} method uses {@code >=} semantics, not {@code >}. When two tokens are at the
+     * SAME position, they mutually cover each other. Without Condition B, we would prematurely exit
+     * replay when processing the exact event at the reset boundary.
+     * <p>
+     * Example with GlobalSequenceTrackingToken:
+     * <pre>
+     * tokenAtReset = 7, newToken = 7
+     *
+     * Condition A alone: newToken.covers(tokenAtReset) = (7 >= 7) = TRUE
+     * → Would incorrectly exit replay! But event 7 WAS seen before reset.
+     *
+     * With both conditions:
+     * Condition A: newToken.covers(tokenAtReset) = TRUE
+     * Condition B: !tokenAtReset.covers(newToken) = !(7 >= 7) = FALSE
+     * Combined: TRUE && FALSE = FALSE → Stay in replay mode ✓
+     * </pre>
+     *
+     * <h3>Visual Timeline</h3>
+     * <pre>
+     * Event Stream:    [0] [1] [2] [3] [4] [5] [6] [7] [8] [9]
+     *                   ←─── SEEN BEFORE RESET ───→│←─ NEW ─→
+     *                                              │
+     *                                     tokenAtReset=7
+     *
+     * Event 7: covers(7)=YES, !covers(7)=NO  → Combined=FALSE → Still replay (Case 2)
+     * Event 8: covers(7)=YES, !covers(8)=YES → Combined=TRUE  → Exit replay (Case 1)
+     * </pre>
+     *
+     * @param newToken The token representing the position of the new event being processed
+     * @return A token representing the new state after processing the event
+     */
     @Override
     public TrackingToken advancedTo(TrackingToken newToken) {
-        if (this.tokenAtReset == null
-                || (newToken.covers(WrappedToken.unwrapUpperBound(this.tokenAtReset))
-                && !tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken)))) {
-            // we're done replaying
-            // if the token at reset was a wrapped token itself, we'll need to use that one to maintain progress.
+        // ═══════════════════════════════════════════════════════════════════════════════
+        // CASE 1: DONE REPLAYING
+        // ═══════════════════════════════════════════════════════════════════════════════
+        // We exit replay mode when BOTH conditions are true:
+        //   Condition A: newToken.covers(tokenAtReset) - "We've reached or passed the reset point"
+        //   Condition B: !tokenAtReset.covers(newToken) - "This specific event is NEW (not seen before)"
+        //
+        // WHY BOTH CONDITIONS?
+        // - covers() uses >= semantics, so tokens at the SAME position mutually cover each other
+        // - Condition A alone would incorrectly exit replay at the boundary (e.g., both at position 7)
+        // - Condition B ensures we only exit when we're STRICTLY PAST the reset point
+        //
+        // Example: tokenAtReset=7
+        //   newToken=7: covers(7)=TRUE, !covers(7)=FALSE → FALSE → Stay in replay
+        //   newToken=8: covers(7)=TRUE, !covers(8)=TRUE  → TRUE  → Exit replay
+        if (this.tokenAtReset == null || isStrictlyAfterTokenAtReset(newToken)) {
+            // We're done replaying - return the unwrapped newToken
+            // If tokenAtReset was a WrappedToken, delegate to it to maintain any wrapper state
             if (tokenAtReset instanceof WrappedToken) {
                 return ((WrappedToken) tokenAtReset).advancedTo(newToken);
             }
             return newToken;
-        } else if (tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken))) {
-            // we're still well behind
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════════════
+        // CASE 2: STILL REPLAYING
+        // ═══════════════════════════════════════════════════════════════════════════════
+        // The event at newToken was seen before reset → it's definitely a replay.
+        // tokenAtReset.covers(newToken) means the reset point "covers" this position,
+        // i.e., this event was already processed before the reset occurred.
+        //
+        // Example: tokenAtReset=7, newToken=5
+        //   tokenAtReset.covers(5) = (7 >= 5) = TRUE → This is a replay
+        else if (isBeforeOrEqualTokenAtReset(newToken)) {
+            // Create a new ReplayToken with lastMessageWasReplay=true
             return new ReplayToken(tokenAtReset, newToken, context, true);
-        } else {
-            // we're getting an event that we didn't have before, but we haven't finished replaying either
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════════════
+        // CASE 3: PARTIAL CATCH-UP (Edge case with gaps)
+        // ═══════════════════════════════════════════════════════════════════════════════
+        // We reach here when:
+        //   - newToken does NOT cover tokenAtReset (we haven't fully caught up)
+        //   - tokenAtReset does NOT cover newToken (this event wasn't seen before)
+        //
+        // This happens with GapAwareTrackingToken when we encounter a GAP event:
+        //
+        // Example: tokenAtReset = GapAwareTrackingToken(index=10, gaps={7})
+        //          This means events 0-6, 8-10 were seen, but event 7 was NOT.
+        //
+        //          newToken = GapAwareTrackingToken(index=7, gaps={})
+        //          We're processing event 7 (the gap).
+        //
+        //          Check Case 1: newToken.covers(tokenAtReset) = (7).covers(10) = FALSE
+        //          Check Case 2: tokenAtReset.covers(newToken) = (10,{7}).covers(7) = FALSE
+        //                        (returns FALSE because 7 is IN the gaps - it wasn't seen!)
+        //
+        //          → Event 7 is NEW (not a replay), but we haven't finished replay yet
+        //          → lastMessageWasReplay = false (this specific event is new)
+        //          → Update tokenAtReset to include this newly seen event via upperBound()
+        else {
+            // This event is NEW (wasn't seen before), but replay isn't finished yet.
+            // Merge the new event into tokenAtReset using upperBound() to track progress.
             if (tokenAtReset instanceof WrappedToken) {
                 return new ReplayToken(tokenAtReset.upperBound(newToken),
                                        ((WrappedToken) tokenAtReset).advancedTo(newToken),
                                        context,
-                                       false);
+                                       false);  // false = this message was NOT a replay
             }
             return new ReplayToken(tokenAtReset.upperBound(newToken), newToken, context, false);
         }
+    }
+
+    private boolean isStrictlyAfterTokenAtReset(TrackingToken newToken) {
+        return isAfterOrEqualTokenAtReset(newToken)
+                && !isBeforeOrEqualTokenAtReset(newToken);
+    }
+
+    private boolean isAfterOrEqualTokenAtReset(TrackingToken newToken) {
+        return newToken.covers(WrappedToken.unwrapUpperBound(this.tokenAtReset));
+    }
+
+    // tokenAtReset >= newToken
+    // newToken <= tokenAtReset
+    private boolean isBeforeOrEqualTokenAtReset(TrackingToken newToken) {
+        return tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken));
     }
 
     @Override
@@ -288,8 +486,28 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
         return advancedTo(other);
     }
 
+    /**
+     * Determines if this ReplayToken has seen all events that the {@code other} token has seen.
+     * <p>
+     * This method delegates to the {@code currentToken}'s covers() method, because during replay
+     * the "progress" is tracked by currentToken, not tokenAtReset.
+     * <p>
+     * <b>Important:</b> The covers() method is the decision-maker in {@link #advancedTo(TrackingToken)}.
+     * Understanding covers() is essential for understanding replay detection:
+     * <ul>
+     *   <li>For {@code GlobalSequenceTrackingToken}: covers(other) = (this.index >= other.index)</li>
+     *   <li>For {@code GapAwareTrackingToken}: covers(other) = (other.index <= this.index)
+     *       AND (other.index not in this.gaps) AND (this.gaps subset of other.gaps)</li>
+     * </ul>
+     *
+     * @param other The token to compare against
+     * @return {@code true} if this token covers the other token
+     */
     @Override
     public boolean covers(TrackingToken other) {
+        // For ReplayToken, we compare currentToken (our progress) against the other's progress.
+        // The tokenAtReset is not relevant here - it's only used in advancedTo() to determine
+        // if an event is a replay or not.
         if (other instanceof ReplayToken) {
             return currentToken != null && currentToken.covers(((ReplayToken) other).currentToken);
         }
