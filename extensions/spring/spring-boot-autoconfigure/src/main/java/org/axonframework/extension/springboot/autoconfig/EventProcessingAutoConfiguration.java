@@ -19,7 +19,6 @@ package org.axonframework.extension.springboot.autoconfig;
 import org.axonframework.extension.spring.config.EventProcessorSettings;
 import org.axonframework.extension.springboot.EventProcessorProperties;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.context.properties.bind.Bindable;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.context.annotation.Bean;
@@ -37,6 +36,12 @@ import java.util.Map;
 @AutoConfiguration
 public class EventProcessingAutoConfiguration {
 
+    /**
+     * Constructs event processing settings.
+     *
+     * @param environment The spring environment containing the event processor properties.
+     * @return The event processor settings keyed by processor name.
+     */
     @Bean
     public EventProcessorSettings.MapWrapper eventProcessorSettings(Environment environment) {
         Binder binder = Binder.get(environment);
