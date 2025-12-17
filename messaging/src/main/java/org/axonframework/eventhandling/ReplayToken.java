@@ -418,7 +418,7 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
         //
         // Example: tokenAtReset=7, newToken=5
         //   tokenAtReset.covers(5) = (7 >= 5) = TRUE → This is a replay
-        else if (isBeforeOrEqualTokenAtReset(newToken)) {
+        else if (tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken))) {
             // Create a new ReplayToken with lastMessageWasReplay=true
             return new ReplayToken(
                     tokenAtReset, // we don't do upperBound here, because it's just useful if the lastMessageWasReplay. We pretend in the code we don't know about gaps, but looks like we know

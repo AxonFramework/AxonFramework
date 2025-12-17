@@ -368,10 +368,8 @@ class ReplayTokenTest {
         // TODO: BUG upperBound!
         @Test
         void replayBeforeResetIndexEvenWhenGapsWereFilledDuringReplay() {
-            // tokenAtReset at index 10 with gaps at 7,8
             TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(7L, 8L));
 
-            // During replay, gaps get filled, process 0-8
             TrackingToken currentToken = ReplayToken.createReplayToken(tokenAtReset, null);
             for (int i = 0; i <= 8; i++) {
                 currentToken = ((ReplayToken) currentToken).advancedTo(
@@ -379,7 +377,6 @@ class ReplayTokenTest {
                 );
             }
 
-            // Event 11 - after reset index, never processed before
             TrackingToken newToken = GapAwareTrackingToken.newInstance(9, emptySet());
             TrackingToken result = ((ReplayToken) currentToken).advancedTo(newToken);
 
@@ -389,13 +386,10 @@ class ReplayTokenTest {
         // TODO: BUG upperBound!
         @Test
         void replayStartsBeforeResetIndexWithoutGaps() {
-            // tokenAtReset at index 10 with gaps at 7,8
             TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(7L, 8L));
 
-            // During replay, gaps get filled, process 0-10
             TrackingToken currentToken = ReplayToken.createReplayToken(tokenAtReset, null);
 
-            // Event 11 - after reset index, never processed before
             TrackingToken newToken = GapAwareTrackingToken.newInstance(9, emptySet());
             TrackingToken result = ((ReplayToken) currentToken).advancedTo(newToken);
 
@@ -1018,6 +1012,36 @@ class ReplayTokenTest {
                     .collect(Collectors.toList());
         }
 
+    }
+
+    @Test
+    void mergedTest1() {
+        MergedTrackingToken currentToken = new MergedTrackingToken(
+                new GapAwareTrackingToken(3, setOf(2L)),
+                new GapAwareTrackingToken(9, emptySet())
+        );
+
+        TrackingToken replayToken = ReplayToken.createReplayToken(currentToken, null);
+,
+        TrackingToken token2 = ((ReplayToken) replayToken).advancedTo(new GapAwareTrackingToken(2, emptySet()));
+        assertInstanceOf(ReplayToken.class, token2);
+        assertFalse(ReplayToken.isReplay(token2));
+
+        TrackingToken token3 = ((ReplayToken) replayToken).advancedTo(new GapAwareTrackingToken(3, emptySet()));
+        assertInstanceOf(ReplayToken.class, token3);
+        assertFalse(ReplayToken.isReplay(token3));
+
+        TrackingToken token4 = ((ReplayToken) replayToken).advancedTo(new GapAwareTrackingToken(4, emptySet()));
+        assertInstanceOf(ReplayToken.class, token4);
+        assertFalse(ReplayToken.isReplay(token4));
+
+        TrackingToken token9 = ((ReplayToken) replayToken).advancedTo(new GapAwareTrackingToken(9, emptySet()));
+        assertInstanceOf(ReplayToken.class, token9); // TODO: Wrong!
+        assertFalse(ReplayToken.isReplay(token9));
+
+        TrackingToken token10 = ((ReplayToken) replayToken).advancedTo(new GapAwareTrackingToken(10, emptySet()));
+        assertInstanceOf(GapAwareTrackingToken.class, token10);
+        assertFalse(ReplayToken.isReplay(token10));
     }
 
     private static Set<Long> setOf(Long... values) {
