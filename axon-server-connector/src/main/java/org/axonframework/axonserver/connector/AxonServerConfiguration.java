@@ -273,7 +273,7 @@ public class AxonServerConfiguration {
      * The configuration of each of the persistent streams. The key is the identifier of the message source, the value
      * represents the settings to use for the related persistent stream.
      */
-//    private final Map<String, PersistentStreamSettings> persistentStreams = new HashMap<>();
+    private final Map<String, PersistentStreamSettings> persistentStreams = new HashMap<>();
 
     /**
      * A toggle dictating whether to create persistent streams for all processing groups. Defaults to {@code false}.
@@ -1101,9 +1101,9 @@ public class AxonServerConfiguration {
      *
      * @return The settings for each of the configured persistent streams, by name.
      */
-//    public Map<String, PersistentStreamSettings> getPersistentStreams() {
-//        return persistentStreams;
-//    }
+    public Map<String, PersistentStreamSettings> getPersistentStreams() {
+        return persistentStreams;
+    }
 
     /**
      * Configuration class for Flow Control of specific message types.
