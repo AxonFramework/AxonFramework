@@ -83,6 +83,7 @@ public class PersistentStreamConnection implements DescribableComponent {
     private final Function<Event, EventMessage> messageConverter;
 
     private final AtomicReference<PersistentStream> persistentStreamHolder = new AtomicReference<>();
+    private final AtomicBoolean closing = new AtomicBoolean(false);
 
     private static final Consumer<List<MessageStream.Entry<EventMessage>>> NO_OP_CONSUMER = events -> {
     };
@@ -200,7 +201,9 @@ public class PersistentStreamConnection implements DescribableComponent {
 
     private void streamClosed(Throwable throwable) {
         persistentStreamHolder.set(null);
-        if (throwable != null) {
+        if (throwable != null && !closing.get()) {
+            // Only reschedule reconnection if the stream was NOT intentionally closed.
+            // When close() is called, closing flag is set to true, preventing reconnection attempts.
             logger.info("{}: Rescheduling persistent stream", streamId, throwable);
             scheduler.schedule(this::start,
                                retrySeconds.getAndUpdate(current -> Math.min(MAX_RETRY_INTERVAL_SECONDS, current * 2)),
@@ -210,8 +213,12 @@ public class PersistentStreamConnection implements DescribableComponent {
 
     /**
      * Closes the persistent stream connection to Axon Server.
+     * <p>
+     * This marks the connection as intentionally closing, preventing automatic reconnection
+     * attempts when the stream closed callback is triggered.
      */
     public void close() {
+        closing.set(true);
         PersistentStream persistentStream = persistentStreamHolder.getAndSet(null);
         if (persistentStream != null) {
             persistentStream.close();
@@ -364,12 +371,6 @@ public class PersistentStreamConnection implements DescribableComponent {
                 // All events were filtered out, but we still need to acknowledge
                 long token = batch.get(batch.size() - 1).getEvent().getToken();
                 persistentStreamSegment.acknowledge(token);
-            }
-        }
-
-        public void messageAvailable() {
-            if (!processGate.get()) {
-                scheduler.submit(this::readMessagesFromSegment);
             }
         }
 
