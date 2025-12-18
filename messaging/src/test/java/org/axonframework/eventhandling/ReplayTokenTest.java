@@ -29,6 +29,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -308,6 +309,19 @@ class ReplayTokenTest {
 
             // Now event 9 arrives - currentToken has NO gaps (they were filled)
             // Event 9 WAS processed before reset, so it SHOULD be a replay
+            TrackingToken newToken = GapAwareTrackingToken.newInstance(9, emptySet());
+            TrackingToken result = ((ReplayToken) currentToken).advancedTo(newToken);
+
+            assertInstanceOf(ReplayToken.class, result, "Should still be in replay mode");
+            assertTrue(ReplayToken.isReplay(result),
+                    "Event 9 was processed before reset, should be marked as replay even though gaps were filled");
+        }
+
+        @Test
+        void eventPreviouslyProcessedShouldBeReplayEvenWhenGapsFilledDuringReplayStartNotNull() {
+            TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(7L, 8L));
+            TrackingToken currentToken = ReplayToken.createReplayToken(tokenAtReset, new GapAwareTrackingToken(0L, emptyList()));
+
             TrackingToken newToken = GapAwareTrackingToken.newInstance(9, emptySet());
             TrackingToken result = ((ReplayToken) currentToken).advancedTo(newToken);
 
