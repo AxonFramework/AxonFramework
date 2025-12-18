@@ -297,6 +297,7 @@ class ReplayTokenTest {
                     "Event at index 9 was processed before reset, should be a replay");
         }
 
+        // EXAMPLE: forgot about events that were gaps - tokenAtReset NEVER covers the newToken
         @Test
         void eventPreviouslyProcessedShouldBeReplayEvenWhenGapsFilledDuringReplay() {
             // tokenAtReset at index 10 with gaps at 7,8
@@ -343,7 +344,7 @@ class ReplayTokenTest {
                     "Event 10 was processed before reset, should be marked as replay");
         }
 
-        // TODO: BUG upperBound!
+        // upperBound helps
         @Test
         void replayBeforeResetIndexAdnGaps() {
             TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(7L, 8L));
@@ -368,7 +369,7 @@ class ReplayTokenTest {
             assertFalse(ReplayToken.isReplay(result));
         }
 
-        // TODO: BUG upperBound!
+        // upperBound helps
         @Test
         void replayBeforeResetIndexEvenWhenGapsWereFilledDuringReplay() {
             TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(7L, 8L));
@@ -380,13 +381,13 @@ class ReplayTokenTest {
                 );
             }
 
-            TrackingToken newToken = GapAwareTrackingToken.newInstance(9, emptySet());
+            TrackingToken newToken = GapAwareTrackingToken.newInstance(10, emptySet());
             TrackingToken result = ((ReplayToken) currentToken).advancedTo(newToken);
 
             assertTrue(ReplayToken.isReplay(result));
         }
 
-        // TODO: BUG upperBound!
+        // upperBound helps
         @Test
         void replayStartsBeforeResetIndexWithoutGaps() {
             TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(7L, 8L));
@@ -399,7 +400,7 @@ class ReplayTokenTest {
             assertTrue(ReplayToken.isReplay(result));
         }
 
-        // TODO: BUG upperBound!
+        // upperBound helps
         @Test
         void replayStartsAtResetIndexWithoutGaps() {
             TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(7L, 8L));
@@ -1041,6 +1042,7 @@ class ReplayTokenTest {
         }
     }
 
+    // TODO: Validate those tests cases if it was expected!!!
     static Stream<Arguments> advancedToParameters() {
         return Stream.of(
                 // index, gaps, expectedTokenType, expectedIsReplay
