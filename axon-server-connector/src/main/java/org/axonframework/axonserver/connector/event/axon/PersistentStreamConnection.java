@@ -374,6 +374,12 @@ public class PersistentStreamConnection implements DescribableComponent {
             }
         }
 
+        public void messageAvailable() {
+            if (!processGate.get() && !closing.get()) {
+                scheduler.submit(this::readMessagesFromSegment);
+            }
+        }
+
         private void readMessagesFromSegment() {
             currentState.get().readMessages();
         }
