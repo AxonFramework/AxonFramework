@@ -20,6 +20,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
 import java.util.*;
@@ -1014,34 +1017,39 @@ class ReplayTokenTest {
 
     }
 
-    @Test
-    void mergedTest1() {
-        MergedTrackingToken currentToken = new MergedTrackingToken(
-                new GapAwareTrackingToken(3, setOf(2L)),
-                new GapAwareTrackingToken(9, emptySet())
+    @Nested
+    class AdvancedToWithMergedTrackingTokenAndGaps {
+
+        @ParameterizedTest
+        @MethodSource("org.axonframework.eventhandling.ReplayTokenTest#advancedToParameters")
+        void advancedToShouldReturnCorrectTokenTypeAndReplayStatus(
+                int index,
+                Set<Long> gaps,
+                Class<?> expectedTokenType,
+                boolean expectedIsReplay
+        ) {
+            MergedTrackingToken tokenAtReset = new MergedTrackingToken(
+                    new GapAwareTrackingToken(3, setOf(2L)), // todo: is it correct that it's not a replay?
+                    new GapAwareTrackingToken(9, emptySet())
+            );
+            ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
+
+            TrackingToken result = replayToken.advancedTo(new GapAwareTrackingToken(index, gaps));
+
+            assertInstanceOf(expectedTokenType, result);
+            assertEquals(expectedIsReplay, ReplayToken.isReplay(result));
+        }
+    }
+
+    static Stream<Arguments> advancedToParameters() {
+        return Stream.of(
+                // index, gaps, expectedTokenType, expectedIsReplay
+                Arguments.of(2, emptySet(), ReplayToken.class, false),
+                Arguments.of(3, emptySet(), ReplayToken.class, false),
+                Arguments.of(4, emptySet(), ReplayToken.class, false),
+                Arguments.of(9, emptySet(), ReplayToken.class, false), // TODO: Wrong!
+                Arguments.of(10, emptySet(), GapAwareTrackingToken.class, false)
         );
-
-        TrackingToken replayToken = ReplayToken.createReplayToken(currentToken, null);
-
-        TrackingToken token2 = ((ReplayToken) replayToken).advancedTo(new GapAwareTrackingToken(2, emptySet()));
-        assertInstanceOf(ReplayToken.class, token2);
-        assertFalse(ReplayToken.isReplay(token2));
-
-        TrackingToken token3 = ((ReplayToken) replayToken).advancedTo(new GapAwareTrackingToken(3, emptySet()));
-        assertInstanceOf(ReplayToken.class, token3);
-        assertFalse(ReplayToken.isReplay(token3));
-
-        TrackingToken token4 = ((ReplayToken) replayToken).advancedTo(new GapAwareTrackingToken(4, emptySet()));
-        assertInstanceOf(ReplayToken.class, token4);
-        assertFalse(ReplayToken.isReplay(token4));
-
-        TrackingToken token9 = ((ReplayToken) replayToken).advancedTo(new GapAwareTrackingToken(9, emptySet()));
-        assertInstanceOf(ReplayToken.class, token9); // TODO: Wrong!
-        assertFalse(ReplayToken.isReplay(token9));
-
-        TrackingToken token10 = ((ReplayToken) replayToken).advancedTo(new GapAwareTrackingToken(10, emptySet()));
-        assertInstanceOf(GapAwareTrackingToken.class, token10);
-        assertFalse(ReplayToken.isReplay(token10));
     }
 
     private static Set<Long> setOf(Long... values) {

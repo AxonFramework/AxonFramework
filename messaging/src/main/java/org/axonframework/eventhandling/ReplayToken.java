@@ -475,7 +475,8 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
     // tokenAtReset >= newToken
     // newToken <= tokenAtReset
     private boolean isBeforeOrEqualTokenAtReset(TrackingToken newToken) {
-        return tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken));
+        return WrappedToken.unwrapUpperBound(tokenAtReset) // added
+                .covers(WrappedToken.unwrapLowerBound(newToken));
     }
 
     @Override
