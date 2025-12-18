@@ -16,14 +16,15 @@
 
 package org.axonframework.messaging.eventhandling.replay;
 
+import org.axonframework.conversion.ConversionException;
+import org.axonframework.conversion.Converter;
 import org.axonframework.conversion.PassThroughConverter;
+import org.axonframework.conversion.json.JacksonConverter;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.eventhandling.annotation.AnnotatedEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.annotation.EventHandler;
-import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
-import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
@@ -36,9 +37,11 @@ import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -129,13 +132,9 @@ class ReplayContextParameterResolverFactoryTest {
     }
 
     private ProcessingContext contextWithToken(EventMessage event, TrackingToken token) {
-        return StubProcessingContext.withComponent(EventConverter.class, eventConverter())
+        return StubProcessingContext.withComponent(Converter.class, PassThroughConverter.INSTANCE)
                                     .withMessage(event)
                                     .withResource(TrackingToken.RESOURCE_KEY, token);
-    }
-
-    private static EventConverter eventConverter() {
-        return new DelegatingEventConverter(PassThroughConverter.INSTANCE);
     }
 
     private static class SomeHandler {
@@ -160,5 +159,58 @@ class ReplayContextParameterResolverFactoryTest {
 
     private record MyResetContext(List<Long> sequences) {
 
+    }
+
+    @Nested
+    class WithJacksonConverter {
+
+        private static final JacksonConverter jacksonConverter = new JacksonConverter();
+
+        @Test
+        void replayContextIsConvertedFromMapToRecord() {
+            // given
+            Map<String, Object> mapContext = Map.of("sequences", List.of(2L, 3L));
+            var handler = new SomeHandler();
+            var testSubject = new AnnotatedEventHandlingComponent<>(
+                    handler,
+                    ClasspathParameterResolverFactory.forClass(SomeHandler.class)
+            );
+            var event = new GenericEventMessage(new MessageType(Long.class), 2L);
+            var replayToken = ReplayToken.createReplayToken(
+                    new GlobalSequenceTrackingToken(3L),
+                    new GlobalSequenceTrackingToken(2L),
+                    mapContext
+            );
+
+            // when
+            testSubject.handle(event, contextWithJacksonConverter(event, replayToken));
+
+            // then
+            assertThat(handler.receivedLongs).containsExactly(2L);
+            assertThat(handler.receivedResetContexts).hasSize(1);
+            assertThat(handler.receivedResetContexts.get(0)).isNotNull();
+            assertThat(handler.receivedResetContexts.get(0).sequences()).containsExactly(2L, 3L);
+        }
+
+        @Test
+        void conversionExceptionIsThrownWhenConversionFails() {
+            // given
+            String incompatibleContext = "incompatible-string-context";
+            var replayToken = ReplayToken.createReplayToken(
+                    new GlobalSequenceTrackingToken(3L),
+                    new GlobalSequenceTrackingToken(2L),
+                    incompatibleContext
+            );
+
+            // when/then
+            assertThatThrownBy(() -> ReplayToken.replayContext(replayToken, MyResetContext.class, jacksonConverter))
+                    .isInstanceOf(ConversionException.class);
+        }
+
+        private ProcessingContext contextWithJacksonConverter(EventMessage event, TrackingToken token) {
+            return StubProcessingContext.withComponent(Converter.class, jacksonConverter)
+                                        .withMessage(event)
+                                        .withResource(TrackingToken.RESOURCE_KEY, token);
+        }
     }
 }
