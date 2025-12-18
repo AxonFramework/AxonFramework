@@ -20,13 +20,14 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.Module;
+import org.axonframework.extension.spring.config.EventProcessorSettings;
+import org.axonframework.extension.spring.config.SpringComponentRegistry;
+import org.axonframework.extension.springboot.fixture.event.test1.FirstHandler;
+import org.axonframework.extension.springboot.fixture.event.test2.Test2EventHandlingConfiguration;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorModule;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessorModule;
-import org.axonframework.extension.spring.config.SpringComponentRegistry;
-import org.axonframework.extension.springboot.fixture.event.test1.FirstHandler;
-import org.axonframework.extension.springboot.fixture.event.test2.Test2EventHandlingConfiguration;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
@@ -85,13 +86,11 @@ class EventProcessorConfigurationTest {
         private ApplicationContext context;
 
         @Autowired
-        private EventProcessorProperties properties;
+        private EventProcessorSettings.MapWrapper properties;
 
         @Test
         void processorConfigurationWithCustomValues() throws Exception {
-
-
-            assertThat(properties.getProcessors().get(KEY1)).isNotNull();
+            assertThat(properties.settings().get(KEY1)).isNotNull();
 
             assertThat(context.getBean(SpringComponentRegistry.class)).isNotNull();
             Map<String, Module> modules = ReflectionUtils.getFieldValue(
@@ -126,14 +125,13 @@ class EventProcessorConfigurationTest {
         private ApplicationContext context;
 
         @Autowired
-        private EventProcessorProperties properties;
+        private EventProcessorSettings.MapWrapper properties;
 
         @Test
         void processorConfigurationSubscribed() throws Exception {
-
-            var settings = properties.getProcessors().get(KEY1);
+            var settings = properties.settings().get(KEY1);
             assertThat(settings).isNotNull();
-            assertThat(settings.getMode()).isEqualTo(EventProcessorProperties.Mode.SUBSCRIBING);
+            assertThat(settings.processorMode()).isEqualTo(EventProcessorSettings.ProcessorMode.SUBSCRIBING);
 
             assertThat(context.getBean(SpringComponentRegistry.class)).isNotNull();
             Map<String, Module> modules = ReflectionUtils.getFieldValue(
@@ -200,7 +198,9 @@ class EventProcessorConfigurationTest {
         @ParameterizedTest
         @MethodSource("configToError")
         @Disabled("Stopped working with port-already-in-use")
-        void dontStartWithWrongConfiguredProcessor(Map<String, String> parameters, String message, int port) throws Exception {
+        void dontStartWithWrongConfiguredProcessor(Map<String, String> parameters,
+                                                   String message,
+                                                   int port) throws Exception {
             var app = new SpringApplication(MyCustomContext.class);
             app.setLogStartupInfo(false);
             Map<String, Object> props = new HashMap<>();
