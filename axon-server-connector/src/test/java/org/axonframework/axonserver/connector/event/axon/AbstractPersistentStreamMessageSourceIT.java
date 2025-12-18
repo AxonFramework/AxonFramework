@@ -43,6 +43,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -144,12 +145,18 @@ abstract class AbstractPersistentStreamMessageSourceIT {
     }
 
     @AfterEach
-    void tearDown() {
+    void tearDown() throws InterruptedException {
         if (registration != null) {
             registration.cancel();
+            // Allow time for gRPC to fully close the connection and deliver any final callbacks.
+            // Without this delay, late-arriving gRPC callbacks may hit the terminated scheduler.
+            Thread.sleep(200);
         }
         if (scheduler != null) {
             scheduler.shutdown();
+            if (!scheduler.awaitTermination(2, TimeUnit.SECONDS)) {
+                scheduler.shutdownNow();
+            }
         }
     }
 
