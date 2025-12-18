@@ -14,8 +14,9 @@ This document provides comprehensive documentation of the TrackingToken system i
 4. [GapAwareTrackingToken](#gapawaretrackingtoken)
 5. [WrappedToken Interface](#wrappedtoken-interface)
 6. [ReplayToken](#replaytoken)
-7. [Comparison Methods Reference](#comparison-methods-reference)
-8. [ReplayToken.advancedTo() Deep Dive](#replaytokenadvancedto-deep-dive)
+7. [MergedTrackingToken](#mergedtrackingtoken)
+8. [Comparison Methods Reference](#comparison-methods-reference)
+9. [ReplayToken.advancedTo() Deep Dive](#replaytokenadvancedto-deep-dive)
 
 ---
 
@@ -67,10 +68,22 @@ classDiagram
         +context() Object
     }
 
+    class MergedTrackingToken {
+        -TrackingToken lowerSegmentToken
+        -TrackingToken upperSegmentToken
+        -boolean lowerSegmentAdvanced
+        -boolean upperSegmentAdvanced
+        +lowerSegmentToken() TrackingToken
+        +upperSegmentToken() TrackingToken
+        +isLowerSegmentAdvanced() boolean
+        +isUpperSegmentAdvanced() boolean
+    }
+
     TrackingToken <|.. GlobalSequenceTrackingToken
     TrackingToken <|.. GapAwareTrackingToken
     TrackingToken <|-- WrappedToken
     WrappedToken <|.. ReplayToken
+    WrappedToken <|.. MergedTrackingToken
 ```
 
 ---

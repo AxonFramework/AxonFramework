@@ -251,15 +251,17 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
 
     @Override
     public TrackingToken advancedTo(TrackingToken newToken) {
-        if (this.tokenAtReset == null || isDoneReplaying(newToken)) {
+        if (this.tokenAtReset == null
+                || (newToken.covers(WrappedToken.unwrapUpperBound(this.tokenAtReset))
+                && !tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken)))) {
             // we're done replaying
             // if the token at reset was a wrapped token itself, we'll need to use that one to maintain progress.
             if (tokenAtReset instanceof WrappedToken) {
                 return ((WrappedToken) tokenAtReset).advancedTo(newToken);
             }
             return newToken;
-        } else if (wasSeenBeforeReset(newToken)) {
-            // we're still replaying - this event was seen before reset
+        } else if (tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken))) {
+            // we're still well behind
             return new ReplayToken(tokenAtReset, newToken, context, true);
         } else {
             // we're getting an event that we didn't have before, but we haven't finished replaying either
@@ -271,68 +273,6 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
             }
             return new ReplayToken(tokenAtReset.upperBound(newToken), newToken, context, false);
         }
-    }
-
-    /**
-     * Checks if we're done replaying - newToken has progressed strictly past tokenAtReset.
-     * <p>
-     * We're done when:
-     * 1. newToken covers everything in tokenAtReset (all prior events have been delivered)
-     * 2. newToken's position is strictly greater than tokenAtReset's position
-     */
-    private boolean isDoneReplaying(TrackingToken newToken) {
-        TrackingToken unwrappedNewToken = WrappedToken.unwrapLowerBound(newToken);
-        TrackingToken unwrappedResetToken = WrappedToken.unwrapUpperBound(this.tokenAtReset);
-
-        // Check if newToken covers tokenAtReset (all events delivered)
-        if (!newToken.covers(unwrappedResetToken)) {
-            return false;
-        }
-
-        // Check if newToken is strictly past tokenAtReset's position
-        long newPosition = unwrappedNewToken.position().orElse(-1);
-        long resetPosition = unwrappedResetToken.position().orElse(-1);
-        return newPosition > resetPosition;
-    }
-
-    /**
-     * Checks if the position represented by newToken was seen before reset.
-     * <p>
-     * Unlike covers(), this does NOT require gap alignment between tokens.
-     * It only checks: "Was this specific position processed before reset?"
-     * <p>
-     * Uses lowerBound behavior to detect if newToken's position was a gap:
-     * When lowerBound is called with a position that IS a gap, it walks backward
-     * to the nearest non-gap position. We can detect this by comparing positions:
-     * - If lowerBound.position() == newToken.position() → position was NOT a gap (was seen)
-     * - If lowerBound.position() < newToken.position() → position WAS a gap (not seen)
-     * <p>
-     * NOTE: We cannot use covers() here because covers() includes a gap alignment check
-     * that fails when tokenAtReset has gaps that newToken doesn't have (which happens
-     * when gaps are filled during replay). The gap alignment semantic answers
-     * "have you seen ALL the events I've seen?" while we need to answer
-     * "was THIS specific position seen?".
-     */
-    private boolean wasSeenBeforeReset(TrackingToken newToken) {
-        TrackingToken unwrappedNew = WrappedToken.unwrapLowerBound(newToken);
-        TrackingToken unwrappedReset = WrappedToken.unwrapLowerBound(tokenAtReset);
-
-        long newPosition = unwrappedNew.position().orElse(-1);
-        long resetPosition = unwrappedReset.position().orElse(-1);
-
-        // Position must be at or before the reset position
-        if (newPosition > resetPosition) {
-            return false;
-        }
-
-        // Use lowerBound to detect if position was a gap in tokenAtReset
-        // lowerBound walks back if the position is in the merged gaps
-        TrackingToken lower = unwrappedReset.lowerBound(unwrappedNew);
-        long lowerPosition = lower.position().orElse(-1);
-
-        // If lowerBound stayed at or above newPosition, the position was NOT a gap (was seen)
-        // If lowerBound walked back below newPosition, the position WAS a gap (not seen)
-        return lowerPosition >= newPosition;
     }
 
     @Override
