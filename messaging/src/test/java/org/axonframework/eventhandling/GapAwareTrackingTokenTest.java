@@ -247,6 +247,62 @@ class GapAwareTrackingTokenTest {
         assertEquals(GapAwareTrackingToken.newInstance(15, emptyList()), token5.upperBound(token3));
     }
 
+    @Test
+    void upperBoundCase2() {
+
+//        T1 = 7, 8, 10+
+//                T2 = 1+
+//                upper(T1,T2) = 7, 8, 10+  --> token 1 not changed = replay
+//
+//                --------------------------------------
+        GapAwareTrackingToken token0_0 = GapAwareTrackingToken.newInstance(9, asList(7L, 8L));
+        GapAwareTrackingToken token0_1 = GapAwareTrackingToken.newInstance(0, emptyList());
+        assertEquals(token0_0, token0_0.upperBound(token0_1));
+
+
+//        T1 = 7, 8, 10+
+//                T2 = 7+
+//                upper(T1,T2) = 7, 8, 10+  --> token 1 not changed = replay
+//
+        GapAwareTrackingToken token1_0 = GapAwareTrackingToken.newInstance(9, asList(7L, 8L));
+        GapAwareTrackingToken token1_1 = GapAwareTrackingToken.newInstance(6, emptyList());
+        assertEquals(token1_0, token1_0.upperBound(token1_1));
+
+//        T1 = 7, 8, 10+
+//                T2 = 8+
+//                upper(T1,T2) = 8, 10+     --> token 1 changed = NOT replay
+//
+        GapAwareTrackingToken token2_0 = GapAwareTrackingToken.newInstance(9, asList(7L, 8L));
+        GapAwareTrackingToken token2_1 = GapAwareTrackingToken.newInstance(7, emptyList());
+        assertEquals(GapAwareTrackingToken.newInstance(9, singletonList(8L)), token2_0.upperBound(token2_1));
+//
+//        T1 = 8, 10+
+//                T2 = 9+
+//                upper(T1,T2) = 10+        --> token 1 changed = NOT replay
+//
+        GapAwareTrackingToken token3_0 = GapAwareTrackingToken.newInstance(9, singletonList(8L));
+        GapAwareTrackingToken token3_1 = GapAwareTrackingToken.newInstance(8, emptyList());
+        assertEquals(GapAwareTrackingToken.newInstance(9, emptyList()), token3_0.upperBound(token3_1));
+//
+//        T1 = 10+
+//                T2 = 10+
+//                upper(T1,T2) = 10+        --> token 1 not changed = replay
+//
+        GapAwareTrackingToken token4_0 = GapAwareTrackingToken.newInstance(9, emptyList());
+        GapAwareTrackingToken token4_1 = GapAwareTrackingToken.newInstance(9, emptyList());
+        assertEquals(GapAwareTrackingToken.newInstance(9, emptyList()), token4_0.upperBound(token4_1));
+//
+//        T1 = 10+
+//                T2 = 11+
+//                upper(T1,T2) = 11+        --> token 1 changed = NOT replay
+//        T2.covers(T1) = true      --> we're done
+//
+        GapAwareTrackingToken token5_0 = GapAwareTrackingToken.newInstance(9, emptyList());
+        GapAwareTrackingToken token5_1 = GapAwareTrackingToken.newInstance(10, emptyList());
+        assertEquals(GapAwareTrackingToken.newInstance(10, emptyList()), token5_0.upperBound(token5_1));
+    }
+
+
 
     @Test
     void upperBoundGapsKeptIfAfterLowerIndex() {
@@ -315,6 +371,9 @@ class GapAwareTrackingTokenTest {
         GapAwareTrackingToken advancedToken = token.advanceTo(Long.MAX_VALUE, 1_234);
         assertEquals(1_234, advancedToken.getGaps().size());
     }
+
+
+
 
     private TreeSet<Long> asTreeSet(Long... elements) {
         return new TreeSet<>(asList(elements));
