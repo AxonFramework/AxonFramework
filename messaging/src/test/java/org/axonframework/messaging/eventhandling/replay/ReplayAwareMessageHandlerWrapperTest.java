@@ -40,7 +40,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test to verify that the {@link AllowReplay} and {@link DisallowReplay} annotations have the expected behavior.
@@ -84,6 +83,8 @@ class ReplayAwareMessageHandlerWrapperTest {
 
             // then
             assertThat(handler.receivedStrings).containsExactly("test-string");
+            assertThat(handler.receivedTokens).hasSize(1);
+            assertThat(handler.receivedTokens).noneMatch(ReplayToken.class::isInstance);
         }
 
         @Test
@@ -96,6 +97,7 @@ class ReplayAwareMessageHandlerWrapperTest {
 
             // then
             assertThat(handler.receivedLongs).isEmpty();
+            assertThat(handler.receivedTokens).isEmpty();
         }
 
         @Test
@@ -108,6 +110,8 @@ class ReplayAwareMessageHandlerWrapperTest {
 
             // then
             assertThat(handler.receivedLongs).containsExactly(42L);
+            assertThat(handler.receivedTokens).hasSize(1);
+            assertThat(handler.receivedTokens).noneMatch(ReplayToken.class::isInstance);
         }
 
         @Test
@@ -120,6 +124,8 @@ class ReplayAwareMessageHandlerWrapperTest {
 
             // then
             assertThat(handler.receivedStrings).containsExactly("test-string");
+            assertThat(handler.receivedTokens).hasSize(1);
+            assertThat(handler.receivedTokens).noneMatch(ReplayToken.class::isInstance);
         }
     }
 
@@ -148,6 +154,8 @@ class ReplayAwareMessageHandlerWrapperTest {
 
             // then
             assertThat(handler.receivedStrings).containsExactly("test-string");
+            assertThat(handler.receivedTokens).hasSize(1);
+            assertThat(handler.receivedTokens).noneMatch(ReplayToken.class::isInstance);
         }
 
         @Test
@@ -160,6 +168,7 @@ class ReplayAwareMessageHandlerWrapperTest {
 
             // then
             assertThat(handler.receivedLongs).isEmpty();
+            assertThat(handler.receivedTokens).isEmpty();
         }
 
         @Test
@@ -172,6 +181,8 @@ class ReplayAwareMessageHandlerWrapperTest {
 
             // then
             assertThat(handler.receivedLongs).containsExactly(42L);
+            assertThat(handler.receivedTokens).hasSize(1);
+            assertThat(handler.receivedTokens).noneMatch(ReplayToken.class::isInstance);
         }
     }
 
@@ -203,6 +214,7 @@ class ReplayAwareMessageHandlerWrapperTest {
             // then
             assertThat(handler.receivedStrings).isEmpty();
             assertThat(handler.receivedLongs).isEmpty();
+            assertThat(handler.receivedTokens).isEmpty();
         }
 
         @Test
@@ -218,6 +230,8 @@ class ReplayAwareMessageHandlerWrapperTest {
             // then
             assertThat(handler.receivedStrings).containsExactly("test-string");
             assertThat(handler.receivedLongs).containsExactly(42L);
+            assertThat(handler.receivedTokens).hasSize(2);
+            assertThat(handler.receivedTokens).noneMatch(ReplayToken.class::isInstance);
         }
     }
 
@@ -264,6 +278,7 @@ class ReplayAwareMessageHandlerWrapperTest {
             // then
             assertThat(handler.receivedStrings).isEmpty();
             assertThat(handler.receivedLongs).isEmpty();
+            assertThat(handler.receivedTokens).isEmpty();
         }
 
         @Test
@@ -279,6 +294,217 @@ class ReplayAwareMessageHandlerWrapperTest {
             // then
             assertThat(handler.receivedStrings).containsExactly("test-string");
             assertThat(handler.receivedLongs).containsExactly(42L);
+            assertThat(handler.receivedTokens).hasSize(2);
+            assertThat(handler.receivedTokens).noneMatch(ReplayToken.class::isInstance);
+        }
+    }
+
+    @Nested
+    class GivenClassLevelAllowReplayWithAllMethodsDisallowed {
+
+        private ClassAllowedWithAllMethodsDisallowedHandler handler;
+        private EventHandlingComponent testSubject;
+
+        @BeforeEach
+        void setUp() {
+            handler = new ClassAllowedWithAllMethodsDisallowedHandler();
+            testSubject = new AnnotatedEventHandlingComponent<>(
+                    handler,
+                    ClasspathParameterResolverFactory.forClass(ClassAllowedWithAllMethodsDisallowedHandler.class)
+            );
+        }
+
+        @Test
+        void skipsAllEventsDuringReplay() {
+            // given
+            var stringEvent = stringEvent();
+            var longEvent = longEvent();
+
+            // when
+            testSubject.handle(stringEvent, replayContext(stringEvent));
+            testSubject.handle(longEvent, replayContext(longEvent));
+
+            // then
+            assertThat(handler.receivedStrings).isEmpty();
+            assertThat(handler.receivedLongs).isEmpty();
+            assertThat(handler.receivedTokens).isEmpty();
+        }
+
+        @Test
+        void handlesAllEventsOutsideReplay() {
+            // given
+            var stringEvent = stringEvent();
+            var longEvent = longEvent();
+
+            // when
+            testSubject.handle(stringEvent, regularContext(stringEvent));
+            testSubject.handle(longEvent, regularContext(longEvent));
+
+            // then
+            assertThat(handler.receivedStrings).containsExactly("test-string");
+            assertThat(handler.receivedLongs).containsExactly(42L);
+            assertThat(handler.receivedTokens).hasSize(2);
+            assertThat(handler.receivedTokens).noneMatch(ReplayToken.class::isInstance);
+        }
+    }
+
+    @Nested
+    class GivenClassLevelAllowReplayWithSomeMethodsDisallowed {
+
+        private ClassAllowedWithSomeMethodsDisallowedHandler handler;
+        private EventHandlingComponent testSubject;
+
+        @BeforeEach
+        void setUp() {
+            handler = new ClassAllowedWithSomeMethodsDisallowedHandler();
+            testSubject = new AnnotatedEventHandlingComponent<>(
+                    handler,
+                    ClasspathParameterResolverFactory.forClass(ClassAllowedWithSomeMethodsDisallowedHandler.class)
+            );
+        }
+
+        @Test
+        void allowReplayMethodHandlesEventsDuringReplay() {
+            // given
+            var stringEvent = stringEvent();
+
+            // when
+            testSubject.handle(stringEvent, replayContext(stringEvent));
+
+            // then
+            assertThat(handler.receivedStrings).containsExactly("test-string");
+            assertThat(handler.receivedTokens).hasSize(1);
+            assertThat(handler.receivedTokens).noneMatch(ReplayToken.class::isInstance);
+        }
+
+        @Test
+        void disallowReplayMethodSkipsEventsDuringReplay() {
+            // given
+            var longEvent = longEvent();
+
+            // when
+            testSubject.handle(longEvent, replayContext(longEvent));
+
+            // then
+            assertThat(handler.receivedLongs).isEmpty();
+            assertThat(handler.receivedTokens).isEmpty();
+        }
+
+        @Test
+        void handlesAllEventsOutsideReplay() {
+            // given
+            var stringEvent = stringEvent();
+            var longEvent = longEvent();
+
+            // when
+            testSubject.handle(stringEvent, regularContext(stringEvent));
+            testSubject.handle(longEvent, regularContext(longEvent));
+
+            // then
+            assertThat(handler.receivedStrings).containsExactly("test-string");
+            assertThat(handler.receivedLongs).containsExactly(42L);
+            assertThat(handler.receivedTokens).hasSize(2);
+            assertThat(handler.receivedTokens).noneMatch(ReplayToken.class::isInstance);
+        }
+    }
+
+    @Nested
+    class GivenNoReplayAnnotations {
+
+        private NoAnnotationsHandler handler;
+        private EventHandlingComponent testSubject;
+
+        @BeforeEach
+        void setUp() {
+            handler = new NoAnnotationsHandler();
+            testSubject = new AnnotatedEventHandlingComponent<>(
+                    handler,
+                    ClasspathParameterResolverFactory.forClass(NoAnnotationsHandler.class)
+            );
+        }
+
+        @Test
+        void handlesAllEventsDuringReplay() {
+            // given
+            var stringEvent = stringEvent();
+            var longEvent = longEvent();
+
+            // when
+            testSubject.handle(stringEvent, replayContext(stringEvent));
+            testSubject.handle(longEvent, replayContext(longEvent));
+
+            // then
+            assertThat(handler.receivedStrings).containsExactly("test-string");
+            assertThat(handler.receivedLongs).containsExactly(42L);
+            assertThat(handler.receivedTokens).hasSize(2);
+            assertThat(handler.receivedTokens).noneMatch(ReplayToken.class::isInstance);
+        }
+
+        @Test
+        void handlesAllEventsOutsideReplay() {
+            // given
+            var stringEvent = stringEvent();
+            var longEvent = longEvent();
+
+            // when
+            testSubject.handle(stringEvent, regularContext(stringEvent));
+            testSubject.handle(longEvent, regularContext(longEvent));
+
+            // then
+            assertThat(handler.receivedStrings).containsExactly("test-string");
+            assertThat(handler.receivedLongs).containsExactly(42L);
+            assertThat(handler.receivedTokens).hasSize(2);
+            assertThat(handler.receivedTokens).noneMatch(ReplayToken.class::isInstance);
+        }
+    }
+
+    @Nested
+    class GivenClassLevelAllowReplayOnly {
+
+        private ClassAllowedOnlyHandler handler;
+        private EventHandlingComponent testSubject;
+
+        @BeforeEach
+        void setUp() {
+            handler = new ClassAllowedOnlyHandler();
+            testSubject = new AnnotatedEventHandlingComponent<>(
+                    handler,
+                    ClasspathParameterResolverFactory.forClass(ClassAllowedOnlyHandler.class)
+            );
+        }
+
+        @Test
+        void handlesAllEventsDuringReplay() {
+            // given
+            var stringEvent = stringEvent();
+            var longEvent = longEvent();
+
+            // when
+            testSubject.handle(stringEvent, replayContext(stringEvent));
+            testSubject.handle(longEvent, replayContext(longEvent));
+
+            // then
+            assertThat(handler.receivedStrings).containsExactly("test-string");
+            assertThat(handler.receivedLongs).containsExactly(42L);
+            assertThat(handler.receivedTokens).hasSize(2);
+            assertThat(handler.receivedTokens).noneMatch(ReplayToken.class::isInstance);
+        }
+
+        @Test
+        void handlesAllEventsOutsideReplay() {
+            // given
+            var stringEvent = stringEvent();
+            var longEvent = longEvent();
+
+            // when
+            testSubject.handle(stringEvent, regularContext(stringEvent));
+            testSubject.handle(longEvent, regularContext(longEvent));
+
+            // then
+            assertThat(handler.receivedStrings).containsExactly("test-string");
+            assertThat(handler.receivedLongs).containsExactly(42L);
+            assertThat(handler.receivedTokens).hasSize(2);
+            assertThat(handler.receivedTokens).noneMatch(ReplayToken.class::isInstance);
         }
     }
 
@@ -422,18 +648,19 @@ class ReplayAwareMessageHandlerWrapperTest {
 
         private final List<String> receivedStrings = new ArrayList<>();
         private final List<Long> receivedLongs = new ArrayList<>();
+        private final List<TrackingToken> receivedTokens = new ArrayList<>();
 
         @AllowReplay
         @EventHandler
         public void handle(String event, TrackingToken token) {
-            assertFalse(token instanceof ReplayToken);
             receivedStrings.add(event);
+            receivedTokens.add(token);
         }
 
         @EventHandler
         public void handle(Long event, TrackingToken token) {
-            assertFalse(token instanceof ReplayToken);
             receivedLongs.add(event);
+            receivedTokens.add(token);
         }
     }
 
@@ -444,19 +671,20 @@ class ReplayAwareMessageHandlerWrapperTest {
 
         private final List<String> receivedStrings = new ArrayList<>();
         private final List<Long> receivedLongs = new ArrayList<>();
+        private final List<TrackingToken> receivedTokens = new ArrayList<>();
 
         @AllowReplay
         @EventHandler
         public void handle(String event, TrackingToken token) {
-            assertFalse(token instanceof ReplayToken);
             receivedStrings.add(event);
+            receivedTokens.add(token);
         }
 
         @EventHandler
         @DisallowReplay
         public void handle(Long event, TrackingToken token) {
-            assertFalse(token instanceof ReplayToken);
             receivedLongs.add(event);
+            receivedTokens.add(token);
         }
     }
 
@@ -468,17 +696,18 @@ class ReplayAwareMessageHandlerWrapperTest {
 
         private final List<String> receivedStrings = new ArrayList<>();
         private final List<Long> receivedLongs = new ArrayList<>();
+        private final List<TrackingToken> receivedTokens = new ArrayList<>();
 
         @EventHandler
         public void handle(String event, TrackingToken token) {
-            assertFalse(token instanceof ReplayToken);
             receivedStrings.add(event);
+            receivedTokens.add(token);
         }
 
         @EventHandler
         public void handle(Long event, TrackingToken token) {
-            assertFalse(token instanceof ReplayToken);
             receivedLongs.add(event);
+            receivedTokens.add(token);
         }
     }
 
@@ -491,19 +720,20 @@ class ReplayAwareMessageHandlerWrapperTest {
 
         private final List<String> receivedStrings = new ArrayList<>();
         private final List<Long> receivedLongs = new ArrayList<>();
+        private final List<TrackingToken> receivedTokens = new ArrayList<>();
 
         @DisallowReplay
         @EventHandler
         public void handle(String event, TrackingToken token) {
-            assertFalse(token instanceof ReplayToken);
             receivedStrings.add(event);
+            receivedTokens.add(token);
         }
 
         @AllowReplay(false)
         @EventHandler
         public void handle(Long event, TrackingToken token) {
-            assertFalse(token instanceof ReplayToken);
             receivedLongs.add(event);
+            receivedTokens.add(token);
         }
     }
 
@@ -516,18 +746,19 @@ class ReplayAwareMessageHandlerWrapperTest {
 
         private final List<String> receivedStrings = new ArrayList<>();
         private final List<Long> receivedLongs = new ArrayList<>();
+        private final List<TrackingToken> receivedTokens = new ArrayList<>();
 
         @EventHandler
         public void handle(String event, TrackingToken token) {
-            assertFalse(token instanceof ReplayToken);
             receivedStrings.add(event);
+            receivedTokens.add(token);
         }
 
         @DisallowReplay
         @EventHandler
         public void handle(Long event, TrackingToken token) {
-            assertFalse(token instanceof ReplayToken);
             receivedLongs.add(event);
+            receivedTokens.add(token);
         }
     }
 
@@ -539,17 +770,18 @@ class ReplayAwareMessageHandlerWrapperTest {
 
         private final List<String> receivedStrings = new ArrayList<>();
         private final List<Long> receivedLongs = new ArrayList<>();
+        private final List<TrackingToken> receivedTokens = new ArrayList<>();
 
         @EventHandler
         public void handle(String event, TrackingToken token) {
-            assertFalse(token instanceof ReplayToken);
             receivedStrings.add(event);
+            receivedTokens.add(token);
         }
 
         @EventHandler
         public void handle(Long event, TrackingToken token) {
-            assertFalse(token instanceof ReplayToken);
             receivedLongs.add(event);
+            receivedTokens.add(token);
         }
     }
 
@@ -562,17 +794,18 @@ class ReplayAwareMessageHandlerWrapperTest {
 
         private final List<String> receivedStrings = new ArrayList<>();
         private final List<Long> receivedLongs = new ArrayList<>();
+        private final List<TrackingToken> receivedTokens = new ArrayList<>();
 
         @EventHandler
         public void handle(String event, TrackingToken token) {
-            assertFalse(token instanceof ReplayToken);
             receivedStrings.add(event);
+            receivedTokens.add(token);
         }
 
         @EventHandler
         public void handle(Long event, TrackingToken token) {
-            assertFalse(token instanceof ReplayToken);
             receivedLongs.add(event);
+            receivedTokens.add(token);
         }
     }
 
@@ -586,19 +819,20 @@ class ReplayAwareMessageHandlerWrapperTest {
 
         private final List<String> receivedStrings = new ArrayList<>();
         private final List<Long> receivedLongs = new ArrayList<>();
+        private final List<TrackingToken> receivedTokens = new ArrayList<>();
         private boolean resetInvoked = false;
         private Object resetPayload = null;
 
         @EventHandler
         public void handle(String event, TrackingToken token) {
-            assertFalse(token instanceof ReplayToken);
             receivedStrings.add(event);
+            receivedTokens.add(token);
         }
 
         @EventHandler
         public void handle(Long event, TrackingToken token) {
-            assertFalse(token instanceof ReplayToken);
             receivedLongs.add(event);
+            receivedTokens.add(token);
         }
 
         @AllowReplay
