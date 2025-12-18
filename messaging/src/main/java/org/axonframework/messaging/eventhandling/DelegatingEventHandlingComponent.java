@@ -21,6 +21,8 @@ import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.replay.ResetContext;
+import org.axonframework.messaging.eventhandling.replay.ResetHandler;
 
 import java.util.Objects;
 import java.util.Set;
@@ -55,8 +57,22 @@ public abstract class DelegatingEventHandlingComponent implements EventHandlingC
     }
 
     @Override
-    public EventHandlerRegistry subscribe(@Nonnull QualifiedName name, @Nonnull EventHandler eventHandler) {
-        return delegate.subscribe(name, eventHandler);
+    public DelegatingEventHandlingComponent subscribe(@Nonnull QualifiedName name, @Nonnull EventHandler eventHandler) {
+        delegate.subscribe(name, eventHandler);
+        return this;
+    }
+
+    @Override
+    public DelegatingEventHandlingComponent subscribe(@Nonnull Set<QualifiedName> names,
+                                                      @Nonnull EventHandler eventHandler) {
+        EventHandlingComponent.super.subscribe(names, eventHandler);
+        return this;
+    }
+
+    @Override
+    public EventHandlerRegistry subscribe(@Nonnull EventHandlingComponent handlingComponent) {
+        EventHandlingComponent.super.subscribe(handlingComponent);
+        return this;
     }
 
     @Override
@@ -73,5 +89,18 @@ public abstract class DelegatingEventHandlingComponent implements EventHandlingC
     @Override
     public Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
         return delegate.sequenceIdentifierFor(event, context);
+    }
+
+    @Nonnull
+    @Override
+    public DelegatingEventHandlingComponent subscribe(@Nonnull ResetHandler resetHandler) {
+        delegate.subscribe(resetHandler);
+        return this;
+    }
+
+    @Nonnull
+    @Override
+    public MessageStream.Empty<Message> handle(@Nonnull ResetContext resetContext, @Nonnull ProcessingContext context) {
+        return delegate.handle(resetContext, context);
     }
 }

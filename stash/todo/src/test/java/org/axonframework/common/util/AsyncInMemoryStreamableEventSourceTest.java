@@ -31,8 +31,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * This test verifies that both implementations produce equivalent results when processing the same sequence of events,
- * including error scenarios.
+ * Test class for {@link AsyncInMemoryStreamableEventSource}.
  */
 class AsyncInMemoryStreamableEventSourceTest {
 

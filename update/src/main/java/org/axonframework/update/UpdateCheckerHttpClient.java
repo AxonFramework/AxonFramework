@@ -95,6 +95,10 @@ public class UpdateCheckerHttpClient {
             }
             logger.debug("Reported anonymous usage data successfully, received response: {}", response.body());
             return Optional.of(UpdateCheckResponse.fromRequest(response.body()));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.warn("Failed to report anonymous usage data. Thread interrupted.", e);
+            return Optional.empty();
         } catch (Exception e) {
             logger.warn("Failed to report anonymous usage data", e);
             return Optional.empty();

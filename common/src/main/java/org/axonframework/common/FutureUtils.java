@@ -23,6 +23,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 
 /**
  * Utility class containing reusable functionality for interacting with the {@link CompletableFuture}.
@@ -94,6 +95,22 @@ public final class FutureUtils {
         return exception instanceof CompletionException || exception instanceof ExecutionException
                 ? exception.getCause()
                 : exception;
+    }
+
+    /**
+     * Safely catches exceptions thrown by the given {@code fn} and returns a {@link CompletableFuture} that completes.
+     *
+     * @param fn  A lambda returning a {@link CompletableFuture}.
+     * @param <T> Type of the completable future.
+     * @return A completable future that completes exceptionally if the given lambda throws an exception.
+     */
+    @Nonnull
+    public static <T> CompletableFuture<T> runFailing(@Nonnull final Supplier<CompletableFuture<T>> fn) {
+        try {
+            return fn.get();
+        } catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
+        }
     }
 
     /**

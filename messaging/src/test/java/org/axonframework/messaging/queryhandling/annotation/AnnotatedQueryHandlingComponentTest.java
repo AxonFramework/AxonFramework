@@ -15,10 +15,18 @@
  */
 package org.axonframework.messaging.queryhandling.annotation;
 
+import org.axonframework.common.util.MockException;
+import org.axonframework.conversion.PassThroughConverter;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.MessageStream.Entry;
 import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.annotation.AnnotationMessageTypeResolver;
+import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.core.annotation.UnsupportedHandlerException;
 import org.axonframework.messaging.core.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -28,13 +36,16 @@ import org.axonframework.messaging.queryhandling.NoHandlerForQueryException;
 import org.axonframework.messaging.queryhandling.QueryExecutionException;
 import org.axonframework.messaging.queryhandling.QueryMessage;
 import org.axonframework.messaging.queryhandling.QueryResponseMessage;
-import org.axonframework.conversion.PassThroughConverter;
-import org.axonframework.common.util.MockException;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -46,26 +57,43 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @author Steven van Beelen
  */
 class AnnotatedQueryHandlingComponentTest {
+    private final AtomicInteger callCount = new AtomicInteger();
 
     private AnnotatedQueryHandlingComponent<?> testSubject;
 
     @BeforeEach
     void setUp() {
-        testSubject = new AnnotatedQueryHandlingComponent<>(new MyQueryHandler(),
-                                                            new DelegatingMessageConverter(PassThroughConverter.INSTANCE));
+        MyQueryHandler handler = new MyQueryHandler();
+        testSubject = new AnnotatedQueryHandlingComponent<>(
+                handler,
+                ClasspathParameterResolverFactory.forClass(handler.getClass()),
+                ClasspathHandlerDefinition.forClass(handler.getClass()),
+                new AnnotationMessageTypeResolver(),
+                new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
+        );
     }
 
     @Test
     void subscribeFailsForHandlerWithInvalidParameters() {
+        FaultyParameterOrderQueryHandler handler = new FaultyParameterOrderQueryHandler();
         assertThatThrownBy(() -> new AnnotatedQueryHandlingComponent<>(
-                new FaultyParameterOrderQueryHandler(), new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
+                handler,
+                ClasspathParameterResolverFactory.forClass(handler.getClass()),
+                ClasspathHandlerDefinition.forClass(handler.getClass()),
+                new AnnotationMessageTypeResolver(),
+                new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
         )).isInstanceOf(UnsupportedHandlerException.class);
     }
 
     @Test
     void subscribeFailsForHandlerWithVoidReturnType() {
+        VoidReturnTypeQueryHandler handler = new VoidReturnTypeQueryHandler();
         assertThatThrownBy(() -> new AnnotatedQueryHandlingComponent<>(
-                new VoidReturnTypeQueryHandler(), new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
+                handler,
+                ClasspathParameterResolverFactory.forClass(handler.getClass()),
+                ClasspathHandlerDefinition.forClass(handler.getClass()),
+                new AnnotationMessageTypeResolver(),
+                new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
         )).isInstanceOf(UnsupportedHandlerException.class);
     }
 
@@ -180,6 +208,353 @@ class AnnotatedQueryHandlingComponentTest {
         assertThat(result.hasNextAvailable()).isFalse();
     }
 
+    @Nested
+    class GivenAnAnnotatedInterfaceMethod {
+        interface I {
+            @QueryHandler(queryName = "call-counter")
+            int handle(Integer event);
+        }
+
+        @Nested
+        class WhenImplementedByAnnotedInstanceMethod {
+            class T implements I {
+                @Override @QueryHandler(queryName = "call-counter")
+                public int handle(Integer event) {
+                    return callCount.incrementAndGet();
+                }
+            }
+
+            @Test
+            void shouldCallHandlerOnlyOnce() {
+                assertCalledOnlyOnce(new T());
+            }
+
+            @Nested
+            class AndOverriddenAndAnnotatedInASubclass {
+                class U extends T {
+                    @Override @QueryHandler(queryName = "call-counter")
+                    public int handle(Integer event) {
+                        return callCount.incrementAndGet();
+                    }
+                }
+
+                @Test
+                void shouldCallHandlerOnlyOnce() {
+                    assertCalledOnlyOnce(new U());
+                }
+            }
+
+            @Nested
+            class AndOverriddenButNotAnnotatedInASubclass {
+                class U extends T {
+                    @Override
+                    public int handle(Integer event) {
+                        return callCount.incrementAndGet();
+                    }
+                }
+
+                @Test
+                void shouldCallHandlerOnlyOnce() {
+                    assertCalledOnlyOnce(new U());
+                }
+            }
+        }
+
+        @Nested
+        class WhenImplementedByUnannotedInstanceMethod {
+            class T implements I {
+                @Override
+                public int handle(Integer event) {
+                    return callCount.incrementAndGet();
+                }
+            }
+
+            @Test
+            void shouldCallHandlerOnlyOnce() {
+                assertCalledOnlyOnce(new T());
+            }
+
+            @Nested
+            class AndOverriddenAndAnnotatedInASubclass {
+                class U extends T {
+                    @Override @QueryHandler(queryName = "call-counter")
+                    public int handle(Integer event) {
+                        return callCount.incrementAndGet();
+                    }
+                }
+
+                @Test
+                void shouldCallHandlerOnlyOnce() {
+                    assertCalledOnlyOnce(new U());
+                }
+            }
+
+            @Nested
+            class AndOverriddenButNotAnnotatedInASubclass {
+                class U extends T {
+                    @Override
+                    public int handle(Integer event) {
+                        return callCount.incrementAndGet();
+                    }
+                }
+
+                @Test
+                void shouldCallHandlerOnlyOnce() {
+                    assertCalledOnlyOnce(new U());
+                }
+            }
+        }
+    }
+
+    @Nested
+    class GivenAnUnannotatedInterfaceMethod {
+        interface I {
+            int handle(Integer event);
+        }
+
+        @Nested
+        class WhenImplementedByAnnotedInstanceMethod {
+            class T implements I {
+                @Override @QueryHandler(queryName = "call-counter")
+                public int handle(Integer event) {
+                    return callCount.incrementAndGet();
+                }
+            }
+
+            @Test
+            void shouldCallHandlerOnlyOnce() {
+                assertCalledOnlyOnce(new T());
+            }
+
+            @Nested
+            class AndOverriddenAndAnnotatedInASubclass {
+                class U extends T {
+                    @Override @QueryHandler(queryName = "call-counter")
+                    public int handle(Integer event) {
+                        return callCount.incrementAndGet();
+                    }
+                }
+
+                @Test
+                void shouldCallHandlerOnlyOnce() {
+                    assertCalledOnlyOnce(new U());
+                }
+            }
+
+            @Nested
+            class AndOverriddenButNotAnnotatedInASubclass {
+                class U extends T {
+                    @Override
+                    public int handle(Integer event) {
+                        return callCount.incrementAndGet();
+                    }
+                }
+
+                @Test
+                void shouldCallHandlerOnlyOnce() {
+                    assertCalledOnlyOnce(new U());
+                }
+            }
+        }
+
+        @Nested
+        class WhenImplementedByUnannotedInstanceMethod {
+            class T implements I {
+                @Override
+                public int handle(Integer event) {
+                    return callCount.incrementAndGet();
+                }
+            }
+
+            @Test
+            void shouldNotCallAnything() {
+                assertNotCalled(new T());
+            }
+
+            @Nested
+            class AndOverriddenAndAnnotatedInASubclass {
+                class U extends T {
+                    @Override @QueryHandler(queryName = "call-counter")
+                    public int handle(Integer event) {
+                        return callCount.incrementAndGet();
+                    }
+                }
+
+                @Test
+                void shouldCallHandlerOnlyOnce() {
+                    assertCalledOnlyOnce(new U());
+                }
+            }
+
+            @Nested
+            class AndOverriddenButNotAnnotatedInASubclass {
+                class U extends T {
+                    @Override
+                    public int handle(Integer event) {
+                        return callCount.incrementAndGet();
+                    }
+                }
+
+                @Test
+                void shouldNotCallAnything() {
+                    assertNotCalled(new U());
+                }
+            }
+        }
+    }
+
+    @Nested
+    class GivenAnAnnotatedInstanceMethod {
+        class T {
+            @QueryHandler(queryName = "call-counter")
+            public int handle(Integer event) {
+                return callCount.incrementAndGet();
+            }
+        }
+
+        @Test
+        void shouldCallHandlerOnlyOnce() {
+            assertCalledOnlyOnce(new T());
+        }
+
+        @Nested
+        class WhenOverriddenAndAnnotatedInASubclass {
+            class U extends T {
+                @Override @QueryHandler(queryName = "call-counter")
+                public int handle(Integer event) {
+                    return callCount.incrementAndGet();
+                }
+            }
+
+            @Test
+            void shouldCallHandlerOnlyOnce() {
+                assertCalledOnlyOnce(new U());
+            }
+        }
+
+        @Nested
+        class WhenNotOverriddenInSubclass {
+            class U extends T {
+            }
+
+            @Test
+            void shouldCallHandlerOnlyOnce() {
+                assertCalledOnlyOnce(new U());
+            }
+        }
+
+        @Nested
+        class WhenOverriddenButNotAnnotatedInASubclass {
+            class U extends T {
+                @Override
+                public int handle(Integer event) {
+                    return callCount.incrementAndGet();
+                }
+            }
+
+            @Test
+            void shouldCallHandlerOnlyOnce() {
+                assertCalledOnlyOnce(new U());
+            }
+        }
+    }
+
+    @Nested
+    class GivenAnUnannotatedInstanceMethod {
+        class T {
+            public int handle(Integer event) {
+                return callCount.incrementAndGet();
+            }
+        }
+
+        @Test
+        void shouldNotCallAnything() {
+            assertNotCalled(new T());
+        }
+
+        @Nested
+        class WhenOverriddenAndAnnotatedInASubclass {
+            class U extends T {
+                @Override @QueryHandler(queryName = "call-counter")
+                public int handle(Integer event) {
+                    return callCount.incrementAndGet();
+                }
+            }
+
+            @Test
+            void shouldCallHandlerOnlyOnce() {
+                assertCalledOnlyOnce(new U());
+            }
+        }
+
+        @Nested
+        class WhenOverriddenButNotAnnotatedInASubclass {
+            class U extends T {
+                @Override
+                public int handle(Integer event) {
+                    return callCount.incrementAndGet();
+                }
+            }
+
+            @Test
+            void shouldNotCallAnything() {
+                assertNotCalled(new U());
+            }
+        }
+    }
+
+    private void assertCalledOnlyOnce(Object handlerInstance) {
+        AnnotatedQueryHandlingComponent<?> testSubject = new AnnotatedQueryHandlingComponent<>(
+                handlerInstance,
+                ClasspathParameterResolverFactory.forClass(handlerInstance.getClass()),
+                ClasspathHandlerDefinition.forClass(handlerInstance.getClass()),
+                new AnnotationMessageTypeResolver(),
+                new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
+        );
+
+        QueryMessage testQuery = new GenericQueryMessage(new MessageType("call-counter"), 42);
+        ProcessingContext testContext = StubProcessingContext.forMessage(testQuery);
+
+        MessageStream<QueryResponseMessage> stream = testSubject.handle(testQuery, testContext);
+
+        assertThat(stream.hasNextAvailable()).isTrue();
+
+        Object result = stream.first()
+            .asCompletableFuture()
+            .thenApply(MessageStream.Entry::message)
+            .thenApply(Message::payload)
+            .join();
+
+        assertThat(callCount.get()).isEqualTo(1);
+        assertThat(result).isEqualTo(1);
+    }
+
+    private void assertNotCalled(Object handlerInstance) {
+        AnnotatedQueryHandlingComponent<?> testSubject = new AnnotatedQueryHandlingComponent<>(
+                handlerInstance,
+                ClasspathParameterResolverFactory.forClass(handlerInstance.getClass()),
+                ClasspathHandlerDefinition.forClass(handlerInstance.getClass()),
+                new AnnotationMessageTypeResolver(),
+                new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
+        );
+
+        QueryMessage testQuery = new GenericQueryMessage(new MessageType("call-counter"), 42);
+        ProcessingContext testContext = StubProcessingContext.forMessage(testQuery);
+
+        MessageStream<QueryResponseMessage> stream = testSubject.handle(testQuery, testContext);
+
+        assertThat(stream.hasNextAvailable()).isFalse();
+
+        CompletableFuture<Entry<QueryResponseMessage>> future = stream.first().asCompletableFuture();
+
+        assertThatThrownBy(() -> future.join())
+            .isInstanceOf(CompletionException.class)
+            .cause()
+            .isInstanceOf(NoHandlerForQueryException.class);
+
+        assertThat(callCount.get()).isEqualTo(0);
+    }
+
     private static class MyQueryHandler {
 
         @SuppressWarnings("unused")
@@ -238,5 +613,75 @@ class AnnotatedQueryHandlingComponentTest {
         @QueryHandler
         public void echo(String echo) {
         }
+    }
+
+    @Test
+    void messageTypeResolverIsUsedWhenProvidedAndQueryNameMatchesFullyQualifiedClassName() {
+        // given...
+        // Create a handler where the queryName uses the default (which would be the payload type's fully qualified name)
+        class HandlerWithDefaultQueryName {
+            @QueryHandler
+            public String handle(String query) {
+                return "result";
+            }
+        }
+
+        MessageTypeResolver customResolver = payloadType -> {
+            if (payloadType == String.class) {
+                return Optional.of(new MessageType(new QualifiedName("custom.resolved.query")));
+            }
+            return Optional.empty();
+        };
+
+        HandlerWithDefaultQueryName handler = new HandlerWithDefaultQueryName();
+        AnnotatedQueryHandlingComponent<?> testSubject = new AnnotatedQueryHandlingComponent<>(
+                handler,
+                ClasspathParameterResolverFactory.forClass(handler.getClass()),
+                ClasspathHandlerDefinition.forClass(handler.getClass()),
+                customResolver,
+                new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
+        );
+
+        // then... the resolver should be used since no custom queryName was specified
+        assertThat(testSubject.supportedQueries()).contains(new QualifiedName("custom.resolved.query"));
+    }
+
+    @Test
+    void queryNameFromAnnotationIsUsedWhenItDoesNotMatchFullyQualifiedClassName() {
+        // given...
+        // The MyQueryHandler uses custom query names like "echo", "faulty", etc.
+        // which don't match the payload type's fully qualified class name
+        MyQueryHandler handler = new MyQueryHandler();
+        MessageTypeResolver customResolver = payloadType ->
+                Optional.of(new MessageType(new QualifiedName("should.not.be.used")));
+
+        AnnotatedQueryHandlingComponent<?> testSubject = new AnnotatedQueryHandlingComponent<>(
+                handler,
+                ClasspathParameterResolverFactory.forClass(handler.getClass()),
+                ClasspathHandlerDefinition.forClass(handler.getClass()),
+                customResolver,
+                new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
+        );
+
+        // then... annotation names should be used, not the resolver
+        assertThat(testSubject.supportedQueries()).contains(new QualifiedName("echo"));
+        assertThat(testSubject.supportedQueries()).doesNotContain(new QualifiedName("should.not.be.used"));
+    }
+
+    @Test
+    void queryNameFromAnnotationIsUsedWithAnnotationMessageTypeResolver() {
+        // given...
+        // When using AnnotationMessageTypeResolver, custom query names should be preserved
+        MyQueryHandler handler = new MyQueryHandler();
+        AnnotatedQueryHandlingComponent<?> testSubject = new AnnotatedQueryHandlingComponent<>(
+                handler,
+                ClasspathParameterResolverFactory.forClass(handler.getClass()),
+                ClasspathHandlerDefinition.forClass(handler.getClass()),
+                new AnnotationMessageTypeResolver(),
+                new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
+        );
+
+        // then... annotation names should be used since they don't match the fully qualified class name
+        assertThat(testSubject.supportedQueries()).contains(new QualifiedName("echo"));
     }
 }

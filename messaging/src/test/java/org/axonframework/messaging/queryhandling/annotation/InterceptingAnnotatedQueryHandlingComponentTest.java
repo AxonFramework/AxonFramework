@@ -18,6 +18,9 @@ package org.axonframework.messaging.queryhandling.annotation;
 import org.axonframework.messaging.core.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.annotation.AnnotationMessageTypeResolver;
+import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.core.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.core.interception.annotation.ExceptionHandler;
 import org.axonframework.messaging.core.interception.annotation.MessageHandlerInterceptor;
@@ -53,8 +56,12 @@ class InterceptingAnnotatedQueryHandlingComponentTest {
         // given...
         List<QueryMessage> withInterceptor = new ArrayList<>();
         List<QueryMessage> withoutInterceptor = new ArrayList<>();
+        MyInterceptingQueryHandler handler = new MyInterceptingQueryHandler(withoutInterceptor, withInterceptor, new ArrayList<>());
         QueryHandlingComponent testSubject = new AnnotatedQueryHandlingComponent<>(
-                new MyInterceptingQueryHandler(withoutInterceptor, withInterceptor, new ArrayList<>()),
+                handler,
+                ClasspathParameterResolverFactory.forClass(handler.getClass()),
+                ClasspathHandlerDefinition.forClass(handler.getClass()),
+                new AnnotationMessageTypeResolver(),
                 new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
         );
 
@@ -77,8 +84,12 @@ class InterceptingAnnotatedQueryHandlingComponentTest {
     void exceptionHandlerAnnotatedMethodsAreSupportedForQueryHandlingComponents() {
         // given...
         List<Exception> interceptedExceptions = new ArrayList<>();
+        MyInterceptingQueryHandler handler = new MyInterceptingQueryHandler(new ArrayList<>(), new ArrayList<>(), interceptedExceptions);
         QueryHandlingComponent testSubject = new AnnotatedQueryHandlingComponent<>(
-                new MyInterceptingQueryHandler(new ArrayList<>(), new ArrayList<>(), interceptedExceptions),
+                handler,
+                ClasspathParameterResolverFactory.forClass(handler.getClass()),
+                ClasspathHandlerDefinition.forClass(handler.getClass()),
+                new AnnotationMessageTypeResolver(),
                 new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
         );
 

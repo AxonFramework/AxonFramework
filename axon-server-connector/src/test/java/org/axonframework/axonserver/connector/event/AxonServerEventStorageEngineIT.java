@@ -48,7 +48,9 @@ class AxonServerEventStorageEngineIT extends StorageEngineTestSuite<AxonServerEv
 
     @SuppressWarnings("resource")
     @Container
-    private static final AxonServerContainer container = new AxonServerContainer("docker.axoniq.io/axoniq/axonserver:2025.2.0").withDevMode(true);
+    private static final AxonServerContainer container = new AxonServerContainer("docker.axoniq.io/axoniq/axonserver:2025.2.0")
+            .withDevMode(true)
+            .withDcbContext(true);
 
     private static AxonServerConnection connection;
 
@@ -66,12 +68,6 @@ class AxonServerEventStorageEngineIT extends StorageEngineTestSuite<AxonServerEv
                                                 .routingServers(address)
                                                 .build()
                                                 .connect(CONTEXT);
-
-        // This is only needed to switch the store to DCB mode:
-        AxonServerContainerUtils.purgeEventsFromAxonServer(container.getHost(),
-                container.getHttpPort(),
-                CONTEXT,
-                AxonServerContainerUtils.DCB_CONTEXT);
 
         EventConverter eventConverter = new DelegatingEventConverter(new ChainingContentTypeConverter());
         return new AxonServerEventStorageEngine(connection, eventConverter);

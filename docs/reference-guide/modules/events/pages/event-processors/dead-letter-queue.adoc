@@ -6,9 +6,9 @@ Instead of either logging the error and continuing, or infinitely retrying the c
 
 [TIP]
 .Insight and Management
-xref:axoniq-console-reference:ROOT:index.adoc[AxonIQ Console] provides insight into the Dead-Letter Queue and tools for its management.
+xref:axoniq-platform-reference:ROOT:index.adoc[Axoniq Platform] provides insight into the Dead-Letter Queue and tools for its management.
 It's straightforward to see the dead letters in the queue and decide to retry them or remove them from the queue.
-You can find more information on the xref:axoniq-console-reference:ROOT:features/dlq.adoc[Dead-Letter Queue page of AxonIQ Console].
+You can find more information on the xref:axoniq-platform-reference:ROOT:features/dlq.adoc[Dead-Letter Queue page of Axoniq Platform].
 
 Note that you _cannot_ share a dead-letter queue between different processors.
 Hence, each processor you want to enable this behavior for should receive a unique dead-letter queue instance.
