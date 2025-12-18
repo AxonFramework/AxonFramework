@@ -28,7 +28,7 @@
     <artifactId>axon-framework-examples</artifactId>
     <packaging>pom</packaging>
 
-    <name>Axon Examples</name>
+    <name>Axon Framework - Examples</name>
     <description>Collection of examples used for demonstration and test purposes.</description>
 
     <dependencyManagement>

@@ -16,7 +16,6 @@
 
 package org.axonframework.common.configuration;
 
-import org.axonframework.common.util.StubLifecycleRegistry;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.atomic.AtomicBoolean;

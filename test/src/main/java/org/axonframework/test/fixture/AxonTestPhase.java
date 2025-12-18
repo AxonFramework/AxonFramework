@@ -559,11 +559,33 @@ public interface AxonTestPhase {
             /**
              * Invokes the given {@code consumer} of the command result payload that has been returned during the When
              * phase, allowing for <b>any</b> form of assertion.
+             * <p>
+             * <b>Note:</b> Depending on the infrastructure, the payload may require conversion (e.g., from
+             * {@code byte[]} or other intermediate representations). If you need to perform assertions on a typed
+             * payload, use {@link #resultMessagePayloadSatisfies(Class, Consumer)} instead, which automatically
+             * converts the payload to the expected type.
              *
              * @param consumer Consumes the command result payload. You may place your own assertions here.
              * @return The current Then instance, for fluent interfacing.
+             * @see #resultMessagePayloadSatisfies(Class, Consumer)
+             * @deprecated Use {@link #resultMessagePayloadSatisfies(Class, Consumer)} instead, which automatically
+             * handles payload conversion for distributed setups where conversion is necessary.
              */
+            @Deprecated(since = "5.1.0", forRemoval = true)
             Command resultMessagePayloadSatisfies(@Nonnull Consumer<Object> consumer);
+
+            /**
+             * Invokes the given {@code consumer} of the command result payload that has been returned during the When
+             * phase, after converting it to the expected {@code type}. This method automatically handles payload
+             * conversion using the configured
+             * {@link org.axonframework.messaging.core.conversion.MessageConverter}.
+             *
+             * @param type     The expected type of the payload.
+             * @param consumer Consumes the converted command result payload. You may place your own assertions here.
+             * @param <T>      The type of the payload.
+             * @return The current Then instance, for fluent interfacing.
+             */
+            <T> Command resultMessagePayloadSatisfies(@Nonnull Class<T> type, @Nonnull Consumer<T> consumer);
         }
 
         /**
