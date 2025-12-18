@@ -16,12 +16,11 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
+import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.extension.springboot.actuator.axonserver.AxonServerHealthIndicator;
 import org.axonframework.extension.springboot.actuator.axonserver.AxonServerStatusAggregator;
-import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.springframework.boot.actuate.health.SimpleStatusAggregator;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -33,8 +32,7 @@ import org.springframework.context.annotation.Bean;
  * @author Steven van Beelen
  * @since 4.6.0
  */
-@AutoConfiguration
-@AutoConfigureAfter(AxonServerAutoConfiguration.class)
+@AutoConfiguration(after = AxonServerAutoConfiguration.class)
 @ConditionalOnClass(name = {
         "org.springframework.boot.actuate.health.AbstractHealthIndicator",
         "org.axonframework.axonserver.connector.AxonServerConnectionManager"

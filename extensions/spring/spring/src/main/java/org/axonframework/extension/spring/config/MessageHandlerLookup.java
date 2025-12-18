@@ -78,6 +78,7 @@ public class MessageHandlerLookup implements BeanDefinitionRegistryPostProcessor
      *
      * @param messageType The type of message to find handlers for.
      * @param registry    The registry to find these handlers in.
+     * @param includeProtoypeBeans Whether to include prototype beans.
      * @return A list of bean names with message handlers.
      */
     public static List<String> messageHandlerBeans(Class<? extends Message> messageType,
@@ -86,10 +87,13 @@ public class MessageHandlerLookup implements BeanDefinitionRegistryPostProcessor
         List<String> found = new ArrayList<>();
         for (String beanName : registry.getBeanDefinitionNames()) {
             BeanDefinition bd = registry.getBeanDefinition(beanName);
-            if (includePrototypeBeans || (bd.isSingleton() && !bd.isAbstract())) {
-                Class<?> beanType = registry.getType(beanName);
-                if (beanType != null && hasMessageHandler(messageType, beanType)) {
-                    found.add(beanName);
+
+            if (bd.isAutowireCandidate()) {  // excludes unproxied variants of proxied beans
+                if (includePrototypeBeans || (bd.isSingleton() && !bd.isAbstract())) {
+                    Class<?> beanType = registry.getType(beanName);
+                    if (beanType != null && hasMessageHandler(messageType, beanType)) {
+                        found.add(beanName);
+                    }
                 }
             }
         }

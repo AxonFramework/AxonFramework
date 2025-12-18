@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
-import org.axonframework.extension.springboot.autoconfig.InfrastructureConfiguration;
 import org.axonframework.extension.spring.config.MessageHandlerLookup;
 import org.axonframework.extension.spring.config.SpringEventSourcedEntityLookup;
 import org.junit.jupiter.api.*;
@@ -30,11 +29,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 
 /**
- * Test class validating the behavior of the {@link InfrastructureConfiguration}.
+ * Test class validating the behavior of the {@link InfrastructureAutoConfiguration}.
  *
  * @author Simon Zambrovski
  */
-class InfrastructureConfigurationTest {
+class InfrastructureAutoConfigurationTest {
 
     private ApplicationContextRunner testApplicationContext;
 

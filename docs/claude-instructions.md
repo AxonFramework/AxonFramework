@@ -4,6 +4,8 @@
 
 This is a gradual migration project to update the Axon Framework reference guide from Axon 4 to Axon 5. The reference guide is located in `docs/reference-guide/` and uses Antora for documentation.
 
+Don't emphasize changes in the documentation. Instead, describe the new status as if it is the status quo. If there are very significant changes compared to Axon 4, you can describe them briefly in a NOTE section.
+
 Axon 5 includes fundamental architectural changes:
 - Messaging-centric approach (Commands, Events, and Queries are equally important)
 - Shift away from modeling-centric focus of Axon 4
@@ -83,18 +85,67 @@ Axon 5 includes fundamental architectural changes:
 - Different handlers can receive the same message in different Java representations
 - Makes many upcasters unnecessary - conversion happens during handling, not deserialization
 
+**Important distinction - MessageType vs identifier:**
+- **MessageType**: Identifies what TYPE/STRUCTURE of message it is (e.g., "OrderPlaced v1.0")
+  - Describes what structure/content to expect
+  - Many messages can share the same MessageType
+  - Acts as a type/schema identifier
+- **identifier**: Uniquely identifies a SPECIFIC message instance
+  - Like a UUID for that particular message occurrence
+  - Stays the same even if message is represented in different Java classes
+  - Acts as an instance identifier
+
 **Documentation implications:**
 - Emphasize that Java class is no longer the message identity
-- Explain MessageType (QualifiedName + version) as the true message identifier
+- Explain MessageType (QualifiedName + version) as the true message TYPE identifier
+- Clarify that identifier is the instance identifier (not MessageType)
 - Show how handlers declare types (via @Event/@Command/@Query annotations or parameter types)
 - Demonstrate payload conversion at handling time
 - Explain when upcasters are still needed vs when simple conversion suffices
+
+**Handler annotation requirements:**
+- When handler parameter is @Event/@Command/@Query annotated: Framework derives MessageType from annotation
+- When handler parameter is NOT annotated (JsonNode, Map, String, etc.): **MUST specify messageType attribute**
+  - Example: `@EventHandler(messageType = "com.example.OrderPlaced")`
+  - This tells Axon which message type the handler should receive
+
+### Exception Handling Philosophy
+**Important shift in approach:**
+
+In distributed systems, exceptions often lose value when crossing boundaries:
+- Exception details may not be meaningful to receivers
+- Different services may not share same exception classes
+- Receivers need structured information to make decisions
+
+**Guidance for documentation:**
+- **Use result objects for expected failure scenarios:**
+  - Validation failures, business rule violations, authorization failures
+  - These are not exceptional - they're expected possibilities
+  - Result objects can carry structured information about failures
+- **Reserve exceptions for truly exceptional circumstances:**
+  - Infrastructure failures (database unavailable, network timeout)
+  - Programming errors (null pointer, illegal state)
+  - Configuration errors
+  - Situations where normal processing cannot continue
+
+**Documentation approach:**
+- Emphasize results vs exceptions distinction in exception handling sections
+- Show result object patterns alongside exception handling
+- Guide users toward appropriate error handling strategy for their scenario
 
 ### Module Structure
 - JPA remains in core framework
 - JDBC has moved to external extensions (remove references for now)
 - Spring has moved to extensions
 - Monitoring and tracing moved to extensions
+
+### Removed Components
+**DomainEventMessage:**
+- `DomainEventMessage` has been removed in Axon 5
+- No longer distinguishes between domain events and regular events
+- All events are now `EventMessage`
+- Remove references to DomainEventMessage in documentation
+- Update examples to use EventMessage only
 
 ### Legacy Package = Not Available
 **Critical policy for documentation:**
