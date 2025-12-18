@@ -73,17 +73,6 @@ public class ReplayAwareMessageHandlerWrapper implements HandlerEnhancerDefiniti
         }
 
         @Override
-        public Object handleSync(@Nonnull Message message,
-                                 @Nonnull ProcessingContext context,
-                                 @Nullable T target) throws Exception {
-            Optional<TrackingToken> optionalToken = TrackingToken.fromContext(context);
-            if (optionalToken.isPresent() && ReplayToken.isReplay(optionalToken.get())) {
-                return null;
-            }
-            return super.handleSync(message, context, target);
-        }
-
-        @Override
         public MessageStream<?> handle(@Nonnull Message message,
                                        @Nonnull ProcessingContext context,
                                        @Nullable T target) {
