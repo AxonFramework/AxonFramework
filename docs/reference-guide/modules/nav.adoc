@@ -14,7 +14,7 @@ include::deadlines:partial$nav.adoc[]
 
 include::testing:partial$nav.adoc[]
 
-* xref::serialization.adoc[]
+* xref::conversion.adoc[]
 
 include::tuning:partial$nav.adoc[]
 

@@ -37,11 +37,11 @@ The following files in `axon-5/` describe the API changes:
 - Updated dependency coordinates and groupIds
 - Added Axon Bill of Materials (BOM) recommendation
 
-### modules/ROOT/pages/conversion.adoc
+### modules/ROOT/pages/serialization.adoc
 **Status:** ✅ COMPLETED
-**Note:** Renamed from serialization.adoc
+
 **Changes applied:**
-- Updated title to "Conversion" with page alias for serialization.adoc
+- Updated title to "Serialization and Conversion" to reflect both concepts
 - Replaced all Serializer references with Converter throughout the document
 - Documented MessageConverter and EventConverter types with clear explanations of their roles
 - Added comprehensive section on "Understanding message types and conversion" explaining:

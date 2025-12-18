@@ -98,6 +98,96 @@ This tells Axon which message type the handler should receive.
 This approach **reduces the need for upcasters** in many scenarios.
 Instead of creating upcasters to convert old message formats to new Java classes during deserialization, you can often just handle messages in different formats and let Axon perform the conversion.
 
+[#message_type_resolution]
+=== Message type resolution
+
+The `MessageTypeResolver` determines the `MessageType` for each message class in your application.
+By default, it uses the annotations and class information to derive the qualified name and version.
+
+==== Specifying message types
+
+Use the message-specific annotations to define the name, namespace, and version of your messages.
+
+**For events:**
+
+[source,java]
+----
+package com.example.events;
+
+// Namespace defaults to the package name: "com.example.events"
+// Full qualified name will be: "com.example.events.UserRegistered"
+@Event(name = "UserRegistered", version = "1.0")
+public class UserRegisteredEvent {
+    // fields, constructors, etc.
+}
+
+// Explicitly specify a different namespace
+// Full qualified name will be: "com.mycompany.user.UserRegistered"
+@Event(namespace = "com.mycompany.user", name = "UserRegistered", version = "1.0")
+public class UserRegisteredEvent {
+    // fields, constructors, etc.
+}
+----
+
+**For commands:**
+
+[source,java]
+----
+package com.example.commands;
+
+@Command(name = "RegisterUser", version = "1.0")
+public class RegisterUserCommand {
+    // fields, constructors, etc.
+}
+----
+
+**For queries:**
+
+[source,java]
+----
+package com.example.queries;
+
+@Query(name = "FindUserById", version = "1.0")
+public class FindUserByIdQuery {
+    // fields, constructors, etc.
+}
+----
+
+**Default values:**
+
+* If you don't specify a `namespace`, Axon uses the package name of the class.
+* If you don't specify a `name`, Axon uses the simple class name.
+* If you don't specify a `version`, Axon uses `0.0.1` as the version.
+* The fully qualified name is always: `namespace + "." + name`.
+
+==== Custom message type resolution
+
+If you need custom logic to determine message types, you can implement the `MessageTypeResolver` interface:
+
+[source,java]
+----
+import org.axonframework.messaging.core.MessageTypeResolver;
+import org.axonframework.messaging.core.MessageType;
+
+public class CustomMessageTypeResolver implements MessageTypeResolver {
+
+    @Override
+    public Optional<MessageType> resolve(@Nonnull Class<?> payloadType); {
+        // Custom logic to determine the MessageType
+        return /* ... */;
+    }
+}
+----
+
+Then register it with your configuration:
+
+[source,java]
+----
+ApplicationConfigurer applicationConfigurer = /* The configurer that contains this Application's configuration */
+MessagingConfigurer.enhance(applicationConfigurer)
+    .registerMessageTypeResolver(config -> new CustomMessageTypeResolver());
+----
+
 == Payload
 
 The payload contains the information about what happened - the specific data related to the message.

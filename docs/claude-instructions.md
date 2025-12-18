@@ -34,7 +34,8 @@ Axon 5 includes fundamental architectural changes:
 3. Consult `axon-5/api-changes.md` and other design docs for API details
 4. **IMPORTANT:** Always verify against actual code in the framework before making changes
 5. Update the reference guide file with the necessary changes
-6. **CRITICAL:** Mark progress in `changes-to-process.md` as sections are completed
+6. Validate al code examples in the reference guide file using the framework code
+7. **CRITICAL:** Mark progress in `changes-to-process.md` as sections are completed
    - Change status from "**Changes to apply:**" to "**Status:** ✅ COMPLETED"
    - Add "**Changes applied:**" section listing all changes made
    - This tracking is MANDATORY - never skip this step
