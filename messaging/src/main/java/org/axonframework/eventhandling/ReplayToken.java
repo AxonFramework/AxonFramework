@@ -100,7 +100,7 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
                         Object context,
                         boolean lastMessageWasReplay
     ) {
-        this.tokenAtReset = tokenAtReset;
+        this.tokenAtReset = newRedeliveryToken != null && tokenAtReset != null ? tokenAtReset.upperBound(newRedeliveryToken) : tokenAtReset;
         this.currentToken = newRedeliveryToken;
         this.context = context;
         this.lastMessageWasReplay = lastMessageWasReplay;
@@ -128,7 +128,7 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
      * @return A token that represents a reset to the {@code startPosition} until the provided {@code tokenAtReset}
      */
     public static TrackingToken createReplayToken(TrackingToken tokenAtReset, @Nullable TrackingToken startPosition) {
-        return createReplayToken(tokenAtReset, startPosition, null);
+        return createReplayToken(startPosition != null && tokenAtReset != null ? tokenAtReset.upperBound(startPosition) : tokenAtReset, startPosition, null);
     }
 
     /**
