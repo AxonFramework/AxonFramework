@@ -27,7 +27,6 @@ import io.axoniq.axonserver.grpc.streams.PersistentStreamEvent;
 import jakarta.annotation.Nonnull;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
-import org.axonframework.axonserver.connector.event.PersistentStreamEventConverter;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.infra.ComponentDescriptor;

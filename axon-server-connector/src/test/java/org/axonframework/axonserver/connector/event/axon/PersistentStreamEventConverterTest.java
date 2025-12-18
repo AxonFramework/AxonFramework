@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.axonserver.connector.event;
+package org.axonframework.axonserver.connector.event.axon;
 
 import com.google.protobuf.ByteString;
 import io.axoniq.axonserver.grpc.MetaDataValue;
@@ -22,6 +22,7 @@ import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.event.Event;
 import io.axoniq.axonserver.grpc.event.EventWithToken;
 import io.axoniq.axonserver.grpc.streams.PersistentStreamEvent;
+import org.axonframework.axonserver.connector.event.AggregateEventConverter;
 import org.axonframework.messaging.core.LegacyResources;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.eventhandling.EventMessage;

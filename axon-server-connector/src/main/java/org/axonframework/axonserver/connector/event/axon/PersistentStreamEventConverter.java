@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package org.axonframework.axonserver.connector.event;
+package org.axonframework.axonserver.connector.event.axon;
 
 import io.axoniq.axonserver.grpc.event.Event;
 import io.axoniq.axonserver.grpc.event.EventWithToken;
 import io.axoniq.axonserver.grpc.streams.PersistentStreamEvent;
 import jakarta.annotation.Nonnull;
+import org.axonframework.axonserver.connector.event.AggregateEventConverter;
 import org.axonframework.common.StringUtils;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.Context;
