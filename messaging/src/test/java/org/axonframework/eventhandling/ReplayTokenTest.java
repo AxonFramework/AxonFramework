@@ -1022,7 +1022,7 @@ class ReplayTokenTest {
         );
 
         TrackingToken replayToken = ReplayToken.createReplayToken(currentToken, null);
-,
+
         TrackingToken token2 = ((ReplayToken) replayToken).advancedTo(new GapAwareTrackingToken(2, emptySet()));
         assertInstanceOf(ReplayToken.class, token2);
         assertFalse(ReplayToken.isReplay(token2));
