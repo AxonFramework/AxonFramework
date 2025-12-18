@@ -20,6 +20,7 @@ import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
 import io.axoniq.axonserver.grpc.event.Event;
 import jakarta.annotation.Nonnull;
 import org.axonframework.axonserver.connector.event.AggregateEventConverter;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -188,7 +189,7 @@ public class PersistentStreamMessageSource implements SubscribableEventSource, D
 
                         // todo: I Need more data here!!!! ?!?!?!!?
                         // in the context I have TrackingToken
-                        eventsBatchConsumer.apply(events, null).join();
+                        FutureUtils.joinAndUnwrap(eventsBatchConsumer.apply(events, null));
                     }
                 });
                 this.consumer = eventsBatchConsumer;
@@ -219,7 +220,7 @@ public class PersistentStreamMessageSource implements SubscribableEventSource, D
      * <p>
      * For legacy aggregate-based events, a {@link Tag} is created with the aggregate type as key and aggregate
      * identifier as value (e.g., {@code Tag("OrderAggregate", "order-123")}). This enables filtering by aggregate
-     * when using {@link EventCriteria#havingTags(String, String)}.
+     * when using {@link EventCriteria#havingTags}.
      */
     @Override
     public Registration subscribe(
@@ -249,7 +250,7 @@ public class PersistentStreamMessageSource implements SubscribableEventSource, D
 
                     // Only call consumer if there are events after filtering
                     if (!filteredEvents.isEmpty()) {
-                        eventsBatchConsumer.apply(filteredEvents, null).join();
+                        FutureUtils.joinAndUnwrap(eventsBatchConsumer.apply(filteredEvents, null));
                     }
                 });
                 this.consumer = eventsBatchConsumer;
