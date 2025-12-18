@@ -298,6 +298,7 @@ class ReplayTokenTest {
         }
 
         // EXAMPLE: forgot about events that were gaps - tokenAtReset NEVER covers the newToken
+        // IS IT VALID SCENARIO? I have null token at the beginning and then advance to 9
         @Test
         void eventPreviouslyProcessedShouldBeReplayEvenWhenGapsFilledDuringReplay() {
             // tokenAtReset at index 10 with gaps at 7,8
@@ -375,10 +376,11 @@ class ReplayTokenTest {
             TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(7L, 8L));
 
             TrackingToken currentToken = ReplayToken.createReplayToken(tokenAtReset, null);
-            for (int i = 0; i <= 8; i++) {
+            for (int i = 0; i <= 9; i++) {
                 currentToken = ((ReplayToken) currentToken).advancedTo(
                         GapAwareTrackingToken.newInstance(i, emptySet())
                 );
+                System.out.println("Current token: " + currentToken + " isReplay: " + ReplayToken.isReplay(currentToken));
             }
 
             TrackingToken newToken = GapAwareTrackingToken.newInstance(10, emptySet());
