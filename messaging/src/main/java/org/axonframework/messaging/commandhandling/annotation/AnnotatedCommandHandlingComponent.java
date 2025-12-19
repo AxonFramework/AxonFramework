@@ -69,7 +69,7 @@ public class AnnotatedCommandHandlingComponent<T> implements CommandHandlingComp
      * @param messageTypeResolver      The {@link MessageTypeResolver} resolving the {@link QualifiedName names} for
      *                                 {@link CommandMessage CommandMessages}.
      * @param converter                The converter to use for converting the payload of the command to the type
-     *                                 expected by the handler method.
+     *                                 expected by the handling method.
      */
     public AnnotatedCommandHandlingComponent(@Nonnull T annotatedCommandHandler,
                                              @Nonnull ParameterResolverFactory parameterResolverFactory,

@@ -68,8 +68,8 @@ public class AnnotatedQueryHandlingComponent<T> implements QueryHandlingComponen
      * @param handlerDefinition        The handler definition used to create concrete handlers.
      * @param messageTypeResolver      The {@link MessageTypeResolver} resolving the {@link QualifiedName names} for
      *                                 {@link QueryMessage QueryMessages}.
-     * @param converter                The converter to use for converting the payload of the command to the type
-     *                                 expected by the handler method.
+     * @param converter                The converter to use for converting the payload of the query to the type
+     *                                 expected by the handling method.
      */
     public AnnotatedQueryHandlingComponent(@Nonnull T annotatedQueryHandler,
                                            @Nonnull ParameterResolverFactory parameterResolverFactory,
