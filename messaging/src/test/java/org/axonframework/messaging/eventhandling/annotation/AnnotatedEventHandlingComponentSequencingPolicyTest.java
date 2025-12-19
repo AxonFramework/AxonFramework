@@ -71,6 +71,7 @@ class AnnotatedEventHandlingComponentSequencingPolicyTest {
             assertThat(sequenceIdentifier).isEqualTo(AGGREGATE_IDENTIFIER);
         }
 
+        @SuppressWarnings("unused")
         private static class EventHandlerWithoutPolicy {
 
             @EventHandler
@@ -159,6 +160,7 @@ class AnnotatedEventHandlingComponentSequencingPolicyTest {
             assertThat(sequenceIdentifier).isEqualTo(AGGREGATE_IDENTIFIER);
         }
 
+        @SuppressWarnings({"DefaultAnnotationParam", "unused"})
         @SequencingPolicy(type = SequentialPolicy.class)
         private static class SequentialPolicyEventHandler {
 
@@ -167,6 +169,7 @@ class AnnotatedEventHandlingComponentSequencingPolicyTest {
             }
         }
 
+        @SuppressWarnings("unused")
         @SequencingPolicy(type = FullConcurrencyPolicy.class)
         private static class FullConcurrencyPolicyEventHandler {
 
@@ -175,6 +178,7 @@ class AnnotatedEventHandlingComponentSequencingPolicyTest {
             }
         }
 
+        @SuppressWarnings("unused")
         @SequencingPolicy(type = MetadataSequencingPolicy.class, parameters = {"userId"})
         private static class MetadataSequencingPolicyEventHandler {
 
@@ -183,6 +187,7 @@ class AnnotatedEventHandlingComponentSequencingPolicyTest {
             }
         }
 
+        @SuppressWarnings("unused")
         @SequencingPolicy(type = PropertySequencingPolicy.class, parameters = {"orderId"})
         private static class PropertySequencingPolicyEventHandler {
 
@@ -191,6 +196,7 @@ class AnnotatedEventHandlingComponentSequencingPolicyTest {
             }
         }
 
+        @SuppressWarnings("unused")
         @SequencingPolicy(type = SequentialPerAggregatePolicy.class)
         private static class SequentialPerAggregatePolicyEventHandler {
 
@@ -280,14 +286,17 @@ class AnnotatedEventHandlingComponentSequencingPolicyTest {
             assertThat(sequenceIdentifier).isEqualTo(AGGREGATE_IDENTIFIER);
         }
 
+        @SuppressWarnings("unused")
         private static class MethodLevelSequentialPolicyEventHandler {
 
+            @SuppressWarnings("DefaultAnnotationParam")
             @EventHandler
             @SequencingPolicy(type = SequentialPolicy.class)
             void handle(String event) {
             }
         }
 
+        @SuppressWarnings("unused")
         private static class MethodLevelFullConcurrencyPolicyEventHandler {
 
             @EventHandler
@@ -296,6 +305,7 @@ class AnnotatedEventHandlingComponentSequencingPolicyTest {
             }
         }
 
+        @SuppressWarnings("unused")
         private static class MethodLevelMetadataSequencingPolicyEventHandler {
 
             @EventHandler
@@ -304,6 +314,7 @@ class AnnotatedEventHandlingComponentSequencingPolicyTest {
             }
         }
 
+        @SuppressWarnings("unused")
         private static class MethodLevelPropertySequencingPolicyEventHandler {
 
             @EventHandler
@@ -312,6 +323,7 @@ class AnnotatedEventHandlingComponentSequencingPolicyTest {
             }
         }
 
+        @SuppressWarnings("unused")
         private static class MethodLevelSequentialPerAggregatePolicyEventHandler {
 
             @EventHandler
@@ -355,6 +367,7 @@ class AnnotatedEventHandlingComponentSequencingPolicyTest {
             assertThat(sequenceIdentifier).isEqualTo(FULL_SEQUENTIAL_POLICY);
         }
 
+        @SuppressWarnings({"unused", "DefaultAnnotationParam"})
         @SequencingPolicy(type = SequentialPolicy.class)
         private static class MixedPolicyEventHandler {
 
@@ -390,8 +403,10 @@ class AnnotatedEventHandlingComponentSequencingPolicyTest {
             assertThat(orderSequenceId).isEqualTo(orderEvent.identifier());
         }
 
+        @SuppressWarnings("unused")
         private static class MultipleHandlersEventHandler {
 
+            @SuppressWarnings("DefaultAnnotationParam")
             @EventHandler
             @SequencingPolicy(type = SequentialPolicy.class)
             void handleString(String event) {
