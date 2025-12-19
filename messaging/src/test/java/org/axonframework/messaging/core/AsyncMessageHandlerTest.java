@@ -113,7 +113,13 @@ class AsyncMessageHandlerTest {
 
             @Test
             void withVoidReturnTypeShouldBeCalled() {
-                var ehc = new AnnotatedEventHandlingComponent<>(new VoidEventHandler(), PARAMETER_RESOLVER_FACTORY);
+                var ehc = new AnnotatedEventHandlingComponent<>(
+                        new VoidEventHandler(),
+                        ClasspathParameterResolverFactory.forClass(VoidEventHandler.class),
+                        ClasspathHandlerDefinition.forClass(VoidEventHandler.class),
+                        new AnnotationMessageTypeResolver(),
+                        new DelegatingEventConverter(PassThroughConverter.INSTANCE)
+                );
                 ProcessingContext testContext =
                         StubProcessingContext.withComponent(EventConverter.class,
                                                             new DelegatingEventConverter(PassThroughConverter.INSTANCE));
@@ -128,7 +134,13 @@ class AsyncMessageHandlerTest {
 
             @Test
             void returningMonoShouldExecuteIt() {
-                var ehc = new AnnotatedEventHandlingComponent<>(new MonoEventHandler(), PARAMETER_RESOLVER_FACTORY);
+                var ehc = new AnnotatedEventHandlingComponent<>(
+                        new MonoEventHandler(),
+                        ClasspathParameterResolverFactory.forClass(MonoEventHandler.class),
+                        ClasspathHandlerDefinition.forClass(MonoEventHandler.class),
+                        new AnnotationMessageTypeResolver(),
+                        new DelegatingEventConverter(PassThroughConverter.INSTANCE)
+                );
                 ProcessingContext testContext =
                         StubProcessingContext.withComponent(EventConverter.class,
                                                             new DelegatingEventConverter(PassThroughConverter.INSTANCE));
@@ -143,8 +155,13 @@ class AsyncMessageHandlerTest {
 
             @Test
             void returningCompletableFutureShouldExecuteIt() {
-                var ehc = new AnnotatedEventHandlingComponent<>(new CompletableFutureEventHandler(),
-                                                                PARAMETER_RESOLVER_FACTORY);
+                var ehc = new AnnotatedEventHandlingComponent<>(
+                        new CompletableFutureEventHandler(),
+                        ClasspathParameterResolverFactory.forClass(CompletableFutureEventHandler.class),
+                        ClasspathHandlerDefinition.forClass(CompletableFutureEventHandler.class),
+                        new AnnotationMessageTypeResolver(),
+                        new DelegatingEventConverter(PassThroughConverter.INSTANCE)
+                );
                 ProcessingContext testContext =
                         StubProcessingContext.withComponent(EventConverter.class,
                                                             new DelegatingEventConverter(PassThroughConverter.INSTANCE));

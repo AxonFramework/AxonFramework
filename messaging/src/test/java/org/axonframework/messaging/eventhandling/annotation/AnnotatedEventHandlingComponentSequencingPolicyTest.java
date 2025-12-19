@@ -16,22 +16,25 @@
 
 package org.axonframework.messaging.eventhandling.annotation;
 
+import org.axonframework.conversion.Converter;
+import org.axonframework.conversion.PassThroughConverter;
+import org.axonframework.messaging.core.LegacyResources;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.core.annotation.AnnotationMessageTypeResolver;
+import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventTestUtils;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
 import org.axonframework.messaging.eventhandling.sequencing.FullConcurrencyPolicy;
 import org.axonframework.messaging.eventhandling.sequencing.MetadataSequencingPolicy;
 import org.axonframework.messaging.eventhandling.sequencing.PropertySequencingPolicy;
 import org.axonframework.messaging.eventhandling.sequencing.SequentialPerAggregatePolicy;
 import org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy;
-import org.axonframework.messaging.core.LegacyResources;
-import org.axonframework.messaging.core.MessageType;
-import org.axonframework.messaging.core.Metadata;
-import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
-import org.axonframework.conversion.Converter;
-import org.axonframework.conversion.PassThroughConverter;
 import org.junit.jupiter.api.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -413,7 +416,10 @@ class AnnotatedEventHandlingComponentSequencingPolicyTest {
     private static AnnotatedEventHandlingComponent<?> annotatedEventHandlingComponent(Object eventHandler) {
         return new AnnotatedEventHandlingComponent<>(
                 eventHandler,
-                ClasspathParameterResolverFactory.forClass(eventHandler.getClass())
+                ClasspathParameterResolverFactory.forClass(eventHandler.getClass()),
+                ClasspathHandlerDefinition.forClass(eventHandler.getClass()),
+                new AnnotationMessageTypeResolver(),
+                new DelegatingEventConverter(PassThroughConverter.INSTANCE)
         );
     }
 
