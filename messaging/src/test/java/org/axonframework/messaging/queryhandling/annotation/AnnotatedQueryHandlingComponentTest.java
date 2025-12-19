@@ -36,9 +36,7 @@ import org.axonframework.messaging.queryhandling.NoHandlerForQueryException;
 import org.axonframework.messaging.queryhandling.QueryExecutionException;
 import org.axonframework.messaging.queryhandling.QueryMessage;
 import org.axonframework.messaging.queryhandling.QueryResponseMessage;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,6 +55,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @author Steven van Beelen
  */
 class AnnotatedQueryHandlingComponentTest {
+
     private final AtomicInteger callCount = new AtomicInteger();
 
     private AnnotatedQueryHandlingComponent<?> testSubject;
@@ -210,15 +209,20 @@ class AnnotatedQueryHandlingComponentTest {
 
     @Nested
     class GivenAnAnnotatedInterfaceMethod {
+
         interface I {
+
             @QueryHandler(queryName = "call-counter")
             int handle(Integer event);
         }
 
         @Nested
         class WhenImplementedByAnnotedInstanceMethod {
+
             class T implements I {
-                @Override @QueryHandler(queryName = "call-counter")
+
+                @Override
+                @QueryHandler(queryName = "call-counter")
                 public int handle(Integer event) {
                     return callCount.incrementAndGet();
                 }
@@ -231,8 +235,11 @@ class AnnotatedQueryHandlingComponentTest {
 
             @Nested
             class AndOverriddenAndAnnotatedInASubclass {
+
                 class U extends T {
-                    @Override @QueryHandler(queryName = "call-counter")
+
+                    @Override
+                    @QueryHandler(queryName = "call-counter")
                     public int handle(Integer event) {
                         return callCount.incrementAndGet();
                     }
@@ -246,7 +253,9 @@ class AnnotatedQueryHandlingComponentTest {
 
             @Nested
             class AndOverriddenButNotAnnotatedInASubclass {
+
                 class U extends T {
+
                     @Override
                     public int handle(Integer event) {
                         return callCount.incrementAndGet();
@@ -262,7 +271,9 @@ class AnnotatedQueryHandlingComponentTest {
 
         @Nested
         class WhenImplementedByUnannotedInstanceMethod {
+
             class T implements I {
+
                 @Override
                 public int handle(Integer event) {
                     return callCount.incrementAndGet();
@@ -276,8 +287,11 @@ class AnnotatedQueryHandlingComponentTest {
 
             @Nested
             class AndOverriddenAndAnnotatedInASubclass {
+
                 class U extends T {
-                    @Override @QueryHandler(queryName = "call-counter")
+
+                    @Override
+                    @QueryHandler(queryName = "call-counter")
                     public int handle(Integer event) {
                         return callCount.incrementAndGet();
                     }
@@ -291,7 +305,9 @@ class AnnotatedQueryHandlingComponentTest {
 
             @Nested
             class AndOverriddenButNotAnnotatedInASubclass {
+
                 class U extends T {
+
                     @Override
                     public int handle(Integer event) {
                         return callCount.incrementAndGet();
@@ -308,14 +324,19 @@ class AnnotatedQueryHandlingComponentTest {
 
     @Nested
     class GivenAnUnannotatedInterfaceMethod {
+
         interface I {
+
             int handle(Integer event);
         }
 
         @Nested
         class WhenImplementedByAnnotedInstanceMethod {
+
             class T implements I {
-                @Override @QueryHandler(queryName = "call-counter")
+
+                @Override
+                @QueryHandler(queryName = "call-counter")
                 public int handle(Integer event) {
                     return callCount.incrementAndGet();
                 }
@@ -328,8 +349,11 @@ class AnnotatedQueryHandlingComponentTest {
 
             @Nested
             class AndOverriddenAndAnnotatedInASubclass {
+
                 class U extends T {
-                    @Override @QueryHandler(queryName = "call-counter")
+
+                    @Override
+                    @QueryHandler(queryName = "call-counter")
                     public int handle(Integer event) {
                         return callCount.incrementAndGet();
                     }
@@ -343,7 +367,9 @@ class AnnotatedQueryHandlingComponentTest {
 
             @Nested
             class AndOverriddenButNotAnnotatedInASubclass {
+
                 class U extends T {
+
                     @Override
                     public int handle(Integer event) {
                         return callCount.incrementAndGet();
@@ -359,7 +385,9 @@ class AnnotatedQueryHandlingComponentTest {
 
         @Nested
         class WhenImplementedByUnannotedInstanceMethod {
+
             class T implements I {
+
                 @Override
                 public int handle(Integer event) {
                     return callCount.incrementAndGet();
@@ -373,8 +401,11 @@ class AnnotatedQueryHandlingComponentTest {
 
             @Nested
             class AndOverriddenAndAnnotatedInASubclass {
+
                 class U extends T {
-                    @Override @QueryHandler(queryName = "call-counter")
+
+                    @Override
+                    @QueryHandler(queryName = "call-counter")
                     public int handle(Integer event) {
                         return callCount.incrementAndGet();
                     }
@@ -388,7 +419,9 @@ class AnnotatedQueryHandlingComponentTest {
 
             @Nested
             class AndOverriddenButNotAnnotatedInASubclass {
+
                 class U extends T {
+
                     @Override
                     public int handle(Integer event) {
                         return callCount.incrementAndGet();
@@ -405,7 +438,9 @@ class AnnotatedQueryHandlingComponentTest {
 
     @Nested
     class GivenAnAnnotatedInstanceMethod {
+
         class T {
+
             @QueryHandler(queryName = "call-counter")
             public int handle(Integer event) {
                 return callCount.incrementAndGet();
@@ -419,8 +454,11 @@ class AnnotatedQueryHandlingComponentTest {
 
         @Nested
         class WhenOverriddenAndAnnotatedInASubclass {
+
             class U extends T {
-                @Override @QueryHandler(queryName = "call-counter")
+
+                @Override
+                @QueryHandler(queryName = "call-counter")
                 public int handle(Integer event) {
                     return callCount.incrementAndGet();
                 }
@@ -434,7 +472,9 @@ class AnnotatedQueryHandlingComponentTest {
 
         @Nested
         class WhenNotOverriddenInSubclass {
+
             class U extends T {
+
             }
 
             @Test
@@ -445,7 +485,9 @@ class AnnotatedQueryHandlingComponentTest {
 
         @Nested
         class WhenOverriddenButNotAnnotatedInASubclass {
+
             class U extends T {
+
                 @Override
                 public int handle(Integer event) {
                     return callCount.incrementAndGet();
@@ -461,7 +503,9 @@ class AnnotatedQueryHandlingComponentTest {
 
     @Nested
     class GivenAnUnannotatedInstanceMethod {
+
         class T {
+
             public int handle(Integer event) {
                 return callCount.incrementAndGet();
             }
@@ -474,8 +518,11 @@ class AnnotatedQueryHandlingComponentTest {
 
         @Nested
         class WhenOverriddenAndAnnotatedInASubclass {
+
             class U extends T {
-                @Override @QueryHandler(queryName = "call-counter")
+
+                @Override
+                @QueryHandler(queryName = "call-counter")
                 public int handle(Integer event) {
                     return callCount.incrementAndGet();
                 }
@@ -489,7 +536,9 @@ class AnnotatedQueryHandlingComponentTest {
 
         @Nested
         class WhenOverriddenButNotAnnotatedInASubclass {
+
             class U extends T {
+
                 @Override
                 public int handle(Integer event) {
                     return callCount.incrementAndGet();
@@ -520,10 +569,10 @@ class AnnotatedQueryHandlingComponentTest {
         assertThat(stream.hasNextAvailable()).isTrue();
 
         Object result = stream.first()
-            .asCompletableFuture()
-            .thenApply(MessageStream.Entry::message)
-            .thenApply(Message::payload)
-            .join();
+                              .asCompletableFuture()
+                              .thenApply(MessageStream.Entry::message)
+                              .thenApply(Message::payload)
+                              .join();
 
         assertThat(callCount.get()).isEqualTo(1);
         assertThat(result).isEqualTo(1);
@@ -548,9 +597,9 @@ class AnnotatedQueryHandlingComponentTest {
         CompletableFuture<Entry<QueryResponseMessage>> future = stream.first().asCompletableFuture();
 
         assertThatThrownBy(() -> future.join())
-            .isInstanceOf(CompletionException.class)
-            .cause()
-            .isInstanceOf(NoHandlerForQueryException.class);
+                .isInstanceOf(CompletionException.class)
+                .cause()
+                .isInstanceOf(NoHandlerForQueryException.class);
 
         assertThat(callCount.get()).isEqualTo(0);
     }
@@ -620,6 +669,7 @@ class AnnotatedQueryHandlingComponentTest {
         // given...
         // Create a handler where the queryName uses the default (which would be the payload type's fully qualified name)
         class HandlerWithDefaultQueryName {
+
             @QueryHandler
             public String handle(String query) {
                 return "result";

@@ -22,9 +22,6 @@ import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.annotation.AnnotatedHandlerInspector;
-import org.axonframework.messaging.core.annotation.AnnotationMessageTypeResolver;
-import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
-import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.core.annotation.HandlerDefinition;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.conversion.MessageConverter;
@@ -56,8 +53,8 @@ import static java.util.Objects.requireNonNull;
  */
 public class AnnotatedQueryHandlingComponent<T> implements QueryHandlingComponent {
 
-    private final SimpleQueryHandlingComponent handlingComponent;
     private final T target;
+    private final SimpleQueryHandlingComponent handlingComponent;
     private final AnnotatedHandlerInspector<T> model;
     private final MessageTypeResolver messageTypeResolver;
     private final MessageConverter converter;
@@ -69,8 +66,7 @@ public class AnnotatedQueryHandlingComponent<T> implements QueryHandlingComponen
      * @param annotatedQueryHandler    The object containing the {@link QueryHandler} annotated methods.
      * @param parameterResolverFactory The parameter resolver factory to resolve handler parameters with.
      * @param handlerDefinition        The handler definition used to create concrete handlers.
-     * @param messageTypeResolver      The {@link MessageTypeResolver} resolving the
-     *                                 {@link QualifiedName names} for
+     * @param messageTypeResolver      The {@link MessageTypeResolver} resolving the {@link QualifiedName names} for
      *                                 {@link QueryMessage QueryMessages}.
      * @param converter                The converter to use for converting the payload of the command to the type
      *                                 expected by the handler method.
@@ -80,26 +76,22 @@ public class AnnotatedQueryHandlingComponent<T> implements QueryHandlingComponen
                                            @Nonnull HandlerDefinition handlerDefinition,
                                            @Nonnull MessageTypeResolver messageTypeResolver,
                                            @Nonnull MessageConverter converter) {
+        this.target = requireNonNull(annotatedQueryHandler, "The Annotated Query Handler may not be null.");
         this.handlingComponent = SimpleQueryHandlingComponent.create(
                 "AnnotatedQueryHandlingComponent[%s]".formatted(annotatedQueryHandler.getClass().getName())
         );
-        this.target = requireNonNull(annotatedQueryHandler, "The Annotated Query Handler may not be null.");
-
         @SuppressWarnings("unchecked")
-        Class<T> cls = (Class<T>) annotatedQueryHandler.getClass();
-
-        this.model = AnnotatedHandlerInspector.inspectType(cls,
-                                                           parameterResolverFactory,
-                                                           handlerDefinition);
+        Class<T> clazz = (Class<T>) annotatedQueryHandler.getClass();
+        this.model = AnnotatedHandlerInspector.inspectType(clazz, parameterResolverFactory, handlerDefinition);
         this.messageTypeResolver = requireNonNull(messageTypeResolver, "The MessageTypeResolver may not be null.");
-        this.converter = requireNonNull(converter, "The Converter may not be null.");
+        this.converter = requireNonNull(converter, "The MessageConverter may not be null.");
 
         initializeHandlersBasedOnModel();
     }
 
     private void initializeHandlersBasedOnModel() {
         model.getUniqueHandlers(target.getClass(), QueryMessage.class).forEach(h ->
-            registerHandler((QueryHandlingMember<? super T>) h)
+                                                                                       registerHandler((QueryHandlingMember<? super T>) h)
         );
     }
 
