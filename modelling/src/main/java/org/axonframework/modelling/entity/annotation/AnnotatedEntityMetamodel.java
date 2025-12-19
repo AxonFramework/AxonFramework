@@ -267,7 +267,11 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
         // #3784: inspection of concrete (sub) types does not work with EntityMembers, that's why we need to
         // differentiate here.
         var hasMemberEntities = !ReflectionUtils.collectMatchingMethodsAndFields(entityType, isAnnotatedWith(EntityMember.class))
-                                                .isEmpty();
+                                                .isEmpty() || concreteTypes.stream()
+                                                                           .anyMatch(concreteType -> !ReflectionUtils.collectMatchingMethodsAndFields(
+                                                                                                                             concreteType,
+                                                                                                                             isAnnotatedWith(EntityMember.class))
+                                                                                                                     .isEmpty());
         AnnotatedHandlerInspector<E> inspected = inspectType(
                 entityType,
                 parameterResolverFactory,
