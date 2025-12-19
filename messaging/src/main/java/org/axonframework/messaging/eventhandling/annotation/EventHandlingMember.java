@@ -31,6 +31,9 @@ public interface EventHandlingMember<T> extends MessageHandlingMember<T> {
 
     /**
      * Returns the name of the event that can be handled.
+     * <p>
+     * Might be an empty {@link String} when undefined by this handling member, in which case components gathering
+     * {@code EventHandlingMembers} should fall back to other mechanisms to define the name of a handling member.
      *
      * @return The name of the event that can be handled.
      */
