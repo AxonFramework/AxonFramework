@@ -23,6 +23,7 @@ import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.core.annotation.HandlerDefinition;
+import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.interception.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -93,10 +94,10 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
 
     private void initializeHandlersBasedOnModel() {
         model.getUniqueHandlers(target.getClass(), EventMessage.class)
-             .forEach(h -> registerHandler((EventHandlingMember<? super T>) h));
+             .forEach(this::registerHandler);
     }
 
-    private void registerHandler(EventHandlingMember<? super T> handler) {
+    private void registerHandler(MessageHandlingMember<? super T> handler) {
         Class<?> payloadType = handler.payloadType();
         QualifiedName qualifiedName = handler.unwrap(MethodEventHandlerDefinition.MethodEventMessageHandlingMember.class)
                                              .map(EventHandlingMember::eventName)
@@ -106,7 +107,8 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
         handlingComponent.subscribe(qualifiedName, constructEventHandlerFor(qualifiedName, handler));
     }
 
-    private EventHandler constructEventHandlerFor(QualifiedName qualifiedName, EventHandlingMember<? super T> handler) {
+    private EventHandler constructEventHandlerFor(QualifiedName qualifiedName,
+                                                  MessageHandlingMember<? super T> handler) {
         MessageHandlerInterceptorMemberChain<T> interceptorChain = model.chainedInterceptor(target.getClass());
         EventHandler interceptedHandler =
                 (event, context) -> interceptorChain.handle(
@@ -132,7 +134,7 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
                 .orElse(interceptedHandler);
     }
 
-    private Optional<SequencingPolicy> whenCustomSequencingPolicyOn(EventHandlingMember<? super T> handler) {
+    private Optional<SequencingPolicy> whenCustomSequencingPolicyOn(MessageHandlingMember<? super T> handler) {
         return handler.unwrap(MethodSequencingPolicyEventHandlerDefinition.SequencingPolicyEventMessageHandlingMember.class)
                       .map(MethodSequencingPolicyEventHandlerDefinition.SequencingPolicyEventMessageHandlingMember::sequencingPolicy);
     }
