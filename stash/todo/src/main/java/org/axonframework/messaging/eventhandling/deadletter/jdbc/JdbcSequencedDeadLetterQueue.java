@@ -17,6 +17,7 @@
 package org.axonframework.messaging.eventhandling.deadletter.jdbc;
 
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.JdbcException;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
@@ -45,6 +46,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import jakarta.annotation.Nonnull;
@@ -188,15 +190,16 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
         }
     }
 
+    @Nonnull
     @Override
-    public void enqueue(@Nonnull Object sequenceIdentifier,
-                        @Nonnull DeadLetter<? extends E> letter) throws DeadLetterQueueOverflowException {
+    public CompletableFuture<Void> enqueue(@Nonnull Object sequenceIdentifier,
+                        @Nonnull DeadLetter<? extends E> letter) {
         String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
-        if (isFull(sequenceId)) {
-            throw new DeadLetterQueueOverflowException(
+        if (isFullSync(sequenceId)) {
+            return CompletableFuture.failedFuture(new DeadLetterQueueOverflowException(
                     "No room left to enqueue [" + letter.message() + "] for identifier ["
                             + sequenceId + "] since the queue is full."
-            );
+            ));
         }
 
         if (logger.isDebugEnabled()) {
@@ -224,6 +227,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
         } finally {
             closeQuietly(connection);
         }
+        return CompletableFuture.completedFuture(null);
     }
 
     private long nextIndexForSequence(String sequenceId) {
@@ -241,8 +245,9 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
         ));
     }
 
+    @Nonnull
     @Override
-    public void evict(DeadLetter<? extends E> letter) {
+    public CompletableFuture<Void> evict(@Nonnull DeadLetter<? extends E> letter) {
         if (!(letter instanceof JdbcDeadLetter)) {
             throw new WrongDeadLetterTypeException(
                     String.format("Invoke evict with a JdbcDeadLetter instance. Instead got: [%s]",
@@ -274,13 +279,15 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
                 closeQuietly(connection);
             }
         });
+        return CompletableFuture.completedFuture(null);
     }
 
+    @Nonnull
     @Override
-    public void requeue(
+    public CompletableFuture<Void> requeue(
             @Nonnull DeadLetter<? extends E> letter,
             @Nonnull UnaryOperator<DeadLetter<? extends E>> letterUpdater
-    ) throws NoSuchDeadLetterException {
+    ) {
         if (!(letter instanceof JdbcDeadLetter)) {
             throw new WrongDeadLetterTypeException(
                     String.format("Invoke requeue with a JdbcDeadLetter instance. Instead got: [%s]",
@@ -294,35 +301,45 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
                     identifier, processingGroup, jdbcLetter.getSequenceIdentifier());
         DeadLetter<? extends E> updatedLetter = letterUpdater.apply(jdbcLetter).markTouched();
 
-        transactionManager.executeInTransaction(() -> {
-            Connection connection = getConnection();
-            try {
-                int updatedRows = executeUpdate(
-                        connection,
-                        c -> statementFactory.requeueStatement(c,
-                                                               identifier,
-                                                               updatedLetter.cause().orElse(null),
-                                                               updatedLetter.lastTouched(),
-                                                               updatedLetter.diagnostics()),
-                        e -> new JdbcException("Failed to requeue letter with message id ["
-                                                       + letter.message().identifier() + "]", e)
-                );
-                if (updatedRows == 0) {
-                    throw new NoSuchDeadLetterException("Cannot requeue [" + letter.message().identifier()
-                                                                + "] since there is not matching entry in this queue.");
-                } else if (logger.isTraceEnabled()) {
-                    logger.trace("Requeued letter [{}] for sequence [{}].",
-                                 identifier, jdbcLetter.getSequenceIdentifier());
+        try {
+            transactionManager.executeInTransaction(() -> {
+                Connection connection = getConnection();
+                try {
+                    int updatedRows = executeUpdate(
+                            connection,
+                            c -> statementFactory.requeueStatement(c,
+                                                                   identifier,
+                                                                   updatedLetter.cause().orElse(null),
+                                                                   updatedLetter.lastTouched(),
+                                                                   updatedLetter.diagnostics()),
+                            e -> new JdbcException("Failed to requeue letter with message id ["
+                                                           + letter.message().identifier() + "]", e)
+                    );
+                    if (updatedRows == 0) {
+                        throw new NoSuchDeadLetterException("Cannot requeue [" + letter.message().identifier()
+                                                                    + "] since there is not matching entry in this queue.");
+                    } else if (logger.isTraceEnabled()) {
+                        logger.trace("Requeued letter [{}] for sequence [{}].",
+                                     identifier, jdbcLetter.getSequenceIdentifier());
+                    }
+                } finally {
+                    closeQuietly(connection);
                 }
-            } finally {
-                closeQuietly(connection);
-            }
-        });
+            });
+            return CompletableFuture.completedFuture(null);
+        } catch (NoSuchDeadLetterException e) {
+            return CompletableFuture.failedFuture(e);
+        }
     }
 
+    @Nonnull
     @Override
-    public boolean contains(@Nonnull Object sequenceIdentifier) {
+    public CompletableFuture<Boolean> contains(@Nonnull Object sequenceIdentifier) {
         String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
+        return CompletableFuture.completedFuture(containsSync(sequenceId));
+    }
+
+    private boolean containsSync(String sequenceId) {
         if (logger.isDebugEnabled()) {
             logger.debug("Validating existence of sequence identifier [{}].", sequenceId);
         }
@@ -335,10 +352,15 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
                             CLOSE_QUIETLY);
     }
 
+    @Nonnull
     @Override
-    public Iterable<DeadLetter<? extends E>> deadLetterSequence(@Nonnull Object sequenceIdentifier) {
+    public CompletableFuture<Iterable<DeadLetter<? extends E>>> deadLetterSequence(@Nonnull Object sequenceIdentifier) {
         String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
-        if (!contains(sequenceId)) {
+        return CompletableFuture.completedFuture(deadLetterSequenceSync(sequenceId));
+    }
+
+    private Iterable<DeadLetter<? extends E>> deadLetterSequenceSync(String sequenceId) {
+        if (!containsSync(sequenceId)) {
             return Collections.emptyList();
         }
 
@@ -354,8 +376,9 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
         );
     }
 
+    @Nonnull
     @Override
-    public Iterable<Iterable<DeadLetter<? extends E>>> deadLetters() {
+    public CompletableFuture<Iterable<Iterable<DeadLetter<? extends E>>>> deadLetters() {
         List<String> sequenceIdentifiers = executeQuery(
                 getConnection(),
                 connection -> statementFactory.sequenceIdentifiersStatement(connection, processingGroup),
@@ -365,7 +388,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
         );
 
         //noinspection DuplicatedCode
-        return () -> {
+        Iterable<Iterable<DeadLetter<? extends E>>> result = () -> {
             Iterator<String> sequenceIterator = sequenceIdentifiers.iterator();
             return new Iterator<>() {
                 @Override
@@ -376,31 +399,43 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
                 @Override
                 public Iterable<DeadLetter<? extends E>> next() {
                     String next = sequenceIterator.next();
-                    return deadLetterSequence(next);
+                    return deadLetterSequenceSync(next);
                 }
             };
         };
+        return CompletableFuture.completedFuture(result);
     }
 
+    @Nonnull
     @Override
-    public boolean isFull(@Nonnull Object sequenceIdentifier) {
+    public CompletableFuture<Boolean> isFull(@Nonnull Object sequenceIdentifier) {
         String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
-        long numberInSequence = sequenceSize(sequenceId);
-        return numberInSequence > 0 ? numberInSequence >= maxSequenceSize : amountOfSequences() >= maxSequences;
+        return CompletableFuture.completedFuture(isFullSync(sequenceId));
     }
 
+    private boolean isFullSync(String sequenceId) {
+        long numberInSequence = sequenceSizeSync(sequenceId);
+        return numberInSequence > 0 ? numberInSequence >= maxSequenceSize : amountOfSequencesSync() >= maxSequences;
+    }
+
+    @Nonnull
     @Override
-    public long size() {
-        return executeQuery(getConnection(),
+    public CompletableFuture<Long> size() {
+        return CompletableFuture.completedFuture(executeQuery(getConnection(),
                             connection -> statementFactory.sizeStatement(connection, processingGroup),
                             resultSet -> nextAndExtract(resultSet, 1, Long.class, 0L),
                             e -> new JdbcException("Failed to check the total number of dead letters", e),
-                            CLOSE_QUIETLY);
+                            CLOSE_QUIETLY));
     }
 
+    @Nonnull
     @Override
-    public long sequenceSize(@Nonnull Object sequenceIdentifier) {
+    public CompletableFuture<Long> sequenceSize(@Nonnull Object sequenceIdentifier) {
         String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
+        return CompletableFuture.completedFuture(sequenceSizeSync(sequenceId));
+    }
+
+    private long sequenceSizeSync(String sequenceId) {
         return executeQuery(getConnection(),
                             connection -> statementFactory.sequenceSizeStatement(
                                     connection, processingGroup, sequenceId
@@ -413,8 +448,13 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
         );
     }
 
+    @Nonnull
     @Override
-    public long amountOfSequences() {
+    public CompletableFuture<Long> amountOfSequences() {
+        return CompletableFuture.completedFuture(amountOfSequencesSync());
+    }
+
+    private long amountOfSequencesSync() {
         return executeQuery(getConnection(),
                             connection -> statementFactory.amountOfSequencesStatement(connection, processingGroup),
                             resultSet -> nextAndExtract(resultSet, 1, Long.class, 0L),
@@ -424,9 +464,10 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
                             CLOSE_QUIETLY);
     }
 
+    @Nonnull
     @Override
-    public boolean process(@Nonnull Predicate<DeadLetter<? extends E>> sequenceFilter,
-                           @Nonnull Function<DeadLetter<? extends E>, EnqueueDecision<E>> processingTask) {
+    public CompletableFuture<Boolean> process(@Nonnull Predicate<DeadLetter<? extends E>> sequenceFilter,
+                           @Nonnull Function<DeadLetter<? extends E>, CompletableFuture<EnqueueDecision<E>>> processingTask) {
         logger.debug("Received a request to process matching dead letters.");
 
         Iterator<? extends JdbcDeadLetter<E>> iterator = findClaimableSequences(10);
@@ -439,23 +480,10 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
         }
 
         if (claimedLetter != null) {
-            return processInitialAndSubsequent(claimedLetter, processingTask);
+            return CompletableFuture.completedFuture(processInitialAndSubsequent(claimedLetter, processingTask));
         }
         logger.debug("Received a request to process dead letters but there are no matching or claimable sequences.");
-        return false;
-    }
-
-    @Override
-    public boolean process(@Nonnull Function<DeadLetter<? extends E>, EnqueueDecision<E>> processingTask) {
-        logger.debug("Received a request to process any dead letters.");
-        Iterator<? extends JdbcDeadLetter<E>> iterator = findClaimableSequences(1);
-        if (iterator.hasNext()) {
-            JdbcDeadLetter<E> deadLetter = iterator.next();
-            claimDeadLetter(deadLetter);
-            return processInitialAndSubsequent(deadLetter, processingTask);
-        }
-        logger.debug("Received a request to process dead letters but there are no claimable sequences.");
-        return false;
+        return CompletableFuture.completedFuture(false);
     }
 
     /**
@@ -543,12 +571,12 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
      * @return Whether processing all letters in this sequence was successful.
      */
     private boolean processInitialAndSubsequent(JdbcDeadLetter<E> initialLetter,
-                                                Function<DeadLetter<? extends E>, EnqueueDecision<E>> processingTask) {
+                                                Function<DeadLetter<? extends E>, CompletableFuture<EnqueueDecision<E>>> processingTask) {
         JdbcDeadLetter<E> current = initialLetter;
         while (current != null) {
             logger.info("Processing dead letter with identifier [{}] at index [{}]",
                         current.getIdentifier(), current.getSequenceIndex());
-            EnqueueDecision<E> decision = processingTask.apply(current);
+            EnqueueDecision<E> decision = FutureUtils.joinAndUnwrap(processingTask.apply(current));
             if (!decision.shouldEnqueue()) {
                 JdbcDeadLetter<E> previous = current;
                 JdbcDeadLetter<E> next = findNext(previous.getSequenceIdentifier(), previous.getSequenceIndex());
@@ -591,8 +619,9 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
         ));
     }
 
+    @Nonnull
     @Override
-    public void clear() {
+    public CompletableFuture<Void> clear() {
         Connection connection = getConnection();
         try {
             executeUpdate(connection,
@@ -602,6 +631,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
         } finally {
             closeQuietly(connection);
         }
+        return CompletableFuture.completedFuture(null);
     }
 
     /**
