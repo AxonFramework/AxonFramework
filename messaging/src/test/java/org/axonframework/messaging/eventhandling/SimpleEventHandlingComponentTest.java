@@ -87,15 +87,15 @@ class SimpleEventHandlingComponentTest {
             // given
             var handler1Invoked = new AtomicBoolean();
             var handler2Invoked = new AtomicBoolean();
-            var component = new SimpleEventHandlingComponent()
-                    .subscribe(new QualifiedName(String.class), (e, c) -> {
-                        handler1Invoked.set(true);
-                        return MessageStream.empty();
-                    })
-                    .subscribe(new QualifiedName(String.class), (e, c) -> {
-                        handler2Invoked.set(true);
-                        return MessageStream.empty();
-                    });
+            var component = SimpleEventHandlingComponent.create("test")
+                                                        .subscribe(new QualifiedName(String.class), (e, c) -> {
+                                                            handler1Invoked.set(true);
+                                                            return MessageStream.empty();
+                                                        })
+                                                        .subscribe(new QualifiedName(String.class), (e, c) -> {
+                                                            handler2Invoked.set(true);
+                                                            return MessageStream.empty();
+                                                        });
 
             //  when
             EventMessage sampleMessage = EventTestUtils.asEventMessage("Message1");
@@ -114,8 +114,9 @@ class SimpleEventHandlingComponentTest {
         void shouldDecorateEventHandlingComponent() {
             // given
             SampleDecoration component = new SampleDecoration(
-                    new SimpleEventHandlingComponent()
-                            .subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty())
+                    SimpleEventHandlingComponent.create("test")
+                                                .subscribe(new QualifiedName(String.class),
+                                                           (e, c) -> MessageStream.empty())
             );
 
             // when

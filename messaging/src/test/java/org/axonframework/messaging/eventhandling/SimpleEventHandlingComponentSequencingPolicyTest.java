@@ -59,7 +59,7 @@ class SimpleEventHandlingComponentSequencingPolicyTest {
         @Test
         void should_use_default_hierarchical_sequencing_when_no_policy_specified() {
             // given
-            var component = new SimpleEventHandlingComponent();
+            var component = SimpleEventHandlingComponent.create("test");
             var event = EventTestUtils.asEventMessage("test-event");
             var context = messageProcessingContext(event);
 
