@@ -947,6 +947,11 @@ class AxonServerQueryBusTest {
         }
 
         @Override
+        public ResultStream<QueryResponse> initialResults() {
+            return new StubResultStream<>(stubResponse(payload));
+        }
+
+        @Override
         public ResultStream<QueryUpdate> updates() {
             return updateStubResultStream;
         }

@@ -16,6 +16,7 @@
 
 package org.axonframework.axonserver.connector.query.subscription;
 
+import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
 import org.axonframework.axonserver.connector.query.GrpcBackedQueryMessage;
 import org.axonframework.axonserver.connector.util.GrpcSerializedObject;
@@ -26,8 +27,8 @@ import org.axonframework.queryhandling.SubscriptionQueryResult;
 import org.axonframework.serialization.LazyDeserializingObject;
 import org.axonframework.serialization.Serializer;
 
-import java.util.Map;
 import javax.annotation.Nonnull;
+import java.util.Map;
 
 /**
  * Wrapper that allows clients to access a gRPC {@link SubscriptionQuery} message as a {@link
@@ -62,10 +63,21 @@ public class GrpcBackedSubscriptionQueryMessage<Q, I, U> implements Subscription
         this(
                 subscriptionQuery,
                 new GrpcBackedQueryMessage<>(subscriptionQuery.getQueryRequest(), messageSerializer, serializer),
-                new LazyDeserializingObject<>(
+                SerializedObject.getDefaultInstance().equals(subscriptionQuery.getUpdateResponseType()) ?
+                        new LazyDeserializingObject<>(anyResponse())
+                        : new LazyDeserializingObject<>(
                         new GrpcSerializedObject(subscriptionQuery.getUpdateResponseType()), serializer
                 )
         );
+    }
+
+    @SafeVarargs
+    @SuppressWarnings("unchecked")
+    private static <U> ResponseType<U> anyResponse(Class<U>... type) {
+        if (type.length != 0) {
+            throw new IllegalArgumentException("Do not provide any arguments to any()");
+        }
+        return new IgnoredResponseType<>((Class<U>) type.getClass().getComponentType());
     }
 
     private GrpcBackedSubscriptionQueryMessage(SubscriptionQuery subscriptionQuery,
