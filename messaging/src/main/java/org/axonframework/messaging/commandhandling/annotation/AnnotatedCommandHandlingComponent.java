@@ -104,20 +104,26 @@ public class AnnotatedCommandHandlingComponent<T> implements CommandHandlingComp
                                                                                  .orElse(new MessageType(payloadType))
                                                                                  .qualifiedName());
 
-        MessageHandlerInterceptorMemberChain<T> interceptorChain = model.chainedInterceptor(target.getClass());
-        handlingComponent.subscribe(
-                qualifiedName,
-                (command, ctx) -> interceptorChain.handle(
-                                                          command.withConvertedPayload(payloadType, converter),
-                                                          ctx,
-                                                          target,
-                                                          handler
-                                                  )
-                                                  .mapMessage(this::asCommandResultMessage)
-                                                  .first()
-                                                  .cast()
-        );
+        handlingComponent.subscribe(qualifiedName, constructCommandHandlerFor(handler));
     }
+
+    private org.axonframework.messaging.commandhandling.CommandHandler constructCommandHandlerFor(
+            MessageHandlingMember<? super T> handler
+    ) {
+        MessageHandlerInterceptorMemberChain<T> interceptorChain = model.chainedInterceptor(target.getClass());
+        return (command, context) -> interceptorChain.handle(
+                                                             command.withConvertedPayload(
+                                                                     handler.payloadType(), converter
+                                                             ),
+                                                             context,
+                                                             target,
+                                                             handler
+                                                     )
+                                                     .mapMessage(this::asCommandResultMessage)
+                                                     .first()
+                                                     .cast();
+    }
+
 
     private CommandResultMessage asCommandResultMessage(@Nonnull Message commandResult) {
         return commandResult instanceof CommandResultMessage
