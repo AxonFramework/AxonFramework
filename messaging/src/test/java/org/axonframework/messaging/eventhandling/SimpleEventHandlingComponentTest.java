@@ -50,8 +50,8 @@ class SimpleEventHandlingComponentTest {
             SequencingPolicy sequencingPolicy = (event, context) -> Optional.of(expectedIdentifier);
 
             // when
-            var component = new SimpleEventHandlingComponent("test", sequencingPolicy)
-                    .subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
+            var component = SimpleEventHandlingComponent.create("test", sequencingPolicy);
+            component.subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
 
             // then
             var sampleEvent = EventTestUtils.asEventMessage("sample");
@@ -69,8 +69,8 @@ class SimpleEventHandlingComponentTest {
             var expectedIdentifier = "sequenceId";
 
             // when
-            var component = new SimpleEventHandlingComponent("test", (e, ctx) -> Optional.of(expectedIdentifier))
-                    .subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
+            var component = SimpleEventHandlingComponent.create("test", (e, ctx) -> Optional.of(expectedIdentifier));
+            component.subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
 
             // then
             var sampleEvent = EventTestUtils.asEventMessage("sample");

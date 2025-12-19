@@ -67,23 +67,26 @@ public class SimpleEventHandlingComponent implements
      * @return A simple {@link EventHandlingComponent} instance with the given {@code name}.
      */
     public static SimpleEventHandlingComponent create(@Nonnull String name) {
-        return new SimpleEventHandlingComponent(name);
-    }
-
-    private SimpleEventHandlingComponent(@Nonnull String name) {
-        this(name, DEFAULT_SEQUENCING_POLICY);
+        return create(name, DEFAULT_SEQUENCING_POLICY);
     }
 
     /**
-     * Initializes a {@code SimpleEventHandlingComponent} with no {@link EventHandler EventHandlers} and the given
-     * {@code sequencingPolicy} and {@code name}.
+     * Instantiates a simple {@link EventHandlingComponent} that is able to handle events and delegate them to
+     * subcomponents, using the given {@code sequencingPolicy} to decide how to sequence incoming events.
      *
      * @param name             The name of the component, used for {@link DescribableComponent describing} the
      *                         component.
-     * @param sequencingPolicy the {@link SequencingPolicy} to use for sequencing events.
+     * @param sequencingPolicy The {@link SequencingPolicy} to use for sequencing events through, for example,
+     *                         {@link #sequenceIdentifierFor(EventMessage, ProcessingContext)}.
+     * @return A simple {@link EventHandlingComponent} instance with the given {@code name}.
      */
-    public SimpleEventHandlingComponent(@Nonnull String name,
-                                        @Nonnull SequencingPolicy sequencingPolicy) {
+    public static SimpleEventHandlingComponent create(@Nonnull String name,
+                                                      @Nonnull SequencingPolicy sequencingPolicy) {
+        return new SimpleEventHandlingComponent(name, sequencingPolicy);
+    }
+
+    private SimpleEventHandlingComponent(@Nonnull String name,
+                                         @Nonnull SequencingPolicy sequencingPolicy) {
         this.name = Assert.nonEmpty(name, "The name may not be null or empty.");
         this.sequencingPolicy = Objects.requireNonNull(sequencingPolicy, "Sequencing Policy may not be null.");
     }
