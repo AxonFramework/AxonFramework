@@ -30,9 +30,6 @@ import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.annotation.AnnotatedHandlerInspector;
-import org.axonframework.messaging.core.annotation.AnnotationMessageTypeResolver;
-import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
-import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.core.annotation.HandlerDefinition;
 import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
@@ -56,8 +53,8 @@ import static java.util.Objects.requireNonNull;
  */
 public class AnnotatedCommandHandlingComponent<T> implements CommandHandlingComponent {
 
-    private final SimpleCommandHandlingComponent handlingComponent;
     private final T target;
+    private final SimpleCommandHandlingComponent handlingComponent;
     private final AnnotatedHandlerInspector<T> model;
     private final MessageTypeResolver messageTypeResolver;
     private final MessageConverter converter;
@@ -66,45 +63,10 @@ public class AnnotatedCommandHandlingComponent<T> implements CommandHandlingComp
      * Wraps the given {@code annotatedCommandHandler}, allowing it to be subscribed to a {@link CommandBus} as a
      * {@link CommandHandlingComponent}.
      *
-     * @param annotatedCommandHandler The object containing the {@link CommandHandler} annotated methods.
-     * @param converter               The converter to use for converting the payload of the command to the type
-     *                                expected by the handler method.
-     */
-    public AnnotatedCommandHandlingComponent(@Nonnull T annotatedCommandHandler,
-                                             @Nonnull MessageConverter converter) {
-        this(annotatedCommandHandler,
-             ClasspathParameterResolverFactory.forClass(annotatedCommandHandler.getClass()),
-             converter);
-    }
-
-    /**
-     * Wraps the given {@code annotatedCommandHandler}, allowing it to be subscribed to a {@link CommandBus} as a
-     * {@link CommandHandlingComponent}.
-     *
-     * @param annotatedCommandHandler  The object containing the {@link CommandHandler} annotated methods.
-     * @param parameterResolverFactory The parameter resolver factory to resolve handler parameters with.
-     * @param converter                The converter to use for converting the payload of the command to the type
-     *                                 expected by the handler method.
-     */
-    public AnnotatedCommandHandlingComponent(@Nonnull T annotatedCommandHandler,
-                                             @Nonnull ParameterResolverFactory parameterResolverFactory,
-                                             @Nonnull MessageConverter converter) {
-        this(annotatedCommandHandler,
-             parameterResolverFactory,
-             ClasspathHandlerDefinition.forClass(annotatedCommandHandler.getClass()),
-             new AnnotationMessageTypeResolver(),
-             converter);
-    }
-
-    /**
-     * Wraps the given {@code annotatedCommandHandler}, allowing it to be subscribed to a {@link CommandBus} as a
-     * {@link CommandHandlingComponent}.
-     *
      * @param annotatedCommandHandler  The object containing the {@link CommandHandler} annotated methods.
      * @param parameterResolverFactory The parameter resolver factory to resolve handler parameters with.
      * @param handlerDefinition        The handler definition used to create concrete handlers.
-     * @param messageTypeResolver      The {@link MessageTypeResolver} resolving the
-     *                                 {@link QualifiedName names} for
+     * @param messageTypeResolver      The {@link MessageTypeResolver} resolving the {@link QualifiedName names} for
      *                                 {@link CommandMessage CommandMessages}.
      * @param converter                The converter to use for converting the payload of the command to the type
      *                                 expected by the handler method.
@@ -114,19 +76,15 @@ public class AnnotatedCommandHandlingComponent<T> implements CommandHandlingComp
                                              @Nonnull HandlerDefinition handlerDefinition,
                                              @Nonnull MessageTypeResolver messageTypeResolver,
                                              @Nonnull MessageConverter converter) {
+        this.target = requireNonNull(annotatedCommandHandler, "The Annotated Command Handler may not be null.");
         this.handlingComponent = SimpleCommandHandlingComponent.create(
                 "AnnotatedCommandHandlingComponent[%s]".formatted(annotatedCommandHandler.getClass().getName())
         );
-        this.target = requireNonNull(annotatedCommandHandler, "The Annotated Command Handler may not be null.");
-
         @SuppressWarnings("unchecked")
-        Class<T> cls = (Class<T>) annotatedCommandHandler.getClass();
-
-        this.model = AnnotatedHandlerInspector.inspectType(cls,
-                                                           parameterResolverFactory,
-                                                           handlerDefinition);
+        Class<T> clazz = (Class<T>) annotatedCommandHandler.getClass();
+        this.model = AnnotatedHandlerInspector.inspectType(clazz, parameterResolverFactory, handlerDefinition);
         this.messageTypeResolver = requireNonNull(messageTypeResolver, "The MessageTypeResolver may not be null.");
-        this.converter = requireNonNull(converter, "The Converter may not be null.");
+        this.converter = requireNonNull(converter, "The MessageConverter may not be null.");
 
         initializeHandlersBasedOnModel();
     }

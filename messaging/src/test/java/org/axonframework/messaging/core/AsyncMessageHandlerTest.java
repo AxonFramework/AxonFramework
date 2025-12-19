@@ -153,24 +153,39 @@ class AsyncMessageHandlerTest {
 
             @Test
             void returningCompletableFutureShouldUseItsResult() {
-                commandBus.subscribe(new AnnotatedCommandHandlingComponent<>(new CompletableFutureCommandHandler(),
-                                                                             new DelegatingMessageConverter(PassThroughConverter.INSTANCE)));
+                commandBus.subscribe(new AnnotatedCommandHandlingComponent<>(
+                        new CompletableFutureCommandHandler(),
+                        ClasspathParameterResolverFactory.forClass(CompletableFutureCommandHandler.class),
+                        ClasspathHandlerDefinition.forClass(CompletableFutureCommandHandler.class),
+                        new AnnotationMessageTypeResolver(),
+                        new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
+                ));
 
                 assertCommands();
             }
 
             @Test
             void returningMonoShouldUseItsResult() {
-                commandBus.subscribe(new AnnotatedCommandHandlingComponent<>(new MonoCommandHandler(),
-                                                                             new DelegatingMessageConverter(PassThroughConverter.INSTANCE)));
+                commandBus.subscribe(new AnnotatedCommandHandlingComponent<>(
+                        new MonoCommandHandler(),
+                        ClasspathParameterResolverFactory.forClass(MonoCommandHandler.class),
+                        ClasspathHandlerDefinition.forClass(MonoCommandHandler.class),
+                        new AnnotationMessageTypeResolver(),
+                        new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
+                ));
 
                 assertCommands();
             }
 
             @Test
             void returningBooleanShouldUseResult() {
-                commandBus.subscribe(new AnnotatedCommandHandlingComponent<>(new BooleanCommandHandler(),
-                                                                             new DelegatingMessageConverter(PassThroughConverter.INSTANCE)));
+                commandBus.subscribe(new AnnotatedCommandHandlingComponent<>(
+                        new BooleanCommandHandler(),
+                        ClasspathParameterResolverFactory.forClass(BooleanCommandHandler.class),
+                        ClasspathHandlerDefinition.forClass(BooleanCommandHandler.class),
+                        new AnnotationMessageTypeResolver(),
+                        new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
+                ));
 
                 assertCommands();
             }
