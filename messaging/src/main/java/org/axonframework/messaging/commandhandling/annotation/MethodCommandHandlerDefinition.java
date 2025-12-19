@@ -18,6 +18,7 @@ package org.axonframework.messaging.commandhandling.annotation;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.annotation.HandlerAttributes;
 import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
@@ -80,7 +81,7 @@ public class MethodCommandHandlerDefinition implements HandlerEnhancerDefinition
 
         @Override
         public boolean canHandle(@Nonnull Message message, @Nonnull ProcessingContext context) {
-            return super.canHandle(message, context);
+            return super.canHandle(message, context) && message instanceof CommandMessage;
         }
 
         @Override
