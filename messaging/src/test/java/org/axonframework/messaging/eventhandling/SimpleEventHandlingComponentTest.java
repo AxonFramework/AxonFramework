@@ -17,14 +17,13 @@
 package org.axonframework.messaging.eventhandling;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
+import org.junit.jupiter.api.*;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -51,7 +50,7 @@ class SimpleEventHandlingComponentTest {
             SequencingPolicy sequencingPolicy = (event, context) -> Optional.of(expectedIdentifier);
 
             // when
-            var component = new SimpleEventHandlingComponent(sequencingPolicy)
+            var component = new SimpleEventHandlingComponent("test", sequencingPolicy)
                     .subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
 
             // then
@@ -70,7 +69,7 @@ class SimpleEventHandlingComponentTest {
             var expectedIdentifier = "sequenceId";
 
             // when
-            var component = new SimpleEventHandlingComponent((e, ctx) -> Optional.of(expectedIdentifier))
+            var component = new SimpleEventHandlingComponent("test", (e, ctx) -> Optional.of(expectedIdentifier))
                     .subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
 
             // then

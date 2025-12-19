@@ -17,15 +17,18 @@
 package org.axonframework.messaging.eventhandling;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.eventhandling.sequencing.HierarchicalSequencingPolicy;
-import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
-import org.axonframework.messaging.eventhandling.sequencing.SequentialPerAggregatePolicy;
-import org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy;
+import org.axonframework.common.Assert;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SequenceOverridingEventHandlingComponent;
+import org.axonframework.messaging.eventhandling.sequencing.HierarchicalSequencingPolicy;
+import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
+import org.axonframework.messaging.eventhandling.sequencing.SequentialPerAggregatePolicy;
+import org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy;
 
 import java.util.List;
 import java.util.Objects;
@@ -40,13 +43,16 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public class SimpleEventHandlingComponent implements EventHandlingComponent {
+public class SimpleEventHandlingComponent implements
+        EventHandlingComponent,
+        DescribableComponent {
 
     private static final SequencingPolicy DEFAULT_SEQUENCING_POLICY = new HierarchicalSequencingPolicy(
             SequentialPerAggregatePolicy.instance(),
             SequentialPolicy.INSTANCE
     );
 
+    private final String name;
     private final ConcurrentHashMap<QualifiedName, List<EventHandler>> eventHandlers = new ConcurrentHashMap<>();
     private final SequencingPolicy sequencingPolicy;
 
@@ -54,17 +60,21 @@ public class SimpleEventHandlingComponent implements EventHandlingComponent {
      * Initializes a {@code SimpleEventHandlingComponent} with no {@link EventHandler}s and default
      * {@link SequentialPolicy}.
      */
-    public SimpleEventHandlingComponent() {
-        this.sequencingPolicy = DEFAULT_SEQUENCING_POLICY;
+    public SimpleEventHandlingComponent(@Nonnull String name) {
+        this(name, DEFAULT_SEQUENCING_POLICY);
     }
 
     /**
-     * Initializes a {@code SimpleEventHandlingComponent} with no {@link EventHandler}s and the given
-     * {@code sequencingPolicy}.
+     * Initializes a {@code SimpleEventHandlingComponent} with no {@link EventHandler EventHandlers} and the given
+     * {@code sequencingPolicy} and {@code name}.
      *
+     * @param name             The name of the component, used for {@link DescribableComponent describing} the
+     *                         component.
      * @param sequencingPolicy the {@link SequencingPolicy} to use for sequencing events.
      */
-    public SimpleEventHandlingComponent(@Nonnull SequencingPolicy sequencingPolicy) {
+    public SimpleEventHandlingComponent(@Nonnull String name,
+                                        @Nonnull SequencingPolicy sequencingPolicy) {
+        this.name = Assert.nonEmpty(name, "The name may not be null or empty.");
         this.sequencingPolicy = Objects.requireNonNull(sequencingPolicy, "Sequencing Policy may not be null.");
     }
 
@@ -147,5 +157,12 @@ public class SimpleEventHandlingComponent implements EventHandlingComponent {
                        .findFirst()
                        .map(component -> component.sequenceIdentifierFor(event, context))
                        .orElse(sequencingPolicy.getSequenceIdentifierFor(event, context).get());
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("name", name);
+        descriptor.describeProperty("eventHandlers", eventHandlers);
+        descriptor.describeProperty("sequencingPolicy", sequencingPolicy);
     }
 }

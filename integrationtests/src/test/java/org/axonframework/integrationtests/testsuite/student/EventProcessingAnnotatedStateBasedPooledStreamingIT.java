@@ -117,7 +117,7 @@ public class EventProcessingAnnotatedStateBasedPooledStreamingIT extends Abstrac
 
     @Nonnull
     private static EventHandlingComponent studentCoursesProjector() {
-        return new SimpleEventHandlingComponent(SequentialPolicy.INSTANCE)
+        return new SimpleEventHandlingComponent("test", SequentialPolicy.INSTANCE)
                 .subscribe(
                         new QualifiedName(StudentEnrolledEvent.class),
                         (event, context) -> {

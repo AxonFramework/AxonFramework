@@ -16,14 +16,14 @@
 
 package org.axonframework.integrationtests.testsuite.student;
 
-import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
-import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
-import org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
+import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
+import org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.test.util.MessageMonitorReport;
 import org.axonframework.test.util.RecordingMessageMonitor;
 import org.junit.jupiter.api.*;
@@ -109,21 +109,22 @@ public class MonitoringPooledEventProcessingReportIT extends AbstractStudentIT {
         configurer.messaging(mc -> mc
                 .registerMessageMonitor(c -> new RecordingMessageMonitor(reportedMessages))
                 .eventProcessing(ep -> ep.pooledStreaming(
-
                         ps -> ps.processor(EventProcessorModule.pooledStreaming(NAME)
                                                                .eventHandlingComponents(components -> components
                                                                        .declarative(cfg -> new SimpleEventHandlingComponent(
-                                                                               SequentialPolicy.INSTANCE)
-                                                                               .subscribe(new QualifiedName(
-                                                                                                  KnownEvent.class),
-                                                                                          (event, context) -> {
-                                                                                              if ("ERROR".equals(event.metadata()
-                                                                                                                      .get("type"))) {
-                                                                                                  throw new RuntimeException(
-                                                                                                          "Failures are expected");
-                                                                                              }
-                                                                                              return MessageStream.empty();
-                                                                                          })
+                                                                                            "test",
+                                                                                            SequentialPolicy.INSTANCE
+                                                                                    ).subscribe(
+                                                                                            new QualifiedName(KnownEvent.class),
+                                                                                            (event, context) -> {
+                                                                                                if ("ERROR".equals(event.metadata().get("type"))) {
+                                                                                                    throw new RuntimeException(
+                                                                                                            "Failures are expected"
+                                                                                                    );
+                                                                                                }
+                                                                                                return MessageStream.empty();
+                                                                                            }
+                                                                                    )
                                                                        )
 
                                                                )

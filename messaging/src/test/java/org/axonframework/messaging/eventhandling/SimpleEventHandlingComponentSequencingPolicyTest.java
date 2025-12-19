@@ -17,12 +17,8 @@
 package org.axonframework.messaging.eventhandling;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.eventhandling.sequencing.FullConcurrencyPolicy;
-import org.axonframework.messaging.eventhandling.sequencing.HierarchicalSequencingPolicy;
-import org.axonframework.messaging.eventhandling.sequencing.MetadataSequencingPolicy;
-import org.axonframework.messaging.eventhandling.sequencing.PropertySequencingPolicy;
-import org.axonframework.messaging.eventhandling.sequencing.SequentialPerAggregatePolicy;
-import org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy;
+import org.axonframework.conversion.Converter;
+import org.axonframework.conversion.PassThroughConverter;
 import org.axonframework.messaging.core.LegacyResources;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
@@ -31,8 +27,12 @@ import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
-import org.axonframework.conversion.Converter;
-import org.axonframework.conversion.PassThroughConverter;
+import org.axonframework.messaging.eventhandling.sequencing.FullConcurrencyPolicy;
+import org.axonframework.messaging.eventhandling.sequencing.HierarchicalSequencingPolicy;
+import org.axonframework.messaging.eventhandling.sequencing.MetadataSequencingPolicy;
+import org.axonframework.messaging.eventhandling.sequencing.PropertySequencingPolicy;
+import org.axonframework.messaging.eventhandling.sequencing.SequentialPerAggregatePolicy;
+import org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;
@@ -77,7 +77,7 @@ class SimpleEventHandlingComponentSequencingPolicyTest {
         @Test
         void should_use_sequential_policy_when_set_on_component() {
             // given
-            var component = new SimpleEventHandlingComponent(SequentialPolicy.INSTANCE);
+            var component = new SimpleEventHandlingComponent("test", SequentialPolicy.INSTANCE);
             var event = EventTestUtils.asEventMessage("test-event");
             var context = messageProcessingContext(event);
 
@@ -91,7 +91,7 @@ class SimpleEventHandlingComponentSequencingPolicyTest {
         @Test
         void should_use_full_concurrency_policy_when_set_on_component() {
             // given
-            var component = new SimpleEventHandlingComponent(FullConcurrencyPolicy.INSTANCE);
+            var component = new SimpleEventHandlingComponent("test", FullConcurrencyPolicy.INSTANCE);
             var event = EventTestUtils.asEventMessage("test-event");
             var context = messageProcessingContext(event);
 
@@ -105,7 +105,7 @@ class SimpleEventHandlingComponentSequencingPolicyTest {
         @Test
         void should_use_metadata_sequencing_policy_when_set_on_component() {
             // given
-            var component = new SimpleEventHandlingComponent(new MetadataSequencingPolicy("userId"));
+            var component = new SimpleEventHandlingComponent("test", new MetadataSequencingPolicy("userId"));
             var metadata = Metadata.with("userId", "user123");
             var event = new GenericEventMessage(new MessageType("test-event"), "test-event", metadata);
             var context = messageProcessingContext(event);
@@ -120,7 +120,7 @@ class SimpleEventHandlingComponentSequencingPolicyTest {
         @Test
         void should_use_metadata_sequencing_policy_fallback_to_event_identifier() {
             // given
-            var component = new SimpleEventHandlingComponent(new HierarchicalSequencingPolicy(
+            var component = new SimpleEventHandlingComponent("test", new HierarchicalSequencingPolicy(
                     new MetadataSequencingPolicy("userId"),
                     (e, ctx) -> Optional.of(e.identifier())
             ));
@@ -138,8 +138,8 @@ class SimpleEventHandlingComponentSequencingPolicyTest {
         void should_use_property_sequencing_policy_when_set_on_component() {
             // given
             var component = new SimpleEventHandlingComponent(
-                    new PropertySequencingPolicy<OrderEvent, String>(OrderEvent.class,
-                                                                     "orderId")
+                    "test",
+                    new PropertySequencingPolicy<OrderEvent, String>(OrderEvent.class, "orderId")
             );
             var eventPayload = new OrderEvent("order123", "item456");
             var event = EventTestUtils.asEventMessage(eventPayload);
@@ -155,7 +155,7 @@ class SimpleEventHandlingComponentSequencingPolicyTest {
         @Test
         void should_use_sequential_per_aggregate_policy_when_set_on_component() {
             // given
-            var component = new SimpleEventHandlingComponent(SequentialPerAggregatePolicy.instance());
+            var component = new SimpleEventHandlingComponent("test", SequentialPerAggregatePolicy.instance());
             var event = EventTestUtils.asEventMessage("test-event");
             var context = messageProcessingContext(event);
 
@@ -173,13 +173,12 @@ class SimpleEventHandlingComponentSequencingPolicyTest {
         @Test
         void should_use_nested_component_over_main_component_policy() {
             // given
-            var mainComponent = new SimpleEventHandlingComponent(FullConcurrencyPolicy.INSTANCE);
+            var mainComponent = new SimpleEventHandlingComponent("test", FullConcurrencyPolicy.INSTANCE);
 
             mainComponent.subscribe(
                     new QualifiedName("java.lang", "String"),
-                    new SimpleEventHandlingComponent(SequentialPolicy.INSTANCE).subscribe(new QualifiedName("java.lang",
-                                                                                                            "String"),
-                                                                                          new PlainEventHandler())
+                    new SimpleEventHandlingComponent("test", SequentialPolicy.INSTANCE)
+                            .subscribe(new QualifiedName("java.lang", "String"), new PlainEventHandler())
             );
 
             var event = EventTestUtils.asEventMessage("test-event");
@@ -199,7 +198,7 @@ class SimpleEventHandlingComponentSequencingPolicyTest {
         @Test
         void should_use_main_component_policy_when_no_nested_component() {
             // given
-            var mainComponent = new SimpleEventHandlingComponent(SequentialPolicy.INSTANCE);
+            var mainComponent = new SimpleEventHandlingComponent("test", SequentialPolicy.INSTANCE);
             var plainEventHandler = new PlainEventHandler();
 
             mainComponent.subscribe(new QualifiedName("java.lang", "String"), plainEventHandler);
@@ -218,9 +217,9 @@ class SimpleEventHandlingComponentSequencingPolicyTest {
         void should_use_main_component_policy_when_mixed_handlers() {
             // given
             var mainComponent = new SimpleEventHandlingComponent(
-                    new PropertySequencingPolicy<OrderEvent, String>(OrderEvent.class, "orderId")
+                    "test", new PropertySequencingPolicy<OrderEvent, String>(OrderEvent.class, "orderId")
             );
-            var nestedComponent = new SimpleEventHandlingComponent(FullConcurrencyPolicy.INSTANCE);
+            var nestedComponent = new SimpleEventHandlingComponent("test", FullConcurrencyPolicy.INSTANCE);
             var nestedEventHandler = createEventHandlerFromComponent(nestedComponent);
             var plainEventHandler = new PlainEventHandler();
 
@@ -253,10 +252,6 @@ class SimpleEventHandlingComponentSequencingPolicyTest {
     }
 
     private record OrderEvent(String orderId, String itemId) {
-
-    }
-
-    private record CustomerEvent(String customerId, String name) {
 
     }
 
