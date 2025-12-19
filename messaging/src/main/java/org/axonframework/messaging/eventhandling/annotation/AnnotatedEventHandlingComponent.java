@@ -17,6 +17,7 @@
 package org.axonframework.messaging.eventhandling.annotation;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.StringUtils;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageTypeResolver;
@@ -101,9 +102,12 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
         Class<?> payloadType = handler.payloadType();
         QualifiedName qualifiedName = handler.unwrap(MethodEventHandlerDefinition.MethodEventMessageHandlingMember.class)
                                              .map(EventHandlingMember::eventName)
+                                             // Filter empty Strings to  fall back to the MessageTypeResolver
+                                             .filter(StringUtils::nonEmpty)
                                              .map(QualifiedName::new)
                                              .orElseGet(() -> messageTypeResolver.resolveOrThrow(payloadType)
                                                                                  .qualifiedName());
+
         handlingComponent.subscribe(qualifiedName, constructEventHandlerFor(qualifiedName, handler));
     }
 

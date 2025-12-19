@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.commandhandling.annotation;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.conversion.PassThroughConverter;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.CommandMessage;
@@ -27,6 +28,7 @@ import org.axonframework.messaging.core.GenericMessage;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageStream.Entry;
 import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.annotation.AnnotationMessageTypeResolver;
 import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
@@ -43,6 +45,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -81,6 +85,54 @@ class AnnotatedCommandHandlingComponentTest {
         CommandBus commandBus = mock(CommandBus.class);
         when(commandBus.subscribe(any(QualifiedName.class), any())).thenReturn(commandBus);
         when(commandBus.subscribe(anySet(), any())).thenReturn(commandBus);
+    }
+
+    @Test
+    void subscribesCommandHandlerWithCommandName() {
+        Object annotatedCommandHandler = new Object() {
+            @SuppressWarnings("unused")
+            @CommandHandler(commandName = "myCommandName")
+            public void handle(String command) {
+                // Unimportant
+            }
+        };
+        MessageTypeResolver messageTypeResolver = spy(new AnnotationMessageTypeResolver());
+        AnnotatedCommandHandlingComponent<Object> annotatedComponent = new AnnotatedCommandHandlingComponent<>(
+                annotatedCommandHandler,
+                ClasspathParameterResolverFactory.forClass(annotatedCommandHandler.getClass()),
+                ClasspathHandlerDefinition.forClass(annotatedCommandHandler.getClass()),
+                messageTypeResolver,
+                new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
+        );
+
+        Set<QualifiedName> supportedCommands = annotatedComponent.supportedCommands();
+        assertThat(supportedCommands).hasSize(1);
+        assertThat(supportedCommands).contains(new QualifiedName("myCommandName"));
+        verifyNoInteractions(messageTypeResolver);
+    }
+
+    @Test
+    void subscribesCommandHandlerThroughMessageTypeResolverWhenCommandNameIsEmpty() {
+        QualifiedName expectedName = new QualifiedName("defaultName");
+
+        Object annotatedCommandHandler = new Object() {
+            @SuppressWarnings({"unused", "DefaultAnnotationParam"})
+            @CommandHandler(commandName = "") // Deliberately empty to give control to the MessageTypeResolver
+            public void handle(String command) {
+                // Unimportant
+            }
+        };
+        AnnotatedCommandHandlingComponent<Object> annotatedComponent = new AnnotatedCommandHandlingComponent<>(
+                annotatedCommandHandler,
+                ClasspathParameterResolverFactory.forClass(annotatedCommandHandler.getClass()),
+                ClasspathHandlerDefinition.forClass(annotatedCommandHandler.getClass()),
+                payloadType -> Optional.of(new MessageType(expectedName)),
+                new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
+        );
+
+        Set<QualifiedName> supportedCommands = annotatedComponent.supportedCommands();
+        assertThat(supportedCommands).hasSize(1);
+        assertThat(supportedCommands).contains(expectedName);
     }
 
     @Test

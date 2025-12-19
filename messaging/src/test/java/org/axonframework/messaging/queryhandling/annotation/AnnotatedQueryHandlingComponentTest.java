@@ -41,12 +41,14 @@ import org.junit.jupiter.api.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link AnnotatedQueryHandlingComponent}.
@@ -70,6 +72,54 @@ class AnnotatedQueryHandlingComponentTest {
                 new AnnotationMessageTypeResolver(),
                 new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
         );
+    }
+
+    @Test
+    void subscribesQueryHandlerWithQueryName() {
+        Object annotatedQueryHandler = new Object() {
+            @SuppressWarnings("unused")
+            @QueryHandler(queryName = "myQueryName")
+            public String handle(String query) {
+                return "something";
+            }
+        };
+        MessageTypeResolver messageTypeResolver = spy(new AnnotationMessageTypeResolver());
+        AnnotatedQueryHandlingComponent<Object> annotatedComponent = new AnnotatedQueryHandlingComponent<>(
+                annotatedQueryHandler,
+                ClasspathParameterResolverFactory.forClass(annotatedQueryHandler.getClass()),
+                ClasspathHandlerDefinition.forClass(annotatedQueryHandler.getClass()),
+                messageTypeResolver,
+                new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
+        );
+
+        Set<QualifiedName> supportedQueries = annotatedComponent.supportedQueries();
+        assertThat(supportedQueries).hasSize(1);
+        assertThat(supportedQueries).contains(new QualifiedName("myQueryName"));
+        verifyNoInteractions(messageTypeResolver);
+    }
+
+    @Test
+    void subscribesQueryHandlerThroughMessageTypeResolverWhenQueryNameIsEmpty() {
+        QualifiedName expectedName = new QualifiedName("defaultName");
+
+        Object annotatedQueryHandler = new Object() {
+            @SuppressWarnings({"unused", "DefaultAnnotationParam"})
+            @QueryHandler(queryName = "") // Deliberately empty to give control to the MessageTypeResolver
+            public String handle(String query) {
+                return "something";
+            }
+        };
+        AnnotatedQueryHandlingComponent<Object> annotatedComponent = new AnnotatedQueryHandlingComponent<>(
+                annotatedQueryHandler,
+                ClasspathParameterResolverFactory.forClass(annotatedQueryHandler.getClass()),
+                ClasspathHandlerDefinition.forClass(annotatedQueryHandler.getClass()),
+                payloadType -> Optional.of(new MessageType(expectedName)),
+                new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
+        );
+
+        Set<QualifiedName> supportedQueries = annotatedComponent.supportedQueries();
+        assertThat(supportedQueries).hasSize(1);
+        assertThat(supportedQueries).contains(expectedName);
     }
 
     @Test
