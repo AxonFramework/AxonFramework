@@ -17,6 +17,7 @@
 package org.axonframework.messaging.commandhandling.annotation;
 
 import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.annotation.MessageHandler;
 
 import java.lang.annotation.Documented;
@@ -62,12 +63,14 @@ import java.lang.annotation.Target;
 public @interface CommandHandler {
 
     /**
-     * The name of the Command this handler listens to.
+     * The name of the command this handler listens to, matching to the {@link MessageType#name()} from the
+     * {@link CommandMessage#type()}.
      * <p>
-     * Defaults to the type declared by the payload type (i.e. first parameter), or its fully qualified class name, if
-     * no explicit names are declared on that payload type.
+     * When not defined the {@link org.axonframework.messaging.core.MessageTypeResolver} will derive the name based on
+     * the payload type (thus the <b>first</b> parameter) of the annotated method.
      *
-     * @return The command name.
+     * @return The name of the command this handler listens to, matching to the {@link MessageType#name()} from the
+     * {@link CommandMessage#type()}.
      */
     String commandName() default "";
 
