@@ -19,6 +19,7 @@ package org.axonframework.messaging.commandhandling.annotation;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.commandhandling.CommandHandler;
 import org.axonframework.messaging.commandhandling.CommandHandlingComponent;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandResultMessage;
@@ -31,7 +32,6 @@ import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.core.annotation.HandlerDefinition;
-import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.conversion.MessageConverter;
 import org.axonframework.messaging.core.interception.annotation.MessageHandlerInterceptorMemberChain;
@@ -42,10 +42,11 @@ import java.util.Set;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Adapter that turns classes with {@link CommandHandler} annotated methods into a {@link CommandHandlingComponent}.
+ * Adapter that turns classes with {@link org.axonframework.messaging.commandhandling.annotation.CommandHandler}
+ * annotated methods into a {@link CommandHandlingComponent}.
  * <p>
- * Each annotated method is subscribed as a {@link org.axonframework.messaging.commandhandling.CommandHandler} at the
- * {@link CommandHandlingComponent} for the command name specified by the parameter of that method.
+ * Each annotated method is subscribed as a {@link CommandHandler} at the {@link CommandHandlingComponent} for the
+ * command name specified by the parameter of that method.
  *
  * @param <T> The target type of this command handling component.
  * @author Allard Buijze
@@ -63,7 +64,9 @@ public class AnnotatedCommandHandlingComponent<T> implements CommandHandlingComp
      * Wraps the given {@code annotatedCommandHandler}, allowing it to be subscribed to a {@link CommandBus} as a
      * {@link CommandHandlingComponent}.
      *
-     * @param annotatedCommandHandler  The object containing the {@link CommandHandler} annotated methods.
+     * @param annotatedCommandHandler  The object containing the
+     *                                 {@link org.axonframework.messaging.commandhandling.annotation.CommandHandler}
+     *                                 annotated methods.
      * @param parameterResolverFactory The parameter resolver factory to resolve handler parameters with.
      * @param handlerDefinition        The handler definition used to create concrete handlers.
      * @param messageTypeResolver      The {@link MessageTypeResolver} resolving the {@link QualifiedName names} for
@@ -90,10 +93,11 @@ public class AnnotatedCommandHandlingComponent<T> implements CommandHandlingComp
     }
 
     private void initializeHandlersBasedOnModel() {
-        model.getUniqueHandlers(target.getClass(), CommandMessage.class).forEach(this::registerHandler);
+        model.getUniqueHandlers(target.getClass(), CommandMessage.class)
+             .forEach(h -> registerHandler((CommandHandlingMember<? super T>) h));
     }
 
-    private void registerHandler(MessageHandlingMember<? super T> handler) {
+    private void registerHandler(CommandHandlingMember<? super T> handler) {
         Class<?> payloadType = handler.payloadType();
         QualifiedName qualifiedName = handler.unwrap(CommandHandlingMember.class)
                                              .map(CommandHandlingMember::commandName)
@@ -107,9 +111,7 @@ public class AnnotatedCommandHandlingComponent<T> implements CommandHandlingComp
         handlingComponent.subscribe(qualifiedName, constructCommandHandlerFor(handler));
     }
 
-    private org.axonframework.messaging.commandhandling.CommandHandler constructCommandHandlerFor(
-            MessageHandlingMember<? super T> handler
-    ) {
+    private CommandHandler constructCommandHandlerFor(CommandHandlingMember<? super T> handler) {
         MessageHandlerInterceptorMemberChain<T> interceptorChain = model.chainedInterceptor(target.getClass());
         return (command, context) -> interceptorChain.handle(
                                                              command.withConvertedPayload(
