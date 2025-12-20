@@ -40,6 +40,7 @@ import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.core.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,6 +48,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Predicate;
@@ -164,7 +166,7 @@ public class DeadLetteringEventHandlerInvoker
         return mightBePresent && queue.enqueueIfPresent(
                 sequenceIdentifier,
                 () -> new GenericDeadLetter<>(sequenceIdentifier, message)
-        );
+        ).join();
     }
 
     private void invokeHandlers(@Nonnull EventMessage message, @Nonnull ProcessingContext context,
@@ -182,7 +184,7 @@ public class DeadLetteringEventHandlerInvoker
             if (decision.shouldEnqueue()) {
                 Throwable cause = decision.enqueueCause().orElse(null);
                 markEnqueued(sequenceIdentifier, segment);
-                queue.enqueue(sequenceIdentifier, decision.withDiagnostics(letter.withCause(cause)));
+                queue.enqueue(sequenceIdentifier, decision.withDiagnostics(letter.withCause(cause))).join();
             } else if (logger.isInfoEnabled()) {
                 logger.info("The enqueue policy decided not to dead letter event [{}].", message.identifier());
             }
@@ -218,7 +220,7 @@ public class DeadLetteringEventHandlerInvoker
     @Override
     public void performReset(ProcessingContext context) {
         if (allowReset) {
-            transactionManager.executeInTransaction(queue::clear);
+            transactionManager.executeInTransaction(() -> queue.clear().join());
         }
         super.performReset(null, context);
     }
@@ -226,22 +228,30 @@ public class DeadLetteringEventHandlerInvoker
     @Override
     public <R> void performReset(R resetContext, ProcessingContext context) {
         if (allowReset) {
-            transactionManager.executeInTransaction(queue::clear);
+            transactionManager.executeInTransaction(() -> queue.clear().join());
         }
         super.performReset(resetContext, context);
     }
 
     @Override
-    public boolean process(Predicate<DeadLetter<? extends EventMessage>> sequenceFilter) {
-        DeadLetteredEventProcessingTask processingTask =
-                new DeadLetteredEventProcessingTask(super.eventHandlers(),
-                                                    interceptors,
-                                                    enqueuePolicy,
-                                                    transactionManager);
+    public CompletableFuture<Boolean> process(Predicate<DeadLetter<? extends EventMessage>> sequenceFilter) {
+        // TODO: This is legacy AF4 code that needs to be fully migrated to AF5 patterns.
+        // The new DeadLetteredEventProcessingTask requires an EventHandlingComponent, not individual handlers.
+        // For now, we create a simple inline processing that wraps the existing handler logic.
         LegacyUnitOfWork<?> uow = new LegacyDefaultUnitOfWork<>(null);
         uow.attachTransaction(transactionManager);
-        return (boolean) uow.executeWithResult((ctx) -> queue.process(sequenceFilter, processingTask::process))
-                            .payload();
+        return queue.process(sequenceFilter, letter -> {
+            // Inline processing - apply handlers to the dead letter's message
+            try {
+                ProcessingContext context = new LegacyMessageSupportingContext(letter.message());
+                for (var handler : super.eventHandlers()) {
+                    handler.handle(letter.message(), context);
+                }
+                return CompletableFuture.completedFuture(Decisions.evict());
+            } catch (Exception e) {
+                return CompletableFuture.completedFuture(enqueuePolicy.decide(letter, e));
+            }
+        });
     }
 
     public Registration registerHandlerInterceptor(

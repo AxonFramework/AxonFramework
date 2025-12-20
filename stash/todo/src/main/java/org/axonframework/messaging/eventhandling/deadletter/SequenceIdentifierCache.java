@@ -60,7 +60,7 @@ class SequenceIdentifierCache {
     SequenceIdentifierCache(int segmentId, int maxSize, SequencedDeadLetterQueue<EventMessage> queue) {
         this.segmentId = segmentId;
         this.maxSize = maxSize;
-        this.startedEmpty = queue.amountOfSequences() == 0L;
+        this.startedEmpty = queue.amountOfSequences().join() == 0L;
     }
 
     boolean mightBePresent(Object sequenceIdentifier) {
