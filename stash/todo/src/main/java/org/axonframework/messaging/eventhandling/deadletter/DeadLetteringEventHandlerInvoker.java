@@ -18,6 +18,7 @@ package org.axonframework.messaging.eventhandling.deadletter;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
 import org.axonframework.messaging.eventhandling.EventHandlerInvoker;
@@ -163,10 +164,10 @@ public class DeadLetteringEventHandlerInvoker
      * {@code false} otherwise.
      */
     private boolean isPresent(boolean mightBePresent, Object sequenceIdentifier, EventMessage message) {
-        return mightBePresent && queue.enqueueIfPresent(
+        return mightBePresent && FutureUtils.joinAndUnwrap(queue.enqueueIfPresent(
                 sequenceIdentifier,
                 () -> new GenericDeadLetter<>(sequenceIdentifier, message)
-        ).join();
+        ));
     }
 
     private void invokeHandlers(@Nonnull EventMessage message, @Nonnull ProcessingContext context,
@@ -184,7 +185,7 @@ public class DeadLetteringEventHandlerInvoker
             if (decision.shouldEnqueue()) {
                 Throwable cause = decision.enqueueCause().orElse(null);
                 markEnqueued(sequenceIdentifier, segment);
-                queue.enqueue(sequenceIdentifier, decision.withDiagnostics(letter.withCause(cause))).join();
+                FutureUtils.joinAndUnwrap(queue.enqueue(sequenceIdentifier, decision.withDiagnostics(letter.withCause(cause))));
             } else if (logger.isInfoEnabled()) {
                 logger.info("The enqueue policy decided not to dead letter event [{}].", message.identifier());
             }
@@ -220,7 +221,7 @@ public class DeadLetteringEventHandlerInvoker
     @Override
     public void performReset(ProcessingContext context) {
         if (allowReset) {
-            transactionManager.executeInTransaction(() -> queue.clear().join());
+            transactionManager.executeInTransaction(() -> FutureUtils.joinAndUnwrap(queue.clear()));
         }
         super.performReset(null, context);
     }
@@ -228,7 +229,7 @@ public class DeadLetteringEventHandlerInvoker
     @Override
     public <R> void performReset(R resetContext, ProcessingContext context) {
         if (allowReset) {
-            transactionManager.executeInTransaction(() -> queue.clear().join());
+            transactionManager.executeInTransaction(() -> FutureUtils.joinAndUnwrap(queue.clear()));
         }
         super.performReset(resetContext, context);
     }

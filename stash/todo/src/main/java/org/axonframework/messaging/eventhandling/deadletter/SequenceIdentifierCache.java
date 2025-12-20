@@ -19,6 +19,7 @@ package org.axonframework.messaging.eventhandling.deadletter;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
+import org.axonframework.common.FutureUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,7 +61,7 @@ class SequenceIdentifierCache {
     SequenceIdentifierCache(int segmentId, int maxSize, SequencedDeadLetterQueue<EventMessage> queue) {
         this.segmentId = segmentId;
         this.maxSize = maxSize;
-        this.startedEmpty = queue.amountOfSequences().join() == 0L;
+        this.startedEmpty = FutureUtils.joinAndUnwrap(queue.amountOfSequences()) == 0L;
     }
 
     boolean mightBePresent(Object sequenceIdentifier) {
