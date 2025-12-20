@@ -67,7 +67,7 @@
         <jakarta.persistence.version>3.2.0</jakarta.persistence.version>
         <jakarta.validation.version>3.1.1</jakarta.validation.version>
         <!-- Logging -->
-        <log4j.version>2.25.2</log4j.version>
+        <log4j.version>2.25.3</log4j.version>
         <slf4j.version>2.0.17</slf4j.version>
         <!-- Metrics -->
         <dropwizard.metrics.version>4.2.37</dropwizard.metrics.version>
