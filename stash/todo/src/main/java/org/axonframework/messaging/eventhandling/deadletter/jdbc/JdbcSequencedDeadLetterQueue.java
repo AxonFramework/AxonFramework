@@ -17,6 +17,7 @@
 package org.axonframework.messaging.eventhandling.deadletter.jdbc;
 
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.JdbcException;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
@@ -575,7 +576,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
         while (current != null) {
             logger.info("Processing dead letter with identifier [{}] at index [{}]",
                         current.getIdentifier(), current.getSequenceIndex());
-            EnqueueDecision<E> decision = processingTask.apply(current).join();
+            EnqueueDecision<E> decision = FutureUtils.joinAndUnwrap(processingTask.apply(current));
             if (!decision.shouldEnqueue()) {
                 JdbcDeadLetter<E> previous = current;
                 JdbcDeadLetter<E> next = findNext(previous.getSequenceIdentifier(), previous.getSequenceIndex());
