@@ -278,10 +278,10 @@ public abstract class DeadLetteringEventIntegrationTest {
         assertTrue(eventHandlingComponent.initialHandlingWasSuccessful("success"));
         assertTrue(eventHandlingComponent.initialHandlingWasUnsuccessful("failure"));
 
-        assertTrue(deadLetterQueue.contains("failure"));
-        assertFalse(deadLetterQueue.contains("success"));
+        assertTrue(FutureUtils.joinAndUnwrap(deadLetterQueue.contains("failure")));
+        assertFalse(FutureUtils.joinAndUnwrap(deadLetterQueue.contains("success")));
 
-        Iterator<DeadLetter<? extends EventMessage>> sequence = deadLetterQueue.deadLetterSequence("failure")
+        Iterator<DeadLetter<? extends EventMessage>> sequence = FutureUtils.joinAndUnwrap(deadLetterQueue.deadLetterSequence("failure"))
                                                                                .iterator();
         assertTrue(sequence.hasNext());
         assertEquals(failedEvent.payload(), sequence.next().message().payload());
@@ -319,9 +319,9 @@ public abstract class DeadLetteringEventIntegrationTest {
         assertTrue(eventHandlingComponent.initialHandlingWasUnsuccessful(aggregateId));
         assertEquals(1, eventHandlingComponent.unsuccessfulInitialHandlingCount(aggregateId));
 
-        assertTrue(deadLetterQueue.contains(aggregateId));
+        assertTrue(FutureUtils.joinAndUnwrap(deadLetterQueue.contains(aggregateId)));
         assertWithin(2, TimeUnit.SECONDS, () -> {
-            Iterator<DeadLetter<? extends EventMessage>> sequence = deadLetterQueue.deadLetterSequence(aggregateId)
+            Iterator<DeadLetter<? extends EventMessage>> sequence = FutureUtils.joinAndUnwrap(deadLetterQueue.deadLetterSequence(aggregateId))
                                                                                    .iterator();
             assertTrue(sequence.hasNext());
             assertEquals(firstDeadLetter, sequence.next().message().payload());
@@ -369,7 +369,7 @@ public abstract class DeadLetteringEventIntegrationTest {
         assertEquals(expectedUnsuccessfulInitialHandlingCount,
                      eventHandlingComponent.unsuccessfulInitialHandlingCount(aggregateId));
 
-        assertTrue(deadLetterQueue.contains(aggregateId));
+        assertTrue(FutureUtils.joinAndUnwrap(deadLetterQueue.contains(aggregateId)));
 
         deadLetteringInvoker.process(deadLetter -> true);
 
@@ -386,7 +386,7 @@ public abstract class DeadLetteringEventIntegrationTest {
                 eventHandlingComponent.unsuccessfulEvaluationCount(aggregateId)
         ));
 
-        assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(deadLetterQueue.contains(aggregateId)));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(FutureUtils.joinAndUnwrap(deadLetterQueue.contains(aggregateId))));
     }
 
     @Test
@@ -426,7 +426,7 @@ public abstract class DeadLetteringEventIntegrationTest {
         assertEquals(expectedUnsuccessfulInitialHandlingCount,
                      eventHandlingComponent.unsuccessfulInitialHandlingCount(aggregateId));
 
-        assertTrue(deadLetterQueue.contains(aggregateId));
+        assertTrue(FutureUtils.joinAndUnwrap(deadLetterQueue.contains(aggregateId)));
 
         deadLetteringInvoker.process(deadLetter -> true);
 
@@ -444,7 +444,7 @@ public abstract class DeadLetteringEventIntegrationTest {
         ));
 
         // As evaluation fails, the sequenceId should still exist
-        assertTrue(deadLetterQueue.contains(aggregateId));
+        assertTrue(FutureUtils.joinAndUnwrap(deadLetterQueue.contains(aggregateId)));
     }
 
     @Test
@@ -489,7 +489,7 @@ public abstract class DeadLetteringEventIntegrationTest {
         assertEquals(expectedUnsuccessfulInitialHandlingCount,
                      eventHandlingComponent.unsuccessfulInitialHandlingCount(aggregateId));
 
-        assertTrue(deadLetterQueue.contains(aggregateId));
+        assertTrue(FutureUtils.joinAndUnwrap(deadLetterQueue.contains(aggregateId)));
 
         assertWithin(2, TimeUnit.SECONDS,
                      () -> assertTrue(eventHandlingComponent.evaluationWasSuccessful(aggregateId)));
@@ -505,7 +505,7 @@ public abstract class DeadLetteringEventIntegrationTest {
         ));
 
         // As evaluation fails, the sequenceId should still exist
-        assertTrue(deadLetterQueue.contains(aggregateId));
+        assertTrue(FutureUtils.joinAndUnwrap(deadLetterQueue.contains(aggregateId)));
     }
 
     @Test
@@ -620,7 +620,7 @@ public abstract class DeadLetteringEventIntegrationTest {
         assertTrue(eventHandlingComponent.initialHandlingWasUnsuccessful(aggregateId));
         assertEquals(1, eventHandlingComponent.unsuccessfulInitialHandlingCount(aggregateId));
 
-        assertTrue(deadLetterQueue.contains(aggregateId));
+        assertTrue(FutureUtils.joinAndUnwrap(deadLetterQueue.contains(aggregateId)));
 
         deadLetteringInvoker.process(deadLetter -> true);
 
@@ -639,14 +639,14 @@ public abstract class DeadLetteringEventIntegrationTest {
         startProcessingEvent();
         await().pollDelay(Duration.ofMillis(25))
                .atMost(Duration.ofSeconds(10))
-               .until(() -> deadLetterQueue.size() == 1);
+               .until(() -> FutureUtils.joinAndUnwrap(deadLetterQueue.size()) == 1);
 
         // component needs to be reset, so process will cause an exception again
         eventHandlingComponent.handledEvent.clear();
         eventHandlingComponent.firstTryFailures.clear();
         deadLetteringInvoker.process(deadLetter -> true);
         assertTrue(invoked.get());
-        assertEquals(0, deadLetterQueue.size());
+        assertEquals(0, FutureUtils.joinAndUnwrap(deadLetterQueue.size()).longValue());
     }
 
     @Test
@@ -657,8 +657,8 @@ public abstract class DeadLetteringEventIntegrationTest {
         startProcessingEvent();
         await().pollDelay(Duration.ofMillis(25))
                .atMost(Duration.ofSeconds(1))
-               .until(() -> deadLetterQueue.amountOfSequences() == 1);
-        DeadLetter<?> deadLetter = deadLetterQueue.deadLetters().iterator().next().iterator().next();
+               .until(() -> FutureUtils.joinAndUnwrap(deadLetterQueue.amountOfSequences()) == 1);
+        DeadLetter<?> deadLetter = FutureUtils.joinAndUnwrap(deadLetterQueue.deadLetters()).iterator().next().iterator().next();
         assertTrue(deadLetter.cause().isPresent());
         String causeType = deadLetter.cause().get().type();
         assertEquals(ReferenceException.class.getName(), causeType);
@@ -677,9 +677,9 @@ public abstract class DeadLetteringEventIntegrationTest {
         startProcessingEvent();
         await().pollDelay(Duration.ofMillis(25))
                .atMost(Duration.ofSeconds(1))
-               .until(() -> deadLetterQueue.amountOfSequences() == 1);
+               .until(() -> FutureUtils.joinAndUnwrap(deadLetterQueue.amountOfSequences()) == 1);
 
-        DeadLetter<?> deadLetter = deadLetterQueue.deadLetters().iterator().next().iterator().next();
+        DeadLetter<?> deadLetter = FutureUtils.joinAndUnwrap(deadLetterQueue.deadLetters()).iterator().next().iterator().next();
         Optional<Cause> optionalCause = deadLetter.cause();
         assertTrue(optionalCause.isPresent());
         String resultMessage = optionalCause.get().message();
