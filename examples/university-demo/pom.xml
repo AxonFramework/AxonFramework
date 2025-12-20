@@ -21,7 +21,7 @@
         <hamcrest.version>3.0</hamcrest.version>
         <junit.version>5.12.1</junit.version>
         <jackson.version>2.20.0</jackson.version>
-        <log4j.version>2.24.3</log4j.version>
+        <log4j.version>2.25.3</log4j.version>
 
         <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
     </properties>
