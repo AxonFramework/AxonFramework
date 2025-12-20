@@ -30,7 +30,6 @@ import org.junit.jupiter.api.*;
  *
  * @author Gerard Klijs
  */
-@Disabled("TODO #3517 - Support dead lettering with EventHandlingComponent instead of EventHandlerInvoker")
 class InMemoryWithCacheDeadLetteringIntegrationTest extends DeadLetteringEventIntegrationTest {
 
     @Override
