@@ -199,11 +199,15 @@ public class DeadLetteringEventHandlingComponent
 
     /**
      * Handles an error during event processing by applying the enqueue policy.
+     * <p>
+     * After the dead-letter decision is made and executed (enqueue or evict), processing continues normally.
+     * The error is considered "handled" by being dead-lettered or evicted, and is not propagated to the processor.
+     * This allows the processor to continue with the next event rather than aborting the work package.
      *
      * @param event              The event that failed.
      * @param sequenceIdentifier The sequence identifier.
      * @param error              The error that occurred.
-     * @return A stream representing the error handling result.
+     * @return An empty stream indicating the error was handled (either enqueued or evicted).
      */
     private MessageStream<Message> handleError(EventMessage event, Object sequenceIdentifier, Throwable error) {
         DeadLetter<EventMessage> letter = new GenericDeadLetter<>(sequenceIdentifier, event, error);
@@ -219,7 +223,7 @@ public class DeadLetteringEventHandlingComponent
                             event.identifier(), error.getMessage());
             }
 
-            // Enqueue and then propagate the original error
+            // Enqueue the dead letter - the error is handled by being dead-lettered
             queue.enqueue(sequenceIdentifier, letterToEnqueue)
                  .whenComplete((v, enqueueError) -> {
                      if (enqueueError != null) {
@@ -228,12 +232,14 @@ public class DeadLetteringEventHandlingComponent
                      }
                  });
 
-            return MessageStream.failed(error);
+            // Return empty stream - error is handled, processor should continue
+            return MessageStream.empty();
         } else {
             if (logger.isInfoEnabled()) {
                 logger.info("The enqueue policy decided not to dead letter event [{}].", event.identifier());
             }
-            return MessageStream.failed(error);
+            // Return empty stream - error is evicted/ignored, processor should continue
+            return MessageStream.empty();
         }
     }
 
