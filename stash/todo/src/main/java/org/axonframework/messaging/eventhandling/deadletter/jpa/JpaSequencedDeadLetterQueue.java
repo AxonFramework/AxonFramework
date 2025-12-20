@@ -33,6 +33,7 @@ import org.axonframework.messaging.deadletter.NoSuchDeadLetterException;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.WrongDeadLetterTypeException;
 import org.axonframework.conversion.Serializer;
+import org.axonframework.common.FutureUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -398,7 +399,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
         JpaDeadLetter<M> deadLetter = firstDeadLetter;
         while (deadLetter != null) {
             logger.info("Processing dead letter with id [{}] at index [{}]", deadLetter.getId(), deadLetter.getIndex());
-            EnqueueDecision<M> decision = processingTask.apply(deadLetter).join();
+            EnqueueDecision<M> decision = FutureUtils.joinAndUnwrap(processingTask.apply(deadLetter));
             if (!decision.shouldEnqueue()) {
                 JpaDeadLetter<M> oldLetter = deadLetter;
                 DeadLetterEntry deadLetterEntry = findNextDeadLetter(oldLetter);
