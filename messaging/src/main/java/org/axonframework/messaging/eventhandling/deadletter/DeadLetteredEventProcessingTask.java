@@ -18,7 +18,6 @@ package org.axonframework.messaging.eventhandling.deadletter;
 
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
-import org.axonframework.messaging.core.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.Decisions;
@@ -31,7 +30,6 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * A processing task dedicated to handling a single {@link DeadLetter dead letter} of an {@link EventMessage}.
@@ -79,24 +77,19 @@ class DeadLetteredEventProcessingTask {
      * {@code letter} on successful handling. On unsuccessful event handling, the configured {@link EnqueuePolicy} is
      * used to decide what to do with the {@code letter}.
      *
-     * @param letter The {@link DeadLetter dead letter} to process.
+     * @param letter  The {@link DeadLetter dead letter} to process.
+     * @param context The {@link ProcessingContext} for processing the dead letter. The context should already contain
+     *                the dead letter as a resource (via {@link DeadLetter#RESOURCE_KEY}) for parameter resolvers.
      * @return A {@link CompletableFuture} containing an {@link EnqueueDecision} describing what to do after processing
      * the given {@code letter}.
      */
-    public CompletableFuture<EnqueueDecision<EventMessage>> process(DeadLetter<? extends EventMessage> letter) {
+    public CompletableFuture<EnqueueDecision<EventMessage>> process(DeadLetter<? extends EventMessage> letter,
+                                                                    ProcessingContext context) {
         if (logger.isDebugEnabled()) {
             logger.debug("Start evaluation of dead letter with message id [{}].", letter.message().identifier());
         }
 
-        EventMessage message = letter.message();
-        ProcessingContext context = new LegacyMessageSupportingContext(message);
-
-        // Store dead letter in context for parameter resolvers
-        context.putResource(DeadLetter.RESOURCE_KEY, letter);
-
-        AtomicReference<EnqueueDecision<EventMessage>> decision = new AtomicReference<>();
-
-        MessageStream.Empty<Message> result = delegate.handle(message, context);
+        MessageStream.Empty<Message> result = delegate.handle(letter.message(), context);
 
         return result.reduce(null, (acc, entry) -> acc)
                      .handle((ignored, error) -> {
