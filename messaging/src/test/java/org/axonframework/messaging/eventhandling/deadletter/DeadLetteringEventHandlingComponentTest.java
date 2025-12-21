@@ -264,8 +264,11 @@ class DeadLetteringEventHandlingComponentTest {
 
         @Test
         void processAnyReturnsFalseWhenQueueIsEmpty() {
+            // given
+            ProcessingContext context = new StubProcessingContext();
+
             // when
-            boolean result = testSubject.processAny().join();
+            boolean result = testSubject.processAny(context).join();
 
             // then
             assertFalse(result);
@@ -280,8 +283,10 @@ class DeadLetteringEventHandlingComponentTest {
             queue.enqueue(TEST_SEQUENCE_ID, new GenericDeadLetter<>(TEST_SEQUENCE_ID, testEvent)).join();
             assertTrue(queue.contains(TEST_SEQUENCE_ID).join());
 
+            ProcessingContext context = new StubProcessingContext();
+
             // when
-            boolean result = testSubject.processAny().join();
+            boolean result = testSubject.processAny(context).join();
 
             // then
             assertTrue(result);
@@ -318,9 +323,12 @@ class DeadLetteringEventHandlingComponentTest {
             queue.enqueue(TEST_SEQUENCE_ID, new GenericDeadLetter<>(TEST_SEQUENCE_ID, testEvent1)).join();
             queue.enqueue(otherSequenceId, new GenericDeadLetter<>(otherSequenceId, testEvent2)).join();
 
+            ProcessingContext context = new StubProcessingContext();
+
             // when - process only letters matching TEST_SEQUENCE_ID
             boolean result = testSubject.process(
-                    letter -> letter.message().payload().toString().contains("payload-1")
+                    letter -> letter.message().payload().toString().contains("payload-1"),
+                    context
             ).join();
 
             // then
@@ -341,8 +349,10 @@ class DeadLetteringEventHandlingComponentTest {
             RuntimeException testException = new RuntimeException("processing failed");
             delegate.setFailWith(testException);
 
+            ProcessingContext context = new StubProcessingContext();
+
             // when
-            boolean result = testSubject.processAny().join();
+            boolean result = testSubject.processAny(context).join();
 
             // then - letter should be requeued (still in queue)
             assertFalse(result);

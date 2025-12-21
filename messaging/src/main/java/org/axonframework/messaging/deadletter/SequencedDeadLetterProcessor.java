@@ -17,6 +17,7 @@
 package org.axonframework.messaging.deadletter;
 
 import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
@@ -41,24 +42,34 @@ public interface SequencedDeadLetterProcessor<M extends Message> {
      * <p>
      * Note that only a <em>single</em> matching sequence is processed! Furthermore, the {@code sequenceFilter} is
      * <em>only</em> invoked for the first letter of a sequence, as the first entry blocks the entire sequence.
+     * <p>
+     * The provided {@code context} is used for processing and will have the {@link DeadLetter} added as a resource
+     * (via {@link DeadLetter#RESOURCE_KEY}) for each letter being processed. The message from the dead letter is also
+     * added to the context.
      *
      * @param sequenceFilter A filter for the first {@link DeadLetter dead letter} entries of each sequence.
+     * @param context        The {@link ProcessingContext} to use for processing dead letters.
      * @return A {@link CompletableFuture} with {@code true} if at least one {@link DeadLetter dead letter} was
      * processed successfully, {@code false} otherwise.
      */
     @Nonnull
-    CompletableFuture<Boolean> process(@Nonnull Predicate<DeadLetter<? extends M>> sequenceFilter);
+    CompletableFuture<Boolean> process(@Nonnull Predicate<DeadLetter<? extends M>> sequenceFilter,
+                                       @Nonnull ProcessingContext context);
 
     /**
      * Process any sequence of {@link DeadLetter dead letters} belonging to this component.
      * <p>
      * Note that only a <em>single</em> matching sequence is processed!
+     * <p>
+     * The provided {@code context} is used for processing and will have the {@link DeadLetter} added as a resource
+     * (via {@link DeadLetter#RESOURCE_KEY}) for each letter being processed.
      *
+     * @param context The {@link ProcessingContext} to use for processing dead letters.
      * @return A {@link CompletableFuture} with {@code true} if at least one {@link DeadLetter dead letter} was
      * processed successfully, {@code false} otherwise.
      */
     @Nonnull
-    default CompletableFuture<Boolean> processAny() {
-        return process(letter -> true);
+    default CompletableFuture<Boolean> processAny(@Nonnull ProcessingContext context) {
+        return process(letter -> true, context);
     }
 }
