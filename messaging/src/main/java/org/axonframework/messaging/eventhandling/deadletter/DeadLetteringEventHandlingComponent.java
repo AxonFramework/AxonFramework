@@ -256,14 +256,12 @@ public class DeadLetteringEventHandlingComponent
 
     @Nonnull
     @Override
-    public CompletableFuture<Boolean> process(@Nonnull Predicate<DeadLetter<? extends EventMessage>> sequenceFilter) {
+    public CompletableFuture<Boolean> process(@Nonnull Predicate<DeadLetter<? extends EventMessage>> sequenceFilter,
+                                              @Nonnull ProcessingContext context) {
         DeadLetteredEventProcessingTask processingTask = new DeadLetteredEventProcessingTask(
                 delegate, enqueuePolicy
         );
-        return queue.process(sequenceFilter, letter -> {
-            ProcessingContext context = new DeadLetterProcessingContext(letter);
-            return processingTask.process(letter, context);
-        });
+        return queue.process(sequenceFilter, letter -> processingTask.process(letter, context));
     }
 
     /**

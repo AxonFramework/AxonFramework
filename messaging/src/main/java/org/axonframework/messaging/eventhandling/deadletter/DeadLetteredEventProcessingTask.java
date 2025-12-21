@@ -76,10 +76,13 @@ class DeadLetteredEventProcessingTask {
      * {@link org.axonframework.messaging.deadletter.SequencedDeadLetterQueue#evict(DeadLetter) evict} the
      * {@code letter} on successful handling. On unsuccessful event handling, the configured {@link EnqueuePolicy} is
      * used to decide what to do with the {@code letter}.
+     * <p>
+     * The dead letter is added to the provided {@code context} as a resource (via {@link DeadLetter#RESOURCE_KEY}) so
+     * that parameter resolvers can access it during processing. The message from the dead letter is also added to the
+     * context.
      *
      * @param letter  The {@link DeadLetter dead letter} to process.
-     * @param context The {@link ProcessingContext} for processing the dead letter. The context should already contain
-     *                the dead letter as a resource (via {@link DeadLetter#RESOURCE_KEY}) for parameter resolvers.
+     * @param context The {@link ProcessingContext} for processing the dead letter.
      * @return A {@link CompletableFuture} containing an {@link EnqueueDecision} describing what to do after processing
      * the given {@code letter}.
      */
@@ -88,6 +91,10 @@ class DeadLetteredEventProcessingTask {
         if (logger.isDebugEnabled()) {
             logger.debug("Start evaluation of dead letter with message id [{}].", letter.message().identifier());
         }
+
+        // Add dead letter and message to context for parameter resolvers
+        context.putResource(DeadLetter.RESOURCE_KEY, letter);
+        Message.addToContext(context, letter.message());
 
         MessageStream.Empty<Message> result = delegate.handle(letter.message(), context);
 
