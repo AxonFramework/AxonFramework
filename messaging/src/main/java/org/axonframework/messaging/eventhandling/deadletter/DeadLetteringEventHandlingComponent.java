@@ -260,7 +260,10 @@ public class DeadLetteringEventHandlingComponent
         DeadLetteredEventProcessingTask processingTask = new DeadLetteredEventProcessingTask(
                 delegate, enqueuePolicy
         );
-        return queue.process(sequenceFilter, processingTask::process);
+        return queue.process(sequenceFilter, letter -> {
+            ProcessingContext context = new DeadLetterProcessingContext(letter);
+            return processingTask.process(letter, context);
+        });
     }
 
     /**
