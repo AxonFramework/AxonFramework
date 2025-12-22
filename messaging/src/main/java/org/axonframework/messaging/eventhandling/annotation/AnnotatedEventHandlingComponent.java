@@ -29,7 +29,6 @@ import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.interception.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.EventHandler;
-import org.axonframework.messaging.eventhandling.EventHandlerRegistry;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventSink;
@@ -56,7 +55,7 @@ import static java.util.Objects.requireNonNull;
 public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponent {
 
     private final T target;
-    private final EventHandlingComponent handlingComponent;
+    private final SimpleEventHandlingComponent handlingComponent;
     private final AnnotatedHandlerInspector<T> model;
     private final MessageTypeResolver messageTypeResolver;
     private final EventConverter converter;
@@ -129,7 +128,7 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
         return whenCustomSequencingPolicyOn(handler)
                 .map(sequencingPolicy -> {
                     String name = "CustomPolicyHandler[%s]".formatted(handler.signature());
-                    EventHandlingComponent handlerWithCustomPolicy =
+                    SimpleEventHandlingComponent handlerWithCustomPolicy =
                             SimpleEventHandlingComponent.create(name, sequencingPolicy);
                     handlerWithCustomPolicy.subscribe(qualifiedName, interceptedHandler);
                     return handlerWithCustomPolicy;
@@ -141,11 +140,6 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
     private Optional<SequencingPolicy> whenCustomSequencingPolicyOn(MessageHandlingMember<? super T> handler) {
         return handler.unwrap(MethodSequencingPolicyEventHandlerDefinition.SequencingPolicyEventMessageHandlingMember.class)
                       .map(MethodSequencingPolicyEventHandlerDefinition.SequencingPolicyEventMessageHandlingMember::sequencingPolicy);
-    }
-
-    @Override
-    public EventHandlingComponent subscribe(@Nonnull QualifiedName name, @Nonnull EventHandler eventHandler) {
-        return handlingComponent.subscribe(name, eventHandler);
     }
 
     @Nonnull

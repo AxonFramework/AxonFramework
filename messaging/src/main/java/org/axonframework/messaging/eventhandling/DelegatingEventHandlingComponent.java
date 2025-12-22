@@ -55,11 +55,6 @@ public abstract class DelegatingEventHandlingComponent implements EventHandlingC
     }
 
     @Override
-    public EventHandlingComponent subscribe(@Nonnull QualifiedName name, @Nonnull EventHandler eventHandler) {
-        return delegate.subscribe(name, eventHandler);
-    }
-
-    @Override
     public Set<QualifiedName> supportedEvents() {
         return delegate.supportedEvents();
     }

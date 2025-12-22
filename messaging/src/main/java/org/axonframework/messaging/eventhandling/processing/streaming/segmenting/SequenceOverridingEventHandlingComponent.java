@@ -92,19 +92,4 @@ public class SequenceOverridingEventHandlingComponent implements EventHandlingCo
                                                @Nonnull ProcessingContext context) {
         return delegate.handle(event, context);
     }
-
-    @Override
-    public EventHandlingComponent subscribe(@Nonnull QualifiedName name, @Nonnull EventHandler eventHandler) {
-        return delegate.subscribe(name, eventHandler);
-    }
-
-    @Override
-    public EventHandlingComponent subscribe(@Nonnull Set<QualifiedName> names, @Nonnull EventHandler eventHandler) {
-        return delegate.subscribe(names, eventHandler);
-    }
-
-    @Override
-    public EventHandlingComponent subscribe(@Nonnull EventHandlingComponent handlingComponent) {
-        return delegate.subscribe(handlingComponent);
-    }
 }

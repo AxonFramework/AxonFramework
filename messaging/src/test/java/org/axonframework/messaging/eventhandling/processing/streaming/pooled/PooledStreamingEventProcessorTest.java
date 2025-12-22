@@ -109,11 +109,9 @@ class PooledStreamingEventProcessorTest {
         tokenStore = spy(new InMemoryTokenStore());
         coordinatorExecutor = spy(new DelegateScheduledExecutorService(Executors.newScheduledThreadPool(2)));
         workerExecutor = new DelegateScheduledExecutorService(Executors.newScheduledThreadPool(8));
-        defaultEventHandlingComponent = spy(new RecordingEventHandlingComponent(
-                SimpleEventHandlingComponent.create("test")
-        ));
-        defaultEventHandlingComponent.subscribe(new QualifiedName(Integer.class),
-                                                (event, ctx) -> MessageStream.empty());
+        SimpleEventHandlingComponent ehc = SimpleEventHandlingComponent.create("test");
+        ehc.subscribe(new QualifiedName(Integer.class), (event, ctx) -> MessageStream.empty());
+        defaultEventHandlingComponent = spy(new RecordingEventHandlingComponent(ehc));
         withTestSubject(List.of()); // default always applied
     }
 
@@ -189,10 +187,12 @@ class PooledStreamingEventProcessorTest {
     @Test
     void handlingEventsByMultipleEventHandlingComponents() {
         // given
-        var eventHandlingComponent1 = new RecordingEventHandlingComponent(SimpleEventHandlingComponent.create("test"));
-        eventHandlingComponent1.subscribe(new QualifiedName(String.class), (event, ctx) -> MessageStream.empty());
-        var eventHandlingComponent2 = new RecordingEventHandlingComponent(SimpleEventHandlingComponent.create("test"));
-        eventHandlingComponent2.subscribe(new QualifiedName(String.class), (event, ctx) -> MessageStream.empty());
+        SimpleEventHandlingComponent ehc1 = SimpleEventHandlingComponent.create("test");
+        ehc1.subscribe(new QualifiedName(String.class), (event, ctx) -> MessageStream.empty());
+        var eventHandlingComponent1 = new RecordingEventHandlingComponent(ehc1);
+        SimpleEventHandlingComponent ehc2 = SimpleEventHandlingComponent.create("test");
+        ehc2.subscribe(new QualifiedName(String.class), (event, ctx) -> MessageStream.empty());
+        var eventHandlingComponent2 = new RecordingEventHandlingComponent(ehc2);
 
         List<EventHandlingComponent> components = List.of(eventHandlingComponent1, eventHandlingComponent2);
         withTestSubject(components, customization -> customization.initialSegmentCount(1));
@@ -942,10 +942,9 @@ class PooledStreamingEventProcessorTest {
             EventCriteria stringOnlyCriteria = EventCriteria.havingAnyTag()
                                                             .andBeingOneOfTypes(new QualifiedName(String.class.getName()));
 
-            var stringEventHandlingComponent =
-                    new RecordingEventHandlingComponent(SimpleEventHandlingComponent.create("test"));
-            stringEventHandlingComponent.subscribe(new QualifiedName(String.class),
-                                                   (event, ctx) -> MessageStream.empty());
+            SimpleEventHandlingComponent ehc = SimpleEventHandlingComponent.create("test");
+            ehc.subscribe(new QualifiedName(String.class), (event, ctx) -> MessageStream.empty());
+            var stringEventHandlingComponent = new RecordingEventHandlingComponent(ehc);
             withTestSubject(
                     List.of(stringEventHandlingComponent),
                     c -> c.initialSegmentCount(1)

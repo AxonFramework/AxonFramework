@@ -32,7 +32,7 @@ import java.util.Set;
  * @author Steven van Beelen
  * @since 3.0.0
  */
-public interface EventHandlingComponent extends EventHandler, EventHandlerRegistry<EventHandlingComponent> {
+public interface EventHandlingComponent extends EventHandler {
 
     /**
      * All supported {@link EventMessage events}, referenced through a {@link QualifiedName}.
