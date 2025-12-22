@@ -130,12 +130,13 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
      */
     public static TrackingToken createReplayToken(TrackingToken tokenAtReset, @Nullable TrackingToken startPosition) {
         // If startPosition is strictly ahead of tokenAtReset, no replay is needed
-        if (startPosition != null && tokenAtReset != null
-                && startPosition.covers(WrappedToken.unwrapLowerBound(tokenAtReset))
-                && !tokenAtReset.covers(startPosition)) {
+        TrackingToken unwrappedTokenAtReset = WrappedToken.unwrapLowerBound(tokenAtReset);
+        if (startPosition != null && unwrappedTokenAtReset != null
+                && !unwrappedTokenAtReset.same(startPosition)
+                && startPosition.covers(unwrappedTokenAtReset)) {
             return startPosition;
         }
-        return createReplayToken(startPosition != null && tokenAtReset != null ? tokenAtReset.upperBound(startPosition) : tokenAtReset, startPosition, null);
+        return createReplayToken(tokenAtReset, startPosition, null);
     }
 
     /**
@@ -160,11 +161,11 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
             return createReplayToken(((ReplayToken) tokenAtReset).tokenAtReset, startPosition, resetContext);
         }
         // Only skip replay if startPosition is STRICTLY ahead of tokenAtReset
-        // (startPosition covers tokenAtReset AND tokenAtReset does NOT cover startPosition)
-        // When they're at the same position, we still need a ReplayToken
+        // Use same() to ensure tokens are NOT at the same position before considering strictly ahead
+        TrackingToken unwrappedTokenAtReset = WrappedToken.unwrapLowerBound(tokenAtReset);
         if (startPosition != null
-                && startPosition.covers(WrappedToken.unwrapLowerBound(tokenAtReset))
-                && !tokenAtReset.covers(startPosition)) {
+                && !unwrappedTokenAtReset.same(startPosition)
+                && startPosition.covers(unwrappedTokenAtReset)) {
             return startPosition;
         }
         return new ReplayToken(tokenAtReset, startPosition, resetContext);

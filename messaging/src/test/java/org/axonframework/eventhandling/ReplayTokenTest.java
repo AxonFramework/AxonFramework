@@ -156,6 +156,126 @@ class ReplayTokenTest {
     }
 
     /**
+     * Tests for {@link ReplayToken#createReplayToken(TrackingToken, TrackingToken)} with GapAwareTrackingToken.
+     * These verify the "strictly ahead" check that decides whether a ReplayToken is needed.
+     */
+    @Nested
+    class CreateReplayTokenWithGapAwareTrackingToken {
+
+        @Test
+        void createReplayTokenReturnsStartPositionWhenStrictlyAhead() {
+            // tokenAtReset at index 5, startPosition at index 10 - clearly ahead
+            TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(5, emptySet());
+            TrackingToken startPosition = GapAwareTrackingToken.newInstance(10, emptySet());
+
+            TrackingToken result = ReplayToken.createReplayToken(tokenAtReset, startPosition);
+
+            // Should return startPosition directly - no replay needed
+            assertSame(startPosition, result);
+            assertFalse(ReplayToken.isReplay(result));
+        }
+
+        @Test
+        void createReplayTokenReturnsReplayTokenWhenAtSameIndex() {
+            // Both at index 5, same gaps - replay IS needed (at exact same position)
+            TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(5, emptySet());
+            TrackingToken startPosition = GapAwareTrackingToken.newInstance(5, emptySet());
+
+            TrackingToken result = ReplayToken.createReplayToken(tokenAtReset, startPosition);
+
+            // Should return ReplayToken - we're at the same position, replay is needed
+            assertInstanceOf(ReplayToken.class, result);
+        }
+
+        @Test
+        void createReplayTokenReturnsReplayTokenWhenStartPositionIsBehind() {
+            // tokenAtReset at index 10, startPosition at index 5 - behind
+            TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, emptySet());
+            TrackingToken startPosition = GapAwareTrackingToken.newInstance(5, emptySet());
+
+            TrackingToken result = ReplayToken.createReplayToken(tokenAtReset, startPosition);
+
+            // Should return ReplayToken - replay is needed
+            assertInstanceOf(ReplayToken.class, result);
+        }
+
+        /**
+         * BUG SCENARIO: Same index but different gaps.
+         * tokenAtReset has gaps, startPosition has no gaps (gaps were filled).
+         * This is NOT "strictly ahead" - they're at the same index!
+         * The current covers()-based check may incorrectly return startPosition.
+         */
+        @Test
+        void createReplayTokenReturnsReplayTokenWhenSameIndexButDifferentGaps() {
+            // tokenAtReset at index 10 with gaps [7,8]
+            // startPosition at index 10 with NO gaps
+            // They're at the SAME index - replay IS needed!
+            TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(7L, 8L));
+            TrackingToken startPosition = GapAwareTrackingToken.newInstance(10, emptySet());
+
+            TrackingToken result = ReplayToken.createReplayToken(tokenAtReset, startPosition);
+
+            // Should return ReplayToken because they're at the same index
+            // Even though startPosition has more events processed (no gaps),
+            // it's NOT strictly AHEAD in terms of index position
+            assertInstanceOf(ReplayToken.class, result,
+                    "Same index with different gaps should still create ReplayToken - not strictly ahead");
+        }
+
+        /**
+         * Edge case: startPosition has MORE gaps than tokenAtReset at the same index.
+         * This shouldn't happen in practice, but the check should handle it correctly.
+         */
+        @Test
+        void createReplayTokenReturnsReplayTokenWhenSameIndexAndStartPositionHasMoreGaps() {
+            // tokenAtReset at index 10 with no gaps
+            // startPosition at index 10 with gaps [7,8]
+            TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, emptySet());
+            TrackingToken startPosition = GapAwareTrackingToken.newInstance(10, setOf(7L, 8L));
+
+            TrackingToken result = ReplayToken.createReplayToken(tokenAtReset, startPosition);
+
+            // Should return ReplayToken - same index, replay needed
+            assertInstanceOf(ReplayToken.class, result,
+                    "Same index should create ReplayToken regardless of gap differences");
+        }
+
+        /**
+         * Strictly ahead with gaps present in tokenAtReset.
+         * startPosition index > tokenAtReset index - this IS strictly ahead.
+         */
+        @Test
+        void createReplayTokenReturnsStartPositionWhenStrictlyAheadDespiteGapsInTokenAtReset() {
+            // tokenAtReset at index 10 with gaps [7,8]
+            // startPosition at index 15 - strictly ahead of index 10
+            TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(7L, 8L));
+            TrackingToken startPosition = GapAwareTrackingToken.newInstance(15, emptySet());
+
+            TrackingToken result = ReplayToken.createReplayToken(tokenAtReset, startPosition);
+
+            // Should return startPosition - strictly ahead, no replay needed
+            assertSame(startPosition, result);
+        }
+
+        /**
+         * startPosition at index that was a gap in tokenAtReset.
+         * Index 7 < tokenAtReset index 10, so NOT strictly ahead - replay IS needed.
+         */
+        @Test
+        void createReplayTokenReturnsReplayTokenWhenStartPositionIsAtGapIndex() {
+            // tokenAtReset at index 10 with gaps [7,8]
+            // startPosition at index 7 (which is in gaps)
+            TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(7L, 8L));
+            TrackingToken startPosition = GapAwareTrackingToken.newInstance(7, emptySet());
+
+            TrackingToken result = ReplayToken.createReplayToken(tokenAtReset, startPosition);
+
+            // Should return ReplayToken - startPosition is NOT ahead, it's behind tokenAtReset
+            assertInstanceOf(ReplayToken.class, result);
+        }
+    }
+
+    /**
      * Tests for {@link ReplayToken#advancedTo(TrackingToken)} with {@link GlobalSequenceTrackingToken}.
      * These tests verify replay detection behavior with simple sequential tokens.
      */
