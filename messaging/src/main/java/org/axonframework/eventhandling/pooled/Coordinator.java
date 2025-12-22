@@ -799,7 +799,7 @@ class Coordinator {
                 }
             }
 
-            if (workPackages.isEmpty()) { // fixme: if not all aborted, it will be non-empty - new CoordinationTask has eventStream = null, but workPackages NOT EMPTY
+            if (workPackages.isEmpty()) {
                 // We didn't start any work packages. Retry later.
                 logger.debug("No segments claimed. Will retry in {} milliseconds.", tokenClaimInterval);
                 lastScheduledToken = NoToken.INSTANCE;
@@ -810,9 +810,27 @@ class Coordinator {
                 return;
             }
 
+            if (eventStream == null) {
+                // Inconsistent state: work packages exist but no event stream was opened.
+                // This can happen when workPackages weren't fully cleared during a previous abort,
+                // causing claimNewSegments() to return empty (segments already in workPackages),
+                // which leaves streamStartPosition as NoToken and prevents stream opening.
+                // Abort and retry to reset to a clean state.
+                logger.warn(
+                        "Processor [{}] has {} work packages but no event stream. "
+                                + "Aborting work packages and scheduling retry.",
+                        name, workPackages.size()
+                );
+                abortAndScheduleRetry(
+                        new IllegalStateException("Event stream is null with " + workPackages.size()
+                                                          + " active work packages")
+                );
+                return;
+            }
+
             try {
                 // Coordinate events to work packages and reschedule this coordinator
-                if (!eventStream.hasNextAvailable() && isDone()) { // fixme: NPE if eventStream is null
+                if (!eventStream.hasNextAvailable() && isDone()) {
                     workPackages.keySet().forEach(i -> processingStatusUpdater.accept(i, TrackerStatus::caughtUp));
                 }
                 coordinateWorkPackages();
