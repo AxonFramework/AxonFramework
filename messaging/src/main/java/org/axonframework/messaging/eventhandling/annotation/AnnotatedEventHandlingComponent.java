@@ -144,7 +144,7 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
     }
 
     @Override
-    public EventHandlerRegistry subscribe(@Nonnull QualifiedName name, @Nonnull EventHandler eventHandler) {
+    public EventHandlingComponent subscribe(@Nonnull QualifiedName name, @Nonnull EventHandler eventHandler) {
         return handlingComponent.subscribe(name, eventHandler);
     }
 

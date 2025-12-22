@@ -97,18 +97,18 @@ class SequenceOverridingEventHandlingComponentTest {
             }
 
             @Override
-            public EventHandlerRegistry subscribe(@Nonnull QualifiedName name, @Nonnull EventHandler eventHandler) {
+            public EventHandlingComponent subscribe(@Nonnull QualifiedName name, @Nonnull EventHandler eventHandler) {
                 return this;
             }
 
             @Override
-            public EventHandlerRegistry subscribe(@Nonnull Set<QualifiedName> names,
+            public EventHandlingComponent subscribe(@Nonnull Set<QualifiedName> names,
                                                   @Nonnull EventHandler eventHandler) {
                 return this;
             }
 
             @Override
-            public EventHandlerRegistry subscribe(@Nonnull EventHandlingComponent handlingComponent) {
+            public EventHandlingComponent subscribe(@Nonnull EventHandlingComponent handlingComponent) {
                 return this;
             }
         };

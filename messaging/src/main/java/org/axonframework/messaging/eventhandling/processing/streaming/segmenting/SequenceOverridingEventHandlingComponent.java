@@ -94,17 +94,17 @@ public class SequenceOverridingEventHandlingComponent implements EventHandlingCo
     }
 
     @Override
-    public EventHandlerRegistry subscribe(@Nonnull QualifiedName name, @Nonnull EventHandler eventHandler) {
+    public EventHandlingComponent subscribe(@Nonnull QualifiedName name, @Nonnull EventHandler eventHandler) {
         return delegate.subscribe(name, eventHandler);
     }
 
     @Override
-    public EventHandlerRegistry subscribe(@Nonnull Set<QualifiedName> names, @Nonnull EventHandler eventHandler) {
+    public EventHandlingComponent subscribe(@Nonnull Set<QualifiedName> names, @Nonnull EventHandler eventHandler) {
         return delegate.subscribe(names, eventHandler);
     }
 
     @Override
-    public EventHandlerRegistry subscribe(@Nonnull EventHandlingComponent handlingComponent) {
+    public EventHandlingComponent subscribe(@Nonnull EventHandlingComponent handlingComponent) {
         return delegate.subscribe(handlingComponent);
     }
 }
