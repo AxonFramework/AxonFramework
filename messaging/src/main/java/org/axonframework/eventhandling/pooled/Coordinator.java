@@ -713,7 +713,7 @@ class Coordinator {
                         "Stopped processing. Runnable flag is false.\nReleasing claims and closing the event stream for Processor [{}].",
                         name);
                 abortWorkPackages(null).thenRun(() -> runState.get().shutdownHandle().complete(null));
-                closeQuietly(eventStream);
+                closeQuietly(eventStream); // fixme: why we do not set eventStream to null?
                 return;
             }
 
@@ -799,7 +799,7 @@ class Coordinator {
                 }
             }
 
-            if (workPackages.isEmpty()) {
+            if (workPackages.isEmpty()) { // fixme: if not all aborted, it will be non-empty - new CoordinationTask has eventStream = null, but workPackages NOT EMPTY
                 // We didn't start any work packages. Retry later.
                 logger.debug("No segments claimed. Will retry in {} milliseconds.", tokenClaimInterval);
                 lastScheduledToken = NoToken.INSTANCE;
@@ -812,7 +812,7 @@ class Coordinator {
 
             try {
                 // Coordinate events to work packages and reschedule this coordinator
-                if (!eventStream.hasNextAvailable() && isDone()) {
+                if (!eventStream.hasNextAvailable() && isDone()) { // fixme: NPE if eventStream is null
                     workPackages.keySet().forEach(i -> processingStatusUpdater.accept(i, TrackerStatus::caughtUp));
                 }
                 coordinateWorkPackages();
@@ -863,7 +863,7 @@ class Coordinator {
                                .map(wp -> abortWorkPackage(wp, cause))
                                .reduce(CompletableFuture::allOf)
                                .orElse(CompletableFuture.completedFuture(null))
-                               .thenRun(workPackages::clear);
+                               .thenRun(workPackages::clear); // fixme: if any of the futures fail, then this will not run - but looks redundant, cause each abortWOrkPackage do it itself
         }
 
         /**
@@ -1013,7 +1013,7 @@ class Coordinator {
                         .filter(WorkPackage::isAbortTriggered)
                         .forEach(workPackage -> {
                             advanceReleaseDeadlineFor(workPackage.segment().getSegmentId());
-                            abortWorkPackage(workPackage, null);
+                            abortWorkPackage(workPackage, null); // fixme: not joined?
                         });
 
             // Chances are no events were scheduled at all. Scheduling regardless will ensure the token claim is held.
@@ -1097,12 +1097,14 @@ class Coordinator {
                         processingGate.set(false);
                         logger.debug("Scheduling new coordination task to run in {}ms", errorWaitBackOff);
                         // Construct a new CoordinationTask, thus abandoning the old task and it's progress entirely.
+
+                        // fixme: Creates NEW CoordinationTask - with its own null eventStream
                         CoordinationTask task = new CoordinationTask();
                         executorService.schedule(task, errorWaitBackOff, TimeUnit.MILLISECONDS);
                         coordinationTask.set(task);
                     }
             );
-            closeQuietly(eventStream);
+            closeQuietly(eventStream); // fixme: Why we do not set eventStream to null?
         }
 
         private CompletableFuture<Void> abortWorkPackage(WorkPackage work, Exception cause) {

@@ -211,6 +211,148 @@ class CoordinatorTest {
         verify(messageSource, never()).openStream(any(TrackingToken.class));
     }
 
+    /**
+     * This test demonstrates that a NullPointerException occurs when:
+     * 1. Work packages exist in the coordinator (from a previous run or incomplete abort)
+     * 2. No new segments are claimed (claimNewSegments returns empty)
+     * 3. The event stream is null (never opened or closed during abort)
+     * 4. The coordinator tries to access eventStream.hasNextAvailable()
+     *
+     * This scenario can occur during error recovery when the abort process doesn't
+     * fully clear the workPackages map before the new CoordinationTask runs.
+     *
+     * @see <a href="https://github.com/AxonFramework/AxonFramework/issues/XXXX">GitHub Issue</a>
+     */
+    @Test
+    void coordinatorShouldNotThrowNpeWhenWorkPackagesExistButStreamIsNull() throws NoSuchFieldException {
+        // Arrange: Set up a coordinator with existing work packages but no stream
+        final GlobalSequenceTrackingToken token = new GlobalSequenceTrackingToken(0);
+
+        doReturn(SEGMENT_IDS).when(tokenStore).fetchSegments(PROCESSOR_NAME);
+        // Return empty list - no new segments to claim (they're already in workPackages)
+        doReturn(Collections.emptyList()).when(tokenStore).fetchAvailableSegments(PROCESSOR_NAME);
+        doReturn(SEGMENT_ZERO).when(workPackage).segment();
+        doReturn(false).when(workPackage).isAbortTriggered();
+        doReturn(true).when(workPackage).hasRemainingCapacity();
+        doReturn(completedFuture(null)).when(workPackage).abort(any());
+        doAnswer(runTaskSync()).when(executorService).submit(any(Runnable.class));
+
+        // Using reflection to simulate the state after an incomplete abort:
+        // - workPackages map has entries (not cleared)
+        // - but the new CoordinationTask has eventStream = null
+        Map<Integer, WorkPackage> workPackages =
+                ReflectionUtils.getFieldValue(Coordinator.class.getDeclaredField("workPackages"), testSubject);
+        workPackages.put(SEGMENT_ID, workPackage);
+
+        // Act & Assert: Should NOT throw NullPointerException
+        // Currently this WILL throw NPE at: eventStream.hasNextAvailable()
+        assertDoesNotThrow(() -> testSubject.start());
+    }
+
+    /**
+     * This test demonstrates the race condition during abort recovery:
+     * 1. First coordination fails (e.g., stream opening throws exception)
+     * 2. abortAndScheduleRetry is called
+     * 3. New CoordinationTask is created with fresh eventStream=null
+     * 4. But workPackages might not be cleared yet (async)
+     * 5. NPE when accessing eventStream
+     */
+    @Test
+    void coordinatorShouldHandleRaceConditionDuringAbortRecovery() throws NoSuchFieldException {
+        // Arrange
+        final GlobalSequenceTrackingToken token = new GlobalSequenceTrackingToken(0);
+        final RuntimeException streamException = new RuntimeException("Simulated stream failure");
+
+        doReturn(SEGMENT_IDS).when(tokenStore).fetchSegments(PROCESSOR_NAME);
+        doReturn(Collections.singletonList(SEGMENT_ONE)).when(tokenStore).fetchAvailableSegments(PROCESSOR_NAME);
+        doReturn(token).when(tokenStore).fetchToken(eq(PROCESSOR_NAME), any(Segment.class));
+        doReturn(SEGMENT_ZERO).when(workPackage).segment();
+        doReturn(false).when(workPackage).isAbortTriggered();
+        doReturn(true).when(workPackage).hasRemainingCapacity();
+
+        // Make abort() return a future that completes but doesn't clear workPackages fast enough
+        CompletableFuture<Void> slowAbortFuture = new CompletableFuture<>();
+        doReturn(slowAbortFuture).when(workPackage).abort(any());
+
+        // First call opens stream successfully, second call (during retry) returns null stream scenario
+        @SuppressWarnings("unchecked")
+        BlockingStream<TrackedEventMessage<?>> testStream = mock(BlockingStream.class);
+        when(testStream.setOnAvailableCallback(any())).thenReturn(false);
+        // First hasNextAvailable throws to trigger abort
+        when(testStream.hasNextAvailable()).thenThrow(streamException);
+
+        when(messageSource.openStream(any())).thenReturn(testStream);
+
+        // Capture the scheduled retry task
+        ArgumentCaptor<Runnable> retryTaskCaptor = ArgumentCaptor.forClass(Runnable.class);
+        doAnswer(runTaskSync()).when(executorService).submit(any(Runnable.class));
+        doAnswer(invocation -> {
+            // Don't run the retry task immediately - we want to inspect the state
+            return mock(Future.class);
+        }).when(executorService).schedule(retryTaskCaptor.capture(), anyLong(), any(TimeUnit.class));
+
+        // Act: Start the coordinator - this will fail and schedule a retry
+        testSubject.start();
+
+        // Verify abort was triggered
+        verify(workPackage).abort(streamException);
+
+        // Now complete the abort future (simulating async completion)
+        slowAbortFuture.complete(null);
+
+        // Simulate the workPackages not being cleared (race condition)
+        Map<Integer, WorkPackage> workPackagesMap =
+                ReflectionUtils.getFieldValue(Coordinator.class.getDeclaredField("workPackages"), testSubject);
+        workPackagesMap.put(SEGMENT_ID, workPackage);
+
+        // Make fetchAvailableSegments return empty (segments are "claimed" in workPackages)
+        doReturn(Collections.emptyList()).when(tokenStore).fetchAvailableSegments(PROCESSOR_NAME);
+
+        // Act: Run the retry task - this should NOT throw NPE
+        // Currently this WILL throw NPE because eventStream is null but workPackages is not empty
+        Runnable retryTask = retryTaskCaptor.getValue();
+        assertDoesNotThrow(() -> retryTask.run(),
+                "Coordinator should handle the case where workPackages exist but eventStream is null");
+    }
+
+    /**
+     * This test verifies the coordinator gracefully handles the scenario where
+     * the event stream cannot be opened because the tracking token is a NoToken,
+     * but work packages already exist.
+     */
+    @Test
+    void coordinatorShouldNotThrowNpeWhenStreamCannotBeOpenedDueToNoToken() throws NoSuchFieldException {
+        // Arrange
+        doReturn(SEGMENT_IDS).when(tokenStore).fetchSegments(PROCESSOR_NAME);
+        // No available segments to claim (all already in workPackages)
+        doReturn(Collections.emptyList()).when(tokenStore).fetchAvailableSegments(PROCESSOR_NAME);
+        doReturn(SEGMENT_ZERO).when(workPackage).segment();
+        doReturn(false).when(workPackage).isAbortTriggered();
+        doReturn(true).when(workPackage).hasRemainingCapacity();
+        doReturn(true).when(workPackage).isDone();
+        doReturn(completedFuture(null)).when(workPackage).abort(any());
+
+        // Pre-populate workPackages to simulate state after incomplete recovery
+        Map<Integer, WorkPackage> workPackagesMap =
+                ReflectionUtils.getFieldValue(Coordinator.class.getDeclaredField("workPackages"), testSubject);
+        workPackagesMap.put(SEGMENT_ID, workPackage);
+
+        // Track if we get past the problematic code
+        doAnswer(runTaskSync()).when(executorService).submit(any(Runnable.class));
+
+        // Act & Assert
+        // The coordinator should either:
+        // 1. Detect the inconsistent state and trigger recovery, OR
+        // 2. Skip coordination and reschedule
+        // It should NOT throw NullPointerException
+        assertDoesNotThrow(() -> testSubject.start(),
+                "Coordinator should not throw NPE when workPackages exist but stream cannot be opened");
+
+        // Verify that either the stream was opened OR a retry was scheduled
+        // (not that an NPE occurred)
+        verify(executorService, atLeastOnce()).schedule(any(Runnable.class), anyLong(), any(TimeUnit.class));
+    }
+
     private Answer<Future<Void>> runTaskSync() {
         return invocationOnMock -> {
             final Runnable runnable = invocationOnMock.getArgument(0);
