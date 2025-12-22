@@ -65,7 +65,6 @@ class AxonServerSubscriptionQueryResultTest {
                 return initialResult;
             }
 
-            @Override
             public ResultStream<QueryResponse> initialResults() {
                 // unused in this test
                 return null;
