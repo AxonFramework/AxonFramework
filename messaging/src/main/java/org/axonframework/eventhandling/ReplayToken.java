@@ -100,7 +100,7 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
                         Object context,
                         boolean lastMessageWasReplay
     ) {
-        this.tokenAtReset = newRedeliveryToken != null && tokenAtReset != null ? tokenAtReset.upperBound(newRedeliveryToken) : tokenAtReset;
+        this.tokenAtReset = tokenAtReset;
         this.currentToken = newRedeliveryToken;
         this.context = context;
         this.lastMessageWasReplay = lastMessageWasReplay;
@@ -128,6 +128,12 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
      * @return A token that represents a reset to the {@code startPosition} until the provided {@code tokenAtReset}
      */
     public static TrackingToken createReplayToken(TrackingToken tokenAtReset, @Nullable TrackingToken startPosition) {
+        // If startPosition is strictly ahead of tokenAtReset, no replay is needed
+        if (startPosition != null && tokenAtReset != null
+                && startPosition.covers(WrappedToken.unwrapLowerBound(tokenAtReset))
+                && !tokenAtReset.covers(startPosition)) {
+            return startPosition;
+        }
         return createReplayToken(startPosition != null && tokenAtReset != null ? tokenAtReset.upperBound(startPosition) : tokenAtReset, startPosition, null);
     }
 
@@ -152,7 +158,12 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
         if (tokenAtReset instanceof ReplayToken) {
             return createReplayToken(((ReplayToken) tokenAtReset).tokenAtReset, startPosition, resetContext);
         }
-        if (startPosition != null && startPosition.covers(WrappedToken.unwrapLowerBound(tokenAtReset))) {
+        // Only skip replay if startPosition is STRICTLY ahead of tokenAtReset
+        // (startPosition covers tokenAtReset AND tokenAtReset does NOT cover startPosition)
+        // When they're at the same position, we still need a ReplayToken
+        if (startPosition != null
+                && startPosition.covers(WrappedToken.unwrapLowerBound(tokenAtReset))
+                && !tokenAtReset.covers(startPosition)) {
             return startPosition;
         }
         return new ReplayToken(tokenAtReset, startPosition, resetContext);
@@ -252,9 +263,10 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
     @Override
     public TrackingToken advancedTo(TrackingToken newToken) {
         if (this.tokenAtReset == null
-                || (newToken.covers(WrappedToken.unwrapUpperBound(this.tokenAtReset))
+                || (isStrictlyBeyondResetPosition(tokenAtReset, newToken)
+                && newToken.covers(WrappedToken.unwrapUpperBound(this.tokenAtReset))
                 && !tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken)))) {
-            // we're done replaying
+            // we're done replaying - newToken is strictly beyond tokenAtReset
             // if the token at reset was a wrapped token itself, we'll need to use that one to maintain progress.
             if (tokenAtReset instanceof WrappedToken) {
                 return ((WrappedToken) tokenAtReset).advancedTo(newToken);
@@ -264,15 +276,79 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
             // we're still well behind
             return new ReplayToken(tokenAtReset, newToken, context, true);
         } else {
-            // we're getting an event that we didn't have before, but we haven't finished replaying either
+            // We're in replay territory but tokenAtReset.covers(newToken) failed.
+            // This happens when newToken has different gaps than tokenAtReset (e.g., gaps filled during replay)
+            // OR when newToken's index is beyond tokenAtReset's lowerBound but not its upperBound (merge scenario).
+            // We need to determine if the event at newToken's index was processed before reset:
+            // - If it's a NEW event (beyond index or was a gap): lastMessageWasReplay = false
+            // - If it was processed before reset: lastMessageWasReplay = true
+            boolean isNewEvent = isNewEventForResetPosition(tokenAtReset, newToken);
+
             if (tokenAtReset instanceof WrappedToken) {
                 return new ReplayToken(tokenAtReset.upperBound(newToken),
                         ((WrappedToken) tokenAtReset).advancedTo(newToken),
                         context,
-                        false);
+                        !isNewEvent);
             }
-            return new ReplayToken(tokenAtReset.upperBound(newToken), newToken, context, false);
+            return new ReplayToken(tokenAtReset.upperBound(newToken), newToken, context, !isNewEvent);
         }
+    }
+
+    /**
+     * Determines if newToken's index is strictly greater than tokenAtReset's upperBound index.
+     * Uses upperBound to handle MergedTrackingToken (we're "done" when beyond the furthest segment).
+     * This prevents exiting replay mode when at the same index but with different gaps.
+     */
+    private static boolean isStrictlyBeyondResetPosition(TrackingToken tokenAtReset, TrackingToken newToken) {
+        // Use upperBound to get the "furthest ahead" position we need to catch up to
+        // This is important for MergedTrackingToken where we need to be beyond ALL segments
+        TrackingToken rawAtReset = WrappedToken.unwrapUpperBound(tokenAtReset);
+        TrackingToken rawNew = WrappedToken.unwrapLowerBound(newToken);
+
+        if (rawAtReset instanceof GapAwareTrackingToken && rawNew instanceof GapAwareTrackingToken) {
+            return ((GapAwareTrackingToken) rawNew).getIndex() > ((GapAwareTrackingToken) rawAtReset).getIndex();
+        }
+
+        // For GlobalSequenceTrackingToken and other types, use position comparison
+        OptionalLong resetPos = rawAtReset.position();
+        OptionalLong newPos = rawNew.position();
+        if (resetPos.isPresent() && newPos.isPresent()) {
+            return newPos.getAsLong() > resetPos.getAsLong();
+        }
+
+        // Fallback: use the original covers logic (strictly ahead means covers and not covered by)
+        return rawNew.covers(rawAtReset) && !rawAtReset.covers(rawNew);
+    }
+
+    /**
+     * Determines if the event represented by newToken is a "new event" (not previously processed).
+     * An event is new if:
+     * 1. Its index is beyond the reset position (for the lowerBound segment), OR
+     * 2. Its index was a gap in the tokenAtReset
+     *
+     * This is used to correctly set lastMessageWasReplay when processing events during replay.
+     * For MergedTrackingToken, we use lowerBound because the lower segment is the one "catching up"
+     * and events beyond its position are new to it.
+     */
+    private static boolean isNewEventForResetPosition(TrackingToken tokenAtReset, TrackingToken newToken) {
+        // Unwrap both tokens to get to the raw tracking tokens
+        // Use lowerBound for tokenAtReset because in a merge, the lower segment is catching up
+        TrackingToken rawAtReset = WrappedToken.unwrapLowerBound(tokenAtReset);
+        TrackingToken rawNew = WrappedToken.unwrapLowerBound(newToken);
+
+        if (rawAtReset instanceof GapAwareTrackingToken && rawNew instanceof GapAwareTrackingToken) {
+            GapAwareTrackingToken gatAtReset = (GapAwareTrackingToken) rawAtReset;
+            GapAwareTrackingToken gatNew = (GapAwareTrackingToken) rawNew;
+            // Event is "new" (not a replay) if:
+            // 1. Index is beyond the reset position (wasn't processed before), OR
+            // 2. Index was a gap in the reset position (wasn't processed before)
+            return gatNew.getIndex() > gatAtReset.getIndex()
+                    || gatAtReset.getGaps().contains(gatNew.getIndex());
+        }
+
+        // For non-GapAwareTrackingToken types, if tokenAtReset doesn't cover newToken,
+        // it's likely a new event (conservative approach)
+        return true;
     }
 
     @Override
