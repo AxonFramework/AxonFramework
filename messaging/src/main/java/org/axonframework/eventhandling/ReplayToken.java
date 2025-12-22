@@ -331,12 +331,6 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
      * This is used to correctly set lastMessageWasReplay when processing events during replay.
      */
     private static boolean isNewEventForResetPosition(TrackingToken tokenAtReset, TrackingToken newToken) {
-        // Handle MultiSourceTrackingToken specially - check each source independently
-        if (tokenAtReset instanceof MultiSourceTrackingToken && newToken instanceof MultiSourceTrackingToken) {
-            return isNewEventForMultiSource((MultiSourceTrackingToken) tokenAtReset,
-                                             (MultiSourceTrackingToken) newToken);
-        }
-
         // Unwrap both tokens to get to the raw tracking tokens
         // Use lowerBound for wrapped tokens because in a merge, the lower segment is catching up
         TrackingToken rawAtReset = WrappedToken.unwrapLowerBound(tokenAtReset);
@@ -349,32 +343,6 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
         // Then same() checks if positions are equal - if not, it's a new event.
         TrackingToken lowerBound = rawAtReset.lowerBound(rawNew);
         return !lowerBound.same(rawNew);
-    }
-
-    /**
-     * For MultiSourceTrackingToken, checks if the event is new for ANY source.
-     * An event is considered a replay only if ALL sources have already processed it.
-     */
-    private static boolean isNewEventForMultiSource(MultiSourceTrackingToken tokenAtReset,
-                                                     MultiSourceTrackingToken newToken) {
-        for (Map.Entry<String, TrackingToken> entry : newToken.getTrackingTokens().entrySet()) {
-            String sourceName = entry.getKey();
-            TrackingToken newSourceToken = entry.getValue();
-            TrackingToken resetSourceToken = tokenAtReset.getTokenForStream(sourceName);
-
-            if (newSourceToken == null || resetSourceToken == null) {
-                continue;
-            }
-
-            // Check if this source considers the event as new using the same lowerBound/same pattern
-            TrackingToken rawReset = WrappedToken.unwrapLowerBound(resetSourceToken);
-            TrackingToken rawNew = WrappedToken.unwrapLowerBound(newSourceToken);
-            TrackingToken lowerBound = rawReset.lowerBound(rawNew);
-            if (!lowerBound.same(rawNew)) {
-                return true; // New for at least one source
-            }
-        }
-        return false; // Not new for any source (it's a replay)
     }
 
     @Override
