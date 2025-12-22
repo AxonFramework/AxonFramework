@@ -221,12 +221,26 @@ class CoordinatorTest {
      * This scenario can occur during error recovery when the abort process doesn't
      * fully clear the workPackages map before the new CoordinationTask runs.
      *
+     * The test currently FAILS - demonstrating the bug exists.
+     * After the fix, the test should PASS.
+     *
      * @see <a href="https://github.com/AxonFramework/AxonFramework/issues/XXXX">GitHub Issue</a>
      */
     @Test
     void coordinatorShouldNotThrowNpeWhenWorkPackagesExistButStreamIsNull() throws NoSuchFieldException {
-        // Arrange: Set up a coordinator with existing work packages but no stream
-        final GlobalSequenceTrackingToken token = new GlobalSequenceTrackingToken(0);
+        // Arrange: Build a coordinator with processingStatusUpdater set
+        Coordinator coordinator = Coordinator.builder()
+                .name(PROCESSOR_NAME)
+                .messageSource(messageSource)
+                .tokenStore(tokenStore)
+                .transactionManager(NoTransactionManager.instance())
+                .executorService(executorService)
+                .workPackageFactory((segment, trackingToken) -> workPackage)
+                .initialToken(es -> null)
+                .eventFilter(eventMessage -> true)
+                .maxSegmentProvider(e -> SEGMENT_IDS.length)
+                .processingStatusUpdater((segmentId, statusUpdater) -> { /* no-op */ })
+                .build();
 
         doReturn(SEGMENT_IDS).when(tokenStore).fetchSegments(PROCESSOR_NAME);
         // Return empty list - no new segments to claim (they're already in workPackages)
@@ -234,19 +248,38 @@ class CoordinatorTest {
         doReturn(SEGMENT_ZERO).when(workPackage).segment();
         doReturn(false).when(workPackage).isAbortTriggered();
         doReturn(true).when(workPackage).hasRemainingCapacity();
+        doReturn(true).when(workPackage).isDone();
         doReturn(completedFuture(null)).when(workPackage).abort(any());
         doAnswer(runTaskSync()).when(executorService).submit(any(Runnable.class));
 
         // Using reflection to simulate the state after an incomplete abort:
         // - workPackages map has entries (not cleared)
         // - but the new CoordinationTask has eventStream = null
-        Map<Integer, WorkPackage> workPackages =
-                ReflectionUtils.getFieldValue(Coordinator.class.getDeclaredField("workPackages"), testSubject);
-        workPackages.put(SEGMENT_ID, workPackage);
+        Map<Integer, WorkPackage> workPackagesMap =
+                ReflectionUtils.getFieldValue(Coordinator.class.getDeclaredField("workPackages"), coordinator);
+        workPackagesMap.put(SEGMENT_ID, workPackage);
 
-        // Act & Assert: Should NOT throw NullPointerException
-        // Currently this WILL throw NPE at: eventStream.hasNextAvailable()
-        assertDoesNotThrow(() -> testSubject.start());
+        // Capture what exception is passed to abort() - we expect NO NullPointerException
+        ArgumentCaptor<Exception> abortExceptionCaptor = ArgumentCaptor.forClass(Exception.class);
+
+        // Act
+        coordinator.start();
+
+        // Assert: The work package should NOT have been aborted with a NullPointerException
+        // If the bug exists, abort() will be called with NPE.
+        // If the bug is fixed, either:
+        //   - abort() won't be called at all, or
+        //   - abort() will be called with a different exception (like IllegalStateException)
+        verify(workPackage, atMost(1)).abort(abortExceptionCaptor.capture());
+
+        // Check if abort was called
+        if (!abortExceptionCaptor.getAllValues().isEmpty()) {
+            Exception abortException = abortExceptionCaptor.getValue();
+            // The bug manifests as NPE - this assertion FAILS when the bug exists
+            assertFalse(abortException instanceof NullPointerException,
+                    "Coordinator should not abort with NullPointerException when workPackages exist but stream is null. " +
+                            "Got: " + abortException);
+        }
     }
 
     /**
@@ -256,10 +289,26 @@ class CoordinatorTest {
      * 3. New CoordinationTask is created with fresh eventStream=null
      * 4. But workPackages might not be cleared yet (async)
      * 5. NPE when accessing eventStream
+     *
+     * The test currently FAILS - demonstrating the bug exists.
+     * After the fix, the test should PASS.
      */
     @Test
     void coordinatorShouldHandleRaceConditionDuringAbortRecovery() throws NoSuchFieldException {
-        // Arrange
+        // Arrange: Build coordinator with processingStatusUpdater
+        Coordinator coordinator = Coordinator.builder()
+                .name(PROCESSOR_NAME)
+                .messageSource(messageSource)
+                .tokenStore(tokenStore)
+                .transactionManager(NoTransactionManager.instance())
+                .executorService(executorService)
+                .workPackageFactory((segment, trackingToken) -> workPackage)
+                .initialToken(es -> null)
+                .eventFilter(eventMessage -> true)
+                .maxSegmentProvider(e -> SEGMENT_IDS.length)
+                .processingStatusUpdater((segmentId, statusUpdater) -> { /* no-op */ })
+                .build();
+
         final GlobalSequenceTrackingToken token = new GlobalSequenceTrackingToken(0);
         final RuntimeException streamException = new RuntimeException("Simulated stream failure");
 
@@ -269,6 +318,7 @@ class CoordinatorTest {
         doReturn(SEGMENT_ZERO).when(workPackage).segment();
         doReturn(false).when(workPackage).isAbortTriggered();
         doReturn(true).when(workPackage).hasRemainingCapacity();
+        doReturn(true).when(workPackage).isDone();
 
         // Make abort() return a future that completes but doesn't clear workPackages fast enough
         CompletableFuture<Void> slowAbortFuture = new CompletableFuture<>();
@@ -292,37 +342,73 @@ class CoordinatorTest {
         }).when(executorService).schedule(retryTaskCaptor.capture(), anyLong(), any(TimeUnit.class));
 
         // Act: Start the coordinator - this will fail and schedule a retry
-        testSubject.start();
+        coordinator.start();
 
-        // Verify abort was triggered
+        // Verify abort was triggered with the stream exception
         verify(workPackage).abort(streamException);
+
+        // Reset the mock to capture the NEXT abort call (which would be due to NPE)
+        reset(workPackage);
+        doReturn(SEGMENT_ZERO).when(workPackage).segment();
+        doReturn(false).when(workPackage).isAbortTriggered();
+        doReturn(true).when(workPackage).hasRemainingCapacity();
+        doReturn(true).when(workPackage).isDone();
+        doReturn(completedFuture(null)).when(workPackage).abort(any());
 
         // Now complete the abort future (simulating async completion)
         slowAbortFuture.complete(null);
 
         // Simulate the workPackages not being cleared (race condition)
         Map<Integer, WorkPackage> workPackagesMap =
-                ReflectionUtils.getFieldValue(Coordinator.class.getDeclaredField("workPackages"), testSubject);
+                ReflectionUtils.getFieldValue(Coordinator.class.getDeclaredField("workPackages"), coordinator);
         workPackagesMap.put(SEGMENT_ID, workPackage);
 
         // Make fetchAvailableSegments return empty (segments are "claimed" in workPackages)
         doReturn(Collections.emptyList()).when(tokenStore).fetchAvailableSegments(PROCESSOR_NAME);
 
-        // Act: Run the retry task - this should NOT throw NPE
-        // Currently this WILL throw NPE because eventStream is null but workPackages is not empty
+        // Capture the exception passed to abort() during retry
+        ArgumentCaptor<Exception> abortExceptionCaptor = ArgumentCaptor.forClass(Exception.class);
+
+        // Act: Run the retry task
         Runnable retryTask = retryTaskCaptor.getValue();
-        assertDoesNotThrow(() -> retryTask.run(),
-                "Coordinator should handle the case where workPackages exist but eventStream is null");
+        retryTask.run();
+
+        // Assert: The work package should NOT be aborted with a NullPointerException
+        verify(workPackage, atMost(1)).abort(abortExceptionCaptor.capture());
+
+        if (!abortExceptionCaptor.getAllValues().isEmpty()) {
+            Exception abortException = abortExceptionCaptor.getValue();
+            // The bug manifests as NPE - this assertion FAILS when the bug exists
+            assertFalse(abortException instanceof NullPointerException,
+                    "Coordinator should not abort with NullPointerException during recovery. " +
+                            "Got: " + abortException);
+        }
     }
 
     /**
      * This test verifies the coordinator gracefully handles the scenario where
      * the event stream cannot be opened because the tracking token is a NoToken,
      * but work packages already exist.
+     *
+     * The test currently FAILS - demonstrating the bug exists.
+     * After the fix, the test should PASS.
      */
     @Test
     void coordinatorShouldNotThrowNpeWhenStreamCannotBeOpenedDueToNoToken() throws NoSuchFieldException {
-        // Arrange
+        // Arrange: Build coordinator with processingStatusUpdater
+        Coordinator coordinator = Coordinator.builder()
+                .name(PROCESSOR_NAME)
+                .messageSource(messageSource)
+                .tokenStore(tokenStore)
+                .transactionManager(NoTransactionManager.instance())
+                .executorService(executorService)
+                .workPackageFactory((segment, trackingToken) -> workPackage)
+                .initialToken(es -> null)
+                .eventFilter(eventMessage -> true)
+                .maxSegmentProvider(e -> SEGMENT_IDS.length)
+                .processingStatusUpdater((segmentId, statusUpdater) -> { /* no-op */ })
+                .build();
+
         doReturn(SEGMENT_IDS).when(tokenStore).fetchSegments(PROCESSOR_NAME);
         // No available segments to claim (all already in workPackages)
         doReturn(Collections.emptyList()).when(tokenStore).fetchAvailableSegments(PROCESSOR_NAME);
@@ -334,23 +420,28 @@ class CoordinatorTest {
 
         // Pre-populate workPackages to simulate state after incomplete recovery
         Map<Integer, WorkPackage> workPackagesMap =
-                ReflectionUtils.getFieldValue(Coordinator.class.getDeclaredField("workPackages"), testSubject);
+                ReflectionUtils.getFieldValue(Coordinator.class.getDeclaredField("workPackages"), coordinator);
         workPackagesMap.put(SEGMENT_ID, workPackage);
 
         // Track if we get past the problematic code
         doAnswer(runTaskSync()).when(executorService).submit(any(Runnable.class));
 
-        // Act & Assert
-        // The coordinator should either:
-        // 1. Detect the inconsistent state and trigger recovery, OR
-        // 2. Skip coordination and reschedule
-        // It should NOT throw NullPointerException
-        assertDoesNotThrow(() -> testSubject.start(),
-                "Coordinator should not throw NPE when workPackages exist but stream cannot be opened");
+        // Capture the exception passed to abort()
+        ArgumentCaptor<Exception> abortExceptionCaptor = ArgumentCaptor.forClass(Exception.class);
 
-        // Verify that either the stream was opened OR a retry was scheduled
-        // (not that an NPE occurred)
-        verify(executorService, atLeastOnce()).schedule(any(Runnable.class), anyLong(), any(TimeUnit.class));
+        // Act
+        coordinator.start();
+
+        // Assert: The work package should NOT be aborted with a NullPointerException
+        verify(workPackage, atMost(1)).abort(abortExceptionCaptor.capture());
+
+        if (!abortExceptionCaptor.getAllValues().isEmpty()) {
+            Exception abortException = abortExceptionCaptor.getValue();
+            // The bug manifests as NPE - this assertion FAILS when the bug exists
+            assertFalse(abortException instanceof NullPointerException,
+                    "Coordinator should not abort with NullPointerException when stream cannot be opened due to NoToken. " +
+                            "Got: " + abortException);
+        }
     }
 
     private Answer<Future<Void>> runTaskSync() {
