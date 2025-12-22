@@ -170,7 +170,7 @@ public class MergedTrackingToken implements TrackingToken, Serializable, Wrapped
         if (lowerSegmentToken == null || upperSegmentToken == null) {
             return other == null;
         }
-        return lowerSegmentToken.same(other) && upperSegmentToken.covers(other);
+        return lowerSegmentToken.same(other) && upperSegmentToken.same(other);
     }
 
     @Override

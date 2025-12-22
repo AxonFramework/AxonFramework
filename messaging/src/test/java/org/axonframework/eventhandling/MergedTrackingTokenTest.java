@@ -170,6 +170,45 @@ class MergedTrackingTokenTest {
         assertSame(advance, testSubject.advancedTo(advance));
     }
 
+    @Test
+    void sameReturnsFalseWhenUpperSegmentIsAhead() {
+        // lower=1, upper=3 - segments are at different positions
+        MergedTrackingToken testSubject = new MergedTrackingToken(token(1), token(3));
+
+        // same() should return false because upper segment (3) is NOT at the same position as token(1)
+        // Bug: using covers() instead of same() for upper would incorrectly return true
+        assertFalse(testSubject.same(token(1)),
+                "same() should be false when upper segment is ahead of the compared token");
+    }
+
+    @Test
+    void sameReturnsFalseWhenLowerSegmentIsBehind() {
+        // lower=1, upper=3 - segments are at different positions
+        MergedTrackingToken testSubject = new MergedTrackingToken(token(1), token(3));
+
+        // same() should return false because lower segment (1) is NOT at the same position as token(3)
+        assertFalse(testSubject.same(token(3)),
+                "same() should be false when lower segment is behind the compared token");
+    }
+
+    @Test
+    void sameReturnsTrueWhenBothSegmentsAtSamePosition() {
+        // Both segments at position 5
+        MergedTrackingToken testSubject = new MergedTrackingToken(token(5), token(5));
+
+        // same() should return true only when BOTH segments are at the same position
+        assertTrue(testSubject.same(token(5)),
+                "same() should be true when both segments are at the same position as the compared token");
+    }
+
+    @Test
+    void sameWithNullTokens() {
+        MergedTrackingToken testSubject = new MergedTrackingToken(null, null);
+
+        assertFalse(testSubject.same(token(0)));
+        assertTrue(testSubject.same(null));
+    }
+
     private GlobalSequenceTrackingToken token(int sequence) {
         return new GlobalSequenceTrackingToken(sequence);
     }
