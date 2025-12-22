@@ -100,7 +100,7 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
                         Object context,
                         boolean lastMessageWasReplay
     ) {
-        this.tokenAtReset = newRedeliveryToken != null && tokenAtReset != null ? tokenAtReset.upperBound(newRedeliveryToken) : tokenAtReset;
+        this.tokenAtReset = tokenAtReset;
         this.currentToken = newRedeliveryToken;
         this.context = context;
         this.lastMessageWasReplay = lastMessageWasReplay;
@@ -128,7 +128,7 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
      * @return A token that represents a reset to the {@code startPosition} until the provided {@code tokenAtReset}
      */
     public static TrackingToken createReplayToken(TrackingToken tokenAtReset, @Nullable TrackingToken startPosition) {
-        return createReplayToken(startPosition != null && tokenAtReset != null ? tokenAtReset.upperBound(startPosition) : tokenAtReset, startPosition, null);
+        return createReplayToken(tokenAtReset, startPosition, null);
     }
 
     /**
@@ -152,7 +152,7 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
         if (tokenAtReset instanceof ReplayToken) {
             return createReplayToken(((ReplayToken) tokenAtReset).tokenAtReset, startPosition, resetContext);
         }
-        if (startPosition != null && startPosition.covers(WrappedToken.unwrapLowerBound(tokenAtReset))) {
+        if (startPosition != null && !startPosition.same(tokenAtReset) && startPosition.covers(WrappedToken.unwrapLowerBound(tokenAtReset))) {
             return startPosition;
         }
         return new ReplayToken(tokenAtReset, startPosition, resetContext);
@@ -251,9 +251,6 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
 
     @Override
     public TrackingToken advancedTo(TrackingToken newToken) {
-        if (this.tokenAtReset != null && tokenAtReset.same(newToken)) {
-            return new ReplayToken(tokenAtReset, newToken, context, true);
-        }
         if (this.tokenAtReset == null
                 || (newToken.covers(WrappedToken.unwrapUpperBound(this.tokenAtReset))
                 && !tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken)))) {

@@ -69,6 +69,16 @@ class ReplayTokenTest {
     }
 
     @Test
+    void replayTokenIsProvidedWhenResetAtCurrentPosition() {
+        TrackingToken token1 = new GlobalSequenceTrackingToken(2);
+        TrackingToken token2 = new GlobalSequenceTrackingToken(2);
+
+        TrackingToken actual = ReplayToken.createReplayToken(token1, token2);
+        assertInstanceOf(ReplayToken.class, actual);
+        assertTrue(ReplayToken.isReplay(actual));
+    }
+
+    @Test
     void serializationDeserialization() throws IOException {
         ObjectMapper objectMapper = new ObjectMapper();
         ReplayToken replayToken = new ReplayToken(innerToken);
