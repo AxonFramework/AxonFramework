@@ -25,6 +25,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.beans.ConstructorProperties;
 import java.io.Serializable;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
@@ -309,14 +310,13 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
             return ((GapAwareTrackingToken) rawNew).getIndex() > ((GapAwareTrackingToken) rawAtReset).getIndex();
         }
 
-        // For GlobalSequenceTrackingToken and other types, use position comparison
-        OptionalLong resetPos = rawAtReset.position();
-        OptionalLong newPos = rawNew.position();
-        if (resetPos.isPresent() && newPos.isPresent()) {
-            return newPos.getAsLong() > resetPos.getAsLong();
+        // For GlobalSequenceTrackingToken: check using covers logic
+        // (strictly beyond means newToken covers resetToken AND resetToken does NOT cover newToken)
+        if (rawAtReset instanceof GlobalSequenceTrackingToken && rawNew instanceof GlobalSequenceTrackingToken) {
+            return rawNew.covers(rawAtReset) && !rawAtReset.covers(rawNew);
         }
 
-        // Fallback: use the original covers logic (strictly ahead means covers and not covered by)
+        // Fallback: use covers logic (strictly ahead means covers and not covered by)
         return rawNew.covers(rawAtReset) && !rawAtReset.covers(rawNew);
     }
 
@@ -331,6 +331,12 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
      * and events beyond its position are new to it.
      */
     private static boolean isNewEventForResetPosition(TrackingToken tokenAtReset, TrackingToken newToken) {
+        // Handle MultiSourceTrackingToken specially
+        if (tokenAtReset instanceof MultiSourceTrackingToken && newToken instanceof MultiSourceTrackingToken) {
+            return isNewEventForMultiSource((MultiSourceTrackingToken) tokenAtReset,
+                                             (MultiSourceTrackingToken) newToken);
+        }
+
         // Unwrap both tokens to get to the raw tracking tokens
         // Use lowerBound for tokenAtReset because in a merge, the lower segment is catching up
         TrackingToken rawAtReset = WrappedToken.unwrapLowerBound(tokenAtReset);
@@ -349,6 +355,49 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
         // For non-GapAwareTrackingToken types, if tokenAtReset doesn't cover newToken,
         // it's likely a new event (conservative approach)
         return true;
+    }
+
+    /**
+     * For MultiSourceTrackingToken, checks if the event is new for ANY source.
+     * An event is considered a replay only if ALL sources have already processed it.
+     */
+    private static boolean isNewEventForMultiSource(MultiSourceTrackingToken tokenAtReset,
+                                                     MultiSourceTrackingToken newToken) {
+        // For each source in the token, check if the event is new
+        // If new for ANY source, return true (it's a new event)
+        for (Map.Entry<String, TrackingToken> entry : newToken.getTrackingTokens().entrySet()) {
+            String sourceName = entry.getKey();
+            TrackingToken newSourceToken = entry.getValue();
+            TrackingToken resetSourceToken = tokenAtReset.getTokenForStream(sourceName);
+
+            if (newSourceToken == null || resetSourceToken == null) {
+                continue;
+            }
+
+            // Check if this source considers the event as new
+            if (isNewEventForSingleSource(resetSourceToken, newSourceToken)) {
+                return true; // New for at least one source
+            }
+        }
+        return false; // Not new for any source (it's a replay)
+    }
+
+    /**
+     * Helper to check if an event is new for a single source token.
+     */
+    private static boolean isNewEventForSingleSource(TrackingToken resetToken, TrackingToken newToken) {
+        TrackingToken rawReset = WrappedToken.unwrapLowerBound(resetToken);
+        TrackingToken rawNew = WrappedToken.unwrapLowerBound(newToken);
+
+        if (rawReset instanceof GapAwareTrackingToken && rawNew instanceof GapAwareTrackingToken) {
+            GapAwareTrackingToken gatReset = (GapAwareTrackingToken) rawReset;
+            GapAwareTrackingToken gatNew = (GapAwareTrackingToken) rawNew;
+            return gatNew.getIndex() > gatReset.getIndex()
+                    || gatReset.getGaps().contains(gatNew.getIndex());
+        }
+
+        // For non-GAT tokens, check using covers
+        return !resetToken.covers(newToken);
     }
 
     @Override
