@@ -267,10 +267,7 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
 
     @Override
     public TrackingToken advancedTo(TrackingToken newToken) {
-        if (this.tokenAtReset == null
-                || (isStrictlyBeyondResetPosition(tokenAtReset, newToken)
-                && newToken.covers(WrappedToken.unwrapUpperBound(this.tokenAtReset))
-                && !tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken)))) {
+        if (this.tokenAtReset == null || isStrictlyBeyondResetPosition(newToken)) {
             // Done replaying - newToken is strictly beyond tokenAtReset
             if (tokenAtReset instanceof WrappedToken) {
                 return ((WrappedToken) tokenAtReset).advancedTo(newToken);
@@ -281,7 +278,7 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
             return new ReplayToken(tokenAtReset, newToken, context, true);
         } else {
             // Gap filled or merge scenario - determine if this is a new event
-            boolean isNewEvent = isNewEventForResetPosition(tokenAtReset, newToken);
+            boolean isNewEvent = isNewEventForResetPosition(newToken);
 
             if (tokenAtReset instanceof WrappedToken) {
                 return new ReplayToken(tokenAtReset.upperBound(newToken),
@@ -297,7 +294,7 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
      * Determines if newToken is strictly beyond tokenAtReset's position.
      * Uses same() instead of covers() to handle GapAwareTrackingToken correctly when gaps differ.
      */
-    private static boolean isStrictlyBeyondResetPosition(TrackingToken tokenAtReset, TrackingToken newToken) {
+    private boolean isStrictlyBeyondResetPosition(TrackingToken newToken) {
         TrackingToken rawAtReset = WrappedToken.unwrapUpperBound(tokenAtReset);
         TrackingToken rawNew = WrappedToken.unwrapLowerBound(newToken);
         return !rawAtReset.same(rawNew) && rawNew.covers(rawAtReset);
@@ -308,7 +305,7 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
      * An event is new if its index is beyond the reset position or was a gap in tokenAtReset.
      * Uses lowerBound() + same() to detect gap-filled events.
      */
-    private static boolean isNewEventForResetPosition(TrackingToken tokenAtReset, TrackingToken newToken) {
+    private boolean isNewEventForResetPosition(TrackingToken newToken) {
         TrackingToken rawAtReset = WrappedToken.unwrapLowerBound(tokenAtReset);
         TrackingToken rawNew = WrappedToken.unwrapLowerBound(newToken);
         TrackingToken lowerBound = rawAtReset.lowerBound(rawNew);
