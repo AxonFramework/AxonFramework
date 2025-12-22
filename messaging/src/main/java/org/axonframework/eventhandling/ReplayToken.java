@@ -251,28 +251,53 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
 
     @Override
     public TrackingToken advancedTo(TrackingToken newToken) {
+        TrackingToken unwrappedUpperBound = WrappedToken.unwrapUpperBound(this.tokenAtReset);
+        TrackingToken unwrappedLowerBound = WrappedToken.unwrapLowerBound(newToken);
+
         if (this.tokenAtReset == null
-                || (newToken.covers(WrappedToken.unwrapUpperBound(this.tokenAtReset))
-                && !tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken)))) {
-            // we're done replaying
-            // if the token at reset was a wrapped token itself, we'll need to use that one to maintain progress.
+                || (isStrictlyAhead(newToken, unwrappedUpperBound)
+                && !tokenAtReset.covers(unwrappedLowerBound))) {
+            // Done replaying - newToken is strictly beyond tokenAtReset
             if (tokenAtReset instanceof WrappedToken) {
                 return ((WrappedToken) tokenAtReset).advancedTo(newToken);
             }
             return newToken;
-        } else if (tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken))) {
-            // we're still well behind
+        } else if (tokenAtReset.covers(unwrappedLowerBound)) {
+            // Still behind tokenAtReset
             return new ReplayToken(tokenAtReset, newToken, context, true);
         } else {
-            // we're getting an event that we didn't have before, but we haven't finished replaying either
+            // Gap filled or merge scenario - determine if this is a new event
+            boolean isNewEvent = isNewEventForResetPosition(tokenAtReset, newToken);
+
             if (tokenAtReset instanceof WrappedToken) {
                 return new ReplayToken(tokenAtReset.upperBound(newToken),
                         ((WrappedToken) tokenAtReset).advancedTo(newToken),
                         context,
-                        false);
+                        !isNewEvent);
             }
-            return new ReplayToken(tokenAtReset.upperBound(newToken), newToken, context, false);
+            return new ReplayToken(tokenAtReset.upperBound(newToken), newToken, context, !isNewEvent);
         }
+    }
+
+    /**
+     * Checks if {@code token} is strictly ahead of {@code other}.
+     * "Strictly ahead" means not at the same position AND covers the other token.
+     */
+    private static boolean isStrictlyAhead(@Nullable TrackingToken token, @Nullable TrackingToken other) {
+        return token != null && other != null
+                && !other.same(token)
+                && token.covers(other);
+    }
+
+    /**
+     * Determines if newToken represents a new event not previously processed before reset.
+     * An event is new if its index is beyond the reset position or was a gap in tokenAtReset.
+     */
+    private static boolean isNewEventForResetPosition(TrackingToken tokenAtReset, TrackingToken newToken) {
+        TrackingToken rawAtReset = WrappedToken.unwrapLowerBound(tokenAtReset);
+        TrackingToken rawNew = WrappedToken.unwrapLowerBound(newToken);
+        TrackingToken lowerBound = rawAtReset.lowerBound(rawNew);
+        return !lowerBound.same(rawNew);
     }
 
     @Override
