@@ -25,7 +25,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.beans.ConstructorProperties;
 import java.io.Serializable;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
@@ -267,7 +266,7 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
 
     @Override
     public TrackingToken advancedTo(TrackingToken newToken) {
-        if (this.tokenAtReset == null || isStrictlyBeyondResetPosition(newToken)) {
+        if (this.tokenAtReset == null || isStrictlyAfterTokenAtReset(newToken)) {
             // Done replaying - newToken is strictly beyond tokenAtReset
             if (tokenAtReset instanceof WrappedToken) {
                 return ((WrappedToken) tokenAtReset).advancedTo(newToken);
@@ -294,7 +293,7 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
      * Determines if newToken is strictly beyond tokenAtReset's position.
      * Uses same() instead of covers() to handle GapAwareTrackingToken correctly when gaps differ.
      */
-    private boolean isStrictlyBeyondResetPosition(TrackingToken newToken) {
+    private boolean isStrictlyAfterTokenAtReset(TrackingToken newToken) {
         TrackingToken rawAtReset = WrappedToken.unwrapUpperBound(tokenAtReset);
         TrackingToken rawNew = WrappedToken.unwrapLowerBound(newToken);
         return !rawAtReset.same(rawNew) && rawNew.covers(rawAtReset);
