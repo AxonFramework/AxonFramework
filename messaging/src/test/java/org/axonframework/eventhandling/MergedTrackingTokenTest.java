@@ -33,6 +33,30 @@ class MergedTrackingTokenTest {
     }
 
     @Test
+    void same() {
+        MergedTrackingToken testSubject = new MergedTrackingToken(token(1), token(3));
+
+        // Both segments must be at the same position
+        assertTrue(testSubject.same(token(1)));   // Both segments cover token(1)
+        assertFalse(testSubject.same(token(2)));  // Lower segment is at 1, not 2
+        assertFalse(testSubject.same(token(3)));  // Lower segment is at 1, not 3
+
+        // When both segments are at the same position
+        MergedTrackingToken equalSegments = new MergedTrackingToken(token(5), token(5));
+        assertTrue(equalSegments.same(token(5)));
+        assertFalse(equalSegments.same(token(4)));
+        assertFalse(equalSegments.same(token(6)));
+    }
+
+    @Test
+    void sameWithNullTokens() {
+        MergedTrackingToken testSubject = new MergedTrackingToken(null, null);
+
+        assertTrue(testSubject.same(null));
+        assertFalse(testSubject.same(token(0)));
+    }
+
+    @Test
     void upperBound() {
         MergedTrackingToken testSubject = new MergedTrackingToken(token(1), token(3));
 

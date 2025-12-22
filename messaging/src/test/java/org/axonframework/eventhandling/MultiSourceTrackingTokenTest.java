@@ -343,4 +343,61 @@ class MultiSourceTrackingTokenTest {
 
         assertNotEquals(newMultiToken, testSubject);
     }
+
+    @Test
+    void same() {
+        Map<String, TrackingToken> sameTokens = new HashMap<>();
+        sameTokens.put("token1", new GlobalSequenceTrackingToken(0));
+        sameTokens.put("token2", new GlobalSequenceTrackingToken(0));
+
+        assertTrue(testSubject.same(new MultiSourceTrackingToken(sameTokens)));
+    }
+
+    @Test
+    void sameReturnsFalseWhenConstituentsAreDifferent() {
+        Map<String, TrackingToken> differentTokens = new HashMap<>();
+        differentTokens.put("token1", new GlobalSequenceTrackingToken(1));
+        differentTokens.put("token2", new GlobalSequenceTrackingToken(0));
+
+        assertFalse(testSubject.same(new MultiSourceTrackingToken(differentTokens)));
+    }
+
+    @Test
+    void sameWithNullConstituents() {
+        Map<String, TrackingToken> tokensWithNull = new HashMap<>();
+        tokensWithNull.put("token1", new GlobalSequenceTrackingToken(0));
+        tokensWithNull.put("token2", null);
+        MultiSourceTrackingToken tokenWithNull = new MultiSourceTrackingToken(tokensWithNull);
+
+        // Comparing two tokens with same null constituent
+        assertTrue(tokenWithNull.same(tokenWithNull));
+
+        // Comparing token with null constituent to token without
+        assertFalse(tokenWithNull.same(testSubject));
+        assertFalse(testSubject.same(tokenWithNull));
+    }
+
+    @Test
+    void sameMismatchTokens() {
+        Map<String, TrackingToken> differentKeys = new HashMap<>();
+        differentKeys.put("token1", new GlobalSequenceTrackingToken(0));
+        differentKeys.put("token3", new GlobalSequenceTrackingToken(0));
+
+        assertThrows(IllegalArgumentException.class,
+                     () -> testSubject.same(new MultiSourceTrackingToken(differentKeys)));
+    }
+
+    @Test
+    void sameDifferentNumberOfTokens() {
+        Map<String, TrackingToken> fewerTokens = new HashMap<>();
+        fewerTokens.put("token1", new GlobalSequenceTrackingToken(0));
+
+        assertThrows(IllegalArgumentException.class,
+                     () -> testSubject.same(new MultiSourceTrackingToken(fewerTokens)));
+    }
+
+    @Test
+    void sameIncompatibleToken() {
+        assertThrows(IllegalArgumentException.class, () -> testSubject.same(new GlobalSequenceTrackingToken(0)));
+    }
 }

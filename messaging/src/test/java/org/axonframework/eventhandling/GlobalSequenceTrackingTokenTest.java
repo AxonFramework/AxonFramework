@@ -54,6 +54,26 @@ class GlobalSequenceTrackingTokenTest {
     }
 
     @Test
+    void same() {
+        GlobalSequenceTrackingToken token1 = new GlobalSequenceTrackingToken(1L);
+        GlobalSequenceTrackingToken token2 = new GlobalSequenceTrackingToken(2L);
+        GlobalSequenceTrackingToken token1Copy = new GlobalSequenceTrackingToken(1L);
+
+        // Same index means same position
+        assertTrue(token1.same(token1));
+        assertTrue(token1.same(token1Copy));
+        assertTrue(token2.same(token2));
+
+        // Different index means different position
+        assertFalse(token1.same(token2));
+        assertFalse(token2.same(token1));
+
+        // Null is never the same
+        assertFalse(token1.same(null));
+        assertFalse(token2.same(null));
+    }
+
+    @Test
     void position() {
         GlobalSequenceTrackingToken token = new GlobalSequenceTrackingToken(1L);
 

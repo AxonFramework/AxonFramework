@@ -206,6 +206,37 @@ class GapAwareTrackingTokenTest {
     }
 
     @Test
+    void tokenSameAsOther() {
+        // Same index, same gaps = same position
+        GapAwareTrackingToken token1 = GapAwareTrackingToken.newInstance(3L, singleton(1L));
+        GapAwareTrackingToken token1Copy = GapAwareTrackingToken.newInstance(3L, singleton(1L));
+        assertTrue(token1.same(token1));
+        assertTrue(token1.same(token1Copy));
+
+        // Same index, different gaps = same position (past gaps don't matter)
+        GapAwareTrackingToken token2 = GapAwareTrackingToken.newInstance(3L, singleton(2L));
+        assertTrue(token1.same(token2));
+        assertTrue(token2.same(token1));
+
+        // Same index, one with gaps one without = same position
+        GapAwareTrackingToken token3 = GapAwareTrackingToken.newInstance(3L, emptySortedSet());
+        assertTrue(token1.same(token3));
+        assertTrue(token3.same(token1));
+
+        // Different index = different position
+        GapAwareTrackingToken token4 = GapAwareTrackingToken.newInstance(4L, emptySortedSet());
+        assertFalse(token1.same(token4));
+        assertFalse(token4.same(token1));
+
+        // One token's index is in the other's gaps = NOT same
+        // token5 is at index 7, token6 has index 10 with gap at 7
+        GapAwareTrackingToken token5 = GapAwareTrackingToken.newInstance(7L, emptySortedSet());
+        GapAwareTrackingToken token6 = GapAwareTrackingToken.newInstance(10L, singleton(7L));
+        assertFalse(token5.same(token6));  // token6 skipped event 7, token5 is pointing at 7
+        assertFalse(token6.same(token5));  // different indices anyway
+    }
+
+    @Test
     void occurrenceOfInconsistentRangeException() {
         // verifies issue 655 (https://github.com/AxonFramework/AxonFramework/issues/655)
         GapAwareTrackingToken.newInstance(10L, asList(0L, 1L, 2L, 8L, 9L))

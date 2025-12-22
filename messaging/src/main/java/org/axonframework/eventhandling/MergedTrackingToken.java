@@ -170,7 +170,10 @@ public class MergedTrackingToken implements TrackingToken, Serializable, Wrapped
         if (lowerSegmentToken == null || upperSegmentToken == null) {
             return other == null;
         }
-        return lowerSegmentToken.same(other) && upperSegmentToken.same(other);
+        // MergedTrackingToken is "at" position X if:
+        // 1. The lower segment is at position X (determines the effective position)
+        // 2. The upper segment covers position X (ensures both segments have processed that position)
+        return lowerSegmentToken.same(other) && upperSegmentToken.covers(other);
     }
 
     @Override
