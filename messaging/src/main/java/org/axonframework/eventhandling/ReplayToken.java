@@ -129,11 +129,8 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
      * @return A token that represents a reset to the {@code startPosition} until the provided {@code tokenAtReset}
      */
     public static TrackingToken createReplayToken(TrackingToken tokenAtReset, @Nullable TrackingToken startPosition) {
-        // If startPosition is strictly ahead of tokenAtReset, no replay is needed
         TrackingToken unwrappedTokenAtReset = WrappedToken.unwrapLowerBound(tokenAtReset);
-        if (startPosition != null && unwrappedTokenAtReset != null
-                && !unwrappedTokenAtReset.same(startPosition)
-                && startPosition.covers(unwrappedTokenAtReset)) {
+        if (isStrictlyAhead(startPosition, unwrappedTokenAtReset)) {
             return startPosition;
         }
         return createReplayToken(tokenAtReset, startPosition, null);
@@ -160,15 +157,21 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
         if (tokenAtReset instanceof ReplayToken) {
             return createReplayToken(((ReplayToken) tokenAtReset).tokenAtReset, startPosition, resetContext);
         }
-        // Only skip replay if startPosition is STRICTLY ahead of tokenAtReset
-        // Use same() to ensure tokens are NOT at the same position before considering strictly ahead
         TrackingToken unwrappedTokenAtReset = WrappedToken.unwrapLowerBound(tokenAtReset);
-        if (startPosition != null
-                && !unwrappedTokenAtReset.same(startPosition)
-                && startPosition.covers(unwrappedTokenAtReset)) {
+        if (isStrictlyAhead(startPosition, unwrappedTokenAtReset)) {
             return startPosition;
         }
         return new ReplayToken(tokenAtReset, startPosition, resetContext);
+    }
+
+    /**
+     * Checks if {@code token} is strictly ahead of {@code other}.
+     * "Strictly ahead" means the token is not at the same position AND covers the other token.
+     */
+    private static boolean isStrictlyAhead(@Nullable TrackingToken token, @Nullable TrackingToken other) {
+        return token != null && other != null
+                && !other.same(token)
+                && token.covers(other);
     }
 
     /**
@@ -268,22 +271,16 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
                 || (isStrictlyBeyondResetPosition(tokenAtReset, newToken)
                 && newToken.covers(WrappedToken.unwrapUpperBound(this.tokenAtReset))
                 && !tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken)))) {
-            // we're done replaying - newToken is strictly beyond tokenAtReset
-            // if the token at reset was a wrapped token itself, we'll need to use that one to maintain progress.
+            // Done replaying - newToken is strictly beyond tokenAtReset
             if (tokenAtReset instanceof WrappedToken) {
                 return ((WrappedToken) tokenAtReset).advancedTo(newToken);
             }
             return newToken;
         } else if (tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken))) {
-            // we're still well behind
+            // Still behind tokenAtReset
             return new ReplayToken(tokenAtReset, newToken, context, true);
         } else {
-            // We're in replay territory but tokenAtReset.covers(newToken) failed.
-            // This happens when newToken has different gaps than tokenAtReset (e.g., gaps filled during replay)
-            // OR when newToken's index is beyond tokenAtReset's lowerBound but not its upperBound (merge scenario).
-            // We need to determine if the event at newToken's index was processed before reset:
-            // - If it's a NEW event (beyond index or was a gap): lastMessageWasReplay = false
-            // - If it was processed before reset: lastMessageWasReplay = true
+            // Gap filled or merge scenario - determine if this is a new event
             boolean isNewEvent = isNewEventForResetPosition(tokenAtReset, newToken);
 
             if (tokenAtReset instanceof WrappedToken) {
@@ -298,51 +295,28 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
 
     /**
      * Determines if newToken is strictly beyond tokenAtReset's position.
-     * Uses upperBound to handle MergedTrackingToken (we're "done" when beyond the furthest segment).
-     * <p>
-     * Uses {@link TrackingToken#same(TrackingToken)} instead of {@link TrackingToken#covers(TrackingToken)}
-     * because covers() has asymmetric semantics for GapAwareTrackingToken when gaps differ,
-     * making it impossible to distinguish "same index, different gaps" from "strictly beyond".
-     * The same() method checks for positional equality without the gap containment requirement.
+     * Uses same() instead of covers() to handle GapAwareTrackingToken correctly when gaps differ.
      */
     private static boolean isStrictlyBeyondResetPosition(TrackingToken tokenAtReset, TrackingToken newToken) {
-        // Use upperBound to get the "furthest ahead" position we need to catch up to
-        // This is important for MergedTrackingToken where we need to be beyond ALL segments
         TrackingToken rawAtReset = WrappedToken.unwrapUpperBound(tokenAtReset);
         TrackingToken rawNew = WrappedToken.unwrapLowerBound(newToken);
-
-        // Strictly beyond means: not at the same position AND newToken covers the reset position.
-        // The same() method checks positional equality (index comparison without gap containment),
-        // so !same() with covers() gives us "strictly ahead" semantics.
-        // Since event processing only moves forward, !same() implies we're ahead.
         return !rawAtReset.same(rawNew) && rawNew.covers(rawAtReset);
     }
 
     /**
-     * Determines if the event represented by newToken is a "new event" (not previously processed).
-     * An event is new if:
-     * 1. Its index is beyond the reset position, OR
-     * 2. Its index was a gap in the tokenAtReset (gap filled during replay)
-     * <p>
-     * This uses the {@link TrackingToken#lowerBound(TrackingToken)} method to normalize comparison.
-     * For GapAwareTrackingToken, lowerBound's calculateIndex() decrements through gaps, so if
-     * newToken's index was a gap in tokenAtReset, the lowerBound's index will be less than
-     * newToken's index, making same() return false (indicating a new event).
-     * <p>
-     * This is used to correctly set lastMessageWasReplay when processing events during replay.
+     * Determines if newToken represents a new event not previously processed before reset.
+     * An event is new if its index is beyond the reset position or was a gap in tokenAtReset.
+     * Uses lowerBound() + same() to detect gap-filled events.
      */
     private static boolean isNewEventForResetPosition(TrackingToken tokenAtReset, TrackingToken newToken) {
-        // Unwrap both tokens to get to the raw tracking tokens
-        // Use lowerBound for wrapped tokens because in a merge, the lower segment is catching up
         TrackingToken rawAtReset = WrappedToken.unwrapLowerBound(tokenAtReset);
         TrackingToken rawNew = WrappedToken.unwrapLowerBound(newToken);
-
-        // Use lowerBound() to normalize the comparison:
-        // - For GapAwareTrackingToken: lowerBound merges gaps and uses calculateIndex() which
-        //   decrements through gaps. If newToken's index was a gap, lowerBound's index < newToken's index.
-        // - For GlobalSequenceTrackingToken: lowerBound returns the token with lower index.
-        // Then same() checks if positions are equal - if not, it's a new event.
         TrackingToken lowerBound = rawAtReset.lowerBound(rawNew);
+
+//        This uses the {@link TrackingToken#lowerBound(TrackingToken)} method to normalize comparison.
+//        For GapAwareTrackingToken, lowerBound's calculateIndex() decrements through gaps, so if
+//        newToken's index was a gap in tokenAtReset, the lowerBound's index will be less than
+//        newToken's index, making same() return false (indicating a new event).
         return !lowerBound.same(rawNew);
     }
 
