@@ -6,16 +6,18 @@ import org.axonframework.messaging.responsetypes.ResponseTypes;
 import java.lang.reflect.Type;
 
 /**
- * Class for internal use to ensure compatibility of Axon Framework with the new connection API, which does not rely
- * on response types to match handlers.
+ * Class for internal use to ensure compatibility of Axon Framework with the new connection API, which does not rely on
+ * response types to match handlers.
  *
- * @param <U> The declared response type
+ * @param <U> The declared response type.
+ * @author Allard Buijze
+ * @since 4.12.3
  */
 class IgnoredResponseType<U> implements ResponseType<U> {
 
     private final Class<U> declaredType;
 
-    public IgnoredResponseType(Class<U> declaredType) {
+    IgnoredResponseType(Class<U> declaredType) {
         this.declaredType = declaredType;
     }
 

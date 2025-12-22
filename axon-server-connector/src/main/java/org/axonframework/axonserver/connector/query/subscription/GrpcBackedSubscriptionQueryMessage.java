@@ -27,12 +27,12 @@ import org.axonframework.queryhandling.SubscriptionQueryResult;
 import org.axonframework.serialization.LazyDeserializingObject;
 import org.axonframework.serialization.Serializer;
 
-import javax.annotation.Nonnull;
 import java.util.Map;
+import javax.annotation.Nonnull;
 
 /**
- * Wrapper that allows clients to access a gRPC {@link SubscriptionQuery} message as a {@link
- * SubscriptionQueryMessage}.
+ * Wrapper that allows clients to access a gRPC {@link SubscriptionQuery} message as a
+ * {@link SubscriptionQueryMessage}.
  *
  * @param <Q> a generic specifying the type of the {@link SubscriptionQueryMessage}'s payload
  * @param <I> a generic specifying the type of the initial result of the {@link SubscriptionQueryResult}
@@ -48,11 +48,11 @@ public class GrpcBackedSubscriptionQueryMessage<Q, I, U> implements Subscription
 
     /**
      * Instantiate a {@link GrpcBackedSubscriptionQueryMessage} with the given {@code subscriptionQuery}, using the
-     * provided {@code messageSerializer} to be able to retrieve the payload and {@link MetaData} from it. The {@code
-     * serializer} is solely used to deserialize the response type of the update message.
+     * provided {@code messageSerializer} to be able to retrieve the payload and {@link MetaData} from it. The
+     * {@code serializer} is solely used to deserialize the response type of the update message.
      *
-     * @param subscriptionQuery the {@link SubscriptionQuery} which is being wrapped as a {@link
-     *                          SubscriptionQueryMessage}
+     * @param subscriptionQuery the {@link SubscriptionQuery} which is being wrapped as a
+     *                          {@link SubscriptionQueryMessage}
      * @param messageSerializer the {@link Serializer} used to deserialize the payload and {@link MetaData} from the
      *                          given {@code queryRequest}
      * @param serializer        the {@link Serializer} used to deserialize the response type
@@ -63,11 +63,10 @@ public class GrpcBackedSubscriptionQueryMessage<Q, I, U> implements Subscription
         this(
                 subscriptionQuery,
                 new GrpcBackedQueryMessage<>(subscriptionQuery.getQueryRequest(), messageSerializer, serializer),
-                SerializedObject.getDefaultInstance().equals(subscriptionQuery.getUpdateResponseType()) ?
-                        new LazyDeserializingObject<>(anyResponse())
-                        : new LazyDeserializingObject<>(
-                        new GrpcSerializedObject(subscriptionQuery.getUpdateResponseType()), serializer
-                )
+                SerializedObject.getDefaultInstance().equals(subscriptionQuery.getUpdateResponseType())
+                        ? new LazyDeserializingObject<>(anyResponse())
+                        : new LazyDeserializingObject<>(new GrpcSerializedObject(subscriptionQuery.getUpdateResponseType()),
+                                                        serializer)
         );
     }
 
