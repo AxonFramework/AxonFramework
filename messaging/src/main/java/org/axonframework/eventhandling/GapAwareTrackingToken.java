@@ -230,10 +230,8 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
         Assert.isTrue(other instanceof GapAwareTrackingToken, () -> "Incompatible token type provided.");
         GapAwareTrackingToken otherToken = (GapAwareTrackingToken) other;
 
-        // Same position means same index, and neither token has the other's index as a gap
         return otherToken.index == this.index
-                && !this.gaps.contains(otherToken.index)
-                && !otherToken.gaps.contains(this.index);
+                && !this.gaps.contains(otherToken.index);
     }
 
     /**

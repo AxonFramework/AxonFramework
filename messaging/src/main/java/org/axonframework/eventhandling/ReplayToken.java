@@ -251,6 +251,9 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
 
     @Override
     public TrackingToken advancedTo(TrackingToken newToken) {
+        if (this.tokenAtReset != null && tokenAtReset.same(newToken)) {
+            return new ReplayToken(tokenAtReset, newToken, context, true);
+        }
         if (this.tokenAtReset == null
                 || (newToken.covers(WrappedToken.unwrapUpperBound(this.tokenAtReset))
                 && !tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken)))) {
