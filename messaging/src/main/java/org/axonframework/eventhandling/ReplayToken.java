@@ -296,6 +296,14 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
         return currentToken != null && currentToken.covers(other);
     }
 
+    @Override
+    public boolean same(TrackingToken other) {
+        if (other instanceof ReplayToken) {
+            return currentToken != null && currentToken.same(((ReplayToken) other).currentToken);
+        }
+        return currentToken != null && currentToken.same(other);
+    }
+
     private boolean isReplay() {
         return lastMessageWasReplay;
     }

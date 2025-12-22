@@ -59,6 +59,19 @@ public interface TrackingToken {
     boolean covers(TrackingToken other);
 
     /**
+     * Indicates whether this token represents the exact same position in the stream as the {@code other} token.
+     * Unlike {@link #covers(TrackingToken)}, which uses a "greater than or equal" comparison, this method checks
+     * for positional equality.
+     * <p>
+     * Note that this operation is only safe when comparing tokens obtained from messages from the same
+     * {@link org.axonframework.messaging.StreamableMessageSource}.
+     *
+     * @param other The token to compare to this one
+     * @return {@code true} if this token represents the same position as the other, otherwise {@code false}
+     */
+    boolean same(TrackingToken other);
+
+    /**
      * Return the estimated relative position this token represents.
      * In case no estimation can be given an {@code OptionalLong.empty()} will be returned.
      *

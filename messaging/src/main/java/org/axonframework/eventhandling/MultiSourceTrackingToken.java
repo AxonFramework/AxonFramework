@@ -155,6 +155,40 @@ public class MultiSourceTrackingToken implements TrackingToken, Serializable {
     }
 
     /**
+     * Compares this token to {@code other} checking each member token with its counterpart to see if they are at the
+     * same position in the {@code other} token. If the two tokens contain different number of constituent tokens, or
+     * have the same number but different names, then these two {@link MultiSourceTrackingToken}s must be tracking
+     * different {@code MultiStreamableMessageSource}s.
+     *
+     * @param other The token to compare to this one
+     * @return {@code true} if this token is at the same position as the other, otherwise {@code false}
+     */
+    @Override
+    public boolean same(TrackingToken other) {
+        Assert.isTrue(other instanceof MultiSourceTrackingToken, () -> "Incompatible token type provided.");
+
+        MultiSourceTrackingToken otherMultiToken = (MultiSourceTrackingToken) other;
+
+        Assert.isTrue(otherMultiToken.trackingTokens.keySet().equals(this.trackingTokens.keySet()),
+                      () -> "MultiSourceTrackingTokens contain different keys");
+
+        // as soon as one delegated token is not at the same position, return false
+        for (Map.Entry<String, TrackingToken> trackingTokenEntry : trackingTokens.entrySet()) {
+            TrackingToken constituent = trackingTokenEntry.getValue();
+            TrackingToken otherConstituent = otherMultiToken.trackingTokens.get(trackingTokenEntry.getKey());
+            if (constituent == null) {
+                if (otherConstituent != null) {
+                    return false;
+                }
+            } else if (otherConstituent == null || !constituent.same(otherConstituent)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * Advances a single token within the tokenMap
      *
      * @param streamName        the stream/source which is being advanced
