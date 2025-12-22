@@ -16,6 +16,8 @@
 
 package org.axonframework.integrationtests.testsuite.course.module;
 
+import org.axonframework.integrationtests.testsuite.course.commands.CreateCourse;
+import org.axonframework.integrationtests.testsuite.course.events.CourseCreated;
 import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
 import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
