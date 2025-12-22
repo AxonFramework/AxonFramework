@@ -296,9 +296,14 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
     }
 
     /**
-     * Determines if newToken's index is strictly greater than tokenAtReset's upperBound index.
+     * Determines if newToken is strictly beyond tokenAtReset's position.
      * Uses upperBound to handle MergedTrackingToken (we're "done" when beyond the furthest segment).
-     * This prevents exiting replay mode when at the same index but with different gaps.
+     * <p>
+     * Note: This method requires instanceof checks for GapAwareTrackingToken because the standard
+     * {@link TrackingToken#covers(TrackingToken)} method has asymmetric semantics when gaps differ,
+     * making it impossible to distinguish "same index, different gaps" from "strictly beyond"
+     * using covers() alone. A future improvement could add a {@code rawIndex()} method to the
+     * TrackingToken interface to enable polymorphic index comparison.
      */
     private static boolean isStrictlyBeyondResetPosition(TrackingToken tokenAtReset, TrackingToken newToken) {
         // Use upperBound to get the "furthest ahead" position we need to catch up to
@@ -306,17 +311,15 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
         TrackingToken rawAtReset = WrappedToken.unwrapUpperBound(tokenAtReset);
         TrackingToken rawNew = WrappedToken.unwrapLowerBound(newToken);
 
+        // For GapAwareTrackingToken, we must compare indices directly because covers() has
+        // asymmetric behavior when gaps differ (same index with fewer gaps is incorrectly
+        // considered "beyond" by the covers() check alone)
         if (rawAtReset instanceof GapAwareTrackingToken && rawNew instanceof GapAwareTrackingToken) {
             return ((GapAwareTrackingToken) rawNew).getIndex() > ((GapAwareTrackingToken) rawAtReset).getIndex();
         }
 
-        // For GlobalSequenceTrackingToken: check using covers logic
+        // For other token types, use covers-based logic
         // (strictly beyond means newToken covers resetToken AND resetToken does NOT cover newToken)
-        if (rawAtReset instanceof GlobalSequenceTrackingToken && rawNew instanceof GlobalSequenceTrackingToken) {
-            return rawNew.covers(rawAtReset) && !rawAtReset.covers(rawNew);
-        }
-
-        // Fallback: use covers logic (strictly ahead means covers and not covered by)
         return rawNew.covers(rawAtReset) && !rawAtReset.covers(rawNew);
     }
 
