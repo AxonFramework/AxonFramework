@@ -946,6 +946,10 @@ class AxonServerQueryBusTest {
             return CompletableFuture.completedFuture(stubResponse(payload));
         }
 
+        public ResultStream<QueryResponse> initialResults() {
+            return new StubResultStream<>(stubResponse(payload));
+        }
+
         @Override
         public ResultStream<QueryUpdate> updates() {
             return updateStubResultStream;

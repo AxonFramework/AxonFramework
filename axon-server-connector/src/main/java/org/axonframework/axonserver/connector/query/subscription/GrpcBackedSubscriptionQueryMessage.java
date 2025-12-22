@@ -16,6 +16,7 @@
 
 package org.axonframework.axonserver.connector.query.subscription;
 
+import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
 import org.axonframework.axonserver.connector.query.GrpcBackedQueryMessage;
 import org.axonframework.axonserver.connector.util.GrpcSerializedObject;
@@ -30,8 +31,8 @@ import java.util.Map;
 import javax.annotation.Nonnull;
 
 /**
- * Wrapper that allows clients to access a gRPC {@link SubscriptionQuery} message as a {@link
- * SubscriptionQueryMessage}.
+ * Wrapper that allows clients to access a gRPC {@link SubscriptionQuery} message as a
+ * {@link SubscriptionQueryMessage}.
  *
  * @param <Q> a generic specifying the type of the {@link SubscriptionQueryMessage}'s payload
  * @param <I> a generic specifying the type of the initial result of the {@link SubscriptionQueryResult}
@@ -47,11 +48,11 @@ public class GrpcBackedSubscriptionQueryMessage<Q, I, U> implements Subscription
 
     /**
      * Instantiate a {@link GrpcBackedSubscriptionQueryMessage} with the given {@code subscriptionQuery}, using the
-     * provided {@code messageSerializer} to be able to retrieve the payload and {@link MetaData} from it. The {@code
-     * serializer} is solely used to deserialize the response type of the update message.
+     * provided {@code messageSerializer} to be able to retrieve the payload and {@link MetaData} from it. The
+     * {@code serializer} is solely used to deserialize the response type of the update message.
      *
-     * @param subscriptionQuery the {@link SubscriptionQuery} which is being wrapped as a {@link
-     *                          SubscriptionQueryMessage}
+     * @param subscriptionQuery the {@link SubscriptionQuery} which is being wrapped as a
+     *                          {@link SubscriptionQueryMessage}
      * @param messageSerializer the {@link Serializer} used to deserialize the payload and {@link MetaData} from the
      *                          given {@code queryRequest}
      * @param serializer        the {@link Serializer} used to deserialize the response type
@@ -62,10 +63,20 @@ public class GrpcBackedSubscriptionQueryMessage<Q, I, U> implements Subscription
         this(
                 subscriptionQuery,
                 new GrpcBackedQueryMessage<>(subscriptionQuery.getQueryRequest(), messageSerializer, serializer),
-                new LazyDeserializingObject<>(
-                        new GrpcSerializedObject(subscriptionQuery.getUpdateResponseType()), serializer
-                )
+                SerializedObject.getDefaultInstance().equals(subscriptionQuery.getUpdateResponseType())
+                        ? new LazyDeserializingObject<>(anyResponse())
+                        : new LazyDeserializingObject<>(new GrpcSerializedObject(subscriptionQuery.getUpdateResponseType()),
+                                                        serializer)
         );
+    }
+
+    @SafeVarargs
+    @SuppressWarnings("unchecked")
+    private static <U> ResponseType<U> anyResponse(Class<U>... type) {
+        if (type.length != 0) {
+            throw new IllegalArgumentException("Do not provide any arguments to any()");
+        }
+        return new IgnoredResponseType<>((Class<U>) type.getClass().getComponentType());
     }
 
     private GrpcBackedSubscriptionQueryMessage(SubscriptionQuery subscriptionQuery,

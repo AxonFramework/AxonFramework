@@ -26,7 +26,9 @@ import io.grpc.stub.ClientCallStreamObserver;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.utils.TestSerializer;
 import org.axonframework.serialization.Serializer;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import reactor.test.StepVerifier;
 
 import java.time.Duration;
@@ -35,7 +37,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
 
 class AxonServerSubscriptionQueryResultTest {
 
@@ -57,9 +59,15 @@ class AxonServerSubscriptionQueryResultTest {
         SubscriptionMessageSerializer stubSerializer = new SubscriptionMessageSerializer(serializer, serializer, configuration);
         subscriptionQueryUpdateBuffer = new SubscriptionQueryUpdateBuffer("testClient", "queryId", 10, 3);
         SubscriptionQueryResult result = new SubscriptionQueryResult() {
+            @SuppressWarnings("removal")
             @Override
             public CompletableFuture<QueryResponse> initialResult() {
                 return initialResult;
+            }
+
+            public ResultStream<QueryResponse> initialResults() {
+                // unused in this test
+                return null;
             }
 
             @Override
