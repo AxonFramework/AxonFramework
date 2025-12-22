@@ -299,11 +299,10 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
      * Determines if newToken is strictly beyond tokenAtReset's position.
      * Uses upperBound to handle MergedTrackingToken (we're "done" when beyond the furthest segment).
      * <p>
-     * Note: This method requires instanceof checks for GapAwareTrackingToken because the standard
-     * {@link TrackingToken#covers(TrackingToken)} method has asymmetric semantics when gaps differ,
-     * making it impossible to distinguish "same index, different gaps" from "strictly beyond"
-     * using covers() alone. A future improvement could add a {@code rawIndex()} method to the
-     * TrackingToken interface to enable polymorphic index comparison.
+     * Uses {@link TrackingToken#same(TrackingToken)} instead of {@link TrackingToken#covers(TrackingToken)}
+     * because covers() has asymmetric semantics for GapAwareTrackingToken when gaps differ,
+     * making it impossible to distinguish "same index, different gaps" from "strictly beyond".
+     * The same() method checks for positional equality without the gap containment requirement.
      */
     private static boolean isStrictlyBeyondResetPosition(TrackingToken tokenAtReset, TrackingToken newToken) {
         // Use upperBound to get the "furthest ahead" position we need to catch up to
@@ -311,53 +310,45 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
         TrackingToken rawAtReset = WrappedToken.unwrapUpperBound(tokenAtReset);
         TrackingToken rawNew = WrappedToken.unwrapLowerBound(newToken);
 
-        // For GapAwareTrackingToken, we must compare indices directly because covers() has
-        // asymmetric behavior when gaps differ (same index with fewer gaps is incorrectly
-        // considered "beyond" by the covers() check alone)
-        if (rawAtReset instanceof GapAwareTrackingToken && rawNew instanceof GapAwareTrackingToken) {
-            return ((GapAwareTrackingToken) rawNew).getIndex() > ((GapAwareTrackingToken) rawAtReset).getIndex();
-        }
-
-        // For other token types, use covers-based logic
-        // (strictly beyond means newToken covers resetToken AND resetToken does NOT cover newToken)
-        return rawNew.covers(rawAtReset) && !rawAtReset.covers(rawNew);
+        // Strictly beyond means: not at the same position AND newToken covers the reset position.
+        // The same() method checks positional equality (index comparison without gap containment),
+        // so !same() with covers() gives us "strictly ahead" semantics.
+        // Since event processing only moves forward, !same() implies we're ahead.
+        return !rawAtReset.same(rawNew) && rawNew.covers(rawAtReset);
     }
 
     /**
      * Determines if the event represented by newToken is a "new event" (not previously processed).
      * An event is new if:
-     * 1. Its index is beyond the reset position (for the lowerBound segment), OR
-     * 2. Its index was a gap in the tokenAtReset
-     *
+     * 1. Its index is beyond the reset position, OR
+     * 2. Its index was a gap in the tokenAtReset (gap filled during replay)
+     * <p>
+     * This uses the {@link TrackingToken#lowerBound(TrackingToken)} method to normalize comparison.
+     * For GapAwareTrackingToken, lowerBound's calculateIndex() decrements through gaps, so if
+     * newToken's index was a gap in tokenAtReset, the lowerBound's index will be less than
+     * newToken's index, making same() return false (indicating a new event).
+     * <p>
      * This is used to correctly set lastMessageWasReplay when processing events during replay.
-     * For MergedTrackingToken, we use lowerBound because the lower segment is the one "catching up"
-     * and events beyond its position are new to it.
      */
     private static boolean isNewEventForResetPosition(TrackingToken tokenAtReset, TrackingToken newToken) {
-        // Handle MultiSourceTrackingToken specially
+        // Handle MultiSourceTrackingToken specially - check each source independently
         if (tokenAtReset instanceof MultiSourceTrackingToken && newToken instanceof MultiSourceTrackingToken) {
             return isNewEventForMultiSource((MultiSourceTrackingToken) tokenAtReset,
                                              (MultiSourceTrackingToken) newToken);
         }
 
         // Unwrap both tokens to get to the raw tracking tokens
-        // Use lowerBound for tokenAtReset because in a merge, the lower segment is catching up
+        // Use lowerBound for wrapped tokens because in a merge, the lower segment is catching up
         TrackingToken rawAtReset = WrappedToken.unwrapLowerBound(tokenAtReset);
         TrackingToken rawNew = WrappedToken.unwrapLowerBound(newToken);
 
-        if (rawAtReset instanceof GapAwareTrackingToken && rawNew instanceof GapAwareTrackingToken) {
-            GapAwareTrackingToken gatAtReset = (GapAwareTrackingToken) rawAtReset;
-            GapAwareTrackingToken gatNew = (GapAwareTrackingToken) rawNew;
-            // Event is "new" (not a replay) if:
-            // 1. Index is beyond the reset position (wasn't processed before), OR
-            // 2. Index was a gap in the reset position (wasn't processed before)
-            return gatNew.getIndex() > gatAtReset.getIndex()
-                    || gatAtReset.getGaps().contains(gatNew.getIndex());
-        }
-
-        // For non-GapAwareTrackingToken types, if tokenAtReset doesn't cover newToken,
-        // it's likely a new event (conservative approach)
-        return true;
+        // Use lowerBound() to normalize the comparison:
+        // - For GapAwareTrackingToken: lowerBound merges gaps and uses calculateIndex() which
+        //   decrements through gaps. If newToken's index was a gap, lowerBound's index < newToken's index.
+        // - For GlobalSequenceTrackingToken: lowerBound returns the token with lower index.
+        // Then same() checks if positions are equal - if not, it's a new event.
+        TrackingToken lowerBound = rawAtReset.lowerBound(rawNew);
+        return !lowerBound.same(rawNew);
     }
 
     /**
@@ -366,8 +357,6 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
      */
     private static boolean isNewEventForMultiSource(MultiSourceTrackingToken tokenAtReset,
                                                      MultiSourceTrackingToken newToken) {
-        // For each source in the token, check if the event is new
-        // If new for ANY source, return true (it's a new event)
         for (Map.Entry<String, TrackingToken> entry : newToken.getTrackingTokens().entrySet()) {
             String sourceName = entry.getKey();
             TrackingToken newSourceToken = entry.getValue();
@@ -377,30 +366,15 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
                 continue;
             }
 
-            // Check if this source considers the event as new
-            if (isNewEventForSingleSource(resetSourceToken, newSourceToken)) {
+            // Check if this source considers the event as new using the same lowerBound/same pattern
+            TrackingToken rawReset = WrappedToken.unwrapLowerBound(resetSourceToken);
+            TrackingToken rawNew = WrappedToken.unwrapLowerBound(newSourceToken);
+            TrackingToken lowerBound = rawReset.lowerBound(rawNew);
+            if (!lowerBound.same(rawNew)) {
                 return true; // New for at least one source
             }
         }
         return false; // Not new for any source (it's a replay)
-    }
-
-    /**
-     * Helper to check if an event is new for a single source token.
-     */
-    private static boolean isNewEventForSingleSource(TrackingToken resetToken, TrackingToken newToken) {
-        TrackingToken rawReset = WrappedToken.unwrapLowerBound(resetToken);
-        TrackingToken rawNew = WrappedToken.unwrapLowerBound(newToken);
-
-        if (rawReset instanceof GapAwareTrackingToken && rawNew instanceof GapAwareTrackingToken) {
-            GapAwareTrackingToken gatReset = (GapAwareTrackingToken) rawReset;
-            GapAwareTrackingToken gatNew = (GapAwareTrackingToken) rawNew;
-            return gatNew.getIndex() > gatReset.getIndex()
-                    || gatReset.getGaps().contains(gatNew.getIndex());
-        }
-
-        // For non-GAT tokens, check using covers
-        return !resetToken.covers(newToken);
     }
 
     @Override
@@ -422,6 +396,14 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
             return currentToken != null && currentToken.covers(((ReplayToken) other).currentToken);
         }
         return currentToken != null && currentToken.covers(other);
+    }
+
+    @Override
+    public boolean same(TrackingToken other) {
+        if (other instanceof ReplayToken) {
+            return currentToken != null && currentToken.same(((ReplayToken) other).currentToken);
+        }
+        return currentToken != null && currentToken.same(other);
     }
 
     private boolean isReplay() {

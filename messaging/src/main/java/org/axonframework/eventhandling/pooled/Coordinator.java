@@ -672,6 +672,11 @@ class Coordinator {
         public boolean covers(TrackingToken other) {
             return false;
         }
+
+        @Override
+        public boolean same(TrackingToken other) {
+            return false;
+        }
     }
 
     /**

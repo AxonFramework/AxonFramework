@@ -225,6 +225,15 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
                 && otherToken.gaps.containsAll(this.gaps.headSet(otherToken.index));
     }
 
+    @Override
+    public boolean same(TrackingToken other) {
+        Assert.isTrue(other instanceof GapAwareTrackingToken, () -> "Incompatible token type provided.");
+        GapAwareTrackingToken otherToken = (GapAwareTrackingToken) other;
+
+        return otherToken.index == this.index
+                && !this.gaps.contains(otherToken.index);
+    }
+
     /**
      * Check if this token contains one ore more gaps.
      *
