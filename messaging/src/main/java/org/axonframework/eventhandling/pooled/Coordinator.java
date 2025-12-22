@@ -1117,7 +1117,7 @@ class Coordinator {
                        })
                        .thenRun(() -> transactionManager.executeInTransaction(
                                () -> {
-                                   tokenStore.releaseClaim(name, segmentId);
+                                   tokenStore.releaseClaim(name, segmentId); // fixme: what if I cannot?
                                    segmentReleasedAction.accept(work.segment());
                                }
                        ))
