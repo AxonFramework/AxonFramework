@@ -129,7 +129,7 @@ class JpaTokenStoreTest {
 
     @Test
     void customLockMode() {
-        EntityManager spyEntityManager = mock(EntityManager.class);
+        EntityManager spyEntityManager = spy(entityManager);
 
         var config = JpaTokenStoreConfiguration.DEFAULT.loadingLockMode(LockModeType.NONE).nodeId("test");
         JpaTokenStore testSubject = new JpaTokenStore(new SimpleEntityManagerProvider(spyEntityManager),
@@ -141,7 +141,13 @@ class JpaTokenStoreTest {
         } catch (Exception e) {
             // ignore. This fails
         }
-        verify(spyEntityManager).find(eq(TokenEntry.class), any(), eq(LockModeType.NONE));
+
+        // Migration may run (which use a different lock mode), just check if specifically the fetch used correct lock mode:
+        verify(spyEntityManager, atLeastOnce()).find(
+            eq(TokenEntry.class),
+            eq(new TokenEntry.PK("processorName", 1)),
+            eq(LockModeType.NONE)
+        );
     }
 
     @Test
