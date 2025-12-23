@@ -58,6 +58,10 @@ public interface TrackingToken {
      */
     boolean covers(TrackingToken other);
 
+    default boolean latestEquals(TrackingToken other) {
+        return covers(other);
+    }
+
     /**
      * Return the estimated relative position this token represents.
      * In case no estimation can be given an {@code OptionalLong.empty()} will be returned.

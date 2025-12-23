@@ -385,21 +385,6 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
      */
     @Override
     public TrackingToken advancedTo(TrackingToken newToken) {
-        // ═══════════════════════════════════════════════════════════════════════════════
-        // CASE 1: DONE REPLAYING
-        // ═══════════════════════════════════════════════════════════════════════════════
-        // We exit replay mode when BOTH conditions are true:
-        //   Condition A: newToken.covers(tokenAtReset) - "We've reached or passed the reset point"
-        //   Condition B: !tokenAtReset.covers(newToken) - "This specific event is NEW (not seen before)"
-        //
-        // WHY BOTH CONDITIONS?
-        // - covers() uses >= semantics, so tokens at the SAME position mutually cover each other
-        // - Condition A alone would incorrectly exit replay at the boundary (e.g., both at position 7)
-        // - Condition B ensures we only exit when we're STRICTLY PAST the reset point
-        //
-        // Example: tokenAtReset=7
-        //   newToken=7: covers(7)=TRUE, !covers(7)=FALSE → FALSE → Stay in replay
-        //   newToken=8: covers(7)=TRUE, !covers(8)=TRUE  → TRUE  → Exit replay
         if (this.tokenAtReset == null || isStrictlyAfterTokenAtReset(newToken)) {
             // We're done replaying - return the unwrapped newToken
             // If tokenAtReset was a WrappedToken, delegate to it to maintain any wrapper state
@@ -408,18 +393,7 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
             }
             return newToken;
         }
-
-        // ═══════════════════════════════════════════════════════════════════════════════
-        // CASE 2: STILL REPLAYING
-        // ═══════════════════════════════════════════════════════════════════════════════
-        // The event at newToken was seen before reset → it's definitely a replay.
-        // tokenAtReset.covers(newToken) means the reset point "covers" this position,
-        // i.e., this event was already processed before the reset occurred.
-        //
-        // Example: tokenAtReset=7, newToken=5
-        //   tokenAtReset.covers(5) = (7 >= 5) = TRUE → This is a replay
         else if (isBeforeOrEqualTokenAtReset(newToken)) {
-            // Create a new ReplayToken with lastMessageWasReplay=true
             return new ReplayToken(
                     tokenAtReset, // we don't do upperBound here, because it's just useful if the lastMessageWasReplay. We pretend in the code we don't know about gaps, but looks like we know
                     newToken,
@@ -427,32 +401,7 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
                     true
             );
         }
-
-        // ═══════════════════════════════════════════════════════════════════════════════
-        // CASE 3: PARTIAL CATCH-UP (Edge case with gaps)
-        // ═══════════════════════════════════════════════════════════════════════════════
-        // We reach here when:
-        //   - newToken does NOT cover tokenAtReset (we haven't fully caught up)
-        //   - tokenAtReset does NOT cover newToken (this event wasn't seen before)
-        //
-        // This happens with GapAwareTrackingToken when we encounter a GAP event:
-        //
-        // Example: tokenAtReset = GapAwareTrackingToken(index=10, gaps={7})
-        //          This means events 0-6, 8-10 were seen, but event 7 was NOT.
-        //
-        //          newToken = GapAwareTrackingToken(index=7, gaps={})
-        //          We're processing event 7 (the gap).
-        //
-        //          Check Case 1: newToken.covers(tokenAtReset) = (7).covers(10) = FALSE
-        //          Check Case 2: tokenAtReset.covers(newToken) = (10,{7}).covers(7) = FALSE
-        //                        (returns FALSE because 7 is IN the gaps - it wasn't seen!)
-        //
-        //          → Event 7 is NEW (not a replay), but we haven't finished replay yet
-        //          → lastMessageWasReplay = false (this specific event is new)
-        //          → Update tokenAtReset to include this newly seen event via upperBound()
         else {
-            // This event is NEW (wasn't seen before), but replay isn't finished yet.
-            // Merge the new event into tokenAtReset using upperBound() to track progress.
             if (tokenAtReset instanceof WrappedToken) {
                 return new ReplayToken(tokenAtReset.upperBound(newToken),
                                        ((WrappedToken) tokenAtReset).advancedTo(newToken),
@@ -475,7 +424,7 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
     // tokenAtReset >= newToken
     // newToken <= tokenAtReset
     private boolean isBeforeOrEqualTokenAtReset(TrackingToken newToken) {
-        return tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken));
+        return tokenAtReset.latestEquals(newToken) || tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken));
     }
 
     @Override

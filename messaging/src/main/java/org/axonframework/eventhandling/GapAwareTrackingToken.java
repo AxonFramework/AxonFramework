@@ -101,7 +101,7 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
         }
         SortedSet<Long> gapSet = new TreeSet<>(gaps);
         Assert.isTrue(gapSet.last() < index,
-                      () -> String.format("Gap indices [%s] should all be smaller than head index [%d]", gaps, index));
+                () -> String.format("Gap indices [%s] should all be smaller than head index [%d]", gaps, index));
         return gapSet;
     }
 
@@ -183,7 +183,7 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
         long mergedIndex = calculateIndex(otherToken, mergedGaps);
         mergedGaps.removeIf(i -> i >= mergedIndex);
         return new GapAwareTrackingToken(mergedIndex, mergedGaps, Math.min(gapTruncationIndex,
-                                                                           otherToken.gapTruncationIndex));
+                otherToken.gapTruncationIndex));
     }
 
     @Override
@@ -197,7 +197,7 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
         newGaps.addAll(mergedGaps);
 
         return new GapAwareTrackingToken(Math.max(this.index, other.index), newGaps,
-                                         Math.min(gapTruncationIndex, other.gapTruncationIndex));
+                Math.min(gapTruncationIndex, other.gapTruncationIndex));
     }
 
     private long calculateIndex(GapAwareTrackingToken otherToken, SortedSet<Long> mergedGaps) {
@@ -223,6 +223,14 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
         return otherToken.index <= this.index
                 && !this.gaps.contains(otherToken.index)
                 && otherToken.gaps.containsAll(this.gaps.headSet(otherToken.index));
+    }
+
+    @Override
+    public boolean latestEquals(TrackingToken other) {
+        Assert.isTrue(other instanceof GapAwareTrackingToken, () -> "Incompatible token type provided.");
+        GapAwareTrackingToken otherToken = (GapAwareTrackingToken) other;
+
+        return otherToken.index == this.index;
     }
 
     /**
