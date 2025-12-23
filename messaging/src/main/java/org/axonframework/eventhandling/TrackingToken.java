@@ -85,7 +85,7 @@ public interface TrackingToken {
      * @see #covers(TrackingToken)
      */
     default boolean equalsLatest(TrackingToken other) {
-        return covers(other) && other.covers(this);
+        return other != null && covers(other) && other.covers(this);
     }
 
 }

@@ -172,7 +172,7 @@ public class MultiSourceTrackingToken implements TrackingToken, Serializable {
                 if (otherConstituent != null) {
                     return false;
                 }
-            } else if (otherConstituent != null && !constituent.equalsLatest(otherConstituent)) {
+            } else if (otherConstituent == null || !constituent.equalsLatest(otherConstituent)) {
                 return false;
             }
         }
