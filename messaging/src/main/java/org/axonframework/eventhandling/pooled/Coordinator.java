@@ -811,19 +811,14 @@ class Coordinator {
             }
 
             if (eventStream == null) {
-                // Inconsistent state: work packages exist but no event stream was opened.
-                // This can happen when workPackages weren't fully cleared during a previous abort,
-                // causing claimNewSegments() to return empty (segments already in workPackages),
-                // which leaves streamStartPosition as NoToken and prevents stream opening.
-                // Abort and retry to reset to a clean state.
                 logger.warn(
-                        "Processor [{}] has {} work packages but no event stream. "
+                        "Processor [{}] has [{}] work packages and last scheduled token [{}] but no event stream. "
                                 + "Aborting work packages and scheduling retry.",
-                        name, workPackages.size()
+                        name, workPackages.size(), lastScheduledToken
                 );
                 abortAndScheduleRetry(
-                        new IllegalStateException("Event stream is null with " + workPackages.size()
-                                                          + " active work packages")
+                        new IllegalStateException("Event stream is null with: " + workPackages.size()
+                                                          + " active work packages and last scheduled token: " + lastScheduledToken)
                 );
                 return;
             }
