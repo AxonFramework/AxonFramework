@@ -263,23 +263,44 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
 
     // ==================== Replay State Checks ====================
 
+    /**
+     * Determines if the replay phase is complete and we should exit the ReplayToken wrapper.
+     * <p>
+     * Replay is complete when BOTH conditions are met:
+     * <ol>
+     *   <li><b>Caught up:</b> newToken is strictly ahead of tokenAtReset's upper bound</li>
+     *   <li><b>Not covered:</b> tokenAtReset does not cover newToken's position</li>
+     * </ol>
+     * <p>
+     * <b>Why both conditions?</b>
+     * <p>
+     * For simple tokens (e.g., {@link GapAwareTrackingToken}), checking "caught up" alone would suffice.
+     * However, for {@link MergedTrackingToken}, we compare against the <i>upper</i> segment's bound,
+     * but must also verify the <i>full</i> token doesn't still cover the position (which could happen
+     * if segments have different states).
+     * <p>
+     * The {@code covers()} check ensures we don't prematurely exit replay when tokenAtReset
+     * still considers the position as "within its tracking scope."
+     */
     private boolean replayIsComplete(TrackingToken newToken) {
         if (tokenAtReset == null) {
             return true;
         }
-        return hasCaughtUpToResetPosition(newToken) && !isFillingGapInResetToken(newToken);
-    }
-
-    private boolean hasCaughtUpToResetPosition(TrackingToken newToken) {
         TrackingToken resetUpperBound = WrappedToken.unwrapUpperBound(tokenAtReset);
-        return isStrictlyAhead(newToken, resetUpperBound);
-    }
-
-    private boolean isFillingGapInResetToken(TrackingToken newToken) {
         TrackingToken newTokenLowerBound = WrappedToken.unwrapLowerBound(newToken);
-        return tokenAtReset.covers(newTokenLowerBound);
+
+        boolean caughtUpToResetPosition = isStrictlyAhead(newToken, resetUpperBound);
+        boolean positionStillTrackedByReset = tokenAtReset.covers(newTokenLowerBound);
+
+        return caughtUpToResetPosition && !positionStillTrackedByReset;
     }
 
+    /**
+     * Determines if we are still in the replay phase (behind the reset position).
+     * <p>
+     * Returns {@code true} if tokenAtReset covers the newToken's position, meaning
+     * this event was already processed before reset and is now being replayed.
+     */
     private boolean stillReplaying(TrackingToken newToken) {
         TrackingToken newTokenLowerBound = WrappedToken.unwrapLowerBound(newToken);
         return tokenAtReset.covers(newTokenLowerBound);
