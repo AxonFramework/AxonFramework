@@ -152,7 +152,7 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
         if (tokenAtReset instanceof ReplayToken) {
             return createReplayToken(((ReplayToken) tokenAtReset).tokenAtReset, startPosition, resetContext);
         }
-        if (startPosition != null && !startPosition.equalsLatest(tokenAtReset) && startPosition.covers(WrappedToken.unwrapLowerBound(tokenAtReset))) {
+        if (startPosition != null && isStrictlyAfter(startPosition, tokenAtReset)) {
             return startPosition;
         }
         return new ReplayToken(tokenAtReset, startPosition, resetContext);
@@ -259,9 +259,14 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
             }
             return newToken;
         }
-        if (wasDeliveredBeforeReset(newToken)) { // if we had this event before
+        if (wasProcessedBeforeReset(newToken)) {
             // we're still well behind
-            return new ReplayToken(tokenAtReset, newToken, context, true);
+            return new ReplayToken(
+                    tokenAtReset,  // we don't do upperBound here, because if false it removes the gaps, here we don't have gaps
+                    newToken,
+                    context,
+                    true
+            );
         }
         // we're getting an event that we didn't have before, but we haven't finished replaying either
         if (tokenAtReset instanceof WrappedToken) {
@@ -296,9 +301,7 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
         if (tokenAtReset == null) {
             return true;
         }
-        TrackingToken resetUpperBound = WrappedToken.unwrapUpperBound(tokenAtReset);
-        boolean caughtUpToResetPosition = isStrictlyAhead(newToken, resetUpperBound);
-        return caughtUpToResetPosition && !wasDeliveredBeforeReset(newToken);
+        return isStrictlyAfter(newToken, tokenAtReset);
     }
 
     /**
@@ -338,17 +341,17 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
      * @return {@code true} if the event was delivered before reset (replay), {@code false} if it's a new event
      * @see GapAwareTrackingToken#lowerBound(TrackingToken)
      */
-    private boolean wasDeliveredBeforeReset(TrackingToken newToken) {
+    private boolean wasProcessedBeforeReset(TrackingToken newToken) {
         TrackingToken resetLowerBound = WrappedToken.unwrapLowerBound(tokenAtReset);
         TrackingToken newTokenLowerBound = WrappedToken.unwrapLowerBound(newToken);
         TrackingToken combinedLowerBound = resetLowerBound.lowerBound(newTokenLowerBound);
         return combinedLowerBound.equalsLatest(newTokenLowerBound);
     }
 
-    private static boolean isStrictlyAhead(@Nullable TrackingToken token, @Nullable TrackingToken other) {
-        return token != null && other != null
-                && !other.equalsLatest(token)
-                && token.covers(other);
+    public static boolean isStrictlyAfter(@Nonnull TrackingToken newToken, @Nonnull TrackingToken tokenAtReset) {
+        return !newToken.equalsLatest(WrappedToken.unwrapUpperBound(tokenAtReset))
+                && newToken.covers(WrappedToken.unwrapUpperBound(tokenAtReset))
+                && !tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken));
     }
 
     @Override
