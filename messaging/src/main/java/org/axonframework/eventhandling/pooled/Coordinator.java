@@ -810,6 +810,19 @@ class Coordinator {
                 return;
             }
 
+            if (eventStream == null) {
+                logger.warn(
+                        "Processor [{}] has [{}] work packages and last scheduled token [{}] but no event stream. "
+                                + "Aborting work packages and scheduling retry.",
+                        name, workPackages.size(), lastScheduledToken
+                );
+                abortAndScheduleRetry(
+                        new IllegalStateException("Event stream is null with: " + workPackages.size()
+                                + " active work packages and last scheduled token: " + lastScheduledToken)
+                );
+                return;
+            }
+
             try {
                 // Coordinate events to work packages and reschedule this coordinator
                 if (!eventStream.hasNextAvailable() && isDone()) {
