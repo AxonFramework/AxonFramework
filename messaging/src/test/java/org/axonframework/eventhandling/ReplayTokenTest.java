@@ -1231,19 +1231,21 @@ class ReplayTokenTest {
         }
 
         @Test
-        void mergedTokenNoGaps_eventBetweenSegments_isReplay() {
+        void mergedTokenNoGaps_eventBetweenSegments_isNotReplay() {
+            // Events "between" segments are NOT replays because lower segment hasn't seen them.
+            // For MergedTrackingToken, wasProcessedBeforeReset uses lowerBound (lower segment)
             MergedTrackingToken tokenAtReset = new MergedTrackingToken(
                     GapAwareTrackingToken.newInstance(5, emptySet()),
                     GapAwareTrackingToken.newInstance(10, emptySet())
             );
             ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
 
-            // Event at position 7 - between segments, was processed before reset
+            // Event at position 7 - between segments, lower segment has NOT seen this
             TrackingToken result = replayToken.advancedTo(GapAwareTrackingToken.newInstance(7, emptySet()));
 
-            assertInstanceOf(ReplayToken.class, result);
-            assertTrue(ReplayToken.isReplay(result),
-                    "Event at position 7 (between segments) should be a replay");
+            assertInstanceOf(ReplayToken.class, result, "Should still be in ReplayToken wrapper");
+            assertFalse(ReplayToken.isReplay(result),
+                    "Event at position 7 (between segments) is NOT replay - lower segment hasn't seen it");
         }
 
         @Test
@@ -1263,19 +1265,20 @@ class ReplayTokenTest {
         }
 
         @Test
-        void mergedTokenNoGaps_eventAtUpperSegment_isReplay() {
+        void mergedTokenNoGaps_eventAtUpperSegment_isNotReplay() {
+            // Events at upper segment are NOT replays because lower segment hasn't seen them
             MergedTrackingToken tokenAtReset = new MergedTrackingToken(
                     GapAwareTrackingToken.newInstance(5, emptySet()),
                     GapAwareTrackingToken.newInstance(10, emptySet())
             );
             ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
 
-            // Event at position 10 - exactly at upper segment (upperBound)
+            // Event at position 10 - exactly at upper segment, lower segment hasn't seen this
             TrackingToken result = replayToken.advancedTo(GapAwareTrackingToken.newInstance(10, emptySet()));
 
-            assertInstanceOf(ReplayToken.class, result);
-            assertTrue(ReplayToken.isReplay(result),
-                    "Event at position 10 (at upper segment / upperBound) should be a replay");
+            assertInstanceOf(ReplayToken.class, result, "Should still be in ReplayToken wrapper");
+            assertFalse(ReplayToken.isReplay(result),
+                    "Event at position 10 (at upper segment) is NOT replay - lower segment hasn't seen it");
         }
 
         @Test
@@ -1396,19 +1399,20 @@ class ReplayTokenTest {
         }
 
         @Test
-        void mergedTokenWithGapInUpper_eventAfterGap_isReplay() {
+        void mergedTokenWithGapInUpper_eventAfterGap_isNotReplay() {
+            // Event at position 9 is past lower segment (5), so it's NOT a replay
             MergedTrackingToken tokenAtReset = new MergedTrackingToken(
                     GapAwareTrackingToken.newInstance(5, emptySet()),
                     GapAwareTrackingToken.newInstance(10, setOf(8L))
             );
             ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
 
-            // Event at position 9 - after the gap, was processed by upper segment
+            // Event at position 9 - past lower segment, not seen by lower
             TrackingToken result = replayToken.advancedTo(GapAwareTrackingToken.newInstance(9, setOf(8L)));
 
-            assertInstanceOf(ReplayToken.class, result);
-            assertTrue(ReplayToken.isReplay(result),
-                    "Event at position 9 (after gap in upper) should be a replay");
+            assertInstanceOf(ReplayToken.class, result, "Should still be in ReplayToken wrapper");
+            assertFalse(ReplayToken.isReplay(result),
+                    "Event at position 9 is NOT replay - lower segment hasn't seen it");
         }
 
         // ==================== Gaps in Both Segments ====================
@@ -1460,35 +1464,38 @@ class ReplayTokenTest {
         }
 
         @Test
-        void mergedTokenWithGapsInBoth_eventAtNonGapPosition_isReplay() {
+        void mergedTokenWithGapsInBoth_eventAtNonGapPosition_isNotReplay() {
+            // Position 7 is past lower segment (5), so it's NOT a replay even though not a gap
             MergedTrackingToken tokenAtReset = new MergedTrackingToken(
                     GapAwareTrackingToken.newInstance(5, setOf(2L)),
                     GapAwareTrackingToken.newInstance(10, setOf(8L))
             );
             ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
 
-            // Position 7 is not a gap in either segment
+            // Position 7 - past lower segment, not seen by lower
             TrackingToken result = replayToken.advancedTo(GapAwareTrackingToken.newInstance(7, emptySet()));
 
-            assertInstanceOf(ReplayToken.class, result);
-            assertTrue(ReplayToken.isReplay(result),
-                    "Event at position 7 (not a gap in either segment) should be replay");
+            assertInstanceOf(ReplayToken.class, result, "Should still be in ReplayToken wrapper");
+            assertFalse(ReplayToken.isReplay(result),
+                    "Event at position 7 is NOT replay - lower segment hasn't seen it");
         }
 
         // ==================== Progressive Replay Through MergedTrackingToken ====================
 
         /**
          * Tests progressive replay through a MergedTrackingToken, verifying replay status at each step.
+         * Key insight: Only events ≤ lower segment index are replays. Events past lower but before
+         * upper are NOT replays (lower segment hasn't seen them) but stay in ReplayToken wrapper.
          */
         @Test
         void progressiveReplayThroughMergedToken() {
             MergedTrackingToken tokenAtReset = new MergedTrackingToken(
-                    GapAwareTrackingToken.newInstance(3, setOf(2L)),  // gap at 2
-                    GapAwareTrackingToken.newInstance(9, emptySet())
+                    GapAwareTrackingToken.newInstance(3, setOf(2L)),  // gap at 2, lower at 3
+                    GapAwareTrackingToken.newInstance(9, emptySet())  // upper at 9
             );
             TrackingToken currentToken = ReplayToken.createReplayToken(tokenAtReset, null);
 
-            // Position 0: before both segments, was processed → replay
+            // Position 0: before lower segment, was processed → replay
             currentToken = ((ReplayToken) currentToken).advancedTo(GapAwareTrackingToken.newInstance(0, emptySet()));
             assertTrue(ReplayToken.isReplay(currentToken), "Position 0 should be replay");
 
@@ -1504,13 +1511,15 @@ class ReplayTokenTest {
             currentToken = ((ReplayToken) currentToken).advancedTo(GapAwareTrackingToken.newInstance(3, emptySet()));
             assertTrue(ReplayToken.isReplay(currentToken), "Position 3 should be replay");
 
-            // Position 5: between segments, was processed → replay
+            // Position 5: between segments → NOT replay (lower segment hasn't seen it)
             currentToken = ((ReplayToken) currentToken).advancedTo(GapAwareTrackingToken.newInstance(5, emptySet()));
-            assertTrue(ReplayToken.isReplay(currentToken), "Position 5 should be replay");
+            assertInstanceOf(ReplayToken.class, currentToken, "Should still be in ReplayToken");
+            assertFalse(ReplayToken.isReplay(currentToken), "Position 5 should NOT be replay");
 
-            // Position 9: at upper segment index, was processed → replay
+            // Position 9: at upper segment → NOT replay (lower segment hasn't seen it)
             currentToken = ((ReplayToken) currentToken).advancedTo(GapAwareTrackingToken.newInstance(9, emptySet()));
-            assertTrue(ReplayToken.isReplay(currentToken), "Position 9 should be replay");
+            assertInstanceOf(ReplayToken.class, currentToken, "Should still be in ReplayToken");
+            assertFalse(ReplayToken.isReplay(currentToken), "Position 9 should NOT be replay");
 
             // Position 10: past upper segment → exits replay
             currentToken = ((ReplayToken) currentToken).advancedTo(GapAwareTrackingToken.newInstance(10, emptySet()));
@@ -1521,6 +1530,7 @@ class ReplayTokenTest {
 
         /**
          * Tests when lower segment is far behind upper segment.
+         * Events between segments are NOT replays - lower segment hasn't seen them.
          */
         @Test
         void asymmetricSegments_lowerFarBehind() {
@@ -1530,12 +1540,12 @@ class ReplayTokenTest {
             );
             ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
 
-            // Event at position 50 - between segments, was processed by upper
+            // Event at position 50 - between segments, lower segment hasn't seen it
             TrackingToken result = replayToken.advancedTo(GapAwareTrackingToken.newInstance(50, emptySet()));
 
-            assertInstanceOf(ReplayToken.class, result);
-            assertTrue(ReplayToken.isReplay(result),
-                    "Event at position 50 (between segments) should be replay");
+            assertInstanceOf(ReplayToken.class, result, "Should still be in ReplayToken wrapper");
+            assertFalse(ReplayToken.isReplay(result),
+                    "Event at position 50 is NOT replay - lower segment hasn't seen it");
         }
 
         @Test
@@ -1632,6 +1642,7 @@ class ReplayTokenTest {
         /**
          * Complex scenario: MergedTrackingToken containing another MergedTrackingToken.
          * This can happen with multiple merge operations.
+         * The lowerBound of nested MergedToken is still the innermost lowerSegment (3).
          */
         @Test
         void nestedMergedTrackingToken_basicReplayBehavior() {
@@ -1649,12 +1660,12 @@ class ReplayTokenTest {
 
             ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
 
-            // Event at position 7 - between inner merged and outer upper segment
+            // Event at position 7 - past innermost lower segment (3), NOT a replay
             TrackingToken result = replayToken.advancedTo(GapAwareTrackingToken.newInstance(7, emptySet()));
 
-            assertInstanceOf(ReplayToken.class, result);
-            assertTrue(ReplayToken.isReplay(result),
-                    "Event within nested merge range should be replay");
+            assertInstanceOf(ReplayToken.class, result, "Should still be in ReplayToken wrapper");
+            assertFalse(ReplayToken.isReplay(result),
+                    "Event at position 7 is NOT replay - innermost lower segment (3) hasn't seen it");
         }
 
         @Test
