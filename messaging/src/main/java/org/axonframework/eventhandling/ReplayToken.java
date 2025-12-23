@@ -266,8 +266,8 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
         if (replayIsComplete(newToken)) {
             return advanceThroughWrappedTokenAtReset(newToken);
         }
-        // Still within replay period - determine if this event was seen before reset
-        if (eventWasSeenBeforeReset(newToken)) {
+        // Still within replay period - determine if this event was delivered before reset
+        if (wasDeliveredBeforeReset(newToken)) {
             return advanceAsReplayedEvent(newToken);
         }
         return advanceWithUpdatedResetToken(newToken);
@@ -278,45 +278,21 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
     /**
      * Determines if the replay phase is complete and we should exit the ReplayToken wrapper.
      * <p>
-     * Replay is complete when BOTH conditions are met:
-     * <ol>
-     *   <li><b>Caught up:</b> newToken is strictly ahead of tokenAtReset's upper bound</li>
-     *   <li><b>Not covered:</b> tokenAtReset does not cover newToken's position</li>
-     * </ol>
-     * <p>
-     * <b>Why both conditions?</b>
-     * <p>
-     * For simple tokens (e.g., {@link GapAwareTrackingToken}), checking "caught up" alone would suffice.
-     * However, for {@link MergedTrackingToken}, we compare against the <i>upper</i> segment's bound,
-     * but must also verify the <i>full</i> token doesn't still cover the position (which could happen
-     * if segments have different states).
-     * <p>
-     * The {@code covers()} check ensures we don't prematurely exit replay when tokenAtReset
-     * still considers the position as "within its tracking scope."
+     * Replay is complete when newToken is strictly ahead of tokenAtReset's upper bound.
+     * This automatically implies the event was not delivered before reset, because:
+     * <ul>
+     *   <li>Strictly ahead means: newToken.index > resetUpperBound.index</li>
+     *   <li>Since resetLowerBound.index <= resetUpperBound.index (by definition)</li>
+     *   <li>Therefore newToken.index > resetLowerBound.index</li>
+     *   <li>Therefore wasDeliveredBeforeReset would return false</li>
+     * </ul>
      */
     private boolean replayIsComplete(TrackingToken newToken) {
         if (tokenAtReset == null) {
             return true;
         }
         TrackingToken resetUpperBound = WrappedToken.unwrapUpperBound(tokenAtReset);
-        TrackingToken newTokenLowerBound = WrappedToken.unwrapLowerBound(newToken);
-
-        boolean caughtUpToResetPosition = isStrictlyAhead(newToken, resetUpperBound);
-        boolean positionStillTrackedByReset = tokenAtReset.covers(newTokenLowerBound);
-
-        return caughtUpToResetPosition && !positionStillTrackedByReset;
-    }
-
-    /**
-     * Determines if the event at newToken's position was delivered before the reset.
-     * <p>
-     * Uses {@code covers()} to check if tokenAtReset has already processed this position.
-     * When {@code true}, the event is a replay; when {@code false}, the event is new
-     * (e.g., a gap that got filled after reset).
-     */
-    private boolean eventWasSeenBeforeReset(TrackingToken newToken) {
-        TrackingToken newTokenLowerBound = WrappedToken.unwrapLowerBound(newToken);
-        return tokenAtReset.covers(newTokenLowerBound);
+        return isStrictlyAhead(newToken, resetUpperBound);
     }
 
     // ==================== Token Advancement ====================
