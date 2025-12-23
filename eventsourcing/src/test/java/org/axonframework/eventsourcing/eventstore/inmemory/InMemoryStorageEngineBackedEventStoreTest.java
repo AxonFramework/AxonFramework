@@ -16,8 +16,12 @@
 
 package org.axonframework.eventsourcing.eventstore.inmemory;
 
+import org.axonframework.eventsourcing.eventstore.StorageEngineBackedEventStore;
 import org.axonframework.eventsourcing.eventstore.StorageEngineBackedEventStoreTestSuite;
-import org.axonframework.messaging.core.unitofwork.ProcessingLifecycle;
+import org.axonframework.messaging.core.EmptyApplicationContext;
+import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.messaging.core.unitofwork.UnitOfWork;
+import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.junit.jupiter.api.BeforeAll;
 
@@ -27,6 +31,8 @@ import org.junit.jupiter.api.BeforeAll;
  * @author John Hendrikx
  */
 class InMemoryStorageEngineBackedEventStoreTest extends StorageEngineBackedEventStoreTestSuite<InMemoryEventStorageEngine> {
+
+    private static final UnitOfWorkFactory FACTORY = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
 
     private static InMemoryEventStorageEngine engine;
 
@@ -41,7 +47,7 @@ class InMemoryStorageEngineBackedEventStoreTest extends StorageEngineBackedEvent
     }
 
     @Override
-    protected void enhanceProcessingLifecycle(ProcessingLifecycle lifecycle) {
-        // no enhancement needed
+    protected UnitOfWork unitOfWork() {
+        return FACTORY.create();
     }
 }
