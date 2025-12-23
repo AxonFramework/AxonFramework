@@ -343,4 +343,61 @@ class MultiSourceTrackingTokenTest {
 
         assertNotEquals(newMultiToken, testSubject);
     }
+
+    @Test
+    void equalsLatest() {
+        Map<String, TrackingToken> equalsLatestTokens = new HashMap<>();
+        equalsLatestTokens.put("token1", new GlobalSequenceTrackingToken(0));
+        equalsLatestTokens.put("token2", new GlobalSequenceTrackingToken(0));
+
+        assertTrue(testSubject.equalsLatest(new MultiSourceTrackingToken(equalsLatestTokens)));
+    }
+
+    @Test
+    void equalsLatestReturnsFalseWhenConstituentsAreDifferent() {
+        Map<String, TrackingToken> differentTokens = new HashMap<>();
+        differentTokens.put("token1", new GlobalSequenceTrackingToken(1));
+        differentTokens.put("token2", new GlobalSequenceTrackingToken(0));
+
+        assertFalse(testSubject.equalsLatest(new MultiSourceTrackingToken(differentTokens)));
+    }
+
+    @Test
+    void equalsLatestWithNullConstituents() {
+        Map<String, TrackingToken> tokensWithNull = new HashMap<>();
+        tokensWithNull.put("token1", new GlobalSequenceTrackingToken(0));
+        tokensWithNull.put("token2", null);
+        MultiSourceTrackingToken tokenWithNull = new MultiSourceTrackingToken(tokensWithNull);
+
+        // Comparing two tokens with equalsLatest null constituent
+        assertTrue(tokenWithNull.equalsLatest(tokenWithNull));
+
+        // Comparing token with null constituent to token without
+        assertFalse(tokenWithNull.equalsLatest(testSubject));
+        assertFalse(testSubject.equalsLatest(tokenWithNull));
+    }
+
+    @Test
+    void equalsLatestMismatchTokens() {
+        Map<String, TrackingToken> differentKeys = new HashMap<>();
+        differentKeys.put("token1", new GlobalSequenceTrackingToken(0));
+        differentKeys.put("token3", new GlobalSequenceTrackingToken(0));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> testSubject.equalsLatest(new MultiSourceTrackingToken(differentKeys)));
+    }
+
+    @Test
+    void equalsLatestDifferentNumberOfTokens() {
+        Map<String, TrackingToken> fewerTokens = new HashMap<>();
+        fewerTokens.put("token1", new GlobalSequenceTrackingToken(0));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> testSubject.equalsLatest(new MultiSourceTrackingToken(fewerTokens)));
+    }
+
+    @Test
+    void equalsLatestIncompatibleToken() {
+        assertThrows(IllegalArgumentException.class, () -> testSubject.equalsLatest(new GlobalSequenceTrackingToken(0)));
+    }
 }

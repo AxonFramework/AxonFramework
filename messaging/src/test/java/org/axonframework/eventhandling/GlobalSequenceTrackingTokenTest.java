@@ -59,4 +59,24 @@ class GlobalSequenceTrackingTokenTest {
 
         assertEquals(1L, token.position().getAsLong());
     }
+
+    @Test
+    void equalsLatest() {
+        GlobalSequenceTrackingToken token1 = new GlobalSequenceTrackingToken(1L);
+        GlobalSequenceTrackingToken token2 = new GlobalSequenceTrackingToken(2L);
+        GlobalSequenceTrackingToken token1Copy = new GlobalSequenceTrackingToken(1L);
+
+        // Same index means same position
+        assertTrue(token1.equalsLatest(token1));
+        assertTrue(token1.equalsLatest(token1Copy));
+        assertTrue(token2.equalsLatest(token2));
+
+        // Different index means different position
+        assertFalse(token1.equalsLatest(token2));
+        assertFalse(token2.equalsLatest(token1));
+
+        // Null is never the same
+        assertFalse(token1.equalsLatest(null));
+        assertFalse(token2.equalsLatest(null));
+    }
 }
