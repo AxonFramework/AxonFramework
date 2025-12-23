@@ -152,6 +152,7 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
         if (tokenAtReset instanceof ReplayToken) {
             return createReplayToken(((ReplayToken) tokenAtReset).tokenAtReset, startPosition, resetContext);
         }
+        // If startPosition is strictly ahead of tokenAtReset (covers but not same position), no replay needed
         if (startPosition != null && !startPosition.same(tokenAtReset) && startPosition.covers(WrappedToken.unwrapLowerBound(tokenAtReset))) {
             return startPosition;
         }
@@ -297,6 +298,11 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
         TrackingToken rawAtReset = WrappedToken.unwrapLowerBound(tokenAtReset);
         TrackingToken rawNew = WrappedToken.unwrapLowerBound(newToken);
         TrackingToken lowerBound = rawAtReset.lowerBound(rawNew);
+        /*
+          The lowerBound() method's "walk back through gaps" behavior naturally tells us:
+  - If the event was a gap: lowerBound produces an index before the gap → NOT same as newToken
+  - If the event was already seen: lowerBound produces the same index → same as newToken
+         */
         return !lowerBound.same(rawNew);
     }
 

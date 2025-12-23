@@ -409,4 +409,266 @@ class GapAwareTrackingTokenTest {
     private TreeSet<Long> asTreeSet(Long... elements) {
         return new TreeSet<>(asList(elements));
     }
+
+    /**
+     * Tests demonstrating how lowerBound() can be used to detect whether an event
+     * was a gap at some reference point (tokenAtReset).
+     * <p>
+     * Key insight: When computing lowerBound(), if the minimum index falls on a gap,
+     * the algorithm walks backwards to find the first non-gap position. This behavior
+     * naturally distinguishes:
+     * <ul>
+     *   <li>Events that were gaps (lowerBound walks back → different from newToken)</li>
+     *   <li>Events that were already processed (lowerBound stays → same as newToken)</li>
+     * </ul>
+     * <p>
+     * This is used by ReplayToken to determine if an event is truly "new" (gap-fill)
+     * vs a "replay" (already seen before reset).
+     */
+    @Nested
+    class LowerBoundForGapDetection {
+
+        /**
+         * Scenario: Event at position 7, which WAS a gap at reset time.
+         * <pre>
+         * tokenAtReset: index=10, gaps=[7, 8]
+         *   Timeline: [0-6 seen] [7 GAP] [8 GAP] [9-10 seen]
+         *
+         * newToken: index=7, gaps=[]
+         *   Represents: just received event 7
+         *
+         * lowerBound calculation:
+         *   - mergedGaps = [7, 8]
+         *   - mergedIndex = min(10, 7) = 7
+         *   - 7 IS in gaps → walk back to 6
+         *   - Result: index=6
+         *
+         * lowerBound.same(newToken)? → 6 == 7? NO
+         * Therefore: Event 7 is a NEW event (was a gap)
+         * </pre>
+         */
+        @Test
+        void lowerBoundDetectsGapFilledEvent() {
+            GapAwareTrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10L, asList(7L, 8L));
+            GapAwareTrackingToken newToken = GapAwareTrackingToken.newInstance(7L, emptyList());
+
+            GapAwareTrackingToken lowerBound = tokenAtReset.lowerBound(newToken);
+
+            // lowerBound walked back past gap 7 to index 6
+            assertEquals(6L, lowerBound.getIndex());
+            assertTrue(lowerBound.getGaps().isEmpty());
+
+            // lowerBound is NOT same as newToken → this was a gap (new event)
+            assertFalse(lowerBound.same(newToken));
+        }
+
+        /**
+         * Scenario: Event at position 5, which was already processed before reset.
+         * <pre>
+         * tokenAtReset: index=10, gaps=[7, 8]
+         *   Timeline: [0-6 seen] [7 GAP] [8 GAP] [9-10 seen]
+         *
+         * newToken: index=5, gaps=[]
+         *   Represents: replaying event 5
+         *
+         * lowerBound calculation:
+         *   - mergedGaps = [7, 8]
+         *   - mergedIndex = min(10, 5) = 5
+         *   - 5 is NOT in gaps → stays 5
+         *   - Result: index=5
+         *
+         * lowerBound.same(newToken)? → 5 == 5? YES
+         * Therefore: Event 5 is a REPLAY (was already seen)
+         * </pre>
+         */
+        @Test
+        void lowerBoundDetectsAlreadyProcessedEvent() {
+            GapAwareTrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10L, asList(7L, 8L));
+            GapAwareTrackingToken newToken = GapAwareTrackingToken.newInstance(5L, emptyList());
+
+            GapAwareTrackingToken lowerBound = tokenAtReset.lowerBound(newToken);
+
+            // lowerBound stays at index 5 (not a gap)
+            assertEquals(5L, lowerBound.getIndex());
+
+            // lowerBound IS same as newToken → this was already processed (replay)
+            assertTrue(lowerBound.same(newToken));
+        }
+
+        /**
+         * Scenario: Event at position 8, another gap that gets filled.
+         * <pre>
+         * tokenAtReset: index=10, gaps=[7, 8]
+         *   Timeline: [0-6 seen] [7 GAP] [8 GAP] [9-10 seen]
+         *
+         * newToken: index=8, gaps=[]
+         *   Represents: just received event 8
+         *
+         * lowerBound calculation:
+         *   - mergedGaps = [7, 8]
+         *   - mergedIndex = min(10, 8) = 8
+         *   - 8 IS in gaps → walk back: 7 also in gaps → walk to 6
+         *   - Result: index=6
+         *
+         * lowerBound.same(newToken)? → 6 == 8? NO
+         * Therefore: Event 8 is a NEW event (was a gap)
+         * </pre>
+         */
+        @Test
+        void lowerBoundDetectsConsecutiveGapFill() {
+            GapAwareTrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10L, asList(7L, 8L));
+            GapAwareTrackingToken newToken = GapAwareTrackingToken.newInstance(8L, emptyList());
+
+            GapAwareTrackingToken lowerBound = tokenAtReset.lowerBound(newToken);
+
+            // lowerBound walked back past gaps 8 and 7 to index 6
+            assertEquals(6L, lowerBound.getIndex());
+
+            // lowerBound is NOT same as newToken → this was a gap (new event)
+            assertFalse(lowerBound.same(newToken));
+        }
+
+        /**
+         * Scenario: Event at position 6 (boundary case - just before the gap).
+         * <pre>
+         * tokenAtReset: index=10, gaps=[7, 8]
+         *   Timeline: [0-6 seen] [7 GAP] [8 GAP] [9-10 seen]
+         *
+         * newToken: index=6, gaps=[]
+         *   Represents: replaying event 6
+         *
+         * lowerBound calculation:
+         *   - mergedGaps = [7, 8]
+         *   - mergedIndex = min(10, 6) = 6
+         *   - 6 is NOT in gaps → stays 6
+         *   - Result: index=6
+         *
+         * lowerBound.same(newToken)? → 6 == 6? YES
+         * Therefore: Event 6 is a REPLAY (was already seen)
+         * </pre>
+         */
+        @Test
+        void lowerBoundDetectsBoundaryBeforeGap() {
+            GapAwareTrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10L, asList(7L, 8L));
+            GapAwareTrackingToken newToken = GapAwareTrackingToken.newInstance(6L, emptyList());
+
+            GapAwareTrackingToken lowerBound = tokenAtReset.lowerBound(newToken);
+
+            // lowerBound stays at index 6
+            assertEquals(6L, lowerBound.getIndex());
+
+            // lowerBound IS same as newToken → this was already processed (replay)
+            assertTrue(lowerBound.same(newToken));
+        }
+
+        /**
+         * Scenario: Event at position 9 (boundary case - just after the gaps).
+         * <pre>
+         * tokenAtReset: index=10, gaps=[7, 8]
+         *   Timeline: [0-6 seen] [7 GAP] [8 GAP] [9-10 seen]
+         *
+         * newToken: index=9, gaps=[]
+         *   Represents: replaying event 9
+         *
+         * lowerBound calculation:
+         *   - mergedGaps = [7, 8]
+         *   - mergedIndex = min(10, 9) = 9
+         *   - 9 is NOT in gaps → stays 9
+         *   - Result: index=9, gaps=[7, 8] (gaps below 9 kept)
+         *
+         * lowerBound.same(newToken)? → 9 == 9? YES
+         * Therefore: Event 9 is a REPLAY (was already seen)
+         * </pre>
+         */
+        @Test
+        void lowerBoundDetectsBoundaryAfterGap() {
+            GapAwareTrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10L, asList(7L, 8L));
+            GapAwareTrackingToken newToken = GapAwareTrackingToken.newInstance(9L, emptyList());
+
+            GapAwareTrackingToken lowerBound = tokenAtReset.lowerBound(newToken);
+
+            // lowerBound stays at index 9
+            assertEquals(9L, lowerBound.getIndex());
+            // Note: gaps 7, 8 are retained since they're below the merged index
+            assertEquals(asList(7L, 8L), new ArrayList<>(lowerBound.getGaps()));
+
+            // lowerBound IS same as newToken → this was already processed (replay)
+            assertTrue(lowerBound.same(newToken));
+        }
+
+        /**
+         * Scenario: Gap at the very beginning (position 0).
+         * <pre>
+         * tokenAtReset: index=5, gaps=[0, 1]
+         *   Timeline: [0 GAP] [1 GAP] [2-5 seen]
+         *
+         * newToken: index=0, gaps=[]
+         *   Represents: just received event 0
+         *
+         * lowerBound calculation:
+         *   - mergedGaps = [0, 1]
+         *   - mergedIndex = min(5, 0) = 0
+         *   - 0 IS in gaps → walk back to -1
+         *   - Result: index=-1
+         *
+         * lowerBound.same(newToken)? → -1 == 0? NO
+         * Therefore: Event 0 is a NEW event (was a gap)
+         * </pre>
+         */
+        @Test
+        void lowerBoundDetectsGapAtStart() {
+            GapAwareTrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(5L, asList(0L, 1L));
+            GapAwareTrackingToken newToken = GapAwareTrackingToken.newInstance(0L, emptyList());
+
+            GapAwareTrackingToken lowerBound = tokenAtReset.lowerBound(newToken);
+
+            // lowerBound walked back past gap 0 to index -1
+            assertEquals(-1L, lowerBound.getIndex());
+
+            // lowerBound is NOT same as newToken → this was a gap (new event)
+            assertFalse(lowerBound.same(newToken));
+        }
+
+        /**
+         * Scenario: Multiple scattered gaps.
+         * <pre>
+         * tokenAtReset: index=15, gaps=[3, 7, 8, 12]
+         *   Timeline: [0-2 seen] [3 GAP] [4-6 seen] [7 GAP] [8 GAP] [9-11 seen] [12 GAP] [13-15 seen]
+         *
+         * Various events tested:
+         *   - Event 3: gap → NEW
+         *   - Event 5: seen → REPLAY
+         *   - Event 12: gap → NEW
+         *   - Event 13: seen → REPLAY
+         * </pre>
+         */
+        @Test
+        void lowerBoundWithMultipleScatteredGaps() {
+            GapAwareTrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(15L, asList(3L, 7L, 8L, 12L));
+
+            // Event 3 was a gap → NEW
+            GapAwareTrackingToken event3 = GapAwareTrackingToken.newInstance(3L, emptyList());
+            GapAwareTrackingToken lowerBound3 = tokenAtReset.lowerBound(event3);
+            assertEquals(2L, lowerBound3.getIndex()); // walked back past gap 3
+            assertFalse(lowerBound3.same(event3));
+
+            // Event 5 was seen → REPLAY
+            GapAwareTrackingToken event5 = GapAwareTrackingToken.newInstance(5L, emptyList());
+            GapAwareTrackingToken lowerBound5 = tokenAtReset.lowerBound(event5);
+            assertEquals(5L, lowerBound5.getIndex()); // stays at 5
+            assertTrue(lowerBound5.same(event5));
+
+            // Event 12 was a gap → NEW
+            GapAwareTrackingToken event12 = GapAwareTrackingToken.newInstance(12L, emptyList());
+            GapAwareTrackingToken lowerBound12 = tokenAtReset.lowerBound(event12);
+            assertEquals(11L, lowerBound12.getIndex()); // walked back past gap 12
+            assertFalse(lowerBound12.same(event12));
+
+            // Event 13 was seen → REPLAY
+            GapAwareTrackingToken event13 = GapAwareTrackingToken.newInstance(13L, emptyList());
+            GapAwareTrackingToken lowerBound13 = tokenAtReset.lowerBound(event13);
+            assertEquals(13L, lowerBound13.getIndex()); // stays at 13
+            assertTrue(lowerBound13.same(event13));
+        }
+    }
 }

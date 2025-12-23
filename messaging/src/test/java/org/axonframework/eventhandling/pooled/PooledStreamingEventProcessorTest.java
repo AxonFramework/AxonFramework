@@ -845,11 +845,11 @@ class PooledStreamingEventProcessorTest {
     @Test
     void resetTokens() {
         int expectedSegmentCount = 2;
-        TrackingToken expectedToken = new GlobalSequenceTrackingToken(42);
+        TrackingToken initialToken = new GlobalSequenceTrackingToken(42);
 
         when(stubEventHandler.supportsReset()).thenReturn(true);
         setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(expectedSegmentCount)
-                                                           .initialToken(source -> expectedToken)));
+                                                           .initialToken(source -> initialToken)));
 
         // Start and stop the processor to initialize the tracking tokens
         testSubject.start();
@@ -863,7 +863,8 @@ class PooledStreamingEventProcessorTest {
         verify(stubEventHandler).performReset(null);
 
         int[] segments = tokenStore.fetchSegments(PROCESSOR_NAME);
-        // The token stays the same, as the original and token after reset are identical.
+        // A ReplayToken is created even when resetting to the same position (entering replay mode)
+        TrackingToken expectedToken = ReplayToken.createReplayToken(initialToken, initialToken);
         assertEquals(expectedToken, tokenStore.fetchToken(PROCESSOR_NAME, segments[0]));
         assertEquals(expectedToken, tokenStore.fetchToken(PROCESSOR_NAME, segments[1]));
     }
@@ -871,12 +872,12 @@ class PooledStreamingEventProcessorTest {
     @Test
     void resetTokensWithContext() {
         int expectedSegmentCount = 2;
-        TrackingToken expectedToken = new GlobalSequenceTrackingToken(42);
+        TrackingToken initialToken = new GlobalSequenceTrackingToken(42);
         String expectedContext = "my-context";
 
         when(stubEventHandler.supportsReset()).thenReturn(true);
         setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(expectedSegmentCount)
-                                                           .initialToken(source -> expectedToken)));
+                                                           .initialToken(source -> initialToken)));
 
         // Start and stop the processor to initialize the tracking tokens
         testSubject.start();
@@ -890,7 +891,8 @@ class PooledStreamingEventProcessorTest {
         verify(stubEventHandler).performReset(expectedContext);
 
         int[] segments = tokenStore.fetchSegments(PROCESSOR_NAME);
-        // The token stays the same, as the original and token after reset are identical.
+        // A ReplayToken is created even when resetting to the same position (entering replay mode)
+        TrackingToken expectedToken = ReplayToken.createReplayToken(initialToken, initialToken, expectedContext);
         assertEquals(expectedToken, tokenStore.fetchToken(PROCESSOR_NAME, segments[0]));
         assertEquals(expectedToken, tokenStore.fetchToken(PROCESSOR_NAME, segments[1]));
         await().atMost(Duration.ofSeconds(2L)).untilAsserted(
