@@ -67,13 +67,13 @@
         <jakarta.persistence.version>3.2.0</jakarta.persistence.version>
         <jakarta.validation.version>3.1.1</jakarta.validation.version>
         <!-- Logging -->
-        <log4j.version>2.25.2</log4j.version>
+        <log4j.version>2.25.3</log4j.version>
         <slf4j.version>2.0.17</slf4j.version>
         <!-- Metrics -->
         <dropwizard.metrics.version>4.2.37</dropwizard.metrics.version>
         <micrometer.version>1.16.1</micrometer.version>
         <!-- Other -->
-        <byte-buddy.version>1.18.2</byte-buddy.version>
+        <byte-buddy.version>1.18.3</byte-buddy.version>
         <commons-io.version>2.21.0</commons-io.version>
         <disruptor.version>4.0.0</disruptor.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
@@ -94,14 +94,14 @@
         <quartz.version>2.5.2</quartz.version>
         <!-- Spring -->
         <spring.version>6.2.15</spring.version>
-        <spring.boot.version>3.5.8</spring.boot.version>
+        <spring.boot.version>3.5.9</spring.boot.version>
         <spring-security.version>6.5.7</spring-security.version>
         <!-- Testing -->
         <awaitility.version>4.3.0</awaitility.version>
         <hamcrest.version>3.0</hamcrest.version>
         <junit.jupiter.version>6.0.1</junit.jupiter.version>
         <mockito.version>5.21.0</mockito.version>
-        <testcontainers.version>2.0.2</testcontainers.version>
+        <testcontainers.version>2.0.3</testcontainers.version>
         <assertj.version>3.27.6</assertj.version>
         <archunit.version>1.4.1</archunit.version>
         <!-- Validation -->

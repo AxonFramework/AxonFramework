@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.integrationtests.testsuite.course.module;
+package org.axonframework.integrationtests.testsuite.course.events;
 
 import org.axonframework.eventsourcing.annotation.EventTag;
 
