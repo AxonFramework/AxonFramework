@@ -250,15 +250,27 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
         return currentToken;
     }
 
+    /**
+     * Advances this ReplayToken to the given newToken position.
+     * <p>
+     * There are three possible outcomes:
+     * <ol>
+     *   <li><b>Replay complete:</b> newToken is beyond tokenAtReset → exit ReplayToken wrapper</li>
+     *   <li><b>Replayed event:</b> newToken is at a position that was delivered before reset → mark as replay</li>
+     *   <li><b>New event:</b> newToken is at a position that was NOT delivered before reset
+     *       (e.g., gap that got filled) → mark as new event</li>
+     * </ol>
+     */
     @Override
     public TrackingToken advancedTo(TrackingToken newToken) {
         if (replayIsComplete(newToken)) {
-            return advanceTokenAtReset(newToken);
+            return advanceThroughWrappedTokenAtReset(newToken);
         }
-        if (stillReplaying(newToken)) {
-            return continueReplay(newToken);
+        // Still within replay period - determine if this event was seen before reset
+        if (eventWasSeenBeforeReset(newToken)) {
+            return advanceAsReplayedEvent(newToken);
         }
-        return handleNewEventDuringReplay(newToken);
+        return advanceWithUpdatedResetToken(newToken);
     }
 
     // ==================== Replay State Checks ====================
@@ -296,33 +308,61 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
     }
 
     /**
-     * Determines if we are still in the replay phase (behind the reset position).
+     * Determines if the event at newToken's position was delivered before the reset.
      * <p>
-     * Returns {@code true} if tokenAtReset covers the newToken's position, meaning
-     * this event was already processed before reset and is now being replayed.
+     * Uses {@code covers()} to check if tokenAtReset has already processed this position.
+     * When {@code true}, the event is a replay; when {@code false}, the event is new
+     * (e.g., a gap that got filled after reset).
      */
-    private boolean stillReplaying(TrackingToken newToken) {
+    private boolean eventWasSeenBeforeReset(TrackingToken newToken) {
         TrackingToken newTokenLowerBound = WrappedToken.unwrapLowerBound(newToken);
         return tokenAtReset.covers(newTokenLowerBound);
     }
 
     // ==================== Token Advancement ====================
 
-    private TrackingToken advanceTokenAtReset(TrackingToken newToken) {
+    /**
+     * Propagates the advance through any wrapper layers inside tokenAtReset.
+     * <p>
+     * When tokenAtReset is itself a {@link WrappedToken} (e.g., nested ReplayToken),
+     * we must advance through its layers to maintain proper token chain.
+     * Otherwise, newToken becomes the result directly.
+     *
+     * @param newToken the token to advance to
+     * @return the token after propagating through wrapper chain, or newToken if no wrapper
+     */
+    private TrackingToken advanceThroughWrappedTokenAtReset(TrackingToken newToken) {
         if (tokenAtReset instanceof WrappedToken) {
             return ((WrappedToken) tokenAtReset).advancedTo(newToken);
         }
         return newToken;
     }
 
-    private ReplayToken continueReplay(TrackingToken newToken) {
+    private ReplayToken advanceAsReplayedEvent(TrackingToken newToken) {
         return new ReplayToken(tokenAtReset, newToken, context, true);
     }
 
-    private ReplayToken handleNewEventDuringReplay(TrackingToken newToken) {
+    /**
+     * Handles events that are not directly covered by tokenAtReset.
+     * <p>
+     * This case occurs when {@code eventWasSeenBeforeReset} returns {@code false},
+     * meaning tokenAtReset's {@code covers()} check failed. We need to:
+     * <ol>
+     *   <li>Update tokenAtReset with {@code upperBound()} to include this position</li>
+     *   <li>Determine if the event was actually delivered before reset using the
+     *       more precise {@code lowerBound().same()} check via {@link #wasDeliveredBeforeReset}</li>
+     * </ol>
+     * <p>
+     * The event may be either:
+     * <ul>
+     *   <li><b>New event:</b> position was a gap at reset time → {@code lastMessageWasReplay = false}</li>
+     *   <li><b>Replayed event:</b> position was delivered but wrapped token handling differs → {@code lastMessageWasReplay = true}</li>
+     * </ul>
+     */
+    private ReplayToken advanceWithUpdatedResetToken(TrackingToken newToken) {
         boolean isReplay = wasDeliveredBeforeReset(newToken);
         TrackingToken updatedTokenAtReset = tokenAtReset.upperBound(newToken);
-        TrackingToken advancedCurrentToken = advanceTokenAtReset(newToken);
+        TrackingToken advancedCurrentToken = advanceThroughWrappedTokenAtReset(newToken);
 
         return new ReplayToken(updatedTokenAtReset, advancedCurrentToken, context, isReplay);
     }
