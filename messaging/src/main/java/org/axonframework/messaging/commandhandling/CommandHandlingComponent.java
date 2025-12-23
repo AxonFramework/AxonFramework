@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.commandhandling;
 
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.core.QualifiedName;
 
 import java.util.Set;
@@ -29,7 +30,7 @@ import java.util.Set;
  * @author Steven van Beelen
  * @since 3.0.0
  */
-public interface CommandHandlingComponent extends CommandHandler {
+public interface CommandHandlingComponent extends CommandHandler, DescribableComponent {
 
     /**
      * All supported {@link CommandMessage commands}, referenced through a {@link QualifiedName}.
