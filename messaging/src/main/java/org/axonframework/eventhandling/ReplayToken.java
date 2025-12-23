@@ -251,7 +251,7 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
 
     @Override
     public TrackingToken advancedTo(TrackingToken newToken) {
-        if (replayIsComplete(newToken)) {
+        if ( tokenAtReset == null || isStrictlyAfter(newToken, tokenAtReset)) {
             // we're done replaying
             // if the token at reset was a wrapped token itself, we'll need to use that one to maintain progress.
             if (tokenAtReset instanceof WrappedToken) {
@@ -278,30 +278,10 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
         return new ReplayToken(tokenAtReset.upperBound(newToken), newToken, context, false);
     }
 
-    /**
-     * Determines if the replay phase is complete and we should exit the ReplayToken wrapper.
-     * <p>
-     * Replay is complete when BOTH conditions are met:
-     * <ol>
-     *   <li><b>Caught up:</b> newToken is strictly ahead of tokenAtReset's upper bound</li>
-     *   <li><b>Not covered:</b> tokenAtReset does not cover newToken's position</li>
-     * </ol>
-     * <p>
-     * <b>Why both conditions?</b>
-     * <p>
-     * For simple tokens (e.g., {@link GapAwareTrackingToken}), checking "caught up" alone would suffice.
-     * However, for {@link MergedTrackingToken}, we compare against the <i>upper</i> segment's bound,
-     * but must also verify the <i>full</i> token doesn't still cover the position (which could happen
-     * if segments have different states).
-     * <p>
-     * The {@code covers()} check ensures we don't prematurely exit replay when tokenAtReset
-     * still considers the position as "within its tracking scope."
-     */
-    private boolean replayIsComplete(TrackingToken newToken) {
-        if (tokenAtReset == null) {
-            return true;
-        }
-        return isStrictlyAfter(newToken, tokenAtReset);
+    private static boolean isStrictlyAfter(@Nonnull TrackingToken newToken, @Nonnull TrackingToken tokenAtReset) {
+        return !newToken.equalsLatest(WrappedToken.unwrapUpperBound(tokenAtReset))
+                && newToken.covers(WrappedToken.unwrapUpperBound(tokenAtReset))
+                && !tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken));
     }
 
     /**
@@ -346,12 +326,6 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
         TrackingToken newTokenLowerBound = WrappedToken.unwrapLowerBound(newToken);
         TrackingToken combinedLowerBound = resetLowerBound.lowerBound(newTokenLowerBound);
         return combinedLowerBound.equalsLatest(newTokenLowerBound);
-    }
-
-    public static boolean isStrictlyAfter(@Nonnull TrackingToken newToken, @Nonnull TrackingToken tokenAtReset) {
-        return !newToken.equalsLatest(WrappedToken.unwrapUpperBound(tokenAtReset))
-                && newToken.covers(WrappedToken.unwrapUpperBound(tokenAtReset))
-                && !tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken));
     }
 
     @Override
