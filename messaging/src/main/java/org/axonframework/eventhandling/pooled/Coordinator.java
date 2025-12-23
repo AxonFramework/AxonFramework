@@ -818,7 +818,7 @@ class Coordinator {
                 );
                 abortAndScheduleRetry(
                         new IllegalStateException("Event stream is null with [" + workPackages.size()
-                                + "] active work packages and last scheduled token of [" + lastScheduledToken + "])
+                                + "] active work packages and last scheduled token of [" + lastScheduledToken + "]")
                 );
                 return;
             }
