@@ -252,58 +252,110 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
 
     @Override
     public TrackingToken advancedTo(TrackingToken newToken) {
-        TrackingToken unwrappedUpperBound = WrappedToken.unwrapUpperBound(this.tokenAtReset);
-        TrackingToken unwrappedLowerBound = WrappedToken.unwrapLowerBound(newToken);
-
-        if (this.tokenAtReset == null
-                || (isStrictlyAhead(newToken, unwrappedUpperBound)
-                && !tokenAtReset.covers(unwrappedLowerBound))) {
-            // Done replaying - newToken is strictly beyond tokenAtReset
-            if (tokenAtReset instanceof WrappedToken) {
-                return ((WrappedToken) tokenAtReset).advancedTo(newToken);
-            }
-            return newToken;
-        } else if (tokenAtReset.covers(unwrappedLowerBound)) {
-            // Still behind tokenAtReset
-            return new ReplayToken(tokenAtReset, newToken, context, true);
-        } else {
-            // Gap filled or merge scenario - determine if this is a new event
-            boolean isNewEvent = isNewEventForResetPosition(tokenAtReset, newToken);
-
-            if (tokenAtReset instanceof WrappedToken) {
-                return new ReplayToken(tokenAtReset.upperBound(newToken),
-                        ((WrappedToken) tokenAtReset).advancedTo(newToken),
-                        context,
-                        !isNewEvent);
-            }
-            return new ReplayToken(tokenAtReset.upperBound(newToken), newToken, context, !isNewEvent);
+        if (replayIsComplete(newToken)) {
+            return advanceTokenAtReset(newToken);
         }
+        if (stillReplaying(newToken)) {
+            return continueReplay(newToken);
+        }
+        return handleNewEventDuringReplay(newToken);
+    }
+
+    // ==================== Replay State Checks ====================
+
+    private boolean replayIsComplete(TrackingToken newToken) {
+        if (tokenAtReset == null) {
+            return true;
+        }
+        return hasCaughtUpToResetPosition(newToken) && !isFillingGapInResetToken(newToken);
+    }
+
+    private boolean hasCaughtUpToResetPosition(TrackingToken newToken) {
+        TrackingToken resetUpperBound = WrappedToken.unwrapUpperBound(tokenAtReset);
+        return isStrictlyAhead(newToken, resetUpperBound);
+    }
+
+    private boolean isFillingGapInResetToken(TrackingToken newToken) {
+        TrackingToken newTokenLowerBound = WrappedToken.unwrapLowerBound(newToken);
+        return tokenAtReset.covers(newTokenLowerBound);
+    }
+
+    private boolean stillReplaying(TrackingToken newToken) {
+        TrackingToken newTokenLowerBound = WrappedToken.unwrapLowerBound(newToken);
+        return tokenAtReset.covers(newTokenLowerBound);
+    }
+
+    // ==================== Token Advancement ====================
+
+    private TrackingToken advanceTokenAtReset(TrackingToken newToken) {
+        if (tokenAtReset instanceof WrappedToken) {
+            return ((WrappedToken) tokenAtReset).advancedTo(newToken);
+        }
+        return newToken;
+    }
+
+    private ReplayToken continueReplay(TrackingToken newToken) {
+        return new ReplayToken(tokenAtReset, newToken, context, true);
+    }
+
+    private ReplayToken handleNewEventDuringReplay(TrackingToken newToken) {
+        boolean isReplay = wasDeliveredBeforeReset(newToken);
+        TrackingToken updatedTokenAtReset = tokenAtReset.upperBound(newToken);
+        TrackingToken advancedCurrentToken = advanceTokenAtReset(newToken);
+
+        return new ReplayToken(updatedTokenAtReset, advancedCurrentToken, context, isReplay);
     }
 
     /**
-     * Checks if {@code token} is strictly ahead of {@code other}.
-     * "Strictly ahead" means not at the same position AND covers the other token.
+     * Determines if the event represented by newToken was delivered before the reset occurred.
+     * <p>
+     * This method leverages the {@link TrackingToken#lowerBound(TrackingToken)} behavior to detect
+     * whether an event was already processed or was skipped (e.g., not yet committed) at reset time.
+     * <p>
+     * <b>How it works:</b>
+     * <p>
+     * The {@code lowerBound()} method computes the "earliest common position" of two tokens.
+     * For {@link GapAwareTrackingToken}, when the minimum index falls on a gap, the algorithm
+     * walks backwards to find the first non-gap position.
+     * <p>
+     * This "walk back" behavior naturally distinguishes:
+     * <ul>
+     *   <li><b>Events that were delivered:</b> {@code lowerBound} stays at the same index as newToken
+     *       → {@code combinedLowerBound.same(newToken)} returns {@code true}</li>
+     *   <li><b>Events that were skipped:</b> {@code lowerBound} walks back past the gap
+     *       → {@code combinedLowerBound.same(newToken)} returns {@code false}</li>
+     * </ul>
+     * <p>
+     * <b>Example:</b>
+     * <pre>
+     * tokenAtReset: index=10, gaps=[7, 8]  (events 0-6 delivered, 7-8 skipped, 9-10 delivered)
+     *
+     * Case 1: newToken at index 5
+     *   → lowerBound computes index 5 (not a gap, stays)
+     *   → same(newToken)? YES → was delivered before reset
+     *
+     * Case 2: newToken at index 7
+     *   → lowerBound computes index 7, but 7 is a gap → walks back to 6
+     *   → same(newToken)? NO (6 ≠ 7) → was NOT delivered before reset (it's new!)
+     * </pre>
+     *
+     * @param newToken the token representing the current event position
+     * @return {@code true} if the event was delivered before reset (replay), {@code false} if it's a new event
+     * @see GapAwareTrackingToken#lowerBound(TrackingToken)
      */
+    private boolean wasDeliveredBeforeReset(TrackingToken newToken) {
+        TrackingToken resetLowerBound = WrappedToken.unwrapLowerBound(tokenAtReset);
+        TrackingToken newTokenLowerBound = WrappedToken.unwrapLowerBound(newToken);
+        TrackingToken combinedLowerBound = resetLowerBound.lowerBound(newTokenLowerBound);
+        return combinedLowerBound.same(newTokenLowerBound);
+    }
+
+    // ==================== Helper Methods ====================
+
     private static boolean isStrictlyAhead(@Nullable TrackingToken token, @Nullable TrackingToken other) {
         return token != null && other != null
                 && !other.same(token)
                 && token.covers(other);
-    }
-
-    /**
-     * Determines if newToken represents a new event not previously processed before reset.
-     * An event is new if its index is beyond the reset position or was a gap in tokenAtReset.
-     */
-    private static boolean isNewEventForResetPosition(TrackingToken tokenAtReset, TrackingToken newToken) {
-        TrackingToken rawAtReset = WrappedToken.unwrapLowerBound(tokenAtReset);
-        TrackingToken rawNew = WrappedToken.unwrapLowerBound(newToken);
-        TrackingToken lowerBound = rawAtReset.lowerBound(rawNew);
-        /*
-          The lowerBound() method's "walk back through gaps" behavior naturally tells us:
-  - If the event was a gap: lowerBound produces an index before the gap → NOT same as newToken
-  - If the event was already seen: lowerBound produces the same index → same as newToken
-         */
-        return !lowerBound.same(rawNew);
     }
 
     @Override
