@@ -59,7 +59,7 @@ public interface TransactionManager extends ProcessingLifecycleHandlerRegistrar 
         }
     }
 
-    default void attachToProcessingLifecycle(ProcessingLifecycle processingLifecycle) {
+    default void attachToProcessingLifecycle(@Nonnull ProcessingLifecycle processingLifecycle) {
         processingLifecycle.runOnPreInvocation(pc -> {
             Transaction transaction = startTransaction();
             pc.runOnCommit(p -> transaction.commit());
@@ -69,11 +69,7 @@ public interface TransactionManager extends ProcessingLifecycleHandlerRegistrar 
 
     @Override
     default void registerHandlers(@Nonnull ProcessingLifecycle processingLifecycle) {
-        processingLifecycle.runOnPreInvocation(pc -> {
-            Transaction transaction = startTransaction();
-            pc.runOnCommit(p -> transaction.commit());
-            pc.onError((p, phase, e) -> transaction.rollback());
-        });
+        attachToProcessingLifecycle(processingLifecycle);
     }
 
     /**

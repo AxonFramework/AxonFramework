@@ -21,7 +21,10 @@ import io.axoniq.axonserver.connector.AxonServerConnectionFactory;
 import io.axoniq.axonserver.connector.impl.ServerAddress;
 import org.axonframework.common.infra.MockComponentDescriptor;
 import org.axonframework.eventsourcing.eventstore.StorageEngineBackedEventStoreTestSuite;
-import org.axonframework.messaging.core.unitofwork.ProcessingLifecycle;
+import org.axonframework.messaging.core.EmptyApplicationContext;
+import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.messaging.core.unitofwork.UnitOfWork;
+import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.test.server.AxonServerContainer;
 import org.junit.jupiter.api.AfterAll;
@@ -43,6 +46,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Testcontainers
 class AxonServerStorageEngineBackedEventStoreIT extends StorageEngineBackedEventStoreTestSuite<AxonServerEventStorageEngine> {
 
+    private static final UnitOfWorkFactory FACTORY = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
     private static final String CONTEXT = "default";
 
     @SuppressWarnings("resource")
@@ -81,8 +85,8 @@ class AxonServerStorageEngineBackedEventStoreIT extends StorageEngineBackedEvent
     }
 
     @Override
-    protected void enhanceProcessingLifecycle(ProcessingLifecycle lifecycle) {
-        // No enhancement needed for Axon Server, it does its own transaction management
+    protected UnitOfWork unitOfWork() {
+        return FACTORY.create();
     }
 
     @Test
