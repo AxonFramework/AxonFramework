@@ -20,8 +20,8 @@ Although this approach deserves a spot within the framework, most scenarios requ
 When, for example, an application requires event processing parallelization to get a higher performance, this can be a blocker.
 This predicament is why the `SubscribingEventProcessor` is not the default in Axon Framework.
 
-Instead, the "Tracking Event Processor" (a xref:event-processors/streaming.adoc[Streaming Processor] implementation) takes up that role.
-It provides greater flexibility for developers for configuring the event processor in greater detail.
+Instead, the "Pooled Streaming Event Processor" (a xref:event-processors/streaming.adoc[Streaming Processor] implementation) takes up that role.
+It provides greater flexibility for developers for configuring the event processor in greater detail, including parallel processing and event replay capabilities.
 
 ____
 
@@ -40,7 +40,7 @@ ____
 Other than configuring that an app uses a Subscribing Event Processor, everything is covered xref:event-processors/index.adoc#general_processor_configuration[here].
 Firstly, to specify that a new Event Processors should default to a `SubscribingEventProcessor`, you can use the `usingSubscribingEventProcessors` method:
 
-==== Axon Configuration API
+=== Axon Configuration API
 
 [source,java]
 ----
@@ -52,7 +52,7 @@ public class AxonConfig {
 }
 ----
 
-==== Spring Boot auto configuration
+=== Spring Boot auto configuration
 
 [source,java]
 ----
@@ -60,8 +60,8 @@ public class AxonConfig {
 public class AxonConfig {
     // omitting other configuration methods...
     @Bean
-    public ConfigurerModule processorDefaultConfigurerModule() {
-        return configurer -> configurer.eventProcessing(EventProcessingConfigurer::usingSubscribingEventProcessors);
+    public ConfigurationEnhancer processorDefaultConfigurerModule() {
+        return registry -> MessagingConfigurer.with(registry).eventProcessing(EventProcessingConfigurer::usingSubscribingEventProcessors);
     }
 }
 ----
@@ -93,8 +93,8 @@ public class AxonConfig {
 public class AxonConfig {
     // omitting other configuration methods...
     @Bean
-    public ConfigurerModule subscribingProcessorsConfigurerModule() {
-        return configurer -> configurer.eventProcessing(
+    public ConfigurationEnhancer subscribingProcessorsConfigurerModule() {
+        return registry -> MessagingConfigurer.with(registry).eventProcessing(
                 // To configure a processor to be subscribing ...
                 processingConfigurer -> processingConfigurer.registerSubscribingEventProcessor("my-processor")
                                                             // ... to define a specific SubscribableMessageSource ... 
@@ -218,7 +218,7 @@ public class AxonConfig {
                 segmentCount,
                 PersistentStreamSequencingPolicyProvider.SEQUENTIAL_PER_AGGREGATE_POLICY,
                 sequencingPolicyParameters,
-                PersistentStreamProperties.HEAD_POSITION,
+                TrackingToken.LATEST,
                 filter
         );
 
@@ -244,7 +244,7 @@ public class AxonConfig {
 public class AxonConfig {
     // omitting other configuration methods...
     @Bean
-    public ConfigurerModule subscribingProcessorsConfigurerModule() {
+    public ConfigurationEnhancer subscribingProcessorsConfigurerModule() {
         String streamName = "my-persistent-stream-name";
         int segmentCount = 4;
         // Not required for sequential per aggregate policy.
@@ -259,11 +259,11 @@ public class AxonConfig {
                 segmentCount,
                 PersistentStreamSequencingPolicyProvider.SEQUENTIAL_PER_AGGREGATE_POLICY,
                 sequencingPolicyParameters,
-                PersistentStreamProperties.HEAD_POSITION,
+                TrackingToken.LATEST,
                 filter
         );
 
-        return configurer -> configurer.eventProcessing(
+        return registry -> MessagingConfigurer.with(registry).eventProcessing(
                 // To configure a processor to be subscribing ...
                 processingConfigurer -> processingConfigurer.registerSubscribingEventProcessor(
                         "my-processor",
@@ -298,19 +298,19 @@ axon.axonserver.persistent-streams.my-persistent-stream.batch-size=100
 axon.axonserver.persistent-streams.my-persistent-stream.initial-segment-count=4
 ----
 
-To simplify configuration, if you want to apply persistent streams to all processing groups all you have to do is set property:
+To simplify configuration, if you want to apply persistent streams to all processors all you have to do is set property:
 
 [source,text]
 ----
 axon.axonserver.auto-persistent-streams-enable=true
 ----
 
-This will configure persistent streams automatically for all processing groups with default settings.
+This will configure persistent streams automatically for all processors with default settings.
 Each persistent stream will be named according to the following pattern:
 
 [source,text]
 ----
-processingGroupName + "-stream"
+processorName + "-stream"
 ----
 
 You can also override default persistent stream settings
