@@ -152,7 +152,7 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
         if (tokenAtReset instanceof ReplayToken) {
             return createReplayToken(((ReplayToken) tokenAtReset).tokenAtReset, startPosition, resetContext);
         }
-        if (startPosition != null && startPosition.covers(WrappedToken.unwrapLowerBound(tokenAtReset))) {
+        if (startPosition != null && !startPosition.equalsLatest(tokenAtReset) && startPosition.covers(WrappedToken.unwrapLowerBound(tokenAtReset))) {
             return startPosition;
         }
         return new ReplayToken(tokenAtReset, startPosition, resetContext);
