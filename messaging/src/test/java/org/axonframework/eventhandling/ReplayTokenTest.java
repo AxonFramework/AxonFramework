@@ -394,6 +394,58 @@ class ReplayTokenTest {
             assertFalse(ReplayToken.isReplay(result));
         }
 
+        /**
+         * Tests the specific scenario where both internal checks return false:
+         * <ol>
+         *   <li>{@code eventWasSeenBeforeReset()} returns {@code false} - because tokenAtReset.covers() fails for gap positions</li>
+         *   <li>{@code wasDeliveredBeforeReset()} returns {@code false} - because lowerBound walks back past the gap</li>
+         * </ol>
+         * <p>
+         * This verifies that gap-filled events are correctly identified as NEW events (not replays)
+         * even though we're still within the replay period.
+         * <p>
+         * Scenario:
+         * <pre>
+         * tokenAtReset: index=10, gaps=[7, 8]
+         *   → Events 0-6 were delivered before reset
+         *   → Events 7-8 were skipped (gaps)
+         *   → Events 9-10 were delivered before reset
+         *
+         * newToken: index=7, gaps=[]
+         *   → Gap at position 7 is now being filled (late-arriving event)
+         *
+         * Flow in advancedTo():
+         *   1. replayIsComplete(7) → false (still within replay range)
+         *   2. eventWasSeenBeforeReset(7) → false (tokenAtReset doesn't cover position 7 - it's in gaps!)
+         *   3. advanceWithUpdatedResetToken() is called
+         *   4. wasDeliveredBeforeReset(7) → false (lowerBound at 7 walks back to 6, so 6 ≠ 7)
+         *
+         * Result: lastMessageWasReplay = false → this is a NEW event, not a replay!
+         * </pre>
+         */
+        @Test
+        void gapFilledDuringReplay_eventWasSeenBeforeResetFalse_wasDeliveredBeforeResetFalse() {
+            // Setup: tokenAtReset at index 10 with gaps at 7, 8
+            // Before reset, processor saw: 0,1,2,3,4,5,6,9,10 (NOT 7,8)
+            TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(7L, 8L));
+            ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
+
+            // Now gap at position 7 gets filled during replay
+            // This event was NEVER delivered before reset - it's a new event!
+            TrackingToken newToken = GapAwareTrackingToken.newInstance(7, emptySet());
+            TrackingToken result = replayToken.advancedTo(newToken);
+
+            // Should still be in replay MODE (we haven't passed tokenAtReset yet)
+            assertInstanceOf(ReplayToken.class, result,
+                    "Should still be a ReplayToken - we're within the replay period");
+
+            // But this specific event is NOT a replay - it was never delivered before
+            assertFalse(ReplayToken.isReplay(result),
+                    "Gap-filled event at position 7 was NEVER delivered before reset, " +
+                            "so it should NOT be marked as a replay. " +
+                            "This tests: eventWasSeenBeforeReset=false AND wasDeliveredBeforeReset=false");
+        }
+
         // upperBound helps
         @Test
         void replayBeforeResetIndexEvenWhenGapsWereFilledDuringReplay() {
