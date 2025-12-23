@@ -156,6 +156,30 @@ public class MultiSourceTrackingToken implements TrackingToken, Serializable {
         return true;
     }
 
+    @Override
+    public boolean equalsLatest(TrackingToken other) {
+        Assert.isTrue(other instanceof MultiSourceTrackingToken, () -> "Incompatible token type provided.");
+
+        MultiSourceTrackingToken otherMultiToken = (MultiSourceTrackingToken) other;
+
+        Assert.isTrue(otherMultiToken.trackingTokens.keySet().equals(this.trackingTokens.keySet()),
+                      () -> "MultiSourceTrackingTokens contain different keys");
+
+        for (Map.Entry<String, TrackingToken> trackingTokenEntry : trackingTokens.entrySet()) {
+            TrackingToken constituent = trackingTokenEntry.getValue();
+            TrackingToken otherConstituent = otherMultiToken.trackingTokens.get(trackingTokenEntry.getKey());
+            if (constituent == null) {
+                if (otherConstituent != null) {
+                    return false;
+                }
+            } else if (otherConstituent != null && !constituent.equalsLatest(otherConstituent)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     /**
      * Advances a single token within the tokenMap
      *
