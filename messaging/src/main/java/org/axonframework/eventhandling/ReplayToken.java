@@ -324,8 +324,8 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
     private boolean wasProcessedBeforeReset(TrackingToken newToken) {
         TrackingToken resetLowerBound = WrappedToken.unwrapLowerBound(tokenAtReset);
         TrackingToken newTokenLowerBound = WrappedToken.unwrapLowerBound(newToken);
-        TrackingToken combinedLowerBound = resetLowerBound.lowerBound(newTokenLowerBound);
-        return combinedLowerBound.equalsLatest(newTokenLowerBound);
+        TrackingToken resetTokenLowerNewToken = resetLowerBound.lowerBound(newTokenLowerBound);
+        return resetTokenLowerNewToken.equalsLatest(newTokenLowerBound);
     }
 
     @Override
