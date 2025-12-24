@@ -166,6 +166,14 @@ public class MergedTrackingToken implements TrackingToken, Serializable, Wrapped
     }
 
     @Override
+    public boolean equalsLatest(TrackingToken other) {
+        if (lowerSegmentToken == null || upperSegmentToken == null || other == null) {
+            return false;
+        }
+        return lowerSegmentToken.equalsLatest(other) && upperSegmentToken.equalsLatest(other);
+    }
+
+    @Override
     public TrackingToken advancedTo(TrackingToken newToken) {
         TrackingToken newLowerSegmentToken = doAdvance(lowerSegmentToken, newToken);
         TrackingToken newUpperSegmentToken = doAdvance(upperSegmentToken, newToken);

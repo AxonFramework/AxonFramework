@@ -226,6 +226,22 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
+     * For {@link GapAwareTrackingToken}, this method only compares the index positions, ignoring the gap structures.
+     * This is useful when comparing tokens from different points in time, where gap structures may naturally differ.
+     * <p>
+     * The method returns {@code true} if both tokens have the same index value.
+     */
+    @Override
+    public boolean equalsLatest(TrackingToken other) {
+        Assert.isTrue(other instanceof GapAwareTrackingToken, () -> "Incompatible token type provided.");
+        GapAwareTrackingToken otherToken = (GapAwareTrackingToken) other;
+
+        return otherToken.index == this.index;
+    }
+
+    /**
      * Check if this token contains one ore more gaps.
      *
      * @return {@code true} if this token contains gaps, {@code false} otherwise
