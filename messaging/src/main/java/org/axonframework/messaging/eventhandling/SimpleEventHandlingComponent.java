@@ -61,7 +61,7 @@ public class SimpleEventHandlingComponent implements
      * Instantiates a simple {@link EventHandlingComponent} that is able to handle events and delegate them to
      * subcomponents.
      * <p>
-     * Uses a default {@link SequentialPolicy} that will first try for the {@link SequentialPerAggregatePolicy}, falling
+     * Uses a default sequencing policy that will first try for the {@link SequentialPerAggregatePolicy}, falling
      * back to the {@link SequentialPolicy} when the former returns no sequence value.
      *
      * @param name The name of the component, used for {@link DescribableComponent describing} the component.
