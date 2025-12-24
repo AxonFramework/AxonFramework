@@ -46,7 +46,7 @@ import static java.util.Objects.requireNonNull;
  * Adapter that turns classes with {@link org.axonframework.messaging.eventhandling.annotation.EventHandler} annotated
  * methods into a {@link EventHandlingComponent}.
  * <p>
- * Each annotated method is subscribed as an {@link EventHandler} at the {@link EventHandlingComponent} for the event
+ * Each annotated method is subscribed as an {@link EventHandler} at the {@link EventHandlingComponent} with the event
  * name specified by the parameter of that method.
  *
  * @param <T> The type of the annotated event handler.
@@ -62,7 +62,7 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
     private final EventConverter converter;
 
     /**
-     * Wraps the given {@code annotatedEventHandler}, allowing it to be subscribed to a {@link EventSink} as an
+     * Wraps the given {@code annotatedEventHandler}, allowing it to be subscribed to an {@link EventSink} as an
      * {@link EventHandlingComponent}.
      *
      * @param annotatedEventHandler    The object containing the

@@ -19,6 +19,7 @@ package org.axonframework.examples.university.write.enrollstudent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -37,6 +38,7 @@ import java.util.UUID;
 @RequestMapping("/api/students")
 @RequiredArgsConstructor
 @Slf4j
+@Profile("!webmvc")
 public class EnrollStudentInFacultyController {
 
     private final CommandGateway commandGateway;
