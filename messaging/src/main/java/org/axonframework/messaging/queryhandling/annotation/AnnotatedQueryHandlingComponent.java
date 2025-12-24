@@ -45,7 +45,7 @@ import static java.util.Objects.requireNonNull;
  * Adapter that turns classes with {@link org.axonframework.messaging.queryhandling.annotation.QueryHandler} annotated
  * methods into a {@link QueryHandlingComponent}.
  * <p>
- * Each annotated method is subscribed as a {@link QueryHandler} at the {@link QueryHandlingComponent} for the query
+ * Each annotated method is subscribed as a {@link QueryHandler} at the {@link QueryHandlingComponent} with the query
  * name and response type specified by that method.
  *
  * @param <T> The target type of this query handling component.
