@@ -46,7 +46,7 @@ import static java.util.Objects.requireNonNull;
  * Adapter that turns classes with {@link org.axonframework.messaging.commandhandling.annotation.CommandHandler}
  * annotated methods into a {@link CommandHandlingComponent}.
  * <p>
- * Each annotated method is subscribed as a {@link CommandHandler} at the {@link CommandHandlingComponent} for the
+ * Each annotated method is subscribed as a {@link CommandHandler} at the {@link CommandHandlingComponent} with the
  * command name specified by the parameter of that method.
  *
  * @param <T> The target type of this command handling component.
