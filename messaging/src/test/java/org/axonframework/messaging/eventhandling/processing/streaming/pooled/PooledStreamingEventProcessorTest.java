@@ -109,7 +109,9 @@ class PooledStreamingEventProcessorTest {
         tokenStore = spy(new InMemoryTokenStore());
         coordinatorExecutor = spy(new DelegateScheduledExecutorService(Executors.newScheduledThreadPool(2)));
         workerExecutor = new DelegateScheduledExecutorService(Executors.newScheduledThreadPool(8));
-        defaultEventHandlingComponent = spy(new RecordingEventHandlingComponent(new SimpleEventHandlingComponent()));
+        defaultEventHandlingComponent = spy(new RecordingEventHandlingComponent(
+                SimpleEventHandlingComponent.create("test")
+        ));
         defaultEventHandlingComponent.subscribe(new QualifiedName(Integer.class),
                                                 (event, ctx) -> MessageStream.empty());
         withTestSubject(List.of()); // default always applied
@@ -187,9 +189,9 @@ class PooledStreamingEventProcessorTest {
     @Test
     void handlingEventsByMultipleEventHandlingComponents() {
         // given
-        var eventHandlingComponent1 = new RecordingEventHandlingComponent(new SimpleEventHandlingComponent());
+        var eventHandlingComponent1 = new RecordingEventHandlingComponent(SimpleEventHandlingComponent.create("test"));
         eventHandlingComponent1.subscribe(new QualifiedName(String.class), (event, ctx) -> MessageStream.empty());
-        var eventHandlingComponent2 = new RecordingEventHandlingComponent(new SimpleEventHandlingComponent());
+        var eventHandlingComponent2 = new RecordingEventHandlingComponent(SimpleEventHandlingComponent.create("test"));
         eventHandlingComponent2.subscribe(new QualifiedName(String.class), (event, ctx) -> MessageStream.empty());
 
         List<EventHandlingComponent> components = List.of(eventHandlingComponent1, eventHandlingComponent2);
@@ -489,7 +491,7 @@ class PooledStreamingEventProcessorTest {
         void handlingEventsHaveSegmentAndTokenInProcessingContext() throws Exception {
             // given
             CountDownLatch countDownLatch = new CountDownLatch(8);
-            var eventHandlingComponent = new SimpleEventHandlingComponent();
+            var eventHandlingComponent = SimpleEventHandlingComponent.create("test");
             eventHandlingComponent.subscribe(new QualifiedName(Integer.class), (event, context) -> {
                 boolean containsSegment = Segment.fromContext(context).isPresent();
                 boolean containsToken = TrackingToken.fromContext(context).isPresent();
@@ -940,7 +942,8 @@ class PooledStreamingEventProcessorTest {
             EventCriteria stringOnlyCriteria = EventCriteria.havingAnyTag()
                                                             .andBeingOneOfTypes(new QualifiedName(String.class.getName()));
 
-            var stringEventHandlingComponent = new RecordingEventHandlingComponent(new SimpleEventHandlingComponent());
+            var stringEventHandlingComponent =
+                    new RecordingEventHandlingComponent(SimpleEventHandlingComponent.create("test"));
             stringEventHandlingComponent.subscribe(new QualifiedName(String.class),
                                                    (event, ctx) -> MessageStream.empty());
             withTestSubject(
@@ -1188,7 +1191,7 @@ class PooledStreamingEventProcessorTest {
             // given
             var mockErrorHandler = mock(ErrorHandler.class);
             var expectedError = new RuntimeException("Simulated handling error");
-            var failingEventHandlingComponent = new SimpleEventHandlingComponent();
+            var failingEventHandlingComponent = SimpleEventHandlingComponent.create("test");
             failingEventHandlingComponent.subscribe(new QualifiedName(String.class),
                                                     (event, context) -> MessageStream.failed(expectedError));
             withTestSubject(List.of(failingEventHandlingComponent), c -> c.errorHandler(mockErrorHandler));

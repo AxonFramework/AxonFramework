@@ -56,7 +56,7 @@ class SequencingEventHandlingComponentTest {
 
     @BeforeEach
     void setUp() {
-        internal = new RecordingEventHandlingComponent(new SimpleEventHandlingComponent());
+        internal = new RecordingEventHandlingComponent(SimpleEventHandlingComponent.create("test"));
         executorService = Executors.newFixedThreadPool(2);
     }
 

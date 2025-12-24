@@ -17,6 +17,7 @@
 package org.axonframework.messaging.core;
 
 import org.awaitility.Awaitility;
+import org.axonframework.conversion.PassThroughConverter;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.CommandBusTestUtils;
 import org.axonframework.messaging.commandhandling.CommandPriorityCalculator;
@@ -27,13 +28,6 @@ import org.axonframework.messaging.commandhandling.annotation.AnnotationRoutingS
 import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
 import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
 import org.axonframework.messaging.commandhandling.gateway.DefaultCommandGateway;
-import org.axonframework.messaging.eventhandling.EventBus;
-import org.axonframework.messaging.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.eventhandling.SimpleEventBus;
-import org.axonframework.messaging.eventhandling.annotation.AnnotatedEventHandlingComponent;
-import org.axonframework.messaging.eventhandling.annotation.EventHandler;
-import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
-import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.core.annotation.AnnotationMessageTypeResolver;
 import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
@@ -42,6 +36,13 @@ import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.eventhandling.EventBus;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.eventhandling.SimpleEventBus;
+import org.axonframework.messaging.eventhandling.annotation.AnnotatedEventHandlingComponent;
+import org.axonframework.messaging.eventhandling.annotation.EventHandler;
+import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.messaging.queryhandling.QueryBus;
 import org.axonframework.messaging.queryhandling.QueryBusTestUtils;
@@ -50,7 +51,6 @@ import org.axonframework.messaging.queryhandling.annotation.AnnotatedQueryHandli
 import org.axonframework.messaging.queryhandling.annotation.QueryHandler;
 import org.axonframework.messaging.queryhandling.gateway.DefaultQueryGateway;
 import org.axonframework.messaging.queryhandling.gateway.QueryGateway;
-import org.axonframework.conversion.PassThroughConverter;
 import org.junit.jupiter.api.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -65,6 +65,11 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+/**
+ * Test class validating asynchronous return types are supported for command, event, and query handlers.
+ *
+ * @author John Hendrikx
+ */
 class AsyncMessageHandlerTest {
 
     private static final ParameterResolverFactory PARAMETER_RESOLVER_FACTORY = new DefaultParameterResolverFactory();
@@ -75,10 +80,12 @@ class AsyncMessageHandlerTest {
                                                                             CommandPriorityCalculator.defaultCalculator(),
                                                                             new AnnotationRoutingStrategy());
     private final QueryBus queryBus = QueryBusTestUtils.aQueryBus();
-    private final QueryGateway queryGateway = new DefaultQueryGateway(queryBus,
-                                                                      new ClassBasedMessageTypeResolver(),
-                                                                      QueryPriorityCalculator.defaultCalculator(),
-                                                                      new DelegatingMessageConverter(PassThroughConverter.INSTANCE));
+    private final QueryGateway queryGateway = new DefaultQueryGateway(
+            queryBus,
+            new ClassBasedMessageTypeResolver(),
+            QueryPriorityCalculator.defaultCalculator(),
+            new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
+    );
     private final EventBus eventBus = new SimpleEventBus();
     private final AtomicBoolean eventHandlerCalled = new AtomicBoolean();
 
@@ -106,9 +113,16 @@ class AsyncMessageHandlerTest {
 
             @Test
             void withVoidReturnTypeShouldBeCalled() {
-                var ehc = new AnnotatedEventHandlingComponent<>(new VoidEventHandler(), PARAMETER_RESOLVER_FACTORY);
+                var ehc = new AnnotatedEventHandlingComponent<>(
+                        new VoidEventHandler(),
+                        ClasspathParameterResolverFactory.forClass(VoidEventHandler.class),
+                        ClasspathHandlerDefinition.forClass(VoidEventHandler.class),
+                        new AnnotationMessageTypeResolver(),
+                        new DelegatingEventConverter(PassThroughConverter.INSTANCE)
+                );
                 ProcessingContext testContext =
-                        StubProcessingContext.withComponent(EventConverter.class, new DelegatingEventConverter(PassThroughConverter.INSTANCE));
+                        StubProcessingContext.withComponent(EventConverter.class,
+                                                            new DelegatingEventConverter(PassThroughConverter.INSTANCE));
 
                 eventBus.subscribe((messages, context) -> {
                     messages.forEach(m -> ehc.handle(m, testContext));
@@ -120,9 +134,16 @@ class AsyncMessageHandlerTest {
 
             @Test
             void returningMonoShouldExecuteIt() {
-                var ehc = new AnnotatedEventHandlingComponent<>(new MonoEventHandler(), PARAMETER_RESOLVER_FACTORY);
+                var ehc = new AnnotatedEventHandlingComponent<>(
+                        new MonoEventHandler(),
+                        ClasspathParameterResolverFactory.forClass(MonoEventHandler.class),
+                        ClasspathHandlerDefinition.forClass(MonoEventHandler.class),
+                        new AnnotationMessageTypeResolver(),
+                        new DelegatingEventConverter(PassThroughConverter.INSTANCE)
+                );
                 ProcessingContext testContext =
-                        StubProcessingContext.withComponent(EventConverter.class, new DelegatingEventConverter(PassThroughConverter.INSTANCE));
+                        StubProcessingContext.withComponent(EventConverter.class,
+                                                            new DelegatingEventConverter(PassThroughConverter.INSTANCE));
 
                 eventBus.subscribe((messages, context) -> {
                     messages.forEach(m -> ehc.handle(m, testContext));
@@ -134,10 +155,16 @@ class AsyncMessageHandlerTest {
 
             @Test
             void returningCompletableFutureShouldExecuteIt() {
-                var ehc = new AnnotatedEventHandlingComponent<>(new CompletableFutureEventHandler(),
-                                                                PARAMETER_RESOLVER_FACTORY);
+                var ehc = new AnnotatedEventHandlingComponent<>(
+                        new CompletableFutureEventHandler(),
+                        ClasspathParameterResolverFactory.forClass(CompletableFutureEventHandler.class),
+                        ClasspathHandlerDefinition.forClass(CompletableFutureEventHandler.class),
+                        new AnnotationMessageTypeResolver(),
+                        new DelegatingEventConverter(PassThroughConverter.INSTANCE)
+                );
                 ProcessingContext testContext =
-                        StubProcessingContext.withComponent(EventConverter.class, new DelegatingEventConverter(PassThroughConverter.INSTANCE));
+                        StubProcessingContext.withComponent(EventConverter.class,
+                                                            new DelegatingEventConverter(PassThroughConverter.INSTANCE));
 
                 eventBus.subscribe((messages, context) -> {
                     messages.forEach(m -> ehc.handle(m, testContext));
@@ -153,24 +180,39 @@ class AsyncMessageHandlerTest {
 
             @Test
             void returningCompletableFutureShouldUseItsResult() {
-                commandBus.subscribe(new AnnotatedCommandHandlingComponent<>(new CompletableFutureCommandHandler(),
-                                                                             new DelegatingMessageConverter(PassThroughConverter.INSTANCE)));
+                commandBus.subscribe(new AnnotatedCommandHandlingComponent<>(
+                        new CompletableFutureCommandHandler(),
+                        ClasspathParameterResolverFactory.forClass(CompletableFutureCommandHandler.class),
+                        ClasspathHandlerDefinition.forClass(CompletableFutureCommandHandler.class),
+                        new AnnotationMessageTypeResolver(),
+                        new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
+                ));
 
                 assertCommands();
             }
 
             @Test
             void returningMonoShouldUseItsResult() {
-                commandBus.subscribe(new AnnotatedCommandHandlingComponent<>(new MonoCommandHandler(),
-                                                                             new DelegatingMessageConverter(PassThroughConverter.INSTANCE)));
+                commandBus.subscribe(new AnnotatedCommandHandlingComponent<>(
+                        new MonoCommandHandler(),
+                        ClasspathParameterResolverFactory.forClass(MonoCommandHandler.class),
+                        ClasspathHandlerDefinition.forClass(MonoCommandHandler.class),
+                        new AnnotationMessageTypeResolver(),
+                        new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
+                ));
 
                 assertCommands();
             }
 
             @Test
             void returningBooleanShouldUseResult() {
-                commandBus.subscribe(new AnnotatedCommandHandlingComponent<>(new BooleanCommandHandler(),
-                                                                             new DelegatingMessageConverter(PassThroughConverter.INSTANCE)));
+                commandBus.subscribe(new AnnotatedCommandHandlingComponent<>(
+                        new BooleanCommandHandler(),
+                        ClasspathParameterResolverFactory.forClass(BooleanCommandHandler.class),
+                        ClasspathHandlerDefinition.forClass(BooleanCommandHandler.class),
+                        new AnnotationMessageTypeResolver(),
+                        new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
+                ));
 
                 assertCommands();
             }

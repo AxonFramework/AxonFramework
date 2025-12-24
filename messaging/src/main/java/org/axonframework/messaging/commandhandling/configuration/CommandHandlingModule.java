@@ -26,6 +26,8 @@ import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.Module;
 import org.axonframework.common.configuration.ModuleBuilder;
+import org.axonframework.messaging.core.MessageTypeResolver;
+import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.core.conversion.MessageConverter;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
@@ -200,6 +202,8 @@ public interface CommandHandlingModule extends Module, ModuleBuilder<CommandHand
             return commandHandlingComponent(c -> new AnnotatedCommandHandlingComponent<>(
                     handlingComponentBuilder.build(c),
                     c.getComponent(ParameterResolverFactory.class),
+                    ClasspathHandlerDefinition.forClass(c.getClass()),
+                    c.getComponent(MessageTypeResolver.class),
                     c.getComponent(MessageConverter.class)
             ));
         }
