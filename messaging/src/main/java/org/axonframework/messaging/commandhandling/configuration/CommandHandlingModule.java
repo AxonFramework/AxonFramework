@@ -41,7 +41,7 @@ import static java.util.Objects.requireNonNull;
  * application module.
  * <p>
  * The {@code CommandHandlingModule} follows a builder paradigm, wherein several {@link CommandHandler CommmandHandlers}
- * can be registered in either order.
+ * can be registered in any order.
  * <p>
  * To register command handlers, a similar registration phase switch should be made, by invoking
  * {@link SetupPhase#commandHandlers()}.
