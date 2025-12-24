@@ -6,14 +6,15 @@ _Event Processors_ are the components that take care of the technical aspects of
 They start a xref:messaging-concepts:processing-context.adoc[unit of work] and possibly a transaction.
 However, they also ensure that xref:messaging-concepts:message-correlation.adoc[correlation data] can be correctly attached to all messages created during event processing, among other non-functional requirements.
 
-Event handlers are assigned directly to an Event Processor by name.
-Each event handler, or "Event Handling Component," belongs to a single Event Processor.
-The Event Processor manages all aspects of event processing including threading, <<listener-invocation-error-handler,error handling>>, xref:event-processors/streaming.adoc#sequential-processing[sequencing], and transaction management.
+Event processors have event handling components.
+Event handling components, in turn, have event handlers.
+Each event handling component belongs to a single event processor.
+The event processor manages all aspects of event processing including threading, <<error-handling,error handling>>, xref:event-processors/streaming.adoc#sequential-processing[sequencing], and transaction management.
 
-Event Processors come in roughly two forms: xref:event-processors/subscribing.adoc[Subscribing] and xref:event-processors/streaming.adoc[Streaming].
+Event processors come in roughly two forms: xref:event-processors/subscribing.adoc[Subscribing] and xref:event-processors/streaming.adoc[Streaming].
 
-Subscribing Event Processors subscribe to a source of events and are invoked by the thread managed by the publishing mechanism.
-Streaming Event Processors, on the other hand, pull their messages from a source using a thread that it manages itself.
+Subscribing event processors subscribe to a source of events and are invoked by the thread managed by the publishing mechanism.
+Streaming event processors, on the other hand, pull their messages from a source using a thread that it manages itself.
 
 For more specifics on either type, consult their respective sections xref:event-processors/subscribing.adoc[here] and xref:event-processors/streaming.adoc[here].
 The rest of this page describes the Event Processor's common concepts and configuration options.
@@ -23,14 +24,15 @@ The rest of this page describes the Event Processor's common concepts and config
 All processors have a name, which identifies a processor instance across JVM instances.
 Two processors with the same name are considered as two instances of the same processor.
 
-All event handlers are attached to a processor whose name by default is the package name of the event handler's class.
+Each event handler will belong to an event handling component.
+An event handling component can include any number of event handlers.
+These event handling components are attached to a processor, whose name by default is the package name of the event handler's class.
 Furthermore, the default processor implementation used by Axon is the xref:event-processors/streaming.adoc[PooledStreamingEventProcessor].
 The event processor type can be customized, as is shown in the xref:event-processors/subscribing.adoc#configuring[subscribing] and xref:event-processors/streaming.adoc#configuring[streaming] sections.
 
-Event handlers, or Event Handling Components, come in roughly two flavors: "regular" (singleton, stateless) event handlers and xref:sagas:index.adoc[sagas].
-xref:event-handlers.adoc#registering-event-handlers[This] section describes the process to register an event handler, whereas xref:sagas:implementation.adoc#configuring-a-saga[this] page describes the saga registration process.
+xref:event-handlers.adoc#registering-event-handlers[This] section describes the process to register an event handler.
 
-Now let us consider that the following event handlers have been registered:
+Now let us consider that the following event handling components have been registered :
 
 * `org.axonframework.example.eventhandling.MyHandler`
 * `org.axonframework.example.eventhandling.MyOtherHandler`
@@ -38,80 +40,16 @@ Now let us consider that the following event handlers have been registered:
 
 Without any intervention, this will trigger the creation of two processors, namely:
 
-. `org.axonframework.example.eventhandling` with two handlers called `MyHandler` and `MyOtherHandler`
-. `org.axonframework.example.eventhandling.module` with the single handler `ModuleHandler`
+. `org.axonframework.example.eventhandling` with two event handling components called `MyHandler` and `MyOtherHandler`
+. `org.axonframework.example.eventhandling.module` with the event handling component `ModuleHandler`
 
-Using the package name serves as a suitable default, but using dedicated names for Event Processors is recommended.
-The most straightforward approach to reaching a transparent naming scheme is by using the `ProcessingGroup` annotation.
-This annotation assigns a handler to a specific processor by name.
+=== Ordering event handling components within a processor
 
-The `ProcessingGroup` annotation requires the insertion of a name and can only be set on the class.
-Let us adjust the previous sample by using this annotation to explicitly assign handlers to processors:
-
-[source,java]
-----
-@ProcessingGroup("my-handlers")
-class MyHandler {
-    // left out event handling functions...
-}
-
-@ProcessingGroup("my-handlers")
-class MyOtherHandler{
-    // ...
-}
-
-@ProcessingGroup("module-handlers")
-class ModuleHandler {
-    // ...
-}
-
-----
-
-Using the `ProcessingGroup` annotation as depicted, we again construct two processors:
-
-. `my-handlers` with two handlers called `MyHandler` and `MyOtherHandler`
-. `module-handlers` with the single handler `ModuleHandler`
-
-If more control is required to group Event Handling Components, we recommend consulting the <<Event handler assignment rules,assignment rules>> section.
-
-=== Event handler assignment rules
-
-The Configuration API allows you to configure strategies for assigning event handling classes to processors or assigning specific handler instances to particular processors.
-Below is a list of the assignment rules available for configuring event handler to processor assignment:
-
-*Default assignment strategies*
-
-* `byDefaultAssignTo(String)`: defines the default processor name to assign an event handler to.
-It will only be taken into account if there are no more specific rules and if the `ProcessingGroup` annotation is not present.
-* `byDefaultAssignHandlerInstancesTo(Function<Object, String>)`: defines a lambda invoked to assign an event handling instance to a desired processor by returning that processor's name.
-It will only be taken into account if there are no more specific rules and if the `ProcessingGroup` annotation is not present.
-* `byDefaultAssignHandlerTypesTo(Function<Class<?>, String>)`: defines a lambda invoked to assign an event handler type to a desired processor by returning that processor's name.
-It will only be taken into account if there are no more specific rules and if the `ProcessingGroup` annotation is not present.
-
-*Predicate-based assignment*
-
-* `assignHandlerInstancesMatching(String, Predicate<Object>)`: assigns event handlers to the given processor name based on a predicate ingesting an event handling instance.
-The operation uses a natural priority of zero.
-If an instance matches several criteria, the outcome is _undefined_.
-* `assignHandlerTypesMatching(String, Predicate<Class<?>>)`: assigns event handlers to the given processor name based on a predicate ingesting an event handler type.
-The operation uses a natural priority of zero.
-If an instance matches several criteria, the outcome is _undefined_.
-* `assignHandlerInstancesMatching(String, int, Predicate<Object>)`: assigns event handlers to the given processor name based on a predicate ingesting an event handling instance.
-Uses the given priority to decide on rule-ordering.
-The higher the priority value, the more important the rule is.
-If an instance matches several criteria, the outcome is _undefined_.
-* `assignHandlerTypesMatching(String, int, Predicate<Class<?>>)`: assigns event handlers to the given processor name based on a predicate ingesting an event handler type.
-Uses the given priority to decide on rule-ordering.
-The higher the priority, the more important the rule is.
-If an instance matches several criteria, the outcome is _undefined_.
-
-=== Ordering event handlers within a processor
-
-To order event handlers within an Event Processor, the order in which event handlers are registered (as described in the xref:event-handlers.adoc#registering-event-handlers[Registering Event Handlers] section) is guiding.
-Thus, the ordering in which an Event Processor will call event handlers for event handling is the same as their insertion ordering in the Configuration API.
+To order event handling components within an Event Processor, the order in which components are registered (as described in the xref:event-handlers.adoc#registering-event-handlers[Registering Event Handlers] section) is guiding.
+Thus, the ordering in which an Event Processor will call handling components for event handling is the same as their insertion ordering in the Configuration API.
 
 If we use Spring as the mechanism for wiring everything, we can explicitly specify the event handler component ordering by adding the `@Order` annotation.
-This annotation is placed on the event handler class name, containing an `integer` value to specify the ordering.
+This annotation is placed on the event handling component class, containing an `integer` value to specify the ordering.
 
 Note that it is *not possible* to order event handlers belonging to different Event Processors.
 Each Event Processor acts as an isolated component without any intervention from other Event Processors.
@@ -120,11 +58,11 @@ Each Event Processor acts as an isolated component without any intervention from
 .Ordering Event Handlers within a Processor
 ====
 
-Although we can place an order among event handlers within an Event Processor, separation of event handlers is recommended.
+Although we can place an order among event handling components within an Event Processor, separation of components is recommended.
 
-Placing an overall ordering on event handlers means those components are inclined to interact with one another, introducing a form of coupling.
+Placing an overall ordering on event handling components means those components are inclined to interact with one another, introducing a form of coupling.
 Due to this, the event handling process will become complex to manage (for example, for new team members).
-Furthermore, embracing an ordering approach might lead to place _all_ event handlers in a global ordering, decreasing processing speeds in general.
+Furthermore, embracing an ordering approach might lead to place _all_ event handling components in a global ordering, decreasing processing speeds in general.
 
 In all, you are free to use an ordering, but we recommend using it sparingly.
 ====
@@ -135,99 +73,13 @@ In all, you are free to use an ordering, but we recommend using it sparingly.
 Errors are inevitable in any application.
 Depending on where they happen, you may want to respond differently.
 
-By default, exceptions raised by event handlers are caught by the <<listener-invocation-error-handler,listener invocation error handler>>, logged, and processing continues with the following events.
-When an exception is thrown when a processor is trying to commit a transaction, update a xref:event-processors/streaming.adoc#token-store[token], or in any other part of the process, the exception will be propagated.
+By default, exceptions raised by event handlers are handled by the `ErrorHandler`.
+The default `ErrorHandler` used is the `PropagatingErrorHandler`, which rethrows any exceptions it catches.
 
 In the case of a xref:event-processors/streaming.adoc#error-mode[Streaming Event Processor], this means the processor will go into error mode, releasing any tokens and retrying at an incremental interval (starting at 1 second, up to max 60 seconds).
 A xref:event-processors/subscribing.adoc#error-mode[Subscribing Event Processor] will report a publication error to the component that provided the event.
 
-To change this behavior, Event Processors allow customization on how to deal with exceptions:
-
-[[listener-invocation-error-handler]]
-=== Listener invocation error handler
-
-The component dealing with exceptions thrown from an event handling method is called the `ListenerInvocationErrorHandler`.
-By default, these exceptions are logged (with the `LoggingErrorHandler` implementation), and processing continues with the next handler or message.
-
-The default `ListenerInvocationErrorHandler` can be customized globally or per event processor:
-
-[tabs]
-====
-Configuration API::
-+
---
-
-[source,java]
-----
-public class AxonConfig {
-    // omitting other configuration methods...
-    public void configureErrorHandling(EventProcessingConfigurer processingConfigurer) {
-        // To configure a default ...
-        processingConfigurer
-            .registerDefaultListenerInvocationErrorHandler(conf -> {
-                /* create listener error handler */
-            })
-            // ... or for a specific processor:
-            .registerListenerInvocationErrorHandler("my-processor", conf -> {
-                 /* create listener error handler */
-            });
-    }
-}
-----
---
-Spring Boot::
-+
---
-[source,java]
-----
-@Configuration
-public class AxonConfig {
-    // omitting other configuration methods...
-    @Bean
-    public ConfigurationEnhancer errorHandlingConfigurationEnhancer() {
-        return registry -> MessagingConfigurer.with(registry).eventProcessing(processingConfigurer ->
-            processingConfigurer.registerDefaultListenerInvocationErrorHandler(
-                    conf -> {
-                        /* create listener error handler */
-                    }
-            )
-            // ... or for a specific processor:
-            .registerListenerInvocationErrorHandler(
-                    "my-processor",
-                    conf -> {
-                        /* create listener error handler */
-                    }
-            )
-        );
-    }
-}
-----
---
-====
-
-It is easy to implement custom error handling behavior.
-The error handling method to implement provides the exception, the event that was handled, and a reference to the handler that was handling the message:
-
-[source,java]
-----
-public interface ListenerInvocationErrorHandler {
-
-    void onError(Exception exception, 
-                 EventMessage<?> event, 
-                 EventMessageHandler eventHandler) throws Exception;
-}
-----
-
-You can choose to retry, ignore or rethrow the exception.
-The exception will bubble up to the <<event-processor-error-handler,processor's error handler>> when rethrown.
-
-[[event-processor-error-handler]]
-=== Error handler
-
-Exceptions occurring outside an event handler's scope, or have bubbled up from there, are handled by the `ErrorHandler`.
-The default error handler is the `PropagatingErrorHandler`, which will rethrow any exceptions it catches.
-
-How the Event Processor deals with a rethrown exception differ per implementation.
+How the Event Processor deals with a rethrown exception differs per implementation.
 The behaviour for the Subscribing- and the Streaming Event Processor can respectively be found xref:event-processors/subscribing.adoc#error-mode[here] and xref:event-processors/streaming.adoc#error-mode[here].
 
 We can configure a default `ErrorHandler` for all Event Processors or an `ErrorHandler` for specific processors:
@@ -240,17 +92,18 @@ Configuration API::
 
 [source,java]
 ----
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+
 public class AxonConfig {
-    public void configure(EventProcessingConfigurer configurer) {
-        configurer
-            // To configure a default ...
-            .registerDefaultErrorHandler(conf -> {
-                /* create error handler */
-            })
-           // ... or for a specific processor:
-           .registerErrorHandler("my-processor", conf -> {
-               /* create error handler */
-           });
+
+    public void registerDefaultErrorHandler(MessagingConfigurer configurer) {
+        configurer.eventProcessing()
+                  .defaults(config -> config.errorHandler(new CustomErrorHandler()));
+    }
+
+    public void registerProcessorSpecificErrorHandler(MessagingConfigurer configurer) {
+        configurer.eventProcessing().subscribing()
+                  .customize("my-processor", config -> config.errorHandler(new CustomErrorHandler()));
     }
 }
 ----
@@ -262,23 +115,7 @@ Spring Boot::
 
 [source,java]
 ----
-@Configuration
-public class AxonConfig {
-    @Bean
-    public ConfigurationEnhancer processorErrorHandlingConfigurationEnhancer() {
-        return registry -> MessagingConfigurer.with(registry).eventProcessing(processing ->
-            processing
-                // Register a global error handler
-                .registerDefaultErrorHandler(conf -> {
-                    /* create error handler */
-                })
-                // ... or for a specific processor:
-                .registerErrorHandler("my-processor", conf -> {
-                     /* create error handler */
-                })
-        );
-    }
-}
+// TODO #3577 - Update once Enhancer API is expanded with more Spring Boot options
 ----
 --
 ====
@@ -289,26 +126,31 @@ For providing a custom solution, the `ErrorHandler`'s single method needs to be 
 ----
 public interface ErrorHandler {
 
-    void handleError(ErrorContext errorContext) throws Exception;
+    void handleError(@Nonnull ErrorContext errorContext) throws Exception;
 }
 ----
 
 Based on the provided `ErrorContext` object, you can decide to ignore the error, schedule retries, or rethrow the exception.
 
-//[[dead-letter-queue]]
-//=== Dead-letter queue
-//
-// TODO: Reinstate when DLQ API is available in Axon 5.0
-//Although configuring a <<listener-invocation-error-handler,Listener Invocation Error Handler>>
-//and <<event-processor-error-handler,Error Handler>>
-//helps you to deal with exceptions when processing events, you still end up in an event handling stop.
-//When you only log the error and allow processing to proceed, you will most likely end up with missing data until you fix the predicament and xref:event-processors/streaming.adoc#replaying-events[replay]
-//past events.
-//If you instead propagate the exception so the event processor keeps retrying, the event processor will stall entirely when the cause is consistent.
-//
-//Although this behavior is sufficient on many occasions, sometimes it is beneficial if we can unblock event handling by parking the problematic event.
-//This is where the Dead-letter Queue comes in. It is a mechanism to park events until they can be processed successfully.
-//You can find more information in the xref:axon-framework-reference:events:event-processors/dead-letter-queue.adoc[] section.
+[[dead-letter-queue]]
+=== Dead-letter queue
+
+[WARNING]
+.Dead-Letter Queue not available in Axon Framework 5.0
+====
+The Dead-Letter Queue feature is not yet available in Axon Framework 5.0.
+It will be reintroduced in Axon Framework 5.1.
+The documentation below describes the Dead-Letter Queue concepts for reference and future use.
+====
+
+Although configuring an <<error-handling,Error Handler>> helps you to deal with exceptions when processing events, event handling will typically still stop entirely.
+When you only log the error and allow processing to proceed, you will most likely end up with missing data until you fix the predicament and xref:event-processors/streaming.adoc#replaying-events[replay]
+past events.
+If you instead propagate the exception so the event processor keeps retrying, the event processor will stall entirely when the cause is consistent.
+
+Although this behavior is sufficient on many occasions, sometimes it is beneficial if we can unblock event handling by parking the problematic event.
+This is where the dead-letter queue comes in. It is a mechanism to park events until they can be processed successfully.
+You can find more information in the xref:axon-framework-reference:events:event-processors/dead-letter-queue.adoc[] section.
 
 [[general_processor_configuration]]
 == General processor configuration
@@ -316,32 +158,6 @@ Based on the provided `ErrorContext` object, you can decide to ignore the error,
 Alongside <<Assigning handlers to processors,handler assignment>> and <<Error handling,error handling>>, Event Processors allow configuration for other components too.
 For xref:event-processors/subscribing.adoc#configuring[Subscribing] and xref:event-processors/streaming.adoc#configuring[Streaming] Event Processor specific options, their respective sections should be checked.
 The remainder of this page will cover the generic configuration options for each Event Processor.
-
-=== Event processor builders
-
-The `EventProcessingConfigurer` provides access to a lot of configurable components for Event Processors.
-Sometimes it is easier or preferable to provide an entire function to construct an Event Processor, however.
-To that end, we can configure a custom `EventProcessorBuilder`:
-
-[source,java]
-----
-@FunctionalInterface
-interface EventProcessorBuilder {
-
-    // Note: the `EventHandlerInvoker` is the component which holds the event handling functions.
-    EventProcessor build(String name,
-                         Configuration configuration,
-                         EventHandlerInvoker eventHandlerInvoker);
-}
-----
-
-The `EventProcessorBuilder` functional interface provides the event processor's name, the `Configuration` and the `EventHandlerInvoker`, and requires returning an `EventProcessor` instance.
-Note that any Axon component that an Event Processor requires (for example, an `EventStore`) is retrievable from the `Configuration`.
-
-The `EventProcessingConfigurer` provides two methods to configure an `EventProcessorBuilder`:
-
-. `registerEventProcessorFactory(EventProcessorBuilder)`: allows you to define a default factory method that creates event processors for which no explicit factories are defined
-. `registerEventProcessor(String, EventProcessorBuilder)`: defines the factory method to use to create a processor with given `name`
 
 === Event handler interceptors
 
