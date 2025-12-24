@@ -18,6 +18,7 @@ package org.axonframework.messaging.eventhandling.annotation;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.StringUtils;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageTypeResolver;
@@ -158,5 +159,13 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
     @Override
     public Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
         return handlingComponent.sequenceIdentifierFor(event, context);
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("target", target);
+        descriptor.describeWrapperOf(handlingComponent);
+        descriptor.describeProperty("messageTypeResolver", messageTypeResolver);
+        descriptor.describeProperty("converter", converter);
     }
 }

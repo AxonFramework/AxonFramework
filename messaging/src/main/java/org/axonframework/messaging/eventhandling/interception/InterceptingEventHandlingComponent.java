@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.DecoratorDefinition;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.eventhandling.DelegatingEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
@@ -82,5 +83,11 @@ public class InterceptingEventHandlingComponent extends DelegatingEventHandlingC
         return interceptorChain.proceed(event, context)
                                .ignoreEntries()
                                .cast();
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        super.describeTo(descriptor);
+        descriptor.describeProperty("interceptorChain", interceptorChain);
     }
 }

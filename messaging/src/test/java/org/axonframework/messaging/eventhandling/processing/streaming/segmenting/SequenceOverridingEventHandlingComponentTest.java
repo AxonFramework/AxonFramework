@@ -17,6 +17,7 @@
 package org.axonframework.messaging.eventhandling.processing.streaming.segmenting;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
@@ -96,6 +97,11 @@ class SequenceOverridingEventHandlingComponentTest {
             public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
                                                        @Nonnull ProcessingContext context) {
                 return MessageStream.empty();
+            }
+
+            @Override
+            public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+                // Not important for this test to implement
             }
         };
     }

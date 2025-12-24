@@ -17,6 +17,7 @@
 package org.axonframework.messaging.eventhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
@@ -102,5 +103,10 @@ public class LegacyEventHandlingComponent implements EventHandlingComponent {
      */
     public EventHandlerInvoker getEventHandlerInvoker() {
         return eventHandlerInvoker;
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        // Unimplemented as this is legacy flow.
     }
 }

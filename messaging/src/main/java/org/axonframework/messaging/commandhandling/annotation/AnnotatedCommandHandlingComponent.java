@@ -19,6 +19,7 @@ package org.axonframework.messaging.commandhandling.annotation;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.StringUtils;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.CommandHandler;
 import org.axonframework.messaging.commandhandling.CommandHandlingComponent;
@@ -142,5 +143,13 @@ public class AnnotatedCommandHandlingComponent<T> implements CommandHandlingComp
     @Override
     public Set<QualifiedName> supportedCommands() {
         return Set.copyOf(handlingComponent.supportedCommands());
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("target", target);
+        descriptor.describeWrapperOf(handlingComponent);
+        descriptor.describeProperty("messageTypeResolver", messageTypeResolver);
+        descriptor.describeProperty("converter", converter);
     }
 }

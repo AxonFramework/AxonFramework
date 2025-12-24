@@ -46,8 +46,7 @@ import static java.util.Objects.requireNonNull;
  */
 public class SimpleCommandHandlingComponent implements
         CommandHandlingComponent,
-        CommandHandlerRegistry<SimpleCommandHandlingComponent>,
-        DescribableComponent {
+        CommandHandlerRegistry<SimpleCommandHandlingComponent> {
 
     private final String name;
     private final Map<QualifiedName, CommandHandler> commandHandlers = new HashMap<>();

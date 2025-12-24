@@ -17,6 +17,7 @@ package org.axonframework.messaging.queryhandling.annotation;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.StringUtils;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageTypeResolver;
@@ -149,5 +150,13 @@ public class AnnotatedQueryHandlingComponent<T> implements QueryHandlingComponen
     @Override
     public Set<QualifiedName> supportedQueries() {
         return Set.copyOf(handlingComponent.supportedQueries());
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("target", target);
+        descriptor.describeWrapperOf(handlingComponent);
+        descriptor.describeProperty("messageTypeResolver", messageTypeResolver);
+        descriptor.describeProperty("converter", converter);
     }
 }
