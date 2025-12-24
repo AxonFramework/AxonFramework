@@ -52,7 +52,7 @@ class DefaultEventHandlingComponentsConfigurerTest {
         void shouldCreateSingleComponentFromEventHandlingComponent() {
             //given
             ComponentBuilder<EventHandlingComponent> componentBuilder = cfg -> {
-                EventHandlingComponent handlingComponent = SimpleEventHandlingComponent.create("test");
+                SimpleEventHandlingComponent handlingComponent = SimpleEventHandlingComponent.create("test");
                 handlingComponent.subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
                 return handlingComponent;
             };

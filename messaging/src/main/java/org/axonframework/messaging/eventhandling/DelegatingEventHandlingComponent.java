@@ -17,6 +17,7 @@
 package org.axonframework.messaging.eventhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
@@ -55,11 +56,6 @@ public abstract class DelegatingEventHandlingComponent implements EventHandlingC
     }
 
     @Override
-    public EventHandlerRegistry subscribe(@Nonnull QualifiedName name, @Nonnull EventHandler eventHandler) {
-        return delegate.subscribe(name, eventHandler);
-    }
-
-    @Override
     public Set<QualifiedName> supportedEvents() {
         return delegate.supportedEvents();
     }
@@ -73,5 +69,10 @@ public abstract class DelegatingEventHandlingComponent implements EventHandlingC
     @Override
     public Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
         return delegate.sequenceIdentifierFor(event, context);
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeWrapperOf(delegate);
     }
 }

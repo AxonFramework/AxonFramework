@@ -17,6 +17,7 @@
 package org.axonframework.messaging.eventhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
@@ -32,7 +33,7 @@ import java.util.Set;
  * @author Steven van Beelen
  * @since 3.0.0
  */
-public interface EventHandlingComponent extends EventHandler, EventHandlerRegistry {
+public interface EventHandlingComponent extends EventHandler, DescribableComponent {
 
     /**
      * All supported {@link EventMessage events}, referenced through a {@link QualifiedName}.

@@ -98,7 +98,7 @@ public class EventProcessingDeclarativeEventSourcedPooledStreamingIT extends Abs
 
     @Nonnull
     private static EventHandlingComponent whenStudentEnrolledToMaxCoursesThenSendNotificationAutomation() {
-        EventHandlingComponent handlingComponent =
+        SimpleEventHandlingComponent handlingComponent =
                 SimpleEventHandlingComponent.create("studentEnrolledAutomation", SequentialPolicy.INSTANCE);
         handlingComponent.subscribe(
                 new QualifiedName(StudentEnrolledEvent.class),

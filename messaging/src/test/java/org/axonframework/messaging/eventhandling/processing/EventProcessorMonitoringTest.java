@@ -69,9 +69,8 @@ class EventProcessorMonitoringTest {
             }
         };
 
-        EventHandlingComponent eventHandlingComponent = SimpleEventHandlingComponent.create("test");
-        eventHandlingComponent.subscribe(new QualifiedName(Integer.class), (e, c)
-                -> MessageStream.empty());
+        SimpleEventHandlingComponent eventHandlingComponent = SimpleEventHandlingComponent.create("test");
+        eventHandlingComponent.subscribe(new QualifiedName(Integer.class), (e, c) -> MessageStream.empty());
 
         // Also test that the mechanism used to call the monitor can deal with the message in the unit of work being
         // modified during processing

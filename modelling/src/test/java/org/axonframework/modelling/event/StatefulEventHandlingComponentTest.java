@@ -53,7 +53,7 @@ class StatefulEventHandlingComponentTest {
         @Test
         void invokedRegisteredStatefulHandler() {
             // given
-            EventHandlingComponent testSubject = SimpleEventHandlingComponent.create("test");
+            SimpleEventHandlingComponent testSubject = SimpleEventHandlingComponent.create("test");
             AtomicBoolean invoked = new AtomicBoolean();
 
             testSubject.subscribe(new QualifiedName("test-event"), (event, ctx) -> {
@@ -76,7 +76,7 @@ class StatefulEventHandlingComponentTest {
         @Test
         void canRegisterNonStatefulNormalHandler() {
             // given
-            EventHandlingComponent testSubject = SimpleEventHandlingComponent.create("test");
+            SimpleEventHandlingComponent testSubject = SimpleEventHandlingComponent.create("test");
             AtomicBoolean invoked = new AtomicBoolean();
 
             testSubject.subscribe(new QualifiedName("test-event"), (event, ctx) -> {
@@ -95,7 +95,7 @@ class StatefulEventHandlingComponentTest {
         @Test
         void exceptionWhileHandlingEventResultsInFailedStream() {
             // given
-            EventHandlingComponent testSubject = SimpleEventHandlingComponent.create("test");
+            SimpleEventHandlingComponent testSubject = SimpleEventHandlingComponent.create("test");
             testSubject.subscribe(new QualifiedName("test-event"), (event, ctx) -> {
                 throw new RuntimeException("Faking an exception");
             });
@@ -119,7 +119,7 @@ class StatefulEventHandlingComponentTest {
         @Test
         void registeredHandlersAreListedInSupportedEvents() {
             // given
-            EventHandlingComponent testSubject = SimpleEventHandlingComponent.create("test");
+            SimpleEventHandlingComponent testSubject = SimpleEventHandlingComponent.create("test");
 
             testSubject.subscribe(new QualifiedName("test-event"),
                                   (event, ctx) -> MessageStream.empty().cast());
@@ -154,7 +154,7 @@ class StatefulEventHandlingComponentTest {
         @Test
         void stateManagerIsProvidedToStatefulHandler() {
             // given
-            EventHandlingComponent testSubject = SimpleEventHandlingComponent.create("test");
+            SimpleEventHandlingComponent testSubject = SimpleEventHandlingComponent.create("test");
             AtomicBoolean stateManagerProvided = new AtomicBoolean();
 
             testSubject.subscribe(new QualifiedName("test-event"), (event, ctx) -> {
@@ -175,7 +175,7 @@ class StatefulEventHandlingComponentTest {
         @Test
         void canLoadEntityThroughStateManager() {
             // given
-            EventHandlingComponent testSubject = SimpleEventHandlingComponent.create("test");
+            SimpleEventHandlingComponent testSubject = SimpleEventHandlingComponent.create("test");
             AtomicBoolean entityLoaded = new AtomicBoolean();
 
             testSubject.subscribe(new QualifiedName("test-event"), (event, ctx) -> {
