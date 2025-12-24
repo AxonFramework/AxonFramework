@@ -45,7 +45,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class SimpleEventHandlingComponent implements
         EventHandlingComponent,
-        DescribableComponent {
+        EventHandlerRegistry<SimpleEventHandlingComponent> {
 
     private static final SequencingPolicy DEFAULT_SEQUENCING_POLICY = new HierarchicalSequencingPolicy(
             SequentialPerAggregatePolicy.instance(),

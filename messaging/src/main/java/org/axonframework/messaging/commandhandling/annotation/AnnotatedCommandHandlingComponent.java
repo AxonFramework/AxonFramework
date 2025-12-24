@@ -18,6 +18,8 @@
 package org.axonframework.messaging.commandhandling.annotation;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.StringUtils;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.CommandHandler;
 import org.axonframework.messaging.commandhandling.CommandHandlingComponent;
@@ -27,7 +29,6 @@ import org.axonframework.messaging.commandhandling.GenericCommandResultMessage;
 import org.axonframework.messaging.commandhandling.SimpleCommandHandlingComponent;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
-import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.annotation.AnnotatedHandlerInspector;
@@ -101,11 +102,10 @@ public class AnnotatedCommandHandlingComponent<T> implements CommandHandlingComp
         Class<?> payloadType = handler.payloadType();
         QualifiedName qualifiedName = handler.unwrap(CommandHandlingMember.class)
                                              .map(CommandHandlingMember::commandName)
-                                             // Only use names as is that not match the fully qualified class name.
-                                             .filter(name -> !name.equals(payloadType.getName()))
+                                             // Filter empty Strings to  fall back to the MessageTypeResolver
+                                             .filter(StringUtils::nonEmpty)
                                              .map(QualifiedName::new)
-                                             .orElseGet(() -> messageTypeResolver.resolve(payloadType)
-                                                                                 .orElse(new MessageType(payloadType))
+                                             .orElseGet(() -> messageTypeResolver.resolveOrThrow(payloadType)
                                                                                  .qualifiedName());
 
         handlingComponent.subscribe(qualifiedName, constructCommandHandlerFor(handler));
@@ -143,5 +143,13 @@ public class AnnotatedCommandHandlingComponent<T> implements CommandHandlingComp
     @Override
     public Set<QualifiedName> supportedCommands() {
         return Set.copyOf(handlingComponent.supportedCommands());
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("target", target);
+        descriptor.describeWrapperOf(handlingComponent);
+        descriptor.describeProperty("messageTypeResolver", messageTypeResolver);
+        descriptor.describeProperty("converter", converter);
     }
 }

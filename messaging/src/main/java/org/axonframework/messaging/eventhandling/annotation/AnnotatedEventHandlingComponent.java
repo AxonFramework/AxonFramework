@@ -17,6 +17,8 @@
 package org.axonframework.messaging.eventhandling.annotation;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.StringUtils;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageTypeResolver;
@@ -28,7 +30,6 @@ import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.interception.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.EventHandler;
-import org.axonframework.messaging.eventhandling.EventHandlerRegistry;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventSink;
@@ -55,7 +56,7 @@ import static java.util.Objects.requireNonNull;
 public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponent {
 
     private final T target;
-    private final EventHandlingComponent handlingComponent;
+    private final SimpleEventHandlingComponent handlingComponent;
     private final AnnotatedHandlerInspector<T> model;
     private final MessageTypeResolver messageTypeResolver;
     private final EventConverter converter;
@@ -101,9 +102,12 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
         Class<?> payloadType = handler.payloadType();
         QualifiedName qualifiedName = handler.unwrap(MethodEventHandlerDefinition.MethodEventMessageHandlingMember.class)
                                              .map(EventHandlingMember::eventName)
+                                             // Filter empty Strings to  fall back to the MessageTypeResolver
+                                             .filter(StringUtils::nonEmpty)
                                              .map(QualifiedName::new)
                                              .orElseGet(() -> messageTypeResolver.resolveOrThrow(payloadType)
                                                                                  .qualifiedName());
+
         handlingComponent.subscribe(qualifiedName, constructEventHandlerFor(qualifiedName, handler));
     }
 
@@ -125,7 +129,7 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
         return whenCustomSequencingPolicyOn(handler)
                 .map(sequencingPolicy -> {
                     String name = "CustomPolicyHandler[%s]".formatted(handler.signature());
-                    EventHandlingComponent handlerWithCustomPolicy =
+                    SimpleEventHandlingComponent handlerWithCustomPolicy =
                             SimpleEventHandlingComponent.create(name, sequencingPolicy);
                     handlerWithCustomPolicy.subscribe(qualifiedName, interceptedHandler);
                     return handlerWithCustomPolicy;
@@ -137,11 +141,6 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
     private Optional<SequencingPolicy> whenCustomSequencingPolicyOn(MessageHandlingMember<? super T> handler) {
         return handler.unwrap(MethodSequencingPolicyEventHandlerDefinition.SequencingPolicyEventMessageHandlingMember.class)
                       .map(MethodSequencingPolicyEventHandlerDefinition.SequencingPolicyEventMessageHandlingMember::sequencingPolicy);
-    }
-
-    @Override
-    public EventHandlerRegistry subscribe(@Nonnull QualifiedName name, @Nonnull EventHandler eventHandler) {
-        return handlingComponent.subscribe(name, eventHandler);
     }
 
     @Nonnull
@@ -160,5 +159,13 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
     @Override
     public Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
         return handlingComponent.sequenceIdentifierFor(event, context);
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("target", target);
+        descriptor.describeWrapperOf(handlingComponent);
+        descriptor.describeProperty("messageTypeResolver", messageTypeResolver);
+        descriptor.describeProperty("converter", converter);
     }
 }

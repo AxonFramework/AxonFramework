@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.annotation;
 
+import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.annotation.MessageHandler;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.eventhandling.EventMessage;
@@ -73,10 +74,14 @@ import java.lang.annotation.Target;
 public @interface EventHandler {
 
     /**
-     * The name of the Event this handler listens to. Defaults to the type declared by the payload type (i.e. first
-     * parameter), or its fully qualified class name, if no explicit names are declared on that payload type.
+     * The name of the event this handler listens to, matching to the {@link MessageType#name()} from the
+     * {@link EventMessage#type()}.
+     * <p>
+     * When not defined the {@link org.axonframework.messaging.core.MessageTypeResolver} will derive the name based on
+     * the payload type (thus the <b>first</b> parameter) of the annotated method.
      *
-     * @return The event name.
+     * @return The name of the event this handler listens to, matching to the {@link MessageType#name()} from the
+     * {@link EventMessage#type()}.
      */
     String eventName() default "";
 

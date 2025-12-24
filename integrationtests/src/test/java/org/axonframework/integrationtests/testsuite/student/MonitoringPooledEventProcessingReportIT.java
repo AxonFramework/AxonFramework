@@ -113,7 +113,7 @@ public class MonitoringPooledEventProcessingReportIT extends AbstractStudentIT {
                     ps.processor(
                             EventProcessorModule.pooledStreaming(NAME).eventHandlingComponents(
                                                         components -> {
-                                                            EventHandlingComponent handlingComponent = SimpleEventHandlingComponent.create(
+                                                            SimpleEventHandlingComponent handlingComponent = SimpleEventHandlingComponent.create(
                                                                     "test",
                                                                     SequentialPolicy.INSTANCE
                                                             );

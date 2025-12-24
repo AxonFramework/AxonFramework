@@ -17,14 +17,17 @@
 package org.axonframework.messaging.eventhandling.processing.streaming.segmenting;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.eventhandling.*;
-import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.eventhandling.EventHandlingComponent;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;
@@ -97,19 +100,8 @@ class SequenceOverridingEventHandlingComponentTest {
             }
 
             @Override
-            public EventHandlerRegistry subscribe(@Nonnull QualifiedName name, @Nonnull EventHandler eventHandler) {
-                return this;
-            }
-
-            @Override
-            public EventHandlerRegistry subscribe(@Nonnull Set<QualifiedName> names,
-                                                  @Nonnull EventHandler eventHandler) {
-                return this;
-            }
-
-            @Override
-            public EventHandlerRegistry subscribe(@Nonnull EventHandlingComponent handlingComponent) {
-                return this;
+            public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+                // Not important for this test to implement
             }
         };
     }

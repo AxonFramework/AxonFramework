@@ -16,9 +16,10 @@
 package org.axonframework.messaging.queryhandling.annotation;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.StringUtils;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
-import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.annotation.AnnotatedHandlerInspector;
@@ -102,12 +103,12 @@ public class AnnotatedQueryHandlingComponent<T> implements QueryHandlingComponen
         Class<?> payloadType = handler.payloadType();
         QualifiedName qualifiedName = handler.unwrap(QueryHandlingMember.class)
                                              .map(QueryHandlingMember::queryName)
-                                             // Only use names as is that not match the fully qualified class name.
-                                             .filter(name -> !name.equals(payloadType.getName()))
+                                             // Filter empty Strings to  fall back to the MessageTypeResolver
+                                             .filter(StringUtils::nonEmpty)
                                              .map(QualifiedName::new)
-                                             .orElseGet(() -> messageTypeResolver.resolve(payloadType)
-                                                                                 .orElse(new MessageType(payloadType))
+                                             .orElseGet(() -> messageTypeResolver.resolveOrThrow(payloadType)
                                                                                  .qualifiedName());
+
         handlingComponent.subscribe(qualifiedName, constructQueryHandlerFor(handler));
     }
 
@@ -149,5 +150,13 @@ public class AnnotatedQueryHandlingComponent<T> implements QueryHandlingComponen
     @Override
     public Set<QualifiedName> supportedQueries() {
         return Set.copyOf(handlingComponent.supportedQueries());
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("target", target);
+        descriptor.describeWrapperOf(handlingComponent);
+        descriptor.describeProperty("messageTypeResolver", messageTypeResolver);
+        descriptor.describeProperty("converter", converter);
     }
 }

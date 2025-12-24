@@ -16,9 +16,11 @@
 
 package org.axonframework.messaging.commandhandling.annotation;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.messaging.core.annotation.HandlerAttributes;
+import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.annotation.HandlerAttributes;
 import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.messaging.core.annotation.WrappedMessageHandlingMember;
@@ -29,10 +31,13 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Optional;
-import jakarta.annotation.Nonnull;
 
 /**
- * Implementation of a {@link HandlerEnhancerDefinition} that is used for {@link CommandHandler} annotated methods.
+ * Implementation of a {@link HandlerEnhancerDefinition} used for {@link CommandHandler} annotated methods to wrap a
+ * {@link MessageHandlingMember} in a {@link CommandHandlingMember} instance.
+ * <p>
+ * The {@link CommandHandler#commandName()} is used to define the {@link CommandHandlingMember#commandName()} without
+ * any fall back.
  *
  * @author Allard Buijze
  * @since 3.0.0
@@ -68,16 +73,15 @@ public class MethodCommandHandlerDefinition implements HandlerEnhancerDefinition
                                     "The @CommandHandler annotation must be put on an Executable "
                                             + "(either directly or as Meta Annotation)"
                             ));
-
-            routingKey = "".equals(routingKeyAttribute) ? null : routingKeyAttribute;
-            commandName = "".equals(commandNameAttribute) ? delegate.payloadType().getName() : commandNameAttribute;
+            commandName = commandNameAttribute;
             final boolean factoryMethod = executable instanceof Method && Modifier.isStatic(executable.getModifiers());
             isFactoryHandler = executable instanceof Constructor || factoryMethod;
+            routingKey = "".equals(routingKeyAttribute) ? null : routingKeyAttribute;
         }
 
         @Override
         public boolean canHandle(@Nonnull Message message, @Nonnull ProcessingContext context) {
-            return super.canHandle(message, context);
+            return super.canHandle(message, context) && message instanceof CommandMessage;
         }
 
         @Override

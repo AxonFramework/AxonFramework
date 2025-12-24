@@ -17,6 +17,7 @@
 package org.axonframework.messaging.eventhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
@@ -95,15 +96,6 @@ public class LegacyEventHandlingComponent implements EventHandlingComponent {
         };
     }
 
-    @Override
-    public EventHandlerRegistry subscribe(@Nonnull QualifiedName name, @Nonnull EventHandler eventHandler) {
-        // EventHandlerInvoker doesn't support dynamic subscription
-        throw new UnsupportedOperationException(
-                "Dynamic subscription is not supported by LegacyEventHandlingComponent. " +
-                "This is a legacy adapter for EventHandlerInvoker which doesn't support runtime registration."
-        );
-    }
-
     /**
      * Returns the wrapped {@link EventHandlerInvoker}.
      *
@@ -111,5 +103,10 @@ public class LegacyEventHandlingComponent implements EventHandlingComponent {
      */
     public EventHandlerInvoker getEventHandlerInvoker() {
         return eventHandlerInvoker;
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        // Unimplemented as this is legacy flow.
     }
 }

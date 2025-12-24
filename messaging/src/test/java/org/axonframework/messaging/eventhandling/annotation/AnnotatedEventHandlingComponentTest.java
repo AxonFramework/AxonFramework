@@ -23,6 +23,7 @@ import org.axonframework.messaging.core.LegacyResources;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.annotation.AnnotationMessageTypeResolver;
@@ -43,12 +44,14 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy.FULL_SEQUENTIAL_POLICY;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link AnnotatedEventHandlingComponent}.
@@ -68,6 +71,54 @@ class AnnotatedEventHandlingComponentTest {
     void beforeEach() {
         eventHandler = new TestEventHandler();
         eventHandlingComponent = annotatedEventHandlingComponent(eventHandler);
+    }
+
+    @Test
+    void subscribesEventHandlerWithEventName() {
+        Object annotatedEventHandler = new Object() {
+            @SuppressWarnings("unused")
+            @EventHandler(eventName = "myEventName")
+            public void handle(String event) {
+                // Unimportant
+            }
+        };
+        MessageTypeResolver messageTypeResolver = spy(new AnnotationMessageTypeResolver());
+        AnnotatedEventHandlingComponent<Object> annotatedComponent = new AnnotatedEventHandlingComponent<>(
+                annotatedEventHandler,
+                ClasspathParameterResolverFactory.forClass(annotatedEventHandler.getClass()),
+                ClasspathHandlerDefinition.forClass(annotatedEventHandler.getClass()),
+                messageTypeResolver,
+                new DelegatingEventConverter(PassThroughConverter.INSTANCE)
+        );
+
+        Set<QualifiedName> supportedEvents = annotatedComponent.supportedEvents();
+        assertThat(supportedEvents).hasSize(1);
+        assertThat(supportedEvents).contains(new QualifiedName("myEventName"));
+        verifyNoInteractions(messageTypeResolver);
+    }
+
+    @Test
+    void subscribesEventHandlerThroughMessageTypeResolverWhenEventNameIsEmpty() {
+        QualifiedName expectedName = new QualifiedName("defaultName");
+
+        Object annotatedEventHandler = new Object() {
+            @SuppressWarnings({"unused", "DefaultAnnotationParam"})
+            @EventHandler(eventName = "") // Deliberately empty to give control to the MessageTypeResolver
+            public void handle(String event) {
+                // Unimportant
+            }
+        };
+        AnnotatedEventHandlingComponent<Object> annotatedComponent = new AnnotatedEventHandlingComponent<>(
+                annotatedEventHandler,
+                ClasspathParameterResolverFactory.forClass(annotatedEventHandler.getClass()),
+                ClasspathHandlerDefinition.forClass(annotatedEventHandler.getClass()),
+                payloadType -> Optional.of(new MessageType(expectedName)),
+                new DelegatingEventConverter(PassThroughConverter.INSTANCE)
+        );
+
+        Set<QualifiedName> supportedEvents = annotatedComponent.supportedEvents();
+        assertThat(supportedEvents).hasSize(1);
+        assertThat(supportedEvents).contains(expectedName);
     }
 
     @Test
@@ -350,7 +401,8 @@ class AnnotatedEventHandlingComponentTest {
             var event = eventMessage(0);
 
             // when
-            var sequenceIdentifier = eventHandlingComponent.sequenceIdentifierFor(event, messageProcessingContext(event));
+            var sequenceIdentifier = eventHandlingComponent.sequenceIdentifierFor(event,
+                                                                                  messageProcessingContext(event));
 
             // then
             assertThat(sequenceIdentifier).isEqualTo("id");
@@ -404,15 +456,20 @@ class AnnotatedEventHandlingComponentTest {
 
     @Nested
     class GivenAnAnnotatedInterfaceMethod {
+
         interface I {
+
             @EventHandler
             void handle(Integer event);
         }
 
         @Nested
         class WhenImplementedByAnnotedInstanceMethod {
+
             class T implements I {
-                @Override @EventHandler
+
+                @Override
+                @EventHandler
                 public void handle(Integer event) {
                     callCount.incrementAndGet();
                 }
@@ -425,8 +482,11 @@ class AnnotatedEventHandlingComponentTest {
 
             @Nested
             class AndOverriddenAndAnnotatedInASubclass {
+
                 class U extends T {
-                    @Override @EventHandler
+
+                    @Override
+                    @EventHandler
                     public void handle(Integer event) {
                         callCount.incrementAndGet();
                     }
@@ -440,7 +500,9 @@ class AnnotatedEventHandlingComponentTest {
 
             @Nested
             class AndOverriddenButNotAnnotatedInASubclass {
+
                 class U extends T {
+
                     @Override
                     public void handle(Integer event) {
                         callCount.incrementAndGet();
@@ -456,7 +518,9 @@ class AnnotatedEventHandlingComponentTest {
 
         @Nested
         class WhenImplementedByUnannotedInstanceMethod {
+
             class T implements I {
+
                 @Override
                 public void handle(Integer event) {
                     callCount.incrementAndGet();
@@ -470,8 +534,11 @@ class AnnotatedEventHandlingComponentTest {
 
             @Nested
             class AndOverriddenAndAnnotatedInASubclass {
+
                 class U extends T {
-                    @Override @EventHandler
+
+                    @Override
+                    @EventHandler
                     public void handle(Integer event) {
                         callCount.incrementAndGet();
                     }
@@ -485,7 +552,9 @@ class AnnotatedEventHandlingComponentTest {
 
             @Nested
             class AndOverriddenButNotAnnotatedInASubclass {
+
                 class U extends T {
+
                     @Override
                     public void handle(Integer event) {
                         callCount.incrementAndGet();
@@ -502,14 +571,19 @@ class AnnotatedEventHandlingComponentTest {
 
     @Nested
     class GivenAnUnannotatedInterfaceMethod {
+
         interface I {
+
             void handle(Integer event);
         }
 
         @Nested
         class WhenImplementedByAnnotedInstanceMethod {
+
             class T implements I {
-                @Override @EventHandler
+
+                @Override
+                @EventHandler
                 public void handle(Integer event) {
                     callCount.incrementAndGet();
                 }
@@ -522,8 +596,11 @@ class AnnotatedEventHandlingComponentTest {
 
             @Nested
             class AndOverriddenAndAnnotatedInASubclass {
+
                 class U extends T {
-                    @Override @EventHandler
+
+                    @Override
+                    @EventHandler
                     public void handle(Integer event) {
                         callCount.incrementAndGet();
                     }
@@ -537,7 +614,9 @@ class AnnotatedEventHandlingComponentTest {
 
             @Nested
             class AndOverriddenButNotAnnotatedInASubclass {
+
                 class U extends T {
+
                     @Override
                     public void handle(Integer event) {
                         callCount.incrementAndGet();
@@ -553,7 +632,9 @@ class AnnotatedEventHandlingComponentTest {
 
         @Nested
         class WhenImplementedByUnannotedInstanceMethod {
+
             class T implements I {
+
                 @Override
                 public void handle(Integer event) {
                     callCount.incrementAndGet();
@@ -567,8 +648,11 @@ class AnnotatedEventHandlingComponentTest {
 
             @Nested
             class AndOverriddenAndAnnotatedInASubclass {
+
                 class U extends T {
-                    @Override @EventHandler
+
+                    @Override
+                    @EventHandler
                     public void handle(Integer event) {
                         callCount.incrementAndGet();
                     }
@@ -582,7 +666,9 @@ class AnnotatedEventHandlingComponentTest {
 
             @Nested
             class AndOverriddenButNotAnnotatedInASubclass {
+
                 class U extends T {
+
                     @Override
                     public void handle(Integer event) {
                         callCount.incrementAndGet();
@@ -599,7 +685,9 @@ class AnnotatedEventHandlingComponentTest {
 
     @Nested
     class GivenAnAnnotatedInstanceMethod {
+
         class T {
+
             @EventHandler
             public void handle(Integer event) {
                 callCount.incrementAndGet();
@@ -613,8 +701,11 @@ class AnnotatedEventHandlingComponentTest {
 
         @Nested
         class WhenOverriddenAndAnnotatedInASubclass {
+
             class U extends T {
-                @Override @EventHandler
+
+                @Override
+                @EventHandler
                 public void handle(Integer event) {
                     callCount.incrementAndGet();
                 }
@@ -628,7 +719,9 @@ class AnnotatedEventHandlingComponentTest {
 
         @Nested
         class WhenNotOverriddenInSubclass {
+
             class U extends T {
+
             }
 
             @Test
@@ -639,7 +732,9 @@ class AnnotatedEventHandlingComponentTest {
 
         @Nested
         class WhenOverriddenButNotAnnotatedInASubclass {
+
             class U extends T {
+
                 @Override
                 public void handle(Integer event) {
                     callCount.incrementAndGet();
@@ -655,7 +750,9 @@ class AnnotatedEventHandlingComponentTest {
 
     @Nested
     class GivenAnUnannotatedInstanceMethod {
+
         class T {
+
             public void handle(Integer event) {
                 callCount.incrementAndGet();
             }
@@ -668,8 +765,11 @@ class AnnotatedEventHandlingComponentTest {
 
         @Nested
         class WhenOverriddenAndAnnotatedInASubclass {
+
             class U extends T {
-                @Override @EventHandler
+
+                @Override
+                @EventHandler
                 public void handle(Integer event) {
                     callCount.incrementAndGet();
                 }
@@ -683,7 +783,9 @@ class AnnotatedEventHandlingComponentTest {
 
         @Nested
         class WhenOverriddenButNotAnnotatedInASubclass {
+
             class U extends T {
+
                 @Override
                 public void handle(Integer event) {
                     callCount.incrementAndGet();
@@ -698,7 +800,8 @@ class AnnotatedEventHandlingComponentTest {
     }
 
     private void assertCalledOnlyOnce(Object handlerInstance) {
-        AnnotatedEventHandlingComponent<?> annotatedEventHandlingComponent = annotatedEventHandlingComponent(handlerInstance);
+        AnnotatedEventHandlingComponent<?> annotatedEventHandlingComponent = annotatedEventHandlingComponent(
+                handlerInstance);
         EventMessage event = eventMessage(0);
 
         annotatedEventHandlingComponent.handle(event, messageProcessingContext(event));
@@ -707,7 +810,8 @@ class AnnotatedEventHandlingComponentTest {
     }
 
     private void assertNotCalled(Object handlerInstance) {
-        AnnotatedEventHandlingComponent<?> annotatedEventHandlingComponent = annotatedEventHandlingComponent(handlerInstance);
+        AnnotatedEventHandlingComponent<?> annotatedEventHandlingComponent = annotatedEventHandlingComponent(
+                handlerInstance);
         EventMessage event = eventMessage(0);
 
         annotatedEventHandlingComponent.handle(event, messageProcessingContext(event));
@@ -748,7 +852,6 @@ class AnnotatedEventHandlingComponentTest {
         void handleNotNamed() {
             handledNotNamed++;
         }
-
     }
 
     @Nonnull
