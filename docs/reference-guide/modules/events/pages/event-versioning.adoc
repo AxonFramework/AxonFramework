@@ -1,37 +1,35 @@
 = Event Versioning
 
-In the lifecycle of an Axon application, their events _will_ typically change their format.
+In the lifecycle of an application, events _will_ typically change their format.
 As events are stored indefinitely, the application should be able to cope with several versions of an event.
 This chapter will discuss what to keep in mind when creating your events, for backwards (and forwards) compatibility.
 It will explain Axon's versioning approach using payload conversion and when you might need upcasters.
 
-== Event versioning approach
+[#event_versioning_at_handling_time]
+== Event versioning at handling time
 
 Axon Framework provides a flexible approach to event versioning that minimizes the need for complex migration strategies.
-The primary mechanism is **payload conversion at handling time**, which allows different handlers to receive events in the format they expect.
-
-=== Payload conversion at handling time
+We dub this **payload conversion at handling time**, which allows different handlers to receive events in the format they expect.
 
 When events are stored in the event store, they retain their serialized form (for example JSON or Avro binary) along with metadata about their `MessageType`.
 When a handler needs to process an event, Axon converts the payload to the handler's expected type at that moment.
 
 This means:
 
-* Different handlers can process the same event using different Java representations
-* You can evolve your event handling without modifying stored events
-* Simple structural changes often require no upcasters
+* Different handlers can process the same event using different Java representations.
+* You can evolve your event handling without modifying stored events.
+* Simple structural changes often require no upcasters.
 
 For example, consider an event stored with this structure:
 
 [source,java]
 ----
 @Event(name = "OrderPlaced", version = "1.0.0")
-public class OrderPlacedEvent {
-    private final String orderId;
-    private final String customerId;
-    private final List<String> productIds;
-
-    // constructors, getters...
+public record OrderPlacedEvent(
+    String orderId, 
+    String customerId, 
+    List<String> productIds
+) {
 }
 ----
 
@@ -39,21 +37,17 @@ Later, you want to process this same event with additional computed information:
 
 [source,java]
 ----
-public class EnrichedOrderPlacedEvent {
-    private final String orderId;
-    private final String customerId;
-    private final List<String> productIds;
-    private final int productCount;  // Computed from productIds
-
-    // Constructor that computes productCount
+@Event(name = "OrderPlaced", version = "2.0.0")
+public record EnrichedOrderPlacedEvent(
+    String orderId,
+    String customerId,
+    List<String> productIds,
+    int productCount  // Computed from productIds
+) {
+    // Compact constructor that computes productCount
     public EnrichedOrderPlacedEvent(String orderId, String customerId, List<String> productIds) {
-        this.orderId = orderId;
-        this.customerId = customerId;
-        this.productIds = productIds;
-        this.productCount = productIds != null ? productIds.size() : 0;
+        this(orderId, customerId, productIds, productIds != null ? productIds.size() : 0);
     }
-
-    // getters...
 }
 ----
 
@@ -61,11 +55,23 @@ You can add a handler that receives the event in this new format:
 
 [source,java]
 ----
-@EventHandler(eventName = "com.example.events.OrderPlaced")
+@EventHandler(eventName = "OrderPlaced")
 public void on(EnrichedOrderPlacedEvent event) {
     // Axon converts the stored OrderPlacedEvent to EnrichedOrderPlacedEvent
     // The productCount field is computed during conversion
     notifyAnalytics(event.getProductCount());
+}
+----
+
+In doing the above, Axon will know you want to handle the `"OrderPlaced"` and desire it in the `EnrichedOrderPlacedEvent`.
+It will thus convert the stored format of the `"OrderPlaced"` into a `EnrichedOrderPlacedEvent`.
+In the meantime, another handler (in for example another application) can still use the old format:
+
+[source,java]
+----
+@EventHandler(eventName = "OrderPlaced")
+public void on(OrderPlacedEvent event) {
+    // Old handling flow...
 }
 ----
 
@@ -74,44 +80,33 @@ Axon's `Converter` performs the transformation automatically at handling time.
 
 For complete details on payload conversion, see xref:ROOT:conversion.adoc[Conversion].
 
+[#when_payload_conversion_is_sufficient]
 === When payload conversion is sufficient
 
 Payload conversion handles many common versioning scenarios without requiring upcasters:
 
-* **Adding fields with defaults** - New fields can have default values during conversion
-* **Removing fields** - Handlers simply don't declare fields they don't need
-* **Renaming fields** - Use Jackson annotations like `@JsonProperty` to map old names to new fields
-* **Changing field types** - Converters can transform compatible types (for example String to Integer, Date to Instant)
-* **Restructuring for different handlers** - Different handlers can use completely different Java types for the same event
-
-=== When upcasters are needed
-
-Upcasters are required when you need to transform the **stored representation** of events in ways that payload conversion cannot handle:
-
-* **Splitting one event into multiple events** - When you need to split a single stored event into multiple distinct events
-* **Merging multiple events** - When you need to combine several stored events into one
-* **Complex structural transformations** - When the transformation requires access to multiple events or contextual information
-* **Changing event identity** - When you need to change the event's MessageType (qualified name or version) in storage
-
-For most scenarios, payload conversion is simpler and more flexible than upcasters.
-Only use upcasters when the stored event structure itself must change.
+* **Adding fields with defaults** - New fields can have default values during conversion.
+* **Removing fields** - Handlers simply don't declare fields they don't need.
+* **Renaming fields** - Use Jackson annotations like `@JsonProperty` to map old names to new fields.
+* **Changing field types** - Converters can transform compatible types (for example String to Integer, Date to Instant).
+* **Restructuring for different handlers** - Different handlers can use completely different Java types for the same event.
 
 [[event-upcasting]]
 == Event Upcasting
 
-[IMPORTANT]
+[WARNING]
 .Upcasters not available in Axon 5.0
 ====
 Event upcasters are not yet available in Axon Framework 5.0.
-They will be reintroduced in a future release with updated APIs aligned with the new conversion architecture.
+They are scheduled to be reintroduced in Axon Framework 5.2.0 (see https://github.com/AxonFramework/AxonFramework/issues/3597[issue #3597]) with updated APIs aligned with the new conversion architecture.
 
-For now, rely on xref:#_payload_conversion_at_handling_time[payload conversion at handling time] for event versioning.
+For now, rely on xref:#event_versioning_at_handling_time[payload conversion at handling time] for event versioning.
 This approach handles most common versioning scenarios without requiring upcasters.
 
 The documentation below describes the upcasting concepts and approach that will be available in future releases.
 ====
 
-For scenarios where xref:#_when_payload_conversion_is_sufficient[payload conversion] is not sufficient, Axon will provide upcasters to transform the stored representation of events.
+For scenarios where xref:#when_payload_conversion_is_sufficient[payload conversion] is not sufficient, Axon will provide upcasters to transform the stored representation of events.
 
 Upcasting transforms events from their original stored structure to a new structure.
 This is useful when you need to modify the event stream itself, such as splitting events, merging events, or fundamentally changing event types.
@@ -120,10 +115,6 @@ To upcast an event means to transform it from its original structure to its new 
 Unlike payload conversion which happens at handling time, upcasting modifies how events are read from storage.
 Manually written upcasters must be provided to specify how to transform the old structure to the new structure.
 
-Upcasters take one input event of version `x` and output zero or more new events of version `x + 1`.
-Moreover, upcasters are processed in a chain, meaning that the output of one upcaster is sent to the input of the next.
-This allows you to update events in an incremental manner, writing an upcaster for each new event version, making them small, isolated, and easy to understand.
-
 [TIP]
 .Benefits of Upcasters
 ====
@@ -131,16 +122,34 @@ Upcasting allows you to do non-destructive refactoring of stored events.
 In other words, the complete event history remains intact, while events are transformed when read from the store.
 ====
 
+Upcasters take one input event of version `x` and output zero or more new events of version `x + 1`.
+Moreover, upcasters are processed in a chain, meaning that the output of one upcaster is sent to the input of the next.
+This allows you to update events in an incremental manner, writing an upcaster for each new event version, making them small, isolated, and easy to understand.
+
+In the remainder of this section we'll explain when you need an upcaster, how to write an upcaster, describe the different (abstract) implementations of the Upcaster, and explain how the serialized representations of events affects how upcasters are written.
+
 [NOTE]
 .When to use upcasters vs payload conversion
 ====
-For most event versioning scenarios, xref:#_payload_conversion_at_handling_time[payload conversion at handling time] is simpler and more flexible.
+For most event versioning scenarios, xref:#event_versioning_at_handling_time[payload conversion at handling time] is simpler and more flexible.
 Only use upcasters when you need to transform the stored event structure in ways that conversion cannot handle.
 
-See xref:#_when_upcasters_are_needed[When upcasters are needed] for specific scenarios where upcasters are required.
+See xref:#when_upcasters_are_needed[When upcasters are needed] for specific scenarios where upcasters are required.
 ====
 
-In this section we'll explain how to write an upcaster, describe the different (abstract) implementations of the Upcaster, and explain how the serialized representations of events affects how upcasters are written.
+[#when_upcasters_are_needed]
+=== When upcasters are needed
+
+Upcasters are required when you need to transform the **stored representation** of events in ways that payload conversion cannot handle:
+
+* **Splitting one event into multiple events** - When you need to split a single stored event into multiple distinct events.
+* **Merging multiple events** - When you need to combine several stored events into one.
+* **Complex structural transformations** - When the transformation requires access to multiple events or contextual information.
+* **Changing event identity** - When you need to change the event's MessageType (qualified name or version) in storage.
+* **Generic transformation for all handlers** - When you have multiple handlers for the same event and want a single transformation to apply to all of them, rather than adjusting each handler individually.
+
+For most scenarios, payload conversion is simpler and more flexible than upcasters.
+Only use upcasters when the stored event structure itself must change.
 
 === Event version identification
 
@@ -155,9 +164,7 @@ This version is specified using the `@Event` annotation on your event class:
     name = "OrderPlaced",              // Defaults to simple class name
     version = "1.0.0"                  // Defaults to "0.0.1"
 )
-public class OrderPlacedEvent {
-    private final String orderId;
-    // fields, constructors, getters...
+public record OrderPlacedEvent(String orderId) {
 }
 ----
 
@@ -235,13 +242,11 @@ Old version of the event:
 [source,java]
 ----
 @Event(name = "Complaint", version = "1.0")
-public class ComplaintEvent {
-    private String id;
-    private String companyName;
-
-    // Constructor, getter, setter...
+public record ComplaintEvent(
+    String id,
+    String companyName
+) {
 }
-
 ----
 
 New version of the event:
@@ -249,14 +254,12 @@ New version of the event:
 [source,java]
 ----
 @Event(name = "Complaint", version = "2.0")
-public class ComplaintEvent {
-    private String id;
-    private String companyName;
-    private String description; // New field
-
-    // Constructor, getter, setter...
+public record ComplaintEvent(
+    String id, 
+    String companyName, 
+    String description
+) {
 }
-
 ----
 
 Upcaster from 1.0 revision to 2.0 revision:
@@ -478,165 +481,4 @@ When using the `@Event` annotation's version field on your Entity, a `VersionSna
 This filter can prevent snapshot events from reaching your upcaster.
 
 As such, it is advised to override the `SnapshotFilter` of an Entity to a no-op entry when you prefer to upcast your snapshots.
-====
-
-== Custom event transformation
-
-While the built-in upcasting infrastructure is not yet available in Axon 5.0, you can implement custom event transformations by wrapping the `EventConverter`.
-This approach allows you to transform events as they are read from the event store.
-
-The basic pattern is to create a custom `EventConverter` that:
-
-1. Converts events to an intermediate representation (for example `JsonNode`)
-2. Performs transformations on that intermediate representation
-3. Forwards the transformed event to a delegate converter
-
-Here's an example of a custom `EventConverter` that transforms events:
-
-[source,java]
-----
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.conversion.EventConverter;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-
-public class TransformingEventConverter implements EventConverter {
-
-    private final EventConverter delegate;
-
-    public TransformingEventConverter(EventConverter delegate) {
-        this.delegate = delegate;
-    }
-
-    @Override
-    public <E extends EventMessage, T> T convertPayload(E event, Type targetType) {
-        // First, convert to intermediate representation
-        JsonNode jsonNode = delegate.convertPayload(event, JsonNode.class);
-
-        // Check if this is an event that needs transformation
-        if (needsTransformation(event, jsonNode)) {
-            // Perform the transformation on the JsonNode
-            JsonNode transformedNode = transform(event, (ObjectNode) jsonNode);
-
-            // Now convert the transformed JsonNode to the target type
-            // We use the base Converter since we're converting from JsonNode to target type
-            return (T) delegate.convert(transformedNode, targetType);
-        }
-
-        // No transformation needed, convert directly to target type
-        return delegate.convertPayload(event, targetType);
-    }
-
-    @Override
-    public <E extends EventMessage> E convertEvent(E event, Type targetType) {
-        // Use withConvertedPayload to apply our transformation logic
-        // This will call our convertPayload method which includes transformation
-        return (E) event.withConvertedPayload(targetType, this);
-    }
-
-    private boolean needsTransformation(EventMessage<?> event, JsonNode jsonNode) {
-        // Check message type and version
-        String qualifiedName = event.type().qualifiedName().name();
-        String version = event.type().version();
-
-        // For example: transform OrderPlaced v1.0.0 to v2.0.0 structure
-        return "com.example.orders.OrderPlaced".equals(qualifiedName)
-               && "1.0.0".equals(version);
-    }
-
-    private JsonNode transform(EventMessage<?> event, ObjectNode jsonNode) {
-        // Perform the actual transformation
-        // For example, add a new field with a default value
-        if (!jsonNode.has("description")) {
-            jsonNode.put("description", "No description provided");
-        }
-
-        // Or rename fields
-        if (jsonNode.has("oldFieldName")) {
-            jsonNode.set("newFieldName", jsonNode.get("oldFieldName"));
-            jsonNode.remove("oldFieldName");
-        }
-
-        return jsonNode;
-    }
-
-    @Override
-    public boolean canConvert(Type sourceType, Type targetType) {
-        return delegate.canConvert(sourceType, targetType);
-    }
-
-    @Override
-    public <T> T convert(Object input, Type targetType) {
-        return delegate.convert(input, targetType);
-    }
-
-    @Override
-    public void describeTo(ComponentDescriptor descriptor) {
-        descriptor.describeProperty("type", "TransformingEventConverter");
-        descriptor.describeNestedComponent("delegate", delegate);
-    }
-}
-----
-
-Register your custom `EventConverter` in the configuration:
-
-[tabs]
-====
-Configuration API::
-+
---
-[source,java]
-----
-import org.axonframework.messaging.core.configuration.MessagingConfigurer;
-import org.axonframework.messaging.eventhandling.conversion.EventConverter;
-import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
-import org.axonframework.conversion.json.JacksonConverter;
-
-MessagingConfigurer configurer = MessagingConfigurer.create()
-    .componentRegistry(cr -> cr.registerComponent(
-        EventConverter.class,
-        config -> {
-            // Create the base converter
-            JacksonConverter jacksonConverter = new JacksonConverter();
-            DelegatingEventConverter baseConverter = new DelegatingEventConverter(jacksonConverter);
-
-            // Wrap with your transforming converter
-            return new TransformingEventConverter(baseConverter);
-        }
-    ));
-----
---
-
-Spring Boot::
-+
---
-[source,java]
-----
-@Configuration
-public class ConverterConfiguration {
-
-    @Bean
-    public EventConverter eventConverter() {
-        // Create the base converter
-        JacksonConverter jacksonConverter = new JacksonConverter();
-        DelegatingEventConverter baseConverter = new DelegatingEventConverter(jacksonConverter);
-
-        // Wrap with your transforming converter
-        return new TransformingEventConverter(baseConverter);
-    }
-}
-----
---
-====
-
-[NOTE]
-====
-This approach provides a bridge until the full upcasting infrastructure is available in a future Axon release.
-It's particularly useful for:
-
-* Simple field additions or renames
-* Structural transformations that can be expressed in the intermediate format
-* Gradual migration of event structures
-
-For more complex scenarios (splitting events, merging events, context-aware transformations), wait for the full upcasting infrastructure in future releases.
 ====
