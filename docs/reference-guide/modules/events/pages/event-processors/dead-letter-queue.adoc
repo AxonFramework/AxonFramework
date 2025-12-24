@@ -1,5 +1,13 @@
 = Dead-Letter Queue
 
+[WARNING]
+.Dead-Letter Queue not available in Axon Framework 5.0
+====
+The Dead-Letter Queue feature is not yet available in Axon Framework 5.0.
+It will be reintroduced in Axon Framework 5.1.
+The documentation below describes the Dead-Letter Queue concepts for reference and future use.
+====
+
 When configuring xref:axon-framework-reference:events:event-processors/index.adoc#error-handling[error handling] for your event processors, you might want to consider a Dead-Letter Queue to park events that you were unable to handle.
 
 Instead of either logging the error and continuing, or infinitely retrying the current event, a Dead-Letter Queue will park the event in the queue so you can decide to try and handle it again later. In addition, it will prevent handling of later events in the same sequence until the failed event is successfully processed.
@@ -105,25 +113,7 @@ Spring Boot::
 --
 [source,java]
 ----
-@Configuration
-public class AxonConfig {
-    // omitting other configuration methods...
-    @Bean
-    public ConfigurationEnhancer deadLetterQueueConfigurationEnhancer() {
-        // Replace "my-processor" for the processor you want to configure the DLQ on.
-        return registry -> MessagingConfigurer.with(registry).eventProcessing().registerDeadLetterQueue(
-                "my-processor",
-                config -> JpaSequencedDeadLetterQueue.builder()
-                                                     .processingGroup("my-processor")
-                                                     .maxSequences(256)
-                                                     .maxSequenceSize(256)
-                                                     .entityManagerProvider(config.getComponent(EntityManagerProvider.class))
-                                                     .transactionManager(config.getComponent(TransactionManager.class))
-                                                     .serializer(config.converter())
-                                                     .build()
-        );
-    }
-}
+// TODO #3577 - Update once Enhancer API is expanded with more Spring Boot options
 ----
 --
 ====
@@ -179,32 +169,7 @@ Spring Boot::
 --
 [source,java]
 ----
-@Configuration
-public class AxonConfig {
-    // omitting other configuration methods...
-    @Bean
-    public ConfigurationEnhancer deadLetterQueueConfigurationEnhancer () {
-        return registry -> MessagingConfigurer.with(registry).eventProcessing().registerDeadLetterQueueProvider(
-                processorName -> {
-                    //dlqEnabledProcessors is a collection with the processors that should have a dlq
-                    if (dlqEnabledProcessors.contains(processorName)) {
-                        return config -> JpaSequencedDeadLetterQueue.builder()
-                                                             .processingGroup(processorName)
-                                                             .entityManagerProvider(config.getComponent(
-                                                                     EntityManagerProvider.class
-                                                             ))
-                                                             .transactionManager(config.getComponent(
-                                                                     TransactionManager.class
-                                                             ))
-                                                             .serializer(config.converter())
-                                                             .build();
-                    } else {
-                        return null;
-                    }
-                }
-        );
-    }
-}
+// TODO #3577 - Update once Enhancer API is expanded with more Spring Boot options
 ----
 --
 ====
@@ -422,16 +387,7 @@ Spring Boot::
 --
 [source,java]
 ----
-@Configuration
-public class AxonConfig {
-    // omitting other configuration methods...
-    @Bean
-    public ConfigurationEnhancer enqueuePolicyConfigurationEnhancer() {
-        // Replace "my-processor" for the processor you want to configure the policy on.
-        return registry -> MessagingConfigurer.with(registry).eventProcessing()
-                                       .registerDeadLetterPolicy("my-processing-group", config -> new MyEnqueuePolicy());
-    }
-}
+// TODO #3577 - Update once Enhancer API is expanded with more Spring Boot options
 ----
 --
 ====
