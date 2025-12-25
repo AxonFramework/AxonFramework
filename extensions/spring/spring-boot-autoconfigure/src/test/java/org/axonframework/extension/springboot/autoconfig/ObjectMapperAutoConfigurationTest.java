@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.http.HttpMessageConvertersAutoConfiguration;
-import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.jmx.JmxAutoConfiguration;
 import org.springframework.boot.autoconfigure.web.reactive.function.client.WebClientAutoConfiguration;
@@ -36,11 +35,11 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Test class validating the {@link CustomJacksonModuleAutoConfiguration}.
+ * Test class validating the {@link ObjectMapperAutoConfiguration}.
  *
  * @author Theo Emanuelsson
  */
-class CustomJacksonModuleAutoConfigurationTest {
+class ObjectMapperAutoConfigurationTest {
 
     private ApplicationContextRunner testContext;
 
@@ -91,7 +90,7 @@ class CustomJacksonModuleAutoConfigurationTest {
     }
 
     @Test
-    void springDataPageDeserializerWorksCorrectly() throws Exception {
+    void springDataPageDeserializerWorksCorrectlyInContext() throws Exception {
         testContext.run(context -> {
             ObjectMapper objectMapper = context.getBean(ObjectMapper.class);
 
@@ -113,46 +112,7 @@ class CustomJacksonModuleAutoConfigurationTest {
     }
 
     @Test
-    void springDataPageDeserializerHandlesEmptyContent() throws Exception {
-        testContext.run(context -> {
-            ObjectMapper objectMapper = context.getBean(ObjectMapper.class);
-
-            String json = "{"
-                    + "\"content\":[],"
-                    + "\"number\":0,"
-                    + "\"size\":10,"
-                    + "\"totalElements\":0"
-                    + "}";
-
-            Page<?> page = objectMapper.readValue(json, Page.class);
-
-            assertThat(page).isInstanceOf(PageImpl.class);
-            assertThat(page.getContent()).isEmpty();
-            assertThat(page.getNumber()).isEqualTo(0);
-            assertThat(page.getSize()).isEqualTo(10);
-            assertThat(page.getTotalElements()).isEqualTo(0);
-        });
-    }
-
-    @Test
-    void springDataPageDeserializerHandlesMissingFields() throws Exception {
-        testContext.run(context -> {
-            ObjectMapper objectMapper = context.getBean(ObjectMapper.class);
-
-            String json = "{\"content\":[\"item1\",\"item2\"]}";
-
-            Page<?> page = objectMapper.readValue(json, Page.class);
-
-            assertThat(page).isInstanceOf(PageImpl.class);
-            assertThat(page.getContent()).hasSize(2);
-            assertThat(page.getNumber()).isEqualTo(0);
-            assertThat(page.getSize()).isEqualTo(2);
-            assertThat(page.getTotalElements()).isEqualTo(2);
-        });
-    }
-
-    @Test
-    void springDataPageSerializationRoundTrip() throws Exception {
+    void springDataPageSerializationRoundTripInContext() throws Exception {
         testContext.run(context -> {
             ObjectMapper objectMapper = context.getBean(ObjectMapper.class);
 
