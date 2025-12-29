@@ -8,7 +8,7 @@ In general, these can be grouped in two major areas:
 . Dispatching events from regular components
 
 This page will describe how to get an event message on the event bus from both locations.
-For more specifics regarding event publication and storage implementations in Axon Framework, read xref:event-bus-and-event-store.adoc[this] section.
+For more specifics regarding event publication and storage implementations in Axon Framework, read xref:event-buses-and-event-stores.adoc[this] section.
 
 == Dispatching events from an entity
 

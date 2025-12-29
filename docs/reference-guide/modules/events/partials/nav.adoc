@@ -5,8 +5,6 @@
 ** xref:events:event-processors/index.adoc[]
 *** xref:events:event-processors/subscribing.adoc[]
 *** xref:events:event-processors/streaming.adoc[]
-//*** xref:events:event-processors/dead-letter-queue.adoc[] // TODO: Reinstate when DLQ API is available in Axon 5.0
-
-
-** xref:events:event-bus-and-event-store.adoc[]
+*** xref:events:event-processors/dead-letter-queue.adoc[]
+** xref:events:infrastructure.adoc[]
 ** xref:events:event-versioning.adoc[]

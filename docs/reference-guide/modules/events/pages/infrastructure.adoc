@@ -1,6 +1,6 @@
-= Event Bus & Event Store
+= Event Buses & Event Stores
 :navtitle: Infrastructure
-:page-aliases: event-bus-and-event-store.adoc
+:page-aliases: event-buses-and-event-stores.adoc
 
 [#_event_bus]
 == Event bus
@@ -22,66 +22,10 @@ Additionally, it persists published events and is able to retrieve previous even
 
 === Dynamic Consistency Boundaries (DCB)
 
-Axon Framework 5 introduces **Dynamic Consistency Boundaries** (DCB) as a flexible approach to organizing and querying events.
+**Dynamic Consistency Boundaries** (DCB) provide a flexible approach to organizing and querying events.
 DCB allows you to tag events with arbitrary key-value pairs and query events using those tags, rather than being limited to querying by aggregate identifier alone.
 
-==== Event tags
-
-When appending events, you can attach tags to provide additional metadata for querying and filtering:
-
-[source,java]
-----
-// Tag events during append
-eventStore.append(
-    events,
-    tags -> tags.with("customerId", customerId)
-                .with("region", "EU")
-                .with("orderType", "subscription")
-);
-----
-
-Tags are particularly useful for:
-
-* **Cross-entity queries** - Find events across multiple entity instances based on business criteria
-* **Filtering event streams** - Create focused event processors that only handle relevant events
-* **Business-level organization** - Group events by business concepts rather than technical entity boundaries
-
-==== `EventCriteria`
-
-Use `EventCriteria` to query events based on tags when reading from the event store:
-
-[source,java]
-----
-import org.axonframework.messaging.eventhandling.EventCriteria;
-
-// Query events by tag
-EventCriteria criteria = EventCriteria.builder()
-    .tag("customerId", customerId)
-    .tag("region", "EU")
-    .build();
-
-MessageStream<EventMessage<?>> eventStream = eventStore.readEvents(criteria);
-----
-
-==== Consistency markers
-
-DCB uses **ConsistencyMarker** to track the logical grouping of events and prevent write conflicts.
-When appending events with tags, the framework automatically manages consistency markers to ensure that concurrent writes to the same logical boundary are detected and handled appropriately.
-
-This approach provides flexibility while maintaining consistency guarantees similar to traditional aggregate-based event sourcing.
-
-[NOTE]
-.DCB vs Traditional Aggregate-Based Storage
-====
-Traditional aggregate-based event sourcing queries events by aggregate identifier.
-DCB extends this by allowing arbitrary tag-based queries, making it easier to model complex business scenarios where events need to be grouped and queried in multiple ways.
-
-Event processors reading from the store typically use simple criteria.
-The main impact of DCB is on the write side (command handling) where events are appended with tags.
-
-**Availability**: DCB is currently supported by Axon Server as the event store.
-JPA-based event storage does not yet support DCB and uses traditional aggregate-based storage.
-====
+For detailed information on DCB including event tags, EventCriteria, and consistency markers, see xref:event-store-specifics.adoc[Event Storage].
 
 === Axon Server as an event store
 
@@ -350,96 +294,6 @@ The `JdbcEventStorageEngine` has been moved to an external extension.
 If you need JDBC-based event storage, please refer to the JDBC extension documentation.
 
 For most use cases, we recommend using either Axon Server or the JPA Event Storage Engine.
-====
-
-[[MongoEventStorageEngine]]
-==== `MongoEventStorageEngine`
-
-https://www.mongodb.com/[MongoDB] is a document based NoSQL store.
-Its scalability characteristics make it suitable for use as an event store.
-Axon provides the `MongoEventStorageEngine`, which uses MongoDB as a backing database.
-It is contained in the Axon Mongo module (Maven artifactId `axon-mongo`).
-
-Events are stored in two separate collections: one for the event streams and one for snapshots.
-
-By default, the `MongoEventStorageEngine` stores each event in a separate document.
-It is, however, possible to change the `StorageStrategy` used.
-The alternative provided by Axon is the `DocumentPerCommitStorageStrategy`, which creates a single document for all events that have been stored in a single commit (that is, in the same transaction).
-
-The advantage of storing an entire commit in a single document is that commit is stored atomically.
-Furthermore, it requires only a single roundtrip for any number of events.
-The disadvantage is that it becomes harder to query events directly in the database.
-For example, when refactoring the domain model it is harder to "transfer" events from one aggregate to another if they are included in a "commit document".
-
-The `MongoEventStorageEngine` does not require a lot of configuration.
-All it needs is a reference to the collections to store the events in, and you're set to go.
-For production environments, you may want to double check the indexes on your collections.
-If you want transactions to be handled correctly, it's important to set a `TransactionManager`.
-Please note that there are several other optional configuration properties, like the serializers and an (optional) upcaster chain.
-
-[tabs]
-====
-Configuration API::
-+
---
-
-[source,java]
-----
-import org.axonframework.messaging.core.configuration.MessagingConfigurer;
-import org.axonframework.messaging.eventhandling.eventstore.EmbeddedEventStore;
-import org.axonframework.extensions.mongo.eventhandling.eventstore.MongoEventStorageEngine;
-
-public class AxonConfig {
-    // omitting other configuration methods...
-    public void configureMongoEventStorage(MessagingConfigurer configurer, MongoTemplate mongoTemplate) {
-        configurer.registerEventSink(config ->
-            new EmbeddedEventStore(
-                MongoEventStorageEngine.builder()
-                    .mongoTemplate(mongoTemplate)
-                    .build()
-            )
-        );
-    }
-}
-----
---
-Spring Boot::
-+
---
-
-[source,java]
-----
-@Configuration
-public class AxonConfig {
-    // omitting other configuration methods...
-
-    // The EmbeddedEventStore delegates actual storage and retrieval of events to an EventStorageEngine.
-    @Bean
-    public EventStore eventStore(EventStorageEngine storageEngine,
-                                 GlobalMetricRegistry metricRegistry) {
-       return EmbeddedEventStore
-           .builder()
-           .storageEngine(storageEngine)
-           .messageMonitor(metricRegistry.registerEventBus("eventStore"))
-           .spanFactory(spanFactory)
-           // ...
-           .build();
-    }
-
-    // The MongoEventStorageEngine stores each event in a separate MongoDB document.
-    @Bean
-    public EventStorageEngine storageEngine(MongoClient client) {
-        return MongoEventStorageEngine
-            .builder()
-            .mongoTemplate(DefaultMongoTemplate.builder()
-                                               .mongoDatabase(client)
-                                               .build())
-            // ...
-            .build();
-    }
-}
-----
---
 ====
 
 === Event store utilities
