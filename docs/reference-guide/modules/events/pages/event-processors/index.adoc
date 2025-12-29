@@ -165,10 +165,31 @@ Since the Event Processor is the invoker of event handling methods, it is a spot
 Since Event Processors are dedicated to event handling, the `MessageHandlerInterceptor` is required to deal with an `EventMessage`.
 Differently put, an xref:messaging-concepts:message-intercepting.adoc#event-handler-interceptors[EventHandlerInterceptor] can be registered to Event Processors.
 
-The `EventProcessingConfigurer` provides two methods to configure `MessageHandlerInterceptor` instances:
+There are two approaches to registering interceptors with your event handling processes.
+Firstly, you can define default handling interceptors that will be attached to all Event Processors in your application.
+This can be achieved through the `MessagingConfigurer` and is explained in more detail xref:messaging-concepts:message-intercepting.adoc#event-handler-interceptors[here].
 
-* `registerDefaultHandlerInterceptor(BiFunction<Configuration, String, MessageHandlerInterceptor<? super EventMessage<?>>>)`: registers a default `MessageHandlerInterceptor` that will be configured on every Event Processor instance
-* `registerHandlerInterceptor(String, Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>>)`: registers a `MessageHandlerInterceptor` that will be configured for the Event Processor matching the given `String`
+Secondly, handler interceptor can be registered per specific Event Processor instance.
+For this you should use the `withInterceptr(MessageHandlerInterceptor<? super EventMessage>)` operation as part of customizing a processor based on its name as shown:
+
+[source,java]
+----
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+
+public class AxonConfig {
+
+    public void registerProcessorSpecificInterceptor(MessagingConfigurer configurer) {
+        // For SubscribingEventProcessor:
+        configurer.eventProcessing()
+                  .subscribing()
+                  .customize("my-processor", config -> config.withInterceptor(new CustomEventHandlerInterceptor()));
+        // For PooledStreamEventProcessor:
+        configurer.eventProcessing()
+                  .pooledStreaming()
+                  .customize("my-processor", config -> config.withInterceptor(new CustomEventHandlerInterceptor()));
+    }
+}
+----
 
 === Message monitors
 
@@ -176,43 +197,16 @@ Any Event Processor instance provides the means to contain a Message Monitor.
 Message Monitors (discussed in more detail xref:monitoring:metrics.adoc[here]) allow for monitoring the flow of messages throughout an Axon application.
 For Event Processors, the message monitor deals explicitly with the events flowing through the Event Processor towards the event handling functions.
 
-The `EventProcessingConfigurer` provides two approaches towards configuring a `MessageMonitor`:
-
-* `registerMessageMonitor(String, Function<Configuration, MessageMonitor<Message<?>>>)`: registers the given `MessageMonitor` to the Event Processor matching the given `String`
-* `registerMessageMonitorFactory(String, MessageMonitorFactory)`: registers the given `MessageMonitorFactory` to construct a `MessageMonitor` for the Event Processor matching the given `String`
-
-The `MessageMonitorFactory` provides a more fine-grained approach, used throughout the Configuration API, to construct a `MessageMonitor`:
+To register a default `MessagMonitor` for events, you use the `MessageConfigurer#registerEventMonitor` operation as shown:
 
 [source,java]
 ----
-@FunctionalInterface
-public interface MessageMonitorFactory {
-    
-    MessageMonitor<Message<?>> create(Configuration configuration, 
-                                      Class<?> componentType, 
-                                      String componentName);
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+
+public class AxonConfig {
+
+    public void registerEventMonitor(MessagingConfigurer configurer) {
+        configurer.registerEventMonitor(config -> new CustomMessageMonitor());
+    }
 }
 ----
-
-We can use the `Configuration` to retrieve the required dependencies to construct the `MessageMonitor`.
-The type and name reflect which infrastructure component the factory constructs a monitor for.
-Whenever you use the `MessageMonitorFactory` to construct a `MessageMonitor` for an Event Processor, the factory expects the `componentType` to be an `EventProcessor` implementation.
-The `componentName`, on the other hand, would resemble the name of the Event Processor.
-
-=== Transaction management
-
-As components that deal with event handling, the Event Processor is a logical place to provide transaction configuration options.
-Note that in the majority of the scenarios, the defaults will suffice.
-This section simply serves to show these options to allow adjustment if the application requires it.
-
-The first of these is the `TransactionManager`.
-Axon uses the `TransactionManager` to attach a transaction to every xref:messaging-concepts:processing-context.adoc[Unit of Work].
-Within a Spring environment, the `TransactionManager` defaults to a `SpringTransactionManager`, which uses Spring's `PlatformTransactionManager` under the hood.
-In non Spring environments, it would be wise to build a `TransactionManager` implement if transaction management is required, of course.
-Such an implementation only requires the definition of the `TransactionManager#startTransaction()` method.
-To adjust the transaction manager for an Event Processor, the `registerTransactionManager(String, Function<Configuration, TransactionManager>)` on the `EventProcessingConfigurer` should be used.
-
-Secondly, you can adjust the desired `RollbackConfiguration` per Event Processor.
-It is the `RollbackConfiguration` that decide when a xref:messaging-concepts:processing-context.adoc[Unit of Work] should rollback the transaction.
-The default `RollbackConfiguration` is to rollback on any type of `Throwable`; the xref:messaging-concepts:processing-context.adoc[Unit of Work] page describes the other options you can choose.
-To adjust the default behaviour, the `registerRollbackConfiguration(String, Function<Configuration, RollbackConfiguration>)` function should be invoked on the `EventProcessingConfigurer`.
