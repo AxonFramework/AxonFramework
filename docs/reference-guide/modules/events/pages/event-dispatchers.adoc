@@ -10,6 +10,7 @@ In general, these can be grouped in two major areas:
 This page will describe how to get an event message on the event bus from both locations.
 For more specifics regarding event publication and storage implementations in Axon Framework, read xref:event-buses-and-event-stores.adoc[this] section.
 
+[#dispatching_events_from_an_entity]
 == Dispatching events from an entity
 
 The xref:commands:modeling/aggregate.adoc[Entity] or its xref:commands:modeling/multi-entity-aggregates.adoc[child entities] are typically the starting point of all event messages.
@@ -59,6 +60,7 @@ appender.append(
 ----
 ====
 
+[#dispatching_events_from_a_non_entity]
 == Dispatching events from a non-entity
 
 In the vast majority of cases, xref:commands:modeling/aggregate.adoc[entities] will publish events by appending them.
