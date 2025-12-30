@@ -80,6 +80,7 @@ public interface TrackingToken {
      * @param other The token to validate against {@code this} token.
      * @return {@code true} if this token is at the same location as the other token, otherwise {@code false}.
      * @see #covers(TrackingToken)
+     * @since 4.12.3
      */
     default boolean equalsLatest(TrackingToken other) {
         return other != null && covers(other) && other.covers(this);
