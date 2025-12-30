@@ -91,7 +91,7 @@ public class ReplayTokenWrappingGapAwareTrackingTokenTest {
         }
 
         @Test
-        void eventPreviouslyProcessedShouldBeReplayEvenWhenGapsFilledDuringReplay() {
+        void replayIfNotAGapWithoutStartPosition() {
             // tokenAtReset at index 10 with gaps at 7,8
             // Before reset, processor saw: 0,1,2,3,4,5,6,9,10 (NOT 7,8)
             TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(7L, 8L));
@@ -108,7 +108,7 @@ public class ReplayTokenWrappingGapAwareTrackingTokenTest {
         }
 
         @Test
-        void eventPreviouslyProcessedShouldBeReplayEvenWhenGapsFilledDuringReplayStartNotNull() {
+        void replayIfNotAtGap() {
             TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(7L, 8L));
             TrackingToken currentToken = ReplayToken.createReplayToken(tokenAtReset, new GapAwareTrackingToken(0L, emptyList()));
 
