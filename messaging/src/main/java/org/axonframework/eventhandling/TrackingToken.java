@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,19 +69,16 @@ public interface TrackingToken {
     }
 
     /**
-     * Indicates whether this token is at the exact same position as the {@code other} token.
-     * This method is similar to {@link #covers(TrackingToken)}, but for some token implementations (like
-     * {@link GapAwareTrackingToken}) it may use a less strict comparison that only checks the index position,
-     * ignoring gap structures.
+     * Indicates whether {@code this} token is at the exact same spot in the event stream as the {@code other} token.
      * <p>
      * This method is particularly useful when comparing tokens from different points in time, such as during
-     * replay detection, where gap structures may naturally differ.
+     * replay detection, where token implementations may naturally differ.
      * <p>
      * By default, this method checks bidirectional coverage: {@code this.covers(other) && other.covers(this)},
      * which ensures both tokens are at the same position.
      *
-     * @param other The token to compare to this one
-     * @return {@code true} if this token's position equals the other's position, otherwise {@code false}
+     * @param other The token to validate against {@code this} token.
+     * @return {@code true} if this token is at the same location as the other token, otherwise {@code false}.
      * @see #covers(TrackingToken)
      */
     default boolean equalsLatest(TrackingToken other) {
