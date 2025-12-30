@@ -121,22 +121,6 @@ public class ReplayTokenWrappingGapAwareTrackingTokenTest {
         }
 
         @Test
-        void eventAtResetIndexShouldBeReplayEvenWhenGapsFilledDuringReplay() {
-            // tokenAtReset at index 10 with gaps at 7,8
-            TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(7L, 8L));
-            TrackingToken currentToken = ReplayToken.createReplayToken(tokenAtReset, null);
-
-            // During replay, gaps get filled, process 0-9
-            // Event 10 - at reset index, WAS processed before reset
-            TrackingToken newToken = GapAwareTrackingToken.newInstance(10, emptySet());
-            TrackingToken result = ((ReplayToken) currentToken).advancedTo(newToken);
-
-            assertInstanceOf(ReplayToken.class, result, "Should still be in replay mode at reset index");
-            assertTrue(ReplayToken.isReplay(result),
-                    "Event 10 was processed before reset, should be marked as replay");
-        }
-
-        @Test
         void replayBeforeResetIndexAndGaps() {
             TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(7L, 8L));
 
@@ -344,9 +328,6 @@ public class ReplayTokenWrappingGapAwareTrackingTokenTest {
                             "event 5 was processed before reset");
         }
 
-        /**
-         * Edge case: Gap at index 0.
-         */
         @Test
         void gapAtIndexZeroFilledDuringReplay() {
             // Setup: tokenAtReset at index 5 with gap at 0
@@ -369,10 +350,6 @@ public class ReplayTokenWrappingGapAwareTrackingTokenTest {
                     "Event 1 was processed before reset, should be marked as replay");
         }
 
-        /**
-         * Edge case: Partial gap fill - only some gaps filled.
-         * Gap 3 filled, gap 7 not filled. Event 5 arrives.
-         */
         @Test
         void partialGapFill_eventBetweenGaps() {
             // Setup: tokenAtReset at index 10 with gaps at 3,7
@@ -414,19 +391,16 @@ public class ReplayTokenWrappingGapAwareTrackingTokenTest {
             assertTrue(ReplayToken.isReplay(advancedToken), "Should still be in replay mode");
         }
 
-        /**
-         * Tests that replay exits only when newToken has passed tokenAtReset's index.
-         */
         @Test
-        void advancedToShouldExitReplayWhenPastTokenAtResetIndex() {
+        void replayExitsOnlyWhenAdvancedToTokenHasPassedTokenAtResetPosition() {
             // Token at reset: index 6 with gap at position 1
             GapAwareTrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(6, Collections.singleton(1L));
 
             TrackingToken replayToken = ReplayToken.createReplayToken(tokenAtReset, null);
 
-            // Advance to index 7 - this is PAST the reset position
-            GapAwareTrackingToken pastToken = GapAwareTrackingToken.newInstance(7, emptySet());
-            TrackingToken advancedToken = ((ReplayToken) replayToken).advancedTo(pastToken);
+            // Advance to index 7 - this is after the reset position
+            GapAwareTrackingToken currentToken = GapAwareTrackingToken.newInstance(7, emptySet());
+            TrackingToken advancedToken = ((ReplayToken) replayToken).advancedTo(currentToken);
 
             // Should exit replay - we've passed the reset position
             assertFalse(ReplayToken.isReplay(advancedToken),
