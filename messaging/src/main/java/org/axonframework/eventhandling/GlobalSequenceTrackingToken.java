@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -109,7 +109,7 @@ public class GlobalSequenceTrackingToken implements TrackingToken, Comparable<Gl
                () -> "Incompatible token type provided:" + (other != null ? other.getClass().getSimpleName() : "null"));
         GlobalSequenceTrackingToken otherToken = (GlobalSequenceTrackingToken) other;
 
-        return otherToken == null || otherToken.globalIndex <= this.globalIndex;
+        return otherToken.globalIndex <= this.globalIndex;
     }
 
     @Override
@@ -118,7 +118,7 @@ public class GlobalSequenceTrackingToken implements TrackingToken, Comparable<Gl
                 () -> "Incompatible token type provided:" + (other != null ? other.getClass().getSimpleName() : "null"));
         GlobalSequenceTrackingToken otherToken = (GlobalSequenceTrackingToken) other;
 
-        return otherToken != null && otherToken.globalIndex == this.globalIndex;
+        return otherToken.globalIndex == this.globalIndex;
     }
 
     @Override
