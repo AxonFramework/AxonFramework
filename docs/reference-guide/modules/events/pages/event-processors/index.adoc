@@ -30,25 +30,79 @@ These event handling components are attached to a processor, whose name by defau
 Furthermore, the default processor implementation used by Axon is the xref:event-processors/streaming.adoc[PooledStreamingEventProcessor].
 The event processor type can be customized, as is shown in the xref:event-processors/subscribing.adoc#configuring[subscribing] and xref:event-processors/streaming.adoc#configuring[streaming] sections.
 
+There are two main approaches to configuring event processors and assigning handlers:
+
+* *Declarative configuration* - Using Axon's configuration API to explicitly define which event handling components belong to which processor.
+* *Autodetected configuration* - Using Spring Boot to automatically detect and assign event handling components to processors based on their package name.
+
 xref:event-handlers.adoc#registering-event-handlers[This] section describes the process to register an event handler.
 
-Now let us consider that the following event handling components have been registered :
+[#declarative_config]
+=== Declarative Configuration
+
+Assuming the declarative approach is used and we have the following event handling components:
 
 * `org.axonframework.example.eventhandling.MyHandler`
 * `org.axonframework.example.eventhandling.MyOtherHandler`
 * `org.axonframework.example.eventhandling.module.ModuleHandler`
 
-Without any intervention, this will trigger the creation of two processors, namely:
+To register these, we need to explicitly invoke the `MessagingConfigurer#eventProcessing(Consumer<EventProcessingConfigurer>)`.
+In the example below, a xref:events:event-processors/subscribing.adoc[subscribing processor] is constructed, which can be replaced for a xref:events:event-processors/streaming.adoc[streaming processor] if desired:
 
-. `org.axonframework.example.eventhandling` with two event handling components called `MyHandler` and `MyOtherHandler`
-. `org.axonframework.example.eventhandling.module` with the event handling component `ModuleHandler`
+[source,java]
+----
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
+import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessorsConfigurer;
+
+public class AxonConfig {
+
+    public void configureEventProcessing(MessagingConfigurer configurer) {
+        configurer.eventProcessing(eventConfigurer -> eventConfigurer.subscribing(
+                this::configureSubscribingProcessor
+        ));
+    }
+
+    private SubscribingEventProcessorsConfigurer configureSubscribingProcessor(
+            SubscribingEventProcessorsConfigurer subscribingConfigurer
+    ) {
+        return subscribingConfigurer.processor(
+                "my-processor",
+                config -> config.eventHandlingComponents(this::configureHandlingComponent)
+                                .notCustomized()
+        );
+    }
+
+    private EventHandlingComponentsConfigurer.AdditionalComponentPhase configureHandlingComponent(
+            EventHandlingComponentsConfigurer.RequiredComponentPhase componentConfigurer
+    ) {
+        return componentConfigurer.autodetected(c -> new MyHandler())
+                                  .autodetected(c -> new ModuleHandler())
+                                  .autodetected(c -> new MyOtherHandler());
+    }
+}
+----
+
+[#autodetected_config]
+=== Autodetected configuration
+
+Assuming the autodetected approach is used, let us consider that the following event handling components have been registered:
+
+* `org.axonframework.example.eventhandling.MyHandler`
+* `org.axonframework.example.eventhandling.MyOtherHandler`
+* `org.axonframework.example.eventhandling.module.ModuleHandler`
+
+Without any intervention, this will trigger the creation of two Streaming Processors, namely:
+
+. `org.axonframework.example.eventhandling` with two event handling components called `MyHandler` and `MyOtherHandler`.
+. `org.axonframework.example.eventhandling.module` with the event handling component `ModuleHandler`.
 
 === Ordering event handling components within a processor
 
 To order event handling components within an Event Processor, the order in which components are registered (as described in the xref:event-handlers.adoc#registering-event-handlers[Registering Event Handlers] section) is guiding.
 Thus, the ordering in which an Event Processor will call handling components for event handling is the same as their insertion ordering in the Configuration API.
 
-If we use Spring as the mechanism for wiring everything, we can explicitly specify the event handler component ordering by adding the `@Order` annotation.
+If we use an autodetected configuration like Spring as the mechanism for wiring everything, we can explicitly specify the event handler component ordering by adding the `@Order` annotation.
 This annotation is placed on the event handling component class, containing an `integer` value to specify the ordering.
 
 Note that it is *not possible* to order event handlers belonging to different Event Processors.
@@ -57,7 +111,6 @@ Each Event Processor acts as an isolated component without any intervention from
 [NOTE]
 .Ordering Event Handlers within a Processor
 ====
-
 Although we can place an order among event handling components within an Event Processor, separation of components is recommended.
 
 Placing an overall ordering on event handling components means those components are inclined to interact with one another, introducing a form of coupling.
@@ -86,36 +139,66 @@ We can configure a default `ErrorHandler` for all Event Processors or an `ErrorH
 
 [tabs]
 ====
-Configuration API::
+Configuration API - Default::
 +
 --
+To register a default `ErrorHandler` for any Event Processor, you can do the following:
 
 [source,java]
 ----
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorContext;
+import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorHandler;
 
 public class AxonConfig {
 
-    public void registerDefaultErrorHandler(MessagingConfigurer configurer) {
-        configurer.eventProcessing()
-                  .defaults(config -> config.errorHandler(new CustomErrorHandler()));
-    }
-
-    public void registerProcessorSpecificErrorHandler(MessagingConfigurer configurer) {
-        configurer.eventProcessing().subscribing()
-                  .customize("my-processor", config -> config.errorHandler(new CustomErrorHandler()));
+    public void configureEventProcessing(MessagingConfigurer configurer) {
+        configurer.eventProcessing(eventConfigurer -> eventConfigurer.defaults(
+                defaults -> defaults.errorHandler(new CustomErrorHandler())
+        ));
     }
 }
 ----
 --
 
-Spring Boot::
+Configuration API - Specific::
 +
 --
+To register a custom `ErrorHandler` for a specific (in this case Subscribing) Processor, have a look at the following example:
 
 [source,java]
 ----
-// TODO #3577 - Update once Enhancer API is expanded with more Spring Boot options
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
+import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessorsConfigurer;
+
+public class AxonConfig {
+
+    public void configureEventProcessing(MessagingConfigurer configurer) {
+        configurer.eventProcessing(eventConfigurer -> eventConfigurer.subscribing(
+                this::configureSubscribingProcessor
+        ));
+    }
+
+    private SubscribingEventProcessorsConfigurer configureSubscribingProcessor(
+            SubscribingEventProcessorsConfigurer subscribingConfigurer
+    ) {
+        return subscribingConfigurer.processor(
+                "my-processor",
+                config -> config.eventHandlingComponents(this::configureHandlingComponent)
+                                .customized((c, subscribingConfig) -> subscribingConfig.errorHandler(
+                                        new CustomErrorHandler()
+                                ))
+        );
+    }
+
+    private EventHandlingComponentsConfigurer.AdditionalComponentPhase configureHandlingComponent(
+            EventHandlingComponentsConfigurer.RequiredComponentPhase componentConfigurer
+    ) {
+        return componentConfigurer.autodetected(c -> new MyHandler());
+    }
+}
 ----
 --
 ====
@@ -149,7 +232,8 @@ past events.
 If you instead propagate the exception so the event processor keeps retrying, the event processor will stall entirely when the cause is consistent.
 
 Although this behavior is sufficient on many occasions, sometimes it is beneficial if we can unblock event handling by parking the problematic event.
-This is where the dead-letter queue comes in. It is a mechanism to park events until they can be processed successfully.
+This is where the dead-letter queue comes in.
+It is a mechanism to park events until they can be processed successfully.
 You can find more information in the xref:axon-framework-reference:events:event-processors/dead-letter-queue.adoc[] section.
 
 [[general_processor_configuration]]
