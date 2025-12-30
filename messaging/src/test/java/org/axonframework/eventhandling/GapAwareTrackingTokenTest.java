@@ -280,32 +280,32 @@ class GapAwareTrackingTokenTest {
 
     @Test
     void upperBoundRemovesGapsWhenOtherTokenFillsThem() {
-        // upper(T1,T2) = 7, 8, 10+  --> token 1 not changed
+        // upper(T1,T2) = 7, 8, 10+  --> token not changed
         GapAwareTrackingToken token0_0 = GapAwareTrackingToken.newInstance(9, asList(7L, 8L));
         GapAwareTrackingToken token0_1 = GapAwareTrackingToken.newInstance(0, emptyList());
         assertEquals(token0_0, token0_0.upperBound(token0_1));
 
-        // upper(T1,T2) = 7, 8, 10+  --> token 1 not changed
+        // upper(T1,T2) = 7, 8, 10+  --> token not changed
         GapAwareTrackingToken token1_0 = GapAwareTrackingToken.newInstance(9, asList(7L, 8L));
         GapAwareTrackingToken token1_1 = GapAwareTrackingToken.newInstance(6, emptyList());
         assertEquals(token1_0, token1_0.upperBound(token1_1));
 
-        // upper(T1,T2) = 8, 10+     --> token 1 changed
+        // upper(T1,T2) = 8, 10+     --> token changed
         GapAwareTrackingToken token2_0 = GapAwareTrackingToken.newInstance(9, asList(7L, 8L));
         GapAwareTrackingToken token2_1 = GapAwareTrackingToken.newInstance(7, emptyList());
         assertEquals(GapAwareTrackingToken.newInstance(9, singletonList(8L)), token2_0.upperBound(token2_1));
 
-        // upper(T1,T2) = 10+        --> token 1 changed
+        // upper(T1,T2) = 10+        --> token changed
         GapAwareTrackingToken token3_0 = GapAwareTrackingToken.newInstance(9, singletonList(8L));
         GapAwareTrackingToken token3_1 = GapAwareTrackingToken.newInstance(8, emptyList());
         assertEquals(GapAwareTrackingToken.newInstance(9, emptyList()), token3_0.upperBound(token3_1));
 
-        // upper(T1,T2) = 10+        --> token 1 not changed
+        // upper(T1,T2) = 10+        --> token not changed
         GapAwareTrackingToken token4_0 = GapAwareTrackingToken.newInstance(9, emptyList());
         GapAwareTrackingToken token4_1 = GapAwareTrackingToken.newInstance(9, emptyList());
         assertEquals(GapAwareTrackingToken.newInstance(9, emptyList()), token4_0.upperBound(token4_1));
 
-        // upper(T1,T2) = 11+        --> token 1 changed
+        // upper(T1,T2) = 11+        --> token changed
         GapAwareTrackingToken token5_0 = GapAwareTrackingToken.newInstance(9, emptyList());
         GapAwareTrackingToken token5_1 = GapAwareTrackingToken.newInstance(10, emptyList());
         assertEquals(GapAwareTrackingToken.newInstance(10, emptyList()), token5_0.upperBound(token5_1));
