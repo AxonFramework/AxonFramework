@@ -5,7 +5,7 @@ As any Event Processor, it serves as the technical aspect to handle events by in
 
 The Streaming Processor defines itself by receiving the events from a `StreamableEventSource`.
 The `StreamableEventSource` is an infrastructure component through which we can open a stream of events.
-The source can also specify positions on the event stream, so-called <<tracking-tokens,Tracking Tokens>>, used as start positions when opening an event stream.
+The source can also specify positions on the event stream, so-called <<tracking_tokens,Tracking Tokens>>, used as start positions when opening an event stream.
 An example of a `StreamableEventSource` is the xref:event-buses-and-event-stores.adoc#event_store[`EventStore`], like for example Axon Server or the xref:event-buses-and-event-stores.adoc#aggregatebasedjpaeventstorageengine[JPA aggregate-based storage engine].
 
 Furthermore, Streaming Processors use separate threads to process the events retrieved from the `StreamableEventSource`.
@@ -37,7 +37,7 @@ Due to this, the "Pooled Streaming Event Processor," a type of Streaming Process
 [NOTE]
 .Default Event Processor
 ====
-Which `EventProcessor` type becomes the default processor depends on the event message source available in your application.
+Which `EventProcessor` type becomes the default processor depends on the event source available in your application.
 In the majority of use cases, an Event Store is present.
 As the Event Store is a type of `StreamableEventSource`, the default will be the Pooled Streaming Event Processor.
 
@@ -49,7 +49,7 @@ This implementation will use the configured `EventBus` as its `SubscribableMessa
 The Pooled Streaming Event Processor (PSEP for short) is the recommended processor implementation for most users.
 It provides a high-performance, two-pool architecture that separates event fetching from event processing, enabling efficient parallel processing and better resource utilization.
 
-The processor supports all core streaming operations including <<replaying-events,replaying events>>, <<parallel-processing,parallelism>>, and tracking progress with <<tracking-tokens,tokens>>.
+The processor supports all core streaming operations including <<replaying-events,replaying events>>, <<parallel-processing,parallelism>>, and tracking progress with <<tracking_tokens,tokens>>.
 
 [[configuring]]
 == Configuring
@@ -75,7 +75,7 @@ The `EventProcessingConfigurer` lambda guides users towards:
 2. second, register a lambda to retrieve the Event Handling Components, and,
 3. third, customization for the event processor, if any.
 
-The example below shows how this approach is used to define a (1) `PooledStreamingEventProcessor` with the (2) `AnnotatedEventHandlingClass` as the single event handling component, and (3) with a specific  customization:
+The example below shows how this approach is used to define a (1) `PooledStreamingEventProcessor` with the (2) `AnnotatedEventHandlingClass` as the single event handling component, and (3) with a specific customization:
 
 [source,java]
 ----
@@ -184,18 +184,19 @@ axon.eventhandling.processors[my.processor].mode=pooled-streaming
 axon.eventhandling.processors[my.processor].source=eventStore
 ----
 
-[[error-mode]]
+[[error_mode]]
 == Error mode
 
 Whenever the xref:event-processors/index.adoc#error-handling[error handler] rethrows an exception, the `PooledStreamingEventProcessor` aborts the failed processing segment.
 
 The processor will retry processing using an incremental back-off period, starting at 1 second and doubling after each attempt until it reaches the maximum wait time of 60 seconds per attempt.
 
-Due to the <<Pooled streaming processor threading,two-pool threading architecture>>, the failed segment is likely to be picked up quickly by another thread within the same JVM. The back-off mechanism applies within the local JVM instance only.
+Due to the <<Pooled streaming processor threading,two-pool threading architecture>>, the failed segment is likely to be picked up quickly by another thread within the same JVM.
+The back-off mechanism applies within the local JVM instance only.
 
 In a distributed environment with multiple PSEP instances, other instances will ignore the back-off and may immediately claim and process the failed segment, providing faster recovery from transient errors.
 
-[[tracking-tokens]]
+[[tracking_tokens]]
 == Tracking tokens
 
 A vital attribute of the Streaming Event Processor is its capability to keep and maintain the processing progress.
@@ -217,7 +218,7 @@ Secondly, it allows <<parallel-processing,parallelization>> of the load over sev
 
 To be able to reopen the stream at a later point, we should keep the progress somewhere.
 The progress is kept by updating and saving the `TrackingToken` after handling batches of events.
-Keeping the progress requires CRUD operation, for which the Streaming Processor uses the <<token-store,`TokenStore`>>.
+Keeping the progress requires CRUD operation, for which the Streaming Processor uses the <<token_store,`TokenStore`>>.
 
 For a Streaming Processor to process any events, it needs <<Token claims,"a claim">> on a `TrackingToken`.
 The processor will update this claim every time it has finished handling a batch of events.
@@ -225,38 +226,30 @@ This so-called "claim extension" is, just as updating and saving of tokens, dele
 Hence, the Streaming Processors achieves collaboration among instances/threads through token claims.
 
 In the absence of a claim, a processor will actively try to retrieve one.
-If a token claim is not extended for a configurable amount of time, other processor threads can <<token-stealing,"steal">> the claim.
+If a token claim is not extended for a configurable amount of time, other processor threads can <<token_stealing,"steal">> the claim.
 Token stealing can, for example, happen if event processing is slow or encountered some exceptions.
 
 [TIP]
 .Easy TrackingToken access
 ====
-
 When processing an event, it may be beneficial to retrieve the token belonging to that event.
 First, this can be achieved by adding a parameter of type `TrackingToken` to the event handler.
 This support is mentioned in the xref:messaging-concepts:supported-parameters-annotated-handlers.adoc#supported-parameters-for-event-handlers[Supported Parameters for Event Handlers] section.
 
-Additionally, you can retrieve the token from the resources collection of the xref:messaging-concepts:processing-context.adoc[Unit of Work].
-Both the Tracking and Pooled Streaming Event Processor add the current `TrackingToken` under the key `"Processor[{processor-name}]/Token"`.
+Additionally, you can retrieve the token from the resources collection of the xref:messaging-concepts:processing-context.adoc[Processing Context].
+To that end, the `TrackingToken` interface has the static `fromContext(Context)` operation, which can ingest the `ProcessingContext`.
 ====
 
+[#initial_token]
 === Initial tracking token
 
 The Streaming Processor uses a `StreamableEventSource` to retrieve a stream of events that will open on start-up.
 It requires a `TrackingToken` to open this stream, which it will fetch from the `TokenStore`.
 However, if a Streaming Processor starts for the first time, there is no `TrackingToken` present to open the stream with yet.
 
-Whenever this situation occurs, a Streaming Processor will construct an "initial token." By default, the initial token will start at the FIRST position of the event stream.
-Thus, the processor will begin at the start and handle every event present in the message source.
-This start position is configurable, as is described <<Token configuration,here>>.
-
-[NOTE]
-.Sagas and their initial token
-====
-
-A Streaming Processor dedicated to a xref:sagas:index.adoc[Saga] will default the initial token to the LATEST position of the stream.
-The default initial token position ensures that the Saga does not react to events from the past, as in most cases, this would introduce unwanted side effects.
-====
+Whenever this situation occurs, a Streaming Processor will construct an "initial token." By default, the initial token will start at the first position of the event stream.
+Thus, the processor will begin at the start and handle every event present in the event source.
+This start position is configurable, as is described <<token_configuration,here>>.
 
 Conceptually, there are a couple of scenarios when a processor builds an initial token on application startup.
 The obvious one is already shared, namely when a processor starts for the first time.
@@ -270,25 +263,28 @@ There are, however, also other situations when a token is built that might be un
 Whenever a Streaming Processor's event handlers show unexpected behavior in the form of missed or reprocessed events, a new initial token might have been triggered.
 In those cases, we recommend to validate if any of the above situations occurred.
 
-== Configuration
+[#token_configuration]
+=== Token Configuration
 
 There are a couple of things we can configure when it comes to tokens.
 We can separate these options in "initial token" and "token claim" configuration, as described in the following sections:
 
-=== Initial token
+[#initial_token_config]
+==== Initial token
 
 The <<Initial tracking token,initial token>> for a `StreamingEventProcessor` is configurable for every processor instance.
 When configuring the initial token builder function, the received input parameter is the `StreamableEventSource`.
-The message source provides methods to build a token:
+The event source provides methods to build a token:
 
-. `createTokenAt(Instant)`: Creates a token at a specific point in time. If there is an event precisely at that given moment, it will also be included.
-. `createTokenSince(Duration)`: Creates a token at a relative time (for example, "1 hour ago").
-
-Alternatively, you can use the predefined token positions:
-- `TrackingToken.FIRST`: Start from the beginning of the stream (default for most processors)
-- `TrackingToken.LATEST`: Start from the latest position, processing only new events
+* `firstToken()`: Creates a token at the first position of the source.
+* `latestToken()`: Creates a token at the latest position of the source.
+* `tokenAt(Instant)`: Creates a token at a specific point in time.
+If there is an event precisely at that given moment, it will also be included.
 
 Of course, you can completely disregard the `StreamableEventSource` input parameter and create a token by yourself.
+This will, for example, allow you to use predefined token positions like:
+- `TrackingToken.FIRST`: Start from the beginning of the stream.
+- `TrackingToken.LATEST`: Start from the latest position, processing only new events.
 Consider the following snippets if you want to configure a different initial token:
 
 [tabs]
@@ -298,23 +294,28 @@ Configuration API::
 --
 [source,java]
 ----
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
+import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorsConfigurer;
+
 public class AxonConfig {
-    // omitting other configuration methods...
-    public void configureInitialToken(EventProcessingConfigurer processingConfigurer) {
-        processingConfigurer
-            .pooledStreaming(pooledStreaming ->
-                pooledStreaming
-                    .processor("my-processor", components -> components
-                        .autodetected(cfg -> new MyEventHandler())
-                        .customize((config, processorConfig) -> processorConfig
-                            .initialToken(source -> TrackingToken.LATEST)
-                            // Or use a specific time:
-                            // .initialToken(source -> source.createTokenAt(Instant.parse("2024-12-01T10:15:30.00Z")))
-                            // Or relative time:
-                            // .initialToken(source -> source.createTokenSince(Duration.ofDays(7)))
-                        )
-                    )
-            );
+
+    public void configureEventProcessing(MessagingConfigurer configurer) {
+        configurer.eventProcessing(eventConfigurer -> eventConfigurer.pooledStreaming(
+                this::configureInitialToken
+        ));
+    }
+
+    private PooledStreamingEventProcessorsConfigurer configureInitialToken(
+            PooledStreamingEventProcessorsConfigurer pooledStreamingConfigurer
+    ) {
+        return pooledStreamingConfigurer.processor(
+                "my-processor",
+                config -> config.eventHandlingComponents(this::configureHandlingComponent)
+                                .customized((c, pooledStreamingConfig) -> pooledStreamingConfig.initialToken(
+                                        source -> source.firstToken(null)
+                                ))
+        );
     }
 }
 ----
@@ -326,35 +327,15 @@ Spring Boot::
 
 [source,java]
 ----
-@Configuration
-public class AxonConfig {
-    // omitting other configuration methods...
-    @Bean
-    public ConfigurationEnhancer initialTokenConfigurationEnhancer() {
-        return registry -> MessagingConfigurer.with(registry).eventProcessing(processingConfigurer ->
-            processingConfigurer.pooledStreaming(pooledStreaming ->
-                pooledStreaming
-                    .processor("my-processor", components -> components
-                        .autodetected(cfg -> new MyEventHandler())
-                        .customize((config, processorConfig) -> processorConfig
-                            .initialToken(source -> TrackingToken.LATEST)
-                            // Or use a specific time:
-                            // .initialToken(source -> source.createTokenAt(Instant.parse("2024-12-01T10:15:30.00Z")))
-                            // Or relative time:
-                            // .initialToken(source -> source.createTokenSince(Duration.ofDays(7)))
-                        )
-                    )
-            )
-        );
-    }
-}
+// TODO #3577 - Update once Enhancer API is expanded.
 ----
 --
 ====
 
-=== Token claims
+[#token_claim_config]
+==== Token claims
 
-As described <<tracking-tokens,here>>, a streaming processor should claim a token before it is allowed to perform any processing work.
+As described <<tracking_tokens,here>>, a streaming processor should claim a token before it is allowed to perform any processing work.
 There are several scenarios where a processor may keep the claim for too long.
 This can occur when, for example, the event handling process is slow or encountered an exception.
 
@@ -376,20 +357,28 @@ Configuration API::
 --
 [source,java]
 ----
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
+import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorsConfigurer;
+
 public class AxonConfig {
-    // omitting other configuration methods...
-    public void configureTokenClaimValues(EventProcessingConfigurer processingConfigurer) {
-        processingConfigurer
-            .pooledStreaming(pooledStreaming ->
-                pooledStreaming
-                    .processor("my-processor", components -> components
-                        .autodetected(cfg -> new MyEventHandler())
-                        .customize((config, processorConfig) -> processorConfig
-                            .tokenClaimInterval(Duration.ofSeconds(2))
-                            .claimExtensionThreshold(Duration.ofSeconds(3))
-                        )
-                    )
-            );
+
+    public void configureEventProcessing(MessagingConfigurer configurer) {
+        configurer.eventProcessing(eventConfigurer -> eventConfigurer.pooledStreaming(
+                this::configureTokenClaims
+        ));
+    }
+
+    private PooledStreamingEventProcessorsConfigurer configureTokenClaims(
+            PooledStreamingEventProcessorsConfigurer pooledStreamingConfigurer
+    ) {
+        return pooledStreamingConfigurer.processor(
+                "my-processor",
+                config -> config.eventHandlingComponents(this::configureHandlingComponent).customized(
+                        (c, pooledStreamingConfig) -> pooledStreamingConfig.claimExtensionThreshold(2500)
+                                                                           .tokenClaimInterval(7500)
+                )
+        );
     }
 }
 ----
@@ -401,34 +390,16 @@ Spring Boot::
 
 [source,java]
 ----
-@Configuration
-public class AxonConfig {
-    // omitting other configuration methods...
-    @Bean
-    public ConfigurationEnhancer tokenClaimValuesConfigurationEnhancer() {
-        return registry -> MessagingConfigurer.with(registry).eventProcessing(processingConfigurer ->
-            processingConfigurer.pooledStreaming(pooledStreaming ->
-                pooledStreaming
-                    .processor("my-processor", components -> components
-                        .autodetected(cfg -> new MyEventHandler())
-                        .customize((config, processorConfig) -> processorConfig
-                            .tokenClaimInterval(Duration.ofSeconds(2))
-                            .claimExtensionThreshold(Duration.ofSeconds(3))
-                        )
-                    )
-            )
-        );
-    }
-}
+// TODO #3577 - Update once Enhancer API is expanded.
 ----
 --
 ====
 
-[[token-stealing]]
+[[token_stealing]]
 === Token stealing
 
-As described at the <<tracking-tokens,start>>, streaming processor threads can "steal" tokens from one another.
-A token is "stolen" when a thread loses a <<Token claims,token claim>>.
+As described at the <<tracking_tokens,start>>, streaming processor threads can "steal" tokens from one another.
+A token is "stolen" when a thread loses a <<token_claim_config,token claim>>.
 Situations like this internally result in an `UnableToClaimTokenException,` caught by both streaming event processor implementations and translated into warn- or info-level log statements.
 
 Where the framework uses token claims to ensure that a single thread is processing a sequence of events, it supports token stealing to guarantee event processing is not blocked forever.
@@ -444,19 +415,22 @@ In practical terms, a token is stolen whenever the _claim timeout_ is exceeded.
 
 This timeout is met whenever the token's timestamp (for example, the `timestamp` column of your `token_entry` table) exceeds the `claimTimeout` of the `TokenStore`.
 By default, the `claimTimeout` value equals 10 seconds.
-To adjust it, you must configure a `TokenStore` instance through its builder, as shown in the <<token-store,Token Store>> section.
+To adjust it, you must configure a `TokenStore` instance through its builder, as shown in the <<token_store,Token Store>> section.
 If you use Spring Boot, you can alternatively set the `axon.eventhandling.tokenstore.claim-timeout` for example to `30s` to increase it to 30 seconds.
 
 The token's timestamp is equally crucial in deciding when the timeout is met.
 The streaming processor thread holding the claim is in charge of updating the token timestamp.
 This timestamp is updated whenever the thread finishes a batch of events or whenever the processor extends the claim based on the configured `claimExtensionThreshold`.
-You should check out the <<Token claims,token claim>> section if you want to know how to configure these values.
+You should check out the <<token_claim_config,token claim>> section if you want to know how to configure these values.
 
 To further clarify, a streaming processor's thread needs to be able to update the token claim and, by extension, the timestamp to ensure it won't get stolen.
 Hence, a staling processor thread will, one way or another, eventually lose the claim.
 
 Examples of when a thread may get its token stolen are:
-- Overall slow event handling - Too large event batch size - Blocking operations inside event handlers - Blocking exceptions inside event handlers
+- Overall slow event handling.
+- Too large event batch size.
+- Blocking operations inside event handlers.
+- Blocking exceptions inside event handlers.
 
 ==== What are the consequences of token stealing?
 
@@ -465,7 +439,7 @@ The consequence of token stealing is that an event may be handled twice (or more
 When a thread steals a token, the original thread was _already_ processing events from the token's position.
 To protect against doubling event handling, Axon Framework will combine committing the event handling task with updating the token.
 As the token claim is required to update the token, the original thread will fail the update.
-Following this, a rollback occurs on the xref:messaging-concepts:processing-context.adoc[Unit of Work], resolving most issues arising from token stealing.
+Following this, a rollback occurs on the xref:messaging-concepts:processing-context.adoc[processing context], resolving most issues arising from token stealing.
 
 The ability to rollback event handling tasks sheds light on the consequences of token stealing.
 Most event processors project events into a projection stored within a database.
@@ -475,29 +449,29 @@ This scenario is why we recommend storing tokens and projections in the same dat
 
 If a rollback is out of the question for an event handling task, we strongly recommend making the task idempotent.
 You may have this scenario when, for example, the projection and tokens do not reside in the same database.
-or when the event handler dispatches an operation (for example, through the `CommandGateway`).
+Or, when the event handler dispatches an operation (for example, through the `CommandGateway`).
 In making the invoked operation idempotent, you ensure that whenever the thread stealing a token handles an event twice (or more), the outcome will be identical.
 
 Without idempotency, the consequences of token stealing can be many fold:
 - Your projection (stored in a different database than your tokens!) may incorrectly project the state.
 - An event handler putting messages on a queue will put a message on the queue again.
-- A Saga Event Handler invoking a third-party service will invoke that service again.
+- A automation supporting Event Handler invoking a third-party service will invoke that service again.
 - An event handler sending an email will send that email again.
 
 In short, any operation introducing a side effect that isn't handled in an idempotent fashion will occur again when a token is stolen.
 
 Concluding, we can separate the consequence of token stealing into roughly three scenarios:
-1. We can rollback the operation.
+1. We can roll back the operation.
 In this case, the only consequence is wasted processor cycles.
 2. The operation is idempotent.
 In this case, the only consequence is wasted processor cycles.
-3. When the task cannot be rolled back nor performed in an idempotent fashion, compensating actions may be the way out.
+3. When the task cannot be rolled back nor performed in an idempotent fashion, compensating actions are the way out.
 
-[[token-store]]
+[[token_store]]
 === Token store
 
-The `TokenStore` provides the CRUD operations for the `StreamingEventProcessor` to interact with `TrackingTokens`.
-The streaming processor will use the store to construct, fetch and claim tokens.
+The `TokenStore` provides asynchronous CRUD-styled operations for the `StreamingEventProcessor` to interact with `TrackingTokens`.
+The streaming processor will use the store to construct, fetch, and claim tokens.
 
 When no token store is explicitly defined, an `InMemoryTokenStore` is used.
 The `InMemoryTokenStore` is _not_ recommended in most production scenarios since it cannot maintain the progress through application shutdowns.
@@ -510,10 +484,6 @@ This implementation does not suffice as a production-ready store in most applica
 * `JpaTokenStore` - A `TokenStore` implementation using JPA to store the tokens with.
 Expects that a table is constructed based on the `org.axonframework.eventhandling.tokenstore.jpa.TokenEntry`.
 It is easily auto-configurable with, for example, Spring Boot.
-* `JdbcTokenStore` - A `TokenStore` implementation using JDBC to store the tokens with.
-Expects that the schema is constructed through the `JdbcTokenStore#createSchema(TokenTableFactory)` method.
-Several `TokenTableFactory` can be chosen here, like the `GenericTokenTableFactory`, `PostgresTokenTableFactory` or `Oracle11TokenTableFactory` implementation.
-* `MongoTokenStore`- A `TokenStore` implementation using Mongo to store the tokens with.
 
 [NOTE]
 .Keep your tokens close
@@ -534,14 +504,29 @@ To configure a `TokenStore` for all processors:
 
 [source,java]
 ----
-public class AxonConfig {
-    // omitting other configuration methods...
-    public void registerTokenStore(EventProcessingConfigurer processingConfigurer) {
-        TokenStore tokenStore = JpaTokenStore.builder()
-                                             // …
-                                             .build();
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
+import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorsConfigurer;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
 
-        processingConfigurer.registerTokenStore(config -> tokenStore);
+public class AxonConfig {
+
+    public void configureEventProcessing(MessagingConfigurer configurer) {
+        configurer.eventProcessing(eventConfigurer -> eventConfigurer.pooledStreaming(
+                this::configurePooledStreamingProcessor
+        ));
+    }
+
+    private PooledStreamingEventProcessorsConfigurer configurePooledStreamingProcessor(
+            PooledStreamingEventProcessorsConfigurer pooledStreamingConfigurer
+    ) {
+        return pooledStreamingConfigurer.processor(
+                "my-processor",
+                config -> config.eventHandlingComponents(this::configureHandlingComponent)
+                                .notCustomized()
+        ).defaults((config, psepConfig) -> psepConfig.tokenStore(
+                config.getComponent(TokenStore.class)
+        ));
     }
 }
 ----
@@ -550,14 +535,29 @@ Alternatively, to configure a `TokenStore` for a specific processor, use:
 
 [source,java]
 ----
-public class AxonConfig {
-    // omitting other configuration methods...
-    public void registerTokenStore(EventProcessingConfigurer processingConfigurer, String processorName) {
-        TokenStore tokenStore = JdbcTokenStore.builder()
-                                              // …
-                                              .build();
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
+import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorsConfigurer;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
 
-        processingConfigurer.registerTokenStore(processorName, config -> tokenStore);
+public class AxonConfig {
+
+    public void configureEventProcessing(MessagingConfigurer configurer) {
+        configurer.eventProcessing(eventConfigurer -> eventConfigurer.pooledStreaming(
+                this::configurePooledStreamingProcessor
+        ));
+    }
+
+    private PooledStreamingEventProcessorsConfigurer configurePooledStreamingProcessor(
+            PooledStreamingEventProcessorsConfigurer pooledStreamingConfigurer
+    ) {
+        return pooledStreamingConfigurer.processor(
+                "my-processor",
+                config -> config.eventHandlingComponents(this::configureHandlingComponent)
+                                .customized((c, psepConfig) -> psepConfig.tokenStore(
+                                        c.getComponent(TokenStore.class)
+                                ))
+        );
     }
 }
 ----
@@ -565,50 +565,31 @@ public class AxonConfig {
 Spring Boot::
 +
 --
-The default `TokenStore` implementation is defined base dependencies available in Spring Boot, in the following order:
+The default `TokenStore` implementation is defined based on dependencies available in Spring Boot, in the following order:
 
 . If any `TokenStore` bean is defined, that bean is used.
 . Otherwise, if an `EntityManager` is available, the `JpaTokenStore` is defined.
-. Otherwise, if a `DataSource` is defined, the `JdbcTokenStore` is created.
-. Lastly, the `InMemoryToken` store is used.
+. Lastly, the `InMemoryTokenStore` is used.
 
 To override the TokenStore, either define a bean in a Spring `@Configuration` class:
 
 [source,java]
 ----
+import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.store.jpa.JpaTokenStore;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.store.jpa.JpaTokenStoreConfiguration;
+
 @Configuration
 public class AxonConfig {
-    // omitting other configuration methods...
+
     @Bean
-    public TokenStore myTokenStore() {
-        return JpaTokenStore.builder()
-                            // …
-                            .build();
+    public TokenStore myTokenStore(EntityManagerProvider entityManagerProvider,
+                                   Converter converter) {
+        return new JpaTokenStore(entityManagerProvider, converter, JpaTokenStoreConfiguration.DEFAULT);
     }
 }
 ----
 
-Alternatively, inject the `EventProcessingConfigurer`, which allows more fine-grained customization:
-
-[source,java]
-----
-@Configuration
-public class AxonConfig {
-    // omitting other configuration methods...
-    @Bean
-    public ConfigurationEnhancer tokenStoreConfigurationEnhancer() {
-        TokenStore tokenStore = JdbcTokenStore.builder()
-                                              // …
-                                              .build();
-
-        return registry -> MessagingConfigurer.with(registry).eventProcessing(
-              processingConfigurer -> processingConfigurer.registerTokenStore(conf -> tokenStore)
-                                                          // or, to define one for a specific processor:
-                                                          .registerTokenStore("my-processor", conf -> tokenStore)
-        );
-    }
-}
-----
 --
 ====
 
@@ -620,8 +601,14 @@ This identifier can be queried with the `retrieveStorageIdentifier` method of yo
 
 [source,java]
 ----
-StreamingEventProcessor eventProcessor = /*…*/;
-String tokenStoreId = eventProcessor.getTokenStoreIdentifier();
+import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
+
+public class AxonConfig {
+
+    public String tokenStoreFor(StreamingEventProcessor eventProcessor) {
+        return eventProcessor.getTokenStoreIdentifier();
+    }
+}
 ----
 
 [[parallel-processing]]
@@ -629,7 +616,7 @@ String tokenStoreId = eventProcessor.getTokenStoreIdentifier();
 
 Streaming processors can use <<Thread configuration,multiple threads>> to process an event stream.
 Using multiple threads allows the `StreamingEventProcessor` to more efficiently process batches of events.
-As described <<tracking-tokens,here>>, a streaming processor's thread requires a claim on a tracking token to process events.
+As described <<tracking_tokens,here>>, a streaming processor's thread requires a claim on a tracking token to process events.
 
 Thus, to be able to parallelize the load, we require several tokens per processor.
 To that end, each token instance represents a _segment_ of the event stream, wherein each segment is identified through a number.

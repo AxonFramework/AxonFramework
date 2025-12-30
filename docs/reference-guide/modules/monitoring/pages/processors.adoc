@@ -6,7 +6,7 @@ You can achieve this by checking the Event Tracker Status, or monitoring the eve
 [[event-tracker-status]]
 == Event tracker status
 
-Since xref:events:event-processors/streaming.adoc#tracking-tokens[Tracking Tokens] "track" the progress of a given Streaming Event Processor, they provide a sensible monitoring hook in any Axon application.
+Since xref:events:event-processors/streaming.adoc#tracking_tokens[Tracking Tokens] "track" the progress of a given Streaming Event Processor, they provide a sensible monitoring hook in any Axon application.
 Such a hook proves its usefulness when we want to rebuild our view model and we want to check when the processor has caught up with all the events.
 
 To that end the `StreamingEventProcessor` exposes the `processingStatus()` method.

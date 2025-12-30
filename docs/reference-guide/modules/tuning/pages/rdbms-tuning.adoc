@@ -153,7 +153,7 @@ Thus, the dedicate large object storage solution will be used if you are using P
 As events and snapshots are frequently read, the overhead predicament discussed earlier will be hit.
 Arguably more problematic is issue two, especially for the `token_entry` table.
 
-The "claim" on a token is frequently updated to allow correct collaboration in a distributed Axon setup (please read our xref:axon-framework-reference:events:event-processors/streaming.adoc#tracking-tokens[Tracking Tokens] section for more details).
+The "claim" on a token is frequently updated to allow correct collaboration in a distributed Axon setup (please read our xref:axon-framework-reference:events:event-processors/streaming.adoc#tracking_tokens[Tracking Tokens] section for more details).
 As the large object table is **not** automatically cleared, it will eventually overflow through all the updates.
 
 Hence, it would be best to avoid the Large Object Storage behavior and instead opt for the transparent TOAST feature.
