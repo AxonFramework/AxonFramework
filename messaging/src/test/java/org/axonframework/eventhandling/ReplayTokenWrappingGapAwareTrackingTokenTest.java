@@ -23,10 +23,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class ReplayTokenWrappingGapAwareTrackingTokenTest {
 
-    /**
-     * Tests for {@link ReplayToken#advancedTo(TrackingToken)} with {@link GapAwareTrackingToken}.
-     * These tests verify replay detection behavior when gaps are involved.
-     */
     @Nested
     class AdvancedToWithGapAwareTrackingToken {
 
@@ -74,7 +70,7 @@ public class ReplayTokenWrappingGapAwareTrackingTokenTest {
             assertFalse(ReplayToken.isReplay(result), "Event after reset position should not be a replay");
         }
 
-        @ParameterizedTest(name = "{5}: event at {2} \u2192 isReplay={4}")
+        @ParameterizedTest(name = "{5}: event at {2} → isReplay={4}")
         @MethodSource("org.axonframework.eventhandling.ReplayTokenWrappingGapAwareTrackingTokenTest#gapPositionScenarios")
         void eventPositionRelativeToGaps(
                 long tokenAtResetIndex,
@@ -600,7 +596,6 @@ public class ReplayTokenWrappingGapAwareTrackingTokenTest {
         }
 
     }
-
 
     @Nested
     class MergedTrackingTokenAdvancedToGapAwareTrackingToken {
