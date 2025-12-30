@@ -224,6 +224,20 @@ class ReplayTokenTest {
             currentToken = ((ReplayToken) currentToken).advancedTo(new GlobalSequenceTrackingToken(6));
             assertFalse(ReplayToken.isReplay(currentToken), "Event 6 should not be a replay");
         }
+
+        @Test
+        void advancedToShouldKeepReplayWhenTokenReachesSameIndex() {
+            GlobalSequenceTrackingToken tokenAtReset = new GlobalSequenceTrackingToken(6);
+
+            TrackingToken replayToken = ReplayToken.createReplayToken(tokenAtReset, null);
+
+            // Advance to the same index as tokenAtReset
+            GlobalSequenceTrackingToken newToken = new GlobalSequenceTrackingToken(6);
+            TrackingToken advancedToken = ((ReplayToken) replayToken).advancedTo(newToken);
+
+            assertTrue(ReplayToken.isReplay(advancedToken),
+                    "Should have exited replay mode since newToken (index 6) covers tokenAtReset (index 6)");
+        }
     }
 
     /**
@@ -277,35 +291,24 @@ class ReplayTokenTest {
             assertFalse(ReplayToken.isReplay(result), "Event after reset position should not be a replay");
         }
 
-        @Test
-        void eventInGapOfTokenAtResetIsNotReplay() {
-            // tokenAtReset at index 10 with gaps at 7,8 - processor saw 0-6,9,10 before reset
-            TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(7L, 8L));
+        @ParameterizedTest(name = "{5}: event at {2} \u2192 isReplay={4}")
+        @MethodSource("org.axonframework.eventhandling.ReplayTokenTest#gapPositionScenarios")
+        void eventPositionRelativeToGaps(
+                long tokenAtResetIndex,
+                Set<Long> gaps,
+                long eventIndex,
+                Set<Long> eventGaps,
+                boolean expectedReplay,
+                String description
+        ) {
+            TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(tokenAtResetIndex, gaps);
             ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
 
-            // Event at index 7 - this was a gap, never processed before reset
-            TrackingToken newToken = GapAwareTrackingToken.newInstance(7, emptySet());
+            TrackingToken newToken = GapAwareTrackingToken.newInstance(eventIndex, eventGaps);
             TrackingToken result = replayToken.advancedTo(newToken);
 
             assertInstanceOf(ReplayToken.class, result, "Should still be in replay mode");
-            assertFalse(ReplayToken.isReplay(result),
-                    "Event that was in gap of tokenAtReset should NOT be marked as replay");
-        }
-
-        @Test
-        void eventAfterGapButBeforeResetIndexIsReplay() {
-            // tokenAtReset at index 10 with gaps at 7,8 - processor saw 0-6,9,10 before reset
-            TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(7L, 8L));
-            ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
-
-            // Event at index 9 - after the gaps but before reset index, WAS processed before
-            // Note: newToken has gaps 7,8 because they weren't seen yet during this replay
-            TrackingToken newToken = GapAwareTrackingToken.newInstance(9, setOf(7L, 8L));
-            TrackingToken result = replayToken.advancedTo(newToken);
-
-            assertInstanceOf(ReplayToken.class, result);
-            assertTrue(ReplayToken.isReplay(result),
-                    "Event at index 9 was processed before reset, should be a replay");
+            assertEquals(expectedReplay, ReplayToken.isReplay(result));
         }
 
         // EXAMPLE: forgot about events that were gaps - tokenAtReset NEVER covers the newToken
@@ -468,19 +471,6 @@ class ReplayTokenTest {
             assertInstanceOf(ReplayToken.class, result);
             assertTrue(ReplayToken.isReplay(result),
                     "Event 9 was processed before reset, should be replay even with partial gap fill");
-        }
-
-        @Test
-        void gapsInTokenAtResetShouldNotAffectEventsBeforeGaps() {
-            TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(7L, 8L));
-            ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
-
-            TrackingToken newToken = GapAwareTrackingToken.newInstance(6, emptySet());
-            TrackingToken result = replayToken.advancedTo(newToken);
-
-            assertInstanceOf(ReplayToken.class, result);
-            assertTrue(ReplayToken.isReplay(result),
-                    "Event 6 (before gaps) was processed before reset, should be replay");
         }
 
         @Test
@@ -723,83 +713,23 @@ class ReplayTokenTest {
                     "Event 5 was processed before reset, should be marked as replay");
         }
 
-        @Test
-        void advancedToShouldKeepReplayWhenGlobalSequenceTokenReachesSameIndex() {
-            GlobalSequenceTrackingToken tokenAtReset = new GlobalSequenceTrackingToken(6);
-
+        @ParameterizedTest(name = "{4}")
+        @MethodSource("org.axonframework.eventhandling.ReplayTokenTest#remainInReplayScenarios")
+        void advancedToShouldRemainInReplay(
+                long tokenAtResetIndex,
+                Set<Long> tokenAtResetGaps,
+                long newTokenIndex,
+                Set<Long> newTokenGaps,
+                String description
+        ) {
+            GapAwareTrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(tokenAtResetIndex, tokenAtResetGaps);
             TrackingToken replayToken = ReplayToken.createReplayToken(tokenAtReset, null);
 
-            // Advance to the same index as tokenAtReset
-            GlobalSequenceTrackingToken newToken = new GlobalSequenceTrackingToken(6);
+            GapAwareTrackingToken newToken = GapAwareTrackingToken.newInstance(newTokenIndex, newTokenGaps);
             TrackingToken advancedToken = ((ReplayToken) replayToken).advancedTo(newToken);
 
-            assertTrue(ReplayToken.isReplay(advancedToken),
-                    "Should have exited replay mode since newToken (index 6) covers tokenAtReset (index 6)");
-        }
-
-        @Test
-        void advancedToShouldRemainInReplayWhenNewTokenIsBeforeGapPosition() {
-            // tokenAtReset: Index 6, Gaps [2]
-            // newToken during replay: Index 1, Gaps []
-            //
-            // The newToken (index 1) is before the gap at position 2,
-            // so replay should still be in progress.
-            GapAwareTrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(6, Collections.singleton(2L));
-            GapAwareTrackingToken newToken = GapAwareTrackingToken.newInstance(1, emptySet());
-
-            TrackingToken replayToken = ReplayToken.createReplayToken(tokenAtReset, null);
-            TrackingToken advancedToken = ((ReplayToken) replayToken).advancedTo(newToken);
-
-            // The advanced token should still be a ReplayToken since we haven't caught up to tokenAtReset
-            assertTrue(advancedToken instanceof ReplayToken,
-                    "Should still be a ReplayToken since index 1 has not reached index 6");
-            // And it should still be in replay mode
-            assertTrue(ReplayToken.isReplay(advancedToken),
-                    "Should still be in replay mode since newToken (index 1) is before the reset position (index 6)");
-        }
-
-        @Test
-        void advancedToShouldRemainInReplayWhenNewTokenHasSameIndexButTokenAtResetHasGaps() {
-            // tokenAtReset: Index 6, Gaps [2]
-            // newToken during replay: Index 6, Gaps []
-            //
-            // The newToken has the same index (6) as tokenAtReset.
-            // Event 6 WAS processed before reset (it's not in the gaps),
-            // so it should be marked as a replay.
-            // The gap at position 2 was filled during replay, but that doesn't
-            // change the fact that event 6 was already seen before reset.
-            GapAwareTrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(6, Collections.singleton(2L));
-            GapAwareTrackingToken newToken = GapAwareTrackingToken.newInstance(6, emptySet());
-
-            TrackingToken replayToken = ReplayToken.createReplayToken(tokenAtReset, null);
-            TrackingToken advancedToken = ((ReplayToken) replayToken).advancedTo(newToken);
-
-            // Should still be in replay mode - event 6 was processed before reset
-            assertTrue(ReplayToken.isReplay(advancedToken),
-                    "Event 6 was processed before reset, should be marked as replay");
-            assertInstanceOf(ReplayToken.class, advancedToken,
-                    "Should still be a ReplayToken at the reset index");
-        }
-
-        @Test
-        void advancedToShouldRemainInReplayWhenTokenAtResetHasGapsAndNewTokenDoesNot() {
-            // tokenAtReset: Index 6, Gaps [1]
-            // newToken during replay: Index 2, Gaps []
-            //
-            // The newToken (index 2) does NOT cover tokenAtReset (index 6),
-            // so replay should still be in progress.
-            GapAwareTrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(6, Collections.singleton(1L));
-            GapAwareTrackingToken newToken = GapAwareTrackingToken.newInstance(2, emptySet());
-
-            TrackingToken replayToken = ReplayToken.createReplayToken(tokenAtReset, null);
-            TrackingToken advancedToken = ((ReplayToken) replayToken).advancedTo(newToken);
-
-            // The advanced token should still be a ReplayToken since we haven't caught up to tokenAtReset
-            assertTrue(advancedToken instanceof ReplayToken,
-                    "Should still be a ReplayToken since index 2 has not reached index 6");
-            // And it should still be in replay mode
-            assertTrue(ReplayToken.isReplay(advancedToken),
-                    "Should still be in replay mode since we haven't caught up to the reset position");
+            assertInstanceOf(ReplayToken.class, advancedToken, "Should still be a ReplayToken");
+            assertTrue(ReplayToken.isReplay(advancedToken), "Should still be in replay mode");
         }
 
         /**
@@ -873,50 +803,6 @@ class ReplayTokenTest {
                     "Should still be a ReplayToken since we haven't caught up to reset position");
             assertTrue(ReplayToken.isReplay(advancedToken),
                     "Should be marked as replay - both source positions were processed before reset");
-        }
-
-        /**
-         * Tests that advancing through gaps correctly maintains replay status.
-         * When we process an event that fills a gap in the tokenAtReset, we should still be in replay
-         * until we've processed all events up to the reset position.
-         */
-        @Test
-        void advancedToShouldRemainInReplayWhenProcessingEventsWithinGaps() {
-            // Token at reset: index 6 with gap at position 1
-            GapAwareTrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(6, Collections.singleton(1L));
-
-            TrackingToken replayToken = ReplayToken.createReplayToken(tokenAtReset, null);
-
-            // Process events up to index 5 (still before the reset index of 6)
-            GapAwareTrackingToken partialToken = GapAwareTrackingToken.newInstance(5, emptySet());
-            TrackingToken advancedToken = ((ReplayToken) replayToken).advancedTo(partialToken);
-
-            assertTrue(advancedToken instanceof ReplayToken,
-                    "Should still be a ReplayToken since index 5 hasn't reached index 6");
-            assertTrue(ReplayToken.isReplay(advancedToken),
-                    "Should still be in replay mode");
-        }
-
-        /**
-         * Tests that when both tokens have the same index AND same gaps, we're still in replay.
-         * This is the "just reached the reset position" scenario.
-         */
-        @Test
-        void advancedToShouldRemainInReplayWhenAtSamePositionWithSameGaps() {
-            // Token at reset: index 6 with gap at position 1
-            GapAwareTrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(6, Collections.singleton(1L));
-
-            TrackingToken replayToken = ReplayToken.createReplayToken(tokenAtReset, null);
-
-            // Advance to the exact same position with same gaps
-            GapAwareTrackingToken sameToken = GapAwareTrackingToken.newInstance(6, Collections.singleton(1L));
-            TrackingToken advancedToken = ((ReplayToken) replayToken).advancedTo(sameToken);
-
-            // Should still be in replay - we're at the boundary, processing the last replay event
-            assertTrue(advancedToken instanceof ReplayToken,
-                    "Should still be a ReplayToken when at exact same position");
-            assertTrue(ReplayToken.isReplay(advancedToken),
-                    "Should still be in replay mode when at the reset position (boundary)");
         }
 
         /**
@@ -1033,90 +919,29 @@ class ReplayTokenTest {
          * }
          * upperBound = 10
          *
-         * Events 0-10 were processed before reset.
+         * Events 0-5 were processed by lower segment before reset.
+         * Events 6-10 were NOT processed by lower segment (only by upper).
          * Event 11 is new (not a replay).
          * </pre>
          */
-        @Test
-        void mergedTokenNoGaps_eventBeforeLowerSegment_isReplay() {
+        @ParameterizedTest(name = "event {3}: position {0} → isReplay={2}")
+        @MethodSource("org.axonframework.eventhandling.ReplayTokenTest#mergedTokenNoGapsPositions")
+        void mergedTokenNoGaps_eventAtPosition(
+                int position,
+                Class<?> expectedTokenType,
+                boolean expectedIsReplay,
+                String description
+        ) {
             MergedTrackingToken tokenAtReset = new MergedTrackingToken(
                     GapAwareTrackingToken.newInstance(5, emptySet()),
                     GapAwareTrackingToken.newInstance(10, emptySet())
             );
             ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
 
-            // Event at position 3 - before both segments, was processed before reset
-            TrackingToken result = replayToken.advancedTo(GapAwareTrackingToken.newInstance(3, emptySet()));
+            TrackingToken result = replayToken.advancedTo(GapAwareTrackingToken.newInstance(position, emptySet()));
 
-            assertInstanceOf(ReplayToken.class, result);
-            assertTrue(ReplayToken.isReplay(result),
-                    "Event at position 3 (before both segments) should be a replay");
-        }
-
-        @Test
-        void mergedTokenNoGaps_eventBetweenSegments_isNotReplay() {
-            // Events "between" segments are NOT replays because lower segment hasn't seen them.
-            // For MergedTrackingToken, wasProcessedBeforeReset uses lowerBound (lower segment)
-            MergedTrackingToken tokenAtReset = new MergedTrackingToken(
-                    GapAwareTrackingToken.newInstance(5, emptySet()),
-                    GapAwareTrackingToken.newInstance(10, emptySet())
-            );
-            ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
-
-            // Event at position 7 - between segments, lower segment has NOT seen this
-            TrackingToken result = replayToken.advancedTo(GapAwareTrackingToken.newInstance(7, emptySet()));
-
-            assertInstanceOf(ReplayToken.class, result, "Should still be in ReplayToken wrapper");
-            assertFalse(ReplayToken.isReplay(result),
-                    "Event at position 7 (between segments) is NOT replay - lower segment hasn't seen it");
-        }
-
-        @Test
-        void mergedTokenNoGaps_eventAtLowerSegment_isReplay() {
-            MergedTrackingToken tokenAtReset = new MergedTrackingToken(
-                    GapAwareTrackingToken.newInstance(5, emptySet()),
-                    GapAwareTrackingToken.newInstance(10, emptySet())
-            );
-            ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
-
-            // Event at position 5 - exactly at lower segment
-            TrackingToken result = replayToken.advancedTo(GapAwareTrackingToken.newInstance(5, emptySet()));
-
-            assertInstanceOf(ReplayToken.class, result);
-            assertTrue(ReplayToken.isReplay(result),
-                    "Event at position 5 (at lower segment) should be a replay");
-        }
-
-        @Test
-        void mergedTokenNoGaps_eventAtUpperSegment_isNotReplay() {
-            // Events at upper segment are NOT replays because lower segment hasn't seen them
-            MergedTrackingToken tokenAtReset = new MergedTrackingToken(
-                    GapAwareTrackingToken.newInstance(5, emptySet()),
-                    GapAwareTrackingToken.newInstance(10, emptySet())
-            );
-            ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
-
-            // Event at position 10 - exactly at upper segment, lower segment hasn't seen this
-            TrackingToken result = replayToken.advancedTo(GapAwareTrackingToken.newInstance(10, emptySet()));
-
-            assertInstanceOf(ReplayToken.class, result, "Should still be in ReplayToken wrapper");
-            assertFalse(ReplayToken.isReplay(result),
-                    "Event at position 10 (at upper segment) is NOT replay - lower segment hasn't seen it");
-        }
-
-        @Test
-        void mergedTokenNoGaps_eventPastUpperSegment_exitsReplay() {
-            MergedTrackingToken tokenAtReset = new MergedTrackingToken(
-                    GapAwareTrackingToken.newInstance(5, emptySet()),
-                    GapAwareTrackingToken.newInstance(10, emptySet())
-            );
-            ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
-
-            // Event at position 11 - past upper segment, new event
-            TrackingToken result = replayToken.advancedTo(GapAwareTrackingToken.newInstance(11, emptySet()));
-
-            assertFalse(ReplayToken.isReplay(result),
-                    "Event at position 11 (past upperBound) should exit replay");
+            assertInstanceOf(expectedTokenType, result);
+            assertEquals(expectedIsReplay, ReplayToken.isReplay(result));
         }
 
         // ==================== Gaps in Lower Segment ====================
@@ -1137,52 +962,19 @@ class ReplayTokenTest {
          * Event 3 was NOT seen (it's in the gap).
          * </pre>
          */
-        @Test
-        void mergedTokenWithGapInLower_eventAtGap_isNotReplay() {
+        @ParameterizedTest(name = "{2}: position {0} → isReplay={1}")
+        @MethodSource("org.axonframework.eventhandling.ReplayTokenTest#mergedTokenWithGapInLowerPositions")
+        void mergedTokenWithGapInLower_eventAtPosition(int position, boolean expectedReplay, String description) {
             MergedTrackingToken tokenAtReset = new MergedTrackingToken(
                     GapAwareTrackingToken.newInstance(5, setOf(3L)),  // gap at 3
                     GapAwareTrackingToken.newInstance(10, emptySet())
             );
             ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
 
-            // Event at position 3 - this was a gap in lower segment
-            TrackingToken result = replayToken.advancedTo(GapAwareTrackingToken.newInstance(3, emptySet()));
+            TrackingToken result = replayToken.advancedTo(GapAwareTrackingToken.newInstance(position, emptySet()));
 
             assertInstanceOf(ReplayToken.class, result, "Should still be in replay mode");
-            assertFalse(ReplayToken.isReplay(result),
-                    "Event at gap position 3 was NOT processed before reset, should NOT be replay");
-        }
-
-        @Test
-        void mergedTokenWithGapInLower_eventBeforeGap_isReplay() {
-            MergedTrackingToken tokenAtReset = new MergedTrackingToken(
-                    GapAwareTrackingToken.newInstance(5, setOf(3L)),
-                    GapAwareTrackingToken.newInstance(10, emptySet())
-            );
-            ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
-
-            // Event at position 2 - before the gap, was processed
-            TrackingToken result = replayToken.advancedTo(GapAwareTrackingToken.newInstance(2, emptySet()));
-
-            assertInstanceOf(ReplayToken.class, result);
-            assertTrue(ReplayToken.isReplay(result),
-                    "Event at position 2 (before gap) should be a replay");
-        }
-
-        @Test
-        void mergedTokenWithGapInLower_eventAfterGapButBeforeLowerIndex_isReplay() {
-            MergedTrackingToken tokenAtReset = new MergedTrackingToken(
-                    GapAwareTrackingToken.newInstance(5, setOf(3L)),
-                    GapAwareTrackingToken.newInstance(10, emptySet())
-            );
-            ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
-
-            // Event at position 4 - after gap, before lower segment index, was processed
-            TrackingToken result = replayToken.advancedTo(GapAwareTrackingToken.newInstance(4, emptySet()));
-
-            assertInstanceOf(ReplayToken.class, result);
-            assertTrue(ReplayToken.isReplay(result),
-                    "Event at position 4 (after gap, before lower index) should be a replay");
+            assertEquals(expectedReplay, ReplayToken.isReplay(result));
         }
 
         // ==================== Gaps in Upper Segment ====================
@@ -1205,37 +997,19 @@ class ReplayTokenTest {
          * For positions 9-10: upper segment saw them → replay
          * </pre>
          */
-        @Test
-        void mergedTokenWithGapInUpper_eventAtGap_isNotReplay() {
+        @ParameterizedTest(name = "{3}: position {0} → isReplay={2}")
+        @MethodSource("org.axonframework.eventhandling.ReplayTokenTest#mergedTokenWithGapInUpperPositions")
+        void mergedTokenWithGapInUpper_eventAtPosition(int position, Set<Long> eventGaps, boolean expectedReplay, String description) {
             MergedTrackingToken tokenAtReset = new MergedTrackingToken(
                     GapAwareTrackingToken.newInstance(5, emptySet()),
                     GapAwareTrackingToken.newInstance(10, setOf(8L))  // gap at 8
             );
             ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
 
-            // Event at position 8 - this was a gap in upper segment
-            TrackingToken result = replayToken.advancedTo(GapAwareTrackingToken.newInstance(8, emptySet()));
+            TrackingToken result = replayToken.advancedTo(GapAwareTrackingToken.newInstance(position, eventGaps));
 
             assertInstanceOf(ReplayToken.class, result, "Should still be in replay mode");
-            assertFalse(ReplayToken.isReplay(result),
-                    "Event at gap position 8 was NOT processed before reset, should NOT be replay");
-        }
-
-        @Test
-        void mergedTokenWithGapInUpper_eventAfterGap_isNotReplay() {
-            // Event at position 9 is past lower segment (5), so it's NOT a replay
-            MergedTrackingToken tokenAtReset = new MergedTrackingToken(
-                    GapAwareTrackingToken.newInstance(5, emptySet()),
-                    GapAwareTrackingToken.newInstance(10, setOf(8L))
-            );
-            ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
-
-            // Event at position 9 - past lower segment, not seen by lower
-            TrackingToken result = replayToken.advancedTo(GapAwareTrackingToken.newInstance(9, setOf(8L)));
-
-            assertInstanceOf(ReplayToken.class, result, "Should still be in ReplayToken wrapper");
-            assertFalse(ReplayToken.isReplay(result),
-                    "Event at position 9 is NOT replay - lower segment hasn't seen it");
+            assertEquals(expectedReplay, ReplayToken.isReplay(result));
         }
 
         // ==================== Gaps in Both Segments ====================
@@ -1256,51 +1030,19 @@ class ReplayTokenTest {
          * Other positions up to 10: replay
          * </pre>
          */
-        @Test
-        void mergedTokenWithGapsInBoth_eventAtLowerGap_isNotReplay() {
+        @ParameterizedTest(name = "{2}: position {0} → isReplay={1}")
+        @MethodSource("org.axonframework.eventhandling.ReplayTokenTest#mergedTokenWithGapsInBothPositions")
+        void mergedTokenWithGapsInBoth_eventAtPosition(int position, boolean expectedReplay, String description) {
             MergedTrackingToken tokenAtReset = new MergedTrackingToken(
                     GapAwareTrackingToken.newInstance(5, setOf(2L)),
                     GapAwareTrackingToken.newInstance(10, setOf(8L))
             );
             ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
 
-            TrackingToken result = replayToken.advancedTo(GapAwareTrackingToken.newInstance(2, emptySet()));
-
-            assertInstanceOf(ReplayToken.class, result);
-            assertFalse(ReplayToken.isReplay(result),
-                    "Event at gap position 2 (gap in lower segment) should NOT be replay");
-        }
-
-        @Test
-        void mergedTokenWithGapsInBoth_eventAtUpperGap_isNotReplay() {
-            MergedTrackingToken tokenAtReset = new MergedTrackingToken(
-                    GapAwareTrackingToken.newInstance(5, setOf(2L)),
-                    GapAwareTrackingToken.newInstance(10, setOf(8L))
-            );
-            ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
-
-            TrackingToken result = replayToken.advancedTo(GapAwareTrackingToken.newInstance(8, emptySet()));
-
-            assertInstanceOf(ReplayToken.class, result);
-            assertFalse(ReplayToken.isReplay(result),
-                    "Event at gap position 8 (gap in upper segment) should NOT be replay");
-        }
-
-        @Test
-        void mergedTokenWithGapsInBoth_eventAtNonGapPosition_isNotReplay() {
-            // Position 7 is past lower segment (5), so it's NOT a replay even though not a gap
-            MergedTrackingToken tokenAtReset = new MergedTrackingToken(
-                    GapAwareTrackingToken.newInstance(5, setOf(2L)),
-                    GapAwareTrackingToken.newInstance(10, setOf(8L))
-            );
-            ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
-
-            // Position 7 - past lower segment, not seen by lower
-            TrackingToken result = replayToken.advancedTo(GapAwareTrackingToken.newInstance(7, emptySet()));
+            TrackingToken result = replayToken.advancedTo(GapAwareTrackingToken.newInstance(position, emptySet()));
 
             assertInstanceOf(ReplayToken.class, result, "Should still be in ReplayToken wrapper");
-            assertFalse(ReplayToken.isReplay(result),
-                    "Event at position 7 is NOT replay - lower segment hasn't seen it");
+            assertEquals(expectedReplay, ReplayToken.isReplay(result));
         }
 
         // ==================== Progressive Replay Through MergedTrackingToken ====================
@@ -1530,6 +1272,76 @@ class ReplayTokenTest {
                 Arguments.of(4, emptySet(), ReplayToken.class, false),   // past lower, upper doesn't have this as gap but lower does contextually
                 Arguments.of(9, emptySet(), ReplayToken.class, false),   // at upper index - needs verification
                 Arguments.of(10, emptySet(), GapAwareTrackingToken.class, false)  // past upper, exits replay
+        );
+    }
+
+    // Test parameters for MergedTrackingToken with no gaps in segments
+    // MergedTrackingToken: lower(5, no gaps), upper(10, no gaps)
+    // Tests replay status at different positions relative to the segments
+    static Stream<Arguments> mergedTokenNoGapsPositions() {
+        return Stream.of(
+                // position, expectedTokenType, expectedIsReplay, description
+                Arguments.of(3, ReplayToken.class, true, "before lower segment"),
+                Arguments.of(5, ReplayToken.class, true, "at lower segment"),
+                Arguments.of(7, ReplayToken.class, false, "between segments"),
+                Arguments.of(10, ReplayToken.class, false, "at upper segment"),
+                Arguments.of(11, GapAwareTrackingToken.class, false, "past upper segment")
+        );
+    }
+
+    // Test parameters for advancedTo remaining in replay mode
+    // All scenarios where advancing should keep the token in replay mode
+    static Stream<Arguments> remainInReplayScenarios() {
+        return Stream.of(
+                // tokenAtResetIndex, tokenAtResetGaps, newTokenIndex, newTokenGaps, description
+                Arguments.of(6L, setOf(2L), 1L, emptySet(), "newToken before gap position"),
+                Arguments.of(6L, setOf(2L), 6L, emptySet(), "newToken at same index, gap filled"),
+                Arguments.of(6L, setOf(1L), 2L, emptySet(), "tokenAtReset has gaps, newToken does not"),
+                Arguments.of(6L, setOf(1L), 5L, emptySet(), "processing within gaps range"),
+                Arguments.of(6L, setOf(1L), 6L, setOf(1L), "same position with same gaps")
+        );
+    }
+
+    // Test parameters for gap position scenarios - isReplay depends on event position relative to gaps
+    // tokenAtReset at index 10 with gaps at 7,8 - processor saw 0-6,9,10 before reset
+    static Stream<Arguments> gapPositionScenarios() {
+        return Stream.of(
+                // tokenAtResetIndex, gaps, eventIndex, eventGaps, expectedReplay, description
+                Arguments.of(10L, setOf(7L, 8L), 7L, emptySet(), false, "event at gap position"),
+                Arguments.of(10L, setOf(7L, 8L), 9L, setOf(7L, 8L), true, "event after gap but before reset"),
+                Arguments.of(10L, setOf(7L, 8L), 6L, emptySet(), true, "event before gaps")
+        );
+    }
+
+    // Test parameters for MergedToken with gap in lower segment
+    // tokenAtReset = MergedTrackingToken { lower: position 5 with gap at 3, upper: position 10 }
+    static Stream<Arguments> mergedTokenWithGapInLowerPositions() {
+        return Stream.of(
+                // position, expectedReplay, description
+                Arguments.of(3, false, "event at gap position"),
+                Arguments.of(2, true, "event before gap"),
+                Arguments.of(4, true, "event after gap but before lower index")
+        );
+    }
+
+    // Test parameters for MergedToken with gap in upper segment
+    // tokenAtReset = MergedTrackingToken { lower: position 5, upper: position 10 with gap at 8 }
+    static Stream<Arguments> mergedTokenWithGapInUpperPositions() {
+        return Stream.of(
+                // position, eventGaps, expectedReplay, description
+                Arguments.of(8, emptySet(), false, "event at gap position"),
+                Arguments.of(9, setOf(8L), false, "event after gap (past lower segment)")
+        );
+    }
+
+    // Test parameters for MergedToken with gaps in both segments
+    // tokenAtReset = MergedTrackingToken { lower: position 5 with gap at 2, upper: position 10 with gap at 8 }
+    static Stream<Arguments> mergedTokenWithGapsInBothPositions() {
+        return Stream.of(
+                // position, expectedReplay, description
+                Arguments.of(2, false, "event at lower gap"),
+                Arguments.of(8, false, "event at upper gap"),
+                Arguments.of(7, false, "event at non-gap position (past lower segment)")
         );
     }
 
