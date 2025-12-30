@@ -6,26 +6,22 @@ As any Event Processor, it serves as the technical aspect to handle events by in
 The Streaming Processor defines itself by receiving the events from a `StreamableEventSource`.
 The `StreamableEventSource` is an infrastructure component through which we can open a stream of events.
 The source can also specify positions on the event stream, so-called <<tracking-tokens,Tracking Tokens>>, used as start positions when opening an event stream.
-An example of a `StreamableEventSource` is the xref:event-bus-and-event-store.adoc#event-store[`EventStore`], like for example Axon Server or an xref:event-bus-and-event-store.adoc#embedded-event-store[RDBMS].
+An example of a `StreamableEventSource` is the xref:event-buses-and-event-stores.adoc#event_store[`EventStore`], like for example Axon Server or the xref:event-buses-and-event-stores.adoc#aggregatebasedjpaeventstorageengine[JPA aggregate-based storage engine].
 
 Furthermore, Streaming Processors use separate threads to process the events retrieved from the `StreamableEventSource`.
-Using separate threads decouples the `StreamingEventProcessor` from other operations (for example, event publication or command handling), allowing for cleaner separation within any application. +
+Using separate threads decouples the `StreamingEventProcessor` from other operations (for example, event publication or command handling), allowing for cleaner separation within any application.
 Using separate threads allows for <<parallel-processing,parallelization>> of the event load, either within a single JVM or between several.
 
 When starting a Streaming Processor, it will open an event stream through the configured `StreamableEventSource`.
-The first time a stream has started, it, by default, will begin at the FIRST position (the oldest token) of the stream.
+The first time a stream has started, it, by default, will begin at the **first** position (the oldest token) of the stream.
 It keeps track of the event processing progress while traversing the stream.
 It does so by storing the Tracking Tokens, or _tokens_ for short, accompanying the events.
 This solution works towards tracking the progress since the tokens specify the event's position on the stream.
 
 [TIP]
-.Token positions: FIRST and LATEST
+.First or latest?
 ====
-Token positions are defined by:
-- `TrackingToken.FIRST` - The oldest (first) position in the stream
-- `TrackingToken.LATEST` - The newest (latest) position in the stream
-
-By default, a processor starts at `TrackingToken.FIRST` to process all events from the beginning.
+The first, or oldest, token is located at the beginning of the stream, and the newest, or latest, token is positioned at the tip of the stream.
 ====
 
 Maintaining the progress through tokens makes a Streaming Processor
@@ -37,7 +33,6 @@ Maintaining the progress through tokens makes a Streaming Processor
 All combined, the Streaming Processor allows for decoupling, parallelization, resiliency, and replay-ability.
 It is these features that make the Streaming Processor the logical choice for the majority of applications.
 Due to this, the "Pooled Streaming Event Processor," a type of Streaming Processor, is the default Event Processor.
-
 
 [NOTE]
 .Default Event Processor
@@ -51,7 +46,7 @@ It will fall back to the xref:event-processors/subscribing.adoc[Subscribing Even
 This implementation will use the configured `EventBus` as its `SubscribableMessageSource`.
 ====
 
-The Pooled Streaming Event Processor (PSEP for short) is the recommended streaming processor implementation in Axon 5.
+The Pooled Streaming Event Processor (PSEP for short) is the recommended processor implementation for most users.
 It provides a high-performance, two-pool architecture that separates event fetching from event processing, enabling efficient parallel processing and better resource utilization.
 
 The processor supports all core streaming operations including <<replaying-events,replaying events>>, <<parallel-processing,parallelism>>, and tracking progress with <<tracking-tokens,tokens>>.
@@ -61,227 +56,133 @@ The processor supports all core streaming operations including <<replaying-event
 
 The Pooled Streaming Event Processor has several additional components that you can configure, next to the xref:event-processors/index.adoc#general_processor_configuration[base options].
 For other features that are configurable, we refer to their respective sections for more details.
-This section covers how to configure a Pooled Streaming Event Processor.
+This section covers how to configure the basics of a Pooled Streaming Event Processor.
 
-=== Configuring a pooled streaming processor
+To configure a Pooled Streaming Event Processor you have roughly two approaches:
 
-The Pooled Streaming Event Processor is the default processor when a `StreamableEventSource` (such as an Event Store) is available.
-To explicitly configure processors as pooled streaming processors:
+1. <<declarative_config_pooled,Declarative configuration>>
+2. <<autodetected_config_spring_properties_pooled,Autodetected configuration>>, like Spring
 
-[tabs]
-====
-Configuration API::
-+
---
+Both solutions have examples drafted below, showing how to configure the "my-processor" with a specific event source.
+
+[#declarative_config_pooled]
+=== Declarative Configuration
+
+When using Axon's configuration API, you should invoke the `MessagingConfigurer#eventProcessing(Consumer<EventProcessingConfigurer>)` operation.
+The `EventProcessingConfigurer` lambda guides users towards:
+
+1. First, selecting the Event Processor type,
+2. second, register a lambda to retrieve the Event Handling Components, and,
+3. third, customization for the event processor, if any.
+
+The example below shows how this approach is used to define a (1) `PooledStreamingEventProcessor` with the (2) `AnnotatedEventHandlingClass` as the single event handling component, and (3) with a specific  customization:
+
 [source,java]
 ----
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
+import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorsConfigurer;
+import org.axonframework.messaging.eventstreaming.StreamableEventSource;
+
 public class AxonConfig {
-    // omitting other configuration methods...
-    public void configureProcessorDefault(EventProcessingConfigurer processingConfigurer) {
-        processingConfigurer.usingPooledStreamingEventProcessors();
+
+    public void configureEventProcessing(MessagingConfigurer configurer) {
+        configurer.eventProcessing(eventConfigurer -> eventConfigurer.pooledStreaming(
+                this::configurePooledStreamingProcessor
+        ));
     }
-}
-----
---
 
-Spring Boot::
-+
---
-[source,java]
-----
-@Configuration
-public class AxonConfig {
-    // omitting other configuration methods...
-    @Bean
-    public ConfigurationEnhancer processorDefaultConfigurationEnhancer() {
-        return configurer -> configurer
-            .eventProcessing(EventProcessingConfigurer::usingPooledStreamingEventProcessors);
-    }
-}
-----
---
-====
-
-For a specific Event Processor to be a Pooled Streaming instance, configure it through the `pooledStreaming` configurer:
-
-
-[tabs]
-====
-Configuration API::
-+
---
-[source,java]
-----
-public class AxonConfig {
-    // omitting other configuration methods...
-    public void configurePooledProcessors(EventProcessingConfigurer processingConfigurer) {
-        processingConfigurer
-            .pooledStreaming(pooledStreaming ->
-                pooledStreaming
-                    // Configure a specific processor with event handlers
-                    .processor("my-processor", components -> components
-                        .autodetected(cfg -> myEventHandler)
-                    )
-                    // Set defaults for all pooled streaming processors
-                    .defaults((config, processorConfig) -> processorConfig
-                        .segmentCount(4)
-                        .batchSize(100)
-                        .eventSource(config.getComponent(StreamableEventSource.class))
-                    )
-            );
-    }
-}
-----
---
-Spring Boot::
-+
---
-[source,java]
-----
-@Configuration
-public class AxonConfig {
-    // omitting other configuration methods...
-    @Bean
-    public ConfigurationEnhancer pooledProcessorConfigurationEnhancer() {
-        return registry -> MessagingConfigurer.with(registry).eventProcessing(processingConfigurer ->
-            processingConfigurer.pooledStreaming(pooledStreaming ->
-                pooledStreaming
-                    // Configure a specific processor with event handlers
-                    .processor("my-processor", components -> components
-                        .autodetected(cfg -> myEventHandler)
-                    )
-                    // Set defaults for all pooled streaming processors
-                    .defaults((config, processorConfig) -> processorConfig
-                        .segmentCount(4)
-                        .batchSize(100)
-                        .eventSource(config.getComponent(StreamableEventSource.class))
-                    )
-            )
+    private PooledStreamingEventProcessorsConfigurer configurePooledStreamingProcessor(
+            PooledStreamingEventProcessorsConfigurer pooledStreamingConfigurer
+    ) {
+        return pooledStreamingConfigurer.processor(
+                "my-processor",
+                config -> config.eventHandlingComponents(this::configureHandlingComponent)
+                                .notCustomized()
         );
     }
+
+    private EventHandlingComponentsConfigurer.AdditionalComponentPhase configureHandlingComponent(
+            EventHandlingComponentsConfigurer.RequiredComponentPhase componentConfigurer
+    ) {
+        return componentConfigurer.autodetected(c -> new AnnotatedEventHandlingClass());
+    }
 }
 ----
---
 
-Spring Boot properties::
-+
---
+The example above shows how to configure "my-processor" as a Pooled Streaming Event Processor.
+When no customization is required, the `customized` method can be replaced by the `notCustomized()` operation.
 
-A properties file allows the configuration of some fields on an Event Processor.
-Do note that the Java configuration provides more degrees of freedom.
-
-[source,properties]
-----
-axon.eventhandling.processors.my-processor.mode=pooled-streaming
-axon.eventhandling.processors.my-processor.source=eventStore
-----
-
-If the name of an event processor contains periods `.`, use the map notation:
-
-[source,properties]
-----
-axon.eventhandling.processors[my.processor].mode=pooled-streaming
-axon.eventhandling.processors[my.processor].source=eventStore
-----
---
-====
-
-For more fine-grained control when configuring a pooled streaming processor, the `PooledStreamingEventProcessorConfiguration` can be used.
-You can customize the processor configuration through the `defaults()` method for global settings or per-processor `customize()` for specific processors:
-
-[tabs]
-====
-Configuration API::
-+
---
+If you prefer to define defaults for all Pooled Streaming Processors, you can use the `defaults(...)` instead of `customized(...)`.
+This does not limit to possibility to override defaults, as is shown below:
 
 [source,java]
 ----
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
+import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorsConfigurer;
+import org.axonframework.messaging.eventstreaming.StreamableEventSource;
+
+import java.time.Duration;
+
 public class AxonConfig {
-    // omitting other configuration methods...
-    public void configurePooledProcessors(EventProcessingConfigurer processingConfigurer) {
-        processingConfigurer
-            .pooledStreaming(pooledStreaming ->
-                pooledStreaming
-                    // Set defaults for all pooled streaming processors
-                    .defaults((config, processorConfig) -> processorConfig
+
+    public void configureEventProcessing(MessagingConfigurer configurer) {
+        configurer.eventProcessing(eventConfigurer -> eventConfigurer.pooledStreaming(
+                this::configurePooledStreamingProcessor
+        ));
+    }
+
+    private PooledStreamingEventProcessorsConfigurer configurePooledStreamingProcessor(
+            PooledStreamingEventProcessorsConfigurer pooledStreamingConfigurer
+    ) {
+        return pooledStreamingConfigurer
+                // Set defaults for all pooled streaming processors
+                .defaults((config, processorConfig) -> processorConfig
+                        .eventSource(config.getComponent(StreamableEventSource.class))
                         .segmentCount(4)
                         .batchSize(100)
                         .claimExtensionThreshold(Duration.ofSeconds(5))
-                    )
-                    // Configure a specific processor
-                    .processor("my-processor", components -> components
-                        .autodetected(cfg -> new MyEventHandler())
-                        .customize((config, processorConfig) -> processorConfig
-                            .segmentCount(8)  // Override default for this processor
-                            .eventSource(config.getComponent(StreamableEventSource.class))
-                        )
-                    )
-            );
+                )
+                // Configure a specific processor
+                .processor(
+                        "my-processor",
+                        config -> config.eventHandlingComponents(this::configureHandlingComponent)
+                                        .customize((c, pooledStreamingConfig) -> pooledStreamingConfig
+                                                .segmentCount(8)  // Override default for this processor
+                                        )
+                );
+    }
+
+    private EventHandlingComponentsConfigurer.AdditionalComponentPhase configureHandlingComponent(
+            EventHandlingComponentsConfigurer.RequiredComponentPhase componentConfigurer
+    ) {
+        return componentConfigurer.autodetected(c -> new AnnotatedEventHandlingClass());
     }
 }
 ----
---
 
-Spring Boot::
-+
---
+[#autodetected_config_spring_properties_pooled]
+=== Autodetected configuration - Spring Boot properties file
 
-[source,java]
-----
-@Configuration
-public class AxonConfig {
-    // omitting other configuration methods...
-    @Bean
-    public ConfigurationEnhancer pooledProcessorConfigurationEnhancer() {
-        return registry -> MessagingConfigurer.with(registry).eventProcessing(processingConfigurer ->
-            processingConfigurer.pooledStreaming(pooledStreaming ->
-                pooledStreaming
-                    // Set defaults for all pooled streaming processors
-                    .defaults((config, processorConfig) -> processorConfig
-                        .segmentCount(4)
-                        .batchSize(100)
-                        .claimExtensionThreshold(Duration.ofSeconds(5))
-                    )
-                    // Configure a specific processor
-                    .processor("my-processor", components -> components
-                        .autodetected(cfg -> new MyEventHandler())
-                        .customize((config, processorConfig) -> processorConfig
-                            .segmentCount(8)  // Override default for this processor
-                            .eventSource(config.getComponent(StreamableEventSource.class))
-                        )
-                    )
-            )
-        );
-    }
-}
-----
---
+A properties file allows the configuration of several fields for the Pooled Streaming Event Processor.
+If more flexibility is required, like concretely defining the event handling components to attach, we recommend use of the <<declarative_config_pooled,declarative configuration>> instead.
 
-Spring Boot properties::
-+
---
-
-A properties file allows the configuration of some fields on an Event Processor.
-Do note that the Java configuration provides more degrees of freedom.
-
-[source,properties]
+[source,text]
 ----
 axon.eventhandling.processors.my-processor.mode=pooled-streaming
 axon.eventhandling.processors.my-processor.source=eventStore
-axon.eventhandling.processors.my-processor.segment-count=4
+axon.eventhandling.processors.my-processor.initial-segment-count=4
 axon.eventhandling.processors.my-processor.batch-size=100
 ----
 
 If the name of an event processor contains periods `.`, use the map notation:
 
-[source,properties]
+[source,text]
 ----
 axon.eventhandling.processors[my.processor].mode=pooled-streaming
 axon.eventhandling.processors[my.processor].source=eventStore
 ----
---
-====
 
 [[error-mode]]
 == Error mode

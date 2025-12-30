@@ -210,6 +210,7 @@ public class AxonConfig {
 --
 ====
 
+[#aggregatebasedjpaeventstorageengine]
 ==== `AggregateBasedJpaEventStorageEngine`
 
 The `AggregateBasedJpaEventStorageEngine` stores events in a JPA-compatible data source.
