@@ -251,7 +251,7 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
 
     @Override
     public TrackingToken advancedTo(TrackingToken newToken) {
-        if ( tokenAtReset == null || isStrictlyAfter(newToken, tokenAtReset)) {
+        if (tokenAtReset == null || isStrictlyAfter(newToken, tokenAtReset)) {
             // we're done replaying
             // if the token at reset was a wrapped token itself, we'll need to use that one to maintain progress.
             if (tokenAtReset instanceof WrappedToken) {
