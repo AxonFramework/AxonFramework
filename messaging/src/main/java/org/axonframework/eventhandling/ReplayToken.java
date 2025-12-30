@@ -293,33 +293,33 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
      * <b>How it works:</b>
      * <p>
      * The {@code lowerBound()} method computes the "earliest common position" of two tokens.
-     * For {@link GapAwareTrackingToken}, when the minimum index falls on a gap, the algorithm
-     * walks backwards to find the first non-gap position.
+     * When the minimum position falls on a position that was not yet seen by one of the tokens,
+     * the algorithm walks backwards to find the first position that both tokens have seen.
      * <p>
      * This "walk back" behavior naturally distinguishes:
      * <ul>
-     *   <li><b>Events that were delivered:</b> {@code lowerBound} stays at the same index as newToken
+     *   <li><b>Events that were delivered:</b> {@code lowerBound} stays at the same position as newToken
      *       → {@code combinedLowerBound.equalsLatest(newToken)} returns {@code true}</li>
-     *   <li><b>Events that were skipped:</b> {@code lowerBound} walks back past the gap
+     *   <li><b>Events that were skipped:</b> {@code lowerBound} walks back past the skipped position
      *       → {@code combinedLowerBound.equalsLatest(newToken)} returns {@code false}</li>
      * </ul>
      * <p>
      * <b>Example:</b>
      * <pre>
-     * tokenAtReset: index=10, gaps=[7, 8]  (events 0-6 delivered, 7-8 skipped, 9-10 delivered)
+     * tokenAtReset: positions 0-6 and 9-10 were seen, positions 7-8 were skipped
      *
-     * Case 1: newToken at index 5
-     *   → lowerBound computes index 5 (not a gap, stays)
+     * Case 1: newToken at position 5
+     *   → lowerBound stays at 5 (was seen)
      *   → equalsLatest(newToken)? YES → was delivered before reset
      *
-     * Case 2: newToken at index 7
-     *   → lowerBound computes index 7, but 7 is a gap → walks back to 6
+     * Case 2: newToken at position 7
+     *   → lowerBound walks back to 6 (position 7 was skipped)
      *   → equalsLatest(newToken)? NO (6 ≠ 7) → was NOT delivered before reset (it's new!)
      * </pre>
      *
      * @param newToken the token representing the current event position
-     * @return {@code true} if the event was delivered before reset (replay), {@code false} if it's a new event
-     * @see GapAwareTrackingToken#lowerBound(TrackingToken)
+     * @return {@code true} if the event was delivered before reset, {@code false} if it's a new event
+     * @see TrackingToken#lowerBound(TrackingToken)
      */
     private boolean wasProcessedBeforeReset(TrackingToken newToken) {
         TrackingToken resetLowerBound = WrappedToken.unwrapLowerBound(tokenAtReset);
