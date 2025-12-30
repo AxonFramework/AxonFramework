@@ -352,7 +352,7 @@ class GapAwareTrackingTokenTest {
     }
 
     @Test
-    void upperBoundRemovesGapsAreNoAtLower() {
+    void upperBoundRemovesGapsAreNotAtLower() {
         GapAwareTrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(5, asList(3L, 4L));
         GapAwareTrackingToken replayToken = GapAwareTrackingToken.newInstance(4, singletonList(3L));
 

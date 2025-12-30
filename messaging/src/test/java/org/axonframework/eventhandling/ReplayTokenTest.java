@@ -236,7 +236,7 @@ class ReplayTokenTest {
             TrackingToken advancedToken = ((ReplayToken) replayToken).advancedTo(newToken);
 
             assertTrue(ReplayToken.isReplay(advancedToken),
-                    "Should have exited replay mode since newToken (index 6) covers tokenAtReset (index 6)");
+                    "Should have remained in replay mode since newToken (index 6) does not have tokenAtReset beyond its positio");
         }
     }
 

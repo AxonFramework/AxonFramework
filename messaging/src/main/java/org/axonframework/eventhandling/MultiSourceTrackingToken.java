@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.axonframework.common.Assert;
 
+import javax.annotation.Nonnull;
 import java.beans.ConstructorProperties;
 import java.io.Serializable;
 import java.util.HashMap;
@@ -67,12 +68,7 @@ public class MultiSourceTrackingToken implements TrackingToken, Serializable {
      */
     @Override
     public TrackingToken lowerBound(TrackingToken other) {
-        Assert.isTrue(other instanceof MultiSourceTrackingToken, () -> "Incompatible token type provided.");
-
-        MultiSourceTrackingToken otherMultiToken = (MultiSourceTrackingToken) other;
-
-        Assert.isTrue(otherMultiToken.trackingTokens.keySet().equals(this.trackingTokens.keySet()),
-                      () -> "MultiSourceTrackingTokens contain different keys");
+        MultiSourceTrackingToken otherMultiToken = assertSameKeysMultiSourceTrackingToken(other);
 
         Map<String, TrackingToken> tokenMap = new HashMap<>();
 
@@ -96,12 +92,7 @@ public class MultiSourceTrackingToken implements TrackingToken, Serializable {
      */
     @Override
     public TrackingToken upperBound(TrackingToken other) {
-        Assert.isTrue(other instanceof MultiSourceTrackingToken, () -> "Incompatible token type provided.");
-
-        MultiSourceTrackingToken otherMultiToken = (MultiSourceTrackingToken) other;
-
-        Assert.isTrue(otherMultiToken.trackingTokens.keySet().equals(this.trackingTokens.keySet()),
-                      () -> "MultiSourceTrackingTokens contain different keys");
+        MultiSourceTrackingToken otherMultiToken = assertSameKeysMultiSourceTrackingToken(other);
 
         Map<String, TrackingToken> tokenMap = new HashMap<>();
 
@@ -133,12 +124,7 @@ public class MultiSourceTrackingToken implements TrackingToken, Serializable {
      */
     @Override
     public boolean covers(TrackingToken other) {
-        Assert.isTrue(other instanceof MultiSourceTrackingToken, () -> "Incompatible token type provided.");
-
-        MultiSourceTrackingToken otherMultiToken = (MultiSourceTrackingToken) other;
-
-        Assert.isTrue(otherMultiToken.trackingTokens.keySet().equals(this.trackingTokens.keySet()),
-                      () -> "MultiSourceTrackingTokens contain different keys");
+        MultiSourceTrackingToken otherMultiToken = assertSameKeysMultiSourceTrackingToken(other);
 
         //as soon as one delegated token doesn't cover return false
         for (Map.Entry<String, TrackingToken> trackingTokenEntry : trackingTokens.entrySet()) {
@@ -156,14 +142,20 @@ public class MultiSourceTrackingToken implements TrackingToken, Serializable {
         return true;
     }
 
-    @Override
-    public boolean equalsLatest(TrackingToken other) {
+    @Nonnull
+    private MultiSourceTrackingToken assertSameKeysMultiSourceTrackingToken(TrackingToken other) {
         Assert.isTrue(other instanceof MultiSourceTrackingToken, () -> "Incompatible token type provided.");
 
         MultiSourceTrackingToken otherMultiToken = (MultiSourceTrackingToken) other;
 
         Assert.isTrue(otherMultiToken.trackingTokens.keySet().equals(this.trackingTokens.keySet()),
                       () -> "MultiSourceTrackingTokens contain different keys");
+        return otherMultiToken;
+    }
+
+    @Override
+    public boolean equalsLatest(TrackingToken other) {
+        MultiSourceTrackingToken otherMultiToken = assertSameKeysMultiSourceTrackingToken(other);
 
         for (Map.Entry<String, TrackingToken> trackingTokenEntry : trackingTokens.entrySet()) {
             TrackingToken constituent = trackingTokenEntry.getValue();

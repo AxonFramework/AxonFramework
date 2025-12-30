@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.common.Assert;
 import org.axonframework.common.CollectionUtils;
 
+import javax.annotation.Nonnull;
 import java.beans.ConstructorProperties;
 import java.io.Serializable;
 import java.util.Collection;
@@ -175,8 +176,7 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
 
     @Override
     public GapAwareTrackingToken lowerBound(TrackingToken other) {
-        Assert.isTrue(other instanceof GapAwareTrackingToken, () -> "Incompatible token type provided.");
-        GapAwareTrackingToken otherToken = (GapAwareTrackingToken) other;
+        GapAwareTrackingToken otherToken = assertGapAwareTrackingToken(other);
 
         SortedSet<Long> mergedGaps = new TreeSet<>(this.gaps);
         mergedGaps.addAll(otherToken.gaps);
@@ -188,8 +188,7 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
 
     @Override
     public TrackingToken upperBound(TrackingToken otherToken) {
-        Assert.isTrue(otherToken instanceof GapAwareTrackingToken, () -> "Incompatible token type provided.");
-        GapAwareTrackingToken other = (GapAwareTrackingToken) otherToken;
+        GapAwareTrackingToken other = assertGapAwareTrackingToken(otherToken);
         SortedSet<Long> newGaps = CollectionUtils.intersect(this.gaps, other.gaps, TreeSet::new);
         long min = Math.min(this.index, other.index) + 1;
         SortedSet<Long> mergedGaps =
@@ -210,8 +209,7 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
 
     @Override
     public boolean covers(TrackingToken other) {
-        Assert.isTrue(other instanceof GapAwareTrackingToken, () -> "Incompatible token type provided.");
-        GapAwareTrackingToken otherToken = (GapAwareTrackingToken) other;
+        GapAwareTrackingToken otherToken = assertGapAwareTrackingToken(other);
 
         // if the token we compare to has a higher gap truncation index, we need to truncate this instance to compare
         if (!this.gaps.isEmpty()
@@ -225,6 +223,13 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
                 && otherToken.gaps.containsAll(this.gaps.headSet(otherToken.index));
     }
 
+    @Nonnull
+    private static GapAwareTrackingToken assertGapAwareTrackingToken(TrackingToken other) {
+        Assert.isTrue(other instanceof GapAwareTrackingToken, () -> "Incompatible token type provided.");
+        GapAwareTrackingToken otherToken = (GapAwareTrackingToken) other;
+        return otherToken;
+    }
+
     /**
      * {@inheritDoc}
      * <p>
@@ -235,8 +240,7 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
      */
     @Override
     public boolean equalsLatest(TrackingToken other) {
-        Assert.isTrue(other instanceof GapAwareTrackingToken, () -> "Incompatible token type provided.");
-        GapAwareTrackingToken otherToken = (GapAwareTrackingToken) other;
+        GapAwareTrackingToken otherToken = assertGapAwareTrackingToken(other);
 
         return otherToken.index == this.index;
     }
