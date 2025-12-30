@@ -206,7 +206,7 @@ class GapAwareTrackingTokenTest {
     }
 
     @Test
-    void tokenSameAsOther() {
+    void equalsLatest() {
         // Same index, same gaps = same position
         GapAwareTrackingToken token1 = GapAwareTrackingToken.newInstance(3L, singleton(1L));
         GapAwareTrackingToken token1Copy = GapAwareTrackingToken.newInstance(3L, singleton(1L));
