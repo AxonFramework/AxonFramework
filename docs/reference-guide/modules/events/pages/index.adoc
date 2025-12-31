@@ -1,18 +1,45 @@
 = Events
 :page-aliases: README.adoc
 
-The second type of Message that an Axon application is associated with is the Event Message, or simply Events.
-These are messages that communicate that something has happened in the business domain or application.
-Other parts of the application, or event other applications, can react to these events.
+Events are messages that communicate that something has happened in the business domain or application.
+They represent facts about the past that cannot be changed.
+Other parts of the application, or even other applications, can react to these events.
 
-This section of the reference guide covers in detail the capabilities that Axon Framework provides for Event messages.
-A summary of the various sections is given below.
+== Core concepts
+
+The list below quickly mentions the core concepts that come into play when thinking about events. For more detail, be sure to read the other sections within this chapter.
+
+**Events**:: Messages that represent facts about something relevant that has happened in an application.
+
+**Event Handlers**:: Methods or lambdas that react to events and execute business logic or update read models.
+
+**Event Handling Components**:: Classes containing one or more event handlers, registered with an event processor for event delivery.
+
+**Event Processors**:: Infrastructure components that manage the delivery of events to event handling components, controlling threading, batching, and error handling.
+
+**Event Sink**:: An abstraction for any component that can receive and distribute events, encompassing the Event Bus, Event Store, and external system facades.
+
+**Event Bus**:: A mechanism that distributes published events to all subscribed event processors within the application.
+
+**Event Gateway**:: A convenience component for publishing events that provides a user-friendly API.
+
+**Event Store**:: A persistent storage mechanism that stores events as the source of truth and provides event streams to processors.
+
+**Event Sourcing**:: An architectural pattern that stores all changes to application state as a sequence of immutable events, providing a complete audit trail and enabling temporal queries.
+
+**Dynamic Consistency Boundaries (DCB)**:: A pattern that allows flexible grouping of events using tags to define consistency boundaries based on business needs rather than technical constraints.
+
+== Event handling overview
+
+This section covers the complete event handling capabilities:
 
 [cols="<,<"]
 |===
 |Sub-Section |Purpose
 
-|xref:event-dispatchers.adoc[Event Dispatchers] / xref:event-handlers.adoc[Event Handlers] |Functional development for Event Messages using the Axon Framework
-|xref:event-processors/index.adoc[Event Processors] / xref:event-bus-and-event-store.adoc[Event Bus &amp; Event Store] |Non-Functional development for Event Messages using the Axon Framework
-|xref:event-versioning.adoc[Event Versioning] |Details on Event versioning capabilities provided by the Axon Framework
+|xref:event-dispatchers.adoc[Event Dispatchers] |Publishing events using EventSink, EventAppender, and EventGateway
+|xref:event-handlers.adoc[Event Handlers] |Implementing event handlers with @EventHandler annotation
+|xref:event-processors/index.adoc[Event Processors] |Configuring and managing event processors (pooled streaming and subscribing)
+|xref:infrastructure.adoc[Event Infrastructure] |EventStore, Dynamic Consistency Boundaries, tags, and event storage
+|xref:event-versioning.adoc[Event Versioning] |Evolving event structures with payload conversion and upcasters
 |===

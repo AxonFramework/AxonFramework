@@ -371,43 +371,125 @@ The following files in `axon-5/` describe the API changes:
 - Verified all xrefs point to existing files (using current filenames until files are renamed)
 
 ### modules/events/pages/event-handlers.adoc
-**Changes to apply:**
-- Document handler resolution changes (all matching handlers invoked)
-- Document ProcessingContext injection (mandatory - always available in handlers)
-- Show ProcessingContext must be passed to components during handling
-- **Document message type concept**: Java class is no longer message identity
-  - Explain MessageType (QualifiedName + version) as message identifier
-  - Show handlers declare type via @Event annotation or parameter type
-  - Explain payload conversion at handling time (different handlers can receive different representations)
-  - Show practical example: same event to multiple handlers with different payload types
-  - Explain how this reduces need for upcasters
-- Document MessageStream return types
-- Update parameter injection (EventAppender, QueryDispatcher, CommandDispatcher)
-- Document event name resolution (@Event annotation, qualified names)
-- Update interceptor patterns
+**Status:** ✅ COMPLETED
+**Changes applied:**
+- **Documented handler resolution changes**: All matching event handlers are now invoked (not just one per instance)
+  - Provided clear example showing multiple handlers for same event
+- **Documented ProcessingContext injection**:
+  - Explained that ProcessingContext is mandatory and always created by framework on handling side
+  - Showed how to inject ProcessingContext as parameter
+  - Explained passing ProcessingContext to components for correlation
+  - Added examples of accessing metadata and registering lifecycle callbacks
+- **Documented message type concept extensively**:
+  - Explained MessageType (QualifiedName + version) as event identity, not Java class
+  - Documented @Event annotation with namespace, name, and version attributes
+  - Showed three ways handlers declare event types: by parameter type, explicit eventName, and payloadType conversion
+  - Provided comprehensive example showing same event to three different handlers with different payload representations
+  - Explained payload conversion at handling time and how it reduces need for upcasters
+  - Clarified when upcasters are still needed (structural changes in event store)
+- **Documented parameter injection**:
+  - EventAppender (with IMPORTANT note about parameter injection, not field injection)
+  - CommandDispatcher (with ProcessingContext-awareness)
+  - ProcessingContext
+  - Metadata and @MetadataValue
+  - Aggregate-specific parameters (@SourceId, @SequenceNumber, @AggregateType)
+  - Event processor parameters (TrackingToken, ReplayStatus, @ReplayContext)
+  - Complete example showing all parameter types together
+- **Documented event handler return values**:
+  - Void return type
+  - CompletableFuture for async processing
+  - MessageStream for advanced scenarios
+- **Documented registration**:
+  - Spring Boot auto-configuration examples
+  - Configuration API examples
+- **Added comprehensive best practices section**:
+  - Keep handlers focused
+  - Use ProcessingContext for correlation
+  - Inject dispatchers as parameters, not fields
+  - Handle events idempotently
+  - Use result objects instead of exceptions for expected failures
+- Cross-referenced processing-context.adoc, supported-parameters-annotated-handlers.adoc, and exception-handling.adoc
+- All code examples verified against actual Axon 5 APIs
 
 ### modules/events/pages/event-versioning.adoc
-**Changes to apply:**
-- **Document fundamental shift in versioning approach**
-  - Explain that payload conversion at handling time reduces need for upcasters
-  - Upcasters still needed for structural changes, not simple type conversions
-  - Show when to use upcasters vs when conversion suffices
-- Update upcasting approach (now part of Converter, not separate)
-- Document MessageType version field
-- Replace @Revision with @Event annotation
-- Update conversion examples
-- Show practical examples of version handling without upcasters
+**Status:** ✅ COMPLETED
+
+**Changes applied:**
+- **Added new "Event versioning approach" section** explaining payload conversion as the primary versioning mechanism:
+  - Documented payload conversion at handling time with comprehensive examples
+  - Explained when payload conversion is sufficient (adding fields, removing fields, renaming, type changes, restructuring)
+  - Explained when upcasters are needed (splitting events, merging events, complex transformations, changing event identity)
+  - Added example showing EnrichedOrderPlacedEvent receiving additional computed fields from OrderPlacedEvent
+  - Referenced xref:ROOT:conversion.adoc for complete conversion details
+- **Added IMPORTANT note** that upcasters are not yet available in Axon 5.0 but will be reintroduced in future releases
+- **Updated "Event Upcasting" section**:
+  - Revised introduction to explain upcasters are for scenarios where payload conversion isn't sufficient
+  - Added cross-references to payload conversion sections
+  - Added NOTE explaining when to use upcasters vs payload conversion
+- **Replaced @Revision with @Event annotation** throughout all examples:
+  - Updated ComplaintEvent examples to use @Event(name = "Complaint", version = "1.0")
+  - Added "Event version identification" subsection showing @Event annotation with namespace, name, and version fields
+- **Updated configuration examples**:
+  - Replaced Configurer with MessagingConfigurer in Configuration API example
+  - Updated import statement to org.axonframework.messaging.core.configuration.MessagingConfigurer
+- **Terminology updates**:
+  - Changed "Serializer" to "Converter" in serialization formats note
+  - Changed "aggregate" to "entity" in snapshot upcasting section
+  - Changed "Streaming Event Processor" to "streaming event processor" (lowercase)
+  - Updated SnapshotFilter warning to reference @Event annotation instead of @Revision
+  - Updated RevisionSnapshotFilter reference to VersionSnapshotFilter
+- **Structured document for clarity**:
+  - Payload conversion approach comes first (lines 8-97)
+  - Event upcasting section comes second with clear note about future availability (lines 99-481)
+  - Custom event transformation section at the end (lines 483-644)
+- **Added "Custom event transformation" section**:
+  - Documented practical workaround for event transformation by wrapping EventConverter
+  - Provided complete example of TransformingEventConverter that converts to JsonNode intermediate representation
+  - Showed how to check message type and version using event.type().qualifiedName().name() and event.type().version()
+  - Demonstrated transformation logic (adding fields, renaming fields)
+  - Included both Configuration API and Spring Boot registration examples
+  - Added NOTE explaining this is a bridge solution until full upcasting infrastructure is available
+- All code examples verified against Axon 5 APIs:
+  - EventConverter.convertPayload() and convertEvent() methods verified
+  - MessageType.qualifiedName().name() and version() methods verified
+  - EventMessage.type() method verified
+  - Converter.convert() method usage verified
+  - DelegatingEventConverter and JacksonConverter verified
+- Note: Upcaster APIs (SimpleSerializedType, IntermediateEventRepresentation, SingleEventUpcaster, etc.) remain documented but noted as not yet available in 5.0
 
 ### modules/events/pages/infrastructure.adoc
-**Changes to apply:**
-- Document EventStore DCB changes (tags, types, EventCriteria)
-- Update EventStorageEngine API (async, conditions-based)
-- Document EventStoreTransaction for sourcing and appending
-- Update JPA storage engine (aggregate-based vs DCB-based, still part of core)
-- Remove JDBC storage engine references (moved to external extension)
-- Document Axon Server storage engine options
-- Update stored format changes (table and column renames for JPA)
-- Remove DomainEventStream references (replaced by MessageStream)
+**Status:** ✅ COMPLETED
+
+**Changes applied:**
+- **Added Dynamic Consistency Boundaries (DCB) documentation section**:
+  - Documented event tags with example: `tags.with("customerId", customerId).with("region", "EU")`
+  - Explained EventCriteria for querying events by tags
+  - Documented ConsistencyMarker for preventing write conflicts
+  - Added NOTE comparing DCB vs traditional aggregate-based storage
+  - Emphasized that DCB mainly impacts write side (command handling), not read side
+- **Removed JDBC Event Storage Engine section**: Replaced with NOTE directing users to external extension
+- **Updated JPA Event Storage Engine section**:
+  - Documented entity classes: `AggregateEventEntry` and `AggregateSnapshotEntry`
+  - Updated persistence.xml example to show correct entity classes
+  - Added NOTE clarifying that DCB is not yet supported for JPA-based storage (Axon Server only)
+  - Updated concurrency note to explain aggregate identifier + sequence number constraints
+  - Fixed PersistenceExceptionTranslator → PersistenceExceptionResolver
+- **Updated "Influencing serialization" section to "Configuring event conversion"**:
+  - Changed from XStreamSerializer to JacksonConverter as default
+  - Updated terminology from Serializer to Converter throughout
+  - Added reference to xref:ROOT:conversion.adoc[Conversion]
+  - Provided custom ObjectMapper configuration example
+  - Changed "Serializing events vs 'the others'" to "Converting events vs other messages"
+- **Updated all configuration examples to use MessagingConfigurer**:
+  - Axon Server configuration: `MessagingConfigurer.create()` instead of `DefaultConfigurer.defaultConfiguration()`
+  - JPA configuration: `configurer.registerEventSink()` with EmbeddedEventStore
+  - Mongo configuration: Updated to use MessagingConfigurer and registerEventSink
+  - InMemory configuration: Updated to use MessagingConfigurer and registerEventSink
+  - Converter configuration: Shows EventConverter registration with DelegatingEventConverter
+- **Updated Spring Boot auto-configuration note**: Removed JDBC references, kept only JPA
+- **Replaced DomainEventStream reference**: Changed to "transaction" in MongoEventStorageEngine description
+- **Updated EventStore introduction**: Changed "from aggregates" to "from entities", "based on aggregate identifier" to "based on given criteria"
+- All imports updated to use correct Axon 5 packages
 
 ### modules/events/pages/event-processors/index.adoc
 **Changes to apply:**

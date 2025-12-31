@@ -130,6 +130,7 @@ It extends the conversion concept to work with `EventMessage` objects and provid
 
 This converter is used by the event store and event processors.
 
+[#converter_configuration_levels]
 === Converter configuration levels
 
 Axon Framework allows you to configure converters at three levels:

@@ -2,7 +2,7 @@
 
 Interesting metrics in a message centric system come in several forms and flavors, like count, capacity and latency for example.
 Axon Framework allows you to retrieve such measurements through the use of the `axon-metrics` or `axon-micrometer` module.
-With these modules you can register a number of `MessageMonitor` implementations to your messaging components, like the xref:commands:command-dispatchers.adoc#the-command-bus[`CommandBus`], xref:events:event-bus-and-event-store.adoc#_event_bus[`EventBus`], xref:queries:query-dispatchers.adoc#_the_query_bus_and_query_gateway[`QueryBus`] and xref:events:event-processors/index.adoc[`EventProcessors`].
+With these modules you can register a number of `MessageMonitor` implementations to your messaging components, like the xref:commands:command-dispatchers.adoc#command-bus[`CommandBus`], xref:events:infrastructure.adoc#event_bus[`EventBus`], xref:queries:query-dispatchers.adoc#query-bus-and-gateway[`QueryBus`] and xref:events:event-processors/index.adoc[`EventProcessors`].
 
 `axon-metrics` module uses https://metrics.dropwizard.io/[Dropwizard Metrics] for registering the measurements correctly.
 That means that `MessageMonitors` are registered against the Dropwizard `MetricRegistry`.
