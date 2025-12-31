@@ -1362,6 +1362,14 @@ The type of the `resetContext` has to match the parameter's, or it will be null.
 [#_multiple_event_sources]
 == Multiple event sources
 
+[WARNING]
+.Multiple event sources not available in Axon Framework 5.0
+====
+The `MultiStreamableEventSource` feature is not yet available in Axon Framework 5.0.
+It will be reintroduced in Axon Framework 5.2.0.
+The documentation below describes the multiple event sources concepts for reference and future use.
+====
+
 You can configure a Streaming Event Processor to use multiple sources to process events from.
 When required to process events from several sources, we can configure a specific type of `StreamableEventSource`: the `MultiStreamableEventSource`.
 The `MultiStreamableEventSource` is useful when a streaming processor should act on the events from:
