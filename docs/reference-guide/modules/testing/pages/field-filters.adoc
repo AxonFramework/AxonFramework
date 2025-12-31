@@ -392,5 +392,5 @@ Field filters provide fine-grained control over message equality comparison:
 
 For more testing guidance, see:
 
-* xref:testing-with-axon-test-fixture.adoc[] - Main testing guide
+* xref:basic-testing.adoc[] - Main testing guide
 * xref:advanced-testing.adoc[] - Advanced testing techniques
