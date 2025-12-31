@@ -16,11 +16,13 @@
 
 package org.axonframework.common.annotation;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -28,6 +30,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * Utility class for locating annotation and attribute values on elements.
@@ -312,6 +315,17 @@ public final class AnnotationUtils {
         }
 
         return hasSubjectAnnotation;
+    }
+
+    /**
+     * Creates a {@link Predicate} that checks whether the given {@link Member} is annotated with the given {@code annotationType}.
+     *
+     * @param annotationType The annotation type to check.
+     * @return Predicate that checks whether the given annotation is present.
+     */
+    @Nonnull
+    public static Predicate<Member> isAnnotatedWith(@Nonnull Class<? extends Annotation> annotationType) {
+        return it ->  it instanceof AnnotatedElement &&  isAnnotationPresent((AnnotatedElement)it, annotationType);
     }
 
     private AnnotationUtils() {

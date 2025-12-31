@@ -18,9 +18,9 @@ package org.axonframework.eventsourcing.configuration;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.configuration.Configuration;
-import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.common.configuration.StubLifecycleRegistry;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.EventSourcingRepository;
@@ -28,11 +28,11 @@ import org.axonframework.eventsourcing.annotation.CriteriaResolverDefinition;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactoryDefinition;
 import org.axonframework.eventsourcing.annotation.reflection.EntityCreator;
-import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.repository.Repository;
-import org.axonframework.common.util.StubLifecycleRegistry;
 import org.junit.jupiter.api.*;
 
 import java.lang.annotation.ElementType;
@@ -41,6 +41,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.Set;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -145,6 +146,15 @@ class AnnotatedEventSourcedEntityModuleTest {
         assertInstanceOf(EventSourcingRepository.class, result);
     }
 
+    @Test
+    void failsWhenConcreteTypeIsNotSubclassOfEventSourcedEntity() {
+        assertThatThrownBy(() -> new AnnotatedEventSourcedEntityModule<>(String.class,
+                                                                         PolymorphicEventSourcedEntity.class))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("The declared concrete type [java.lang.String] is not assignable to the entity "
+                                    + "type [org.axonframework.eventsourcing.configuration.AnnotatedEventSourcedEntityModuleTest$PolymorphicEventSourcedEntity]. Please ensure the concrete type is a subclass of the entity type.");
+    }
+
     record CourseId() {
 
     }
@@ -155,7 +165,6 @@ class AnnotatedEventSourcedEntityModuleTest {
         @EntityCreator
         public Course {
         }
-
     }
 
     @EventSourcedEntity(criteriaResolverDefinition = CustomCriteriaResolverDefinition.class)
@@ -164,7 +173,6 @@ class AnnotatedEventSourcedEntityModuleTest {
         @EntityCreator
         public CustomCriteriaResolverCourse {
         }
-
     }
 
     static class CustomCriteriaResolverDefinition implements CriteriaResolverDefinition {
@@ -229,6 +237,11 @@ class AnnotatedEventSourcedEntityModuleTest {
     @Retention(RetentionPolicy.RUNTIME)
     @EventSourcedEntity(tagKey = "metaAnnotated")
     public @interface MetaAnnotatedEventSourcingEntity {
+
+    }
+
+    @EventSourcedEntity(concreteTypes = {String.class})
+    interface PolymorphicEventSourcedEntity {
 
     }
 }

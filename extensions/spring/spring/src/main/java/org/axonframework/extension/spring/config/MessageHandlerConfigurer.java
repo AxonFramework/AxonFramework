@@ -17,6 +17,7 @@
 package org.axonframework.extension.spring.config;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.configuration.LazyInitializedModule;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.common.annotation.Internal;
@@ -141,7 +142,7 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
                 };
             };
             registry.registerModule(
-                    new SpringLazyCreatingModule<>("Lazy[" + processorName + "]", moduleBuilder)
+                    new LazyInitializedModule<>("Lazy[" + processorName + "]", moduleBuilder)
             );
         });
     }

@@ -22,13 +22,13 @@ import org.axonframework.common.configuration.ComponentDefinition;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.DefaultComponentRegistry;
+import org.axonframework.common.configuration.StubLifecycleRegistry;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.ApplicationContext;
 import org.axonframework.messaging.core.ConfigurationApplicationContext;
 import org.axonframework.messaging.core.EmptyApplicationContext;
 import org.axonframework.messaging.core.LegacyResources;
 import org.axonframework.messaging.core.Message;
-import org.axonframework.common.util.StubLifecycleRegistry;
 import org.slf4j.Logger;
 
 import java.util.Comparator;

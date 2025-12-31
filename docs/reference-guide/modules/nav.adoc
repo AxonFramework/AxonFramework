@@ -1,5 +1,4 @@
 * xref::index.adoc[]
-* xref::upgrading-to-4-7.adoc[]
 
 include::messaging-concepts:partial$nav.adoc[]
 
@@ -15,7 +14,7 @@ include::deadlines:partial$nav.adoc[]
 
 include::testing:partial$nav.adoc[]
 
-* xref::serialization.adoc[]
+* xref::conversion.adoc[]
 
 include::tuning:partial$nav.adoc[]
 
