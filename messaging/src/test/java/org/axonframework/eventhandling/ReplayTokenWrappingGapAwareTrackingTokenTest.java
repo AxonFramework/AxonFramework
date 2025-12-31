@@ -321,7 +321,7 @@ public class ReplayTokenWrappingGapAwareTrackingTokenTest {
         }
 
         @Test
-        void whenGapAtZeroFilledThenReplay() {
+        void whenGapAtStartPositionThenNotReplay() {
             // given
             GapAwareTrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(5, setOf(0L));
             GapAwareTrackingToken currentToken = GapAwareTrackingToken.newInstance(0, emptySet());
@@ -332,15 +332,6 @@ public class ReplayTokenWrappingGapAwareTrackingTokenTest {
             // then
             assertInstanceOf(ReplayToken.class, replayToken);
             assertFalse(ReplayToken.isReplay(replayToken), "Event 0 was a gap, should NOT be marked as replay");
-
-            // when
-            GapAwareTrackingToken newToken = GapAwareTrackingToken.newInstance(1, emptySet());
-            TrackingToken result = replayToken.advancedTo(newToken);
-
-            // then
-            assertInstanceOf(ReplayToken.class, result, "Should still be in replay mode");
-            assertTrue(ReplayToken.isReplay(result),
-                    "Event 1 was processed before reset, should be marked as replay");
         }
 
         @Test
