@@ -24,220 +24,230 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class ReplayTokenWrappingGapAwareTrackingTokenTest {
 
     @Nested
-    class AdvancedToWithGapAwareTrackingToken {
+    class AdvancedTo {
 
         @Test
-        void eventBeforeResetPositionWithoutGapsIsReplay() {
-            // tokenAtReset at index 10, no gaps - processor saw events 0-10 before reset
+        void whenBeforeResetPositionWithoutGapsThenReplay() {
+            // given
             TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, emptySet());
             ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
 
-            // Event at index 5 - clearly before reset position
+            // when
             TrackingToken newToken = GapAwareTrackingToken.newInstance(5, emptySet());
             TrackingToken result = replayToken.advancedTo(newToken);
 
+            // then
             assertInstanceOf(ReplayToken.class, result);
             assertTrue(ReplayToken.isReplay(result), "Event before reset position should be a replay");
         }
 
         @Test
-        void eventAtResetPositionWithoutGapsIsReplay() {
-            // tokenAtReset at index 10, no gaps
+        void whenAtResetPositionWithoutGapsThenReplay() {
+            // given
             TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, emptySet());
             ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
 
-            // Advance to position 9
+            // when
             replayToken = (ReplayToken) replayToken.advancedTo(GapAwareTrackingToken.newInstance(9, emptySet()));
-
-            // Event at index 10 - exactly at reset position
             TrackingToken newToken = GapAwareTrackingToken.newInstance(10, emptySet());
             TrackingToken result = replayToken.advancedTo(newToken);
 
+            // then
             assertInstanceOf(ReplayToken.class, result);
             assertTrue(ReplayToken.isReplay(result), "Event at exact reset position should be a replay");
         }
 
         @Test
-        void eventAfterResetPositionWithoutGapsEndsReplay() {
-            // tokenAtReset at index 10, no gaps
+        void whenAfterResetPositionWithoutGapsThenNotReplay() {
+            // given
             TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, emptySet());
             ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
 
-            // Event at index 11 - after reset position
+            // when
             TrackingToken newToken = GapAwareTrackingToken.newInstance(11, emptySet());
             TrackingToken result = replayToken.advancedTo(newToken);
 
+            // then
             assertFalse(ReplayToken.isReplay(result), "Event after reset position should not be a replay");
         }
 
         @Test
-        void notReplayAtGapPosition() {
-            // tokenAtReset at index 10 with gaps at 7,8 - processor saw 0-6,9,10 before reset
+        void whenAtGapThenNotReplay() {
+            // given
             TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(7L, 8L));
             ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
 
-            // Event at gap position 7 - was NOT processed before reset
+            // when
             TrackingToken newToken = GapAwareTrackingToken.newInstance(7, emptySet());
             TrackingToken result = replayToken.advancedTo(newToken);
 
+            // then
             assertInstanceOf(ReplayToken.class, result, "Should still be in replay mode");
             assertFalse(ReplayToken.isReplay(result), "Event at gap position should NOT be replay");
         }
 
         @Test
-        void replayAfterGapBeforeReset() {
-            // tokenAtReset at index 10 with gaps at 7,8 - processor saw 0-6,9,10 before reset
+        void whenAtGapAndWithAnotherGapThenNotReplay() {
+            // given
+            TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(7L, 8L));
+            TrackingToken currentToken = ReplayToken.createReplayToken(tokenAtReset, null);
+
+            // when
+            TrackingToken newToken = GapAwareTrackingToken.newInstance(8, setOf(7L));
+            TrackingToken result = ((ReplayToken) currentToken).advancedTo(newToken);
+
+            // then
+            assertFalse(ReplayToken.isReplay(result));
+        }
+
+        @Test
+        void whenAfterGapBeforeResetAndNotFilledGapsThenReplay() {
+            // given
             TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(7L, 8L));
             ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
 
-            // Event at position 9 (after gaps but before reset) - WAS processed before reset
+            // when
             TrackingToken newToken = GapAwareTrackingToken.newInstance(9, setOf(7L, 8L));
             TrackingToken result = replayToken.advancedTo(newToken);
 
+            // then
             assertInstanceOf(ReplayToken.class, result, "Should still be in replay mode");
             assertTrue(ReplayToken.isReplay(result), "Event after gap but before reset should be replay");
         }
 
         @Test
-        void replayIfNotAGapWithoutStartPosition() {
+        void whenAfterGapBeforeResetAndFilledGapsThenReplay() {
+            // given
             // tokenAtReset at index 10 with gaps at 7,8
             // Before reset, processor saw: 0,1,2,3,4,5,6,9,10 (NOT 7,8)
             TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(7L, 8L));
             TrackingToken currentToken = ReplayToken.createReplayToken(tokenAtReset, null);
 
+            // when
             // Now event 9 arrives - currentToken has NO gaps (they were filled)
-            // Event 9 WAS processed before reset, so it SHOULD be a replay
             TrackingToken newToken = GapAwareTrackingToken.newInstance(9, emptySet());
             TrackingToken result = ((ReplayToken) currentToken).advancedTo(newToken);
 
+            // then
             assertInstanceOf(ReplayToken.class, result, "Should still be in replay mode");
             assertTrue(ReplayToken.isReplay(result),
                     "Event 9 was processed before reset, should be marked as replay even though gaps were filled");
         }
 
         @Test
-        void replayIfNotAtGap() {
+        void givenStartPositionWhenAfterGapBeforeResetAndFilledGapsThenReplay() {
+            // given
             TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(7L, 8L));
             TrackingToken currentToken = ReplayToken.createReplayToken(tokenAtReset, new GapAwareTrackingToken(0L, emptyList()));
 
+            // when
             TrackingToken newToken = GapAwareTrackingToken.newInstance(9, emptySet());
             TrackingToken result = ((ReplayToken) currentToken).advancedTo(newToken);
 
+            // then
             assertInstanceOf(ReplayToken.class, result, "Should still be in replay mode");
             assertTrue(ReplayToken.isReplay(result),
                     "Event 9 was processed before reset, should be marked as replay even though gaps were filled");
         }
 
         @Test
-        void replayBeforeResetIndexAndGaps() {
+        void whenAtResetPositionAndFilledGapsThenReplay() {
+            // given
             TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(7L, 8L));
 
-            TrackingToken currentToken = ReplayToken.createReplayToken(tokenAtReset, null);
-
-            TrackingToken newToken = GapAwareTrackingToken.newInstance(6, emptySet());
-            TrackingToken result = ((ReplayToken) currentToken).advancedTo(newToken);
-
-            assertTrue(ReplayToken.isReplay(result));
-        }
-
-        @Test
-        void replayAtGapAndWithAnotherGap() {
-            TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(7L, 8L));
-
-            TrackingToken currentToken = ReplayToken.createReplayToken(tokenAtReset, null);
-
-            TrackingToken newToken = GapAwareTrackingToken.newInstance(8, setOf(7L));
-            TrackingToken result = ((ReplayToken) currentToken).advancedTo(newToken);
-
-            assertFalse(ReplayToken.isReplay(result));
-        }
-
-        @Test
-        void replayAtResetIndexEvenWhenGapsWereFilledDuringReplay() {
-            TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(7L, 8L));
-
+            // when
             TrackingToken currentToken = ReplayToken.createReplayToken(tokenAtReset, null);
             for (int i = 0; i <= 9; i++) {
                 currentToken = ((ReplayToken) currentToken).advancedTo(
                         GapAwareTrackingToken.newInstance(i, emptySet())
                 );
             }
-
             TrackingToken newToken = GapAwareTrackingToken.newInstance(10, emptySet());
             TrackingToken result = ((ReplayToken) currentToken).advancedTo(newToken);
 
+            // then
             assertTrue(ReplayToken.isReplay(result));
+            assertInstanceOf(ReplayToken.class, result,
+                    "Should still be in replay mode at reset index - " +
+                            "event 10 was processed before reset");
         }
 
         @Test
-        void replayEndsAfterResetIndexEvenWhenGapsWereFilledDuringReplay() {
+        void whenAfterResetPositionAndFilledGapsThenNotReplay() {
+            // given
             TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(7L, 8L));
 
+            // when
             TrackingToken currentToken = ReplayToken.createReplayToken(tokenAtReset, null);
             for (int i = 0; i <= 10; i++) {
                 currentToken = ((ReplayToken) currentToken).advancedTo(
                         GapAwareTrackingToken.newInstance(i, emptySet())
                 );
             }
-
             TrackingToken newToken = GapAwareTrackingToken.newInstance(11, emptySet());
             TrackingToken result = ((ReplayToken) currentToken).advancedTo(newToken);
 
+            // then
             assertFalse(ReplayToken.isReplay(result),
                     "Event 11 was never processed before reset, should not be a replay");
         }
 
         @Test
-        void replayEndsAfterResetIndexEvenWhenGapsWereNotFilledDuringReplay() {
+        void whenAfterResetPositionAndNotFilledGapsThenNotReplay() {
+            // given
             TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(7L, 8L));
             TrackingToken currentToken = ReplayToken.createReplayToken(tokenAtReset, null);
 
+            // when
             TrackingToken newToken = GapAwareTrackingToken.newInstance(11, setOf(7L, 8L));
             TrackingToken result = ((ReplayToken) currentToken).advancedTo(newToken);
 
+            // then
             assertFalse(ReplayToken.isReplay(result),
                     "Event 11 was never processed before reset, should not be a replay");
         }
 
         @Test
-        void eventPreviouslyProcessedShouldBeReplayWhenOnlySomeGapsFilled() {
+        void whenBeforeResetPositionAndNotFilledGapsThenReplay() {
+            // given
             TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(7L, 8L));
 
+            // when
             TrackingToken currentToken = ReplayToken.createReplayToken(tokenAtReset, null);
             for (int i = 0; i <= 7; i++) {
                 currentToken = ((ReplayToken) currentToken).advancedTo(
                         GapAwareTrackingToken.newInstance(i, emptySet())
                 );
             }
-
             TrackingToken newToken = GapAwareTrackingToken.newInstance(9, setOf(8L));
             TrackingToken result = ((ReplayToken) currentToken).advancedTo(newToken);
 
+            // then
             assertInstanceOf(ReplayToken.class, result);
             assertTrue(ReplayToken.isReplay(result),
                     "Event 9 was processed before reset, should be replay even with partial gap fill");
         }
 
         @Test
-        void gapJustBeforeResetIndex() {
-            // tokenAtReset at index 10 with gap at 9
-            // Processor saw: 0-8, 10 (NOT 9)
+        void whenAtGapJustBeforeResetPositionThenNotReplay() {
+            // given
             TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, setOf(9L));
             ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
 
-            // Now gap 9 gets filled during replay
+            // when - gap 9 gets filled during replay
             TrackingToken token9 = GapAwareTrackingToken.newInstance(9, emptySet());
             TrackingToken resultAt9 = replayToken.advancedTo(token9);
 
+            // then
             assertInstanceOf(ReplayToken.class, resultAt9);
-            // Event 9 was NOT processed before reset (was a gap), so should NOT be marked as replay
             assertFalse(ReplayToken.isReplay(resultAt9),
                     "Event 9 was a gap before reset, should NOT be marked as replay");
 
-            // Event 10 - was processed before reset
+            // when
             TrackingToken token10 = GapAwareTrackingToken.newInstance(10, emptySet());
             TrackingToken resultAt10 = ((ReplayToken) resultAt9).advancedTo(token10);
 
+            // then
             assertInstanceOf(ReplayToken.class, resultAt10);
             assertTrue(ReplayToken.isReplay(resultAt10),
                     "Event 10 was processed before reset, should be marked as replay");
@@ -245,21 +255,19 @@ public class ReplayTokenWrappingGapAwareTrackingTokenTest {
 
         @Test
         void multipleDisjointGapsInTokenAtReset() {
-            // tokenAtReset at index 15 with gaps at 3,4,9,10
-            // Processor saw: 0-2, 5-8, 11-15
+            // given
             TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(15, setOf(3L, 4L, 9L, 10L));
             ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
 
-            // Test events at various positions
-            // Event 2 - was processed
+            // when-then
             TrackingToken result2 = replayToken.advancedTo(GapAwareTrackingToken.newInstance(2, emptySet()));
             assertTrue(ReplayToken.isReplay(result2), "Event 2 was processed, should be replay");
 
-            // Event 3 - was NOT processed (gap)
+            // when-then
             TrackingToken result3 = ((ReplayToken) result2).advancedTo(GapAwareTrackingToken.newInstance(3, emptySet()));
             assertFalse(ReplayToken.isReplay(result3), "Event 3 was a gap, should NOT be replay");
 
-            // Event 5 - was processed
+            // when-then
             TrackingToken result5 = ((ReplayToken) result3).advancedTo(
                     GapAwareTrackingToken.newInstance(5, setOf(4L)));
             assertTrue(ReplayToken.isReplay(result5), "Event 5 was processed, should be replay");
@@ -313,47 +321,24 @@ public class ReplayTokenWrappingGapAwareTrackingTokenTest {
         }
 
         @Test
-        void gapFilledThenEventAtResetIndex() {
-            // Setup: tokenAtReset at index 5 with gap at 3
-            // Before reset, processor saw: 0,1,2,4,5 (NOT 3)
-            GapAwareTrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(5, setOf(3L));
-
-            // After processing 0,1,2,3,4 - gap filled, currentToken at 4 with no gaps
-            GapAwareTrackingToken currentToken = GapAwareTrackingToken.newInstance(4, emptySet());
-
-            ReplayToken replayToken = new ReplayToken(tokenAtReset, currentToken, null);
-
-            // Now event 5 arrives - this event WAS processed before reset
-            GapAwareTrackingToken newToken = GapAwareTrackingToken.newInstance(5, emptySet());
-
-            TrackingToken result = replayToken.advancedTo(newToken);
-
-            // Event 5 at the reset index should STILL be a replay because it was processed before.
-            assertTrue(ReplayToken.isReplay(result),
-                    "Event 5 was processed before reset, should be marked as replay");
-            assertInstanceOf(ReplayToken.class, result,
-                    "Should still be in replay mode at reset index - " +
-                            "event 5 was processed before reset");
-        }
-
-        @Test
-        void gapAtIndexZeroFilledDuringReplay() {
-            // Setup: tokenAtReset at index 5 with gap at 0
-            // Before reset, processor saw: 1,2,3,4,5 (NOT 0)
+        void whenGapAtZeroFilledThenReplay() {
+            // given
             GapAwareTrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(5, setOf(0L));
-
-            // Gap 0 is filled first during replay
             GapAwareTrackingToken currentToken = GapAwareTrackingToken.newInstance(0, emptySet());
 
-            ReplayToken replayToken = new ReplayToken(tokenAtReset, currentToken, null);
+            // when
+            ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, currentToken);
 
-            // Now event 1 arrives - this event WAS processed before reset
+            // then
+            assertInstanceOf(ReplayToken.class, replayToken);
+            assertFalse(ReplayToken.isReplay(replayToken), "Event 0 was a gap, should NOT be marked as replay");
+
+            // when
             GapAwareTrackingToken newToken = GapAwareTrackingToken.newInstance(1, emptySet());
-
             TrackingToken result = replayToken.advancedTo(newToken);
 
+            // then
             assertInstanceOf(ReplayToken.class, result, "Should still be in replay mode");
-            // BUG: tokenAtReset.covers(newToken) returns false
             assertTrue(ReplayToken.isReplay(result),
                     "Event 1 was processed before reset, should be marked as replay");
         }

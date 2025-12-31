@@ -155,7 +155,12 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
         if (startPosition != null && isStrictlyAfter(startPosition, tokenAtReset)) {
             return startPosition;
         }
-        return new ReplayToken(tokenAtReset, startPosition, resetContext);
+        return new ReplayToken(
+                tokenAtReset,
+                startPosition,
+                resetContext,
+                startPosition == null || wasProcessedBeforeReset(tokenAtReset, startPosition)
+        );
     }
 
     /**
@@ -259,7 +264,7 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
             }
             return newToken;
         }
-        if (wasProcessedBeforeReset(newToken)) {
+        if (wasProcessedBeforeReset(tokenAtReset, newToken)) {
             // we're still well behind
             return new ReplayToken(
                     tokenAtReset,  // we don't do upperBound here, because if false it removes the gaps, here we don't have gaps
@@ -303,25 +308,13 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
      *   <li><b>Events that were skipped:</b> {@code lowerBound} walks back past the skipped position
      *       → {@code combinedLowerBound.equalsLatest(newToken)} returns {@code false}</li>
      * </ul>
-     * <p>
-     * <b>Example:</b>
-     * <pre>
-     * tokenAtReset: positions 0-6 and 9-10 were seen, positions 7-8 were skipped
      *
-     * Case 1: newToken at position 5
-     *   → lowerBound stays at 5 (was seen)
-     *   → equalsLatest(newToken)? YES → was delivered before reset
-     *
-     * Case 2: newToken at position 7
-     *   → lowerBound walks back to 6 (position 7 was skipped)
-     *   → equalsLatest(newToken)? NO (6 ≠ 7) → was NOT delivered before reset (it's new!)
-     * </pre>
-     *
-     * @param newToken the token representing the current event position
-     * @return {@code true} if the event was delivered before reset, {@code false} if it's a new event
+     * @param tokenAtReset The token representing the position at reset
+     * @param newToken The token representing the current event position
+     * @return {@code true} if the event was delivered before reset, {@code false} if it's a new event.
      * @see TrackingToken#lowerBound(TrackingToken)
      */
-    private boolean wasProcessedBeforeReset(TrackingToken newToken) {
+    private static boolean wasProcessedBeforeReset(TrackingToken tokenAtReset, TrackingToken newToken) {
         TrackingToken resetLowerBound = WrappedToken.unwrapLowerBound(tokenAtReset);
         TrackingToken newTokenLowerBound = WrappedToken.unwrapLowerBound(newToken);
         TrackingToken resetTokenLowerNewToken = resetLowerBound.lowerBound(newTokenLowerBound);
