@@ -1198,32 +1198,43 @@ We recommend Axoniq Platform or Axon Server because there's a lot to take into a
 [[replaying-events]]
 == Replaying events
 
+[WARNING]
+.Replaying events not available in Axon Framework 5.0
+====
+The Replaying events feature is not yet available in Axon Framework 5.0.
+It will be reintroduced in Axon Framework 5.1.
+The documentation below describes the Replaying events concepts for reference and future use.
+====
+
 A benefit of streaming events is that we can reopen the stream at any point in time.
 Whenever some event handling components misbehaved, and the view models they update or actions they triggered should happen again, starting anew can be useful.
 Handling events again by adjusting the position on the stream is what's called "a replay," a feature supported by the `StreamingEventProcessor`.
 You can trigger a reset using xref:axoniq-platform-reference:ROOT:index.adoc[Axoniq Platform], or programmatically through the Axon Framework API.
 
 [#reset-console]
-=== Triggering a reset with Console
+=== Triggering a reset with Axoniq Platform
 
 Triggering a reset through the xref:axoniq-platform-reference:ROOT:index.adoc[Axoniq Platform] is straightforward.
 It will make sure all processors are stopped, the tokens reset, and the replay is started, without any need for manual intervention.
 
-Go to the detail page of the processor you would like to reset. On the left side, under the configuration details, is a "Reset Processor" button.
+Go to the detail page of the processor you would like to reset.
+On the left side, under the configuration details, is a "Reset Processor" button.
 
 image::console-processor-detail-page-reset.png[alt="Axoniq Platform processor detail page with underlined 'Reset Processor' button"]
 
-Clicking this button will open a dialog in which you can choose the desired position in the event store to replay from. You can choose to reset to the FIRST position (beginning), LATEST position (end), or a custom date.
+Clicking this button will open a dialog in which you can choose the desired position in the event store to replay from.
+You can choose to reset to the first position (beginning), latest position (end), or a custom date.
 
-image::console-processor-reset-dialog.png[alt="Axoniq Platform reset dialog", width=65%, align="center"]
+image::console-processor-reset-dialog.png[alt="Axoniq Platform reset dialog",width=65%,align="center"]
 
-After resetting the processor, the replay will start immediately. You can track its progress under the "Segments" tab. During a replay, each segment has its own pace.
+After resetting the processor, the replay will start immediately.
+You can track its progress under the "Segments" tab.
+During a replay, each segment has its own pace.
 
 image::console-processor-replaying-segments.png[alt="Axoniq Platform segments view during a replay"]
 
-During this time, it's normal to see the latency of the processor at a high value, because it's processing events from a long time ago. This will slowly decrease until it's back at the LATEST position.
-
-
+During this time, it's normal to see the latency of the processor at a high value, because it's processing events from a long time ago.
+This will slowly decrease until it's back at the latest position.
 
 [#reset-programmatically]
 === Triggering a reset programmatically
@@ -1233,13 +1244,14 @@ This API revolves around the `resetTokens()` method and provides a couple of opt
 
 * `resetTokens()`: Simple reset, adjusting the `TrackingToken` to the configured <<Initial tracking token,initial tracking token>>
 * `resetTokens(R resetContext)`: Resets the `TrackingToken` to the configured <<Initial tracking token,initial tracking token>>, providing the `resetContext` to the <<Replay API,`ResetHandlers`>>
-* `resetTokens(Function<StreamableEventSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenSupplier)`: Resets the `TrackingToken` to the results of the `initialTrackingTokenSupplier`
-* `resetTokens(Function<StreamableEventSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenSupplier, R resetContext)`: Resets the `TrackingToken` to the results of the `initialTrackingTokenSupplier`, providing the `resetContext` to the <<Replay API,`ResetHandlers`>>
+* `resetTokens(Function<TrackingTokenSource>, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier)`: Resets the `TrackingToken` to the results of the `initialTrackingTokenSupplier`
+* `resetTokens(Function<TrackingTokenSource>, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier, R resetContext)`: Resets the `TrackingToken` to the results of the `initialTrackingTokenSupplier`, providing the `resetContext` to the <<Replay API,`ResetHandlers`>>
 * `resetTokens(TrackingToken startPosition)`: Resets the `TrackingToken` to the provided `startPosition`
 * `resetTokens(TrackingToken startPosition, R resetContext)`: Resets the `TrackingToken` to the provided `startPosition`, providing the `resetContext` to the <<Replay API,`ResetHandlers`>>
 
-As the method name suggests, the reset adjusts the <<tracking-tokens,tracking token>> to a new position.
-When starting a reset, the streaming processor is _required_ to claim all its <<parallel-processing,segments>>.
+All methods above return a `CompletableFuture<Void>` that will signal if the reset was triggered successfully or exceptionally.
+As the method name suggests, the reset adjusts the <<tracking_tokens,tracking token>> to a new position.
+When starting a reset, the streaming processor is _required_ to claim all its <<parallel_processing,segments>>.
 All claims are required since the processor needs to update all tokens to their new position to start the replay.
 
 To achieve this, the streaming event processor must be inactive when starting a reset.
@@ -1256,22 +1268,26 @@ Reset without reset context::
 
 [source,java]
 ----
-class StreamingProcessorController {
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
 
-    private EventProcessingConfiguration processingConfiguration;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
-    // ...
-    void resetTokensFor(String processorName) {
-        // EventProcessingConfiguration#eventProcessor(String, Class) returns an optional of the event processor
-        processingConfiguration.eventProcessor(processorName, StreamingEventProcessor.class)
-                               .ifPresent(streamingProcessor -> {
-                                   // shutdown this streaming processor
-                                   streamingProcessor.shutDown();
-                                   // reset the tokens to prepare the processor
-                                   streamingProcessor.resetTokens();
-                                   // start the processor to initiate the replay
-                                   streamingProcessor.start();
-                               });
+class StreamingProcessorService {
+
+    // The Configuration allows access to all the configured EventProcessors
+    private Configuration configuration;
+
+    CompletableFuture<CompletableFuture<Void>> resetTokensFor(String processorName) {
+        Map<String, StreamingEventProcessor> processors = configuration.getComponents(StreamingEventProcessor.class);
+        StreamingEventProcessor processor = processors.get(processorName);
+        // shutdown this streaming processor
+        return processor.shutdown()
+                        // reset the tokens to prepare the processor
+                        .thenApply(result -> processor.resetTokens())
+                        // start the processor to initiate the replay
+                        .thenApply(result -> processor.start());
     }
 }
 ----
@@ -1282,23 +1298,28 @@ Reset with reset context::
 
 [source,java]
 ----
-class StreamingProcessorController {
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
 
-    private EventProcessingConfiguration processingConfiguration;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
-    // ...
-    void resetTokensFor(String processorName, Object resetContext) {
-        // EventProcessingConfiguration#eventProcessor(String, Class) returns an optional of the event processor
-        processingConfiguration.eventProcessor(processorName, StreamingEventProcessor.class)
-                               .ifPresent(streamingProcessor -> {
-                                   // shutdown this streaming processor
-                                   streamingProcessor.shutDown();
-                                   // reset the tokens to prepare the processor
-                                   streamingProcessor.resetTokens(resetContext);
-                                   // start the processor to initiate the replay
-                                   streamingProcessor.start();
-                               });
-  }
+class StreamingProcessorService {
+
+    // The Configuration allows access to all the configured EventProcessors
+    private Configuration configuration;
+
+    CompletableFuture<CompletableFuture<Void>> resetTokensFor(String processorName,
+                                                              Object resetContext) {
+        Map<String, StreamingEventProcessor> processors = configuration.getComponents(StreamingEventProcessor.class);
+        StreamingEventProcessor processor = processors.get(processorName);
+        // shutdown this streaming processor
+        return processor.shutdown()
+                        // reset the tokens to prepare the processor
+                        .thenApply(result -> processor.resetTokens(resetContext))
+                        // start the processor to initiate the replay
+                        .thenApply(result -> processor.start());
+    }
 }
 ----
 --
@@ -1307,30 +1328,33 @@ class StreamingProcessorController {
 [WARNING]
 .Resets in multi-node environments
 ====
-If you are in a <<Multi-node processing,multi-node>> scenario, that means _all_ nodes should shut down the `StreamingEventProcessor`.
+If you are in a <<multi_node_processing,multi-node>> scenario, that means _all_ nodes should shut down the `StreamingEventProcessor`.
 Otherwise, another node will pick up the segments released by the inactive processor instance.
 
-Being able to shut down or start up all streaming processor instances is most easily achieved through the xref:axon-server-reference:ROOT:index.adoc[Axon Server] Dashboard or xref:axoniq-platform-reference:ROOT:index.adoc[Axoniq Platform].
-They both provide a "start" and "stop" button, which will start/stop the processor on every node. With Axoniq Platform you can also reset the processor.
+Being able to shut down or start up all streaming processor instances is most easily achieved through xref:axoniq-platform-reference:ROOT:index.adoc[Axoniq Platform] or xref:axon-server-reference:ROOT:index.adoc[Axon Server].
+They both provide a "start" and "stop" button, which will start/stop the processor on every node.
+With Axoniq Platform you can also reset the processor.
 
 When Axon Server is not used, you should construct a custom endpoint in your application.
 The `StreamingProcessorService` sample shared above would be ideal for adding a start and stop method.
 ====
 
-
 ==== Partial replays
+
 A replay does not always have to start "from the beginning of time." Partially replaying the event stream suffices for a lot of applications.
 
 To perform a so-called "partial replay," you should provide the token at a specific point in time.
-The `StreamableEventSource`'s <<Initial tracking token,`createTokenAt(Instant)` and `createTokenSince(Duration)`>> can be used for this.
+The `StreamableEventSource`'s <<initial_token,`createTokenAt(Instant)`>> method can be used for this.
 
 If creating tokens based on time is not sufficient, but creating tokens based on the exact position is something that is more convenient, you could create a `TrackingToken` providing the position and give it to `resetTokens(TrackingToken startPosition)` or
-`resetTokens(TrackingToken startPosition, R resetContext)` methods.
-The concrete implementation of `TrackingToken` to provide depends on the `Token Store` being used.
+`resetTokens(TrackingToken startPosition, R resetContext)`.
+The concrete implementation of `TrackingToken` to provide depends on the `TokenStore` being used.
+Or, if you want to use the token source for your Streaming Processor to construct the right type of token in one go, you can use the  `resetTokens(Function<TrackingTokenSource>, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier)` or
+`resetTokens(Function<TrackingTokenSource>, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier, R resetContext)` methods.
 
 Be mindful that when initiating a partial replay, the event handlers may handle an event in the middle of model construction.
 Hence, event handlers need to be "aware" that some events might not have been handled at all.
-Making the event handlers lenient (for example, deal with missing data) or performing ad-hoc manual replays would help in that area.
+Making the event handlers lenient (for example, deal with missing data) or performing ad-hoc manual replays are avenues to pursue to resolve this.
 
 === Replay API
 
@@ -1405,6 +1429,56 @@ The type of the `resetContext` is up to the user.
 This information is stored in the `ReplayToken` and will be available until the end of the replay.
 The type of the `resetContext` is up to the user and is the same context as is used for the `@ResetHandler` (see 4).
 The type of the `resetContext` has to match the parameter's, or it will be null.
+
+If users take the declarative configuration process instead of auto-detecting through annotation, you should wrap your `EventHandlingComponent` in an `ReplayBlockingEventHandlingComponent`.
+This will ensure all subscribed event handlers for that event handling component will not be invoked during a replay:
+
+[source,java]
+----
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.eventhandling.EventHandlingComponent;
+import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
+import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
+import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorsConfigurer;
+import org.axonframework.messaging.eventhandling.replay.ReplayBlockingEventHandlingComponent;
+
+public class AxonConfig {
+
+    public void configureEventProcessing(MessagingConfigurer configurer) {
+        configurer.eventProcessing(eventConfigurer -> eventConfigurer.pooledStreaming(
+                this::configurePooledStreamingProcessor
+        ));
+    }
+
+    private PooledStreamingEventProcessorsConfigurer configurePooledStreamingProcessor(
+            PooledStreamingEventProcessorsConfigurer pooledStreamingConfigurer
+    ) {
+        return pooledStreamingConfigurer.processor(
+                "my-processor",
+                config -> config.eventHandlingComponents(this::configureHandlingComponent).notCustomized()
+        );
+    }
+
+    private EventHandlingComponentsConfigurer.AdditionalComponentPhase configureHandlingComponent(
+            EventHandlingComponentsConfigurer.RequiredComponentPhase componentConfigurer
+    ) {
+        return componentConfigurer.declarative(c -> {
+            EventHandlingComponent eventHandlingComponent =
+                    new ReplayBlockingEventHandlingComponent(new SimpleEventHandlingComponent());
+            eventHandlingComponent.subscribe(
+                    new QualifiedName("my-event"),
+                    (event, context) -> {
+                        // process events
+                        return MessageStream.empty();
+                    }
+            );
+            return eventHandlingComponent;
+        });
+    }
+}
+----
 
 [#_multiple_event_sources]
 == Multiple event sources
