@@ -327,7 +327,7 @@ Spring Boot::
 
 [source,java]
 ----
-// TODO #3577 - Update once Enhancer API is expanded.
+// TODO #4053 - Introduce Event Processor Specification bean example.
 ----
 --
 ====
@@ -390,7 +390,7 @@ Spring Boot::
 
 [source,java]
 ----
-// TODO #3577 - Update once Enhancer API is expanded.
+// TODO #4053 - Introduce Event Processor Specification bean example.
 ----
 --
 ====
@@ -667,24 +667,7 @@ The default number of segments for the `PooledStreamingEventProcessor` is sixtee
 
 [source,java]
 ----
-@Configuration
-public class AxonConfig {
-    // omitting other configuration methods...
-    @Bean
-    public ConfigurationEnhancer segmentCountConfigurationEnhancer() {
-        return registry -> MessagingConfigurer.with(registry).eventProcessing(processingConfigurer ->
-            processingConfigurer.pooledStreaming(pooledStreaming ->
-                pooledStreaming
-                    .processor("my-processor", components -> components
-                        .autodetected(cfg -> new MyEventHandler())
-                        .customize((config, processorConfig) -> processorConfig
-                            .segmentCount(32)
-                        )
-                    )
-            )
-        );
-    }
-}
+// TODO #4053 - Introduce Event Processor Specification bean example.
 ----
 --
 
@@ -798,23 +781,7 @@ Spring Boot::
 
 [source,java]
 ----
-@Configuration
-public class AxonConfig {
-    // omitting other configuration methods...
-    @Bean
-    public ConfigurationEnhancer sequencingPolicyConfigurationEnhancer(SequencingPolicy<EventMessage<?>> mySequencingPolicy) {
-        return registry -> MessagingConfigurer.with(registry).eventProcessing(
-              processingConfigurer -> processingConfigurer.registerDefaultSequencingPolicy(config -> mySequencingPolicy)
-                                                          // or, to define one for a specific processor:
-                                                          .registerSequencingPolicy("my-processor", config -> mySequencingPolicy)
-        );
-    }
-
-    @Bean
-    public SequencingPolicy<EventMessage<?>> mySequencingPolicy() {
-        return new SequentialPolicy();
-    }
-}
+// TODO #4053 - Introduce Event Processor Specification bean example.
 ----
 --
 
@@ -998,30 +965,7 @@ Spring Boot::
 
 [source,java]
 ----
-@Configuration
-public class AxonConfig {
-    // omitting other configuration methods...
-    @Bean
-    public ConfigurationEnhancer threadCountConfigurationEnhancer() {
-        return registry -> MessagingConfigurer.with(registry).eventProcessing(processingConfigurer ->
-            processingConfigurer.pooledStreaming(pooledStreaming ->
-                pooledStreaming
-                    .processor("my-processor", components -> components
-                        .autodetected(cfg -> new MyEventHandler())
-                        .customize((config, processorConfig) -> processorConfig
-                            .coordinatorExecutor(Executors.newScheduledThreadPool(
-                                1, new AxonThreadFactory("Coordinator - my-processor")
-                            ))
-                            .workerExecutor(Executors.newScheduledThreadPool(
-                                16, new AxonThreadFactory("Worker - my-processor")
-                            ))
-                            .segmentCount(32)
-                        )
-                    )
-            )
-        );
-    }
-}
+// TODO #4053 - Introduce Event Processor Specification bean example.
 ----
 --
 
@@ -1483,18 +1427,7 @@ Tracking: Spring Boot::
 
 [source,java]
 ----
-@Configuration
-public class AxonConfig {
-    // omitting other configuration methods...
-    @Bean
-    public ConfigurationEnhancer trackingProcessorConfigurationEnhancer() {
-        return registry -> MessagingConfigurer.with(registry).eventProcessing(
-              processingConfigurer -> processingConfigurer.registerTrackingEventProcessor(
-                      "my-processor", config -> buildMultiStreamableEventSource(/*...*/)
-              )
-        );
-    }
-}
+// TODO #4053 - Introduce Event Processor Specification bean example.
 ----
 --
 
@@ -1521,18 +1454,7 @@ Pooled streaming: Spring Boot::
 
 [source,java]
 ----
-@Configuration
-public class AxonConfig {
-    // omitting other configuration methods...
-    @Bean
-    public ConfigurationEnhancer pooledStreamingProcessorConfigurationEnhancer() {
-        return registry -> MessagingConfigurer.with(registry).eventProcessing(
-              processingConfigurer -> processingConfigurer.registerPooledStreamingEventProcessor(
-                      "my-processor", config -> buildMultiStreamableEventSource(/*...*/)
-              )
-        );
-    }
-}
+// TODO #4053 - Introduce Event Processor Specification bean example.
 ----
 --
 

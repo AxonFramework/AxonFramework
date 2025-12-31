@@ -113,7 +113,7 @@ Spring Boot::
 --
 [source,java]
 ----
-// TODO #3577 - Update once Enhancer API is expanded with more Spring Boot options
+// TODO #4053 - Introduce Event Processor Specification bean example.
 ----
 --
 ====
@@ -169,7 +169,7 @@ Spring Boot::
 --
 [source,java]
 ----
-// TODO #3577 - Update once Enhancer API is expanded with more Spring Boot options
+// TODO #4053 - Introduce Event Processor Specification bean example.
 ----
 --
 ====
@@ -387,7 +387,7 @@ Spring Boot::
 --
 [source,java]
 ----
-// TODO #3577 - Update once Enhancer API is expanded with more Spring Boot options
+// TODO #4053 - Introduce Event Processor Specification bean example.
 ----
 --
 ====
