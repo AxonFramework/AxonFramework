@@ -54,6 +54,7 @@ Axon tests follow a three-phase pattern that makes tests clear and easy to under
 **Given** (setup)::
 Define the initial state before testing.
 Publish events or dispatch commands to set up the scenario.
+It's an optional step - you can skip it and start with a fresh state.
 
 **When** (action)::
 Execute the action being tested.
