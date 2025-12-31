@@ -35,7 +35,7 @@ There are two main approaches to configuring event processors and assigning hand
 * *Declarative configuration* - Using Axon's configuration API to explicitly define which event handling components belong to which processor.
 * *Autodetected configuration* - Using Spring Boot to automatically detect and assign event handling components to processors based on their package name.
 
-xref:event-handlers.adoc#registering-event-handlers[This] section describes the process to register an event handler.
+xref:event-handlers.adoc#registering_event_handlers[This] section describes the process to register an event handler.
 
 [#declarative_config]
 === Declarative Configuration
@@ -99,7 +99,7 @@ Without any intervention, this will trigger the creation of two Streaming Proces
 
 === Ordering event handling components within a processor
 
-To order event handling components within an Event Processor, the order in which components are registered (as described in the xref:event-handlers.adoc#registering-event-handlers[Registering Event Handlers] section) is guiding.
+To order event handling components within an Event Processor, the order in which components are registered (as described in the xref:event-handlers.adoc#registering_event_handlers[Registering Event Handlers] section) is guiding.
 Thus, the ordering in which an Event Processor will call handling components for event handling is the same as their insertion ordering in the Configuration API.
 
 If we use an autodetected configuration like Spring as the mechanism for wiring everything, we can explicitly specify the event handler component ordering by adding the `@Order` annotation.
