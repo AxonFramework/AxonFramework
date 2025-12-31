@@ -34,7 +34,7 @@ Hence, there's no way of knowing whether a next event in the stream does or does
 
 == Event ordering
 
-Axon Framework's event processors maintain the ordering of events within the same sequence, even when you configure xref:event-processors/streaming.adoc#parallel-processing[parallel processing].
+Axon Framework's event processors maintain the ordering of events within the same sequence, even when you configure xref:event-processors/streaming.adoc#parallel_processing[parallel processing].
 A perfect example when this is a requirement is the need to handle events of the same aggregate in their publishing order.
 Simply dead lettering one failed event would cause later events in the sequence to be applied to inconsistent state.
 
