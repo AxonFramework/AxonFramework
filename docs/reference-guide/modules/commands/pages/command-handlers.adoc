@@ -631,6 +631,7 @@ It provides access to correlation data, resources, and lifecycle management.
 // TODO: Update to processing-context.adoc when unit-of-work.adoc is renamed
 For more details on `ProcessingContext`, see xref:messaging-concepts:unit-of-work.adoc[].
 
+[#publishing_events_with_eventappender]
 == Publishing events with `EventAppender`
 
 To publish events as a result of command handling, the `EventAppender` should be used.
