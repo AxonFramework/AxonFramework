@@ -190,8 +190,7 @@ class MergedTrackingTokenTest {
     void equalsLatestWithNullTokens() {
         MergedTrackingToken testSubject = new MergedTrackingToken(null, null);
 
-        // If either segment is null or other is null, equalsLatest returns false
-        assertFalse(testSubject.equalsLatest(null));
+        assertTrue(testSubject.equalsLatest(null));
         assertFalse(testSubject.equalsLatest(token(0)));
     }
 

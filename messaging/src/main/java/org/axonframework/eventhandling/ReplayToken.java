@@ -155,11 +155,13 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
         if (startPosition != null && isStrictlyAfter(startPosition, tokenAtReset)) {
             return startPosition;
         }
+
+        boolean lastMessageWasReplay = WrappedToken.unwrapUpperBound(startPosition) == null || wasProcessedBeforeReset(tokenAtReset, startPosition);
         return new ReplayToken(
                 tokenAtReset,
                 startPosition,
                 resetContext,
-                startPosition == null || wasProcessedBeforeReset(tokenAtReset, startPosition)
+                lastMessageWasReplay
         );
     }
 
