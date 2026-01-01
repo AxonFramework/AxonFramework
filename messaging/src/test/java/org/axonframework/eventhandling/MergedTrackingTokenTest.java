@@ -170,6 +170,30 @@ class MergedTrackingTokenTest {
         assertSame(advance, testSubject.advancedTo(advance));
     }
 
+    @Test
+    void equalsLatest() {
+        MergedTrackingToken testSubject = new MergedTrackingToken(token(1), token(3));
+
+        // Both segments must be at the same position
+        assertFalse(testSubject.equalsLatest(token(1)));
+        assertFalse(testSubject.equalsLatest(token(2)));  // Lower segment is at 1, not 2
+        assertFalse(testSubject.equalsLatest(token(3)));  // Lower segment is at 1, not 3
+
+        // When both segments are at the same position
+        MergedTrackingToken equalSegments = new MergedTrackingToken(token(5), token(5));
+        assertTrue(equalSegments.equalsLatest(token(5)));
+        assertFalse(equalSegments.equalsLatest(token(4)));
+        assertFalse(equalSegments.equalsLatest(token(6)));
+    }
+
+    @Test
+    void equalsLatestWithNullTokens() {
+        MergedTrackingToken testSubject = new MergedTrackingToken(null, null);
+
+        assertTrue(testSubject.equalsLatest(null));
+        assertFalse(testSubject.equalsLatest(token(0)));
+    }
+
     private GlobalSequenceTrackingToken token(int sequence) {
         return new GlobalSequenceTrackingToken(sequence);
     }
