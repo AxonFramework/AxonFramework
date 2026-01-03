@@ -20,13 +20,10 @@ import jakarta.annotation.Nonnull;
 import org.assertj.core.api.AbstractIterableAssert;
 import org.axonframework.conversion.json.JacksonConverter;
 import org.axonframework.eventsourcing.annotation.EventTag;
-import org.axonframework.messaging.core.EmptyApplicationContext;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageStream.Entry;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.annotation.AnnotationMessageTypeResolver;
-import org.axonframework.messaging.core.unitofwork.ProcessingLifecycle;
-import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.core.unitofwork.UnitOfWork;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
@@ -54,7 +51,6 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -161,13 +157,12 @@ public abstract class StorageEngineBackedEventStoreTestSuite<E extends EventStor
     protected abstract E getStorageEngine(@Nonnull EventConverter converter) throws Exception;
 
     /**
-     * This can be used to hook into the lifecycle of each unit of work created by this
-     * test, for example to install a custom transactional executor as a resource for
-     * engines that need one.
+     * Creates a {@link UnitOfWork} with its transactional resource configured.
      *
-     * @param lifecycle The {@link ProcessingLifecycle}, cannot be {@code null}.
+     * @return A {@link UnitOfWork}.
      */
-    protected abstract void enhanceProcessingLifecycle(@Nonnull ProcessingLifecycle lifecycle);
+    @Nonnull
+    protected abstract UnitOfWork unitOfWork();
 
     @Nested
     protected class GivenSomePublishedEvents {
@@ -336,8 +331,8 @@ public abstract class StorageEngineBackedEventStoreTestSuite<E extends EventStor
              * Start both units of work, and wait until they finished sourcing:
              */
 
-            CompletableFuture<Void> execute1 = workUnit1.execute();
-            CompletableFuture<Void> execute2 = workUnit2.execute();
+            CompletableFuture<Void> execute1 = CompletableFuture.runAsync(() -> workUnit1.execute().join());
+            CompletableFuture<Void> execute2 = CompletableFuture.runAsync(() -> workUnit2.execute().join());
 
             awaitLatch(sourcingFinished);
 
@@ -525,21 +520,6 @@ public abstract class StorageEngineBackedEventStoreTestSuite<E extends EventStor
                 }
             );
         }).join();
-    }
-
-    /**
-     * Creates a {@link UnitOfWork} with its transactional resource configured.
-     *
-     * @return A {@link UnitOfWork}.
-     */
-    protected final UnitOfWork unitOfWork() {
-        SimpleUnitOfWorkFactory factory = new SimpleUnitOfWorkFactory(
-            EmptyApplicationContext.INSTANCE,
-            c -> c.workScheduler(Executors.newFixedThreadPool(4))
-                .registerProcessingLifecycleEnhancer(this::enhanceProcessingLifecycle)
-        );
-
-        return factory.create();
     }
 
     /**

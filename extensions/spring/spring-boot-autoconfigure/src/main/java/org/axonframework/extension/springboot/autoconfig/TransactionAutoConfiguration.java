@@ -16,7 +16,9 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
+import jakarta.annotation.Nullable;
 import jakarta.persistence.EntityManagerFactory;
+import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.extension.spring.messaging.unitofwork.SpringTransactionManager;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -41,13 +43,14 @@ public class TransactionAutoConfiguration {
      * Bean creation method constructing a {@link SpringTransactionManager} based on the given
      * {@code transactionManager}.
      *
-     * @param transactionManager The {@code PlatformTransactionManager} used to construct a
-     *                           {@link SpringTransactionManager}.
+     * @param transactionManager    The {@code PlatformTransactionManager} used to construct a
+     *                              {@link SpringTransactionManager}.
+     * @param entityManagerProvider An optional entity manager provider.
      * @return The {@link TransactionManager} to be used by Axon Framework.
      */
     @Bean
     @ConditionalOnMissingBean
-    public TransactionManager axonTransactionManager(PlatformTransactionManager transactionManager) {
-        return new SpringTransactionManager(transactionManager);
+    public TransactionManager axonTransactionManager(PlatformTransactionManager transactionManager, @Nullable EntityManagerProvider entityManagerProvider) {
+        return new SpringTransactionManager(transactionManager, entityManagerProvider);
     }
 }
