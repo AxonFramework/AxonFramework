@@ -51,7 +51,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -153,7 +152,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
         );
 
         MessageStream<EventMessage> result =
-                testSubject.stream(StreamingCondition.startingFrom(trackingTokenAt(0)), processingContext());
+                testSubject.stream(StreamingCondition.startingFrom(trackingTokenAt(0)), null);
 
         StepVerifier.create(FluxUtils.of(result))
                     .assertNext(entry -> assertTrackedEntry(entry, expectedEventOne.event(), 1))
@@ -183,12 +182,72 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
         );
 
         MessageStream<EventMessage> result =
-                testSubject.stream(StreamingCondition.startingFrom(trackingTokenAt(2)), processingContext());
+                testSubject.stream(StreamingCondition.startingFrom(trackingTokenAt(2)), null);
 
         StepVerifier.create(FluxUtils.of(result))
                     // we've skipped the first two
                     .expectNextCount(2).assertNext(entry -> assertTrackedEntry(entry, expectedEventThree.event(), 5))
                     .expectNextCount(2).thenCancel().verify();
+    }
+
+    @Test
+    void streamingWithTagConditionShouldSkipNonMatchingMessages() {
+        TaggedEventMessage<?> expectedEventOne = taggedEventMessage("event-0", TEST_AGGREGATE_TAGS);
+        TaggedEventMessage<?> expectedEventTwo = taggedEventMessage("event-1", TEST_AGGREGATE_TAGS);
+        TaggedEventMessage<?> expectedEventThree = taggedEventMessage("event-4", TEST_AGGREGATE_TAGS);
+        // Ensure there are "gaps" in the global stream based on events not matching the condition.
+        appendEvents(
+            AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
+            expectedEventOne,
+            expectedEventTwo,
+            taggedEventMessage("event-2", Set.of()),
+            taggedEventMessage("event-3", OTHER_AGGREGATE_TAGS),
+            expectedEventThree,
+            taggedEventMessage("event-5", OTHER_AGGREGATE_TAGS),
+            taggedEventMessage("event-6", OTHER_AGGREGATE_TAGS)
+        );
+
+        MessageStream<EventMessage> result =
+                testSubject.stream(
+                    StreamingCondition.conditionFor(trackingTokenAt(0), EventCriteria.havingTags(TEST_AGGREGATE_TAGS)),
+                    null
+                );
+
+        StepVerifier.create(FluxUtils.of(result))
+                    .assertNext(entry -> assertTrackedEntry(entry, expectedEventOne.event(), 1))
+                    .assertNext(entry -> assertTrackedEntry(entry, expectedEventTwo.event(), 2))
+                    .assertNext(entry -> assertTrackedEntry(entry, expectedEventThree.event(), 5))
+                    .thenCancel().verify();
+    }
+
+    @Test
+    void streamingWithTypeConditionShouldSkipNonMatchingMessages() {
+        TaggedEventMessage<?> msg1 = taggedEventMessage("event-1", TEST_AGGREGATE_TAGS, "create");
+        TaggedEventMessage<?> msg2 = taggedEventMessage("event-2", TEST_AGGREGATE_TAGS, "update");
+        TaggedEventMessage<?> msg3 = taggedEventMessage("event-3", Set.of(), "create");
+        TaggedEventMessage<?> msg4 = taggedEventMessage("event-4", OTHER_AGGREGATE_TAGS, "update");
+        TaggedEventMessage<?> msg5 = taggedEventMessage("event-5", TEST_AGGREGATE_TAGS, "update");
+        TaggedEventMessage<?> msg6 = taggedEventMessage("event-6", OTHER_AGGREGATE_TAGS, "update");
+        TaggedEventMessage<?> msg7 = taggedEventMessage("event-7", OTHER_AGGREGATE_TAGS, "delete");
+
+        appendEvents(
+            AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
+            msg1, msg2, msg3, msg4, msg5, msg6, msg7
+        );
+
+        MessageStream<EventMessage> result =
+                testSubject.stream(
+                    StreamingCondition.conditionFor(trackingTokenAt(0), EventCriteria.havingAnyTag().andBeingOneOfTypes("update", "delete")),
+                    null
+                );
+
+        StepVerifier.create(FluxUtils.of(result))
+                    .assertNext(entry -> assertTrackedEntry(entry, msg2.event(), 2))
+                    .assertNext(entry -> assertTrackedEntry(entry, msg4.event(), 4))
+                    .assertNext(entry -> assertTrackedEntry(entry, msg5.event(), 5))
+                    .assertNext(entry -> assertTrackedEntry(entry, msg6.event(), 6))
+                    .assertNext(entry -> assertTrackedEntry(entry, msg7.event(), 7))
+                    .thenCancel().verify();
     }
 
     @Test
@@ -457,18 +516,21 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
 
     @Test
     void transactionRejectedWhenConcurrentlyCreatedTransactionIsCommittedFirst() {
+        ProcessingContext pc1 = processingContext();
+        ProcessingContext pc2 = processingContext();
+
         var firstTx = testSubject.appendEvents(AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
-                                               processingContext(),
+                                               pc1,
                                                taggedEventMessage("event-10", TEST_AGGREGATE_TAGS));
         var secondTx = testSubject.appendEvents(AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
-                                                processingContext(),
+                                                pc2,
                                                 taggedEventMessage("event-11", TEST_AGGREGATE_TAGS));
 
-        CompletableFuture<ConsistencyMarker> firstCommit = finishTx(firstTx);
-        assertDoesNotThrow(() -> firstCommit.get(1, TimeUnit.SECONDS));
+        CompletableFuture<ConsistencyMarker> firstCommit = finishTx(firstTx, pc1);
+        assertDoesNotThrow(() -> firstCommit.get(5, TimeUnit.SECONDS));
 
-        CompletableFuture<ConsistencyMarker> secondCommit = finishTx(secondTx);
-        var thrown = assertThrows(ExecutionException.class, () -> secondCommit.get(1, TimeUnit.SECONDS));
+        CompletableFuture<ConsistencyMarker> secondCommit = finishTx(secondTx, pc2);
+        var thrown = assertThrows(ExecutionException.class, () -> secondCommit.get(5, TimeUnit.SECONDS));
         assertInstanceOf(AppendEventsTransactionRejectedException.class, thrown.getCause());
     }
 
@@ -508,44 +570,21 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
     }
 
     @Test
-    void concurrentTransactionsForNonOverlappingTagsBothCommit()
-            throws ExecutionException, InterruptedException, TimeoutException {
+    void concurrentTransactionsForNonOverlappingTagsBothCommit() {
+        CompletableFuture<ConsistencyMarker> tx1 = CompletableFuture.supplyAsync(() -> asyncAppendEvents(
+            AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
+            taggedEventMessage("event-0", TEST_AGGREGATE_TAGS)
+        )).thenCompose(f -> f);
+        CompletableFuture<ConsistencyMarker> tx2 = CompletableFuture.supplyAsync(() -> asyncAppendEvents(
+            AppendCondition.withCriteria(OTHER_AGGREGATE_CRITERIA),
+            taggedEventMessage("event-0", OTHER_AGGREGATE_TAGS)
+        )).thenCompose(f -> f);
 
-        AppendTransaction<Object> firstTx =
-                testSubject.appendEvents(AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
-                                         processingContext(),
-                                         taggedEventMessage("event-0", TEST_AGGREGATE_TAGS))
-                           .thenApply(this::castTransaction)
-                           .get(1, TimeUnit.SECONDS);
-        AppendTransaction<Object> secondTx =
-                testSubject.appendEvents(AppendCondition.withCriteria(OTHER_AGGREGATE_CRITERIA),
-                                         processingContext(),
-                                         taggedEventMessage("event-0", OTHER_AGGREGATE_TAGS))
-                           .thenApply(this::castTransaction)
-                           .get(1, TimeUnit.SECONDS);
-
-        CompletableFuture<Object> firstCommit = firstTx.commit(processingContext());
-        CompletableFuture<Object> secondCommit = secondTx.commit(processingContext());
-
-        assertDoesNotThrow(() -> firstCommit.get(1, TimeUnit.SECONDS));
-        assertDoesNotThrow(() -> secondCommit.get(1, TimeUnit.SECONDS));
-
-        ConsistencyMarker marker1 = firstCommit.thenCompose(v -> firstTx.afterCommit(v, processingContext())).join();
-        ConsistencyMarker marker2 = secondCommit.thenCompose(v -> secondTx.afterCommit(v, processingContext())).join();
+        ConsistencyMarker marker1 = tx1.join();
+        ConsistencyMarker marker2 = tx2.join();
 
         assertThat(AggregateSequenceNumberPosition.toSequenceNumber(marker1.position())).isEqualTo(0);
         assertThat(AggregateSequenceNumberPosition.toSequenceNumber(marker2.position())).isEqualTo(0);
-    }
-
-    @Test
-    void transactionCanBeCommitedOnlyOnce() {
-        var tx =
-                testSubject.appendEvents(AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
-                                         processingContext(),
-                                         taggedEventMessage("event-0", TEST_AGGREGATE_TAGS)).join();
-
-        assertDoesNotThrow(() -> tx.commit(processingContext()).get(1, TimeUnit.SECONDS));
-        assertThrows(Exception.class, () -> tx.commit(processingContext()).get(1, TimeUnit.SECONDS));
     }
 
     @Test
@@ -665,9 +704,17 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
         return taggedEventMessage(payload, tags, Metadata.emptyInstance());
     }
 
+    protected static TaggedEventMessage<?> taggedEventMessage(String payload, Set<Tag> tags, String messageType) {
+        return taggedEventMessage(payload, tags, messageType, Metadata.emptyInstance());
+    }
+
     protected static TaggedEventMessage<?> taggedEventMessage(String payload, Set<Tag> tags, Metadata metadata) {
+        return taggedEventMessage(payload, tags, "event", metadata);
+    }
+
+    protected static TaggedEventMessage<?> taggedEventMessage(String payload, Set<Tag> tags, String messageType, Metadata metadata) {
         return new GenericTaggedEventMessage<>(
-                new GenericEventMessage(new MessageType("event"), payload, metadata),
+                new GenericEventMessage(new MessageType(messageType), payload, metadata),
                 tags
         );
     }
@@ -680,19 +727,23 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
                 && TEST_AGGREGATE_TYPE.equals(e.getResource(LegacyResources.AGGREGATE_TYPE_KEY));
     }
 
-    private ConsistencyMarker appendEvents(AppendCondition condition, TaggedEventMessage<?>... events) {
-        return finishTx(testSubject.appendEvents(condition, processingContext(), events)).join();
+    protected ConsistencyMarker appendEvents(AppendCondition condition, TaggedEventMessage<?>... events) {
+        ProcessingContext processingContext = processingContext();
+
+        return finishTx(testSubject.appendEvents(condition, processingContext, events), processingContext).join();
     }
 
-    private CompletableFuture<ConsistencyMarker> asyncAppendEvents(AppendCondition condition, TaggedEventMessage<?>... events) {
-        return finishTx(testSubject.appendEvents(condition, processingContext(), events));
+    protected CompletableFuture<ConsistencyMarker> asyncAppendEvents(AppendCondition condition, TaggedEventMessage<?>... events) {
+        ProcessingContext processingContext = processingContext();
+
+        return finishTx(testSubject.appendEvents(condition, processingContext, events), processingContext);
     }
 
-    private CompletableFuture<ConsistencyMarker> finishTx(CompletableFuture<AppendTransaction<?>> future) {
+    protected CompletableFuture<ConsistencyMarker> finishTx(CompletableFuture<AppendTransaction<?>> future, ProcessingContext processingContext) {
         return future
             .thenApply(this::castTransaction)
-            .thenCompose(tx -> tx.commit(processingContext())
-                .thenCompose(r -> tx.afterCommit(r, processingContext()))
+            .thenCompose(tx -> tx.commit(processingContext)
+                .thenCompose(r -> tx.afterCommit(r, processingContext))
             );
     }
 

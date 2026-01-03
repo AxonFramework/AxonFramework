@@ -46,6 +46,18 @@ class AxonServerContainerIT {
     }
 
     @Test
+    void constructionWithDCBStartsAsExpected() {
+        String testName = "axoniq/axonserver";
+        try (
+                AxonServerContainer testSubject = new AxonServerContainer(testName)
+                        .withDcbContext(true)
+        ) {
+            testSubject.start();
+            assertTrue(testSubject.isRunning());
+        }
+    }
+
+    @Test
     void constructionThroughDockerImageNameStartsAsExpected() {
         DockerImageName testName = DockerImageName.parse("axoniq/axonserver");
         try (
