@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2026. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.axonframework.messaging.eventhandling.deadletter;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.DelayedMessageStream;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
@@ -32,8 +33,6 @@ import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.eventhandling.DelegatingEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
-import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SegmentAware;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,7 +62,7 @@ import static org.axonframework.messaging.deadletter.ThrowableCause.truncated;
  * <ul>
  *   <li>Uses the decorator pattern via {@link DelegatingEventHandlingComponent}</li>
  *   <li>All queue operations are async via {@link CompletableFuture}</li>
- *   <li>Uses per-{@link Segment} caching via {@link SegmentAware} for sequence identifier caching</li>
+ *   <li>Uses {@link ProcessingContext} for sequence identifier caching (no per-Segment cache needed)</li>
  *   <li>Error detection via {@link MessageStream#onErrorContinue} instead of try/catch</li>
  * </ul>
  *
@@ -77,18 +76,16 @@ import static org.axonframework.messaging.deadletter.ThrowableCause.truncated;
  */
 public class DeadLetteringEventHandlingComponent
         extends DelegatingEventHandlingComponent
-        implements SequencedDeadLetterProcessor<EventMessage>, SegmentAware {
+        implements SequencedDeadLetterProcessor<EventMessage> {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     /**
-     * Per-{@link Segment} cache for sequence identifiers. This cache is maintained for the lifetime of the segment
-     * ownership and is cleaned up when {@link #segmentReleased(Segment)} is called.
-     * <p>
-     * Using per-Segment caching provides better performance than per-batch caching because the cache lives for the
-     * duration of segment ownership (hours/days) rather than just for a single batch (seconds).
+     * A {@link Context.ResourceKey} to cache sequence identifiers during processing. The cache is stored in the
+     * {@link ProcessingContext} and automatically cleaned up when processing completes.
      */
-    private final Map<Segment, SequenceIdentifierCache> sequenceIdentifierCache = new ConcurrentHashMap<>();
+    private static final Context.ResourceKey<SequenceIdentifierCache> CACHE_KEY =
+            Context.ResourceKey.withLabel("DeadLetteringEventHandlingComponent.sequenceCache");
 
     private final SequencedDeadLetterQueue<EventMessage> queue;
     private final EnqueuePolicy<EventMessage> enqueuePolicy;
@@ -142,30 +139,17 @@ public class DeadLetteringEventHandlingComponent
     }
 
     /**
-     * Gets the sequence identifier for the given event, using the per-{@link Segment} cache.
+     * Gets the sequence identifier for the given event, using the cache stored in the {@link ProcessingContext}.
      * <p>
-     * The cache is maintained for the lifetime of the segment ownership, providing better performance than per-batch
-     * caching. The cache is cleaned up when {@link #segmentReleased(Segment)} is called.
-     * <p>
-     * If no segment is present in the context (e.g., during dead letter processing), a direct lookup is performed
-     * without caching.
+     * The cache is created per processing batch and automatically cleaned up when processing completes.
      *
      * @param event   The event to get the sequence identifier for.
-     * @param context The processing context containing the segment information.
+     * @param context The processing context containing the cache.
      * @return The sequence identifier for the event.
      */
     private Object getSequenceIdentifier(EventMessage event, ProcessingContext context) {
-        return Segment.fromContext(context)
-                      .map(segment -> {
-                          SequenceIdentifierCache cache = sequenceIdentifierCache.computeIfAbsent(
-                                  segment, s -> new SequenceIdentifierCache()
-                          );
-                          return cache.computeIfAbsent(
-                                  event.identifier(),
-                                  key -> delegate.sequenceIdentifierFor(event, context)
-                          );
-                      })
-                      .orElseGet(() -> delegate.sequenceIdentifierFor(event, context));
+        SequenceIdentifierCache cache = context.computeResourceIfAbsent(CACHE_KEY, SequenceIdentifierCache::new);
+        return cache.computeIfAbsent(event.identifier(), key -> delegate.sequenceIdentifierFor(event, context));
     }
 
     /**
@@ -289,16 +273,8 @@ public class DeadLetteringEventHandlingComponent
         return queue;
     }
 
-    @Override
-    public void segmentReleased(@Nonnull Segment segment) {
-        if (logger.isTraceEnabled()) {
-            logger.trace("Clearing the sequence identifier cache for segment [{}].", segment.getSegmentId());
-        }
-        sequenceIdentifierCache.remove(segment);
-    }
-
     /**
-     * A cache for sequence identifiers, maintained per {@link Segment} to avoid repeated lookups.
+     * A cache for sequence identifiers, stored in the {@link ProcessingContext} to avoid repeated lookups.
      */
     private static class SequenceIdentifierCache {
 
