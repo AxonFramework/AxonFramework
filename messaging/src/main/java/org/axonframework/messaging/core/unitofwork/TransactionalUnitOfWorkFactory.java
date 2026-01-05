@@ -18,7 +18,6 @@ package org.axonframework.messaging.core.unitofwork;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.Context;
-import org.axonframework.messaging.core.unitofwork.transaction.Transaction;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
 
 import java.util.Objects;
@@ -81,19 +80,9 @@ public class TransactionalUnitOfWorkFactory implements UnitOfWorkFactory {
             customization = customization.andThen(UnitOfWorkConfiguration::forcedSameThreadInvocation);
         }
         var unitOfWork = delegate.create(identifier, customization);
-        Context.ResourceKey<Transaction> transactionResourceKey = Context.ResourceKey.withLabel("transaction");
-        unitOfWork.runOnPreInvocation(ctx -> {
-            var transaction = transactionManager.startTransaction();
-            ctx.putResource(transactionResourceKey, transaction);
-        });
-        unitOfWork.runOnCommit(ctx -> {
-            var transaction = ctx.getResource(transactionResourceKey);
-            transaction.commit();
-        });
-        unitOfWork.onError((ctx, phase, error) -> {
-            var transaction = ctx.getResource(transactionResourceKey);
-            transaction.rollback();
-        });
+
+        transactionManager.registerHandlers(unitOfWork);
+
         return unitOfWork;
     }
 }
