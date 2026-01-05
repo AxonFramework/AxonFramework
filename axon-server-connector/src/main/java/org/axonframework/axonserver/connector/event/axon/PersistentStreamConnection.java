@@ -22,21 +22,24 @@ import io.axoniq.axonserver.connector.event.PersistentStreamCallbacks;
 import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
 import io.axoniq.axonserver.connector.event.PersistentStreamSegment;
 import io.axoniq.axonserver.connector.impl.StreamClosedException;
+import io.axoniq.axonserver.grpc.event.Event;
 import io.axoniq.axonserver.grpc.streams.PersistentStreamEvent;
+import jakarta.annotation.Nonnull;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.common.infra.DescribableComponent;
+import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
-import org.axonframework.messaging.eventhandling.TrackedEventMessage;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -44,17 +47,24 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static io.axoniq.axonserver.connector.event.PersistentStreamSegment.PENDING_WORK_DONE_MARKER;
 
 /**
- * A connection instance receiving the events for a persistent stream to pass on in batches of events to an event
- * consumer.
+ * A connection instance receiving events from a persistent stream and passing them in batches to an event consumer.
+ * <p>
+ * This class manages the connection to Axon Server's persistent stream API. Event conversion is handled via an
+ * injected {@code Function<Event, EventMessage>}.
+ * <p>
+ * The connection automatically handles reconnection with exponential backoff when the stream is closed unexpectedly.
  *
  * @author Marc Gathier
+ * @author Mateusz Nowak
  * @since 4.10.0
  */
-public class PersistentStreamConnection {
+@Internal
+public class PersistentStreamConnection implements DescribableComponent {
 
     private static final int MAX_RETRY_INTERVAL_SECONDS = 60;
     private static final int MIN_RETRY_INTERVAL_SECONDS = 1;
@@ -63,12 +73,14 @@ public class PersistentStreamConnection {
     private final String streamId;
     private final Configuration configuration;
     private final PersistentStreamProperties persistentStreamProperties;
+    private final PersistentStreamEventConverter eventConverter;
 
     private final AtomicReference<PersistentStream> persistentStreamHolder = new AtomicReference<>();
+    private final AtomicBoolean closing = new AtomicBoolean(false);
 
-    private static final Consumer<List<? extends EventMessage>> NO_OP_CONSUMER = events -> {
+    private static final Consumer<List<MessageStream.Entry<EventMessage>>> NO_OP_CONSUMER = events -> {
     };
-    private final AtomicReference<Consumer<List<? extends EventMessage>>> consumer =
+    private final AtomicReference<Consumer<List<MessageStream.Entry<EventMessage>>>> consumer =
             new AtomicReference<>(NO_OP_CONSUMER);
     private final ScheduledExecutorService scheduler;
     private final int batchSize;
@@ -85,42 +97,44 @@ public class PersistentStreamConnection {
      * @param persistentStreamProperties Properties for the persistent stream.
      * @param scheduler                  Scheduler thread pool to schedule tasks.
      * @param batchSize                  The batch size for collecting events.
-     */
-    public PersistentStreamConnection(String streamId,
-                                      Configuration configuration,
-                                      PersistentStreamProperties persistentStreamProperties,
-                                      ScheduledExecutorService scheduler,
-                                      int batchSize) {
-        this.streamId = streamId;
-        this.configuration = configuration;
-        this.persistentStreamProperties = persistentStreamProperties;
-        this.scheduler = scheduler;
-        this.batchSize = batchSize;
-        this.defaultContext = null;
-    }
-
-    /**
-     * Instantiates a connection for a persistent stream.
-     *
-     * @param streamId                   The unique identifier of the persistent stream.
-     * @param configuration              Global configuration of Axon components.
-     * @param persistentStreamProperties Properties for the persistent stream.
-     * @param scheduler                  Scheduler thread pool to schedule tasks.
-     * @param batchSize                  The batch size for collecting events.
-     * @param defaultContext             The default context to use for the connection.
+     * @param messageConverter           The function to convert Axon Server events to Event Messages.
      */
     public PersistentStreamConnection(String streamId,
                                       Configuration configuration,
                                       PersistentStreamProperties persistentStreamProperties,
                                       ScheduledExecutorService scheduler,
                                       int batchSize,
-                                      String defaultContext) {
-        this.streamId = streamId;
-        this.configuration = configuration;
-        this.persistentStreamProperties = persistentStreamProperties;
-        this.scheduler = scheduler;
+                                      Function<Event, EventMessage> messageConverter) {
+        this(streamId, configuration, persistentStreamProperties, scheduler, batchSize, null, messageConverter);
+    }
+
+    /**
+     * Instantiates a connection for a persistent stream with a default context.
+     *
+     * @param streamId                   The unique identifier of the persistent stream.
+     * @param configuration              Global configuration of Axon components.
+     * @param persistentStreamProperties Properties for the persistent stream.
+     * @param scheduler                  Scheduler thread pool to schedule tasks.
+     * @param batchSize                  The batch size for collecting events.
+     * @param defaultContext             The default context to use for the connection. May be {@code null}.
+     * @param messageConverter           The function to convert Axon Server events to Event Messages.
+     */
+    public PersistentStreamConnection(String streamId,
+                                      Configuration configuration,
+                                      PersistentStreamProperties persistentStreamProperties,
+                                      ScheduledExecutorService scheduler,
+                                      int batchSize,
+                                      String defaultContext,
+                                      Function<Event, EventMessage> messageConverter) {
+        this.streamId = Objects.requireNonNull(streamId, "streamId must not be null");
+        this.configuration = Objects.requireNonNull(configuration, "configuration must not be null");
+        this.persistentStreamProperties = Objects.requireNonNull(persistentStreamProperties, "persistentStreamProperties must not be null");
+        this.scheduler = Objects.requireNonNull(scheduler, "scheduler must not be null");
         this.batchSize = batchSize;
         this.defaultContext = defaultContext;
+        this.eventConverter = new PersistentStreamEventConverter(
+                Objects.requireNonNull(messageConverter, "messageConverter must not be null")
+        );
     }
 
 
@@ -129,10 +143,10 @@ public class PersistentStreamConnection {
      * once with a single consumer. The connection is exclusive to that consumer. If you try to open it again, an
      * {@link IllegalStateException} is thrown.
      *
-     * @param consumer The consumer of batches of event messages.
+     * @param consumer The consumer of batches of event message entries (with tracking token in context).
      * @throws IllegalStateException if the stream was already opened.
      */
-    public void open(Consumer<List<? extends EventMessage>> consumer) {
+    public void open(Consumer<List<MessageStream.Entry<EventMessage>>> consumer) {
         if (!this.consumer.compareAndSet(NO_OP_CONSUMER, consumer)) {
             throw new IllegalStateException(
                     String.format("%s: Persistent Stream has already been opened.", streamId));
@@ -182,7 +196,9 @@ public class PersistentStreamConnection {
 
     private void streamClosed(Throwable throwable) {
         persistentStreamHolder.set(null);
-        if (throwable != null) {
+        if (throwable != null && !closing.get()) {
+            // Only reschedule reconnection if the stream was NOT intentionally closed.
+            // When close() is called, closing flag is set to true, preventing reconnection attempts.
             logger.info("{}: Rescheduling persistent stream", streamId, throwable);
             scheduler.schedule(this::start,
                                retrySeconds.getAndUpdate(current -> Math.min(MAX_RETRY_INTERVAL_SECONDS, current * 2)),
@@ -192,13 +208,24 @@ public class PersistentStreamConnection {
 
     /**
      * Closes the persistent stream connection to Axon Server.
+     * <p>
+     * This marks the connection as intentionally closing, preventing automatic reconnection
+     * attempts when the stream closed callback is triggered.
      */
     public void close() {
+        closing.set(true);
         PersistentStream persistentStream = persistentStreamHolder.getAndSet(null);
         if (persistentStream != null) {
             persistentStream.close();
             this.consumer.set(NO_OP_CONSUMER);
         }
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("streamId", streamId);
+        descriptor.describeProperty("batchSize", batchSize);
+        descriptor.describeProperty("defaultContext", defaultContext);
     }
 
     private interface SegmentState {
@@ -211,12 +238,10 @@ public class PersistentStreamConnection {
         private final AtomicBoolean processGate = new AtomicBoolean();
         private final AtomicBoolean doneConfirmed = new AtomicBoolean();
         private final PersistentStreamSegment persistentStreamSegment;
-//        private final GrpcMetadataAwareSerializer serializer;
         private final AtomicReference<SegmentState> currentState = new AtomicReference<>(new ProcessingState());
 
         public SegmentConnection(PersistentStreamSegment persistentStreamSegment) {
             this.persistentStreamSegment = persistentStreamSegment;
-//            serializer = new GrpcMetadataAwareSerializer(configuration.getComponent(Serializer.class));
         }
 
         private class RetryState implements SegmentState {
@@ -325,22 +350,27 @@ public class PersistentStreamConnection {
         }
 
         private void processBatch(List<PersistentStreamEvent> batch) {
-            List<TrackedEventMessage> eventMessages = upcastAndDeserialize(batch);
-            if (!persistentStreamSegment.isClosed()) {
+            List<MessageStream.Entry<EventMessage>> eventEntries = convert(batch);
+            if (!eventEntries.isEmpty() && !persistentStreamSegment.isClosed()) {
                 long token = batch.get(batch.size() - 1).getEvent().getToken();
-                consumer.get().accept(eventMessages);
+                consumer.get().accept(eventEntries);
                 if (logger.isTraceEnabled()) {
-                    logger.trace("{}/{} processed {} entries",
+                    logger.trace("{}/{} processed {} entries (from {} raw events)",
                                  streamId,
                                  persistentStreamSegment.segment(),
-                                 eventMessages.size());
+                                 eventEntries.size(),
+                                 batch.size());
                 }
+                persistentStreamSegment.acknowledge(token);
+            } else if (!persistentStreamSegment.isClosed()) {
+                // All events were filtered out, but we still need to acknowledge
+                long token = batch.get(batch.size() - 1).getEvent().getToken();
                 persistentStreamSegment.acknowledge(token);
             }
         }
 
         public void messageAvailable() {
-            if (!processGate.get()) {
+            if (!processGate.get() && !closing.get()) {
                 scheduler.submit(this::readMessagesFromSegment);
             }
         }
@@ -349,29 +379,16 @@ public class PersistentStreamConnection {
             currentState.get().readMessages();
         }
 
-        private List<TrackedEventMessage> upcastAndDeserialize(List<PersistentStreamEvent> batch) {
-            // TODO #3520 - Be sure to fix this part to support persistent streams correctly.
-            return null;
-//            EventUtils.upcastAndDeserializeTrackedEvents(
-//                                     batch.stream()
-//                                          .map(e -> {
-//                                              TrackingToken trackingToken = createToken(e);
-//                                              return new TrackedDomainEventData<>(
-//                                                      trackingToken,
-//                                                      new GrpcBackedDomainEventData(e.getEvent().getEvent())
-//                                              );
-//                                          }),
-//                                     serializer,
-//                                     configuration.getComponent(EventUpcasterChain.class))
-//                             .collect(Collectors.toList());
-        }
-
-        private TrackingToken createToken(PersistentStreamEvent event) {
-            if (!event.getReplay()) {
-                return new GlobalSequenceTrackingToken(event.getEvent().getToken());
-            }
-            return ReplayToken.createReplayToken(new GlobalSequenceTrackingToken(event.getEvent().getToken() + 1),
-                                                 new GlobalSequenceTrackingToken(event.getEvent().getToken()));
+        /**
+         * Converts persistent stream events to Axon Framework event entries.
+         *
+         * @param batch The batch of persistent stream events from Axon Server.
+         * @return A list of converted event entries.
+         */
+        private List<MessageStream.Entry<EventMessage>> convert(List<PersistentStreamEvent> batch) {
+            return batch.stream()
+                        .map(eventConverter)
+                        .toList();
         }
     }
 }

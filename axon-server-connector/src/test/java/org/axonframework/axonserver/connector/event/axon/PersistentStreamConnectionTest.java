@@ -29,9 +29,13 @@ import io.axoniq.axonserver.grpc.event.EventWithToken;
 import io.axoniq.axonserver.grpc.streams.PersistentStreamEvent;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.axonserver.connector.event.AggregateEventConverter;
 import org.axonframework.common.configuration.ApplicationConfigurer;
 import org.axonframework.messaging.core.configuration.MessagingConfigurer;
 import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
+import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.conversion.Converter;
 import org.axonframework.conversion.json.JacksonConverter;
 import org.junit.jupiter.api.*;
@@ -52,6 +56,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -59,8 +64,10 @@ import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link PersistentStreamConnection}.
+ *
+ * @author Marc Gathier
+ * @author Mateusz Nowak
  */
-@Disabled("TODO #3520")
 class PersistentStreamConnectionTest {
 
     private static final String STREAM_NAME = "stream-name";
@@ -104,76 +111,106 @@ class PersistentStreamConnectionTest {
                                                      configurer.build(),
                                                      properties,
                                                      scheduler,
-                                                     batchSize);
+                                                     batchSize,
+                                                     AggregateEventConverter.INSTANCE);
     }
 
-    @Test
-    void consumesMessagesAndSendsAcknowledgements() {
-        List<EventMessage> eventMessages = new LinkedList<>();
-        testSubject.open(eventMessages::addAll);
-        MockPersistentStream mockPersistentStream = mockPersistentStreams.get(STREAM_ID);
-        mockPersistentStream.publish(0, eventWithToken(0, "AggregateId-1", 0));
-        mockPersistentStream.publish(0, eventWithToken(1, "AggregateId-1", 1));
-        await().atMost(Duration.ofSeconds(1))
-               .pollDelay(Duration.ofMillis(100))
-               .until(() -> eventMessages.size() == 2);
-        await().atMost(Duration.ofSeconds(1))
-               .pollDelay(Duration.ofMillis(100))
-               .until(() -> mockPersistentStream.lastAcknowledged(0) == 1);
+    @Nested
+    class ConsumeMessages {
 
-        mockPersistentStream.closeSegment(0);
+        @Test
+        void consumesMessagesAndSendsAcknowledgements() {
+            // given
+            List<MessageStream.Entry<EventMessage>> eventEntries = new LinkedList<>();
+
+            // when
+            testSubject.open(eventEntries::addAll);
+            MockPersistentStream mockPersistentStream = mockPersistentStreams.get(STREAM_ID);
+            mockPersistentStream.publish(0, eventWithToken(0, "AggregateId-1", 0));
+            mockPersistentStream.publish(0, eventWithToken(1, "AggregateId-1", 1));
+
+            // then
+            await().atMost(Duration.ofSeconds(1))
+                   .pollDelay(Duration.ofMillis(100))
+                   .until(() -> eventEntries.size() == 2);
+            await().atMost(Duration.ofSeconds(1))
+                   .pollDelay(Duration.ofMillis(100))
+                   .until(() -> mockPersistentStream.lastAcknowledged(0) == 1);
+
+            // Verify the events contain proper tracking tokens in context
+            MessageStream.Entry<EventMessage> firstEntry = eventEntries.get(0);
+            TrackingToken firstToken = firstEntry.getResource(TrackingToken.RESOURCE_KEY);
+            assertThat(firstToken).isInstanceOf(GlobalSequenceTrackingToken.class);
+            assertThat(((GlobalSequenceTrackingToken) firstToken).getGlobalIndex()).isEqualTo(0);
+
+            MessageStream.Entry<EventMessage> secondEntry = eventEntries.get(1);
+            TrackingToken secondToken = secondEntry.getResource(TrackingToken.RESOURCE_KEY);
+            assertThat(secondToken).isInstanceOf(GlobalSequenceTrackingToken.class);
+            assertThat(((GlobalSequenceTrackingToken) secondToken).getGlobalIndex()).isEqualTo(1);
+
+            mockPersistentStream.closeSegment(0);
+        }
+
+        @Test
+        void retryFailedHandler() {
+            // given
+            List<MessageStream.Entry<EventMessage>> eventEntries = new LinkedList<>();
+            AtomicInteger failureCountDown = new AtomicInteger(2);
+            AtomicInteger attempts = new AtomicInteger();
+
+            // when
+            testSubject.open(m -> {
+                attempts.incrementAndGet();
+                if (failureCountDown.getAndDecrement() > 0) {
+                    throw new IllegalStateException("Cannot invoke handler");
+                }
+                eventEntries.addAll(m);
+            });
+            MockPersistentStream mockPersistentStream = mockPersistentStreams.get(STREAM_ID);
+            mockPersistentStream.publish(0, eventWithToken(0, "AggregateId-1", 0));
+            mockPersistentStream.publish(0, eventWithToken(1, "AggregateId-1", 1));
+
+            // then
+            await().atMost(Duration.ofSeconds(4))
+                   .pollDelay(Duration.ofMillis(100))
+                   .until(() -> attempts.get() == 3);
+            await().atMost(Duration.ofSeconds(1))
+                   .pollDelay(Duration.ofMillis(100))
+                   .until(() -> eventEntries.size() == 2);
+            await().atMost(Duration.ofSeconds(1))
+                   .pollDelay(Duration.ofMillis(100))
+                   .until(() -> mockPersistentStream.lastAcknowledged(0) == 1);
+
+            mockPersistentStream.closeSegment(0);
+        }
     }
 
-    @Test
-    void retryFailedHandler() {
-        List<EventMessage> eventMessages = new LinkedList<>();
-        AtomicInteger failureCountDown = new AtomicInteger(2);
-        AtomicInteger attempts = new AtomicInteger();
-        testSubject.open(m -> {
-            attempts.incrementAndGet();
-            if (failureCountDown.getAndDecrement() > 0) {
-                throw new IllegalStateException("Cannot invoke handler");
-            }
-            eventMessages.addAll(m);
-        });
-        MockPersistentStream mockPersistentStream = mockPersistentStreams.get(STREAM_ID);
-        mockPersistentStream.publish(0, eventWithToken(0, "AggregateId-1", 0));
-        mockPersistentStream.publish(0, eventWithToken(1, "AggregateId-1", 1));
-        await().atMost(Duration.ofSeconds(4))
-               .pollDelay(Duration.ofMillis(100))
-               .until(() -> attempts.get() == 3);
-        await().atMost(Duration.ofSeconds(1))
-               .pollDelay(Duration.ofMillis(100))
-               .until(() -> eventMessages.size() == 2);
-        await().atMost(Duration.ofSeconds(1))
-               .pollDelay(Duration.ofMillis(100))
-               .until(() -> mockPersistentStream.lastAcknowledged(0) == 1);
+    @Nested
+    class OpenClose {
 
-        mockPersistentStream.closeSegment(0);
-    }
+        @Test
+        void givenAlreadyOpenedStreamWhenOpenOneMoreTimeThenException() {
+            // given
+            testSubject.open((e) -> {
+            });
 
-    @Test
-    void givenAlreadyOpenedStreamWhenOpenOneMoreTimeThenException() {
-        // given
-        testSubject.open((e) -> {
-        });
+            // when / then
+            IllegalStateException exception = assertThrows(IllegalStateException.class, () -> testSubject.open((e) -> {
+            }));
+            assertEquals("stream-id: Persistent Stream has already been opened.", exception.getMessage());
+        }
 
-        // when - then
-        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> testSubject.open((e) -> {
-        }));
-        assertEquals("stream-id: Persistent Stream has already been opened.", exception.getMessage());
-    }
+        @Test
+        void givenAlreadyClosedStreamWhenOpenOneMoreTimeThenOpened() {
+            // given
+            testSubject.open((e) -> {
+            });
+            testSubject.close();
 
-    @Test
-    void givenAlreadyClosedStreamWhenOpenOneMoreTimeThenOpened() {
-        // given
-        testSubject.open((e) -> {
-        });
-        testSubject.close();
-
-        // when - then
-        assertDoesNotThrow(() -> testSubject.open((e) -> {
-        }));
+            // when / then
+            assertDoesNotThrow(() -> testSubject.open((e) -> {
+            }));
+        }
     }
 
     private static EventWithToken eventWithToken(int token,
