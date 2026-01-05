@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2010-2025. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.eventhandling;
 
 import org.junit.jupiter.api.Nested;
@@ -13,15 +29,22 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Test class for validating the behavior of {@link ReplayToken} that wraps {@link GapAwareTrackingToken}.
+ * Test class for validating the behavior of {@link ReplayToken} when wrapping complex token types.
+ * <p>
+ * This test validates replay detection across various nested token scenarios:
+ * <ul>
+ *   <li>{@link GapAwareTrackingToken} - with gaps, filled gaps, and various positions relative to reset</li>
+ *   <li>{@link MultiSourceTrackingToken} - multi-source scenarios where each source has independent gap positions</li>
+ *   <li>{@link MergedTrackingToken} - merged segments with gaps in lower/upper segments and nested structures</li>
+ * </ul>
  *
  * @author Mateusz Nowak
  * @since 4.12.3
  */
-public class ReplayTokenWrappingGapAwareTrackingTokenTest {
+class ReplayTokenWrappingComplexTokenTest {
 
     @Nested
-    class AdvancedTo {
+    class GapAwareTrackingTokenAdvancedTo {
 
         @Test
         void whenBeforeResetPositionWithoutGapsThenReplay() {
@@ -318,7 +341,6 @@ public class ReplayTokenWrappingGapAwareTrackingTokenTest {
         }
 
     }
-
 
     @Nested
     class MultiSourceTrackingTokenAdvancedTo {
