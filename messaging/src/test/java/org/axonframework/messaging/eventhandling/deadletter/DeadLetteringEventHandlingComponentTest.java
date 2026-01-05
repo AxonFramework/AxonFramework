@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventTestUtils;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
+import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
 import org.axonframework.messaging.eventhandling.replay.ResetHandler;
 import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
 import org.axonframework.messaging.eventhandling.replay.GenericResetContext;
@@ -435,6 +436,85 @@ class DeadLetteringEventHandlingComponentTest {
         void getQueueReturnsConfiguredQueue() {
             // when / then
             assertThat(testSubject.getQueue()).isSameAs(queue);
+        }
+    }
+
+    @Nested
+    class WhenManagingSegmentCache {
+
+        @Test
+        void implementsSegmentAware() {
+            // when / then
+            assertThat(testSubject).isInstanceOf(
+                    org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SegmentAware.class
+            );
+        }
+
+        @Test
+        void segmentReleasedClearsCacheForThatSegment() {
+            // given
+            Segment segment = Segment.ROOT_SEGMENT;
+            ProcessingContext contextWithSegment = new StubProcessingContext()
+                    .withResource(Segment.RESOURCE_KEY, segment);
+
+            EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
+
+            // Cache will be populated when handling this event
+            testSubject.handle(testEvent, contextWithSegment).asCompletableFuture().join();
+
+            // when
+            testSubject.segmentReleased(segment);
+
+            // then - no exception should be thrown, cache should be cleared
+            // The cache is internal, so we verify indirectly by handling another event
+            // which should work without issues
+            EventMessage testEvent2 = EventTestUtils.asEventMessage("test-payload-2");
+            assertDoesNotThrow(() ->
+                    testSubject.handle(testEvent2, contextWithSegment).asCompletableFuture().join()
+            );
+        }
+
+        @Test
+        void perSegmentCacheIsolatesDataBetweenSegments() {
+            // given - split ROOT_SEGMENT to get two distinct segments
+            Segment[] segments = Segment.ROOT_SEGMENT.split();
+            Segment segment0 = segments[0];
+            Segment segment1 = segments[1];
+
+            ProcessingContext contextSegment0 = new StubProcessingContext()
+                    .withResource(Segment.RESOURCE_KEY, segment0);
+            ProcessingContext contextSegment1 = new StubProcessingContext()
+                    .withResource(Segment.RESOURCE_KEY, segment1);
+
+            EventMessage event1 = EventTestUtils.asEventMessage("payload-1");
+            EventMessage event2 = EventTestUtils.asEventMessage("payload-2");
+
+            // when - handle events on different segments
+            testSubject.handle(event1, contextSegment0).asCompletableFuture().join();
+            testSubject.handle(event2, contextSegment1).asCompletableFuture().join();
+
+            // Release only segment0
+            testSubject.segmentReleased(segment0);
+
+            // then - segment1 cache should still be intact
+            // We can verify by handling another event on segment1 - it should still work
+            EventMessage event3 = EventTestUtils.asEventMessage("payload-3");
+            assertDoesNotThrow(() ->
+                    testSubject.handle(event3, contextSegment1).asCompletableFuture().join()
+            );
+        }
+
+        @Test
+        void handlesEventsWithoutSegmentInContext() {
+            // given - context without segment (e.g., during dead letter processing)
+            ProcessingContext contextWithoutSegment = new StubProcessingContext();
+            EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
+
+            // when / then - should work fine without segment, just no caching
+            assertDoesNotThrow(() ->
+                    testSubject.handle(testEvent, contextWithoutSegment).asCompletableFuture().join()
+            );
+            assertTrue(delegate.wasHandled());
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import org.axonframework.common.FutureUtils;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
+import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SegmentAware;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SequencingEventHandlingComponent;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
@@ -193,5 +195,21 @@ public class ProcessorEventHandlingComponents {
     public boolean supportsReset() {
         return components.stream()
                          .anyMatch(EventHandlingComponent::supportsReset);
+    }
+
+    /**
+     * Notifies all components that implement {@link SegmentAware} that a segment has been released.
+     * <p>
+     * This allows components to clean up any per-segment state, such as caches or buffers, when a segment is no longer
+     * being processed.
+     *
+     * @param segment The {@link Segment} that was released.
+     */
+    public void segmentReleased(@Nonnull Segment segment) {
+        for (var component : components) {
+            if (component instanceof SegmentAware segmentAware) {
+                segmentAware.segmentReleased(segment);
+            }
+        }
     }
 }
