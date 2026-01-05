@@ -49,9 +49,9 @@ The annotation parameters control the `MessageType`:
 
 * `namespace` - The namespace or bounded context (defaults to the package name)
 * `name` - The business name (defaults to the simple class name)
-* `version` - The message version (defaults to "0")
+* `version` - The message version (defaults to `0.0.1`)
 
-If you don't specify these annotations, Axon will use the fully qualified class name as the `QualifiedName` and "0" as the version, maintaining backward compatibility.
+If you don't specify these annotations, Axon will use the fully qualified class name as the `QualifiedName` and `0.0.1` as the version, maintaining backward compatibility.
 
 [TIP]
 ====
