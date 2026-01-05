@@ -95,10 +95,10 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
 
     private void initializeHandlersBasedOnModel() {
         model.getUniqueHandlers(target.getClass(), EventMessage.class)
-             .forEach(this::registerHandler);
+             .forEach(handler -> registerHandler((EventHandlingMember<? super T>) handler));
     }
 
-    private void registerHandler(MessageHandlingMember<? super T> handler) {
+    private void registerHandler(EventHandlingMember<? super T> handler) {
         Class<?> payloadType = handler.payloadType();
         QualifiedName qualifiedName = handler.unwrap(MethodEventHandlerDefinition.MethodEventMessageHandlingMember.class)
                                              .map(EventHandlingMember::eventName)
@@ -112,7 +112,7 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
     }
 
     private EventHandler constructEventHandlerFor(QualifiedName qualifiedName,
-                                                  MessageHandlingMember<? super T> handler) {
+                                                  EventHandlingMember<? super T> handler) {
         MessageHandlerInterceptorMemberChain<T> interceptorChain = model.chainedInterceptor(target.getClass());
         EventHandler interceptedHandler =
                 (event, context) -> interceptorChain.handle(
