@@ -27,7 +27,7 @@ The list below quickly mentions the core concepts that come into play when think
 
 **Event Sourcing**:: An architectural pattern that stores all changes to application state as a sequence of immutable events, providing a complete audit trail and enabling temporal queries.
 
-**Dynamic Consistency Boundaries (DCB)**:: A pattern that allows flexible grouping of events using tags to define consistency boundaries based on business needs rather than technical constraints.
+**xref:event-store-internals.adoc#dynamic_consistency_boundaries_dcb[Dynamic Consistency Boundaries (DCB)]**:: A pattern that allows flexible grouping of events using tags to define consistency boundaries based on business needs rather than technical constraints.
 
 == Event handling overview
 

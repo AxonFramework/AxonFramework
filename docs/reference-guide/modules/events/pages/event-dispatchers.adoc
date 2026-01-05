@@ -10,6 +10,13 @@ In general, these can be grouped in two major areas:
 This page will describe how to get an event message on the event bus from both locations.
 For more specifics regarding event publication and storage implementations in Axon Framework, read xref:event-buses-and-event-stores.adoc[this] section.
 
+[TIP]
+.Tagging Events for DCB
+====
+With Axon Framework 5 support for xref:event-store-internals.adoc#dynamic_consistency_boundaries_dcb[Dynamic Consistency Boundaries (DCB)], it is possible to tag events when modeling them.
+Tags can be used to group events into consistency boundaries, see xref:event-store-internals.adoc#tags[@EventTag] for more information.
+====
+
 [#dispatching_events_from_an_entity]
 == Dispatching events from an entity
 
@@ -49,8 +56,8 @@ It is the recommended way to append events from within an entity's command handl
 . Publishes the event to the `EventSink`
 
 [TIP]
+.The `EventAppender` can append multiple events at once
 ====
-The `EventAppender` can append multiple events at once:
 [source,java]
 ----
 appender.append(
