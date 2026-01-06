@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,9 @@ package org.axonframework.eventsourcing.annotation.reflection;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.Message;
@@ -32,6 +31,8 @@ import org.axonframework.messaging.core.annotation.ParameterResolver;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.annotation.PayloadParameterResolver;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
@@ -273,7 +274,7 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
         if (compatibleCreators.isEmpty()) {
             StringBuilder message = new StringBuilder(
                     "No suitable @EntityCreator found for id: [%s] and event message [%s]. Candidates were:"
-                            .formatted(id, eventMessage));
+                            .formatted(id, ObjectUtils.getOrDefault(eventMessage, Message::type, "none")));
             creators.forEach(creator -> message.append("\n - ").append(creator));
             throw new AxonConfigurationException(message.toString());
         }
