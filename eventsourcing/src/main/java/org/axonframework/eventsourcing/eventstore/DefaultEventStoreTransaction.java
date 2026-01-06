@@ -91,7 +91,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
                         ? AppendCondition.withCriteria(condition.criteria())
                         : ac.orCriteria(condition.criteria())
         );
-        MessageStream<EventMessage> source = eventStorageEngine.source(condition, processingContext);
+        MessageStream<EventMessage> source = eventStorageEngine.source(condition);
         if (appendCondition.consistencyMarker() != ConsistencyMarker.ORIGIN) {
             return source;
         }
@@ -155,10 +155,10 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
                     return eventStorageEngine.appendEvents(appendCondition, processingContext, eventQueue)
                                              .thenApply(DefaultEventStoreTransaction::castTransaction)
                                              .thenAccept(tx -> {
-                                                 processingContext.onCommit(c -> tx.commit(c)
+                                                 processingContext.onCommit(c -> tx.commit()
                                                      .thenAccept(v -> processingContext.onAfterCommit(c2 -> doAfterCommit(c2, tx, v)))
                                                  );
-                                                 processingContext.onError((c, p, e) -> tx.rollback(c));
+                                                 processingContext.onError((c, p, e) -> tx.rollback());
                                              });
                 }
         );
@@ -167,7 +167,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
     private <R> CompletableFuture<ConsistencyMarker> doAfterCommit(ProcessingContext context,
                                                                    EventStorageEngine.AppendTransaction<R> tx,
                                                                    R commitResult) {
-        return tx.afterCommit(commitResult, context)
+        return tx.afterCommit(commitResult)
                  .whenComplete((position, exception) -> {
                      if (position != null) {
                          context.updateResource(

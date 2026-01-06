@@ -142,14 +142,14 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
 
         return CompletableFuture.completedFuture(new AppendTransaction<AggregateBasedConsistencyMarker>() {
             @Override
-            public CompletableFuture<AggregateBasedConsistencyMarker> commit(@Nullable ProcessingContext context) {
+            public CompletableFuture<AggregateBasedConsistencyMarker> commit() {
                 return tx.commit()
                          .exceptionallyCompose(e -> CompletableFuture.failedFuture(translateConflictException(e)))
                          .thenApply(r -> aggregateSequencer.toMarker());
             }
 
             @Override
-            public CompletableFuture<ConsistencyMarker> afterCommit(@Nonnull AggregateBasedConsistencyMarker marker, @Nullable ProcessingContext context) {
+            public CompletableFuture<ConsistencyMarker> afterCommit(@Nonnull AggregateBasedConsistencyMarker marker) {
                 return CompletableFuture.completedFuture(marker);
             }
 
@@ -161,7 +161,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
             }
 
             @Override
-            public void rollback(@Nullable ProcessingContext context) {
+            public void rollback() {
                 tx.rollback();
             }
         });
@@ -172,7 +172,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
     }
 
     @Override
-    public MessageStream<EventMessage> source(@Nonnull SourcingCondition condition, @Nullable ProcessingContext context) {
+    public MessageStream<EventMessage> source(@Nonnull SourcingCondition condition) {
         CompletableFuture<Void> endOfStreams = new CompletableFuture<>();
         List<AggregateSource> aggregateSources = condition.criteria()
                                                           .flatten()
@@ -236,7 +236,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
     }
 
     @Override
-    public MessageStream<EventMessage> stream(@Nonnull StreamingCondition condition, @Nullable ProcessingContext context) {
+    public MessageStream<EventMessage> stream(@Nonnull StreamingCondition condition) {
         TrackingToken trackingToken = condition.position();
         if (trackingToken instanceof GlobalSequenceTrackingToken gtt) {
             return new AxonServerMessageStream(connection.eventChannel().openStream(gtt.getGlobalIndex(), 32),
@@ -271,21 +271,21 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
     }
 
     @Override
-    public CompletableFuture<TrackingToken> firstToken(@Nullable ProcessingContext context) {
+    public CompletableFuture<TrackingToken> firstToken() {
         return connection.eventChannel()
                          .getFirstToken()
                          .thenApply(GlobalSequenceTrackingToken::new);
     }
 
     @Override
-    public CompletableFuture<TrackingToken> latestToken(@Nullable ProcessingContext context) {
+    public CompletableFuture<TrackingToken> latestToken() {
         return connection.eventChannel()
                          .getLastToken()
                          .thenApply(GlobalSequenceTrackingToken::new);
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at, @Nullable ProcessingContext context) {
+    public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at) {
         return connection.eventChannel().getTokenAt(at.toEpochMilli()).thenApply(GlobalSequenceTrackingToken::new);
     }
 

@@ -113,7 +113,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
             private final AtomicBoolean finished = new AtomicBoolean(false);
 
             @Override
-            public CompletableFuture<ConsistencyMarker> commit(@Nullable ProcessingContext context) {
+            public CompletableFuture<ConsistencyMarker> commit() {
                 if (finished.getAndSet(true)) {
                     return CompletableFuture.failedFuture(new IllegalStateException("Already committed or rolled back"));
                 }
@@ -149,12 +149,12 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
             }
 
             @Override
-            public CompletableFuture<ConsistencyMarker> afterCommit(@Nonnull ConsistencyMarker marker, @Nullable ProcessingContext context) {
+            public CompletableFuture<ConsistencyMarker> afterCommit(@Nonnull ConsistencyMarker marker) {
                 return CompletableFuture.completedFuture(marker);
             }
 
             @Override
-            public void rollback(@Nullable ProcessingContext context) {
+            public void rollback() {
                 finished.set(true);
             }
         });
@@ -179,7 +179,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public MessageStream<EventMessage> source(@Nonnull SourcingCondition condition, @Nullable ProcessingContext processingContext) {
+    public MessageStream<EventMessage> source(@Nonnull SourcingCondition condition) {
         if (logger.isDebugEnabled()) {
             logger.debug("Start sourcing events with condition [{}].", condition);
         }
@@ -196,7 +196,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public MessageStream<EventMessage> stream(@Nonnull StreamingCondition condition, @Nullable ProcessingContext processingContext) {
+    public MessageStream<EventMessage> stream(@Nonnull StreamingCondition condition) {
         if (logger.isDebugEnabled()) {
             logger.debug("Start streaming events with condition [{}].", condition);
         }
@@ -214,7 +214,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public CompletableFuture<TrackingToken> firstToken(@Nullable ProcessingContext processingContext) {
+    public CompletableFuture<TrackingToken> firstToken() {
         if (logger.isDebugEnabled()) {
             logger.debug("Operation firstToken() is invoked.");
         }
@@ -227,7 +227,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public CompletableFuture<TrackingToken> latestToken(@Nullable ProcessingContext processingContext) {
+    public CompletableFuture<TrackingToken> latestToken() {
         if (logger.isDebugEnabled()) {
             logger.debug("Operation latestToken() is invoked.");
         }
@@ -240,7 +240,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at, @Nullable ProcessingContext processingContext) {
+    public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at) {
         if (logger.isDebugEnabled()) {
             logger.debug("Operation tokenAt() is invoked with Instant [{}].", at);
         }
@@ -258,7 +258,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
                            .map(GlobalSequenceTrackingToken::new)
                            .map(tt -> (TrackingToken) tt)
                            .map(CompletableFuture::completedFuture)
-                           .orElseGet(() -> latestToken(processingContext));
+                           .orElseGet(() -> latestToken());
     }
 
     @Override

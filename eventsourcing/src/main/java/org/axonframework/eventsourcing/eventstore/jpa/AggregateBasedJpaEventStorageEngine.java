@@ -210,20 +210,18 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
 
                 return new AppendTransaction<AggregateBasedConsistencyMarker>() {
                     @Override
-                    public CompletableFuture<AggregateBasedConsistencyMarker> commit(ProcessingContext context) {
+                    public CompletableFuture<AggregateBasedConsistencyMarker> commit() {
                         // Transaction is in control of the entity manager executor, so do no work here
                         return CompletableFuture.completedFuture(sequencer.toMarker());
                     }
 
                     @Override
-                    public void rollback(ProcessingContext context) {
+                    public void rollback() {
                         // Transaction is in control of the entity manager executor, so do no work here
                     }
 
                     @Override
-                    public CompletableFuture<ConsistencyMarker> afterCommit(
-                        AggregateBasedConsistencyMarker marker, ProcessingContext context
-                    ) {
+                    public CompletableFuture<ConsistencyMarker> afterCommit(AggregateBasedConsistencyMarker marker) {
                         eventCoordinatorHandle.onEventsAppended(events);
 
                         return CompletableFuture.completedFuture(marker);
@@ -257,14 +255,13 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public MessageStream<EventMessage> source(@Nonnull SourcingCondition condition,
-                                              @Nullable ProcessingContext processingContext) {
+    public MessageStream<EventMessage> source(@Nonnull SourcingCondition condition) {
         CompletableFuture<Void> endOfStreams = new CompletableFuture<>();
         List<AggregateSource> aggregateSources = condition.criteria()
                                                           .flatten()
                                                           .stream()
                                                           .map(criterion -> this.aggregateSourceForCriterion(
-                                                                  condition, criterion, processingContext
+                                                                  condition, criterion
                                                           ))
                                                           .toList();
 
@@ -281,7 +278,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
                                ));
     }
 
-    private AggregateSource aggregateSourceForCriterion(SourcingCondition condition, EventCriterion criterion, ProcessingContext pc) {
+    private AggregateSource aggregateSourceForCriterion(SourcingCondition condition, EventCriterion criterion) {
         AtomicReference<AggregateBasedConsistencyMarker> markerReference = new AtomicReference<>();
         var aggregateIdentifier = resolveAggregateIdentifier(criterion.tags());
         long firstSequenceNumber = AggregateSequenceNumberPosition.toSequenceNumber(condition.start());
@@ -291,8 +288,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
                         aggregateIdentifier,
                         lastEntry != null && lastEntry.aggregateSequenceNumber() != null
                                 ? lastEntry.aggregateSequenceNumber() + 1
-                                : firstSequenceNumber,
-                        pc
+                                : firstSequenceNumber
                 ),
                 finalBatchPredicate
         );
@@ -309,8 +305,8 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
         return new AggregateSource(markerReference, source);
     }
 
-    private List<AggregateEventEntry> queryEventsBy(String aggregateIdentifier, long firstSequenceNumber, ProcessingContext processingContext) {
-        return entityManagerExecutor(processingContext).apply(em ->
+    private List<AggregateEventEntry> queryEventsBy(String aggregateIdentifier, long firstSequenceNumber) {
+        return entityManagerExecutor(null).apply(em ->
             em.createQuery(EVENTS_BY_AGGREGATE_QUERY, AggregateEventEntry.class)
                 .setParameter("id", aggregateIdentifier)
                 .setParameter("seq", firstSequenceNumber)
@@ -337,8 +333,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public MessageStream<EventMessage> stream(@Nonnull StreamingCondition condition,
-                                              @Nullable ProcessingContext processingContext) {
+    public MessageStream<EventMessage> stream(@Nonnull StreamingCondition condition) {
         GapAwareTrackingToken trackingToken = tokenOperations.assertGapAwareTrackingToken(condition.position());
 
         return new ContinuousMessageStream<TokenAndEvent>(
@@ -453,27 +448,26 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public CompletableFuture<TrackingToken> firstToken(@Nullable ProcessingContext processingContext) {
-        return queryToken(FIRST_TOKEN_QUERY, processingContext);
+    public CompletableFuture<TrackingToken> firstToken() {
+        return queryToken(FIRST_TOKEN_QUERY);
     }
 
     @Override
-    public CompletableFuture<TrackingToken> latestToken(@Nullable ProcessingContext processingContext) {
-        return queryToken(LATEST_TOKEN_QUERY, processingContext);
+    public CompletableFuture<TrackingToken> latestToken() {
+        return queryToken(LATEST_TOKEN_QUERY);
     }
 
     @Nonnull
-    private CompletableFuture<TrackingToken> queryToken(String firstTokenQuery, ProcessingContext processingContext) {
-        return entityManagerExecutor(processingContext).apply(entityManager -> new GapAwareTrackingToken(
+    private CompletableFuture<TrackingToken> queryToken(String firstTokenQuery) {
+        return entityManagerExecutor(null).apply(entityManager -> new GapAwareTrackingToken(
             entityManager.createQuery(firstTokenQuery, Long.class).getSingleResult(),
             Set.of()
         ));
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at,
-                                                    @Nullable ProcessingContext processingContext) {
-        return entityManagerExecutor(processingContext).apply(entityManager -> new GapAwareTrackingToken(
+    public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at) {
+        return entityManagerExecutor(null).apply(entityManager -> new GapAwareTrackingToken(
             entityManager.createQuery(TOKEN_AT_QUERY, Long.class)
                          .setParameter("dateTime", formatInstant(at))
                          .getSingleResult(),

@@ -186,9 +186,8 @@ class AggregateBasedJpaEventStorageEngineIT
 
     @Test
     void closedStreamingShouldReturnEmptyResults() throws InterruptedException, ExecutionException {
-        TrackingToken position = testSubject.firstToken(processingContext()).get();
-        MessageStream<EventMessage> stream = testSubject.stream(StreamingCondition.startingFrom(position),
-                                                                processingContext());
+        TrackingToken position = testSubject.firstToken().get();
+        MessageStream<EventMessage> stream = testSubject.stream(StreamingCondition.startingFrom(position));
 
         stream.close();
 
@@ -210,12 +209,12 @@ class AggregateBasedJpaEventStorageEngineIT
     @Test
     void streamingEventsShouldNotifyAboutNewEvents() throws InterruptedException, ExecutionException {
         AtomicBoolean called = new AtomicBoolean();
-        TrackingToken position = testSubject.firstToken(processingContext()).get();
+        TrackingToken position = testSubject.firstToken().get();
 
         finishTx();
 
         // Create stream that should get new events as they arrive:
-        MessageStream<EventMessage> stream = testSubject.stream(StreamingCondition.startingFrom(position), null);
+        MessageStream<EventMessage> stream = testSubject.stream(StreamingCondition.startingFrom(position));
 
         stream.setCallback(() -> called.set(true));
 
@@ -249,7 +248,7 @@ class AggregateBasedJpaEventStorageEngineIT
     void streamingFromNonGapAwareTrackingTokenShouldThrowException() {
         assertThrows(
                 IllegalArgumentException.class,
-                () -> testSubject.stream(StreamingCondition.startingFrom(new GlobalSequenceTrackingToken(5)), null)
+                () -> testSubject.stream(StreamingCondition.startingFrom(new GlobalSequenceTrackingToken(5)))
         );
     }
 
@@ -287,8 +286,7 @@ class AggregateBasedJpaEventStorageEngineIT
         transaction.commit();
 
         MessageStream<EventMessage> stream = testSubject.stream(
-                StreamingCondition.startingFrom(new GapAwareTrackingToken(0, Collections.emptySet())),
-                null
+                StreamingCondition.startingFrom(new GapAwareTrackingToken(0, Collections.emptySet()))
         );
 
         List<GapAwareTrackingToken> tokens = new ArrayList<>();
@@ -392,7 +390,7 @@ class AggregateBasedJpaEventStorageEngineIT
         GapAwareTrackingToken startPosition = GapAwareTrackingToken.newInstance(secondLastEventIndex, gaps);
 
         MessageStream<EventMessage> eventStream =
-                gapConfigTestSubject.stream(StreamingCondition.startingFrom(startPosition), null);
+                gapConfigTestSubject.stream(StreamingCondition.startingFrom(startPosition));
         assertThat(eventStream.hasNextAvailable()).isTrue();
         TrackingToken token = eventStream.next()
                                          .flatMap(TrackingToken::fromContext)
