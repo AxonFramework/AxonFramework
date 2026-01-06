@@ -1295,16 +1295,16 @@ class AccountTest {
 --
 ====
 
-[#then_execute]
-==== Then custom execute verification
+[#then_expect]
+==== Then custom expect verification
 
-For complex verification scenarios you can use `execute(Function<Configuration, ?>)`.
-The `execute()` grants access to the entire `Configuration`, allowing users to access any component they require.
+For complex verification scenarios you can use `expect(Consumer<Configuration>)`.
+The `expect()` grants access to the entire `Configuration`, allowing users to access any component they require.
 This can be useful whenever you need to verify external state, validate custom components, or whenever the fixture does not support what you require.
 
 [tabs]
 ====
-Execute::
+Expect::
 +
 --
 [source,java]
@@ -1341,7 +1341,7 @@ class AccountTest {
 ----
 --
 
-Asynchronous execute::
+Asynchronous expect::
 +
 --
 [source,java]
@@ -1504,7 +1504,7 @@ class AccountCommandHandlerTest {
 [#testing_event_handling_components]
 === Example: Testing an Event Handling Component
 
-Here is an example test scenario how an Event Handling Component sends emails as a result of handling an event:
+Here is an example test scenario how an Event Handling Component sends emails as a result of handling an event. Take note of the use of <<then_await,await>>, which mandatory to give the xref:events:event-processors/index.adoc[event processor] time to actually process the event.
 
 [source,java]
 ----
@@ -1547,9 +1547,12 @@ class NotificationEventHandlerTest {
                .when()
                .event(new AccountCreatedEvent("account-1", 500.00))
                .then()
-               .success()
-               .commands(new SendEmailCommand("user@example.com",
-                                              "Your account has been created"));
+               .await(
+                       t -> t.success()
+                             .commands(new SendEmailCommand(
+                                     "user@example.com", "Your account has been created"
+                             ))
+               );
     }
 
     @Test
@@ -1559,9 +1562,12 @@ class NotificationEventHandlerTest {
                .when()
                .event(new MoneyWithdrawnEvent("account-1", 480.00))
                .then()
-               .success()
-               .commands(new SendEmailCommand("user@example.com",
-                                              "Low balance alert"));
+               .await(
+                       t -> t.success()
+                             .commands(new SendEmailCommand(
+                                     "user@example.com", "Low balance alert"
+                             ))
+               );
     }
 
     @AfterEach
