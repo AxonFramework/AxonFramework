@@ -16,6 +16,7 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.extension.spring.config.DefaultProcessorModuleFactory;
 import org.axonframework.extension.spring.config.EventProcessorSettings;
@@ -26,6 +27,7 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.env.Environment;
 
 import java.util.List;
 import java.util.Map;
@@ -44,12 +46,13 @@ public class EventProcessingAutoConfiguration {
     /**
      * Constructs event processing settings.
      *
-     * @param eventProcessorProperties The properties to create the MapWrapper for
+     * @param environment The spring boot environment.
      * @return The event processor settings keyed by processor name.
+     * @see EventProcessorProperties#getProcessors(Environment)
      */
     @Bean
-    public EventProcessorSettings.MapWrapper eventProcessorSettings(EventProcessorProperties eventProcessorProperties) {
-        Map<String, EventProcessorSettings> map = new java.util.HashMap<>(eventProcessorProperties.getProcessors());
+    public EventProcessorSettings.MapWrapper eventProcessorSettings(@Nonnull Environment environment) {
+        Map<String, EventProcessorSettings> map = EventProcessorProperties.getProcessors(environment);
         // Retain the default behavior
         map.putIfAbsent(EventProcessorSettings.DEFAULT, new EventProcessorProperties.ProcessorSettings());
 
