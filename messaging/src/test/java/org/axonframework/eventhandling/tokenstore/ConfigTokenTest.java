@@ -48,12 +48,12 @@ class ConfigTokenTest {
     }
 
     @Test
-    void equalsLatestUnsupportedOperationException() {
+    void samePositionAsUnsupportedOperationException() {
         Map<String, String> configMap = Collections.singletonMap("some-key", "some-value");
         ConfigToken token = new ConfigToken(configMap);
 
-        assertThrows(UnsupportedOperationException.class, () -> token.equalsLatest(token));
-        assertThrows(UnsupportedOperationException.class, () -> token.equalsLatest(new GlobalSequenceTrackingToken(0)));
-        assertThrows(UnsupportedOperationException.class, () -> token.equalsLatest(null));
+        assertThrows(UnsupportedOperationException.class, () -> token.samePositionAs(token));
+        assertThrows(UnsupportedOperationException.class, () -> token.samePositionAs(new GlobalSequenceTrackingToken(0)));
+        assertThrows(UnsupportedOperationException.class, () -> token.samePositionAs(null));
     }
 }

@@ -674,7 +674,7 @@ class Coordinator {
         }
 
         @Override
-        public boolean equalsLatest(TrackingToken other) {
+        public boolean samePositionAs(TrackingToken other) {
             return other instanceof NoToken;
         }
     }

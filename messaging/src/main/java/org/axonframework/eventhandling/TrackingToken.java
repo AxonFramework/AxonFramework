@@ -82,7 +82,7 @@ public interface TrackingToken {
      * @see #covers(TrackingToken)
      * @since 4.12.3
      */
-    default boolean equalsLatest(TrackingToken other) {
+    default boolean samePositionAs(TrackingToken other) {
         return other != null && covers(other) && other.covers(this);
     }
 

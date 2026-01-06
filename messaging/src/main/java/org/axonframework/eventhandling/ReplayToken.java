@@ -288,7 +288,7 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
     }
 
     private static boolean isStrictlyAfter(@Nonnull TrackingToken newToken, @Nonnull TrackingToken tokenAtReset) {
-        return !newToken.equalsLatest(WrappedToken.unwrapUpperBound(tokenAtReset))
+        return !newToken.samePositionAs(WrappedToken.unwrapUpperBound(tokenAtReset))
                 && newToken.covers(WrappedToken.unwrapUpperBound(tokenAtReset))
                 && !tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken));
     }
@@ -308,9 +308,9 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
      * This "walk back" behavior naturally distinguishes:
      * <ul>
      *   <li><b>Events that were delivered:</b> {@code lowerBound} stays at the same position as newToken
-     *       → {@code combinedLowerBound.equalsLatest(newToken)} returns {@code true}</li>
+     *       → {@code combinedLowerBound.samePositionAs(newToken)} returns {@code true}</li>
      *   <li><b>Events that were skipped:</b> {@code lowerBound} walks back past the skipped position
-     *       → {@code combinedLowerBound.equalsLatest(newToken)} returns {@code false}</li>
+     *       → {@code combinedLowerBound.samePositionAs(newToken)} returns {@code false}</li>
      * </ul>
      *
      * @param tokenAtReset The token representing the position at reset
@@ -322,7 +322,7 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
         TrackingToken resetLowerBound = WrappedToken.unwrapLowerBound(tokenAtReset);
         TrackingToken newTokenLowerBound = WrappedToken.unwrapLowerBound(newToken);
         TrackingToken resetTokenLowerNewToken = resetLowerBound.lowerBound(newTokenLowerBound);
-        return resetTokenLowerNewToken.equalsLatest(newTokenLowerBound);
+        return resetTokenLowerNewToken.samePositionAs(newTokenLowerBound);
     }
 
     @Override
@@ -347,11 +347,11 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
     }
 
     @Override
-    public boolean equalsLatest(TrackingToken other) {
+    public boolean samePositionAs(TrackingToken other) {
         if (other instanceof ReplayToken) {
-            return currentToken != null && currentToken.equalsLatest(((ReplayToken) other).currentToken);
+            return currentToken != null && currentToken.samePositionAs(((ReplayToken) other).currentToken);
         }
-        return currentToken != null && currentToken.equalsLatest(other);
+        return currentToken != null && currentToken.samePositionAs(other);
     }
 
     private boolean isReplay() {

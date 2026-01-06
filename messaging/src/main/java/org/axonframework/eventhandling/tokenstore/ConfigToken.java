@@ -87,7 +87,7 @@ public class ConfigToken implements TrackingToken, Serializable {
     }
 
     @Override
-    public boolean equalsLatest(TrackingToken other) {
+    public boolean samePositionAs(TrackingToken other) {
         throw new UnsupportedOperationException("ConfigTokens don't support comparing to other tokens");
     }
 

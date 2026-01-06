@@ -238,7 +238,7 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
      * The method returns {@code true} if both tokens have the same index value.
      */
     @Override
-    public boolean equalsLatest(TrackingToken other) {
+    public boolean samePositionAs(TrackingToken other) {
         GapAwareTrackingToken otherToken = assertGapAwareTrackingToken(other);
 
         return otherToken.index == this.index;

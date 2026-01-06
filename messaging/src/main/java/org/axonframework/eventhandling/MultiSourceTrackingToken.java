@@ -154,7 +154,7 @@ public class MultiSourceTrackingToken implements TrackingToken, Serializable {
     }
 
     @Override
-    public boolean equalsLatest(TrackingToken other) {
+    public boolean samePositionAs(TrackingToken other) {
         MultiSourceTrackingToken otherMultiToken = assertSameKeysMultiSourceTrackingToken(other);
 
         for (Map.Entry<String, TrackingToken> trackingTokenEntry : trackingTokens.entrySet()) {
@@ -164,7 +164,7 @@ public class MultiSourceTrackingToken implements TrackingToken, Serializable {
                 if (otherConstituent != null) {
                     return false;
                 }
-            } else if (otherConstituent == null || !constituent.equalsLatest(otherConstituent)) {
+            } else if (otherConstituent == null || !constituent.samePositionAs(otherConstituent)) {
                 return false;
             }
         }
