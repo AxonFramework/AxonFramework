@@ -41,6 +41,6 @@ This module covers everything you need to test Axon applications.
 |Sub-Section |Purpose
 
 |xref:basic-testing.adoc[Basic Testing] |Comprehensive guide to using `AxonTestFixture` for testing, including Given-When-Then phases, creating fixtures, and available assertions
-|xref:field-filters.adoc[Then-phase: Field Filters] |Customize message-specific field validation in the then-phase for non-deterministic fields like timestamps and UUIDs
+|xref:matchers-and-field-filters.adoc[Matchers and Field Filters] |Explanation of Matchers and Field Filters to expand then-phase verification options
 |xref:advanced-testing.adoc[Advanced Testing] |Advanced testing techniques including custom matchers, integration testing, testing queries, and Spring Boot integration
 |===

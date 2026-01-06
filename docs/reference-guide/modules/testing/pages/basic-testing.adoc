@@ -93,7 +93,7 @@ The `Customization` given as the second parameter allows a number of adjustments
 * `registerIgnoredField(Class<?> clazz, String field)` - Ignore specific fields during equality checks.
 * `registerFieldFilter(FieldFilter filter)` - Register custom field filter.
 
-For more details on field filters, be sure to read the dedicated xref:field-filters.adoc[field filters] section.
+For more details on field filters, be sure to read the dedicated xref:matchers-and-field-filters.adoc[field filters] section.
 
 === Reusing production configuration
 
@@ -1068,6 +1068,7 @@ class AccountTest {
 --
 ====
 
+[#then_commands]
 ==== Then verifying dispatched commands
 
 Actions within the <<when_phase,when-phase>> can result in additional commands to be dispatched.
