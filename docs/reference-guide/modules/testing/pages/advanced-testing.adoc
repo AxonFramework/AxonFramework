@@ -1,253 +1,89 @@
-= Advanced Testing Techniques
+= Advanced testing
 
-This page covers advanced testing scenarios including custom matchers, integration testing, testing queries, and Spring Boot integration.
+After having taken note of the xref:basic-testing.adoc[basic test] flow and the use of xref:matchers-and-field-filters.adoc[matchers and field filters], it's worth to investigate more advanced testing scenarios.
+This page covers those advanced tests, discussing <<integration_testing,integration tests>>, <<testing-with-spring-boot,testing with spring boot>>, and <<testing-with-axon-server-testcontainer,testing with testcontainers>> to name a few.
 
-== Custom matchers
-
-While the built-in assertions cover most scenarios, custom matchers provide more expressive test failures and reusable validation logic.
-
-=== Why custom matchers
-
-Custom matchers provide:
-
-* **Better error messages** - Describe exactly what went wrong
-* **Reusable logic** - Define validation once, use in multiple tests
-* **Expressive tests** - Make test intent clearer
-
-=== Using built-in matchers
-
-Axon provides several useful matchers in the `org.axonframework.test.matchers.Matchers` class:
-
-[source,java]
-----
-import static org.axonframework.test.matchers.Matchers.*;
-
-fixture.then()
-       .eventsSatisfy(events ->
-           assertThat(events, payloadsMatching(hasSize(2)))
-       );
-----
-
-**Available matchers:**
-
-`payloadsMatching(Matcher<? extends List<?>>)`::
-Match a list of message payloads.
-
-`messageWithPayload(Matcher<?>)`::
-Match a single message's payload.
-
-`listWithAllOf(Matcher<T>...)`::
-All matchers must match items in the list (any order).
-
-`listWithAnyOf(Matcher<T>...)`::
-At least one matcher must match an item.
-
-`sequenceOf(Matcher<T>...)`::
-Ordered sequence with gaps allowed.
-
-`exactSequenceOf(Matcher<T>...)`::
-Exact ordered sequence, no gaps.
-
-`matches(Predicate<T>)` / `predicate(Predicate<T>)`::
-Predicate-based matching.
-
-`deepEquals(T expected)` / `deepEquals(T expected, FieldFilter filter)`::
-Deep field-by-field equality with optional filtering.
-
-`exactClassOf(Class<T> expected)`::
-Exact class type matching.
-
-`noEvents()` / `noCommands()`::
-Empty collection matching.
-
-=== Example using built-in matchers
-
-[source,java]
-----
-import static org.axonframework.test.matchers.Matchers.*;
-import static org.hamcrest.MatcherAssert.assertThat;
-
-@Test
-void testMultipleEventsWithMatchers() {
-    fixture.when()
-           .command(new ProcessOrderCommand("order-1"))
-           .then()
-           .eventsSatisfy(events -> {
-               assertThat(events, payloadsMatching(
-                   listWithAllOf(
-                       instanceOf(OrderProcessedEvent.class),
-                       instanceOf(InventoryUpdatedEvent.class)
-                   )
-               ));
-           });
-}
-
-@Test
-void testEventSequence() {
-    fixture.when()
-           .command(new CompleteOrderCommand("order-1"))
-           .then()
-           .eventsSatisfy(events -> {
-               assertThat(events, sequenceOf(
-                   messageWithPayload(instanceOf(OrderCompletedEvent.class)),
-                   messageWithPayload(instanceOf(PaymentProcessedEvent.class))
-               ));
-           });
-}
-----
-
-=== Creating custom matchers
-
-For domain-specific validation, create custom Hamcrest matchers:
-
-[source,java]
-----
-import org.hamcrest.*;
-
-public class AccountEventMatcher extends TypeSafeMatcher<EventMessage> {
-
-    private final String expectedAccountId;
-
-    public AccountEventMatcher(String expectedAccountId) {
-        this.expectedAccountId = expectedAccountId;
-    }
-
-    @Override
-    protected boolean matchesSafely(EventMessage message) {
-        Object payload = message.getPayload();
-        if (payload instanceof AccountCreatedEvent event) {
-            return expectedAccountId.equals(event.getAccountId());
-        } else if (payload instanceof MoneyWithdrawnEvent event) {
-            return expectedAccountId.equals(event.getAccountId());
-        }
-        return false;
-    }
-
-    @Override
-    public void describeTo(Description description) {
-        description.appendText("an account event for account ")
-                   .appendValue(expectedAccountId);
-    }
-
-    @Override
-    protected void describeMismatchSafely(EventMessage item,
-                                         Description mismatchDescription) {
-        mismatchDescription.appendText("was event: ")
-                          .appendValue(item.getPayload());
-    }
-
-    public static Matcher<EventMessage> accountEvent(String accountId) {
-        return new AccountEventMatcher(accountId);
-    }
-}
-----
-
-Use it in tests:
-
-[source,java]
-----
-import static com.example.matchers.AccountEventMatcher.accountEvent;
-
-@Test
-void testWithCustomMatcher() {
-    fixture.when()
-           .command(new WithdrawMoneyCommand("account-1", 100.00))
-           .then()
-           .eventsSatisfy(events -> {
-               assertThat(events.get(0), accountEvent("account-1"));
-           });
-}
-----
-
+[#integration_testing]
 == Integration testing
 
-=== Testing with real infrastructure
+You are able to provide your entire application configuration since the `AxonTestFixture` expects the `ApplicationConfigurer` (as discussed xref:basic-testing.adoc[here]).
+Furthermore, the broad xref:basic-testing.adoc#given_execute[given-execute] and xref:basic-testing.adoc#then_expect[then-expect] operations allow you to dive into configuration and use whatever components you require for setup and validation.
+These two pointers combined make it straightforward to use Axon's test fixtures for integration testing.
 
-The fixture can use real infrastructure components instead of in-memory implementations:
-
-[source,java]
-----
-@BeforeEach
-void setUp() {
-    var eventStore = EmbeddedEventStore.builder()
-        .storageEngine(new InMemoryEventStorageEngine())
-        .build();
-
-    var configurer = EventSourcingConfigurer.create()
-        .registerEventStore(config -> eventStore)
-        .registerEntity(EventSourcedEntityModule.autodetected(String.class, Account.class));
-
-    fixture = AxonTestFixture.with(configurer);
-}
-----
-
-Benefits:
-
-* Test actual serialization and deserialization
-* Verify converters work correctly
-* Test event upcasters
-* Test snapshot behavior
-
-=== Testing event processors
-
-Test that event processors handle events correctly:
+As such, examples of integration tests can roughly be consolidated to flows like this:
 
 [source,java]
 ----
-@BeforeEach
-void setUp() {
-    var configurer = EventSourcingConfigurer.create()
-        .registerEntity(EventSourcedEntityModule.autodetected(String.class, Account.class))
-        .registerEventHandler(AccountProjection.class);
+import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.modelling.repository.Repository;
+import org.axonframework.test.fixture.AxonTestFixture;
+import org.junit.jupiter.api.*;
 
-    fixture = AxonTestFixture.with(configurer);
-}
+import static org.assertj.core.api.Assertions.assertThat;
 
-@Test
-void testEventProcessorUpdatesProjection() {
-    fixture.given()
-           .event(new AccountCreatedEvent("account-1", 500.00))
-           .when()
-           .nothing()
-           .then()
-           .await(t -> t.expect(config -> {
-               var queryGateway = config.component(QueryGateway.class);
-               var balance = queryGateway.query(
-                   new GetBalanceQuery("account-1"),
-                   AccountBalance.class
-               ).join();
 
-               assertNotNull(balance);
-               assertEquals(500.00, balance.getBalance());
-           }), Duration.ofSeconds(5));
+class AccountIntegrationTest {
+
+    private AxonTestFixture fixture;
+
+    @BeforeEach
+    void setUp() {
+        // One way or another, you need access to the full ApplicationConfigurer.
+        // In this example, the ApplicationConfigurer is constructed statically and accessed as such for tests.
+        fixture = AxonTestFixture.with(MainApp.configurer());
+    }
+
+    @Test
+    void test() {
+        fixture.given()
+               .events(new AccountCreatedEvent("account-1", 1337))
+               .execute(config -> {
+                   // Retrieve components for setup
+                   var repository = config.getComponent(Repository.class);
+                   // Perform setup...
+               })
+               .when()
+               .command(new PlaceOrderCommand("order-1", "account-1"))
+               .then()
+               .expect(config -> {
+                   // Retrieve components for verification
+                   Repository repository = config.getComponent(Repository.class);
+                   // Perform verification...
+                   assertThat(repository).has(/*...*/);
+               });
+    }
+
+    @AfterEach
+    void tearDown() {
+        // Ensure to stop the fixture to cleanly close your resources
+        fixture.stop();
+    }
 }
 ----
 
-Use `await()` because event processors are asynchronous.
+When using the fully declarative configuration route, you will be aware of your `ApplicationConfigurer` already and how to use it for fixtures.
+If an autodetected flow is used, as with Spring, be sure to check out the <<testing-with-spring-boot,testing with Spring Boot>> section.
 
 [#testing-with-spring-boot]
 == Testing with Spring Boot
 
-=== Reusing Spring configuration
+If you are using Spring Boot, you will not construct the `ApplicationConfigurer` yourself.
+Axon Framework will take care of that for you.
+However, that does not mean the `ApplicationConfigurer` does not exist in your application.
 
-When using Spring Boot, inject the `ApplicationConfigurer` bean:
+If you adjust your test case to be a Spring Boot test, you can inject the autoconfigured `ApplicationConfigurer` right in your fixture:
 
 [source,java]
 ----
-import org.axonframework.test.server.AxonServerContainer;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.test.fixture.AxonTestFixture;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
+import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-@Testcontainers
 class AccountSpringTest {
-
-    @Container
-    @ServiceConnection
-    static AxonServerContainer axonServer = new AxonServerContainer();
 
     @Autowired
     private ApplicationConfigurer configurer;
@@ -277,371 +113,250 @@ class AccountSpringTest {
 }
 ----
 
-The `@ServiceConnection` annotation (Spring Boot 3.1+) automatically configures the Axon Server connection, providing realistic integration testing with your production configuration.
+From here, it is rather straightforward to add testcontainers into the mix, when your (integration) test requires it.
+Be sure to check out the <<testing-with-axon-server-testcontainer,tests with testcontainers>> section for that.
 
-=== Testing Spring beans
+=== Verifying (mocked) Spring beans
 
-Access Spring beans through the configuration:
-
-[source,java]
-----
-@Test
-void testWithSpringBeans() {
-    fixture.when()
-           .command(new ProcessPaymentCommand("payment-1"))
-           .then()
-           .expect(config -> {
-               var paymentService = config.component(PaymentService.class);
-               assertTrue(paymentService.isProcessed("payment-1"));
-           });
-}
-----
-
-=== Mocking Spring beans
-
-Replace Spring beans with mocks for testing:
+As suggested in the <<integration_testing,integration testing>> section, the xref:basic-testing.adoc#then_expect[then-expect] method provides access to the configuration.
+Note that this configuration includes access to **any* beans that are part of Spring application context.
+As such, by using `expect(consumer<Configuration>)`, you are able to verify if your beans executed certain operations as part of the when-phase action:
 
 [source,java]
 ----
+import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.test.fixture.AxonTestFixture;
+import org.junit.jupiter.api.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+
+import static org.mockito.Mockito.*;
+
 @SpringBootTest
-@TestConfiguration
-static class TestConfig {
-    @Bean
-    @Primary
-    public EmailService mockEmailService() {
-        return mock(EmailService.class);
+class AccountSpringTest {
+
+    @Autowired
+    private ApplicationConfigurer configurer;
+
+    private AxonTestFixture fixture;
+
+    @BeforeEach
+    void setUp() {
+        fixture = AxonTestFixture.with(configurer);
+    }
+
+    @TestConfiguration
+    static class TestConfig {
+
+        @Bean
+        public MyService myService() {
+            return mock(MyService.class);
+        }
+    }
+
+    @Test
+    void testWithSpringConfigurationAndMockedBean() {
+        fixture.given()
+               .event(new AccountCreatedEvent("account-1", 500.00))
+               .when()
+               .command(new WithdrawMoneyCommand("account-1", 100.00))
+               .then()
+               .success()
+               .events(new MoneyWithdrawnEvent("account-1", 100.00))
+               .expect(config -> {
+                   MyService myService = config.getComponent(MyService.class);
+                   verify(myService).invoked();
+               });
+    }
+
+    @AfterEach
+    void tearDown() {
+        fixture.stop();
     }
 }
-
-@Autowired
-private EmailService mockEmailService;
-
-@Test
-void testEmailSent() {
-    fixture.when()
-           .command(new CreateAccountCommand("account-1"))
-           .then()
-           .success();
-
-    verify(mockEmailService).sendWelcomeEmail("account-1");
-}
 ----
 
-== Testing queries
+[#testing-with-axon-server-testcontainer]
+== Tests with the Axon Server Testcontainer
 
-=== Query handler testing
+https://testcontainers.com/[Testcontainers] is a library that provides lightweight, throwaway instances of databases, message brokers, and other services as Docker containers.
+This makes it ideal for (integration) testing.
+Axon provides a dedicated container for Axon Server, called the `AxonServerContainer`.
+By adding this to your tests with the `@Container` annotation, it will be started automatically.
 
-Test query handlers using `expect()`:
+However, you will be required to take the host and port of the constructed container and inject them.
+If you are using Spring Boot, be sure to jump to <<axon_server_with_spring_boot_and_serviceconnection,this>> example.
+Otherwise, here's what you need to do to use The `axon-server-connector` module provides the `AxonServerContainer` for use with testcontainers:
 
 [source,java]
 ----
-@BeforeEach
-void setUp() {
-    var configurer = MessagingConfigurer.create()
-        .registerEventHandler(AccountProjection.class)
-        .registerQueryHandler(AccountQueryHandler.class);
+import io.axoniq.axonserver.connector.AxonServerConnection;
+import io.axoniq.axonserver.connector.AxonServerConnectionFactory;
+import io.axoniq.axonserver.connector.impl.ServerAddress;
+import jakarta.annotation.Nonnull;
+import org.axonframework.axonserver.connector.AxonServerConfiguration;
+import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.ConfigurationEnhancer;
+import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+import org.axonframework.test.fixture.AxonTestFixture;
+import org.axonframework.test.fixture.MessagesRecordingConfigurationEnhancer;
+import org.axonframework.test.server.AxonServerContainer;
+import org.junit.jupiter.api.*;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
-    fixture = AxonTestFixture.with(configurer);
-}
+@Testcontainers
+class AccountAxonServerTest {
 
-@Test
-void testGetAccountBalance() {
-    fixture.given()
-           .event(new AccountCreatedEvent("account-1", 500.00))
-           .event(new MoneyDepositedEvent("account-1", 100.00))
-           .when()
-           .nothing()
-           .then()
-           .expect(config -> {
-               var queryGateway = config.component(QueryGateway.class);
-               var balance = queryGateway.query(
-                   new GetBalanceQuery("account-1"),
-                   AccountBalance.class
-               ).join();
+    @Container
+    static AxonServerContainer axonServer = new AxonServerContainer();
+    private static AxonServerConnection connection;
 
-               assertEquals(600.00, balance.getBalance());
-           });
-}
-----
+    private AxonTestFixture fixture;
 
-=== Testing subscription queries
+    @BeforeAll
+    static void beforeAll() {
+        axonServer.start();
+        ServerAddress address = new ServerAddress(axonServer.getHost(), axonServer.getGrpcPort());
+        connection = AxonServerConnectionFactory.forClient("GameTest")
+                                                .routingServers(address)
+                                                .build()
+                                                .connect("default");
+    }
 
-Test subscription queries with updates:
+    @BeforeEach
+    void setUp() {
+        // The MessagesRecordingConfigurationEnhancer is required to allow verification to succeed for the fixture.
+        // Will be resolved automatically by the test fixture combined with Spring soon.
+        EventSourcingConfigurer configurer =
+                EventSourcingConfigurer.create()
+                                       .registerEntity(EventSourcedEntityModule.autodetected(
+                                               String.class, Account.class
+                                       ))
+                                       .componentRegistry(registry -> registry
+                                               .registerEnhancer(new MessagesRecordingConfigurationEnhancer())
+                                               .registerEnhancer(serverConfigurationEnhancer())
+                                       );
 
-[source,java]
-----
-@Test
-void testSubscriptionQueryUpdates() {
-    fixture.given()
-           .event(new AccountCreatedEvent("account-1", 500.00))
-           .when()
-           .nothing()
-           .then()
-           .expectAsync(config -> {
-               var queryGateway = config.component(QueryGateway.class);
+        fixture = AxonTestFixture.with(configurer);
+    }
 
-               var publisher = queryGateway.subscriptionQuery(
-                   new GetBalanceQuery("account-1"),
-                   AccountBalance.class
-               );
+    public ConfigurationEnhancer serverConfigurationEnhancer() {
+        return new ConfigurationEnhancer() {
+            @Override
+            public void enhance(@Nonnull ComponentRegistry registry) {
+                registry.registerComponent(
+                        AxonServerConfiguration.class,
+                        c -> {
+                            AxonServerConfiguration serverConfig = new AxonServerConfiguration();
+                            serverConfig.setServers(
+                                    axonServer.getHost() + ":" + axonServer.getGrpcPort()
+                            );
+                            return serverConfig;
+                        }
+                );
+            }
 
-               // Collect updates
-               List<AccountBalance> updates = new ArrayList<>();
-               var subscription = Flux.from(publisher)
-                   .doOnNext(updates::add)
-                   .subscribe();
+            @Override
+            public int order() {
+                return Integer.MIN_VALUE;
+            }
+        };
+    }
 
-               // Trigger update
-               var commandGateway = config.component(CommandGateway.class);
-               commandGateway.sendAndWait(
-                   new DepositMoneyCommand("account-1", 100.00)
-               );
+    @Test
+    void testWithAxonServer() {
+        fixture.given()
+               .noPriorActivity()
+               .when()
+               .command(new CreateAccountCommand("account-1", 500.00))
+               .then()
+               .success()
+               .events(new AccountCreatedEvent("account-1", 500.00));
+    }
 
-               // Wait for update
-               await().atMost(Duration.ofSeconds(5))
-                      .until(() -> updates.size() >= 2);
+    @AfterEach
+    void tearDown() {
+        fixture.stop();
+    }
 
-               subscription.dispose();
-
-               // Verify initial result and update
-               assertEquals(500.00, updates.get(0).getBalance());
-               assertEquals(600.00, updates.get(1).getBalance());
-
-               return CompletableFuture.completedFuture(null);
-           });
-}
-----
-
-== Testing message correlation
-
-=== Verifying metadata propagation
-
-Test that metadata is correctly propagated:
-
-[source,java]
-----
-@Test
-void testMetadataPropagation() {
-    fixture.given()
-           .event(new AccountCreatedEvent("account-1", 500.00),
-                  Map.of("userId", "user-123"))
-           .when()
-           .nothing()
-           .then()
-           .commandsSatisfy(commands -> {
-               var metadata = commands.get(0).getMetadata();
-               assertEquals("user-123", metadata.get("userId"));
-           });
-}
-----
-
-=== Testing correlation IDs
-
-Verify that correlation and causation IDs are propagated correctly:
-
-[source,java]
-----
-@Test
-void testCorrelationIds() {
-    fixture.when()
-           .command(new CreateAccountCommand("account-1"),
-                    Map.of("correlationId", "correlation-123"))
-           .then()
-           .eventsSatisfy(events -> {
-               var metadata = events.get(0).getMetadata();
-               assertEquals("correlation-123",
-                   metadata.get("correlationId"));
-               assertNotNull(metadata.get("causationId"));
-           });
-}
-----
-
-== Testing with snapshots
-
-=== Configuring snapshot triggers
-
-Test snapshot creation:
-
-[source,java]
-----
-@BeforeEach
-void setUp() {
-    var configurer = EventSourcingConfigurer.create()
-        .registerEntity(EventSourcedEntityModule.autodetected(String.class, Account.class))
-        .registerSnapshotTriggerDefinition(config ->
-            new EventCountSnapshotTriggerDefinition(5)
-        );
-
-    fixture = AxonTestFixture.with(configurer);
-}
-
-@Test
-void testSnapshotCreation() {
-    fixture.given()
-           .events(
-               new AccountCreatedEvent("account-1", 500.00),
-               new MoneyDepositedEvent("account-1", 100.00),
-               new MoneyDepositedEvent("account-1", 100.00),
-               new MoneyDepositedEvent("account-1", 100.00),
-               new MoneyDepositedEvent("account-1", 100.00)
-           )  // 5 events triggers snapshot
-           .when()
-           .command(new WithdrawMoneyCommand("account-1", 100.00))
-           .then()
-           .success()
-           .expect(config -> {
-               var eventStore = config.component(EventStore.class);
-               // Verify snapshot was created
-               // Implementation depends on your event store
-           });
-}
-----
-
-== Testing time-based triggers
-
-Time-based features require special handling in tests.
-
-=== Testing scheduled tasks
-
-For scheduled tasks, manually trigger the scheduled methods in tests:
-
-[source,java]
-----
-@Component
-public class AccountCleanupTask {
-
-    @Scheduled(cron = "0 0 0 * * *")  // Midnight daily
-    public void cleanupInactiveAccounts() {
-        // Cleanup logic
+    @AfterAll
+    static void afterAll() {
+        connection.disconnect();
+        axonServer.stop();
     }
 }
-
-// Test
-@Test
-void testCleanupTask() {
-    var task = new AccountCleanupTask();
-
-    fixture.given()
-           .event(new AccountCreatedEvent("account-1", 0.00))
-           .execute(config -> {
-               // Manually trigger scheduled method
-               task.cleanupInactiveAccounts();
-               return null;
-           })
-           .when()
-           .nothing()
-           .then()
-           .expect(config -> {
-               // Verify cleanup occurred
-           });
-}
 ----
 
-=== Testing database-based scheduling
+As shown above, we need to inject a `ConfigurationEnhancer` to enhance the `AxonServerConfiguration`.
+Axon's configuration will pick this up and make the connection to the `AxonServerContainer` for message distribution and event storage.
 
-For database-based deadline/timeout patterns:
+[#axon_server_with_spring_boot_and_serviceconnection]
+=== AxonServerContainer with Spring Boot and @ServiceConnection
+
+Spring Boot has a testcontainers specific dependency that provides the `@ServiceConnection` annotation.
+This annotation can be attached to testcontainers, which then will automatically configure the connection properties for you.
+Thus, if we add the `@ServiceConnection` to the `AxonServerContainer` field, our test setup is greatly simplified compared to the <<testing-with-axon-server-testcontainer,declarative>> approach:
 
 [source,java]
 ----
-@Test
-void testDatabaseBasedTimeout() {
-    fixture.when()
-           .command(new StartProcessCommand("process-1"))
-           .then()
-           .success()
-           .expect(config -> {
-               // Verify timeout record was created
-               var timeoutRepository = config.component(TimeoutRepository.class);
-               var timeout = timeoutRepository.findByProcessId("process-1");
+import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.test.fixture.AxonTestFixture;
+import org.axonframework.test.fixture.MessagesRecordingConfigurationEnhancer;
+import org.axonframework.test.server.AxonServerContainer;
+import org.junit.jupiter.api.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.context.annotation.Bean;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
-               assertNotNull(timeout);
-               assertEquals(Instant.now().plus(Duration.ofHours(24)),
-                   timeout.getScheduledFor());
-           });
-}
-----
+@SpringBootTest
+@Testcontainers
+class AccountAxonServerAndSpringBootTest {
 
-== Performance testing considerations
+    @Container
+    @ServiceConnection
+    static AxonServerContainer axonServer = new AxonServerContainer();
 
-`AxonTestFixture` is not designed for performance testing:
+    @Autowired
+    private ApplicationConfigurer configurer;
 
-* Recording infrastructure adds overhead
-* Message comparison is expensive
-* Focus is on correctness, not speed
+    private AxonTestFixture fixture;
 
-**For performance testing:**
+    @TestConfiguration
+    static class TestConfig {
 
-1. Use separate performance test suite
-2. Test with production configuration (no recording)
-3. Use load testing tools (JMeter, Gatling)
-4. Measure throughput, latency, resource usage
-
-[source,java]
-----
-// Performance test (not using AxonTestFixture)
-@Test
-void performanceTest() {
-    var configurer = EventSourcingConfigurer.create()
-        .registerEntity(EventSourcedEntityModule.autodetected(String.class, Account.class));
-
-    var config = configurer.build();
-    config.start();
-
-    var commandGateway = config.component(CommandGateway.class);
-
-    // Measure performance
-    long start = System.nanoTime();
-    for (int i = 0; i < 10000; i++) {
-        commandGateway.sendAndWait(new CreateAccountCommand("account-" + i));
+        @Bean
+        public MessagesRecordingConfigurationEnhancer recordingConfigurationEnhancer() {
+            return new MessagesRecordingConfigurationEnhancer();
+        }
     }
-    long duration = System.nanoTime() - start;
 
-    System.out.println("Throughput: " + (10000.0 / (duration / 1_000_000_000.0)) + " commands/sec");
+    @BeforeEach
+    void setUp() {
+        fixture = AxonTestFixture.with(configurer);
+    }
 
-    config.shutdown();
+    @Test
+    void testWithAxonServer() {
+        fixture.given()
+               .noPriorActivity()
+               .when()
+               .command(new CreateAccountCommand("account-1", 500.00))
+               .then()
+               .success()
+               .events(new AccountCreatedEvent("account-1", 500.00));
+    }
+
+    @AfterEach
+    void tearDown() {
+        fixture.stop();
+    }
 }
 ----
-
-== Best practices
-
-**Use custom matchers for complex validation**::
-Create reusable matchers for domain-specific validation logic.
-
-**Test with real infrastructure when needed**::
-Integration tests with real event stores verify serialization and conversion.
-
-**Use await() for async operations**::
-Event processors, scheduled tasks, and async handlers need `await()`.
-
-**Leverage Spring configuration**::
-Reuse production Spring configuration in tests for consistency.
-
-**Mock external dependencies**::
-Mock HTTP clients, email services, and other external systems.
-
-**Keep performance tests separate**::
-Don't use `AxonTestFixture` for performance testing.
-
-**Test correlation data**::
-Verify metadata propagation in distributed scenarios.
-
-**Document complex test setups**::
-Add comments explaining why you're using specific configurations.
-
-== Summary
-
-Advanced testing techniques provide:
-
-* **Custom matchers** - Expressive, reusable validation logic
-* **Integration testing** - Test with real infrastructure components
-* **Spring Boot support** - Reuse production Spring configuration
-* **Query testing** - Verify query handlers and subscription queries
-* **Correlation testing** - Validate metadata and correlation IDs
-* **Snapshot testing** - Test snapshot creation and restoration
-* **Time-based testing** - Handle scheduled tasks and timeouts
-
-For more testing guidance, see:
-
-* xref:basic-testing.adoc[] - Main testing guide
-* xref:field-filters.adoc[] - Field filtering and equality comparison
-* xref:upgrading-from-axon-4.adoc[] - Migration guide for Axon 4 users

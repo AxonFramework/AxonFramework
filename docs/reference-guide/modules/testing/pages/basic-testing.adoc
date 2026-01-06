@@ -1229,6 +1229,7 @@ class AccountTest {
 ==== Then await verification
 
 Sometimes, the <<when_phase,when-phase>> action will not trigger immediately.
+Examples of these are xref:advanced-testing.adoc#integration_testing[(integration) tests] using a xref:events:event-processors/streaming.adoc[streaming event processor], which by design take some time.
 When this is the case you can use the `await(...)` operation.
 If you do not provide a `Duration`, the task will be awaited on for a default of five seconds.
 When you know a task should be verifiable sooner or later, you can define your own `Duration`:
