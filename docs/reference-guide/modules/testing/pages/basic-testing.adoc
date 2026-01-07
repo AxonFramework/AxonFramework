@@ -378,7 +378,7 @@ class AccountTest {
     @Test
     void test() {
         fixture.given()
-               .events(
+               .commands(
                        new CreateAccountCommand("account-1", 500.00),
                        new DepositMoneyCommand("account-1", 100.00)
                );
@@ -387,7 +387,7 @@ class AccountTest {
 }
 ----
 
-Note that you can either use the `commands(...)` method with several commands, or invoke the `commands(...)` method multiple times per command.
+Note that you can either use the `commands(...)` method with several commands, or invoke the `command(...)` method multiple times per command.
 
 --
 ====
@@ -444,7 +444,6 @@ class AccountTest {
                    // Access any component from configuration
                    var repository = config.getComponent(Repository.class);
                    // Perform custom setup
-                   return null;
                });
                // when...
     }
@@ -1002,7 +1001,7 @@ class AccountTest {
         fixture.given()
                .noPriorActivity()
                .when()
-               .command(new CreateAccountCommand())
+               .command(new CreateAccountCommand("account-1", 500.00))
                .then()
                .resultMessagePayload("account-1");
     }
@@ -1028,7 +1027,7 @@ class AccountTest {
         fixture.given()
                .noPriorActivity()
                .when()
-               .command(new CreateAccountCommand())
+               .command(new CreateAccountCommand("account-1", 500.00))
                .then()
                .resultMessagePayloadSatisfies(
                        String.class,
@@ -1057,7 +1056,7 @@ class AccountTest {
         fixture.given()
                .noPriorActivity()
                .when()
-               .command(new CreateAccountCommand())
+               .command(new CreateAccountCommand("account-1", 500.00))
                .then()
                .resultMessageSatisfies(
                        result -> result.payloadAs(String.class).equals("account-1")
