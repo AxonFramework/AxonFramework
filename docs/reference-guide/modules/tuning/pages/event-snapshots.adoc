@@ -1,5 +1,13 @@
 = Event Snapshots
 
+[WARNING]
+.Snapshots not available in Axon Framework 5.0
+====
+The Snapshots feature is not yet available in Axon Framework 5.0.
+It will be reintroduced in Axon Framework 5.1.
+The documentation below describes the Snapshots concepts for reference and future use.
+====
+
 == Snapshotting
 
 When aggregates live for a long time, and their state constantly changes, they will generate a large amount of events. Having to load all these events in to rebuild an aggregate's state may have a big performance impact. The snapshot event is a domain event with a special purpose: it summarises an arbitrary amount of events into a single one. By regularly creating and storing a snapshot event, the event store does not have to return long lists of events. Just the latest snapshot events and all events that occurred after the snapshot was made.
