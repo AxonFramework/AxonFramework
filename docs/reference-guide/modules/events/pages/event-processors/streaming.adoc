@@ -63,10 +63,10 @@ To configure a Pooled Streaming Event Processor you have roughly two approaches:
 1. <<declarative_config_pooled,Declarative configuration>>
 2. <<autodetected_config_spring_properties_pooled,Autodetected configuration>>, like Spring
 
-Both solutions have examples drafted below, showing how to configure the "my-processor" with a specific event source.
+Both solutions have examples drafted below, showing how to configure the "example-processor" with a specific event source.
 
 [#declarative_config_pooled]
-=== Declarative Configuration
+=== Declarative configuration
 
 When using Axon's configuration API, you should invoke the `MessagingConfigurer#eventProcessing(Consumer<EventProcessingConfigurer>)` operation.
 The `EventProcessingConfigurer` lambda guides users towards:
@@ -96,7 +96,7 @@ public class AxonConfig {
             PooledStreamingEventProcessorsConfigurer pooledStreamingConfigurer
     ) {
         return pooledStreamingConfigurer.processor(
-                "my-processor",
+                "example-processor",
                 config -> config.eventHandlingComponents(this::configureHandlingComponent)
                                 .notCustomized()
         );
@@ -110,7 +110,7 @@ public class AxonConfig {
 }
 ----
 
-The example above shows how to configure "my-processor" as a Pooled Streaming Event Processor.
+The example above shows how to configure "example-processor" as a Pooled Streaming Event Processor.
 When no customization is required, the `customized` method can be replaced by the `notCustomized()` operation.
 
 If you prefer to define defaults for all Pooled Streaming Processors, you can use the `defaults(...)` instead of `customized(...)`.
@@ -146,7 +146,7 @@ public class AxonConfig {
                 )
                 // Configure a specific processor
                 .processor(
-                        "my-processor",
+                        "example-processor",
                         config -> config.eventHandlingComponents(this::configureHandlingComponent)
                                         .customize((c, pooledStreamingConfig) -> pooledStreamingConfig
                                                 .segmentCount(8)  // Override default for this processor
@@ -170,18 +170,18 @@ If more flexibility is required, like concretely defining the event handling com
 
 [source,text]
 ----
-axon.eventhandling.processors.my-processor.mode=pooled-streaming
-axon.eventhandling.processors.my-processor.source=eventStore
-axon.eventhandling.processors.my-processor.initial-segment-count=4
-axon.eventhandling.processors.my-processor.batch-size=100
+axon.eventhandling.processors.example-processor.mode=pooled-streaming
+axon.eventhandling.processors.example-processor.source=eventStore
+axon.eventhandling.processors.example-processor.initial-segment-count=4
+axon.eventhandling.processors.example-processor.batch-size=100
 ----
 
 If the name of an event processor contains periods `.`, use the map notation:
 
 [source,text]
 ----
-axon.eventhandling.processors[my.processor].mode=pooled-streaming
-axon.eventhandling.processors[my.processor].source=eventStore
+axon.eventhandling.processors[example.processor].mode=pooled-streaming
+axon.eventhandling.processors[example.processor].source=eventStore
 ----
 
 [[error_mode]]
@@ -264,7 +264,7 @@ Whenever a Streaming Processor's event handlers show unexpected behavior in the 
 In those cases, we recommend to validate if any of the above situations occurred.
 
 [#token_configuration]
-=== Token Configuration
+=== Token configuration
 
 There are a couple of things we can configure when it comes to tokens.
 We can separate these options in "initial token" and "token claim" configuration, as described in the following sections:
@@ -310,7 +310,7 @@ public class AxonConfig {
             PooledStreamingEventProcessorsConfigurer pooledStreamingConfigurer
     ) {
         return pooledStreamingConfigurer.processor(
-                "my-processor",
+                "example-processor",
                 config -> config.eventHandlingComponents(this::configureHandlingComponent)
                                 .customized((c, pooledStreamingConfig) -> pooledStreamingConfig.initialToken(
                                         source -> source.firstToken(null)
@@ -373,7 +373,7 @@ public class AxonConfig {
             PooledStreamingEventProcessorsConfigurer pooledStreamingConfigurer
     ) {
         return pooledStreamingConfigurer.processor(
-                "my-processor",
+                "example-processor",
                 config -> config.eventHandlingComponents(this::configureHandlingComponent).customized(
                         (c, pooledStreamingConfig) -> pooledStreamingConfig.claimExtensionThreshold(2500)
                                                                            .tokenClaimInterval(7500)
@@ -521,7 +521,7 @@ public class AxonConfig {
             PooledStreamingEventProcessorsConfigurer pooledStreamingConfigurer
     ) {
         return pooledStreamingConfigurer.processor(
-                "my-processor",
+                "example-processor",
                 config -> config.eventHandlingComponents(this::configureHandlingComponent)
                                 .notCustomized()
         ).defaults((config, psepConfig) -> psepConfig.tokenStore(
@@ -552,7 +552,7 @@ public class AxonConfig {
             PooledStreamingEventProcessorsConfigurer pooledStreamingConfigurer
     ) {
         return pooledStreamingConfigurer.processor(
-                "my-processor",
+                "example-processor",
                 config -> config.eventHandlingComponents(this::configureHandlingComponent)
                                 .customized((c, psepConfig) -> psepConfig.tokenStore(
                                         c.getComponent(TokenStore.class)
@@ -583,8 +583,8 @@ import org.axonframework.messaging.eventhandling.processing.streaming.token.stor
 public class AxonConfig {
 
     @Bean
-    public TokenStore myTokenStore(EntityManagerProvider entityManagerProvider,
-                                   Converter converter) {
+    public TokenStore customTokenStore(EntityManagerProvider entityManagerProvider,
+                                       Converter converter) {
         return new JpaTokenStore(entityManagerProvider, converter, JpaTokenStoreConfiguration.DEFAULT);
     }
 }
@@ -657,7 +657,7 @@ public class AxonConfig {
             PooledStreamingEventProcessorsConfigurer pooledStreamingConfigurer
     ) {
         return pooledStreamingConfigurer.processor(
-                "my-processor",
+                "example-processor",
                 config -> config.eventHandlingComponents(this::configureHandlingComponent)
                                 .customized((c, psepConfig) -> psepConfig.initialSegmentCount(32))
         );
@@ -686,9 +686,9 @@ The default number of segments for a `PooledStreamingEventProcessor` is sixteen.
 
 [source,properties]
 ----
-axon.eventhandling.processors.my-processor.mode=pooled-streaming
+axon.eventhandling.processors.example-processor.mode=pooled-streaming
 # Sets the initial number of segments
-axon.eventhandling.processors.my-processor.initial-segment-count=32
+axon.eventhandling.processors.example-processor.initial-segment-count=32
 ----
 --
 ====
@@ -805,7 +805,7 @@ import org.axonframework.messaging.eventhandling.annotation.SequencingPolicy;
 import org.axonframework.messaging.eventhandling.sequencing.PropertySequencingPolicy;
 
 @SequencingPolicy(type = PropertySequencingPolicy.class, parameters = {"studentId"})
-class MyEventHandlingComponent {
+class CustomEventHandlingComponent {
 
     @EventHandler
     public void handle(StudentEnrolledEvent event) {
@@ -838,7 +838,7 @@ import org.axonframework.messaging.eventhandling.annotation.SequencingPolicy;
 import org.axonframework.messaging.eventhandling.sequencing.PropertySequencingPolicy;
 
 @SequencingPolicy(type = PropertySequencingPolicy.class, parameters = {"studentId"})
-class MyEventHandlingComponent {
+class CustomEventHandlingComponent {
 
     @EventHandler
     @SequencingPolicy(type = PropertySequencingPolicy.class, parameters = {"courseId"})
@@ -875,7 +875,7 @@ public class AxonConfig {
             PooledStreamingEventProcessorsConfigurer pooledStreamingConfigurer
     ) {
         return pooledStreamingConfigurer.processor(
-                "my-processor",
+                "example-processor",
                 config -> config.eventHandlingComponents(this::configureHandlingComponent).notCustomized()
         );
     }
@@ -889,7 +889,7 @@ public class AxonConfig {
 
             EventHandlingComponent eventHandlingComponent = new SimpleEventHandlingComponent(policy);
             eventHandlingComponent.subscribe(
-                    new QualifiedName("my-event"),
+                    new QualifiedName("test-event"),
                     (event, context) -> {
                         // process events
                         return MessageStream.empty();
@@ -919,8 +919,8 @@ When we want to configure the `SequencingPolicy` in a properties file, we should
 
 [source,properties]
 ----
-axon.eventhandling.processors.my-processor.mode=tracking
-axon.eventhandling.processors.my-processor.sequencing-policy=mySequencingPolicy
+axon.eventhandling.processors.example-processor.mode=tracking
+axon.eventhandling.processors.example-processor.sequencing-policy=customSequencingPolicy
 ----
 
 This approach does require the bean name to be present in the Application Context of course:
@@ -931,7 +931,7 @@ This approach does require the bean name to be present in the Application Contex
 public class AxonConfig {
     // omitting other configuration methods...
     @Bean
-    public SequencingPolicy<EventMessage<?>> mySequencingPolicy() {
+    public SequencingPolicy<EventMessage<?>> customSequencingPolicy() {
         return new FullConcurrencyPolicy();
     }
 }
@@ -1010,13 +1010,13 @@ public class AxonConfig {
             PooledStreamingEventProcessorsConfigurer pooledStreamingConfigurer
     ) {
         return pooledStreamingConfigurer.processor(
-                "my-processor",
+                "example-processor",
                 config -> config.eventHandlingComponents(this::configureHandlingComponent).customized(
                         (c, psepConfig) -> psepConfig.coordinatorExecutor(Executors.newScheduledThreadPool(
-                                                             1, new AxonThreadFactory("Coordinator - my-processor")
+                                                             1, new AxonThreadFactory("Coordinator - example-processor")
                                                      ))
                                                      .workerExecutor(Executors.newScheduledThreadPool(
-                                                             16, new AxonThreadFactory("Worker - my-processor")
+                                                             16, new AxonThreadFactory("Worker - example-processor")
                                                      ))
                 )
         );
@@ -1041,10 +1041,10 @@ Spring Boot properties::
 
 [source,properties]
 ----
-axon.eventhandling.processors.my-processor.mode=pooled-streaming
+axon.eventhandling.processors.example-processor.mode=pooled-streaming
 # Only the thread count of the Worker can be influenced through a properties file!
-axon.eventhandling.processors.my-processor.thread-count=16
-axon.eventhandling.processors.my-processor.initial-segment-count=32
+axon.eventhandling.processors.example-processor.thread-count=16
+axon.eventhandling.processors.example-processor.initial-segment-count=32
 ----
 --
 ====
@@ -1070,7 +1070,7 @@ There are roughly four approaches to balancing the number of segments claimed pe
 . For Axon Server and Spring Boot users, you can use the `axon.axonserver.eventhandling.processors.[processor-name].load-balancing-strategy` application property.
 . Directly on a `StreamingEventProcessor`, with the `releaseSegment(int segmentId)` or `releaseSegment(int segmentId, long releaseDuration, TimeUnit unit)` method.
 
-By far the simplest approach is to connect your application(s) to Axoniq Platform, as it provides the most flexibility.
+By far the simplest approach is to connect your application to Axoniq Platform, as it provides the most flexibility.
 
 When Axon Server but not Axoniq Platform is in place, we recommend using either option two or three.
 Where option two requires access to the dashboard before load balancing is activated, option three works from within your framework application's properties file.
@@ -1078,13 +1078,13 @@ For those looking to configure load balancing through option three, please consi
 
 [source,properties]
 ----
-# Enables automatic balancing for event processor "my-processor."
+# Enables automatic balancing for event processor "example-processor."
 # Setting automatic balancing to true causes Axon Server to periodically check whether the segments are balanced.
 # Note that automatic balancing is an Enterprise feature of Axon Server.
-axon.axonserver.eventhandling.processors.my-processor.automatic-balancing=true
+axon.axonserver.eventhandling.processors.example-processor.automatic-balancing=true
 # Set the load balancing strategy to, for example, "threadNumber."
 # Note that this task is executed only once, on the start up of the Axon Framework application.
-axon.axonserver.eventhandling.processors.my-processor.load-balancing-strategy=threadNumber
+axon.axonserver.eventhandling.processors.example-processor.load-balancing-strategy=threadNumber
 ----
 
 When neither Axoniq Platform nor Axon Server are used, we can achieve load balancing by having a streaming processor release its segments.
@@ -1456,7 +1456,7 @@ public class AxonConfig {
             PooledStreamingEventProcessorsConfigurer pooledStreamingConfigurer
     ) {
         return pooledStreamingConfigurer.processor(
-                "my-processor",
+                "example-processor",
                 config -> config.eventHandlingComponents(this::configureHandlingComponent).notCustomized()
         );
     }
@@ -1468,7 +1468,7 @@ public class AxonConfig {
             EventHandlingComponent eventHandlingComponent =
                     new ReplayBlockingEventHandlingComponent(new SimpleEventHandlingComponent());
             eventHandlingComponent.subscribe(
-                    new QualifiedName("my-event"),
+                    new QualifiedName("test-event"),
                     (event, context) -> {
                         // process events
                         return MessageStream.empty();
@@ -1544,7 +1544,7 @@ public class AxonConfig {
     // omitting other configuration methods...
     public void configureTrackingProcessor(EventProcessingConfigurer processingConfigurer) {
         processingConfigurer.registerTrackingEventProcessor(
-                "my-processor", config -> buildMultiStreamableEventSource(/*...*/)
+                "example-processor", config -> buildMultiStreamableEventSource(/*...*/)
         );
     }
 }
@@ -1570,7 +1570,7 @@ public class AxonConfig {
     // omitting other configuration methods...
     public void configurePooledStreamingProcessor(EventProcessingConfigurer processingConfigurer) {
         processingConfigurer.registerPooledStreamingEventProcessor(
-                "my-processor", config -> buildMultiStreamableEventSource(/*...*/)
+                "example-processor", config -> buildMultiStreamableEventSource(/*...*/)
         );
     }
 }
@@ -1595,8 +1595,8 @@ When we want to configure the `StreamableEventSource` in a properties file, we s
 
 [source,properties]
 ----
-axon.eventhandling.processors.my-processor.mode=pooled-streaming
-axon.eventhandling.processors.my-processor.source=multiStreamableEventSource
+axon.eventhandling.processors.example-processor.mode=pooled-streaming
+axon.eventhandling.processors.example-processor.source=multiStreamableEventSource
 ----
 
 This approach does require the bean name to be present in the Application Context of course:

@@ -1,7 +1,7 @@
-= Advanced testing
+= Advanced Testing
 
 After having taken note of the xref:basic-testing.adoc[basic test] flow and the use of xref:matchers-and-field-filters.adoc[matchers and field filters], it's worth to investigate more advanced testing scenarios.
-This page covers those advanced tests, discussing <<integration_testing,integration tests>>, <<testing-with-spring-boot,testing with spring boot>>, and <<testing-with-axon-server-testcontainer,testing with testcontainers>> to name a few.
+This page covers those advanced tests, discussing <<integration_testing,integration tests>>, <<testing-with-spring-boot,testing with spring boot>>, and <<testing-with-axon-server-testcontainer,testing with Testcontainers>> to name a few.
 
 [#integration_testing]
 == Integration testing
@@ -113,8 +113,8 @@ class AccountSpringTest {
 }
 ----
 
-From here, it is rather straightforward to add testcontainers into the mix, when your (integration) test requires it.
-Be sure to check out the <<testing-with-axon-server-testcontainer,tests with testcontainers>> section for that.
+From here, it is rather straightforward to add Testcontainers into the mix, when your (integration) test requires it.
+Be sure to check out the <<testing-with-axon-server-testcontainer,tests with Testcontainers>> section for that.
 
 === Verifying (mocked) Spring beans
 
@@ -188,7 +188,7 @@ By adding this to your tests with the `@Container` annotation, it will be starte
 
 However, you will be required to take the host and port of the constructed container and inject them.
 If you are using Spring Boot, be sure to jump to <<axon_server_with_spring_boot_and_serviceconnection,this>> example.
-Otherwise, here's what you need to do to use The `axon-server-connector` module provides the `AxonServerContainer` for use with testcontainers:
+Otherwise, here's what you need to do to use The `axon-server-connector` module provides the `AxonServerContainer` for use with Testcontainers:
 
 [source,java]
 ----
@@ -297,8 +297,8 @@ Axon's configuration will pick this up and make the connection to the `AxonServe
 [#axon_server_with_spring_boot_and_serviceconnection]
 === AxonServerContainer with Spring Boot and @ServiceConnection
 
-Spring Boot has a testcontainers specific dependency that provides the `@ServiceConnection` annotation.
-This annotation can be attached to testcontainers, which then will automatically configure the connection properties for you.
+Spring Boot has a Testcontainers specific dependency that provides the `@ServiceConnection` annotation.
+This annotation can be attached to Testcontainers, which then will automatically configure the connection properties for you.
 Thus, if we add the `@ServiceConnection` to the `AxonServerContainer` field, our test setup is greatly simplified compared to the <<testing-with-axon-server-testcontainer,declarative>> approach:
 
 [source,java]

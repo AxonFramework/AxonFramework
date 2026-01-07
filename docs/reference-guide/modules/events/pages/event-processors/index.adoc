@@ -38,7 +38,7 @@ There are two main approaches to configuring event processors and assigning hand
 xref:event-handlers.adoc#registering_event_handlers[This] section describes the process to register an event handler.
 
 [#declarative_config]
-=== Declarative Configuration
+=== Declarative configuration
 
 Assuming the declarative approach is used and we have the following event handling components:
 

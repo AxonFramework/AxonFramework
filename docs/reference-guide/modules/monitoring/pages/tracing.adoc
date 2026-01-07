@@ -264,8 +264,8 @@ Axon Framework provides https://opentelemetry.io/docs/concepts/what-is-opentelem
 The OpenTelemetry standard improves upon the OpenTracing and OpenCensus standards by providing more auto-instrumentation without the need for the user to configure many things.
 
 OpenTelemetry works by adding a Java agent to the execution of the application.
-Based on the configuration, the agent will collect logs, metrics and tracing automatically before sending it to a collector that can provide insights.
-ElasticSearch APM, Jaeger and many other tools are available for collecting and visualting the information.
+Based on the configuration, the agent will collect logs, metrics, and tracing automatically before sending it to a collector that can provide insights.
+ElasticSearch APM, Jaeger, and many other tools are available for collecting and visualizing the information.
 The configuration of these tools is beyond the scope of this guide.
 You can find more information https://opentelemetry.io/docs/instrumentation/java/getting-started/[in the "Getting Started" section of the OpenTelemetry documentation.]
 
@@ -607,7 +607,7 @@ In addition to this, the spans of the <<Direct queries,direct queries section>> 
 === Message handler invocations
 
 The `TracingHandlerEnhancerDefinition` automatically creates a span for each message handler invocation within your application.
-This is true for commands, events, queries and even custom message handlers.
+This is true for commands, events, queries, and even custom message handlers.
 Spans will be created with the following format:
 `ContainingClassName.methodName(ArgumentClass1, Argumentclass2, etc)`.
 Examples of this are:

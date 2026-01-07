@@ -735,7 +735,7 @@ The only state a stateful handler requires is the state it needs to make decisio
 Handling an event is thus only required if the state change is necessary for future validation of other commands.
 ====
 
-The xref:testing:commands-events.adoc[Test Fixture] will guard against unintentional state changes in command handling functions.
+The xref:testing:index.adoc[Test Fixture] will guard against unintentional state changes in command handling functions.
 It is strongly advised to provide thorough test cases for any stateful handler implementation.
 
 == Injectable parameters

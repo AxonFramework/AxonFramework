@@ -124,7 +124,7 @@ Thus, when you send a command or dispatch a query, the framework handles the com
 There are two key components in Axon Framework that enable it to be async-native. These are the <<message_stream,Message Stream>> and <<processing_context,Processing Context>>.
 
 [#message_stream]
-=== Message Stream
+=== Message stream
 
 The `MessageStream` is a key abstraction that allows you to work with messages in both imperative and reactive styles.
 It is **the** return type for message handlers and event store operations.
@@ -147,7 +147,7 @@ You can create a `MessageStream` using factory methods like:
 The `MessageStream` abstraction allows the framework to support both traditional imperative code and reactive programming styles without forcing you to choose one approach exclusively.
 
 [#processing_context]
-=== Processing Context
+=== Processing context
 
 When Axon processes a message, it creates a `ProcessingContext` that travels with the message throughout its handling.
 This context:

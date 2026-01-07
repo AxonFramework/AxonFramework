@@ -1,5 +1,5 @@
 [#matchers_and_field_filters]
-= Matchers and Field filters
+= Matchers and Field Filters
 
 When testing message handling, the fixture compares expected and actual messages using field-by-field equality.
 While the built-in assertions cover most scenarios, <<matchers,matchers>> and <<field_filters,field filters>> provide a more expressive test flow for the xref:basic-testing.adoc#then_phase[then-phase] of the `AxonTestFixture`.
@@ -11,9 +11,9 @@ Note that neither are required, but knowing they are there and how they are used
 Whenever the equality validation provided by operation like xref:basic-testing.adoc#then_events[`events(...)`] or xref:basic-testing.adoc#then_commands[`commands(...)`] do not cover your scenario well enough, you can use the match-based methods provided on the test fixture.
 These matcher-based then-phase operations come in two flows:
 
-1. Then-satisfies - Lambda-based verification providing the message(s) to assert, like xref:basic-testing.adoc#then_event_satisfies[`eventsSatisfy(...)`] and xref:basic-testing.adoc#then_command_satisfies[`commandsSatisfy(...)`].
+1. Then-satisfies - Lambda-based verification providing the messages to assert, like xref:basic-testing.adoc#then_event_satisfies[`eventsSatisfy(...)`] and xref:basic-testing.adoc#then_command_satisfies[`commandsSatisfy(...)`].
 Captures thrown `AssertionErrors` by the lambda to conclude the verification outcome.
-2. Then-matches - Predicate-based verification providing the message(s) to assert, like xref:basic-testing.adoc#then_event_matches[`eventsMatch(...)`] and xref:basic-testing.adoc#then_command_matches[`commandsMatch(...)`].
+2. Then-matches - Predicate-based verification providing the messages to assert, like xref:basic-testing.adoc#then_event_matches[`eventsMatch(...)`] and xref:basic-testing.adoc#then_command_matches[`commandsMatch(...)`].
 Uses the returned boolean to conclude the verification outcome.
 
 You are able to taking a number of courses for verification as both then-satisfies and then-matches are lambda-based.
@@ -138,7 +138,7 @@ class AccountTest {
 ======
 
 [#field_filters]
-== Field Filters
+== Field filters
 
 Field filters control which fields are included in this comparison, allowing you to ignore non-deterministic fields like timestamps and UUIDs.
 To explain the benefits of field filters, let us look at the following example event:

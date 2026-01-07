@@ -10,7 +10,7 @@ You will learn about event tags and the `TagResolver` for attaching metadata to 
 Finally, the chapter covers consistency markers, which ensure write conflict detection when working with tag-based event groupings.
 
 [#dynamic_consistency_boundaries_dcb]
-== Dynamic Consistency Boundaries (DCB)
+== Dynamic consistency boundary
 
 The Dynamic Consistency Boundary, or DCB for short, allows for a flexible boundary to _what_ should be appended
 _consistently_ with other existing event streams in the event store.
@@ -20,7 +20,7 @@ Note that tags are plural.
 As such, an event is no longer either attached to zero or one aggregate/entity, but potentially **several** due to DCB.
 
 This shift provides great flexibility in deriving models, as there is no longer a hard boundary around, for example, an aggregate stream.
-It allows users to depend on N-"aggregate" streams in one sourcing operation, allowing commands to span a more complete view of the task at hand.
+It allows users to depend on N-"aggregate" streams in one sourcing operation, allowing commands to span a complete view of the task at hand.
 
 To not overencumber the sourcing operation of an `EventStore`, not only tags, but also (event) "types" are used when reading events.
 The types act as a filter on the entity streams that matches the tags.
@@ -92,7 +92,7 @@ This example shows use of the `Tag#of(String, String)` operation, clarifying Axo
 Note that this will require you to write an if-block for every type of or set of events to be able to deduce an actual tag.
 
 [#event_criteria]
-== Event Criteria
+== Event criteria
 
 Where <<tags,tags>> form the basis for an event query, these tags need to be combined in the right order to come to an actual criteria.
 This is the job of the event criteria, or `EventCriteria`, in Axon.
@@ -111,7 +111,7 @@ public EventCriteria createCriteriaFor(OrderPlacedEvent event) {
 ----
 
 It is the `EventCriteria` that allows you to define "slices" of an otherwise potentially large entity.
-Events that (although part of the entity's stream) don't influence the decision-making process, can be omitted when sourcing an entity.
+Events that (although part of the entity's stream) don't influence the decision-making, can be omitted when sourcing an entity.
 
 In most cases, Axon can construct an `EventCriteria` for you automatically:
 
@@ -203,7 +203,7 @@ public class CustomCriteriaResolver implements CriteriaResolver<SubscriptionId> 
 ----
 
 [#conditions]
-== Append, Source, and Stream Conditions
+== Append, source, and stream conditions
 
 While <<event_criteria,event criteria>> define _what_ events to match, conditions wrap this criteria with additional context for specific event store operations.
 Axon provides three condition types, each tailored for a different operation:
@@ -247,5 +247,5 @@ As such, it tracks the logical grouping of sourced events.
 When appending events with tags, thus as part of a sourced entity, Axon automatically attaches this consistency marker to the <<conditions,append condition>>.
 In doing so, we prevent write conflicts, ensuring that concurrent writes to the same logical boundary are detected and handled appropriately.
 
-As with many components in this chapter, the chance is very slim you will need to interact with the `ConsistencyMarker` directly.
+As with many components in this chapter, the chance is slim you will need to interact with the `ConsistencyMarker` directly.
 However, being aware of the internals could just be what you are searching for.

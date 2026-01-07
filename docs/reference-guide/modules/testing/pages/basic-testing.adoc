@@ -311,7 +311,7 @@ Note that you can either use the `events(...)` method with several events, or in
 [#given_commands]
 ==== Given commands
 
-Besides <<given_events,given events>>, you are able to derive the initial state based on command(s) as well.
+Besides <<given_events,given events>>, you are able to derive the initial state based on commands as well.
 This is useful when you want to test the full command handling flow, or our setup needs both command validation and event generation.
 The examples below show the provide operations you can use for this:
 
@@ -550,7 +550,7 @@ class AccountTest {
 [#when_events]
 ==== When publishing events
 
-Besides <<when_commands,when commands>>, you are able to trigger the test based on event(s) as well.
+Besides <<when_commands,when commands>>, you are able to trigger the test based on events as well.
 This is useful when you want to directly test your event handlers or simulate triggered events from an external system).
 The examples below show the provide operations you can use for this:
 
@@ -1421,10 +1421,10 @@ Like being able to reuse the previous test's state, validating a sequence of ope
 == Example test scenarios
 
 Besides the specific examples spread throughout the explanation of the different <<test_phases,phases>>, there are coarse grained examples that you can benefit from.
-To that end, the list below shows some more complete tests for <<testing_command_handling_components,command handling components>>, <<testing_event_handling_components,event handling components>>, <<testing_event_sourced_entities,event-sourced entities>>, and testing <<testing_query_handling_components,query handling components>>.
+To that end, the list below shows some tests for <<testing_command_handling_components,command handling components>>, <<testing_event_handling_components,event handling components>>, <<testing_event_sourced_entities,event-sourced entities>>, and testing <<testing_query_handling_components,query handling components>>.
 
 [#testing_command_handling_components]
-=== Example: Testing a Stateful Command Handling Component
+=== Example: Testing a stateful command handling component
 
 In this test, the user decided to have a Command Handling Component called the `AccountCommandHandler` for which the state is automatically injected in the command handlers.
 The state, which is the event-sourced `Account`, is registered separately with the configurer in this example.
@@ -1502,7 +1502,7 @@ class AccountCommandHandlerTest {
 ----
 
 [#testing_event_handling_components]
-=== Example: Testing an Event Handling Component
+=== Example: Testing an event handling component
 
 Here is an example test scenario how an Event Handling Component sends emails as a result of handling an event. Take note of the use of <<then_await,await>>, which mandatory to give the xref:events:event-processors/index.adoc[event processor] time to actually process the event.
 
@@ -1578,9 +1578,9 @@ class NotificationEventHandlerTest {
 ----
 
 [#testing_event_sourced_entities]
-=== Example: Testing an Event-sourced Entity with command handler
+=== Example: Testing an event-sourced entity with command handler
 
-In this test example, the developer(s) decided to combine the command handler with the event-sourced entity in one object.
+In this test example, the developers decided to combine the command handler with the event-sourced entity in one object.
 Furthermore, the test runs through the complete lifecycle of an account in one go using the fixture's <<chaining_tests,chaining>> capabilities:
 
 [source,java]
@@ -1641,7 +1641,7 @@ class AccountEntityTest {
 ----
 
 [#testing_query_handling_components]
-=== Example: Testing a Query Handling Component
+=== Example: Testing a query handling component
 
 As the test fixtures (not yet) support query validation, this scenario uses the `expect(...)` operation to fully customize the <<then_phase,then-phase>> to their purposes:
 

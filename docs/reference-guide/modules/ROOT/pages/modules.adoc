@@ -33,7 +33,7 @@ ____
 |<<Axon conversion>>            |`axon-conersion`                |`org.axonframework`       |https://central.sonatype.com/search?q=a:axon-conversion[available]
 |<<Axon messaging>>             |`axon-messaging`                |`org.axonframework`       |https://central.sonatype.com/search?q=a:axon-messaging[available]
 |<<Axon modelling>>             |`axon-modelling`                |`org.axonframework`       |https://central.sonatype.com/search?q=a:axon-modelling[available]
-|<<Axon event sourcing>>        |`axon-eventsourcing`            |`org.axonframework`       |https://central.sonatype.com/search?q=a:axon-eventsourcing[available]
+|<<Axon Event Sourcing>>        |`axon-eventsourcing`            |`org.axonframework`       |https://central.sonatype.com/search?q=a:axon-eventsourcing[available]
 |<<Axon test>>                  |`axon-test`                     |`org.axonframework`       |https://central.sonatype.com/search?q=a:axon-test[available]
 |<<Axon Server connector>>      |`axon-server-connector`         |`org.axonframework`       |https://central.sonatype.com/search?q=a:axon-server-connector[available]
 |<<Axon update>>                |`axon-update`                   |`org.axonframework`       |https://central.sonatype.com/search?q=a:axon-update[available]
@@ -50,15 +50,15 @@ This module provides the conversion interfaces and implementations, used to (for
 
 === Axon messaging
 
-This module contains all necessary components and building blocks to support command, event and query messaging.
+This module contains all necessary components and building blocks to support command, event, and query messaging.
 
 === Axon modelling
 
 This module contains the necessary components to create domain models and entities.
 
-=== Axon event sourcing
+=== Axon Event Sourcing
 
-This module contains all necessary infrastructure components to support Event Sourcing, Command and Query Models.
+This module contains all necessary infrastructure components to support Event Sourcing, Command Models, and Query Models.
 
 === Axon test
 

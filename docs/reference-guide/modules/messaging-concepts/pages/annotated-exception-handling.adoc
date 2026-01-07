@@ -1,4 +1,4 @@
-= Annotated exception handling
+= Annotated Exception Handling
 
 [WARNING]
 ====
@@ -11,4 +11,4 @@ Axon Framework allows the use of methods annotated with `@ExceptionHandler` to p
 More specifically, this is a type of xref:message-intercepting.adoc[message handler interceptor] dedicated to reacting to exceptional results.
 
 Note that an `@ExceptionHandler` will only handle exceptions thrown from message handling functions in the same class.
-For more specifics on how to use this annotation, check out xref:message-intercepting.adoc#ExceptionHandler[this] section.
+For more specifics on how to use this annotation, check out xref:exception-handling.adoc[this] chapter.

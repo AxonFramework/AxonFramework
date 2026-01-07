@@ -196,7 +196,7 @@ public CompletableFuture<Void> publishEvent() {
 ====
 
 [#low_level_event_publication]
-== Event Sink, Bus, and Store: Low-level event publication
+== Event sink, bus, and store: Low-level event publication
 
 For advanced use cases, Axon Framework provides lower-level components for event publication: the `EventSink`, `EventBus`, and `EventStore`.
 These components give you more control over the event publication process, but require more manual handling.

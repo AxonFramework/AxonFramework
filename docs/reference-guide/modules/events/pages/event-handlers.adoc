@@ -164,7 +164,7 @@ For complete details on event processor configuration and assigning handlers to 
 ====
 
 [[annotated_event_handler_name_resolution]]
-=== Annotated Event Handler name resolution
+=== Annotated event handler name resolution
 
 `@EventHandler` annotated methods can specify which event they handle in two ways.
 
@@ -252,7 +252,7 @@ public class OrderEventHandler {
 In this example, when an `OrderPlacedEvent` is published, **both** the `on()` and `logOrderPlaced()` methods will be invoked.
 
 [[event_handler_return_values]]
-== Event Handler return values
+== Event handler return values
 
 Event handlers through their nature cannot have a concrete return object.
 This stems from the fact that an event handler can handle events from 5 minutes ago, 5 days ago, or 5 years ago.

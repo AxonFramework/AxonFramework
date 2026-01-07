@@ -51,11 +51,11 @@ To configure a Subscribing Event Processor you have roughly two approaches:
 1. <<declarative_config_plain,Declarative configuration>>
 2. <<autodetected_config_spring_properties_plain,Autodetected configuration>>, like Spring
 
-Both solutions have examples drafted below, showing how to configure the "my-processor" with a specific event source.
+Both solutions have examples drafted below, showing how to configure the "example-processor" with a specific event source.
 For generic configuration options for any Event Processor, we refer to the xref:event-processors/index.adoc#general_processor_configuration[general processor configuration section].
 
 [#declarative_config_plain]
-=== Declarative Configuration
+=== Declarative configuration
 
 When using Axon's configuration API, you should invoke the `MessagingConfigurer#eventProcessing(Consumer<EventProcessingConfigurer>)` operation.
 The `EventProcessingConfigurer` lambda guides users towards:
@@ -84,7 +84,7 @@ public class AxonConfig {
             SubscribingEventProcessorsConfigurer subscribingConfigurer
     ) {
         return subscribingConfigurer.processor(
-                "my-processor",
+                "example-processor",
                 config -> config.eventHandlingComponents(this::configureHandlingComponent)
                                 .customized((c, subscribingConfig) -> subscribingConfig.eventSource(
                                         c.getComponent(EventBus.class)
@@ -108,16 +108,16 @@ If more flexibility is required, like concretely defining the event handling com
 
 [source,text]
 ----
-axon.eventhandling.processors.my-processor.mode=subscribing
-axon.eventhandling.processors.my-processor.source=eventBus
+axon.eventhandling.processors.example-processor.mode=subscribing
+axon.eventhandling.processors.example-processor.source=eventBus
 ----
 
 If the name of an event processor contains periods `.`, use the map notation:
 
 [source,text]
 ----
-axon.eventhandling.processors[my.processor].mode=subscribing
-axon.eventhandling.processors[my.processor].source=eventBus
+axon.eventhandling.processors[example.processor].mode=subscribing
+axon.eventhandling.processors[example.processor].source=eventBus
 ----
 
 [[error-mode]]
@@ -195,7 +195,7 @@ This may be `PropertySequencingPolicy` to specify an expression for another payl
 In this case add the serialization type, payload type, expression and fallback policy parameters for the alternative payload type.
 
 [#declarative_config_persistent]
-==== Declarative Configuration
+==== Declarative configuration
 
 [source,java]
 ----
@@ -223,7 +223,7 @@ public class AxonConfig {
             SubscribingEventProcessorsConfigurer subscribingConfigurer
     ) {
         return subscribingConfigurer.processor(
-                "my-processor",
+                "example-processor",
                 config -> config.eventHandlingComponents(this::configureHandlingComponent)
                                 .customized((c, subscribingConfig) -> subscribingConfig.eventSource(
                                         constructPersistentStream(c)
@@ -232,7 +232,7 @@ public class AxonConfig {
     }
 
     public PersistentStreamMessageSource constructPersistentStream(Configuration configuration) {
-        String streamName = "my-persistent-stream-name";
+        String streamName = "example-persistent-stream-name";
         int segmentCount = 4;
         // Not required for sequential per aggregate policy.
         // See PersistentStreamSequencingPolicyProvider JavaDoc for other policies.
@@ -278,10 +278,10 @@ This bean can also be defined in the properties file.
 
 [source,text]
 ----
-axon.eventhandling.processors.my-processor.mode=subscribing
-axon.eventhandling.processors.my-processor.source=my-persistent-stream
+axon.eventhandling.processors.example-processor.mode=subscribing
+axon.eventhandling.processors.example-processor.source=example-persistent-stream
 
-axon.axonserver.persistent-streams.my-persistent-stream.name=My Persistent Stream
-axon.axonserver.persistent-streams.my-persistent-stream.batch-size=100
-axon.axonserver.persistent-streams.my-persistent-stream.initial-segment-count=4
+axon.axonserver.persistent-streams.example-persistent-stream.name=Example Persistent Stream
+axon.axonserver.persistent-streams.example-persistent-stream.batch-size=100
+axon.axonserver.persistent-streams.example-persistent-stream.initial-segment-count=4
 ----
