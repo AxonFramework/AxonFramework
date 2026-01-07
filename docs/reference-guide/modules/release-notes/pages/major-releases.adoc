@@ -637,7 +637,6 @@ For a full list of all the feature request and enhancements done for release 4.4
 
 * Various test fixture improvements have been made, such as options to register a `HandlerEnhancerDefinition`, a `ParameterResolverFactory` and a `ListenerInvocationErrorHandler`.
  Additional validations have been added too, revolving around asserting scheduled events and deadline message.
- The xref:axon-framework-reference:testing:commands-events.adoc[Test Fixture] page has been updated to define these new operations accordingly.
 
 * The `TrackingEventProcessor#processingStatus` method as of 4.3 exposes more status information.
  The current token position, token-at-reset, is-merging and merge-completed position have been added to the set.
