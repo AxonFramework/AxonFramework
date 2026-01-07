@@ -30,6 +30,7 @@ import org.axonframework.eventhandling.tokenstore.UnableToRetrieveIdentifierExce
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
+import org.hibernate.LockMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -335,8 +336,10 @@ public class JpaTokenStore implements TokenStore {
      * @param segment       the segment of the processor to load or insert a token entry for
      */
     private void validateSegment(String processorName, Segment segment, EntityManager entityManager) {
-        TokenEntry mergeableSegment = entityManager //This segment should exist
-                .find(TokenEntry.class, new TokenEntry.PK(processorName, segment.mergeableSegmentId()), loadingLockMode);
+        // This segment should exist
+        TokenEntry mergeableSegment = entityManager.find(
+                TokenEntry.class, new TokenEntry.PK(processorName, segment.mergeableSegmentId()), LockModeType.NONE
+        );
         if (mergeableSegment == null) {
             throw new UnableToClaimTokenException(format("Unable to claim token '%s[%s]'. It has been merged with another segment",
                                                          processorName, segment.getSegmentId()));
