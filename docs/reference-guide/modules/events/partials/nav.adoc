@@ -1,7 +1,7 @@
 
 * xref:events:index.adoc[]
 ** xref:events:event-handlers.adoc[]
-** xref:events:event-dispatchers.adoc[]
+** xref:events:event-publishing.adoc[]
 ** xref:events:event-processors/index.adoc[]
 *** xref:events:event-processors/subscribing.adoc[]
 *** xref:events:event-processors/streaming.adoc[]

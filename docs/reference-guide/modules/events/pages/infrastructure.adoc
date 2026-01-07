@@ -26,7 +26,7 @@ For more details on event stores specifically, see the xref:events:event-store-i
 The event gateway provides a convenient API for publishing events.
 While you can publish events directly through the event bus and event store, the gateway is generally the easiest option.
 Axon Framework constructs an `EventGateway` component for you out of the box, retrievable from the configuration.
-For more details on how to publish events with the event gateway, read the following xref:event-dispatchers.adoc#dispatching_events_from_a_non_entity[section].
+For more details on how to publish events with the event gateway, read the following xref:event-publishing.adoc#event_gateway[section].
 
 [#event_appender]
 == Event appender
@@ -35,7 +35,7 @@ The `EventAppender` is the preferred way to append events from within message ha
 Events appended through the `EventAppender` are published when the processing context commits.
 This, for example, ensure they are part of the same transactional boundary as the command being handled.
 Axon Framework constructs and injects a unique `EventAppender` for every message handling task, as those resemble the processing context scope.
-For more details on how to publish events with an `EventAppender`, read the following xref:event-dispatchers.adoc#dispatching_events_from_an_entity[section].
+For more details on how to publish events with an `EventAppender`, read the following xref:event-publishing.adoc#event_appender[section].
 
 [#event_bus]
 == Event bus
