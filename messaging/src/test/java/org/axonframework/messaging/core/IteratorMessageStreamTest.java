@@ -17,6 +17,8 @@
 package org.axonframework.messaging.core;
 
 import org.junit.jupiter.api.*;
+import org.junit.platform.commons.util.*;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
