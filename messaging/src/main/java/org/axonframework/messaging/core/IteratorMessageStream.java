@@ -33,6 +33,7 @@ class IteratorMessageStream<M extends Message> extends AbstractMessageStream<M> 
 
     private final Iterator<? extends Entry<M>> source;
     private Entry<M> peeked = null;
+    private Throwable error = null;
 
     /**
      * Constructs a {@link MessageStream stream} using the given {@code source} to provide the {@link Entry entries}.
@@ -77,11 +78,6 @@ class IteratorMessageStream<M extends Message> extends AbstractMessageStream<M> 
     }
 
     @Override
-    public boolean isCompleted() {
-        return super.isCompleted();
-    }
-
-    @Override
     public boolean hasNextAvailable() {
         boolean hasNext = error().isEmpty() && (peeked != null || source.hasNext());
         if (!hasNext && error().isEmpty()) {
@@ -92,6 +88,5 @@ class IteratorMessageStream<M extends Message> extends AbstractMessageStream<M> 
 
     @Override
     public void close() {
-        //complete();
     }
 }
