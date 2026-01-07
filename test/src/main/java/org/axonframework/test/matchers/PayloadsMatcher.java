@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,18 +25,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Matches a list of Messages if the list of their payloads matches the given matcher..
+ * Matches a list of Messages if the list of their payloads matches the given matcher.
  *
  * @author Allard Buijze
  * @since 2.0
  */
-public class PayloadsMatcher extends BaseMatcher<List<Message>> {
+public class PayloadsMatcher extends BaseMatcher<List<? extends Message>> {
+
     private final Matcher<? extends Iterable<?>> matcher;
 
     /**
      * Constructs an instance that uses the given {@code matcher} to match the payloads.
      *
-     * @param matcher             The matcher to match the payloads with
+     * @param matcher The matcher to match the payloads with.
      */
     public PayloadsMatcher(Matcher<? extends Iterable<?>> matcher) {
         this.matcher = matcher;
