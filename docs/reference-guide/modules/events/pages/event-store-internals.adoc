@@ -9,6 +9,7 @@ It explains Dynamic Consistency Boundaries (DCB), a flexible approach to organiz
 You will learn about event tags and the `TagResolver` for attaching metadata to events, as well as `EventCriteria` and the `CriteriaResolver` for querying events based on those tags.
 Finally, the chapter covers consistency markers, which ensure write conflict detection when working with tag-based event groupings.
 
+[#dynamic_consistency_boundaries_dcb]
 == Dynamic Consistency Boundaries (DCB)
 
 The Dynamic Consistency Boundary, or DCB for short, allows for a flexible boundary to _what_ should be appended
