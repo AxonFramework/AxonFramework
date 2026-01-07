@@ -33,6 +33,7 @@ class IteratorMessageStream<M extends Message> implements MessageStream<M> {
 
     private final Iterator<? extends Entry<M>> source;
     private Entry<M> peeked = null;
+    private Throwable error = null;
 
     /**
      * Constructs a {@link MessageStream stream} using the given {@code source} to provide the {@link Entry entries}.
@@ -45,6 +46,9 @@ class IteratorMessageStream<M extends Message> implements MessageStream<M> {
 
     @Override
     public Optional<Entry<M>> next() {
+        if (error != null) {
+            return Optional.empty();
+        }
         if (peeked != null) {
             Entry<M> result = peeked;
             peeked = null;
@@ -71,26 +75,29 @@ class IteratorMessageStream<M extends Message> implements MessageStream<M> {
 
     @Override
     public void setCallback(@Nonnull Runnable callback) {
-        callback.run();
+        try {
+            callback.run();
+        } catch (Throwable e) {
+            error = e;
+        }
     }
 
     @Override
     public Optional<Throwable> error() {
-        return Optional.empty();
+        return Optional.ofNullable(error);
     }
 
     @Override
     public boolean isCompleted() {
-        return peeked == null && !source.hasNext();
+        return (peeked == null && !source.hasNext()) || error != null;
     }
 
     @Override
     public boolean hasNextAvailable() {
-        return peeked != null || source.hasNext();
+        return (peeked != null || source.hasNext()) && error == null;
     }
 
     @Override
     public void close() {
     }
-
 }
