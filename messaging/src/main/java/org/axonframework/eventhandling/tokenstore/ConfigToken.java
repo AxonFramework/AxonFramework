@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,6 +83,11 @@ public class ConfigToken implements TrackingToken, Serializable {
 
     @Override
     public boolean covers(TrackingToken other) {
+        throw new UnsupportedOperationException("ConfigTokens don't support comparing to other tokens");
+    }
+
+    @Override
+    public boolean samePositionAs(TrackingToken other) {
         throw new UnsupportedOperationException("ConfigTokens don't support comparing to other tokens");
     }
 

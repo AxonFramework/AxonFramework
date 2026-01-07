@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,6 +66,24 @@ public interface TrackingToken {
      */
     default OptionalLong position() {
         return OptionalLong.empty();
+    }
+
+    /**
+     * Indicates whether {@code this} token is at the exact same spot in the event stream as the {@code other} token.
+     * <p>
+     * This method is particularly useful when comparing tokens from different points in time, such as during
+     * replay detection, where token implementations may naturally differ.
+     * <p>
+     * By default, this method checks bidirectional coverage: {@code this.covers(other) && other.covers(this)},
+     * which ensures both tokens are at the same position.
+     *
+     * @param other The token to validate against {@code this} token.
+     * @return {@code true} if this token is at the same location as the other token, otherwise {@code false}.
+     * @see #covers(TrackingToken)
+     * @since 4.12.3
+     */
+    default boolean samePositionAs(TrackingToken other) {
+        return other != null && covers(other) && other.covers(this);
     }
 
 }
