@@ -314,20 +314,11 @@ public interface AxonTestPhase {
          * Allows running custom setup steps (other than executing messages) on any component retrievable from the
          * {@link Configuration}.
          *
-         * @param function The function to execute on the configuration.
-         * @return The current Given instance, for fluent interfacing.
-         */
-        Given execute(@Nonnull Function<Configuration, ?> function);
-
-        /**
-         * Allows running custom setup steps (other than executing messages) on any component retrievable from the
-         * {@link Configuration}.
-         *
          * @param consumer The consumer to execute on the configuration.
          * @return The current Given instance, for fluent interfacing.
          */
         default Given execute(@Nonnull Consumer<Configuration> consumer) {
-            return execute((Function<Configuration, ?>) config -> {
+            return executeAsync(config -> {
                 consumer.accept(config);
                 return FutureUtils.emptyCompletedFuture();
             });
