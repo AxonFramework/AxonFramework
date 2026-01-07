@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package org.axonframework.test.matchers;
 
 import org.axonframework.messaging.commandhandling.CommandMessage;
-import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.eventhandling.EventMessage;
 import org.hamcrest.Matcher;
 
 import java.util.List;
@@ -33,23 +33,24 @@ import java.util.function.Predicate;
 public abstract class Matchers {
 
     /**
-     * Matches a list of Messages if a list containing their respective payloads matches the given
+     * Matches a list of {@link Message} if a list containing their respective payloads matches the given
      * {@code matcher}.
      *
-     * @param matcher The mather to match against the Message payloads
-     * @return a Matcher that matches against the Message payloads
+     * @param matcher The matcher to match against the {@link Message} payloads.
+     * @return A Matcher that matches against the {@link Message} payloads.
      */
-    public static Matcher<List<Message>> payloadsMatching(final Matcher<? extends List<?>> matcher) {
+    public static Matcher<List<? extends Message>> payloadsMatching(final Matcher<? extends List<?>> matcher) {
         return new PayloadsMatcher(matcher);
     }
 
     /**
-     * Matches a single Message if the given {@code payloadMatcher} matches that message's payload.
+     * Matches a single {@link Message} if the given {@code payloadMatcher} matches that message's payload.
      *
-     * @param payloadMatcher The matcher to match against the Message's payload
+     * @param payloadMatcher The matcher to match against the Message's payload.
+     * @param <T>            The generic type of {@link Message} matched on by the resulting payload matcher.
      * @return a Matcher that evaluates a Message's payload.
      */
-    public static Matcher<Message> messageWithPayload(Matcher<?> payloadMatcher) {
+    public static <T extends Message> Matcher<T> messageWithPayload(Matcher<?> payloadMatcher) {
         return new PayloadMatcher<>(payloadMatcher);
     }
 
