@@ -3,6 +3,7 @@
 
 Any patch release made for an Axon project is tailored towards resolving bugs. This page aims to provide a dedicated overview of patch releases per project.
 
+[#release_5_0]
 == Release 5.0
 
 === Release 5.0.1

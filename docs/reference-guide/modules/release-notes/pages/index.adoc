@@ -9,6 +9,6 @@ You can switch the documentation to other major version on the right side of the
 |===
 |Release Type |Version
 
-|**Major** |xref:major-releases.adoc#_release_5_0[5.0]
-|**Minor** |xref:minor-releases.adoc#_release_5_0[5.0]
+|**Major** |xref:major-releases.adoc#release_5_0[5.0]
+|**Minor** |xref:minor-releases.adoc#release_5_0[5.0]
 |===

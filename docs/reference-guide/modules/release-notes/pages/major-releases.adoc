@@ -3,6 +3,7 @@
 
 All the enhancements and features which have been introduced to our major releases of the Axon Framework are noted here.
 
+[#release_5_0]
 == Release 5.0
 
 Axon Framework 5 is finally here!
