@@ -53,9 +53,7 @@ If the Axon Server connector is on the classpath, Axon will automatically connec
 You can disable Axon Server integration by setting `axon.axonserver.enabled=false` in your application properties.
 
 **JPA fallback**::
-If Axon Server is not available or disabled, Axon will use JPA-based implementations for:
-* Event storage (using a relational database)
-* Token storage for event processors
+If Axon Server is not available or disabled, Axon will use JPA-based implementations for Event storage.
 
 **Extension-based implementations**::
 Other extensions can provide additional implementations:
