@@ -9,7 +9,7 @@ However, they also ensure that xref:messaging-concepts:message-correlation.adoc[
 Event processors have event handling components.
 Event handling components, in turn, have event handlers.
 Each event handling component belongs to a single event processor.
-The event processor manages all aspects of event processing including threading, <<error-handling,error handling>>, xref:event-processors/streaming.adoc#sequential-processing[sequencing], and transaction management.
+The event processor manages all aspects of event processing including threading, <<error-handling,error handling>>, xref:event-processors/streaming.adoc#sequential_processing[sequencing], and transaction management.
 
 Event processors come in roughly two forms: xref:event-processors/subscribing.adoc[Subscribing] and xref:event-processors/streaming.adoc[Streaming].
 
