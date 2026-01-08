@@ -1127,17 +1127,17 @@ To change the number of segments at runtime, the _split and merge_ operations sh
 Splitting and merging allow you to control the number of segments dynamically.
 There are roughly three approaches to do this.
 
-==== 1. Axoniq Platform
+==== Axoniq Platform
 
 Through xref:axoniq-platform-reference:ROOT:index.adoc[Axoniq Platform]'s processor detail page, where you can scale the segments manually, or configure your segments to scale automatically with the number of your application's replicas.
 It's the easiest to set up and use.
 
-==== 2. Axon Server
+==== Axon Server
 
 The xref:axon-server-reference:ROOT:index.adoc[Axon Server] Dashboard contains split and merge buttons to adjust the number of segments.
 While it's straightforward to use as well, it does not support automatic scaling based on the number of replicas.
 
-==== 3. Manual programming
+==== Manual programming
 
 If none of the other two options are available, you can adjust the number of segments through the Axon Framework API.
 The `StreamingEventProcessor` exposes the `splitSegment(int segmentId)` and `mergeSegment(int segmentId)` methods.
