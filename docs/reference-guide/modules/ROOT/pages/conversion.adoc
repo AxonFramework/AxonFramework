@@ -106,7 +106,7 @@ It provides methods to:
 * Check if conversion between two types is possible (`canConvert`)
 * Convert an object from one type to another (`convert`)
 
-Implementations like `JacksonConverter` and `AvroConverter`, as described in more detail in the <<converter_implementations,Converter implementations>> section, handle the actual conversion logic. We call this instance the general converter, is it is generally used for all non-`Message` components.
+Implementations as described in more detail in the <<converter_implementations,Converter implementations>> section handle the actual conversion logic. We call this instance the general converter, is it is generally used for all non-`Message` components.
 
 [#message_converter]
 === Message converter
@@ -319,6 +319,7 @@ class AxonConfig {
 ----
 
 **Note:** If you don't explicitly configure converters, Axon Framework automatically registers:
+
 * A `JacksonConverter` as the default `Converter`
 * A `DelegatingMessageConverter` wrapping the `Converter`
 * A `DelegatingEventConverter` wrapping the `MessageConverter`
@@ -369,7 +370,7 @@ axon.converter.events=jackson
 # Possible values: 'default', 'java', 'jackson'
 # 'avro' can be used for 'events' and 'messages' only
 axon:
-  serializer:
+  converter:
     general: jackson
     events: jackson
     messages: jackson
