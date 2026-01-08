@@ -19,6 +19,7 @@ package org.axonframework.common.configuration;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.Assert;
+import org.axonframework.common.annotation.DontCopyToChildRegistry;
 import org.axonframework.common.configuration.Component.Identifier;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.slf4j.Logger;
@@ -26,6 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -41,6 +43,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.function.Predicate.not;
+import static org.axonframework.common.annotation.AnnotationUtils.isTypeAnnotatedWith;
 
 /**
  * Default implementation of the {@link ComponentRegistry} allowing for reuse of {@link Component},
@@ -78,12 +82,41 @@ public class DefaultComponentRegistry implements ComponentRegistry {
      * @return A clone of the original.
      */
     DefaultComponentRegistry copyWithDecoratorsAndEnhancers() {
+        return create(
+                this.enhancers.values(),
+                this.disabledEnhancers,
+                this.decoratorDefinitions
+        );
+    }
+
+    /**
+     * Creates a new registry. This will include the provided enhancers, disabled enhancers and decorator definitions
+     * except those annotated with {@link DontCopyToChildRegistry}. The enhancerScanning flag is set to false.
+     *
+     * @param enhancers            The list of enhancers to copy.
+     * @param disabledEnhancers    The list of disabled enhancer types to copy.
+     * @param decoratorDefinitions The list of decorator definitions to copy.
+     * @return A new default component registry.
+     */
+    public static DefaultComponentRegistry create(
+            @Nonnull Collection<ConfigurationEnhancer> enhancers,
+            @Nonnull Collection<Class<? extends ConfigurationEnhancer>> disabledEnhancers,
+            @Nonnull Collection<DecoratorDefinition.CompletedDecoratorDefinition<?, ?>> decoratorDefinitions) {
         var registry = new DefaultComponentRegistry().disableEnhancerScanning();
-        registry.enhancers.putAll(this.enhancers);
-        registry.disabledEnhancers.addAll(this.disabledEnhancers);
-        registry.decoratorDefinitions.addAll(this.decoratorDefinitions);
+        enhancers.stream()
+                 .filter(not(isTypeAnnotatedWith(DontCopyToChildRegistry.class)))
+                 .forEach(registry::registerEnhancer);
+        disabledEnhancers
+                .stream()
+                .filter(not(isTypeAnnotatedWith(DontCopyToChildRegistry.class)))
+                .forEach(registry::disableEnhancer);
+        decoratorDefinitions
+                .stream()
+                .filter(not(isTypeAnnotatedWith(DontCopyToChildRegistry.class)))
+                .forEach(registry::registerDecorator);
         return registry;
     }
+
 
     @Override
     public <C> ComponentRegistry registerComponent(@Nonnull ComponentDefinition<? extends C> definition) {

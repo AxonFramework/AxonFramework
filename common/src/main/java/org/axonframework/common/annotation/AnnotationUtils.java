@@ -28,6 +28,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * Utility class for locating annotation and attribute values on elements.
@@ -312,6 +313,15 @@ public final class AnnotationUtils {
         }
 
         return hasSubjectAnnotation;
+    }
+
+    /**
+     * Returns a predicate testing if a type of the given instance is annotated with provided annotation type.
+     * @param annotationType An annotated type to check for.
+     * @return The predicate.
+     */
+    public static Predicate<Object> isTypeAnnotatedWith(Class<? extends Annotation> annotationType) {
+        return instance -> isAnnotationPresent(instance.getClass(), annotationType);
     }
 
     private AnnotationUtils() {

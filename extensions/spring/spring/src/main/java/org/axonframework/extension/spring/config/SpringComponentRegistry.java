@@ -70,6 +70,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
+import static org.axonframework.common.configuration.DefaultComponentRegistry.create;
+
 /**
  * A {@link ComponentRegistry} implementation that connects into Spring's ecosystem by means of being a
  * {@link BeanPostProcessor}, {@link BeanFactoryPostProcessor}, and {@link InitializingBean}.
@@ -117,20 +119,19 @@ public class SpringComponentRegistry implements
     private ConfigurableListableBeanFactory beanFactory;
 
     /**
-     * Creates a clone of this registry from existing registry. The clone will include the same enhancers, disabled
-     * enhancers and decorator definitions as the original. The enhancerScanning flag is set to false.
+     * Creates a new default registry. This will include the same enhancers, disabled
+     * enhancers and decorator definitions as the original.
+     * The enhancerScanning flag is set to false.
      *
-     * @return a clone of the original.
+     * @return A new registry used for modules.
      */
     DefaultComponentRegistry copyWithDecoratorsAndEnhancers() {
-        var registry = new DefaultComponentRegistry();
-        this.enhancers.values().forEach(registry::registerEnhancer);
-        this.disabledEnhancers.forEach(registry::disableEnhancer);
-        this.decorators.forEach(registry::registerDecorator);
-        registry.disableEnhancerScanning();
-        return registry;
+        return create(
+                this.enhancers.values(),
+                this.disabledEnhancers,
+                this.decorators
+        );
     }
-
     /**
      * Constructs a {@code SpringComponentRegistry} with the given {@code listableBeanFactory}. The
      * {@code listableBeanFactory} is used to discover all beans of type {@link ConfigurationEnhancer}.
@@ -559,7 +560,7 @@ public class SpringComponentRegistry implements
     private void buildModules(Configuration configuration) {
         for (Module module : modules.values()) {
             var moduleRegistry = this.copyWithDecoratorsAndEnhancers();
-            var builtModule = HierarchicalLifecycleRegistry.build(
+            var builtModuleConfiguration = HierarchicalLifecycleRegistry.build(
                     lifecycleRegistry,
                     (childLifecycleRegistry) -> {
                         var local = moduleRegistry.createLocalConfiguration(configuration);
@@ -567,7 +568,7 @@ public class SpringComponentRegistry implements
                         return moduleRegistry.buildNested(moduleConfiguration, childLifecycleRegistry);
                     }
             );
-            moduleConfigurations.put(module.name(), builtModule);
+            moduleConfigurations.put(module.name(), builtModuleConfiguration);
         }
     }
 
