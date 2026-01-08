@@ -1,4 +1,5 @@
 = Advanced Testing
+:navtitle: Advanced Testing
 
 After having taken note of the xref:basic-testing.adoc[basic test] flow and the use of xref:matchers-and-field-filters.adoc[matchers and field filters], it's worth to investigate more advanced testing scenarios.
 This page covers those advanced tests, discussing <<integration_testing,integration tests>>, <<testing-with-spring-boot,testing with spring boot>>, and <<testing-with-axon-server-testcontainer,testing with Testcontainers>> to name a few.

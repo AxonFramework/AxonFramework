@@ -1,4 +1,5 @@
 = Message Tracking
+:navtitle: Message Tracking
 
 Tracking messages in your system can be useful to analyze what the cause of a message was.
 There are several ways to track messages in your system.

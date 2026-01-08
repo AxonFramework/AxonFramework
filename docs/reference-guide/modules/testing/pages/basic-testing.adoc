@@ -1,5 +1,6 @@
 = Basic Testing with AxonTestFixture
 [[basic_testing]]
+:navtitle: Basic Testing
 
 The `AxonTestFixture` is the main tool for testing Axon applications.
 It provides a fluent API for setting up test scenarios, executing actions, and verifying results using a clear Given-When-Then pattern.

@@ -37,9 +37,9 @@ This section covers the complete event handling capabilities:
 |===
 |Sub-Section |Purpose
 
-|xref:event-publishing.adoc[Event Dispatchers] |Publishing events using EventSink, EventAppender, and EventGateway
-|xref:event-handlers.adoc[Event Handlers] |Implementing event handlers with @EventHandler annotation
+|xref:event-publishing.adoc[Publishing] |Publishing events using EventSink, EventAppender, and EventGateway
+|xref:event-handlers.adoc[Handling] |Implementing event handlers with @EventHandler annotation
 |xref:event-processors/index.adoc[Event Processors] |Configuring and managing event processors (pooled streaming and subscribing)
-|xref:infrastructure.adoc[Event Infrastructure] |EventStore, Dynamic Consistency Boundaries, tags, and event storage
-|xref:event-versioning.adoc[Event Versioning] |Evolving event structures with payload conversion and upcasters
+|xref:infrastructure.adoc[Infrastructure] |EventStore, Dynamic Consistency Boundaries, tags, and event storage
+|xref:event-versioning.adoc[Versioning] |Evolving event structures with payload conversion and upcasters
 |===

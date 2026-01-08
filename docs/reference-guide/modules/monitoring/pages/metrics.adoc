@@ -1,4 +1,5 @@
 = Metrics
+:navtitle: Metrics
 
 Interesting metrics in a message centric system come in several forms and flavors, like count, capacity, and latency for example.
 Axon Framework allows you to retrieve such measurements through the use of the `axon-metrics` or `axon-micrometer` module.

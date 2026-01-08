@@ -1,4 +1,5 @@
 = Configuration
+:navtitle: Configuration
 
 This page describes the configuration of query handlers, query handling components, and query infrastructure components. Query handling components are objects (typically singletons) containing `@QueryHandler` annotated methods, which in turn are the query handlers. The query infrastructure includes the `QueryBus`, `QueryGateway`, and related components.
 

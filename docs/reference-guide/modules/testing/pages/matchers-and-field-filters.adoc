@@ -1,5 +1,6 @@
 [#matchers_and_field_filters]
 = Matchers and Field Filters
+:navtitle: Matchers and Field Filters
 
 When testing message handling, the fixture compares expected and actual messages using field-by-field equality.
 While the built-in assertions cover most scenarios, <<matchers,matchers>> and <<field_filters,field filters>> provide a more expressive test flow for the xref:basic-testing.adoc#then_phase[then-phase] of the `AxonTestFixture`.

@@ -1,4 +1,5 @@
 = Event Versioning
+:navtitle: Versioning
 
 In the lifecycle of an application, events _will_ typically change their format.
 As events are stored indefinitely, the application should be able to cope with several versions of an event.

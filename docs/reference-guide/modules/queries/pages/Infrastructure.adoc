@@ -1,4 +1,5 @@
-= Implementations
+= Infrastructure
+:navtitle: Infrastructure
 
 When it comes to dispatching queries, as explained in the xref:query-dispatchers.adoc[Dispatching queries] section, there are several implementations for actually sending query messages.
 The next sections provide an overview of the available implementations, as well as how to set up query dispatching infrastructure with Axon.

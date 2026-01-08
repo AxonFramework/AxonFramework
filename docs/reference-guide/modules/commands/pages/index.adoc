@@ -58,8 +58,8 @@ This section covers everything you need to work with commands in Axon Framework.
 |===
 |Sub-Section |Purpose
 
-|xref:command-handlers.adoc[Command handlers] |How to write command handlers (stateless and stateful, with and without entities)
-|xref:command-dispatchers.adoc[Command dispatchers] |How to dispatch commands from your application code
+|xref:command-handlers.adoc[Handling] |How to write command handlers (stateless and stateful, with and without entities)
+|xref:command-dispatchers.adoc[Dispatching] |How to dispatch commands from your application code
 |xref:infrastructure.adoc[Infrastructure] |Command bus implementations, repositories, and other infrastructure components
 |xref:configuration.adoc[Configuration] |How to configure command handling in your application
 
