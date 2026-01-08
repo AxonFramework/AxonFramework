@@ -25,7 +25,7 @@ import java.util.function.Consumer;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-class HierarchicalConfigurationTest {
+class HierarchicalLifecycleRegistryTest {
 
     @Test
     void childLifecycleHandlersReceiveModuleConfigurationInsteadOfParent() {
@@ -34,7 +34,7 @@ class HierarchicalConfigurationTest {
         var lifecycleRegistry = new StubLifecycleRegistry();
         var startHandlerCalled = new AtomicBoolean();
         var shutdownHandlerCalled = new AtomicBoolean();
-        Configuration configuration = HierarchicalConfiguration.build(
+        Configuration configuration = HierarchicalLifecycleRegistry.build(
                 lifecycleRegistry,
                 (childLifecycleRegistry) -> {
                     assertNotSame(lifecycleRegistry, childLifecycleRegistry);
@@ -66,7 +66,7 @@ class HierarchicalConfigurationTest {
     void propagatesExceptionInLifecycleHandler() {
         var parentConfiguration = mock(Configuration.class);
         var lifecycleRegistry = new StubLifecycleRegistry();
-        Configuration configuration = HierarchicalConfiguration.build(
+        Configuration configuration = HierarchicalLifecycleRegistry.build(
                 lifecycleRegistry,
                 (childLifecycleRegistry) -> {
                     childLifecycleRegistry.onStart(42, (Consumer<Configuration>) (c) -> {

@@ -29,8 +29,9 @@ import org.axonframework.common.configuration.Components;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.common.configuration.DecoratorDefinition;
+import org.axonframework.common.configuration.DefaultComponentRegistry;
 import org.axonframework.common.configuration.DuplicateModuleRegistrationException;
-import org.axonframework.common.configuration.HierarchicalConfiguration;
+import org.axonframework.common.configuration.HierarchicalLifecycleRegistry;
 import org.axonframework.common.configuration.LifecycleRegistry;
 import org.axonframework.common.configuration.Module;
 import org.axonframework.common.configuration.OverridePolicy;
@@ -114,6 +115,21 @@ public class SpringComponentRegistry implements
     private final List<Class<? extends ConfigurationEnhancer>> invokedEnhancers = new CopyOnWriteArrayList<>();
 
     private ConfigurableListableBeanFactory beanFactory;
+
+    /**
+     * Creates a clone of this registry from existing registry. The clone will include the same enhancers, disabled
+     * enhancers and decorator definitions as the original. The enhancerScanning flag is set to false.
+     *
+     * @return a clone of the original.
+     */
+    DefaultComponentRegistry copyWithDecoratorsAndEnhancers() {
+        var registry = new DefaultComponentRegistry();
+        this.enhancers.values().forEach(registry::registerEnhancer);
+        this.disabledEnhancers.forEach(registry::disableEnhancer);
+        this.decorators.forEach(registry::registerDecorator);
+        registry.disableEnhancerScanning();
+        return registry;
+    }
 
     /**
      * Constructs a {@code SpringComponentRegistry} with the given {@code listableBeanFactory}. The
@@ -395,7 +411,7 @@ public class SpringComponentRegistry implements
         decorateComponents();
         registerLocalComponentsWithApplicationContext();
         scanForModules();
-        buildModules();
+        buildModules(this.configuration);
         scanForComponentFactories();
         registerFactoryShutdownHandlers();
     }
@@ -540,10 +556,16 @@ public class SpringComponentRegistry implements
      * Ensure all registered {@link Module Modules} are built too. Store their {@link Configuration} results for
      * exposure on {@link Configuration#getModuleConfigurations()}.
      */
-    private void buildModules() {
+    private void buildModules(Configuration configuration) {
         for (Module module : modules.values()) {
-            Configuration builtModule = HierarchicalConfiguration.build(
-                    lifecycleRegistry, (childLifecycleRegistry) -> module.build(configuration, childLifecycleRegistry)
+            var moduleRegistry = this.copyWithDecoratorsAndEnhancers();
+            var builtModule = HierarchicalLifecycleRegistry.build(
+                    lifecycleRegistry,
+                    (childLifecycleRegistry) -> {
+                        var local = moduleRegistry.createLocalConfiguration(configuration);
+                        var moduleConfiguration = module.build(local, childLifecycleRegistry);
+                        return moduleRegistry.buildNested(moduleConfiguration, childLifecycleRegistry);
+                    }
             );
             moduleConfigurations.put(module.name(), builtModule);
         }

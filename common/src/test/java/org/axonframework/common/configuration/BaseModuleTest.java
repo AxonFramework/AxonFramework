@@ -18,6 +18,7 @@ package org.axonframework.common.configuration;
 
 import org.axonframework.common.configuration.BaseModule;
 import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.util.StubLifecycleRegistry;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.atomic.AtomicReference;
@@ -42,7 +43,9 @@ class BaseModuleTest {
     void simpleModuleDelegatesToComponentRegistry() {
         AtomicReference<ComponentRegistry> detected = new AtomicReference<>();
         testSubject.componentRegistry(detected::set);
-
+        var registry = new StubLifecycleRegistry();
+        var config = new DefaultComponentRegistry().build(registry);
+        testSubject.build(config, registry);
         assertNotNull(detected.get());
     }
 

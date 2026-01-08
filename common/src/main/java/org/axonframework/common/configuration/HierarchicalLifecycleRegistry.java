@@ -24,7 +24,7 @@ import java.util.function.Function;
 import static java.util.Objects.requireNonNull;
 
 /**
- * The HierarchicalConfiguration is a configuration that will ensure the to-be-built child configuration will be passed
+ * The HierarchicalLifecycleRegistry is a configuration that will ensure the to-be-built child configuration will be passed
  * a {@link LifecycleRegistry} that is a child of the parent configuration's {@link LifecycleRegistry}. This will ensure
  * that the child configuration's start- and shutdown handlers receive the child configuration, so they can retrieve
  * their own components.
@@ -32,7 +32,7 @@ import static java.util.Objects.requireNonNull;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public class HierarchicalConfiguration implements LifecycleRegistry {
+public class HierarchicalLifecycleRegistry implements LifecycleRegistry {
 
     private final LifecycleRegistry parentLifecycleRegistry;
     private final Configuration childConfiguration;
@@ -54,16 +54,16 @@ public class HierarchicalConfiguration implements LifecycleRegistry {
             LifecycleRegistry parentLifecycleRegistry,
             Function<LifecycleRegistry, Configuration> childConfigurationBuilder
     ) {
-        HierarchicalConfiguration hierarchicalConfiguration = new HierarchicalConfiguration(parentLifecycleRegistry,
+        HierarchicalLifecycleRegistry hierarchicalLifecycleRegistry = new HierarchicalLifecycleRegistry(parentLifecycleRegistry,
                                                                                             childConfigurationBuilder);
-        return hierarchicalConfiguration.getConfiguration();
+        return hierarchicalLifecycleRegistry.getConfiguration();
     }
 
     private Configuration getConfiguration() {
         return childConfiguration;
     }
 
-    private HierarchicalConfiguration(
+    private HierarchicalLifecycleRegistry(
             @Nonnull LifecycleRegistry parentLifecycleRegistry,
             @Nonnull Function<LifecycleRegistry, Configuration> childConfigurationBuilder) {
         this.parentLifecycleRegistry = requireNonNull(parentLifecycleRegistry,
