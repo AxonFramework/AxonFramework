@@ -805,7 +805,7 @@ class Coordinator {
                     .whenComplete((result, exception) -> {
                         processingGate.set(false);
                         if (exception != null) {
-                            logger.debug(
+                            logger.warn(
                                     "Processor [{}] (Coordination Task [{}]). Task [{}] completed with error. "
                                             + "Scheduling immediate coordination task (itself).",
                                     name,
