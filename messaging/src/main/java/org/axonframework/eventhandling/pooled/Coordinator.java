@@ -805,7 +805,7 @@ class Coordinator {
                     .whenComplete((result, exception) -> {
                         processingGate.set(false);
                         logger.info(
-                                "Processor [{}] (Coordination Task [{}]). CoordinatorTask [{}] completed. "
+                                "Processor [{}] (Coordination Task [{}]). Task [{}] completed. "
                                         + "Scheduling immediate coordination task (itself).",
                                 name,
                                 generation,
