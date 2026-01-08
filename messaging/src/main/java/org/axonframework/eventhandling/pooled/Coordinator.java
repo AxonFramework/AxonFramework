@@ -804,12 +804,22 @@ class Coordinator {
                     .thenRun(() -> unclaimedSegmentValidationThreshold = 0)
                     .whenComplete((result, exception) -> {
                         processingGate.set(false);
-                        logger.info(
-                                "Processor [{}] (Coordination Task [{}]). Task [{}] completed. "
-                                        + "Scheduling immediate coordination task (itself).",
-                                name,
-                                generation,
-                                task.getDescription());
+                        if (exception != null) {
+                            logger.warn(
+                                    "Processor [{}] (Coordination Task [{}]). Task [{}] completed with error. "
+                                            + "Scheduling immediate coordination task (itself).",
+                                    name,
+                                    generation,
+                                    task.getDescription(),
+                                    exception);
+                        } else {
+                            logger.info(
+                                    "Processor [{}] (Coordination Task [{}]). Task [{}] completed successfully. "
+                                            + "Scheduling immediate coordination task (itself).",
+                                    name,
+                                    generation,
+                                    task.getDescription());
+                        }
                         scheduleImmediateCoordinationTask();
                     });
                 return;
