@@ -17,20 +17,21 @@ Furthermore, in taking the overarching configuration, the testing module support
 **Command handler testing**::
 Test command handling logic, validation rules, and state changes.
 Verify that commands produce the expected events and results.
+For a concrete example, check out xref:basic-testing.adoc#testing_command_handling_components[this] section.
 
 **Event handler testing**::
 Test event handling and side effects.
 Verify that events trigger the correct commands, queries, or additional events.
+For a concrete example, check out xref:basic-testing.adoc#testing_event_handling_components[this] section.
 
 **Entity testing**::
 Test event-sourced entities and business logic.
+For a concrete example, check out xref:basic-testing.adoc#testing_event_sourced_entities[this] section.
 
 **Integration testing**::
 Test complete message flows with real infrastructure components.
 Verify end-to-end behavior including conversion, event storage, and processors.
-
-**Side effect testing**::
-Validate commands and events dispatched as side effects during message handling.
+For a concrete example, check out xref:advanced-testing.adoc#integration_testing[this] section.
 
 == Module contents
 
