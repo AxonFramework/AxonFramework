@@ -175,6 +175,7 @@ class Coordinator {
                                                  .shutdownHandle();
         CoordinationTask task = coordinationTask.getAndSet(null);
         if (task != null) {
+            logger.info("Processor [{}]. Stop requested. Scheduling immediate coordination task.", name);
             task.scheduleImmediateCoordinationTask();
         }
         return handle;
@@ -197,6 +198,7 @@ class Coordinator {
     private void scheduleCoordinator() {
         CoordinationTask coordinator = coordinationTask.get();
         if (coordinator != null) {
+            logger.debug("Processor [{}]. Segment operation queued. Scheduling immediate coordination task.", name);
             coordinator.scheduleImmediateCoordinationTask();
         }
     }
@@ -802,6 +804,22 @@ class Coordinator {
                     .thenRun(() -> unclaimedSegmentValidationThreshold = 0)
                     .whenComplete((result, exception) -> {
                         processingGate.set(false);
+                        if (exception != null) {
+                            logger.warn(
+                                    "Processor [{}] (Coordination Task [{}]). Task [{}] completed with error. "
+                                            + "Scheduling immediate coordination task (itself).",
+                                    name,
+                                    generation,
+                                    task.getDescription(),
+                                    exception);
+                        } else {
+                            logger.debug(
+                                    "Processor [{}] (Coordination Task [{}]). Task [{}] completed successfully. "
+                                            + "Scheduling immediate coordination task (itself).",
+                                    name,
+                                    generation,
+                                    task.getDescription());
+                        }
                         scheduleImmediateCoordinationTask();
                     });
                 return;
@@ -853,7 +871,8 @@ class Coordinator {
             if (workPackages.isEmpty()) {
                 // We didn't start any work packages. Retry later.
                 logger.debug(
-                        "Processor [{}] (Coordination Task [{}]). No segments claimed. Will retry in {} milliseconds.",
+                        "Processor [{}] (Coordination Task [{}]). No segments claimed. "
+                                + "Scheduling delayed coordination task (itself) with delay of {}ms.",
                         name,
                         generation,
                         tokenClaimInterval);
@@ -895,14 +914,36 @@ class Coordinator {
                     // All work package have space available to handle events and there are still events on the stream.
                     // We should thus start this process again immediately.
                     // It will likely jump all the if-statement directly, thus initiating the reading of events ASAP.
+                    logger.debug(
+                            "Processor [{}] (Coordination Task [{}]). Space available and events pending. "
+                                    + "Scheduling immediate coordination task (itself).",
+                            name,
+                            generation);
                     scheduleImmediateCoordinationTask();
                 } else if (isSpaceAvailable()) {
                     if (!availabilityCallbackSupported) {
+                        logger.trace(
+                                "Processor [{}] (Coordination Task [{}]). Space available, no events pending, "
+                                        + "no availability callback. Scheduling coordination task (itself) with delay of 500ms.",
+                                name,
+                                generation);
                         scheduleCoordinationTask(500);
                     } else {
-                        scheduleDelayedCoordinationTask(Math.min(claimExtensionThreshold, tokenClaimInterval));
+                        long delay = Math.min(claimExtensionThreshold, tokenClaimInterval);
+                        logger.trace(
+                                "Processor [{}] (Coordination Task [{}]). Space available, no events pending. "
+                                        + "Scheduling delayed coordination task (itself) with delay of {}ms.",
+                                name,
+                                generation,
+                                delay);
+                        scheduleDelayedCoordinationTask(delay);
                     }
                 } else {
+                    logger.trace(
+                            "Processor [{}] (Coordination Task [{}]). No space available in work packages. "
+                                    + "Scheduling coordination task (itself) with delay of 100ms.",
+                            name,
+                            generation);
                     scheduleCoordinationTask(100);
                 }
             } catch (Exception e) {
@@ -1052,7 +1093,14 @@ class Coordinator {
                              generation,
                              trackingToken);
                 availabilityCallbackSupported =
-                        eventStream.setOnAvailableCallback(this::scheduleImmediateCoordinationTask);
+                        eventStream.setOnAvailableCallback(() -> {
+                            logger.trace(
+                                    "Processor [{}] (Coordination Task [{}]). Events became available (callback triggered). "
+                                            + "Scheduling immediate coordination task (itself).",
+                                    name,
+                                    generation);
+                            scheduleImmediateCoordinationTask();
+                        });
                 lastScheduledToken = trackingToken;
             }
         }
@@ -1161,10 +1209,22 @@ class Coordinator {
 
         private void scheduleCoordinationTask(long delay) {
             if (scheduledGate.compareAndSet(false, true)) {
+                logger.trace(
+                        "Processor [{}] (Coordination Task [{}]). Scheduled coordination task (itself) with delay of {}ms.",
+                        name,
+                        generation,
+                        delay);
                 executorService.schedule(() -> {
                     scheduledGate.set(false);
                     this.run();
                 }, delay, TimeUnit.MILLISECONDS);
+            } else {
+                logger.trace(
+                        "Processor [{}] (Coordination Task [{}]). Skipped scheduling coordination task (delay={}ms). "
+                                + "scheduledGate already set.",
+                        name,
+                        generation,
+                        delay);
             }
         }
 
@@ -1172,21 +1232,35 @@ class Coordinator {
             // We only want to schedule a delayed task if there isn't another delayed task scheduled,
             // and preferably not if a regular task has already been scheduled (hence just a get() for that flag)
             if (!scheduledGate.get() && interruptibleScheduledGate.compareAndSet(false, true)) {
+                logger.trace(
+                        "Processor [{}] (Coordination Task [{}]). Scheduled delayed coordination task (itself) with delay of {}ms.",
+                        name,
+                        generation,
+                        delay);
                 executorService.schedule(() -> {
                     interruptibleScheduledGate.set(false);
                     this.run();
                 }, delay, TimeUnit.MILLISECONDS);
+            } else {
+                logger.trace(
+                        "Processor [{}] (Coordination Task [{}]). Skipped scheduling delayed coordination task (delay={}ms). "
+                                + "scheduledGate={}, interruptibleScheduledGate={}.",
+                        name,
+                        generation,
+                        delay,
+                        scheduledGate.get(),
+                        interruptibleScheduledGate.get());
             }
         }
 
         private void abortAndScheduleRetry(Exception cause) {
+            errorWaitBackOff = Math.min(errorWaitBackOff * 2, 60000);
             logger.info(
                     "Processor [{}] (Coordination Task [{}]) is releasing claims and scheduling a new coordination task in {}ms.",
                     name,
                     generation,
                     errorWaitBackOff);
 
-            errorWaitBackOff = Math.min(errorWaitBackOff * 2, 60000);
             abortWorkPackages(cause).whenComplete(
                     (unused, throwable) -> {
                         if (throwable != null) {
