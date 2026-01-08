@@ -50,9 +50,9 @@ The choice depends on your specific requirements for state management, auditabil
 
 Alternatively, you can implement stateful handlers without using entities, managing state through your own custom mechanisms.
 
-== What's in this section
+== Subsections
 
-This section covers everything you need to work with commands in Axon Framework.
+A summary of the various sections is given below.
 
 [cols="<,<"]
 |===
@@ -62,14 +62,4 @@ This section covers everything you need to work with commands in Axon Framework.
 |xref:command-dispatchers.adoc[Dispatching] |How to dispatch commands from your application code
 |xref:infrastructure.adoc[Infrastructure] |Command bus implementations, repositories, and other infrastructure components
 |xref:configuration.adoc[Configuration] |How to configure command handling in your application
-
-== Getting started
-
-The typical workflow for working with commands:
-
-1. **Define your command messages** - Create classes representing the actions users can take
-2. **Write command handlers** - Implement the logic to process commands and apply changes
-3. **Dispatch commands** - Send commands from your controllers, APIs, or other handlers
-4. **Configure routing** - Ensure commands are routed to the correct handler instances
-
-Start with xref:command-handlers.adoc[Command handlers] to learn how to implement command handling logic, then move on to xref:command-dispatchers.adoc[Command dispatchers] to learn how to send commands from your application code.
+|===
