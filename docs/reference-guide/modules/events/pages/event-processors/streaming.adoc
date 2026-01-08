@@ -427,6 +427,7 @@ To further clarify, a streaming processor's thread needs to be able to update th
 Hence, a staling processor thread will, one way or another, eventually lose the claim.
 
 Examples of when a thread may get its token stolen are:
+
 - Overall slow event handling.
 - Too large event batch size.
 - Blocking operations inside event handlers.
@@ -461,6 +462,7 @@ Without idempotency, the consequences of token stealing can be many fold:
 In short, any operation introducing a side effect that isn't handled in an idempotent fashion will occur again when a token is stolen.
 
 Concluding, we can separate the consequence of token stealing into roughly three scenarios:
+
 1. We can roll back the operation.
 In this case, the only consequence is wasted processor cycles.
 2. The operation is idempotent.
@@ -714,7 +716,7 @@ Each node running a streaming processor will attempt to start its configured amo
 The pooled streaming processor uses a two-pool architecture where coordinator threads can claim multiple segments, and worker threads process the events from those segments.
 This architecture provides efficient resource utilization and better scalability compared to a one-thread-per-segment model.
 
-[Tip]
+[TIP]
 .Customize your Sequencing Policy!
 ====
 We strongly recommend to define a sequencing policy that fits your event handling components at all time!

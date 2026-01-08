@@ -126,6 +126,40 @@ Consider the examples below when configuring a command handling component:
 
 [tabs]
 ====
+Configuration API::
++
+--
+Use `CommandHandlingModule` to register handlers:
+
+[source,java]
+----
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
+
+public class AxonConfig {
+
+    public void configureCommandHandlers() {
+        MessagingConfigurer.create()
+            .registerCommandHandlingModule(
+                CommandHandlingModule.named("gift-card-commands")
+                    .commandHandlers(handlers ->
+                        handlers.annotatedCommandHandlingComponent(
+                            config -> new GiftCardCommandHandler(
+                                config.getComponent(Repository.class)
+                            )
+                        )
+                    )
+            );
+    }
+}
+----
+
+The `annotatedCommandHandlingComponent()` method scans for `@CommandHandler` annotations and registers them.
+
+If full manual configuration is required, for example in absence of annotations, use the `commandHandler(QualifiedName, CommandHandler)` flow instead.
+
+--
+
 Spring Boot::
 +
 --
@@ -161,40 +195,6 @@ public class GiftCardCommandHandler {
 ----
 
 Spring Boot automatically discovers and registers the handler.
-
---
-
-Configuration API::
-+
---
-Use `CommandHandlingModule` to register handlers:
-
-[source,java]
-----
-import org.axonframework.messaging.core.configuration.MessagingConfigurer;
-import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
-
-public class AxonConfig {
-
-    public void configureCommandHandlers() {
-        MessagingConfigurer.create()
-            .registerCommandHandlingModule(
-                CommandHandlingModule.named("gift-card-commands")
-                    .commandHandlers(handlers ->
-                        handlers.annotatedCommandHandlingComponent(
-                            config -> new GiftCardCommandHandler(
-                                config.getComponent(Repository.class)
-                            )
-                        )
-                    )
-            );
-    }
-}
-----
-
-The `annotatedCommandHandlingComponent()` method scans for `@CommandHandler` annotations and registers them.
-
-If full manual configuration is required, for example in absence of annotations, use the `commandHandler(QualifiedName, CommandHandler)` flow instead.
 
 --
 ====
@@ -319,6 +319,31 @@ Invoked when a message is dispatched, before routing:
 
 [tabs]
 ====
+Configuration API::
++
+--
+Register interceptors explicitly:
+
+[source,java]
+----
+public class AxonConfig {
+
+    private static final Logger logger =
+        LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
+    public static void main(String[] args) {
+        MessagingConfigurer.create().registerCommandDispatchInterceptor(
+                config -> (command, context, interceptorChain) -> {
+                    logger.info("Dispatching: {}", command.type().name());
+                    return interceptorChain.proceed(command, context);
+                }
+        );
+    }
+}
+----
+
+--
+
 Spring Boot::
 +
 --
@@ -346,30 +371,7 @@ Spring Boot automatically registers interceptor beans with the appropriate bus.
 
 --
 
-Configuration API::
-+
---
-Register interceptors explicitly:
 
-[source,java]
-----
-public class AxonConfig {
-
-    private static final Logger logger =
-        LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-
-    public static void main(String[] args) {
-        MessagingConfigurer.create().registerCommandDispatchInterceptor(
-                config -> (command, context, interceptorChain) -> {
-                    logger.info("Dispatching: {}", command.type().name());
-                    return interceptorChain.proceed(command, context);
-                }
-        );
-    }
-}
-----
-
---
 ====
 
 === Handler interceptors
@@ -378,27 +380,6 @@ Invoked before the actual handler, after routing:
 
 [tabs]
 ====
-Spring Boot::
-+
---
-Define handler interceptors as beans:
-
-[source,java]
-----
-@Configuration
-public class InterceptorConfig {
-
-    @Bean
-    public MessageHandlerInterceptor<? super CommandMessage> securityInterceptor() {
-        return (command, context, interceptorChain) -> {
-            checkPermissions(command);
-            return interceptorChain.proceed(command, context);
-        };
-    }
-}
-----
-
---
 
 Configuration API::
 +
@@ -424,6 +405,29 @@ public class AxonConfig {
 ----
 
 --
+
+Spring Boot::
++
+--
+Define handler interceptors as beans:
+
+[source,java]
+----
+@Configuration
+public class InterceptorConfig {
+
+    @Bean
+    public MessageHandlerInterceptor<? super CommandMessage> securityInterceptor() {
+        return (command, context, interceptorChain) -> {
+            checkPermissions(command);
+            return interceptorChain.proceed(command, context);
+        };
+    }
+}
+----
+
+--
+
 ====
 
 See xref:messaging-concepts:message-intercepting.adoc[Message intercepting] for detailed information on interceptors.

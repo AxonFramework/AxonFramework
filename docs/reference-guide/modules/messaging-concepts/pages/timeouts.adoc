@@ -53,6 +53,12 @@ Note that this also disables the annotation-based timeouts.
 
 [tabs]
 ======
+Configuration API::
++
+--
+To disable timeouts and warnings for non-Spring Boot applications, you only have to not register the configuration outlined on this page, as it's not activated by default.
+--
+
 Spring Boot::
 +
 --
@@ -63,13 +69,6 @@ For Spring Boot, disabling all timeouts and warnings can be done by setting the 
 axon.timeout.enabled=false
 ----
 
---
-
-
-Axon Configuration::
-+
---
-To disable timeouts and warnings for non-Spring Boot applications, you only have to not register the configuration outlined on this page, as it's not activated by default.
 --
 ======
 
@@ -83,6 +82,26 @@ You can set a timeout on all message handlers, with unique configuration per mes
 
 [tabs]
 ======
+Configuration API::
++
+--
+You can create a `ConfigurerModule` with the exact settings you would like.
+Without Spring Boot, no default timeouts are applied.
+
+[source,java]
+----
+public class MyTimeoutConfigurerModule implements ConfigurerModule {
+
+    @Override
+    public void configureModule(@NotNull Configurer configurer) {
+        HandlerTimeoutConfiguration config = new HandlerTimeoutConfiguration();
+        config.getEvents().setTimeoutMs(30000);
+        // Set any timeouts and warning thresholds you would like here
+        configurer.registerHandlerEnhancerDefinition(c -> new HandlerTimeoutHandlerEnhancerDefinition(config));
+    }
+}
+----
+--
 Spring Boot::
 +
 --
@@ -106,28 +125,6 @@ axon.timeout.handler.commands.warning-interval-ms=1000
 axon.timeout.handler.queries.timeout-ms=20000
 axon.timeout.handler.queries.warning-threshold-ms=5000
 axon.timeout.handler.queries.warning-interval-ms=1000
-----
---
-
-
-Axon Configuration::
-+
---
-You can create a `ConfigurerModule` with the exact settings you would like.
-Without Spring Boot, no default timeouts are applied.
-
-[source,java]
-----
-public class MyTimeoutConfigurerModule implements ConfigurerModule {
-
-    @Override
-    public void configureModule(@NotNull Configurer configurer) {
-        HandlerTimeoutConfiguration config = new HandlerTimeoutConfiguration();
-        config.getEvents().setTimeoutMs(30000);
-        // Set any timeouts and warning thresholds you would like here
-        configurer.registerHandlerEnhancerDefinition(c -> new HandlerTimeoutHandlerEnhancerDefinition(config));
-    }
-}
 ----
 --
 ======
@@ -160,40 +157,7 @@ You can customize timeouts for each component separately, such as the `CommandBu
 
 [tabs]
 ======
-Spring Boot::
-+
---
-For Spring Boot, the defaults for all unit of works are set to of 60 seconds.
-In addition, by default, they will start warning every second after 10 seconds have passed.
-You can tweak these settings by setting the following properties in your `application.properties` or `application.yml`:
-
-[source,properties]
-----
-# Timeout for a specific event processor
-axon.timeout.transaction.event-processor.my-processor.timeout-ms=2000
-axon.timeout.transaction.event-processor.my-processor.warning-threshold-ms=1000
-axon.timeout.transaction.event-processor.my-processor.warning-interval-ms=100
-
-# Timeout for all event processors without specific settings
-axon.timeout.transaction.event-processors.timeout-ms=20000
-axon.timeout.transaction.event-processors.warning-threshold-ms=10000
-axon.timeout.transaction.event-processors.warning-interval-ms=1000
-
-# Timeout for the command bus
-axon.timeout.transaction.command-bus.timeout-ms=20000
-axon.timeout.transaction.command-bus.warning-threshold-ms=10000
-axon.timeout.transaction.command-bus.warning-interval-ms=1000
-
-
-# Timeout for the query bus
-axon.timeout.transaction.query.timeout-ms=20000
-axon.timeout.transaction.query.warning-threshold-ms=10000
-axon.timeout.transaction.query.warning-interval-ms=1000
-----
---
-
-
-Axon Configuration::
+Configuration API::
 +
 --
 Without Spring Boot, no default timeouts are applied.
@@ -276,6 +240,38 @@ public void registerTimeoutEnhancer(MessagingConfigurer configurer) {
             cr -> cr.registerEnhancer(new TimeoutConfigurationEnhancer())
     );
 }
+----
+--
+
+Spring Boot::
++
+--
+For Spring Boot, the defaults for all unit of works are set to of 60 seconds.
+In addition, by default, they will start warning every second after 10 seconds have passed.
+You can tweak these settings by setting the following properties in your `application.properties` or `application.yml`:
+
+[source,properties]
+----
+# Timeout for a specific event processor
+axon.timeout.transaction.event-processor.my-processor.timeout-ms=2000
+axon.timeout.transaction.event-processor.my-processor.warning-threshold-ms=1000
+axon.timeout.transaction.event-processor.my-processor.warning-interval-ms=100
+
+# Timeout for all event processors without specific settings
+axon.timeout.transaction.event-processors.timeout-ms=20000
+axon.timeout.transaction.event-processors.warning-threshold-ms=10000
+axon.timeout.transaction.event-processors.warning-interval-ms=1000
+
+# Timeout for the command bus
+axon.timeout.transaction.command-bus.timeout-ms=20000
+axon.timeout.transaction.command-bus.warning-threshold-ms=10000
+axon.timeout.transaction.command-bus.warning-interval-ms=1000
+
+
+# Timeout for the query bus
+axon.timeout.transaction.query.timeout-ms=20000
+axon.timeout.transaction.query.warning-threshold-ms=10000
+axon.timeout.transaction.query.warning-interval-ms=1000
 ----
 --
 ======

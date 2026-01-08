@@ -120,6 +120,8 @@ Declare dependencies:
 
 ----
 
+--
+
 Spring Boot::
 +
 --
@@ -144,6 +146,8 @@ If you want to disable Axon Server as the default `EventStorageEngine`, you have
 1. Set the `axon.axonserver.enabled` property to `false`.
 2. Exclude the `axon-server-connector` dependency from the `axon-spring-boot-starter` dependency.
 ====
+
+--
 ======
 
 ==== `AggregateBasedAxonServerEventStorageEngine`

@@ -79,7 +79,7 @@ For more details on snapshot filtering, please read xref:_filtering_snapshot_eve
 
 [tabs]
 ====
-Axon Configuration API::
+Configuration API::
 +
 --
 
@@ -162,7 +162,7 @@ The following snippets show how to configure a `SnapshotFilter`:
 
 [tabs]
 ====
-Axon Configuration API::
+Configuration API::
 +
 --
 
