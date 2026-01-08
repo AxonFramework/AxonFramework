@@ -19,6 +19,8 @@ xref:event-processors/index.adoc[**Event Processors**]:: Infrastructure componen
 
 xref:event-publishing.adoc#event_sink_directly[**Event Sink**]:: An abstraction for any component that can receive and distribute events, encompassing the Event Bus, Event Store, and external system facades.
 
+xref:event-publishing.adoc#event_appender[**Event Appender**]:: A context-aware solution to append events to an Event Store, ensuring transactionality and correlation data.
+
 xref:infrastructure.adoc#event_bus[**Event Bus**]:: A mechanism that distributes published events to all subscribed event processors within the application.
 
 xref:event-publishing.adoc#event_gateway[**Event Gateway**]:: A convenience component for publishing events that provides a user-friendly API.
