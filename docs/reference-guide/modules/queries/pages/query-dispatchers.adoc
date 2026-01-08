@@ -9,7 +9,7 @@ To that end Axon provides two interfaces:
 . The Query Gateway
 
 This page will show how and when to use the query gateway and bus.
-How to configure and specifics on the query gateway and bus implementations are discussed xref:Infrastructure.adoc[here].
+How to configure and specifics on the query gateway and bus implementations are discussed xref:infrastructure.adoc[here].
 
 [[query-bus-and-gateway]]
 == The query bus and query gateway
@@ -24,13 +24,13 @@ For those familiar with previous iterations of Axon Framework, it does not suppo
 As a workaround, if you need to collect information from multiple sources, consider using multiple separate queries or implementing an aggregating query handler that coordinates the data collection internally.
 ====
 
-The `QueryGateway` is a convenient interface towards the query dispatching mechanism.
+The `QueryGateway`, as described in more detail xref:infrastructure.adoc#query_gateway[here], is a convenient interface towards the query dispatching mechanism.
 While you are not required to use a gateway to dispatch queries, it is generally the easiest option to do so.
 It abstracts certain aspects for you, like the necessity to wrap a Query payload in a Query Message.
 
 [NOTE]
 ====
-The `QueryBus` is a low-level infrastructure component.
+The `QueryBus`, as explained in more detail xref:infrastructure.adoc#query_bus[here], is a low-level infrastructure component.
 For typical application code, prefer using the `QueryGateway`, which provides a more convenient API and handles message creation for you.
 ====
 

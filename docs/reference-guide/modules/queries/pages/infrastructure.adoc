@@ -6,6 +6,7 @@ The next sections provide an overview of the available implementations, as well 
 
 All query operations are async-native, returning `CompletableFuture` or `Publisher` types. This enables efficient asynchronous processing without blocking threads.
 
+[#query_gateway]
 == Query gateway
 
 The query gateway is a convenient interface towards the query dispatching mechanism.
@@ -20,8 +21,9 @@ The query gateway provides methods for:
 
 All methods support an optional `ProcessingContext` parameter for correlation data propagation when dispatching from within a message handler.
 
-The query gateway automatically handles message construction, dispatch interceptors, and result conversion. It's configured with access to the query bus and dispatch interceptors.
+The query gateway automatically handles message construction, dispatch interceptors, and result conversion.It's configured with access to the query bus and dispatch interceptors.
 
+[#query_bus]
 == Query bus
 
 The query bus is the mechanism that dispatches queries to query handlers.
