@@ -1,5 +1,11 @@
 = Deadline Managers
 
+[WARNING]
+====
+Deadlines do not have a replacement yet in Axon Framework 5.
+Once the intended replacement is in place the documentation will be adjusted accordingly.
+====
+
 Deadlines can be scheduled from sagas and aggregates.
 The `DeadlineManager` component is responsible for scheduling deadlines and invoking `@DeadlineHandler`when the deadline is met. The `DeadlineManager` can be injected as a resource.
 It has four flavors: `SimpleDeadlineManager`, `JobRunrDeadlineManager`, `QuartzDeadlineManager` and `DbSchedulerDeadlineManager`.

@@ -1,6 +1,12 @@
 = Deadlines
 :page-aliases: README.adoc
 
+[WARNING]
+====
+Deadlines do not have a replacement yet in Axon Framework 5.
+Once the intended replacement is in place the documentation will be adjusted accordingly.
+====
+
 The 'Deadline' concept in Axon Framework is a mechanism which enables certain actions to be executed after a certain amount of time.
 The context of this execution is an _*aggregate or a saga*_ in which the deadline was scheduled.
 If the deadline becomes obsolete there is the possibility to cancel it as well.
