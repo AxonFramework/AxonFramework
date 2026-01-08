@@ -502,28 +502,3 @@ public void on(OrderPlacedEvent event, ProcessingContext context) {
     // Process event...
 }
 ----
-
-=== Creating contexts for testing
-
-For testing, you can create stub contexts:
-
-[source,java]
-----
-void testWithStubProcessingContext() {
-    CommandMessage command = new GenericCommandMessage(new MessageType("command"), new PlaceOrderCommand());
-    // Create context with a message
-    ProcessingContext contextMessageOnly = StubProcessingContext.forMessage(command);
-
-    CommandGateway mockGateway = mock(CommandGateway.class);
-    // Create context with mocked components
-    ProcessingContext context = StubProcessingContext.withComponent(
-            CommandGateway.class,
-            mockGateway
-    ).withMessage(command);
-
-    // Manually advance to specific phase for testing
-    StubProcessingContext stub = new StubProcessingContext();
-    stub.onCommit(ctx -> verifyCommitPhase());
-    stub.moveToPhase(ProcessingLifecycle.DefaultPhases.COMMIT).join();
-}
-----
