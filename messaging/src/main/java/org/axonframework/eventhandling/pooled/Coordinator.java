@@ -1199,10 +1199,22 @@ class Coordinator {
 
         private void scheduleCoordinationTask(long delay) {
             if (scheduledGate.compareAndSet(false, true)) {
+                logger.trace(
+                        "Processor [{}] (Coordination Task [{}]). Scheduled coordination task (itself) with delay of {}ms.",
+                        name,
+                        generation,
+                        delay);
                 executorService.schedule(() -> {
                     scheduledGate.set(false);
                     this.run();
                 }, delay, TimeUnit.MILLISECONDS);
+            } else {
+                logger.trace(
+                        "Processor [{}] (Coordination Task [{}]). Skipped scheduling coordination task (delay={}ms). "
+                                + "scheduledGate already set.",
+                        name,
+                        generation,
+                        delay);
             }
         }
 
@@ -1210,10 +1222,24 @@ class Coordinator {
             // We only want to schedule a delayed task if there isn't another delayed task scheduled,
             // and preferably not if a regular task has already been scheduled (hence just a get() for that flag)
             if (!scheduledGate.get() && interruptibleScheduledGate.compareAndSet(false, true)) {
+                logger.trace(
+                        "Processor [{}] (Coordination Task [{}]). Scheduled delayed coordination task (itself) with delay of {}ms.",
+                        name,
+                        generation,
+                        delay);
                 executorService.schedule(() -> {
                     interruptibleScheduledGate.set(false);
                     this.run();
                 }, delay, TimeUnit.MILLISECONDS);
+            } else {
+                logger.trace(
+                        "Processor [{}] (Coordination Task [{}]). Skipped scheduling delayed coordination task (delay={}ms). "
+                                + "scheduledGate={}, interruptibleScheduledGate={}.",
+                        name,
+                        generation,
+                        delay,
+                        scheduledGate.get(),
+                        interruptibleScheduledGate.get());
             }
         }
 
