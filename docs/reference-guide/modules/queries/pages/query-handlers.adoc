@@ -1,7 +1,7 @@
 = Query Handlers
 :navtitle: Handling
 
-The handling of a query comes down to a(n annotated) handler returning the query's response. The goal of this chapter is to describe what such a query handler method looks like, as well as describing the call order and response type options. For configuration of query handlers and the `QueryBus`, it is recommended to read the xref:configuration.adoc[Configuration] section.
+The handling of a query comes down to a query handler returning the query's response. The goal of this chapter is to describe what such a query handler method looks like, as well as describing the call order and response type options. For configuration of query handlers and the `QueryBus`, it is recommended to read the xref:configuration.adoc[Configuration] section.
 
 Query handlers are fully async-native and can return `CompletableFuture`, `Publisher`, or synchronous results. The framework handles correlation data propagation automatically through the `ProcessingContext`.
 
@@ -40,12 +40,12 @@ Together, the namespace and name form a `QualifiedName`, which combined with the
 [TIP]
 .Annotating query messages
 ====
-It's highly recommended to annotate all query message classes with `@Query`. This allows you to:
+It's recommended to annotate all query message classes with `@Query`. This allows you to:
 
-* Define an explicit message type independent of the Java class name
-* Version your queries for evolution over time
-* Organize queries by bounded context using namespaces
-* Leverage payload conversion at handling time for different representations
+* Define an explicit message type independent of the Java class name.
+* Version your queries for evolution over time.
+* Organize queries by bounded context using namespaces.
+* Leverage payload conversion at handling time for different representations.
 
 If the `@Query` annotation is omitted, Axon will default to using the fully qualified class name as the query name, which tightly couples your message identity to your Java package structure.
 ====

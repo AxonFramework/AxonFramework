@@ -6,6 +6,19 @@ Command handlers can be either stateless or stateful, depending on whether they 
 
 This page explains how to define command handlers, handle commands, and work with the key concepts like `ProcessingContext`, `EventAppender`, and message types.
 
+[TIP]
+.Annotating command messages
+====
+It's recommended to annotate all command message classes with `@Command`. This allows you to:
+
+* Define an explicit message type independent of the Java class name.
+* Version your queries for evolution over time.
+* Organize queries by bounded context using namespaces.
+* Leverage payload conversion at handling time for different representations.
+
+If the `@Command` annotation is omitted, Axon will default to using the fully qualified class name as the command name, which tightly couples your message identity to your Java package structure.
+====
+
 == Stateless vs stateful command handlers
 
 Command handlers in Axon Framework fall into two categories:
@@ -628,7 +641,6 @@ public void handle(
 <1> The `ProcessingContext` is automatically injected by the framework.
 It provides access to correlation data, resources, and lifecycle management.
 
-// TODO: Update to processing-context.adoc when unit-of-work.adoc is renamed
 For more details on `ProcessingContext`, see xref:messaging-concepts:unit-of-work.adoc[].
 
 [#publishing_events_with_eventappender]

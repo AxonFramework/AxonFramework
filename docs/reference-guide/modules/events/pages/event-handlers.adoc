@@ -30,8 +30,22 @@ The latter would be preferred, for example, by those aiming to use no annotation
 
 Event handlers are registered as part of event handling components.
 In turn, these event handling components are registered as a part of configuring xref:event-processors/index.adoc[event processors].
+
+[TIP]
+.Annotating event messages
+====
+As explained further <<annotated_event_handler_name_resolution,here>>, it's recommended to annotate all event message classes with `@Event`. This allows you to:
+
+* Define an explicit message type independent of the Java class name.
+* Version your queries for evolution over time.
+* Organize queries by bounded context using namespaces.
+* Leverage payload conversion at handling time for different representations.
+
+If the `@Event` annotation is omitted, Axon will default to using the fully qualified class name as the event name, which tightly couples your message identity to your Java package structure.
+====
+
 The exception to this flow is Spring, for which the registration of event handlers is separated from the configuration of event processors.
-The examples below show
+The examples below show how to event handlers can be configured:
 
 [tabs]
 ====
