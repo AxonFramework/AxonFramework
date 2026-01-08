@@ -56,7 +56,7 @@ You can add a handler that receives the event in this new format:
 
 [source,java]
 ----
-@EventHandler(eventName = "OrderPlaced")
+@EventHandler
 public void on(EnrichedOrderPlacedEvent event) {
     // Axon converts the stored OrderPlacedEvent to EnrichedOrderPlacedEvent
     // The productCount field is computed during conversion
