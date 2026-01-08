@@ -198,7 +198,7 @@ class Coordinator {
     private void scheduleCoordinator() {
         CoordinationTask coordinator = coordinationTask.get();
         if (coordinator != null) {
-            logger.info("Processor [{}]. Segment operation queued. Scheduling immediate coordination task.", name);
+            logger.debug("Processor [{}]. Segment operation queued. Scheduling immediate coordination task.", name);
             coordinator.scheduleImmediateCoordinationTask();
         }
     }
@@ -805,7 +805,7 @@ class Coordinator {
                     .whenComplete((result, exception) -> {
                         processingGate.set(false);
                         if (exception != null) {
-                            logger.warn(
+                            logger.debug(
                                     "Processor [{}] (Coordination Task [{}]). Task [{}] completed with error. "
                                             + "Scheduling immediate coordination task (itself).",
                                     name,
@@ -813,7 +813,7 @@ class Coordinator {
                                     task.getDescription(),
                                     exception);
                         } else {
-                            logger.info(
+                            logger.debug(
                                     "Processor [{}] (Coordination Task [{}]). Task [{}] completed successfully. "
                                             + "Scheduling immediate coordination task (itself).",
                                     name,
@@ -870,7 +870,7 @@ class Coordinator {
 
             if (workPackages.isEmpty()) {
                 // We didn't start any work packages. Retry later.
-                logger.info(
+                logger.debug(
                         "Processor [{}] (Coordination Task [{}]). No segments claimed. "
                                 + "Scheduling delayed coordination task (itself) with delay of {}ms.",
                         name,
@@ -914,7 +914,7 @@ class Coordinator {
                     // All work package have space available to handle events and there are still events on the stream.
                     // We should thus start this process again immediately.
                     // It will likely jump all the if-statement directly, thus initiating the reading of events ASAP.
-                    logger.info(
+                    logger.debug(
                             "Processor [{}] (Coordination Task [{}]). Space available and events pending. "
                                     + "Scheduling immediate coordination task (itself).",
                             name,
@@ -922,7 +922,7 @@ class Coordinator {
                     scheduleImmediateCoordinationTask();
                 } else if (isSpaceAvailable()) {
                     if (!availabilityCallbackSupported) {
-                        logger.info(
+                        logger.trace(
                                 "Processor [{}] (Coordination Task [{}]). Space available, no events pending, "
                                         + "no availability callback. Scheduling coordination task (itself) with delay of 500ms.",
                                 name,
@@ -930,7 +930,7 @@ class Coordinator {
                         scheduleCoordinationTask(500);
                     } else {
                         long delay = Math.min(claimExtensionThreshold, tokenClaimInterval);
-                        logger.info(
+                        logger.trace(
                                 "Processor [{}] (Coordination Task [{}]). Space available, no events pending. "
                                         + "Scheduling delayed coordination task (itself) with delay of {}ms.",
                                 name,
@@ -939,7 +939,7 @@ class Coordinator {
                         scheduleDelayedCoordinationTask(delay);
                     }
                 } else {
-                    logger.info(
+                    logger.trace(
                             "Processor [{}] (Coordination Task [{}]). No space available in work packages. "
                                     + "Scheduling coordination task (itself) with delay of 100ms.",
                             name,
@@ -1094,7 +1094,7 @@ class Coordinator {
                              trackingToken);
                 availabilityCallbackSupported =
                         eventStream.setOnAvailableCallback(() -> {
-                            logger.info(
+                            logger.trace(
                                     "Processor [{}] (Coordination Task [{}]). Events became available (callback triggered). "
                                             + "Scheduling immediate coordination task (itself).",
                                     name,
