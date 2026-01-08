@@ -175,6 +175,7 @@ class Coordinator {
                                                  .shutdownHandle();
         CoordinationTask task = coordinationTask.getAndSet(null);
         if (task != null) {
+            logger.info("Processor [{}]. Stop requested. Scheduling immediate coordination task.", name);
             task.scheduleImmediateCoordinationTask();
         }
         return handle;
@@ -197,6 +198,7 @@ class Coordinator {
     private void scheduleCoordinator() {
         CoordinationTask coordinator = coordinationTask.get();
         if (coordinator != null) {
+            logger.info("Processor [{}]. External trigger. Scheduling immediate coordination task.", name);
             coordinator.scheduleImmediateCoordinationTask();
         }
     }
@@ -802,6 +804,12 @@ class Coordinator {
                     .thenRun(() -> unclaimedSegmentValidationThreshold = 0)
                     .whenComplete((result, exception) -> {
                         processingGate.set(false);
+                        logger.info(
+                                "Processor [{}] (Coordination Task [{}]). CoordinatorTask [{}] completed. "
+                                        + "Scheduling immediate coordination task (itself).",
+                                name,
+                                generation,
+                                task.getDescription());
                         scheduleImmediateCoordinationTask();
                     });
                 return;
@@ -896,9 +904,19 @@ class Coordinator {
                     // All work package have space available to handle events and there are still events on the stream.
                     // We should thus start this process again immediately.
                     // It will likely jump all the if-statement directly, thus initiating the reading of events ASAP.
+                    logger.info(
+                            "Processor [{}] (Coordination Task [{}]). Space available and events pending. "
+                                    + "Scheduling immediate coordination task (itself).",
+                            name,
+                            generation);
                     scheduleImmediateCoordinationTask();
                 } else if (isSpaceAvailable()) {
                     if (!availabilityCallbackSupported) {
+                        logger.info(
+                                "Processor [{}] (Coordination Task [{}]). Space available, no events pending, "
+                                        + "no availability callback. Scheduling coordination task (itself) with delay of 500ms.",
+                                name,
+                                generation);
                         scheduleCoordinationTask(500);
                     } else {
                         long delay = Math.min(claimExtensionThreshold, tokenClaimInterval);
@@ -911,6 +929,11 @@ class Coordinator {
                         scheduleDelayedCoordinationTask(delay);
                     }
                 } else {
+                    logger.info(
+                            "Processor [{}] (Coordination Task [{}]). No space available in work packages. "
+                                    + "Scheduling coordination task (itself) with delay of 100ms.",
+                            name,
+                            generation);
                     scheduleCoordinationTask(100);
                 }
             } catch (Exception e) {
@@ -1060,7 +1083,14 @@ class Coordinator {
                              generation,
                              trackingToken);
                 availabilityCallbackSupported =
-                        eventStream.setOnAvailableCallback(this::scheduleImmediateCoordinationTask);
+                        eventStream.setOnAvailableCallback(() -> {
+                            logger.info(
+                                    "Processor [{}] (Coordination Task [{}]). Events became available (callback triggered). "
+                                            + "Scheduling immediate coordination task (itself).",
+                                    name,
+                                    generation);
+                            scheduleImmediateCoordinationTask();
+                        });
                 lastScheduledToken = trackingToken;
             }
         }
