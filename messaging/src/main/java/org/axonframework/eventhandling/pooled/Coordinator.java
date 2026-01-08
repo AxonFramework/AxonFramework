@@ -159,7 +159,7 @@ class Coordinator {
             }
         } else if (!newState.isRunning) {
             throw new IllegalStateException(String.format(
-                    "Cannot start a processor [" + name + "] while it's in process of shutting down."));
+                    "Cannot start a processor [%s] while it's in process of shutting down.", name));
         }
     }
 
