@@ -1,8 +1,8 @@
 = Queries
 :page-aliases: README.adoc,query-processing.adoc
 
-The third type of message that an Axon application is associated with is the query message, or simply queries.
-These are messages that request information in a certain format. Any application can declare it's able to handle a query message and provide a response to it.
+Commands are messages that express the request for data.
+Any application can declare it's able to handle a query message and provide a response to it.
 
 Query handling is fully async-native, with all query dispatching operations returning `CompletableFuture` or `Publisher` types. Query handlers can return these types directly, allowing for efficient asynchronous processing. Queries are routed based on the query's `MessageType` (qualified name and version), independent of the Java class used to represent the query payload.
 
