@@ -2,11 +2,10 @@
 
 There are two different types of interceptors: dispatch interceptors and handler interceptors.
 
-**Dispatch interceptors** are invoked before a message is dispatched.
+1. **Dispatch interceptors** - Interceptors that are invoked before a message is dispatched.
 At that point, it may not even be known that a handler exists for that message.
 They can modify the message (add metadata) or block dispatching entirely.
-
-**Handler interceptors** are invoked just before the message handler is invoked.
+2. **Handler interceptors** - Interceptors that are invoked just before the message handler is invoked.
 They can perform actions before and after handling, and are aware of the active xref:processing-context.adoc[processing context].
 
 Let's look at each interceptor in a bit more detail.
