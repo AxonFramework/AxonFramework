@@ -1,5 +1,11 @@
 = Associations
 
+[WARNING]
+====
+Sagas do not have a replacement yet in Axon Framework 5.
+Once the intended replacement is in place the documentation will be adjusted accordingly.
+====
+
 When a saga manages a transaction across multiple domain concepts, such as Order, Shipment, Invoice, etc, that saga needs to be associated with instances of those concepts. An association requires two parameters: the key, which identifies the type of association (Order, Shipment, etc) and a value, which represents the identifier of that concept.
 
 Associating a saga with a concept is done in several ways. First, when a Saga is newly created when invoking a `@StartSaga` annotated event handler, it is automatically associated with the property identified in the `@SagaEventHandler` method. Any other association can be created using the `SagaLifecycle.associateWith(String key, String/Number value)` method. Use the `SagaLifecycle.removeAssociationWith(String key, String/Number value)` method to remove a specific association. If you would like to know the associations of the Saga at a certain point you can get all associated values using `SagaLifecycle.associationValues()`.

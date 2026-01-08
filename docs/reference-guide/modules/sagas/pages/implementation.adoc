@@ -1,5 +1,11 @@
 = Implementation
 
+[WARNING]
+====
+Sagas do not have a replacement yet in Axon Framework 5.
+Once the intended replacement is in place the documentation will be adjusted accordingly.
+====
+
 A Saga is a special type of event listener: one that manages a business transaction. Some transactions could be running for days or even weeks, while others are completed within a few milliseconds. In Axon, each instance of a Saga is responsible for managing a single business transaction. That means a Saga maintains state necessary to manage that transaction, continuing it or taking compensating actions to roll back any actions already taken. Typically, and contrary to regular event listeners, a saga has a starting point and an end, both triggered by events. While the starting point of a saga is usually clear, there could be many ways for a saga to end.
 
 In Axon, sagas are classes that define one or more `@SagaEventHandler` methods. Unlike regular event handlers, multiple instances of a saga may exist at any time. Sagas are managed by a single event processor (Tracking or Subscribing), which is dedicated to dealing with events for that specific saga type.

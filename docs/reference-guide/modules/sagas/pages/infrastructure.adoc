@@ -1,5 +1,11 @@
 = Infrastructure
 
+[WARNING]
+====
+Sagas do not have a replacement yet in Axon Framework 5.
+Once the intended replacement is in place the documentation will be adjusted accordingly.
+====
+
 Events need to be redirected to the appropriate saga instances. To do so, some infrastructure classes are required. The most important components are the `SagaManager` and the `SagaRepository`.
 
 == Saga manager
