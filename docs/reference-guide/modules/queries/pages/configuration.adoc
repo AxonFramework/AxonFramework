@@ -66,9 +66,9 @@ public class AxonApp {
 The `annotatedQueryHandlingComponent()` method scans the provided object for methods annotated with `@QueryHandler` and automatically registers them with the `QueryBus`.
 
 [NOTE]
-====
+
 For most use cases, using `annotatedQueryHandlingComponent()` with `@QueryHandler` annotated methods is the recommended approach. The framework also provides low-level APIs for registering lambda query handlers directly, but these require working with `QueryMessage` and `MessageStream` types and are primarily intended for advanced scenarios (for example when annotations are not desired) or framework integrations.
-====
+
 --
 
 Spring Boot::
@@ -95,6 +95,7 @@ public class CardSummaryProjection {
 ----
 
 Spring Boot's auto-configuration automatically scans for beans containing `@QueryHandler` methods and registers them with the `QueryBus`.
+
 --
 ====
 

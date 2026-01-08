@@ -25,9 +25,44 @@ Event-sourced entities are the most common pattern for stateful command handling
 
 [tabs]
 ====
+Configuration API::
++
+--
+Use `EventSourcingConfigurer` to register entities:
+
+[source,java]
+----
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+import org.axonframework.modelling.configuration.EntityModule;
+
+public class AxonConfig {
+
+    public void configureEntity() {
+        EventSourcingConfigurer configurer = EventSourcingConfigurer.create();
+
+        // Register an entity module
+        configurer.registerEntity(
+                EventSourcedEntityModule.autodetected(String.class, GiftCard.class).build()
+        );
+    }
+}
+----
+
+For using the `autodetected`, the given entity class should use annotation.
+When this is the case, this approach creates and registers:
+
+* An `EventSourcedRepository` for the `GiftCard` entity.
+* Command handler subscriptions for all `@CommandHandler` methods.
+* Event sourcing handlers for state reconstitution.
+
+If full manual configuration is required, for example in absence of annotations, use the `EventSourcedEntityModule#declarative` flow instead.
+
+--
+
 Spring Boot::
 +
 --
+
 Use the `@EventSourced` annotation on your entity class:
 
 [source,java]
@@ -79,40 +114,6 @@ Spring Boot automatically:
 * Discovers the entity through component scanning
 * Creates an `EventSourcedRepository` for the entity
 * Registers all `@CommandHandler` methods with the command bus
-
---
-
-Configuration API::
-+
---
-Use `EventSourcingConfigurer` to register entities:
-
-[source,java]
-----
-import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.modelling.configuration.EntityModule;
-
-public class AxonConfig {
-
-    public void configureEntity() {
-        EventSourcingConfigurer configurer = EventSourcingConfigurer.create();
-
-        // Register an entity module
-        configurer.registerEntity(
-                EventSourcedEntityModule.autodetected(String.class, GiftCard.class).build()
-        );
-    }
-}
-----
-
-For using the `autodetected`, the given entity class should use annotation.
-When this is the case, this approach creates and registers:
-
-* An `EventSourcedRepository` for the `GiftCard` entity.
-* Command handler subscriptions for all `@CommandHandler` methods.
-* Event sourcing handlers for state reconstitution.
-
-If full manual configuration is required, for example in absence of annotations, use the `EventSourcedEntityModule#declarative` flow instead.
 
 --
 ====
