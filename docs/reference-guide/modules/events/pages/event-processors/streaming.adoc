@@ -783,7 +783,7 @@ This requires the autodetected configuration solution, is provided through Sprin
 This requires the autodetected configuration solution, is provided through Spring!
 3. Define the desired `SequencingPolicy` through declarative configuration with the `EventProcessingConfigurer`.
 
-Consider the following snippets when configuring a (custom) `SequencingPolicy` and for using the `@SequencingPolicy` annotation:
+Consider the following snippets when using the `@SequencingPolicy` annotation:
 
 [tabs]
 ====
@@ -850,7 +850,12 @@ class CustomEventHandlingComponent {
 }
 ----
 --
+====
 
+Consider the following snippets when configuring a (custom) `SequencingPolicy`:
+
+[tabs]
+====
 Declarative Sequencing Policy configuration::
 +
 --
