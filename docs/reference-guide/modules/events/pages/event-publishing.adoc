@@ -12,7 +12,7 @@ In general, these can be grouped in two major areas:
 
 Axon provides five interfaces you can use to publish event to your event handlers:
 
-1. The `EventAppender` - This component comes into play when <<event_appender,publishing events from an entity>>.
+1. The `EventAppender` - This component comes into play when <<event_appender,publishing events>>, from for example an entity.
 2. The `EventGateway` - This component comes into play when <<event_gateway,publishing events from anything else than an entity>>.
 3. The `EventSink`, `EventBus`, and `EventStore` - Axon's infrastructure layering to support different event publication concerns, as described <<low_level_event_publication,here>>.
 Useful to know they exist, but we recommend usage of the `EventAppender` and `EventGateway` at all times.
