@@ -183,18 +183,6 @@ The subscription query allows a client to get the initial state of the model it 
 In short, it is an invocation of a point-to-point query with the possibility to be updated when the initial state changes.
 To update a subscription with changes to the model, we use the `QueryUpdateEmitter` component provided by Axon.
 
-[IMPORTANT]
-.Subscription query API changes in Axon 5
-====
-Axon 5 has simplified the subscription query API:
-
-* Returns a single `Publisher` that combines initial results and updates
-* No more `ResponseTypes` - use `Class` types directly
-* No need to explicitly close subscriptions - cancelling the `Publisher` subscription automatically closes the query
-* `QueryUpdateEmitter` must be injected as a handler parameter (not as a field)
-* `QueryUpdateEmitter` is now `ProcessingContext`-aware
-====
-
 === Query handler example
 
 Let's look at a query handler that provides the initial state:
