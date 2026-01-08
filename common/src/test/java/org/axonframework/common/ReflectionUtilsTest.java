@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,14 @@ import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.axonframework.common.ReflectionUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -332,6 +334,77 @@ class ReflectionUtilsTest {
     void fieldNameFromMemberHandlesGetURLSpecialCase() throws NoSuchMethodException {
         Method getURLMethod = SomeTypeWithSetters.class.getDeclaredMethod("getURL");
         assertEquals("URL", ReflectionUtils.fieldNameFromMember(getURLMethod));
+    }
+
+    @Nested
+    class CollectSealedHierarchyIfSealedTest {
+
+        sealed interface Foo {
+            record Bar() implements Foo {}
+        }
+
+        sealed interface Level0 {
+            sealed class Level1a implements Level0 {
+                final class Level2a extends Level1a {}
+            }
+            sealed class Level1b implements Level0 {
+                final class Level2b extends Level1b {}
+            }
+        }
+
+        @Test
+        void emptyWhenTypeIsNotSealed() {
+            assertThat(collectSealedHierarchyIfSealed(Object.class)).isEmpty();
+        }
+
+        @Test
+        void returnsSubclassesWhenTypeIsSealed() {
+            assertThat(collectSealedHierarchyIfSealed(Foo.class)).containsExactly(Foo.Bar.class);
+        }
+
+        @Test
+        void returnsRecursiveSubclassesWhenTypeIsSealed() {
+            assertThat(collectSealedHierarchyIfSealed(Level0.class)).containsExactlyInAnyOrder(
+                    Level0.Level1a.Level2a.class,
+                    Level0.Level1b.Level2b.class
+            );
+        }
+    }
+
+    @Nested
+    class CollectAnnotatedMethodsAndFieldsTest {
+
+        static class Foo {
+
+            private String xfield;
+
+            private String xmethod() {
+                return null;
+            }
+        }
+
+        record Bar(String xfield) {
+
+            private String xmethod() {
+                return null;
+            }
+        }
+
+        @Test
+        void findAllMethodsAndFieldsOnSimpleClass() {
+            var members = collectMatchingMethodsAndFields(Foo.class, it -> it.getName().startsWith("x"));
+            assertThat(members).hasSize(2);
+            assertThat(members).extracting(Member::getName)
+                    .containsExactlyInAnyOrder("xfield", "xmethod");
+        }
+
+        @Test
+        void findAllMethodsAndFieldsOnRecord() {
+            var members = collectMatchingMethodsAndFields(Bar.class, it -> it.getName().startsWith("x"));
+            assertThat(members).hasSize(2);
+            assertThat(members).extracting(Member::getName)
+                    .containsExactlyInAnyOrder("xfield", "xmethod");
+        }
     }
 
     private static class SomeTypeWithSetters {

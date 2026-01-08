@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,14 +32,19 @@ import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.lang.String.format;
+import static java.util.stream.StreamSupport.stream;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
@@ -581,6 +586,101 @@ public final class ReflectionUtils {
             default -> throw new AxonConfigurationException(
                     format("Member [%s] is not a field or method", member)
             );
+        }
+    }
+
+    /**
+     * Each property of a record has both a backing {@link Field} and a {@link Method} (the accessor). This method
+     * filters out the fields that have a corresponding method, as these would result in duplicate child entity
+     * otherwise.
+     *
+     * @param methods The list of methods to check against the fields.
+     * @return {@code true} if the field is not duplicated by a given method
+     */
+    private static Predicate<Field> deduplicateRecordFields(List<Method> methods) {
+        return field -> methods
+                .stream()
+                .noneMatch(method -> method.getName().equals(field.getName())
+                        && method.getParameterCount() == 0
+                        && method.getReturnType().equals(field.getType()));
+    }
+
+    /**
+     * Collects all {@link Member Members} of type {@link Field} and {@link Method} for given type in one single list.
+     * If the given type is a record, the record-style getters are deduplicated.
+     *
+     * @param type The type which fields and methods are collected.
+     * @return List of all found fields and messages.
+     * @see #collectMatchingMethodsAndFields(Class, Predicate)
+     */
+    @Nonnull
+    public static List<? extends Member> collectMethodsAndFields(@Nonnull Class<?> type) {
+        return collectMatchingMethodsAndFields(type, it -> true);
+    }
+
+    /**
+     * Collects all {@link Member Members} of type {@link Field} and {@link Method} which match the given filter for a
+     * given type in one single list. If the given type is a record, the record-style getters are deduplicated.
+     *
+     * @param type The type which fields and methods are collected.
+     * @param filter A filter that only keeps matching members.
+     * @return List of all found fields and messages.
+     */
+    @Nonnull
+    public static List<? extends Member> collectMatchingMethodsAndFields(@Nonnull Class<?> type,
+                                                                         @Nonnull Predicate<Member> filter) {
+        List<Method> methods = stream(ReflectionUtils.methodsOf(type).spliterator(), false).toList();
+        var deduplicateFilter = deduplicateRecordFields(methods);
+
+        var fields = stream(ReflectionUtils.fieldsOf(type).spliterator(), false)
+                .filter(deduplicateFilter);
+
+        return Stream.concat(fields, methods.stream())
+                     .filter(filter)
+                     .toList();
+    }
+
+    /**
+     * Collects all concrete types from a sealed hierarchy if the given type is sealed. Returns an empty set if the type
+     * is not sealed.
+     *
+     * @param rootType The root type to scan for sealed hierarchy.
+     * @param <T>      The type parameter.
+     * @return A set of all concrete types in the hierarchy, or an empty set if the type is not sealed.
+     */
+    @Nonnull
+    public static <T> Set<Class<? extends T>> collectSealedHierarchyIfSealed(@Nonnull Class<T> rootType) {
+        if (!rootType.isSealed()) {
+            return Set.of();
+        }
+        Set<Class<? extends T>> result = new HashSet<>();
+        collectSealedHierarchyRecursive(rootType, result);
+        return result;
+    }
+
+    /**
+     * Recursively collects all concrete types from a sealed hierarchy.
+     *
+     * @param type        The current type to scan.
+     * @param accumulator The set to accumulate concrete types into.
+     * @param <T>         The root type parameter.
+     */
+    @SuppressWarnings("unchecked")
+    private static <T> void collectSealedHierarchyRecursive(@Nonnull Class<T> type,
+                                                            @Nonnull Set<Class<? extends T>> accumulator) {
+        if (type.isSealed()) {
+            Class<?>[] permittedSubclasses = type.getPermittedSubclasses();
+            if (permittedSubclasses != null) {
+                for (Class<?> subclass : permittedSubclasses) {
+                    // Recursively scan if the subclass is also sealed
+                    if (subclass.isSealed()) {
+                        collectSealedHierarchyRecursive((Class<T>) subclass, accumulator);
+                    } else {
+                        // Add concrete types to the accumulator
+                        accumulator.add((Class<? extends T>) subclass);
+                    }
+                }
+            }
         }
     }
 

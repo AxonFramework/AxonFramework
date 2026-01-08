@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,12 @@
 package org.axonframework.eventsourcing.configuration;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.Assert;
 import org.axonframework.common.ConstructorUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.common.configuration.BaseModule;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.Configuration;
-import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.annotation.CriteriaResolverDefinition;
@@ -31,6 +31,7 @@ import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactoryDefin
 import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.conversion.MessageConverter;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.modelling.EntityIdResolver;
 import org.axonframework.modelling.annotation.EntityIdResolverDefinition;
 import org.axonframework.modelling.entity.EntityMetamodel;
@@ -39,9 +40,12 @@ import org.axonframework.modelling.entity.annotation.AnnotatedEntityMetamodel;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
 import static org.axonframework.common.ConstructorUtils.getConstructorFunctionWithZeroArguments;
+import static org.axonframework.common.ReflectionUtils.collectSealedHierarchyIfSealed;
 
 /**
  * Annotation-based implementation of the {@link EventSourcedEntityModule}. Expects the {@link EventSourcedEntity}
@@ -131,19 +135,29 @@ class AnnotatedEventSourcedEntityModule<I, E>
         };
     }
 
+    /**
+     * Collects the types from {@link EventSourcedEntity#concreteTypes()} and subtypes of sealed superType, if
+     * the given {@link #entityType} is sealed.
+     *
+     * @param attributes the annotation properties derived from {@link EventSourcedEntity}.
+     * @return set of classes that are either explicitly configured via <code>concreteTypes</code> or derived from sealed superType.
+     */
     private Set<Class<? extends E>> getConcreteEntityTypes(Map<String, Object> attributes) {
         //noinspection unchecked
         Class<? extends E>[] concreteTypes = (Class<? extends E>[]) attributes.get("concreteTypes");
-        Arrays.stream(concreteTypes)
-              .filter(concreteType -> !entityType.isAssignableFrom(concreteType))
-              .forEach(concreteType -> {
-                  throw new IllegalArgumentException(
-                          ("The declared concrete type [%s] is not assignable to the entity type [%s]. "
-                                  + "Please ensure the concrete type is a subclass of the entity type.")
-                                  .formatted(concreteType.getName(), entityType.getName())
-                  );
-              });
-        return Set.of(concreteTypes);
+
+        var sealedSubtypes = collectSealedHierarchyIfSealed(entityType);
+
+        return Stream.concat(
+                Arrays.stream(concreteTypes)
+                      .peek(concreteType -> Assert.isTrue(entityType.isAssignableFrom(concreteType),
+                                                          () -> ("The declared concrete type [%s] is not assignable to the entity type [%s]. "
+                                                                  + "Please ensure the concrete type is a subclass of the entity type.").formatted(
+                                                                  concreteType.getName(),
+                                                                  entityType.getName())
+                      )),
+                sealedSubtypes.stream()
+        ).collect(Collectors.toSet());
     }
 
     @Override

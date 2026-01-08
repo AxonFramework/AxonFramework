@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,6 +63,7 @@ public interface Converter extends DescribableComponent {
      * @param targetType The type to convert the given {@code input} into.
      * @param <T>        The target data type.
      * @return A converted version of the given {@code input} into the given {@code targetType}.
+     * @throws ConversionException If the {@code input} cannot be converted to the given {@code targetType}.
      */
     @Nullable
     default <T> T convert(@Nullable Object input, @Nonnull Class<T> targetType) {
@@ -76,6 +77,7 @@ public interface Converter extends DescribableComponent {
      * @param targetType The type to convert the given {@code input} into.
      * @param <T>        The target data type.
      * @return A converted version of the given {@code input} into the given {@code targetType}.
+     * @throws ConversionException If the {@code input} cannot be converted to the given {@code targetType}.
      */
     @Nullable
     <T> T convert(@Nullable Object input, @Nonnull Type targetType);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-package org.axonframework.integrationtests.testsuite.course.module;
+package org.axonframework.modelling.entity.domain.development.events;
 
-import org.axonframework.eventsourcing.annotation.EventTag;
-
-public record CourseCreated(@EventTag(key = "Course") String courseId) {
+public record TaskCompleted(String taskId, String resolution) {
 
 }

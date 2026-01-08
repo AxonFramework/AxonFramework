@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.axonframework.messaging.eventhandling.annotation;
 
 import org.axonframework.common.annotation.Internal;
+import org.axonframework.messaging.core.annotation.HandlerAttributes;
 import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.messaging.core.annotation.UnsupportedHandlerException;
@@ -45,6 +46,9 @@ public class MethodSequencingPolicyEventHandlerDefinition implements HandlerEnha
 
     @Override
     public @Nonnull <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
+        if (original.attribute(HandlerAttributes.EVENT_NAME).isEmpty()) {
+            return original;
+        }
         return original.unwrap(Method.class)
                        .flatMap(method -> findSequencingPolicy(method).map(annotation -> (MessageHandlingMember<T>) new SequencingPolicyEventMessageHandlingMember<>(
                                original,

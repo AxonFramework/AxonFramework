@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.axonframework.messaging.eventhandling.replay.annotation;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.annotation.AnnotationUtils;
+import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.core.Message;
@@ -35,8 +36,8 @@ import java.util.Optional;
 import static java.util.Collections.singletonMap;
 
 /**
- * An implementation of the {@link HandlerEnhancerDefinition} that is used for
- * {@link AllowReplay} annotated message handling methods.
+ * An implementation of the {@link HandlerEnhancerDefinition} that is used for {@link AllowReplay} annotated message
+ * handling methods.
  *
  * @author Allard Buijze
  * @since 3.2
@@ -72,14 +73,14 @@ public class ReplayAwareMessageHandlerWrapper implements HandlerEnhancerDefiniti
         }
 
         @Override
-        public Object handleSync(@Nonnull Message message,
-                                 @Nonnull ProcessingContext context,
-                                 @Nullable T target) throws Exception {
+        public MessageStream<?> handle(@Nonnull Message message,
+                                       @Nonnull ProcessingContext context,
+                                       @Nullable T target) {
             Optional<TrackingToken> optionalToken = TrackingToken.fromContext(context);
             if (optionalToken.isPresent() && ReplayToken.isReplay(optionalToken.get())) {
-                return null;
+                return MessageStream.empty();
             }
-            return super.handleSync(message, context, target);
+            return super.handle(message, context, target);
         }
 
         @SuppressWarnings("unchecked")

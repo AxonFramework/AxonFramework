@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,13 @@
 
 package org.axonframework.common.annotation;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -313,6 +315,17 @@ public final class AnnotationUtils {
         }
 
         return hasSubjectAnnotation;
+    }
+
+    /**
+     * Creates a {@link Predicate} that checks whether the given {@link Member} is annotated with the given {@code annotationType}.
+     *
+     * @param annotationType The annotation type to check.
+     * @return Predicate that checks whether the given annotation is present.
+     */
+    @Nonnull
+    public static Predicate<Member> isAnnotatedWith(@Nonnull Class<? extends Annotation> annotationType) {
+        return it ->  it instanceof AnnotatedElement &&  isAnnotationPresent((AnnotatedElement)it, annotationType);
     }
 
     /**

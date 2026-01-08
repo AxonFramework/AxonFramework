@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,9 @@
  * limitations under the License.
  */
 
-package org.axonframework.common.util;
+package org.axonframework.common.configuration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.configuration.Configuration;
-import org.axonframework.common.configuration.LifecycleHandler;
-import org.axonframework.common.configuration.LifecycleRegistry;
 
 import java.util.HashMap;
 import java.util.List;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.axonframework.common.annotation.AnnotationUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -163,6 +164,18 @@ class AnnotationUtilsTest {
         assertFalse(result);
         assertEquals(expectedAnnotatedWithSubject, resultAnnotatedWithSubject);
         assertEquals(expectedVisited, resultVisited);
+    }
+
+    @Test
+    void isAnnotatedTrueWhenAnnotationExists() throws NoSuchMethodException {
+        var method = AnnotationUtilsTest.class.getDeclaredMethod("directAnnotated");
+        assertThat(isAnnotatedWith(TheTarget.class)).accepts(method);
+    }
+
+    @Test
+    void isAnnotatedFalseWhenAnnotationNotExists() throws NoSuchMethodException {
+        var method = AnnotationUtilsTest.class.getDeclaredMethod("directAnnotated");
+        assertThat(isAnnotatedWith(AnotherMetaAnnotation.class)).rejects(method);
     }
 
     @TheTarget

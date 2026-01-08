@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.entity.domain.development;
+package org.axonframework.integrationtests.testsuite.course.events;
 
-public class InternalProject extends Project {
-    public InternalProject(String projectId, String name) {
-        super(projectId, name);
-    }
+import org.axonframework.eventsourcing.annotation.EventTag;
+
+public record CourseCreated(@EventTag(key = "Course") String courseId) {
+
 }

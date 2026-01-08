@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,8 +30,14 @@ import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.annotation.UnsupportedHandlerException;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.replay.annotation.ResetHandler;
 import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
 import org.junit.jupiter.api.*;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -160,6 +166,49 @@ class MethodSequencingPolicyEventHandlerDefinitionTest {
         }
     }
 
+    @Nested
+    class ResetHandlerNotWrapped {
+
+        @Test
+        void resetHandlerWithClassLevelPolicyNotWrapped() {
+            MessageHandlingMember<ClassWithResetHandler> handler = createHandler(
+                    ClassWithResetHandler.class, "onReset"
+            );
+            MessageHandlingMember<ClassWithResetHandler> wrappedHandler = testSubject.wrapHandler(handler);
+
+            // ResetHandler methods should NOT be wrapped with sequencing policy
+            assertSame(handler, wrappedHandler);
+        }
+
+        @Test
+        void resetHandlerWithMethodLevelPolicyNotWrapped() {
+            MessageHandlingMember<ResetHandlerWithMethodPolicy> handler = createHandler(
+                    ResetHandlerWithMethodPolicy.class, "onReset"
+            );
+            MessageHandlingMember<ResetHandlerWithMethodPolicy> wrappedHandler = testSubject.wrapHandler(handler);
+
+            // ResetHandler methods should NOT be wrapped with sequencing policy even if annotated
+            assertSame(handler, wrappedHandler);
+        }
+    }
+
+    @Nested
+    class MetaAnnotationSupport {
+
+        @Test
+        void customEventHandlerAnnotationWithClassLevelPolicyIsWrapped() {
+            MessageHandlingMember<CustomEventHandlerWithClassPolicy> handler = createHandler(
+                    CustomEventHandlerWithClassPolicy.class, "handleWithCustomAnnotation", String.class
+            );
+            MessageHandlingMember<CustomEventHandlerWithClassPolicy> wrappedHandler = testSubject.wrapHandler(handler);
+
+            // Custom meta-annotated EventHandler should be wrapped
+            assertNotSame(handler, wrappedHandler);
+            SequencingPolicy policy = getSequencingPolicy(wrappedHandler);
+            assertEquals(SequentialPolicy.class, policy.getClass());
+        }
+    }
+
     private static MessageStream<?> returnTypeConverter(Object result) {
         return MessageStream.just(new GenericMessage(new MessageType(ObjectUtils.nullSafeTypeOf(result)), result));
     }
@@ -257,6 +306,45 @@ class MethodSequencingPolicyEventHandlerDefinitionTest {
         @EventHandler
         @org.axonframework.messaging.eventhandling.annotation.SequencingPolicy(type = MetadataSequencingPolicy.class, parameters = {"override"})
         void eventHandlerMethod(String payload) {
+        }
+    }
+
+    // Test class with class-level SequencingPolicy and a ResetHandler - the ResetHandler should NOT be wrapped
+    @org.axonframework.messaging.eventhandling.annotation.SequencingPolicy(type = SequentialPolicy.class)
+    static class ClassWithResetHandler {
+        @SuppressWarnings("unused")
+        @EventHandler
+        void eventHandlerMethod(String payload) {
+        }
+
+        @SuppressWarnings("unused")
+        @ResetHandler
+        void onReset() {
+        }
+    }
+
+    // Test class with method-level SequencingPolicy on a ResetHandler - should NOT be wrapped
+    static class ResetHandlerWithMethodPolicy {
+        @SuppressWarnings("unused")
+        @ResetHandler
+        @org.axonframework.messaging.eventhandling.annotation.SequencingPolicy(type = SequentialPolicy.class)
+        void onReset() {
+        }
+    }
+
+    // Custom annotation meta-annotated with @EventHandler
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @EventHandler
+    @interface CustomEventHandler {
+    }
+
+    // Test class with custom meta-annotation and class-level SequencingPolicy
+    @org.axonframework.messaging.eventhandling.annotation.SequencingPolicy(type = SequentialPolicy.class)
+    static class CustomEventHandlerWithClassPolicy {
+        @SuppressWarnings("unused")
+        @CustomEventHandler
+        void handleWithCustomAnnotation(String payload) {
         }
     }
 }

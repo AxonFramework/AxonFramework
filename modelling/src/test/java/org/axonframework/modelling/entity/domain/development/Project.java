@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,11 +24,13 @@ import org.axonframework.modelling.entity.annotation.AnnotatedEntityMetamodel;
 import org.axonframework.modelling.entity.annotation.EntityMember;
 import org.axonframework.modelling.entity.domain.development.commands.AssignDeveloperAsLeadDeveloper;
 import org.axonframework.modelling.entity.domain.development.commands.AssignDeveloperToProject;
+import org.axonframework.modelling.entity.domain.development.commands.AssignMarketeer;
 import org.axonframework.modelling.entity.domain.development.commands.CreateProjectCommand;
 import org.axonframework.modelling.entity.domain.development.commands.RenameProjectCommand;
 import org.axonframework.modelling.entity.domain.development.common.ProjectType;
 import org.axonframework.modelling.entity.domain.development.events.DeveloperAssignedToProject;
 import org.axonframework.modelling.entity.domain.development.events.LeadDeveloperAssigned;
+import org.axonframework.modelling.entity.domain.development.events.MarketeerAssigned;
 import org.axonframework.modelling.entity.domain.development.events.ProjectCreatedEvent;
 import org.axonframework.modelling.entity.domain.development.events.ProjectRenamedEvent;
 
@@ -59,6 +61,40 @@ import java.util.List;
  * @author Mitchell Herrijgers
  */
 public abstract class Project {
+
+    public static class InternalProject extends Project {
+        public InternalProject(String projectId, String name) {
+            super(projectId, name);
+        }
+    }
+
+    public static class OpenSourceProject extends Project {
+
+        @EntityMember
+        private Marketeer marketeer;
+
+        public OpenSourceProject(String projectId, String name) {
+            super(projectId, name);
+        }
+
+        @CommandHandler
+        public void handle(AssignMarketeer command, EventAppender appender) {
+            appender.append(new MarketeerAssigned(
+                    command.projectId(),
+                    command.email(),
+                    command.hubspotUsername()
+            ));
+        }
+
+        @EventHandler
+        public void on(MarketeerAssigned event) {
+            this.marketeer = new Marketeer(event.email(), event.hubspotUsername());
+        }
+
+        public Marketeer getMarketeer() {
+            return marketeer;
+        }
+    }
 
     private final String projectId;
     private String name;
@@ -166,4 +202,5 @@ public abstract class Project {
     public void setLeadDeveloper(Developer leadDeveloper) {
         this.leadDeveloper = leadDeveloper;
     }
+
 }

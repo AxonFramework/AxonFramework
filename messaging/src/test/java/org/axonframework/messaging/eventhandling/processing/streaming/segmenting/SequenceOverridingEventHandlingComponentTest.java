@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,9 @@ package org.axonframework.messaging.eventhandling.processing.streaming.segmentin
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.eventhandling.*;
+import org.axonframework.messaging.eventhandling.replay.ResetContext;
+import org.axonframework.messaging.eventhandling.replay.ResetHandler;
+import org.axonframework.messaging.eventhandling.replay.ResetHandlerRegistry;
 import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
@@ -90,6 +93,7 @@ class SequenceOverridingEventHandlingComponentTest {
                 return Set.of();
             }
 
+            @Nonnull
             @Override
             public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
                                                        @Nonnull ProcessingContext context) {
@@ -109,6 +113,19 @@ class SequenceOverridingEventHandlingComponentTest {
 
             @Override
             public EventHandlerRegistry subscribe(@Nonnull EventHandlingComponent handlingComponent) {
+                return this;
+            }
+
+            @Nonnull
+            @Override
+            public MessageStream.Empty<Message> handle(@Nonnull ResetContext resetContext,
+                                                       @Nonnull ProcessingContext context) {
+                return MessageStream.empty();
+            }
+
+            @Nonnull
+            @Override
+            public ResetHandlerRegistry subscribe(@Nonnull ResetHandler resetHandler) {
                 return this;
             }
         };

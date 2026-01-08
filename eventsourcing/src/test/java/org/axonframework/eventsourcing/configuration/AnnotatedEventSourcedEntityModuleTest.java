@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.DefaultComponentRegistry;
+import org.axonframework.common.configuration.StubLifecycleRegistry;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.common.util.StubLifecycleRegistry;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.EventSourcingRepository;
@@ -43,6 +43,7 @@ import java.lang.annotation.Target;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -167,6 +168,15 @@ class AnnotatedEventSourcedEntityModuleTest {
         assertThat(result).isInstanceOf(EventSourcingRepository.class);
     }
 
+    @Test
+    void failsWhenConcreteTypeIsNotSubclassOfEventSourcedEntity() {
+        assertThatThrownBy(() -> new AnnotatedEventSourcedEntityModule<>(String.class,
+                                                                         PolymorphicEventSourcedEntity.class))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("The declared concrete type [java.lang.String] is not assignable to the entity "
+                                    + "type [org.axonframework.eventsourcing.configuration.AnnotatedEventSourcedEntityModuleTest$PolymorphicEventSourcedEntity]. Please ensure the concrete type is a subclass of the entity type.");
+    }
+
     record CourseId() {
 
     }
@@ -249,6 +259,11 @@ class AnnotatedEventSourcedEntityModuleTest {
     @Retention(RetentionPolicy.RUNTIME)
     @EventSourcedEntity(tagKey = "metaAnnotated")
     public @interface MetaAnnotatedEventSourcingEntity {
+
+    }
+
+    @EventSourcedEntity(concreteTypes = {String.class})
+    interface PolymorphicEventSourcedEntity {
 
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -190,6 +190,7 @@ public class SubscribingEventProcessor implements EventProcessor {
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("name", name);
         descriptor.describeProperty("mode", "subscribing");
+        descriptor.describeProperty("running", isRunning());
         descriptor.describeProperty("eventHandlingComponents", eventHandlingComponents);
         descriptor.describeProperty("configuration", configuration);
     }
