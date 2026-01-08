@@ -30,5 +30,3 @@ A summary of the various sections is given below.
 |xref:Infrastructure.adoc[Infrastructure] |Query bus implementations and other query infrastructure components
 |xref:configuration.adoc[Configuration] |Configuration concerns for Query Messages using the Axon Framework
 |===
-
-This guide is complemented by a video tutorial which gives a practical demonstration of the concepts explained in this section. The tutorial is available at -&gt; link:https://www.youtube.com/watch?v=jS1vfc5EohM&feature=youtu.be[Axon Coding Tutorial - Query Messages]
