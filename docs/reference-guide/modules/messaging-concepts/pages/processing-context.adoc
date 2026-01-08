@@ -22,15 +22,14 @@ When Axon processes a message, it creates a `ProcessingContext` that:
 
 The `ProcessingContext` ensures that message processing is atomic. Processing either completes successfully or is rolled back entirely if something goes wrong.
 
-[TIP]
-====
 In most cases, Axon's building blocks automatically manage the `ProcessingContext` for you.
 You typically only need to interact with it when:
 
 * Registering lifecycle callbacks for cleanup or transaction management **not** supported by Axon Framework out of the box.
 * Managing custom resources that span multiple processing steps.
 * Implementing advanced interceptors or custom infrastructure components.
-====
+* Single-point of access to Axon's configured components.
+
 
 == Accessing the processing context
 
