@@ -49,7 +49,9 @@ Axon provides the `@EventTag` annotation for tag definition on event classes:
 [source,java]
 ----
 import org.axonframework.eventsourcing.annotation.EventTag;
+import org.axonframework.messaging.eventhandling.annotation.Event;
 
+@Event(name = "orderPlaced")
 record OrderPlacedEvent(
     @EventTag OrderId customerId,
     @EventTag(key = "region") String orderRegion,
