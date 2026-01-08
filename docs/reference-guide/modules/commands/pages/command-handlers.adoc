@@ -115,7 +115,7 @@ In the entity-centric model, you define a class marked with `@EventSourcedEntity
 
 [source,java]
 ----
-import org.axonframework.extension.spring.stereotype.EventSourced;
+import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
 import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
 import org.axonframework.messaging.commandhandling.annotation.Command;
 import org.axonframework.messaging.eventhandling.gateway.EventAppender;
@@ -703,7 +703,7 @@ Failing to follow this principle means the handler will miss state changes when 
 
 [source,java]
 ----
-@EventSourced
+@EventSourcedEntity
 public class GiftCard {
 
     private String id;
