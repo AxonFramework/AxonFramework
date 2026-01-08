@@ -229,34 +229,6 @@ public void on(RedeemedEvent event, QueryUpdateEmitter emitter) {
 In our case, we only update subscription queries interested in the GiftCard that has been updated.
 <5> The third parameter is the actual update, which in our case is the card summary.
 
-[IMPORTANT]
-.QueryUpdateEmitter injection in Axon 5
-====
-In Axon 5, the `QueryUpdateEmitter` must be injected as a handler parameter, not as a class field.
-This makes it `ProcessingContext`-aware and ensures it's used correctly within message handling functions.
-
-[source,java]
-----
-// ❌ WRONG - Don't inject as field
-public class MyProjector {
-    private final QueryUpdateEmitter emitter; // Don't do this
-
-    @EventHandler
-    public void on(MyEvent event) {
-        emitter.emit(...); // This won't work correctly
-    }
-}
-
-// ✅ CORRECT - Inject as parameter
-public class MyProjector {
-    @EventHandler
-    public void on(MyEvent event, QueryUpdateEmitter emitter) {
-        emitter.emit(...); // This works correctly
-    }
-}
-----
-====
-
 === Issuing a subscription query
 
 Once we have the query handling and emitting side implemented, we can issue a subscription query to get the initial state of the GiftCard and be updated once it is redeemed:
