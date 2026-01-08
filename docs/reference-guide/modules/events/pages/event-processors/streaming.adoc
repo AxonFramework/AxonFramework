@@ -740,7 +740,7 @@ By default, a `HierarchicalSequencingPolicy` is configured, which first tries fo
 If that fails, because the events don't contain events, it falls back to the `SequentialPolicy`.
 This policy handles events in the order they've been published within a **single** segment, thus eliminating any possibility for parallel processing.
 
-As correctly sequencing your events is important for any application, we **highly** you check out the <<sequential_processing,sequential processing>> section to understand how to configure a policy that fits with your application.
+As correctly sequencing your events is important for any application, we **highly** recommend you check out the <<sequential_processing,sequential processing>> section to understand how to configure a policy that fits with your application.
 Furthermore, as defining the right policy will allow for parallel processing, it will (greatly) impact event processing performance.
 
 Lastly, the sequencing policy may be configured for a **single** event handler or an **entire** event handling component.
