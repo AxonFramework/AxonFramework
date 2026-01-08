@@ -26,19 +26,32 @@ Use result objects for expected failure scenarios:
 * Resource not found scenarios
 
 These are not exceptional. They're expected possibilities that the caller should handle as part of normal application flow.
+Let's look at an example entity that handles the `PlaceOrderCommand`, returning a domain specific result:
 
 [source,java]
 ----
-// Good: Returns a result object
-public OrderResult placeOrder(PlaceOrderCommand command) {
-    if (balance < command.amount()) {
-        return OrderResult.failed("Insufficient balance");
+import org.axonframework.messaging.commandhandling.CommandExecutionException;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
+import org.axonframework.modelling.annotation.InjectEntity;
+
+class InventoryAutomation {
+
+    // Good: Returns a result object
+    @CommandHandler
+    public OrderResult placeOrder(PlaceOrderCommand command,
+                                  @InjectEntity Inventory inventory,
+                                  EventAppender appender) {
+        if (inventory.sufficientFor(command.productIds())) {
+            return OrderResult.failed("Insufficient balance");
+        }
+        if (!isAuthorized(command.userId())) {
+            return OrderResult.failed("User not authorized");
+        }
+        appender.append(new OrderPlacedEvent(orderId));
+        // Process order
+        return OrderResult.success(orderId);
     }
-    if (!isAuthorized(command.userId())) {
-        return OrderResult.failed("User not authorized");
-    }
-    // Process order
-    return OrderResult.success(orderId);
 }
 ----
 
@@ -57,16 +70,25 @@ These represent situations where normal processing cannot continue and typically
 
 [source,java]
 ----
-// Appropriate: Exception for infrastructure failure
-public void handle(PlaceOrderCommand command) {
-    try {
-        orderRepository.save(order);
-    } catch (DatabaseUnavailableException e) {
-        // Truly exceptional - database is down
-        throw new CommandExecutionException(
-            "Unable to process order due to system unavailability",
-            e
-        );
+import org.axonframework.messaging.commandhandling.CommandExecutionException;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
+import org.axonframework.modelling.annotation.InjectEntity;
+
+class InventoryAutomation {
+
+    // Appropriate: Exception for infrastructure failure
+    @CommandHandler
+    public void handle(PlaceOrderCommand command,
+                       @InjectEntity Inventory inventory) {
+        try {
+            orderRepository.save(new Order(command.order()));
+        } catch (DatabaseUnavailableException e) {
+            // Truly exceptional - database is down
+            throw new CommandExecutionException(
+                    "Unable to process order due to system unavailability",
+                    e
+            );
+        }
     }
 }
 ----
@@ -92,20 +114,32 @@ To maintain support for conditional logic dependent on the type of exception thr
 
 [source,java]
 ----
-@CommandHandler
-public void handle(PlaceOrderCommand command) {
-    if (criticalSystemError()) {
-        throw new CommandExecutionException(
-            "System unavailable",
-            null,
-            // Exception details...
-            Map.of(
-                "errorCode", "SYSTEM_UNAVAILABLE",
-                "retryable", "true"
-            )
-        );
+import org.axonframework.messaging.commandhandling.CommandExecutionException;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
+import org.axonframework.modelling.annotation.InjectEntity;
+
+import java.util.Map;
+
+class InventoryAutomation {
+
+    @CommandHandler
+    public void handle(PlaceOrderCommand command,
+                       @InjectEntity Inventory inventory,
+                       EventAppender appender) {
+        if (criticalSystemError()) {
+            throw new CommandExecutionException(
+                    "System unavailable",
+                    null,
+                    // Exception details...
+                    Map.of(
+                            "errorCode", "SYSTEM_UNAVAILABLE",
+                            "retryable", "true"
+                    )
+            );
+        }
+        // Happy path, validating the inventory and publishing an event.
     }
-    // Happy path...
 }
 ----
 
