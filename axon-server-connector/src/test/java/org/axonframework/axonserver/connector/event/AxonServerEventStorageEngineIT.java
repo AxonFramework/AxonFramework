@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import org.axonframework.eventsourcing.eventstore.StorageEngineTestSuite;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.conversion.ChainingContentTypeConverter;
 import org.axonframework.test.server.AxonServerContainer;
-import org.axonframework.test.server.AxonServerContainerUtils;
 import org.junit.jupiter.api.*;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -61,7 +60,7 @@ class AxonServerEventStorageEngineIT extends StorageEngineTestSuite<AxonServerEv
     }
 
     @Override
-    protected AxonServerEventStorageEngine buildStorageEngine() throws IOException {
+    protected AxonServerEventStorageEngine createStorageEngine() throws IOException {
         container.start();
         ServerAddress address = new ServerAddress(container.getHost(), container.getGrpcPort());
         connection = AxonServerConnectionFactory.forClient("AxonServerEventStorageEngineTest")
