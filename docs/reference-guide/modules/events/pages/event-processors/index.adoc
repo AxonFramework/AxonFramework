@@ -11,7 +11,10 @@ Event handling components, in turn, have event handlers.
 Each event handling component belongs to a single event processor.
 The event processor manages all aspects of event processing including threading, <<error-handling,error handling>>, xref:event-processors/streaming.adoc#sequential_processing[sequencing], and transaction management.
 
-Event processors come in roughly two forms: xref:event-processors/subscribing.adoc[Subscribing] and xref:event-processors/streaming.adoc[Streaming].
+Event processors come in roughly two forms:
+
+1. xref:event-processors/subscribing.adoc[Subscribing], and
+2. xref:event-processors/streaming.adoc[Streaming].
 
 Subscribing event processors subscribe to a source of events and are invoked by the thread managed by the publishing mechanism.
 Streaming event processors, on the other hand, pull their messages from a source using a thread that it manages itself.
