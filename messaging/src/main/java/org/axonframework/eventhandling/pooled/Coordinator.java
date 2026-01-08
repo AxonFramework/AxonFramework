@@ -198,7 +198,7 @@ class Coordinator {
     private void scheduleCoordinator() {
         CoordinationTask coordinator = coordinationTask.get();
         if (coordinator != null) {
-            logger.info("Processor [{}]. External trigger. Scheduling immediate coordination task.", name);
+            logger.info("Processor [{}]. Segment operation queued. Scheduling immediate coordination task.", name);
             coordinator.scheduleImmediateCoordinationTask();
         }
     }
