@@ -1790,7 +1790,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                                                               c -> new TestComponent("level-one")
                                                       )
                                                       .registerDecorator(
-                                                              TestComponent.class, 0,
+                                                              TestComponent.class, 1,
                                                               (config, name, delegate) -> new TestComponent(
                                                                       delegate.state() + "-decorated-by-level-one"
                                                               )
@@ -1804,7 +1804,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                                                                                           )
                                                                                   )
                                                                                   .registerDecorator(
-                                                                                          TestComponent.class, 0,
+                                                                                          TestComponent.class, 2,
                                                                                           (config, name, delegate) -> new TestComponent(
                                                                                                   delegate.state()
                                                                                                           + "-decorated-by-level-two")

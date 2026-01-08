@@ -41,6 +41,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.function.Predicate.not;
@@ -103,17 +104,23 @@ public class DefaultComponentRegistry implements ComponentRegistry {
             @Nonnull Collection<Class<? extends ConfigurationEnhancer>> disabledEnhancers,
             @Nonnull Collection<DecoratorDefinition.CompletedDecoratorDefinition<?, ?>> decoratorDefinitions) {
         var registry = new DefaultComponentRegistry().disableEnhancerScanning();
-        enhancers.stream()
-                 .filter(not(isTypeAnnotatedWith(DontCopyToChildRegistry.class)))
-                 .forEach(registry::registerEnhancer);
-        disabledEnhancers
-                .stream()
-                .filter(not(isTypeAnnotatedWith(DontCopyToChildRegistry.class)))
-                .forEach(registry::disableEnhancer);
-        decoratorDefinitions
-                .stream()
-                .filter(not(isTypeAnnotatedWith(DontCopyToChildRegistry.class)))
-                .forEach(registry::registerDecorator);
+        registry.enhancers.putAll(
+                enhancers.stream()
+                         .filter(not(isTypeAnnotatedWith(DontCopyToChildRegistry.class)))
+                         .collect(Collectors.toMap(e -> e.getClass().getName(), e -> e))
+        );
+        registry.disabledEnhancers.addAll(
+                disabledEnhancers
+                        .stream()
+                        .filter(not(isTypeAnnotatedWith(DontCopyToChildRegistry.class)))
+                        .toList()
+        );
+        registry.decoratorDefinitions.addAll(
+                decoratorDefinitions
+                        .stream()
+                        .filter(not(isTypeAnnotatedWith(DontCopyToChildRegistry.class)))
+                        .collect(Collectors.toSet())
+        );
         return registry;
     }
 
@@ -399,14 +406,16 @@ public class DefaultComponentRegistry implements ComponentRegistry {
                         enhancerClass.getSimpleName());
             return this;
         }
-        if (logger.isInfoEnabled()) {
-            logger.info(
-                    "Configuration Enhancer [{}] has been disabled. "
-                            + "Ensure components set by this enhancer are not mandatory in this application.",
-                    enhancerClass
-            );
+        if (!this.disabledEnhancers.contains(enhancerClass)) {
+            if (logger.isInfoEnabled()) {
+                logger.info(
+                        "Configuration Enhancer [{}] has been disabled. "
+                                + "Ensure components set by this enhancer are not mandatory in this application.",
+                        enhancerClass
+                );
+            }
+            this.disabledEnhancers.add(enhancerClass);
         }
-        this.disabledEnhancers.add(enhancerClass);
         return this;
     }
 
