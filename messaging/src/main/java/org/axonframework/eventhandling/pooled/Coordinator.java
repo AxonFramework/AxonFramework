@@ -852,8 +852,9 @@ class Coordinator {
 
             if (workPackages.isEmpty()) {
                 // We didn't start any work packages. Retry later.
-                logger.debug(
-                        "Processor [{}] (Coordination Task [{}]). No segments claimed. Will retry in {} milliseconds.",
+                logger.info(
+                        "Processor [{}] (Coordination Task [{}]). No segments claimed. "
+                                + "Scheduling delayed coordination task (itself) with delay of {}ms.",
                         name,
                         generation,
                         tokenClaimInterval);
@@ -900,7 +901,14 @@ class Coordinator {
                     if (!availabilityCallbackSupported) {
                         scheduleCoordinationTask(500);
                     } else {
-                        scheduleDelayedCoordinationTask(Math.min(claimExtensionThreshold, tokenClaimInterval));
+                        long delay = Math.min(claimExtensionThreshold, tokenClaimInterval);
+                        logger.info(
+                                "Processor [{}] (Coordination Task [{}]). Space available, no events pending. "
+                                        + "Scheduling delayed coordination task (itself) with delay of {}ms.",
+                                name,
+                                generation,
+                                delay);
+                        scheduleDelayedCoordinationTask(delay);
                     }
                 } else {
                     scheduleCoordinationTask(100);
@@ -1180,13 +1188,13 @@ class Coordinator {
         }
 
         private void abortAndScheduleRetry(Exception cause) {
+            errorWaitBackOff = Math.min(errorWaitBackOff * 2, 60000);
             logger.info(
                     "Processor [{}] (Coordination Task [{}]) is releasing claims and scheduling a new coordination task in {}ms.",
                     name,
                     generation,
                     errorWaitBackOff);
 
-            errorWaitBackOff = Math.min(errorWaitBackOff * 2, 60000);
             abortWorkPackages(cause).whenComplete(
                     (unused, throwable) -> {
                         if (throwable != null) {
