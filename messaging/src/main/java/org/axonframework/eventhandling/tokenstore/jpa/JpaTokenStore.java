@@ -22,28 +22,20 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.eventhandling.tokenstore.ConfigToken;
-import org.axonframework.eventhandling.tokenstore.TokenStore;
-import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
-import org.axonframework.eventhandling.tokenstore.UnableToInitializeTokenException;
-import org.axonframework.eventhandling.tokenstore.UnableToRetrieveIdentifierException;
+import org.axonframework.eventhandling.tokenstore.*;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.lang.management.ManagementFactory;
 import java.time.Duration;
 import java.time.temporal.TemporalAmount;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -245,8 +237,10 @@ public class JpaTokenStore implements TokenStore {
         final List<Integer> resultList = entityManager.createQuery(
                 "SELECT te.segment FROM TokenEntry te "
                         + "WHERE te.processorName = :processorName ORDER BY te.segment ASC",
-                Integer.class
-        ).setParameter(PROCESSOR_NAME_PARAM, processorName).getResultList();
+                Integer.class)
+                                                      .setParameter(PROCESSOR_NAME_PARAM, processorName)
+                                                      .setLockMode(LockModeType.NONE)
+                                                      .getResultList();
 
         return resultList.stream().mapToInt(i -> i).toArray();
     }
@@ -258,8 +252,10 @@ public class JpaTokenStore implements TokenStore {
         final List<TokenEntry> resultList = entityManager.createQuery(
                 "SELECT te FROM TokenEntry te "
                         + "WHERE te.processorName = :processorName ORDER BY te.segment ASC",
-                TokenEntry.class
-        ).setParameter(PROCESSOR_NAME_PARAM, processorName).getResultList();
+                TokenEntry.class)
+                                                         .setParameter(PROCESSOR_NAME_PARAM, processorName)
+                                                         .setLockMode(LockModeType.NONE)
+                                                         .getResultList();
         int[] allSegments = resultList.stream()
                                       .mapToInt(TokenEntry::getSegment)
                                       .toArray();
@@ -335,16 +331,23 @@ public class JpaTokenStore implements TokenStore {
      * @param segment       the segment of the processor to load or insert a token entry for
      */
     private void validateSegment(String processorName, Segment segment, EntityManager entityManager) {
-        TokenEntry mergeableSegment = entityManager //This segment should exist
-                .find(TokenEntry.class, new TokenEntry.PK(processorName, segment.mergeableSegmentId()), loadingLockMode);
-        if (mergeableSegment == null) {
-            throw new UnableToClaimTokenException(format("Unable to claim token '%s[%s]'. It has been merged with another segment",
-                                                         processorName, segment.getSegmentId()));
+        int mergeableSegmentId = segment.mergeableSegmentId();
+        // if the ID of the mergeable segment is lower, it means we're trying to claim the "removable" entry in a merge,
+        // meaning there is no risk for a "merge in progress".
+        if (mergeableSegmentId > segment.getSegmentId()) {
+            // we're just reading for the existence. No interest in claiming or locking
+            //This segment should exist
+            TokenEntry mergeableSegment = entityManager.find(TokenEntry.class, new TokenEntry.PK(processorName, mergeableSegmentId), LockModeType.NONE);
+            if (mergeableSegment == null) {
+                throw new UnableToClaimTokenException(format("Unable to claim segment '%s[%s]'. It has been merged with another segment",
+                                                             processorName, segment.getSegmentId()));
+            }
         }
-        TokenEntry splitSegment = entityManager //This segment should not exist
-                .find(TokenEntry.class, new TokenEntry.PK(processorName, segment.splitSegmentId()), loadingLockMode);
+        // we're just reading for the existence. No interest in claiming or locking
+        // This segment should not exist
+        TokenEntry splitSegment = entityManager.find(TokenEntry.class, new TokenEntry.PK(processorName, segment.splitSegmentId()), LockModeType.NONE);
         if (splitSegment != null) {
-            throw new UnableToClaimTokenException(format("Unable to claim token '%s[%s]'. It has been split into two segments",
+            throw new UnableToClaimTokenException(format("Unable to claim segment '%s[%s]'. It has been split into two segments",
                                                          processorName, segment.getSegmentId()));
         }
     }
