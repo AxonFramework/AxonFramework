@@ -343,4 +343,61 @@ class MultiSourceTrackingTokenTest {
 
         assertNotEquals(newMultiToken, testSubject);
     }
+
+    @Test
+    void samePositionAs() {
+        Map<String, TrackingToken> samePositionTokens = new HashMap<>();
+        samePositionTokens.put("token1", new GlobalSequenceTrackingToken(0));
+        samePositionTokens.put("token2", new GlobalSequenceTrackingToken(0));
+
+        assertTrue(testSubject.samePositionAs(new MultiSourceTrackingToken(samePositionTokens)));
+    }
+
+    @Test
+    void samePositionAsReturnsFalseWhenConstituentsAreDifferent() {
+        Map<String, TrackingToken> differentTokens = new HashMap<>();
+        differentTokens.put("token1", new GlobalSequenceTrackingToken(1));
+        differentTokens.put("token2", new GlobalSequenceTrackingToken(0));
+
+        assertFalse(testSubject.samePositionAs(new MultiSourceTrackingToken(differentTokens)));
+    }
+
+    @Test
+    void samePositionAsWithNullConstituents() {
+        Map<String, TrackingToken> tokensWithNull = new HashMap<>();
+        tokensWithNull.put("token1", new GlobalSequenceTrackingToken(0));
+        tokensWithNull.put("token2", null);
+        MultiSourceTrackingToken tokenWithNull = new MultiSourceTrackingToken(tokensWithNull);
+
+        // Comparing two tokens with samePositionAs null constituent
+        assertTrue(tokenWithNull.samePositionAs(tokenWithNull));
+
+        // Comparing token with null constituent to token without
+        assertFalse(tokenWithNull.samePositionAs(testSubject));
+        assertFalse(testSubject.samePositionAs(tokenWithNull));
+    }
+
+    @Test
+    void samePositionAsMismatchTokens() {
+        Map<String, TrackingToken> differentKeys = new HashMap<>();
+        differentKeys.put("token1", new GlobalSequenceTrackingToken(0));
+        differentKeys.put("token3", new GlobalSequenceTrackingToken(0));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> testSubject.samePositionAs(new MultiSourceTrackingToken(differentKeys)));
+    }
+
+    @Test
+    void samePositionAsDifferentNumberOfTokens() {
+        Map<String, TrackingToken> fewerTokens = new HashMap<>();
+        fewerTokens.put("token1", new GlobalSequenceTrackingToken(0));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> testSubject.samePositionAs(new MultiSourceTrackingToken(fewerTokens)));
+    }
+
+    @Test
+    void samePositionAsIncompatibleToken() {
+        assertThrows(IllegalArgumentException.class, () -> testSubject.samePositionAs(new GlobalSequenceTrackingToken(0)));
+    }
 }

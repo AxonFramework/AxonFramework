@@ -16,7 +16,9 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.token.store;
 
+import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.conversion.TestConverter;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 
@@ -43,5 +45,16 @@ class ConfigTokenTest {
         Map<String, String> configMap = Collections.singletonMap("some-key", "some-value");
         ConfigToken token = new ConfigToken(configMap);
         assertEquals(token, converter.serializeDeserialize(token));
+    }
+
+    @Test
+    void samePositionAsUnsupportedOperationException() {
+        Map<String, String> configMap = Collections.singletonMap("some-key", "some-value");
+        ConfigToken token = new ConfigToken(configMap);
+
+        assertThrows(UnsupportedOperationException.class, () -> token.samePositionAs(token));
+        assertThrows(UnsupportedOperationException.class,
+                     () -> token.samePositionAs(new GlobalSequenceTrackingToken(0)));
+        assertThrows(UnsupportedOperationException.class, () -> token.samePositionAs(null));
     }
 }
