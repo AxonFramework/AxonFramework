@@ -116,7 +116,7 @@ public abstract class AbstractEventStorageEngine implements LegacyEventStorageEn
      * @param failedEvent The EventMessage that could not be persisted
      */
     protected void handlePersistenceException(Exception exception, EventMessage failedEvent) {
-        String eventDescription = buildExceptionMessage(failedEvent);
+        String eventDescription = buildExceptionMessage(failedEvent, exception);
         if (persistenceExceptionResolver != null && persistenceExceptionResolver.isDuplicateKeyViolation(exception)) {
             if (isFirstDomainEvent(failedEvent)) {
                 throw new AggregateStreamCreationException(eventDescription, exception);
@@ -145,20 +145,23 @@ public abstract class AbstractEventStorageEngine implements LegacyEventStorageEn
      * @param failedEvent the event to be used for the exception message
      * @return the created exception message
      */
-    private String buildExceptionMessage(EventMessage failedEvent) {
-        String eventDescription = format("An event with identifier [%s] could not be persisted",
-                                         failedEvent.identifier());
+    private String buildExceptionMessage(EventMessage failedEvent, Exception exception) {
+        String eventDescription = format("An event with identifier [%s] could not be persisted, Original message: [%s]",
+                                         failedEvent.identifier(), exception.getMessage());
         if (isFirstDomainEvent(failedEvent)) {
             DomainEventMessage failedDomainEvent = (DomainEventMessage) failedEvent;
             eventDescription = format(
-                    "Cannot reuse aggregate identifier [%s] to create aggregate [%s] since identifiers need to be unique.",
+                    "Cannot reuse aggregate identifier [%s] to create aggregate [%s] since identifiers need to be unique. , Original message: [%s]",
                     failedDomainEvent.getAggregateIdentifier(),
-                    failedDomainEvent.getType());
+                    failedDomainEvent.getType(),
+                    exception.getMessage());
         } else if (failedEvent instanceof DomainEventMessage) {
             DomainEventMessage failedDomainEvent = (DomainEventMessage) failedEvent;
-            eventDescription = format("An event for aggregate [%s] at sequence [%d] was already inserted",
-                                      failedDomainEvent.getAggregateIdentifier(),
-                                      failedDomainEvent.getSequenceNumber());
+            eventDescription = format(
+                    "An event for aggregate [%s] at sequence [%d] was already inserted. Original message: [%s]",
+                    failedDomainEvent.getAggregateIdentifier(),
+                    failedDomainEvent.getSequenceNumber(),
+                    exception.getMessage());
         }
         return eventDescription;
     }
