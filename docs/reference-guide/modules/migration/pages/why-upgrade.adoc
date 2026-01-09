@@ -1,4 +1,4 @@
-= Why upgrade to Axon Framework 5?: The new features only available in Axon Framework 5
+= Why Upgrade To Axon Framework 5?
 
 Now if you’re already convinced that you want to upgrade to Axon Framework 5, then jump straight to the next section on the prerequisites that are needed.
 Let's explore what makes Axon Framework 5 genuinely different.
@@ -28,13 +28,13 @@ This explicit context passing eliminates entire categories of concurrency bugs a
 For teams building microservices at scale, this means better support for backpressure handling, graceful degradation under load, and tighter integration with cloud-native platforms.
 The explicit context model becomes particularly valuable when managing concurrent operations across multiple threads or when running applications on platforms like Project Loom.
 
-== Dynamic consistency boundaries - Move from aggregates to entities
+== Dynamic Consistency Boundaries - Move from aggregates to entities
 
 Perhaps the most conceptually significant innovation in Axon Framework 5 is the introduction of Dynamic Consistency Boundaries (DCB).
 This represents a fundamental rethinking of how you structure domain logic.
 
 In traditional event sourcing and Axon Framework 4.x, the aggregate was the primary unit of consistency—the boundary that everything revolved around.
-But real-world domain complexity doesn't always map cleanly to single aggregates.
+However, real-world domain complexity doesn't always map cleanly to single aggregates.
 Different parts of your system need different consistency guarantees, different event sourcing strategies, and different performance characteristics.
 
 Dynamic Consistency Boundaries let you break free from this constraint.

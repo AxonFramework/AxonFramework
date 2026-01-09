@@ -25,7 +25,7 @@ Understanding the Architecture Principles of Axon Framework 5::
 The practical heart of the guide.
 Detailed explanations of how foundational components have evolved, accompanied by side-by-side code examples showing Axon Framework 4.x patterns and their Axon Framework 5 equivalents.
 
-== Scope of This Guide
+== Scope of this guide
 
 This guide assumes you're running Axon Framework 4.x and moving to Axon Framework 5. We focus on:
 
