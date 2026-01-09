@@ -1,3 +1,0 @@
-* xref:testing:index.adoc[]
-** xref:testing:commands-events.adoc[]
-** xref:testing:sagas-1.adoc[]

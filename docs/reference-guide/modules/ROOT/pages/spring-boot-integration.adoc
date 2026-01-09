@@ -1,0 +1,75 @@
+= Spring Boot Integration
+
+Axon Framework provides extensive support for Spring Boot through its Spring Boot Starter extension.
+While Axon can be configured programmatically without Spring, the Spring Boot integration provides the easiest way to get started through automatic configuration.
+
+== Getting started
+
+To enable Spring Boot auto-configuration, add the Axon Spring Boot Starter dependency to your project:
+
+[tabs]
+====
+Maven::
++
+--
+[source,xml]
+----
+<dependency>
+    <groupId>org.axonframework.extensions.spring</groupId>
+    <artifactId>axon-spring-boot-starter</artifactId>
+    <version>${axon.version}</version>
+</dependency>
+----
+--
+
+Gradle::
++
+--
+[source,groovy]
+----
+implementation 'org.axonframework.extensions.spring:axon-spring-boot-starter:${axonVersion}'
+----
+--
+====
+
+With this dependency in place, Axon will automatically:
+
+* Detect and register all message handlers (command handlers, event handlers, query handlers)
+* Configure the command bus, event bus, and query bus
+* Set up event processors to handle events
+* Configure entities and repositories
+* Wire all components together
+
+== Infrastructure configuration
+
+The Spring Boot Starter will automatically configure the necessary infrastructure based on what's available:
+
+**Axon Server** (recommended)::
+If the Axon Server connector is on the classpath, Axon will automatically connect to Axon Server (by default at `localhost:8124`) and use it for:
+* Command routing and distribution
+* Event storage and distribution
+* Query routing and distribution
+
+You can disable Axon Server integration by setting `axon.axonserver.enabled=false` in your application properties.
+
+**JPA fallback**::
+If Axon Server is not available or disabled, Axon will use JPA-based implementations for Event storage.
+
+**Extension-based implementations**::
+Other extensions can provide additional implementations:
+* PostgreSQL event store (via the PostgreSQL extension)
+
+== Component detection
+
+The Spring Boot Starter automatically detects Axon components in your application:
+
+* Methods on Spring beans that are annotated with `@CommandHandler`, `@EventHandler`, or `@QueryHandler` are automatically registered
+* Classes annotated with `@EventSourced` are registered as entities
+* All detected components are wired with the appropriate buses and infrastructure
+
+== Customization
+
+The auto-configuration is non-intrusive and only configures components that you haven't explicitly defined.
+You can override any auto-configured bean by defining your own in a `@Configuration` class.
+
+For detailed configuration options, see the specific sections in this reference guide for commands, events, queries, and entities.

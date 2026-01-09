@@ -1,0 +1,47 @@
+= Events
+:page-aliases: README.adoc
+
+Events are messages that communicate that something has happened in the business domain or application.
+They represent facts about the past that cannot be changed.
+Other parts of the application, or even other applications, can react to these events.
+
+== Core concepts
+
+The list below quickly mentions the core concepts that come into play when thinking about events. For more detail, be sure to read the other sections within this chapter.
+
+xref:messaging-concepts:index.adoc#events[**Events**]: Messages that represent facts about something relevant that has happened in an application.
+
+xref:event-handlers.adoc[**Event Handlers**]:: Methods or lambdas that react to events and execute business logic or update read models.
+
+xref:event-handlers.adoc[**Event Handling Components**]:: Classes containing one or more event handlers, registered with an event processor for event delivery.
+
+xref:event-processors/index.adoc[**Event Processors**]:: Infrastructure components that manage the delivery of events to event handling components, controlling threading, batching, and error handling.
+
+xref:event-publishing.adoc#event_sink_directly[**Event Sink**]:: An abstraction for any component that can receive and distribute events, encompassing the Event Bus, Event Store, and external system facades.
+
+xref:event-publishing.adoc#event_appender[**Event Appender**]:: A context-aware solution to append events to an Event Store, ensuring transactionality and correlation data.
+
+xref:infrastructure.adoc#event_bus[**Event Bus**]:: A mechanism that distributes published events to all subscribed event processors within the application.
+
+xref:event-publishing.adoc#event_gateway[**Event Gateway**]:: A convenience component for publishing events that provides a user-friendly API.
+
+xref:infrastructure.adoc#event_store[**Event Store**]:: A persistent storage mechanism that stores events as the source of truth and provides event streams to processors.
+
+link:https://www.axoniq.io/concepts/event-sourcing[**Event Sourcing**]:: An architectural pattern that stores all changes to application state as a sequence of immutable events, providing a complete audit trail and enabling temporal queries.
+
+**xref:event-store-internals.adoc#dynamic_consistency_boundaries_dcb[Dynamic Consistency Boundaries (DCB)]**:: A pattern that allows flexible grouping of events using tags to define consistency boundaries based on business needs rather than technical constraints.
+
+== Event handling overview
+
+This section covers the complete event handling capabilities:
+
+[cols="<,<"]
+|===
+|Sub-Section |Purpose
+
+|xref:event-publishing.adoc[Publishing] |Publishing events using EventSink, EventAppender, and EventGateway
+|xref:event-handlers.adoc[Handling] |Implementing event handlers with @EventHandler annotation
+|xref:event-processors/index.adoc[Event Processors] |Configuring and managing event processors (pooled streaming and subscribing)
+|xref:infrastructure.adoc[Infrastructure] |EventStore, Dynamic Consistency Boundaries, tags, and event storage
+|xref:event-versioning.adoc[Versioning] |Evolving event structures with payload conversion and upcasters
+|===
