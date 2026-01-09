@@ -109,6 +109,15 @@ public class GlobalSequenceTrackingToken implements TrackingToken, Comparable<Gl
     }
 
     @Override
+    public boolean samePositionAs(TrackingToken other) {
+        isTrue(other == null || other instanceof GlobalSequenceTrackingToken,
+                () -> "Incompatible token type provided:" + (other != null ? other.getClass().getSimpleName() : "null"));
+        GlobalSequenceTrackingToken otherToken = (GlobalSequenceTrackingToken) other;
+
+        return otherToken != null && otherToken.globalIndex == this.globalIndex;
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
