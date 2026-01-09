@@ -33,7 +33,7 @@ import static org.axonframework.common.Assert.isTrue;
  * @since 3.0
  */
 public class GlobalSequenceTrackingToken implements TrackingToken, Comparable<GlobalSequenceTrackingToken>,
-                                                    Serializable {
+        Serializable {
 
     private static final long serialVersionUID = -3658606104934080049L;
 
@@ -114,11 +114,14 @@ public class GlobalSequenceTrackingToken implements TrackingToken, Comparable<Gl
 
     @Override
     public boolean samePositionAs(TrackingToken other) {
-        isTrue(other == null || other instanceof GlobalSequenceTrackingToken,
-                () -> "Incompatible token type provided:" + (other != null ? other.getClass().getSimpleName() : "null"));
-        GlobalSequenceTrackingToken otherToken = (GlobalSequenceTrackingToken) other;
-
-        return otherToken != null && otherToken.globalIndex == this.globalIndex;
+        if (other == null) {
+            return false;
+        }
+        if (other instanceof GlobalSequenceTrackingToken) {
+            GlobalSequenceTrackingToken otherToken = (GlobalSequenceTrackingToken) other;
+            return otherToken.globalIndex == this.globalIndex;
+        }
+        throw new IllegalArgumentException("Incompatible token type provided: " + other.getClass().getSimpleName());
     }
 
     @Override

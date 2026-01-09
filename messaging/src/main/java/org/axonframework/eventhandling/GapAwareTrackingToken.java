@@ -38,9 +38,9 @@ import java.util.stream.LongStream;
  * store.
  * <p>
  * By storing the sequence numbers of gaps, i.e. sequence numbers of events that may have been inserted but have not
- * been committed to the store, consumers are able to track the event store uninterruptedly even when there are gaps
- * in the sequence numbers of events. If a gap is detected the event store can check if meanwhile this gap has been
- * filled each time a new batch of events is fetched.
+ * been committed to the store, consumers are able to track the event store uninterruptedly even when there are gaps in
+ * the sequence numbers of events. If a gap is detected the event store can check if meanwhile this gap has been filled
+ * each time a new batch of events is fetched.
  *
  * @author Rene de Waele
  */
@@ -53,8 +53,8 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
     private final transient long gapTruncationIndex;
 
     /**
-     * Returns a new {@link GapAwareTrackingToken} instance based on the given {@code index} and collection of {@code
-     * gaps}.
+     * Returns a new {@link GapAwareTrackingToken} instance based on the given {@code index} and collection of
+     * {@code gaps}.
      *
      * @param index the highest global sequence number of events up until (and including) this tracking token
      * @param gaps  global sequence numbers of events that have not been seen yet even though these sequence numbers are
@@ -67,8 +67,8 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
     }
 
     /**
-     * This constructor is mean't to be used for deserialization. <br>
-     * Please use {@link #newInstance(long, Collection)} to create new instances.
+     * This constructor is mean't to be used for deserialization. <br> Please use {@link #newInstance(long, Collection)}
+     * to create new instances.
      *
      * @param index the highest global sequence number of events up until (and including) this tracking token
      * @param gaps  global sequence numbers of events that have not been seen yet even though these sequence numbers are
@@ -107,15 +107,15 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
     }
 
     /**
-     * Returns a new {@link GapAwareTrackingToken} instance based on this token but which has advanced to given {@code
-     * index}. Gaps that have fallen behind the index by more than the {@code maxGapOffset} will not be included in the
-     * new token.
+     * Returns a new {@link GapAwareTrackingToken} instance based on this token but which has advanced to given
+     * {@code index}. Gaps that have fallen behind the index by more than the {@code maxGapOffset} will not be included
+     * in the new token.
      * <p>
      * Note that the given {@code index} should be one of the current token's gaps or be higher than the current token's
      * index.
      * <p>
-     * If {@code allowGaps} is set to {@code false}, any gaps that occur before the given {@code index} are removed
-     * from the returned token.
+     * If {@code allowGaps} is set to {@code false}, any gaps that occur before the given {@code index} are removed from
+     * the returned token.
      *
      * @param index        the global sequence number of the next event
      * @param maxGapOffset the maximum distance between a gap and the token's index
@@ -123,7 +123,8 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
      */
     public GapAwareTrackingToken advanceTo(long index, int maxGapOffset) {
         long newIndex;
-        long smalledAllowedGap = Math.min(index, Math.max(gapTruncationIndex, Math.max(index, this.index) - maxGapOffset));
+        long smalledAllowedGap = Math.min(index,
+                                          Math.max(gapTruncationIndex, Math.max(index, this.index) - maxGapOffset));
         SortedSet<Long> gaps = new TreeSet<>(this.gaps.tailSet(smalledAllowedGap));
         if (gaps.remove(index) || this.gaps.contains(index)) {
             newIndex = this.index;
@@ -225,7 +226,10 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
 
     @Nonnull
     private static GapAwareTrackingToken assertGapAwareTrackingToken(TrackingToken other) {
-        Assert.isTrue(other instanceof GapAwareTrackingToken, () -> "Incompatible token type provided.");
+        Assert.isTrue(
+                other instanceof GapAwareTrackingToken,
+                () -> "Incompatible token type provided:" + (other != null ? other.getClass().getSimpleName() : "null")
+        );
         return (GapAwareTrackingToken) other;
     }
 
@@ -239,9 +243,14 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
      */
     @Override
     public boolean samePositionAs(TrackingToken other) {
-        GapAwareTrackingToken otherToken = assertGapAwareTrackingToken(other);
-
-        return otherToken.index == this.index;
+        if (other == null) {
+            return false;
+        }
+        if (other instanceof GapAwareTrackingToken) {
+            GapAwareTrackingToken otherToken = (GapAwareTrackingToken) other;
+            return otherToken.index == this.index;
+        }
+        throw new IllegalArgumentException("Incompatible token type provided: " + other.getClass().getSimpleName());
     }
 
     /**
