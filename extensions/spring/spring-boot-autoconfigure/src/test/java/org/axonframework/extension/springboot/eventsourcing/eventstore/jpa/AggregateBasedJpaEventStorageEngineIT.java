@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -113,7 +113,7 @@ class AggregateBasedJpaEventStorageEngineIT
 
     @Override
     protected AggregateBasedJpaEventStorageEngine buildStorageEngine() {
-        transactionManager = new SpringTransactionManager(platformTransactionManager, entityManagerProvider);
+        transactionManager = new SpringTransactionManager(platformTransactionManager, entityManagerProvider, null);
 
         this.engine = new AggregateBasedJpaEventStorageEngine(
                 new JpaTransactionalExecutorProvider(entityManagerFactory),

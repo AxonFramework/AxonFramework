@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.axonframework.extension.springboot.autoconfig;
 
 import jakarta.annotation.Nullable;
 import jakarta.persistence.EntityManagerFactory;
+import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.extension.spring.messaging.unitofwork.SpringTransactionManager;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
@@ -29,14 +30,14 @@ import org.springframework.transaction.PlatformTransactionManager;
 
 /**
  * Autoconfiguration class that registers a bean creation method for the {@link SpringTransactionManager} if a
- * {@link PlatformTransactionManager} is present.
+ * {@link PlatformTransactionManager} and a {@link EntityManagerFactory} is present.
  *
  * @author Allard Buijze
  * @since 3.0.3
  */
 @AutoConfiguration
 @ConditionalOnBean({EntityManagerFactory.class, PlatformTransactionManager.class})
-public class TransactionAutoConfiguration {
+public class JpaTransactionAutoConfiguration {
 
     /**
      * Bean creation method constructing a {@link SpringTransactionManager} based on the given
@@ -45,11 +46,16 @@ public class TransactionAutoConfiguration {
      * @param transactionManager    The {@code PlatformTransactionManager} used to construct a
      *                              {@link SpringTransactionManager}.
      * @param entityManagerProvider An optional entity manager provider.
+     * @param connectionProvider    An optional connection provider.
      * @return The {@link TransactionManager} to be used by Axon Framework.
      */
     @Bean
     @ConditionalOnMissingBean
-    public TransactionManager axonTransactionManager(PlatformTransactionManager transactionManager, @Nullable EntityManagerProvider entityManagerProvider) {
-        return new SpringTransactionManager(transactionManager, entityManagerProvider);
+    public TransactionManager axonTransactionManager(
+        PlatformTransactionManager transactionManager,
+        @Nullable EntityManagerProvider entityManagerProvider,
+        @Nullable ConnectionProvider connectionProvider
+    ) {
+        return new SpringTransactionManager(transactionManager, entityManagerProvider, connectionProvider);
     }
 }
