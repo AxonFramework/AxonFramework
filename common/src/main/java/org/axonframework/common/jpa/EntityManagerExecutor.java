@@ -38,11 +38,11 @@ public class EntityManagerExecutor implements TransactionalExecutor<EntityManage
     /**
      * Creates a new instance.
      *
-     * @param factory An {@link EntityManagerProvider}, cannot be {@code null}.
+     * @param provider An {@link EntityManagerProvider}, cannot be {@code null}.
      * @throws NullPointerException If any argument is {@code null}.
      */
-    public EntityManagerExecutor(@Nonnull EntityManagerProvider factory) {
-        this.provider = Objects.requireNonNull(factory, "factory");
+    public EntityManagerExecutor(@Nonnull EntityManagerProvider provider) {
+        this.provider = Objects.requireNonNull(provider, "provider");
     }
 
     @Override

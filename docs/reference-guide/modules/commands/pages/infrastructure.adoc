@@ -1,0 +1,505 @@
+= Infrastructure
+
+Command handling in Axon Framework involves several infrastructure components that work together to dispatch commands, manage entity state, and coordinate command processing across your application.
+
+This page covers the key infrastructure components you'll work with:
+
+* **Repositories** - Manage entity lifecycle and state persistence
+* **Command bus** - Routes and dispatches commands to handlers
+* **Command gateway** - Provides a convenient API for dispatching commands
+* **Command handling components** - Register and manage command handlers
+
+== Repositories
+
+Repositories provide an abstraction for loading and persisting entities.
+When you use entities for stateful command handling (see xref:command-handlers.adoc[Command handlers]), repositories manage the entity lifecycle automatically.
+
+=== Why repositories?
+
+Repositories handle several concerns for you:
+
+* **Loading entity state** - Fetch current state from storage (event store or database)
+* **Lifecycle management** - Track entity instances during command processing
+* **Persistence** - Save state changes when command processing completes
+* **Coordination** - Ensure changes are committed as part of the processing context
+
+Without a repository, you'd need to manually load entities, track changes, and persist them - repositories do all of this automatically.
+
+=== Async-native API
+
+Repository operations in Axon Framework are async-native, returning `CompletableFuture` to support non-blocking operations:
+
+[source,java]
+----
+public interface Repository<ID, E> {
+    // Load an existing entity
+    CompletableFuture<ManagedEntity<ID, E>> load(ID identifier,
+                                                 ProcessingContext context);
+
+    // Load existing or create new entity
+    CompletableFuture<ManagedEntity<ID, E>> loadOrCreate(ID identifier,
+                                                         ProcessingContext context);
+
+    // Persist a new entity
+    ManagedEntity<ID, E> persist(ID identifier, E entity,
+                                 ProcessingContext context);
+}
+----
+
+All repository operations require an active `ProcessingContext`.
+Command handlers automatically receive a `ProcessingContext` parameter that you pass to repository methods.
+
+=== `ManagedEntity`
+
+Repositories return entities wrapped in a `ManagedEntity` interface.
+This wrapper tracks the entity's lifecycle and enables the repository to detect and persist changes.
+
+[source,java]
+----
+public interface ManagedEntity<ID, E> {
+    ID identifier();           // Get the entity identifier
+    E entity();               // Get the current entity state
+    E applyStateChange(UnaryOperator<E> change);  // Modify entity state
+}
+----
+
+The `ManagedEntity` wrapper ensures that:
+
+* Changes to entity state are tracked
+* State modifications are persisted when the processing context commits
+* The repository maintains consistent state throughout command processing
+
+=== Using repositories in command handlers
+
+When command handlers are not on the entity itself, you use a repository to load and manage entities manually.
+This pattern is covered in xref:command-handlers.adoc#_command_centric_stateful_handlers[Command-centric stateful handlers].
+
+[source,java]
+----
+@Component
+public class OrderCommandHandler {
+
+    private final Repository<String, Order> orderRepository;
+
+    public OrderCommandHandler(Repository<String, Order> orderRepository) {
+        this.orderRepository = orderRepository;
+    }
+
+    @CommandHandler
+    public void handle(ShipOrderCommand command,
+                      ProcessingContext context,
+                      EventAppender eventAppender) {
+        // Load the entity
+        orderRepository.load(command.orderId(), context)
+            .thenAccept(managedOrder -> {
+                Order order = managedOrder.entity();
+                // Apply business logic
+                if (order.canShip()) {
+                    eventAppender.append(new OrderShippedEvent(command.orderId()));
+                }
+            });
+    }
+}
+----
+
+=== `EventSourcedRepository`
+
+The most common repository implementation is `EventSourcedRepository`, which manages event-sourced entities.
+
+Configuration with Spring Boot:
+
+[source,java]
+----
+import org.axonframework.extension.spring.stereotype.EventSourced;
+
+@EventSourced
+public class Order {
+
+    // Omitted handlers and state for brevity.
+}
+----
+
+Configuration with Configuration API:
+
+[source,java]
+----
+import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+
+@EventSourcedEntity
+public class Order {
+
+    // Omitted handlers and state for brevity.
+}
+
+public class AxonConfig {
+
+    public void configureOrderEntity(EventSourcingConfigurer configurer) {
+        configurer.registerEntity(
+                EventSourcedEntityModule.autodetected(String.class, Order.class)
+        );
+    }
+}
+----
+
+== Command bus
+
+The command bus is responsible for routing commands to their registered handlers.
+It receives commands from gateways or dispatchers and invokes the appropriate command handler.
+
+=== `SimpleCommandBus`
+
+The `SimpleCommandBus` is the standard command bus implementation.
+
+Key characteristics:
+
+* **Simple and reliable** - Straightforward processing model
+* **Good performance** - Low overhead for command handling
+* **Single JVM** - Cannot distribute commands across multiple instances
+
+Spring Boot automatically configures a `SimpleCommandBus` when using the Axon Spring Boot starter (unless Axon Server is configured).
+
+Manual configuration:
+
+[tabs]
+====
+Configuration API::
++
+--
+[source,java]
+----
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+
+public class AxonConfig {
+
+    public void configureCommandBus(MessagingConfigurer configurer) {
+        configurer.registerCommandBus(
+                config -> new SimpleCommandBus(
+                        config.getComponent(UnitOfWorkFactory.class),
+                        Collections.emptyList()
+                )
+        );
+    }
+}
+----
+--
+
+Spring Boot::
++
+--
+[source,java]
+----
+@Configuration
+public class AxonConfig {
+
+    @Bean
+    public CommandBus commandBus(UnitOfWorkFactory unitOfWorkFactory,
+                                 TransactionManager transactionManager) {
+        return new SimpleCommandBus(
+                unitOfWorkFactory,
+                List.of(transactionManager)
+        );
+    }
+}
+----
+--
+====
+
+=== Interceptors
+
+The command bus supports interceptors for cross-cutting concerns like logging, metrics, or validation.
+
+There are two types of interceptors:
+
+* **Dispatch interceptors** - Invoked when a command is dispatched, before routing
+* **Handler interceptors** - Invoked before the actual command handler, after routing
+
+See xref:messaging-concepts:message-intercepting.adoc#command-interceptors[Command interceptors] for details on implementing and registering interceptors.
+
+== Command gateway
+
+The command gateway provides a convenient, type-safe API for dispatching commands.
+While you can dispatch commands directly through the command bus, the gateway is generally the easiest option.
+
+=== Using the default `CommandGateway`
+
+The `CommandGateway` interface provides several methods for sending commands:
+
+[source,java]
+----
+public interface CommandGateway {
+    // Send and get CommandResult for full control
+    CommandResult send(@Nonnull Object command);
+
+    // Send and get CompletableFuture with converted result type
+    CompletableFuture<R> send(@Nonnull Object command, @Nonnull Class<R> resultType);
+
+    // Send and wait for result
+    Object sendAndWait(@Nonnull Object command);
+}
+----
+
+Example usage:
+
+[source,java]
+----
+@RestController
+public class OrderController {
+
+    private final CommandGateway commandGateway;
+
+    public OrderController(CommandGateway commandGateway) {
+        this.commandGateway = commandGateway;
+    }
+
+    @PostMapping("/orders")
+    public CompletableFuture<String> createOrder(@RequestBody CreateOrderRequest request) {
+        CreateOrderCommand command = new CreateOrderCommand(
+            UUID.randomUUID().toString(),
+            request.getProductId(),
+            request.getQuantity()
+        );
+
+        // Returns CompletableFuture<String> with the order ID
+        return commandGateway.send(command, String.class);
+    }
+
+    @PostMapping("/orders/{id}/ship")
+    public void shipOrder(@PathVariable String id) {
+        // Fire and forget
+        commandGateway.sendAndWait(new ShipOrderCommand(id));
+    }
+}
+----
+
+Axon Framework will construct a `CommandGateway` component for you out of the box at all times.
+With Axon's Spring Boot integration, you can thus automatically inject a `CommandGateway` bean when needed.
+
+== Command handling component registration
+
+Command handlers need to be registered with the framework so commands can be routed to them.
+
+=== Spring Boot auto-registration
+
+With Spring Boot, command handlers are automatically discovered and registered when you:
+
+* Use `@Component` or `@Service` on handler classes
+* Use `@EventSourced` on entity classes with command handlers
+
+[source,java]
+----
+@Component
+public class OrderCommandHandler {
+
+    @CommandHandler
+    public void handle(CreateOrderCommand command) {
+        // Handler implementation
+    }
+}
+----
+
+[source,java]
+----
+@EventSourced
+public class Order {
+
+    @CommandHandler
+    public static Order handle(CreateOrderCommand command) {
+        // Creation handler
+        return new Order(command.orderId(), command.productId());
+    }
+}
+----
+
+=== Manual registration with configuration API
+
+When not using Spring Boot, register command handlers using `CommandHandlingModule`:
+
+[source,java]
+----
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
+
+public class AxonConfig {
+
+    public void configureHandlers() {
+        MessagingConfigurer.create()
+            .registerCommandHandlingModule(
+                CommandHandlingModule.named("order-commands")
+                    .commandHandlers(handlers ->
+                        handlers.annotatedCommandHandlingComponent(
+                            config -> new OrderCommandHandler(
+                                config.getComponent(Repository.class)
+                            )
+                        )
+                    )
+            );
+    }
+}
+----
+
+The `annotatedCommandHandlingComponent()` method scans the handler for `@CommandHandler` annotated methods and registers them with the command bus. When the you prefer to register methods as command handlers without the use of annotations, use the `commandHandler(QualifiedName, CommandHandler)` method instead.
+
+For registering event-sourced entities and their repositories, use `EventSourcingConfigurer` or `ModellingConfigurer` which provide entity-specific registration methods.
+
+== Distributed command bus
+
+For applications that need to distribute command handling across multiple JVM instances, Axon provides distributed command bus implementations. To that end, Axon Framework has a special type of `CommandBus` implementation, called the `DistributedCommandBus`.
+
+The `DistributedCommandBus` takes in a local `CommandBus` (called the `localSegment`), a `CommandBusConnector`, and `DistributedCommandBusConfiguration`:
+
+[source,java]
+----
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.commandhandling.SimpleCommandBus;
+import org.axonframework.messaging.commandhandling.distributed.CommandBusConnector;
+import org.axonframework.messaging.commandhandling.distributed.DistributedCommandBus;
+import org.axonframework.messaging.commandhandling.distributed.DistributedCommandBusConfiguration;
+import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
+
+public class AxonConfig {
+
+    public void configureDistributedCommandBus(MessagingConfigurer configurer) {
+        configurer.registerCommandBus(
+                config -> {
+                    SimpleCommandBus localSegment = new SimpleCommandBus(
+                            config.getComponent(UnitOfWorkFactory.class),
+                            Collections.emptyList()
+                    );
+                    return new DistributedCommandBus(
+                            localSegment,
+                            config.getComponent(CommandBusConnector.class),
+                            DistributedCommandBusConfiguration.DEFAULT
+                    );
+                }
+        );
+    }
+}
+----
+
+The local segment covers command handler registration and command handler invocations within a given JVM instance. Hence, it covers the local activities of command processing.
+The `CommandBusConnector` is in charge of dispatching and receiving commands to and from other JVM. The `CommandBusConnector` has several implementation, as described further below.
+The `DistributedCommandBusConfiguration` allows customization of load factor, threads, and executor used by the `DistributedCommandBus`.
+
+=== `AxonServerCommandBusConnector`
+
+The `AxonServerCommandBusConnector` connects to https://www.axoniq.io/products/axon-server[Axon Server,window=_blank,role=external] for distributed command routing.
+This is the default when using the Axon Spring Boot starter with `axon-server-connector` dependency.
+
+With Spring Boot:
+
+[source,xml]
+----
+<dependency>
+    <groupId>org.axonframework</groupId>
+    <artifactId>axon-spring-boot-starter</artifactId>
+    <version>${axon.version}</version>
+</dependency>
+----
+
+Configure connection in `application.properties`:
+
+[source,properties]
+----
+axon.axonserver.servers=localhost:8124
+axon.axonserver.enabled=true
+----
+
+To disable Axon Server and use local command bus instead:
+
+[source,properties]
+----
+axon.axonserver.enabled=false
+----
+
+=== Routing strategy
+
+Distributed command buses use the routing information in every `CommandMessage` to decide how to route your commands. The `CommandGateway` is typically in charge of setting the `CommandMesasge#routingKey` field, as it constructs the `CommandMessage` for you. As such, the `RoutingStrategy` is a component present on the `DefaultCommandGateway`. Commands with the same routing key always go to the same instance.
+
+[Note]
+====
+If your node topology is instable, routing of commands with the same key will no longer be consistent.
+====
+
+The default `AnnotationRoutingStrategy` uses the `routingKey` attribute on the `@Command` annotation:
+
+[source,java]
+----
+@Command(routingKey = "orderId")
+public class ShipOrderCommand {
+
+    private final String orderId;
+    private final String trackingNumber;
+
+    // constructor, getters
+}
+----
+
+The `routingKey` attribute specifies which property of the command should be used for routing.
+Commands with the same routing key value will be routed to the same instance.
+
+[NOTE]
+====
+It's recommended to annotate all command classes with `@Command` to explicitly declare their message properties, including namespace, name, version, and routing key.
+This makes your commands self-documenting and ensures consistent message identification across your application.
+====
+
+Custom routing strategies can be configured:
+
+[tabs]
+====
+Configuration API::
++
+--
+[source,java]
+----
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+
+public class AxonConfig {
+
+    public void configureRoutingStrategy() {
+        MessagingConfigurer configurer = MessagingConfigurer.create();
+
+        configurer.componentRegistry(registry ->
+            registry.registerComponent(
+                RoutingStrategy.class,
+                config -> new AnnotationRoutingStrategy()
+            )
+        );
+    }
+}
+----
+--
+
+Spring Boot::
++
+--
+[source,java]
+----
+@Configuration
+public class AxonConfig {
+
+    @Bean
+    public RoutingStrategy routingStrategy() {
+        // Use default (Command.class annotation)
+        return new AnnotationRoutingStrategy();
+    }
+}
+----
+
+You can also use `MetadataRoutingStrategy` to route based on metadata values:
+
+[source,java]
+----
+@Configuration
+public class AxonConfig {
+
+    @Bean
+    public RoutingStrategy routingStrategy() {
+        return new MetadataRoutingStrategy("routingKey");
+    }
+}
+----
+--
+====

@@ -73,7 +73,7 @@ class AggregateBasedAxonServerEventStorageEngineIT extends
                 IllegalArgumentException.class,
                 () -> testSubject.stream(StreamingCondition.startingFrom(
                         new GapAwareTrackingToken(5, Collections.emptySet())
-                ), processingContext())
+                ))
         );
     }
 
@@ -88,7 +88,6 @@ class AggregateBasedAxonServerEventStorageEngineIT extends
 
     @Override
     protected ProcessingContext processingContext() {
-        // TODO implement
         return null;
     }
 
@@ -114,7 +113,7 @@ class AggregateBasedAxonServerEventStorageEngineIT extends
                                          processingContext(),
                                          taggedEventMessage("event-0", TEST_AGGREGATE_TAGS)).join();
 
-        assertDoesNotThrow(() -> tx.commit(processingContext()).get(1, TimeUnit.SECONDS));
-        assertThrows(Exception.class, () -> tx.commit(processingContext()).get(1, TimeUnit.SECONDS));
+        assertDoesNotThrow(() -> tx.commit().get(1, TimeUnit.SECONDS));
+        assertThrows(Exception.class, () -> tx.commit().get(1, TimeUnit.SECONDS));
     }
 }

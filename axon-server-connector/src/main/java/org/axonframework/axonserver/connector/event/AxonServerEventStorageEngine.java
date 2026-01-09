@@ -104,7 +104,7 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public MessageStream<EventMessage> source(@Nonnull SourcingCondition condition, @Nullable ProcessingContext context) {
+    public MessageStream<EventMessage> source(@Nonnull SourcingCondition condition) {
         if (logger.isDebugEnabled()) {
             logger.debug("Start sourcing events with condition [{}].", condition);
         }
@@ -115,7 +115,7 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public MessageStream<EventMessage> stream(@Nonnull StreamingCondition condition, @Nullable ProcessingContext context) {
+    public MessageStream<EventMessage> stream(@Nonnull StreamingCondition condition) {
         if (logger.isDebugEnabled()) {
             logger.debug("Start streaming events with condition [{}].", condition);
         }
@@ -126,7 +126,7 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public CompletableFuture<TrackingToken> firstToken(@Nullable ProcessingContext context) {
+    public CompletableFuture<TrackingToken> firstToken() {
         if (logger.isDebugEnabled()) {
             logger.debug("Operation firstToken() is invoked.");
         }
@@ -136,7 +136,7 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public CompletableFuture<TrackingToken> latestToken(@Nullable ProcessingContext context) {
+    public CompletableFuture<TrackingToken> latestToken() {
         if (logger.isDebugEnabled()) {
             logger.debug("Operation latestToken() is invoked.");
         }
@@ -146,7 +146,7 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at, @Nullable ProcessingContext context) {
+    public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at) {
         if (logger.isDebugEnabled()) {
             logger.debug("Operation tokenAt() is invoked with Instant [{}].", at);
         }
@@ -170,7 +170,7 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
     ) implements AppendTransaction<AppendEventsResponse> {
 
         @Override
-        public CompletableFuture<AppendEventsResponse> commit(@Nullable ProcessingContext context) {
+        public CompletableFuture<AppendEventsResponse> commit() {
             logger.debug("Committing append event transaction...");
             return appendTransaction.commit()
                                     .exceptionallyCompose(throwable -> {
@@ -182,7 +182,7 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
         }
 
         @Override
-        public CompletableFuture<ConsistencyMarker> afterCommit(@Nonnull AppendEventsResponse appendResponse, @Nullable ProcessingContext context) {
+        public CompletableFuture<ConsistencyMarker> afterCommit(@Nonnull AppendEventsResponse appendResponse) {
             long marker = appendResponse.getConsistencyMarker();
             logger.debug("Committing append transaction succeeded with marker [{}].", marker);
 
@@ -190,7 +190,7 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
         }
 
         @Override
-        public void rollback(@Nullable ProcessingContext context) {
+        public void rollback() {
             appendTransaction.rollback();
         }
     }

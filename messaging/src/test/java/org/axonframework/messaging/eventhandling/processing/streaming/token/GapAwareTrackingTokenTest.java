@@ -18,6 +18,7 @@ package org.axonframework.messaging.eventhandling.processing.streaming.token;
 
 import org.junit.jupiter.api.*;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -41,7 +42,7 @@ class GapAwareTrackingTokenTest {
     void gapAwareTokenConcurrency() throws InterruptedException {
         AtomicLong counter = new AtomicLong();
         AtomicReference<GapAwareTrackingToken> currentToken = new AtomicReference<>(GapAwareTrackingToken.newInstance(-1,
-                                                                                                                      emptySortedSet()));
+                emptySortedSet()));
 
         ExecutorService executorService = Executors.newCachedThreadPool();
 
@@ -59,7 +60,7 @@ class GapAwareTrackingTokenTest {
         }
         executorService.shutdown();
         assertTrue(executorService.awaitTermination(5, TimeUnit.SECONDS),
-                   "ExecutorService not stopped within expected reasonable time frame");
+                "ExecutorService not stopped within expected reasonable time frame");
 
         for (Future<?> result : results) {
             assertDoesNotThrow(() -> result.get(1, TimeUnit.SECONDS));
@@ -85,7 +86,7 @@ class GapAwareTrackingTokenTest {
     void gapAwareTokenConcurrency_HighConcurrency() throws InterruptedException {
         long counter = 0;
         AtomicReference<GapAwareTrackingToken> currentToken = new AtomicReference<>(GapAwareTrackingToken.newInstance(-1,
-                                                                                                                      emptySortedSet()));
+                emptySortedSet()));
 
         ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
@@ -98,7 +99,7 @@ class GapAwareTrackingTokenTest {
         }
         executorService.shutdown();
         assertTrue(executorService.awaitTermination(5, TimeUnit.SECONDS),
-                   "ExecutorService not stopped within expected reasonable time frame");
+                "ExecutorService not stopped within expected reasonable time frame");
 
         for (Future<?> result : results) {
             assertDoesNotThrow(() -> result.get(1, TimeUnit.SECONDS));
@@ -204,11 +205,46 @@ class GapAwareTrackingTokenTest {
     }
 
     @Test
+    void samePositionAs() {
+        // Same index, same gaps = same position
+        GapAwareTrackingToken token1 = GapAwareTrackingToken.newInstance(3L, singleton(1L));
+        GapAwareTrackingToken token1Copy = GapAwareTrackingToken.newInstance(3L, singleton(1L));
+        assertTrue(token1.samePositionAs(token1));
+        assertTrue(token1.samePositionAs(token1Copy));
+
+        // Same index, different gaps = same position (past gaps don't matter)
+        GapAwareTrackingToken token2 = GapAwareTrackingToken.newInstance(3L, singleton(2L));
+        assertTrue(token1.samePositionAs(token2));
+        assertTrue(token2.samePositionAs(token1));
+
+        // Null is never the same
+        assertFalse(token1.samePositionAs(null));
+        assertFalse(token2.samePositionAs(null));
+
+        // Same index, one with gaps one without = same position
+        GapAwareTrackingToken token3 = GapAwareTrackingToken.newInstance(3L, emptySortedSet());
+        assertTrue(token1.samePositionAs(token3));
+        assertTrue(token3.samePositionAs(token1));
+
+        // Different index = different position
+        GapAwareTrackingToken token4 = GapAwareTrackingToken.newInstance(4L, emptySortedSet());
+        assertFalse(token1.samePositionAs(token4));
+        assertFalse(token4.samePositionAs(token1));
+
+        // One token's index is in the other's gaps = NOT same
+        // token5 is at index 7, token6 has index 10 with gap at 7
+        GapAwareTrackingToken token5 = GapAwareTrackingToken.newInstance(7L, emptySortedSet());
+        GapAwareTrackingToken token6 = GapAwareTrackingToken.newInstance(10L, singleton(7L));
+        assertFalse(token5.samePositionAs(token6));  // token6 skipped event 7, token5 is pointing at 7
+        assertFalse(token6.samePositionAs(token5));  // different indices anyway
+    }
+
+    @Test
     void occurrenceOfInconsistentRangeException() {
         // verifies issue 655 (https://github.com/AxonFramework/AxonFramework/issues/655)
         GapAwareTrackingToken.newInstance(10L, asList(0L, 1L, 2L, 8L, 9L))
-                             .advanceTo(0L, 5)
-                             .covers(GapAwareTrackingToken.newInstance(0L, emptySet()));
+                .advanceTo(0L, 5)
+                .covers(GapAwareTrackingToken.newInstance(0L, emptySet()));
     }
 
     @Test
@@ -243,6 +279,65 @@ class GapAwareTrackingTokenTest {
         assertEquals(GapAwareTrackingToken.newInstance(15, asList(14L, 9L)), token1.upperBound(token4));
         assertEquals(GapAwareTrackingToken.newInstance(15, asList(14L, 9L, 8L)), token2.upperBound(token4));
         assertEquals(GapAwareTrackingToken.newInstance(15, emptyList()), token5.upperBound(token3));
+    }
+
+    @Test
+    void upperBoundRemovesGapsWhenOtherTokenFillsThem() {
+        // upper(T1,T2) = 7, 8, 10+  --> token not changed
+        GapAwareTrackingToken token0_0 = GapAwareTrackingToken.newInstance(9, asList(7L, 8L));
+        GapAwareTrackingToken token0_1 = GapAwareTrackingToken.newInstance(0, emptyList());
+        assertEquals(token0_0, token0_0.upperBound(token0_1));
+
+        // upper(T1,T2) = 7, 8, 10+  --> token not changed
+        GapAwareTrackingToken token1_0 = GapAwareTrackingToken.newInstance(9, asList(7L, 8L));
+        GapAwareTrackingToken token1_1 = GapAwareTrackingToken.newInstance(6, emptyList());
+        assertEquals(token1_0, token1_0.upperBound(token1_1));
+
+        // upper(T1,T2) = 8, 10+     --> token changed
+        GapAwareTrackingToken token2_0 = GapAwareTrackingToken.newInstance(9, asList(7L, 8L));
+        GapAwareTrackingToken token2_1 = GapAwareTrackingToken.newInstance(7, emptyList());
+        assertEquals(GapAwareTrackingToken.newInstance(9, singletonList(8L)), token2_0.upperBound(token2_1));
+
+        // upper(T1,T2) = 10+        --> token changed
+        GapAwareTrackingToken token3_0 = GapAwareTrackingToken.newInstance(9, singletonList(8L));
+        GapAwareTrackingToken token3_1 = GapAwareTrackingToken.newInstance(8, emptyList());
+        assertEquals(GapAwareTrackingToken.newInstance(9, emptyList()), token3_0.upperBound(token3_1));
+
+        // upper(T1,T2) = 10+        --> token not changed
+        GapAwareTrackingToken token4_0 = GapAwareTrackingToken.newInstance(9, emptyList());
+        GapAwareTrackingToken token4_1 = GapAwareTrackingToken.newInstance(9, emptyList());
+        assertEquals(GapAwareTrackingToken.newInstance(9, emptyList()), token4_0.upperBound(token4_1));
+
+        // upper(T1,T2) = 11+        --> token changed
+        GapAwareTrackingToken token5_0 = GapAwareTrackingToken.newInstance(9, emptyList());
+        GapAwareTrackingToken token5_1 = GapAwareTrackingToken.newInstance(10, emptyList());
+        assertEquals(GapAwareTrackingToken.newInstance(10, emptyList()), token5_0.upperBound(token5_1));
+    }
+
+
+
+    @Test
+    void upperBoundGapsKeptIfAfterLowerIndex() {
+        GapAwareTrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(5, asList(3L, 4L));
+        GapAwareTrackingToken replayToken = GapAwareTrackingToken.newInstance(2, emptyList());
+
+        assertEquals(GapAwareTrackingToken.newInstance(5, asList(3L, 4L)), tokenAtReset.upperBound(replayToken));
+    }
+
+    @Test
+    void upperBoundGapsRemovesGapsThatAreAtLowerIndex() {
+        GapAwareTrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(5, asList(3L, 4L));
+        GapAwareTrackingToken replayToken = GapAwareTrackingToken.newInstance(3, emptyList());
+
+        assertEquals(GapAwareTrackingToken.newInstance(5, singletonList(4L)), tokenAtReset.upperBound(replayToken));
+    }
+
+    @Test
+    void upperBoundRemovesGapsAreNotAtLower() {
+        GapAwareTrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(5, asList(3L, 4L));
+        GapAwareTrackingToken replayToken = GapAwareTrackingToken.newInstance(4, singletonList(3L));
+
+        assertEquals(GapAwareTrackingToken.newInstance(5, singletonList(3L)), tokenAtReset.upperBound(replayToken));
     }
 
     @Test
@@ -289,7 +384,267 @@ class GapAwareTrackingTokenTest {
         assertEquals(1_234, advancedToken.getGaps().size());
     }
 
+
     private TreeSet<Long> asTreeSet(Long... elements) {
         return new TreeSet<>(asList(elements));
+    }
+
+    /**
+     * Tests demonstrating how {@code lowerBound()} can be used to detect whether a position
+     * was a gap at the time of another token (reference token).
+     * <p>
+     * Key insight: When computing {@code lowerBound()}, if the minimum index falls on a gap,
+     * the algorithm walks backwards to find the first non-gap position. This behavior
+     * naturally distinguishes:
+     * <ul>
+     *   <li>Positions that were gaps (lowerBound walks back → different from the other token)</li>
+     *   <li>Positions that were already seen (lowerBound stays → same as the other token)</li>
+     * </ul>
+     */
+    @Nested
+    class LowerBoundForGapDetection {
+
+        /**
+         * Scenario: Position 7 was a gap in the reference token.
+         * <pre>
+         * tokenAtReset: index=10, gaps=[7, 8]
+         *   Timeline: [0-6 seen] [7 GAP] [8 GAP] [9-10 seen]
+         *
+         * newToken: index=7, gaps=[]
+         *   Represents: position 7
+         *
+         * lowerBound calculation:
+         *   - mergedGaps = [7, 8]
+         *   - mergedIndex = min(10, 7) = 7
+         *   - 7 IS in gaps → walk back to 6
+         *   - Result: index=6
+         *
+         * lowerBound.samePositionAs(newToken)? → 6 == 7? NO
+         * Therefore: Position 7 was a gap in the reference token
+         * </pre>
+         */
+        @Test
+        void lowerBoundDetectsGapFilledEvent() {
+            GapAwareTrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10L, asList(7L, 8L));
+            GapAwareTrackingToken newToken = GapAwareTrackingToken.newInstance(7L, emptyList());
+
+            GapAwareTrackingToken lowerBound = tokenAtReset.lowerBound(newToken);
+
+            // lowerBound walked back past gap 7 to index 6
+            assertEquals(6L, lowerBound.getIndex());
+            assertTrue(lowerBound.getGaps().isEmpty());
+
+            // lowerBound is NOT same as newToken → position was a gap
+            assertFalse(lowerBound.samePositionAs(newToken));
+        }
+
+        /**
+         * Scenario: Position 5 was already seen in the reference token.
+         * <pre>
+         * tokenAtReset: index=10, gaps=[7, 8]
+         *   Timeline: [0-6 seen] [7 GAP] [8 GAP] [9-10 seen]
+         *
+         * newToken: index=5, gaps=[]
+         *   Represents: position 5
+         *
+         * lowerBound calculation:
+         *   - mergedGaps = [7, 8]
+         *   - mergedIndex = min(10, 5) = 5
+         *   - 5 is NOT in gaps → stays 5
+         *   - Result: index=5
+         *
+         * lowerBound.samePositionAs(newToken)? → 5 == 5? YES
+         * Therefore: Position 5 was already seen in the reference token
+         * </pre>
+         */
+        @Test
+        void lowerBoundDetectsAlreadyProcessedEvent() {
+            GapAwareTrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10L, asList(7L, 8L));
+            GapAwareTrackingToken newToken = GapAwareTrackingToken.newInstance(5L, emptyList());
+
+            GapAwareTrackingToken lowerBound = tokenAtReset.lowerBound(newToken);
+
+            // lowerBound stays at index 5 (not a gap)
+            assertEquals(5L, lowerBound.getIndex());
+
+            // lowerBound IS same as newToken → position was already seen
+            assertTrue(lowerBound.samePositionAs(newToken));
+        }
+
+        /**
+         * Scenario: Position 8 was also a gap, consecutive with gap at 7.
+         * <pre>
+         * tokenAtReset: index=10, gaps=[7, 8]
+         *   Timeline: [0-6 seen] [7 GAP] [8 GAP] [9-10 seen]
+         *
+         * newToken: index=8, gaps=[]
+         *   Represents: position 8
+         *
+         * lowerBound calculation:
+         *   - mergedGaps = [7, 8]
+         *   - mergedIndex = min(10, 8) = 8
+         *   - 8 IS in gaps → walk back: 7 also in gaps → walk to 6
+         *   - Result: index=6
+         *
+         * lowerBound.samePositionAs(newToken)? → 6 == 8? NO
+         * Therefore: Position 8 was a gap in the reference token
+         * </pre>
+         */
+        @Test
+        void lowerBoundDetectsConsecutiveGapFill() {
+            GapAwareTrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10L, asList(7L, 8L));
+            GapAwareTrackingToken newToken = GapAwareTrackingToken.newInstance(8L, emptyList());
+
+            GapAwareTrackingToken lowerBound = tokenAtReset.lowerBound(newToken);
+
+            // lowerBound walked back past gaps 8 and 7 to index 6
+            assertEquals(6L, lowerBound.getIndex());
+
+            // lowerBound is NOT same as newToken → position was a gap
+            assertFalse(lowerBound.samePositionAs(newToken));
+        }
+
+        /**
+         * Scenario: Position 6 (boundary case - just before the gap).
+         * <pre>
+         * tokenAtReset: index=10, gaps=[7, 8]
+         *   Timeline: [0-6 seen] [7 GAP] [8 GAP] [9-10 seen]
+         *
+         * newToken: index=6, gaps=[]
+         *   Represents: position 6
+         *
+         * lowerBound calculation:
+         *   - mergedGaps = [7, 8]
+         *   - mergedIndex = min(10, 6) = 6
+         *   - 6 is NOT in gaps → stays 6
+         *   - Result: index=6
+         *
+         * lowerBound.samePositionAs(newToken)? → 6 == 6? YES
+         * Therefore: Position 6 was already seen in the reference token
+         * </pre>
+         */
+        @Test
+        void lowerBoundDetectsBoundaryBeforeGap() {
+            GapAwareTrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10L, asList(7L, 8L));
+            GapAwareTrackingToken newToken = GapAwareTrackingToken.newInstance(6L, emptyList());
+
+            GapAwareTrackingToken lowerBound = tokenAtReset.lowerBound(newToken);
+
+            // lowerBound stays at index 6
+            assertEquals(6L, lowerBound.getIndex());
+
+            // lowerBound IS same as newToken → position was already seen
+            assertTrue(lowerBound.samePositionAs(newToken));
+        }
+
+        /**
+         * Scenario: Position 9 (boundary case - just after the gaps).
+         * <pre>
+         * tokenAtReset: index=10, gaps=[7, 8]
+         *   Timeline: [0-6 seen] [7 GAP] [8 GAP] [9-10 seen]
+         *
+         * newToken: index=9, gaps=[]
+         *   Represents: position 9
+         *
+         * lowerBound calculation:
+         *   - mergedGaps = [7, 8]
+         *   - mergedIndex = min(10, 9) = 9
+         *   - 9 is NOT in gaps → stays 9
+         *   - Result: index=9, gaps=[7, 8] (gaps below 9 kept)
+         *
+         * lowerBound.samePositionAs(newToken)? → 9 == 9? YES
+         * Therefore: Position 9 was already seen in the reference token
+         * </pre>
+         */
+        @Test
+        void lowerBoundDetectsBoundaryAfterGap() {
+            GapAwareTrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10L, asList(7L, 8L));
+            GapAwareTrackingToken newToken = GapAwareTrackingToken.newInstance(9L, emptyList());
+
+            GapAwareTrackingToken lowerBound = tokenAtReset.lowerBound(newToken);
+
+            // lowerBound stays at index 9
+            assertEquals(9L, lowerBound.getIndex());
+            // Note: gaps 7, 8 are retained since they're below the merged index
+            assertEquals(asList(7L, 8L), new ArrayList<>(lowerBound.getGaps()));
+
+            // lowerBound IS same as newToken → position was already seen
+            assertTrue(lowerBound.samePositionAs(newToken));
+        }
+
+        /**
+         * Scenario: Gap at the very beginning (position 0).
+         * <pre>
+         * tokenAtReset: index=5, gaps=[0, 1]
+         *   Timeline: [0 GAP] [1 GAP] [2-5 seen]
+         *
+         * newToken: index=0, gaps=[]
+         *   Represents: position 0
+         *
+         * lowerBound calculation:
+         *   - mergedGaps = [0, 1]
+         *   - mergedIndex = min(5, 0) = 0
+         *   - 0 IS in gaps → walk back to -1
+         *   - Result: index=-1
+         *
+         * lowerBound.samePositionAs(newToken)? → -1 == 0? NO
+         * Therefore: Position 0 was a gap in the reference token
+         * </pre>
+         */
+        @Test
+        void lowerBoundDetectsGapAtStart() {
+            GapAwareTrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(5L, asList(0L, 1L));
+            GapAwareTrackingToken newToken = GapAwareTrackingToken.newInstance(0L, emptyList());
+
+            GapAwareTrackingToken lowerBound = tokenAtReset.lowerBound(newToken);
+
+            // lowerBound walked back past gap 0 to index -1
+            assertEquals(-1L, lowerBound.getIndex());
+
+            // lowerBound is NOT same as newToken → position was a gap
+            assertFalse(lowerBound.samePositionAs(newToken));
+        }
+
+        /**
+         * Scenario: Multiple scattered gaps.
+         * <pre>
+         * tokenAtReset: index=15, gaps=[3, 7, 8, 12]
+         *   Timeline: [0-2 seen] [3 GAP] [4-6 seen] [7 GAP] [8 GAP] [9-11 seen] [12 GAP] [13-15 seen]
+         *
+         * Various positions tested:
+         *   - Position 3: was a gap
+         *   - Position 5: was seen
+         *   - Position 12: was a gap
+         *   - Position 13: was seen
+         * </pre>
+         */
+        @Test
+        void lowerBoundWithMultipleScatteredGaps() {
+            GapAwareTrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(15L, asList(3L, 7L, 8L, 12L));
+
+            // Position 3 was a gap
+            GapAwareTrackingToken event3 = GapAwareTrackingToken.newInstance(3L, emptyList());
+            GapAwareTrackingToken lowerBound3 = tokenAtReset.lowerBound(event3);
+            assertEquals(2L, lowerBound3.getIndex()); // walked back past gap 3
+            assertFalse(lowerBound3.samePositionAs(event3));
+
+            // Position 5 was seen
+            GapAwareTrackingToken event5 = GapAwareTrackingToken.newInstance(5L, emptyList());
+            GapAwareTrackingToken lowerBound5 = tokenAtReset.lowerBound(event5);
+            assertEquals(5L, lowerBound5.getIndex()); // stays at 5
+            assertTrue(lowerBound5.samePositionAs(event5));
+
+            // Position 12 was a gap
+            GapAwareTrackingToken event12 = GapAwareTrackingToken.newInstance(12L, emptyList());
+            GapAwareTrackingToken lowerBound12 = tokenAtReset.lowerBound(event12);
+            assertEquals(11L, lowerBound12.getIndex()); // walked back past gap 12
+            assertFalse(lowerBound12.samePositionAs(event12));
+
+            // Position 13 was seen
+            GapAwareTrackingToken event13 = GapAwareTrackingToken.newInstance(13L, emptyList());
+            GapAwareTrackingToken lowerBound13 = tokenAtReset.lowerBound(event13);
+            assertEquals(13L, lowerBound13.getIndex()); // stays at 13
+            assertTrue(lowerBound13.samePositionAs(event13));
+        }
     }
 }

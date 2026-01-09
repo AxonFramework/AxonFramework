@@ -78,87 +78,87 @@ public class ResourceOverridingProcessingContext<R> implements ProcessingContext
     }
 
     @Override
-    public ProcessingLifecycle on(Phase phase, Function<ProcessingContext, CompletableFuture<?>> action) {
+    public ProcessingLifecycle on(@Nonnull Phase phase, @Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
         return delegate.on(phase, action);
     }
 
     @Override
-    public ProcessingLifecycle runOn(Phase phase, Consumer<ProcessingContext> action) {
+    public ProcessingLifecycle runOn(@Nonnull Phase phase, @Nonnull Consumer<ProcessingContext> action) {
         return delegate.runOn(phase, action);
     }
 
     @Override
-    public ProcessingLifecycle onPreInvocation(Function<ProcessingContext, CompletableFuture<?>> action) {
+    public ProcessingLifecycle onPreInvocation(@Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
         return delegate.onPreInvocation(action);
     }
 
     @Override
-    public ProcessingLifecycle runOnPreInvocation(Consumer<ProcessingContext> action) {
+    public ProcessingLifecycle runOnPreInvocation(@Nonnull Consumer<ProcessingContext> action) {
         return delegate.runOnPreInvocation(action);
     }
 
     @Override
-    public ProcessingLifecycle onInvocation(Function<ProcessingContext, CompletableFuture<?>> action) {
+    public ProcessingLifecycle onInvocation(@Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
         return delegate.onInvocation(action);
     }
 
     @Override
-    public ProcessingLifecycle runOnInvocation(Consumer<ProcessingContext> action) {
+    public ProcessingLifecycle runOnInvocation(@Nonnull Consumer<ProcessingContext> action) {
         return delegate.runOnInvocation(action);
     }
 
     @Override
-    public ProcessingLifecycle onPostInvocation(Function<ProcessingContext, CompletableFuture<?>> action) {
+    public ProcessingLifecycle onPostInvocation(@Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
         return delegate.onPostInvocation(action);
     }
 
     @Override
-    public ProcessingLifecycle runOnPostInvocation(Consumer<ProcessingContext> action) {
+    public ProcessingLifecycle runOnPostInvocation(@Nonnull Consumer<ProcessingContext> action) {
         return delegate.runOnPostInvocation(action);
     }
 
     @Override
-    public ProcessingLifecycle onPrepareCommit(Function<ProcessingContext, CompletableFuture<?>> action) {
+    public ProcessingLifecycle onPrepareCommit(@Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
         return delegate.onPrepareCommit(action);
     }
 
     @Override
-    public ProcessingLifecycle runOnPrepareCommit(Consumer<ProcessingContext> action) {
+    public ProcessingLifecycle runOnPrepareCommit(@Nonnull Consumer<ProcessingContext> action) {
         return delegate.runOnPrepareCommit(action);
     }
 
     @Override
-    public ProcessingLifecycle onCommit(Function<ProcessingContext, CompletableFuture<?>> action) {
+    public ProcessingLifecycle onCommit(@Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
         return delegate.onCommit(action);
     }
 
     @Override
-    public ProcessingLifecycle runOnCommit(Consumer<ProcessingContext> action) {
+    public ProcessingLifecycle runOnCommit(@Nonnull Consumer<ProcessingContext> action) {
         return delegate.runOnCommit(action);
     }
 
     @Override
-    public ProcessingLifecycle onAfterCommit(Function<ProcessingContext, CompletableFuture<?>> action) {
+    public ProcessingLifecycle onAfterCommit(@Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
         return delegate.onAfterCommit(action);
     }
 
     @Override
-    public ProcessingLifecycle runOnAfterCommit(Consumer<ProcessingContext> action) {
+    public ProcessingLifecycle runOnAfterCommit(@Nonnull Consumer<ProcessingContext> action) {
         return delegate.runOnAfterCommit(action);
     }
 
     @Override
-    public ProcessingLifecycle onError(ErrorHandler action) {
+    public ProcessingLifecycle onError(@Nonnull ErrorHandler action) {
         return delegate.onError(action);
     }
 
     @Override
-    public ProcessingLifecycle whenComplete(Consumer<ProcessingContext> action) {
+    public ProcessingLifecycle whenComplete(@Nonnull Consumer<ProcessingContext> action) {
         return delegate.whenComplete(action);
     }
 
     @Override
-    public ProcessingLifecycle doFinally(Consumer<ProcessingContext> action) {
+    public ProcessingLifecycle doFinally(@Nonnull Consumer<ProcessingContext> action) {
         return delegate.doFinally(action);
     }
 

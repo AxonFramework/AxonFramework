@@ -1,0 +1,32 @@
+= Migrating to Axon Framework 5.0: Prerequisites and System Requirements
+:navtitle: Prerequisites
+
+Axon Framework 5.0 represents a significant change for event-sourced applications and services that will enable them to perform faster, be more adaptable, and future proof your application architecture. Below is a list of the prerequisites that your systems must have in order to get started with Axon Framework 5.0:
+
+== 1. JDK 21 or higher (required)
+
+**Requirement** - JDK 21 is the absolute minimum baseline for Axon Framework 5.0.
+
+**Why This Matters** - The shift to JDK 21 marks a deliberate alignment with Java's Long-Term Support (LTS) release cadence. This decision reflects Axoniq's commitment to keeping Axon Framework to be modern while leveraging the latest platform innovations in Java language itself. By anchoring to LTS versions, we ensure stability as well as embrace the improvements in language features, performance optimizations, and security enhancements available in Java 21.
+
+**What This Means for You** - The minimum Java version required for Axon Framework 4.x was Java 8. The Java ecosystem has matured significantly since then, and Java 21 provides a wealth of features that make event-sourced systems more resilient, reliable, modern, and performant. Therefore, If you're currently running your Axon Framework 4.x applications on any Java version before Java 21, then you need to upgrade before performing a migration to Axon Framework 5.
+
+== 2. Axon Server compatibility (optional)
+
+**Requirement** - Your Axon Server infrastructure needs to align with your Axon Framework 5.0 migration approach.
+
+**Why This Matters** - Axon Framework 5.0 and Axon Server have different upgrade requirements depending on which features you're using. This distinction is crucial because it determines the order of operations for your migration.
+
+If you're using Axon Framework 5.0 without Dynamic Consistency Boundary (DCB) features (which most customers migrating from 4.x will be doing initially), then you don't need to upgrade Axon Server immediately. Your existing Axon Server LTS instances will continue working with Axon Framework 5.0.
+
+However, we recommend that all customers upgrade to Axon Server 2025.2.0 LTS whenever possible. This unlocks all the features of Axon Framework 5.0, including DCB capabilities and other key features.
+
+**What This Means for You** - In order to use the Dynamic Consistency Boundary (DCB) features of Axon Framework 5.0, then you need Axon Server 2025.2.0.
+
+== 3. Spring compatibility (optional)
+
+**Requirement** - If your Axon Framework 4.x application uses Spring, you must upgrade to Spring Boot 3 or higher and Spring Framework 6 or higher.
+
+**Why This Matters** - Spring Boot 2 and Spring Framework 5 are no longer supported in Axon Framework 5.0. Axon Framework 5.0 has support for Spring Boot integration, but it requires the modern Spring ecosystem to function properly. The new configuration model centers around the ApplicationConfigurer—a unified configuration object that defines your entire Axon ecosystem (command handlers, event handlers, sagas, projections, etc.).
+
+**What This Means for You** - This is a two-part upgrade: first, update Spring Boot to version 3 or higher and Spring Framework to version 6 or higher. This upgrade is non-trivial if you've been on Spring Boot 2—it involves updating all Spring dependencies and handling the javax to jakarta namespace migration across your entire codebase.
