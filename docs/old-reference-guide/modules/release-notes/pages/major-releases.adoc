@@ -238,7 +238,7 @@ Furthermore, it required us to duplicate the Javax Persistence and Javax Validat
 In doing so, we provided support for both Javax and Jakarta, as well as Spring Boot 2 and Spring Boot 3.
 
 However, this required us to introduce breaking changes in 4.7 compared to 4.6.
-To help you upgrade towards Axon Framework 4.7, we provide a dedicated xref:axon-framework-reference::upgrading-to-4-7.adoc[Upgrading to Axon Framework 4.7] page describing the scenarios you may be in and the steps to take for upgrading.
+To help you upgrade towards Axon Framework 4.7, we provide a dedicated xref:ROOT:upgrading-to-4-7.adoc[Upgrading to Axon Framework 4.7] page describing the scenarios you may be in and the steps to take for upgrading.
 
 Next to the Javax-to-Jakarta adjustments and the Spring Boot 3 support, we've added an https://github.com/AxonFramework/AxonFramework/pull/2509[Event Scheduler] and https://github.com/AxonFramework/AxonFramework/pull/2499[Deadline Manager] based on https://www.jobrunr.io/[JobRunr].
 
@@ -584,7 +584,7 @@ For a full list of all the feature request and enhancements done for release 4.4
 * Aggregate Polymorphism has been introduced, allowing for an aggregate hierarchy to come naturally from a domain model.
  To set this up, the `AggregateConfigurer#withSubtypes(Class... aggregates)` method can be used.
  In a Spring environment, an aggregate class hierarchy will be detected automatically.
- For more details on this feature, read up on it xref:axon-framework-reference:axon-framework-commands:modeling/aggregate-polymorphism.adoc[here].
+ For more details on this feature, read up on it xref:axon-framework-commands:modeling/aggregate-polymorphism.adoc[here].
 
 * An Axon application will now shutdown more gracefully than it did in the previous releases.
  This is achieved by marking specific methods in Axon's infrastructure components as a `@StartHandler` or `@ShutdownHandler`.
@@ -593,13 +593,13 @@ For a full list of all the feature request and enhancements done for release 4.4
 
 * We have introduced the `@CreationPolicy` annotation which you can add to `@CommandHandler` annotated methods in your aggregate.
  Through this, it is possible to define if such a command handler should 'never', 'always' or 'create' an aggregate 'if-missing'.
- For further explanation read the xref:axon-framework-reference:axon-framework-commands:command-handlers.adoc#_aggregate_command_handler_creation_policy[Aggregate Command Handler Creation Policy] section.
+ For further explanation read the xref:axon-framework-commands:command-handlers.adoc#_aggregate_command_handler_creation_policy[Aggregate Command Handler Creation Policy] section.
 
 * Both the `XStreamSerializer` and `JacksonSerializer` provide a means to toggle on "lenient serialization" through their builders.
 
 * Various test fixture improvements have been made, such as options to register a `HandlerEnhancerDefinition`, a `ParameterResolverFactory` and a `ListenerInvocationErrorHandler`.
  Additional validations have been added too, revolving around asserting scheduled events and deadline message.
- The xref:axon-framework-reference:testing:commands-events.adoc[Test Fixture] page has been updated to define these new operations accordingly.
+ The xref:testing:commands-events.adoc[Test Fixture] page has been updated to define these new operations accordingly.
 
 * The `TrackingEventProcessor#processingStatus` method as of 4.3 exposes more status information.
  The current token position, token-at-reset, is-merging and merge-completed position have been added to the set.
