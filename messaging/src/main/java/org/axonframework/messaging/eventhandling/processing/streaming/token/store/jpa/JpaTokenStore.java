@@ -24,6 +24,8 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.jpa.EntityManagerProvider;
+import org.axonframework.conversion.Converter;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.ConfigToken;
@@ -31,8 +33,6 @@ import org.axonframework.messaging.eventhandling.processing.streaming.token.stor
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.UnableToClaimTokenException;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.UnableToInitializeTokenException;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.UnableToRetrieveIdentifierException;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.conversion.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -456,25 +456,32 @@ public class JpaTokenStore implements TokenStore {
      * @param segment       The segment of the processor to load or insert a token entry for.
      */
     private void validateSegment(String processorName, Segment segment, EntityManager entityManager) {
-        //This segment should exist
-        TokenEntry mergeableSegment = entityManager.find(TokenEntry.class,
-                                                         new TokenEntry.PK(processorName, segment.mergeableSegmentId()),
-                                                         loadingLockMode);
-        if (mergeableSegment == null) {
-            throw new UnableToClaimTokenException(format(
-                    "Unable to claim token '%s[%s]'. It has been merged with another segment",
-                    processorName, segment.getSegmentId()
-            ));
+        int mergeableSegmentId = segment.mergeableSegmentId();
+        // if the ID of the mergeable segment is lower, it means we're trying to claim the "removable" entry in a merge,
+        // meaning there is no risk for a "merge in progress".
+        if (mergeableSegmentId > segment.getSegmentId()) {
+            // we're just reading for the existence. No interest in claiming or locking
+            //This segment should exist
+            TokenEntry mergeableSegment = entityManager.find(TokenEntry.class,
+                                                             new TokenEntry.PK(processorName, mergeableSegmentId),
+                                                             LockModeType.NONE);
+            if (mergeableSegment == null) {
+                throw new UnableToClaimTokenException(format(
+                        "Unable to claim segment '%s[%s]'. It has been merged with another segment",
+                        processorName,
+                        segment.getSegmentId()));
+            }
         }
-        //This segment should not exist
+        // we're just reading for the existence. No interest in claiming or locking
+        // This segment should not exist
         TokenEntry splitSegment = entityManager.find(TokenEntry.class,
                                                      new TokenEntry.PK(processorName, segment.splitSegmentId()),
-                                                     loadingLockMode);
+                                                     LockModeType.NONE);
         if (splitSegment != null) {
             throw new UnableToClaimTokenException(format(
-                    "Unable to claim token '%s[%s]'. It has been split into two segments",
-                    processorName, segment.getSegmentId()
-            ));
+                    "Unable to claim segment '%s[%s]'. It has been split into two segments",
+                    processorName,
+                    segment.getSegmentId()));
         }
     }
 
