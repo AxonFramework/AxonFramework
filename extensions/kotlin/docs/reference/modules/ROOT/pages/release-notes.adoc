@@ -13,7 +13,7 @@ For earlier releases, please visit the link:https://legacydocs.axoniq.io/referen
 
 === _Contributors_
 
-We'd like to thank all the contributors who worked on this release.
+We want to thank all the contributors who worked on this release.
 
 - link:https://github.com/smcvb[@smcvb]
 - link:https://github.com/MateuszNaKodach[@MateuszNaKodach]
@@ -27,7 +27,7 @@ We'd like to thank all the contributors who worked on this release.
 
 === _Contributors_
 
-We'd like to thank all the contributors who worked on this release.
+We want to thank all the contributors who worked on this release.
 
 - link:https://github.com/MateuszNaKodach[@MateuszNaKodach]
 
@@ -40,13 +40,11 @@ We'd like to thank all the contributors who worked on this release.
 
 === _Contributors_
 
-We'd like to thank all the contributors who worked on this release.
+We want to thank all the contributors who worked on this release.
 
 - link:https://github.com/MateuszNaKodach[@MateuszNaKodach]
 
 == Release 4.10.0
 
-. Upgrades the Kotlin Extension to be compatible with Axon Framework 4.10.0
-. Adds a serializer with `kotlin.serialization` support
-
-See the link:https://github.com/AxonFramework/extension-kotlin/releases/tag/axon-kotlin-4.10.0[GitHub release notes] for an exhaustive list of all changes.
+Upgrades the Kotlin Extension to be compatible with Axon Framework 4.10.0.
+This adds a serializer with `kotlin.serialization` support. See the link:https://github.com/AxonFramework/extension-kotlin/releases/tag/axon-kotlin-4.10.0[GitHub release notes] for an exhaustive list of all changes.
