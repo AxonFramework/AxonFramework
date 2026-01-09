@@ -1,0 +1,414 @@
+= Query Handlers
+:navtitle: Handling
+
+The handling of a query comes down to a query handler returning the query's response. The goal of this chapter is to describe what such a query handler method looks like, as well as describing the call order and response type options. For configuration of query handlers and the `QueryBus`, it is recommended to read the xref:configuration.adoc[Configuration] section.
+
+Query handlers are fully async-native and can return `CompletableFuture`, `Publisher`, or synchronous results. The framework handles correlation data propagation automatically through the `ProcessingContext`.
+
+[[writing-query-handler]]
+== Writing a query handler
+
+In Axon, an object may declare a number of query handler methods, by for example annotating them with the `@QueryHandler` annotation. The object in question is what you would refer to as the Query Handler, or Query Handling Component. For a query handling method, the first declared parameter defines which query message object it will receive.
+
+Taking the 'Gift Card' domain which contains a `CardSummary` Query Model, we can assume there is a query message to fetch a single `CardSummary` instance. Let us define the format of the query message as follows:
+
+[source,java]
+----
+import org.axonframework.messaging.queryhandling.annotation.Query;
+
+@Query(namespace = "giftcard", name = "FetchCardSummary", version = "1.0")
+public class FetchCardSummaryQuery {
+
+    private final String cardSummaryId;
+
+    public FetchCardSummaryQuery(String cardSummaryId) {
+        this.cardSummaryId = cardSummaryId;
+    }
+    // omitted getters, equals/hashCode, toString functions
+}
+
+----
+
+The query message is annotated with `@Query` to define its message type. The annotation specifies:
+
+* `namespace`: The bounded context or namespace for the query (defaults to the package name if omitted)
+* `name`: The business/domain name of the query (defaults to the simple class name if omitted)
+* `version`: The version of the query message (defaults to "1.0" if omitted)
+
+Together, the namespace and name form a `QualifiedName`, which combined with the version creates the `MessageType`. This is how Axon identifies and routes the query, independent of the Java class name.
+
+[TIP]
+.Annotating query messages
+====
+It's recommended to annotate all query message classes with `@Query`. This allows you to:
+
+* Define an explicit message type independent of the Java class name.
+* Version your queries for evolution over time.
+* Organize queries by bounded context using namespaces.
+* Leverage payload conversion at handling time for different representations.
+
+If the `@Query` annotation is omitted, Axon will default to using the fully qualified class name as the query name, which tightly couples your message identity to your Java package structure.
+====
+
+This `FetchCardSummaryQuery` will be xref:query-dispatchers.adoc[dispatched] to a handler that defines the given message as its first declared parameter. The handler will likely be contained in an object which is in charge of or has access to the `CardSummary` model in question:
+
+[source,java]
+----
+import org.axonframework.messaging.queryhandling.QueryHandler;
+
+public class CardSummaryProjection {
+
+    private Map<String, CardSummary> cardSummaryStorage;
+
+    @QueryHandler // <1>
+    public CardSummary handle(FetchCardSummaryQuery query) { // <2>
+        return cardSummaryStorage.get(query.getCardSummaryId());
+    }
+    // omitted CardSummary event handlers which update the model
+}
+
+----
+<1> The `@QueryHandler` annotation marks this method as a query handler.
+<2> The method signature defines the query payload (`FetchCardSummaryQuery`) as the first parameter and the return type (`CardSummary`) as the query response type.
+
+[TIP]
+.Storing a query model
+====
+For the purpose of the example we have chosen to use a regular `Map` as the storage approach. In a real life system, this would be replaced by a form of database or repository layer, for example.
+====
+
+== Query name resolution and message types
+
+Queries are identified by their `MessageType`, which consists of a `QualifiedName` (namespace + local name) and a version. This allows the message identity to be independent of the Java class structure.
+
+=== Defining the query name
+
+The `MessageTypeResolver` determines how query names are resolved from query payload classes. By default, the query name is resolved as follows:
+
+. If the `@Query` annotation is present on the query payload class, the annotation's `namespace` and `localName` attributes define the qualified name, and the `version` attribute defines the version.
+. If the `@Query` annotation is absent, the fully qualified class name of the query payload class is used as the query name (with a default version).
+
+=== Matching handlers to queries
+
+Query handlers are matched to queries based on the query name. The `@QueryHandler` annotation can optionally specify a `queryName` attribute to explicitly declare which query name the handler wants to handle. If not specified, the handler matches queries whose name corresponds to the fully qualified class name of the handler's first parameter type.
+
+Example using the `@Query` annotation:
+
+[source,java]
+----
+import org.axonframework.messaging.queryhandling.annotation.Query;
+
+@Query(namespace = "giftcard", name = "FetchCardSummary", version = "1.0")
+public class FetchCardSummaryQuery {
+    private final String cardSummaryId;
+
+    public FetchCardSummaryQuery(String cardSummaryId) {
+        this.cardSummaryId = cardSummaryId;
+    }
+
+    public String getCardSummaryId() {
+        return cardSummaryId;
+    }
+}
+----
+
+The query handler can then be written to handle this specific query type:
+
+[source,java]
+----
+@QueryHandler
+public CardSummary handle(FetchCardSummaryQuery query) {
+    return cardSummaryStorage.get(query.getCardSummaryId());
+}
+----
+
+Since the handler's first parameter is `FetchCardSummaryQuery`, and that class is annotated with `@Query(namespace = "giftcard", name = "FetchCardSummary")`, the handler will match queries with the qualified name `giftcard.FetchCardSummary`.
+
+=== Using queryName for different representations
+
+If you want the handler to receive the query in a different representation (not the `@Query` annotated class), you **must** explicitly specify the query name in the `@QueryHandler` annotation:
+
+[source,java]
+----
+@QueryHandler(queryName = "giftcard.FetchCardSummary") // <1>
+public CardSummary handle(Map<String, Object> queryData) { // <2>
+    String cardId = (String) queryData.get("cardSummaryId");
+    return cardSummaryStorage.get(cardId);
+}
+----
+<1> The `queryName` attribute is **required** when the first parameter is not the `@Query` annotated payload class. Without it, Axon would resolve the query handler above to handle queries with the name `java.util.Map`. As such, it wouldn't know which query this handler should handle.
+<2> The handler receives the query as a `Map`, allowing flexible access to the query data.
+
+This approach allows the same query to be handled with different representations, as long as each handler explicitly declares which query name it handles. Furthermore, thes query handlers should belong to different applications, as the `QueryBus` will throw a `DuplicateQueryHandlerSubscriptionException` if a query handler for the same name is registered twice within a given JVM.
+
+=== Payload conversion at handling time
+
+The query payload is automatically converted to the handler's expected type at handling time. This means different handlers can receive the same query message in different Java representations, as long as the message types match.
+
+This reduces the need for upcasters in many scenarios. The framework converts the payload when invoking the handler, so upcasters are primarily needed for structural changes to the message format rather than simple type conversions.
+
+Example:
+
+[source,java]
+----
+// Handler expecting the query as a specific type
+@QueryHandler
+public CardSummary handle(FetchCardSummaryQuery query) {
+    return cardSummaryStorage.get(query.getCardSummaryId());
+}
+
+// Another handler in another application could receive the same query in a different representation
+@QueryHandler(queryName = "giftcard.FetchCardSummary") // Must specify queryName!
+public CardDetails handle(Map<String, Object> query) {
+    String cardId = (String) query.get("cardSummaryId");
+    return detailedCardStorage.get(cardId);
+}
+----
+
+Both handlers can be invoked for queries with the same `MessageType`, but they receive the payload in their preferred format.
+
+[IMPORTANT]
+.Single handler per query
+====
+Each query name can have only one registered handler. Attempting to register multiple handlers for the same query name will result in a `DuplicateQueryHandlerSubscriptionException`.
+
+As such, the example above expects both queries to reside in different application instances.
+====
+
+== Query handler chaining
+
+When you need information from another query to complete your query,
+you might call the `QueryGateway` or `QueryBus` from your query handler.
+This needs to be done with caution, as we create a dependency between two query handlers.
+
+[[chaining-local]]
+=== Local query handler
+
+When the secondary query handler is located in the same application,
+you can still use
+the `QueryGateway` or `QueryBus` to retrieve the information you need and keep the two components decoupled.
+This gives you the freedom to move the other query handler to a different application in the future.
+
+
+[WARNING]
+.Projection dependency
+====
+When a query handler depends on another query in the same application, this can indicate a design issue.
+Each projection processes events at their own pace, so two projections might not have the data in sync.
+This can lead to unexpected behavior.
+
+The proper solution is to create independent projections that contain all the data needed
+to function correctly.
+By duplicating data to the event processor locally,
+you are guaranteed to have up-to-date data when handling a query, as well as the flexibility to change it.
+====
+
+When using the `DistributedQueryBus`, with for example the `AxonServerQueryBusConnector`, this secondary query will use a second thread to process in. If both queries block the thread, this could potentially lead to a deadlock.
+
+Example: You have configured the `AxonServerQueryBusConnector` to have 1 thread, and you have query A and B in the same application.
+Query A calls query B. Because query A is waiting on a response of query B, and query B is waiting for a thread to free up, this has now caused a deadlock.
+
+You can take different routes to remedy this:
+
+1. Not chaining queries in this way, and instead duplicating the data locally based on the events.
+2. Returning a `CompletableFuture` from your query handlers, and using `thenCompose` to chain the queries. This will free up the thread to process other queries.
+3. Configure your distributed query bus to have more threads available. This will reduce the chance of a deadlock, but it will not prevent it.
+
+=== Remote query handler
+
+When calling a remote query handler from your query handler, the response processing uses a separate thread pool, preventing thread exhaustion. This allows safe query chaining across distributed applications.
+
+== Query handler parameters
+
+Query handlers support parameter injection to access various framework components and message metadata during query processing. The first parameter is always the query payload, but additional parameters can be injected.
+
+=== `ProcessingContext`
+
+The `ProcessingContext` is Axon's message handling lifecycle tool. As such, it is always created by Axon when processing a (query) message. It provides access to resources, correlation data, and lifecycle hooks during query processing.
+
+You can inject the `ProcessingContext` as a handler parameter:
+
+[source,java]
+----
+@QueryHandler
+public CardSummary handle(FetchCardSummaryQuery query, ProcessingContext context) {
+    // Access correlation data
+    String correlationId = context.correlationId();
+
+    // Access resources
+    SomeService service = context.resource(SomeService.RESOURCE_KEY);
+
+    return cardSummaryStorage.get(query.getCardSummaryId());
+}
+----
+
+When dispatching queries or commands from within a query handler, always pass the `ProcessingContext` to ensure correlation data flows correctly:
+
+[source,java]
+----
+import org.axonframework.messaging.queryhandling.QueryGateway;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+
+@QueryHandler
+public OrderDetails handle(FetchOrderDetailsQuery query,
+                           ProcessingContext context,
+                           QueryGateway queryGateway) {
+    // Dispatch another query, passing the ProcessingContext for correlation
+    CompletableFuture<CustomerInfo> customerInfo =
+        queryGateway.query(new FetchCustomerQuery(query.getCustomerId()),
+                          CustomerInfo.class,
+                          context);
+
+    return orderStorage.get(query.getOrderId());
+}
+----
+
+=== `QueryUpdateEmitter`
+
+For subscription queries, you can inject a `QueryUpdateEmitter` to emit updates to subscribers:
+
+[source,java]
+----
+import org.axonframework.messaging.queryhandling.QueryUpdateEmitter;
+import org.axonframework.messaging.eventhandling.EventHandler;
+
+@Component
+public class CardSummaryProjection {
+
+    @EventHandler
+    public void on(CardRedeemedEvent event, QueryUpdateEmitter emitter) {
+
+        // Update the model
+        CardSummary summary = cardSummaryStorage.get(event.getCardId());
+        summary.setRemainingValue(event.getRemainingValue());
+
+        // Emit update to subscription queries
+        emitter.emit(FetchCardSummaryQuery.class,
+                    query -> query.getCardSummaryId().equals(event.getCardId()),
+                    summary);
+    }
+}
+----
+
+[WARNING]
+.QueryUpdateEmitter injection
+====
+The `QueryUpdateEmitter` must be created using `QueryUpdateEmitter.forContext(ProcessingContext)` or injected as a parameter, **not** as a field. This ensures the emitter is aware of the current processing context and can properly handle correlation data and lifecycle hooks.
+
+[source,java]
+----
+// WRONG - Do not inject as a field
+@Component
+public class CardSummaryProjection {
+    private final QueryUpdateEmitter emitter; // ❌ Wrong!
+
+    public CardSummaryProjection(QueryUpdateEmitter emitter) {
+        this.emitter = emitter;
+    }
+}
+
+// CORRECT - Create from ProcessingContext
+@Component
+public class CardSummaryProjection {
+    @EventHandler
+    public void on(CardRedeemedEvent event, QueryUpdateEmitter emitter) {
+        // ✅ Correct!
+        // Use emitter...
+    }
+}
+----
+====
+
+=== Other parameters
+
+Query handlers support additional parameter types:
+
+* *Metadata*: Inject `org.axonframework.messaging.core.Metadata` to access all message metadata.
+* *MetadataValue*: Use `@MetadataValue("key")` to inject a specific metadata value.
+* *Message*: Inject the complete `QueryMessage` to access all message properties.
+
+Example:
+
+[source,java]
+----
+import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.core.annotation.MetadataValue;
+
+@QueryHandler
+public CardSummary handle(FetchCardSummaryQuery query,
+                          Metadata metadata,
+                          @MetadataValue("userId") String userId) {
+    logger.info("Query from user: {}", userId);
+    return cardSummaryStorage.get(query.getCardSummaryId());
+}
+----
+
+== Query handler return values
+
+Axon allows a multitude of return types for a query handler method, as defined <<writing-query-handler,earlier>> on this page. Query handlers can return single objects, collections, or asynchronous types. Below we share a list of all the options which are supported and tested in the framework.
+
+For clarity, we distinguish between single instance and multiple instances of a response type. When dispatching a query via the `QueryGateway`, you specify the expected response type using either the `query()` method for single results or `queryMany()` method for multiple results.
+
+=== Supported single instance return values
+
+When querying for a single object using `QueryGateway.query()`, the following query handler return types are supported:
+
+* An exact match of the requested type
+* A subtype of the requested type
+* A generic bound to the requested type
+* A `CompletableFuture` of the requested type (for async processing)
+* A `Mono` (from Project Reactor) of the requested type (for reactive async processing)
+* A primitive of the requested type (will be boxed)
+* An `Optional` of the requested type
+
+[NOTE]
+.Primitive Return Types
+====
+Among the usual Objects, it is also possible for queries to return primitive data types:
+
+[source,java]
+----
+public class QueryHandler {
+
+     @QueryHandler
+     public float handle(QueryPrimitive query) {
+     }
+ }
+----
+
+Note that the querying party will retrieve a boxed result instead of the primitive type.
+====
+
+=== Supported multiple instances return values
+
+When querying for multiple objects using `QueryGateway.queryMany()`, the following query handler return types are supported:
+
+* An array containing:
+** The requested type
+** A subtype of the requested type
+** A generic bound to the requested type
+* An `Iterable` or a custom implementation of `Iterable` containing:
+** The requested type
+** A subtype of the requested type
+** A generic bound to the requested type
+** A wildcard bound to the requested type
+* A `Stream` of the requested type
+* A `CompletableFuture` of an `Iterable` of the requested type (for async processing)
+* A `List`, `Set`, or other `Collection` of the requested type
+
+=== Streaming query return values
+
+For streaming queries using `QueryGateway.streamingQuery()`, query handlers can return:
+
+* A `Publisher` (from Reactive Streams) of the requested type
+* A `Flux` (from Project Reactor) of the requested type
+* Any `Iterable`, `Stream`, or collection type (will be converted to a `Publisher`)
+
+Streaming queries allow you to handle large result sets efficiently by streaming results as they become available rather than loading everything into memory at once.
+
+=== Unsupported return values
+
+The following list contains method return values which are not supported when queried for:
+
+* An array of primitive types
+* A `Map` of a given key and value type

@@ -1,0 +1,447 @@
+[#matchers_and_field_filters]
+= Matchers and Field Filters
+:navtitle: Matchers and Field Filters
+
+When testing message handling, the fixture compares expected and actual messages using field-by-field equality.
+While the built-in assertions cover most scenarios, <<matchers,matchers>> and <<field_filters,field filters>> provide a more expressive test flow for the xref:basic-testing.adoc#then_phase[then-phase] of the `AxonTestFixture`.
+Note that neither are required, but knowing they are there and how they are used can greatly improve your tests.
+
+[#matchers]
+== Matchers
+
+Whenever the equality validation provided by operation like xref:basic-testing.adoc#then_events[`events(...)`] or xref:basic-testing.adoc#then_commands[`commands(...)`] do not cover your scenario well enough, you can use the match-based methods provided on the test fixture.
+These matcher-based then-phase operations come in two flows:
+
+1. Then-satisfies - Lambda-based verification providing the messages to assert, like xref:basic-testing.adoc#then_event_satisfies[`eventsSatisfy(...)`] and xref:basic-testing.adoc#then_command_satisfies[`commandsSatisfy(...)`].
+Captures thrown `AssertionErrors` by the lambda to conclude the verification outcome.
+2. Then-matches - Predicate-based verification providing the messages to assert, like xref:basic-testing.adoc#then_event_matches[`eventsMatch(...)`] and xref:basic-testing.adoc#then_command_matches[`commandsMatch(...)`].
+Uses the returned boolean to conclude the verification outcome.
+
+You are able to taking a number of courses for verification as both then-satisfies and then-matches are lambda-based.
+As such, you can invoke **any** matching logic you would like.
+The main difference between both, is that then-satisfies will take the verification errors as thrown by the given lambda.
+The then-matches flow expects a boolean to be returned to dictated if verification succeeded.
+In taking this route, the use of (custom) matchers can provide benefits like ignoring certain field for verification, or for drafting application specific error messages, as matchers can be tailor-made for your use case.
+
+=== Built-in matchers
+
+Axon provides several useful matchers, based on the Hamcrest `Matcher` interface.
+These can be found in the `org.axonframework.test.matchers.Matchers` class as static operations, typically expecting another `Matcher` to complete the verification:
+
+* `payloadsMatching(Matcher<? extends List<?>>)` - Matcher unwrapping the payload of **all**  messages, given them to the given matcher.
+* `messageWithPayload(Matcher<?>)` - Matcher unwrapping the payload of a **single** message, giving it to the given Matcher.
+* `listWithAllOf(Matcher<T>...)` - Matcher expecting a **list** of matchers that **all** must match, in any order.
+* `listWithAnyOf(Matcher<T>...)` - Matcher expecting a **list** of matchers of which at least **one** must match, in any order.
+* `sequenceOf(Matcher<T>...)` - Matcher expecting  **list** of matchers that should match in the given **order**, allowing for gaps.
+* `exactSequenceOf(Matcher<T>...)` - Matcher expecting  **list** of matchers that should match **exactly** in the given **order**.
+* `matches(Predicate<T>)` / `predicate(Predicate<T>)` - Matcher taking in a predicate.
+* `deepEquals(T expected)` / `deepEquals(T expected, FieldFilter filter)` - Deep field-by-field quality with optional <<field_filters,filtering>>.
+* `exactClassOf(Class<T> expected)` - Exact class type matching.
+* `noEvents()` / `noCommands()` - Empty collection matching.
+* `andNoMore()` / `nothing()` - Matcher signaling the end, to be used when a list of matchers is expected.
+
+The code samples below show a number of examples using the built-in matchers. Note that all of them use Axon's then-satisfies flow in combination with Hamcrest's `assertThat` to contain the built-in matcher:
+
+[tabs]
+======
+Payloads matching a listWithAllOf() containing matches()::
++
+--
+
+[source,java]
+----
+import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.test.fixture.AxonTestFixture;
+import org.junit.jupiter.api.*;
+
+import static org.axonframework.test.matchers.Matchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+
+class AccountTest {
+
+    private AxonTestFixture fixture;
+
+    @Test
+    void listWithAllOfMatchers() {
+        fixture.when()
+               .command(new ProcessOrderCommand("order-1"))
+               .then()
+               .eventsSatisfy(events -> assertThat(events, payloadsMatching(
+                       listWithAllOf(
+                               matches(payload -> payload instanceof OrderProcessedEvent),
+                               matches(payload -> payload instanceof InventoryIncrementedEvent)
+                       )
+               )));
+    }
+}
+----
+--
+
+Exact sequence of messageWithPayload() containing exactClassOf() and no more::
++
+--
+
+[source,java]
+----
+import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.test.fixture.AxonTestFixture;
+import org.junit.jupiter.api.*;
+
+import static org.axonframework.test.matchers.Matchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+
+class AccountTest {
+
+    private AxonTestFixture fixture;
+
+    @Test
+    void exactSequenceOfExactClasses() {
+        fixture.when()
+               .command(new CompleteOrderCommand("order-1"))
+               .then()
+               .eventsSatisfy(events -> assertThat(events, exactSequenceOf(
+                       messageWithPayload(exactClassOf(OrderCompletedEvent.class)),
+                       messageWithPayload(exactClassOf(PaymentProcessedEvent.class)),
+                       andNoMore()
+               )));
+    }
+}
+----
+--
+
+No events::
++
+--
+
+[source,java]
+----
+import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.test.fixture.AxonTestFixture;
+import org.junit.jupiter.api.*;
+
+import static org.axonframework.test.matchers.Matchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+
+class AccountTest {
+
+    private AxonTestFixture fixture;
+
+    @Test
+    void noEvents() {
+        fixture.when()
+               .command(new CompleteOrderCommand("unknown"))
+               .then()
+               .eventsSatisfy(events -> assertThat(events, Matchers.noEvents()));
+    }
+}
+----
+--
+======
+
+[#field_filters]
+== Field filters
+
+Field filters control which fields are included in this comparison, allowing you to ignore non-deterministic fields like timestamps and UUIDs.
+To explain the benefits of field filters, let us look at the following example event:
+
+[source,java]
+----
+public record AccountCreatedEvent(
+    String accountId,
+    double initialBalance
+) {
+}
+----
+
+When testing, you want to verify the `initialBalance`, but not the `accountId` since it is generated at runtime.
+Hence, it will differ for every run.
+As such, a plain test as shown below would not work:
+
+[source,java]
+----
+import org.axonframework.test.fixture.AxonTestFixture;
+
+class AccountTest {
+
+    private AxonTestFixture fixture;
+
+    @Test
+    void test() {
+        fixture.given()
+               .noPriorActivity()
+               .when()
+               .command(new CreateAccountCommand(500.00))
+               .then()
+               .events(new AccountCreatedEvent("???", 500.00));
+               // Verify fails as we are unaware of the accountId
+    }
+}
+----
+
+The field filter solves this problem by instructing the fixture that certain fields can be "filtered" from verification.
+Any registered field filters are applied during comparison in the then-phase following these steps:
+
+1. The fixture recursively examines all fields of expected and actual (nested) objects.
+2. For each field, all registered field filters are consulted.
+3. If any filter returns `false`, the field is skipped.
+4. Only fields that pass all filters are compared.
+
+Before we look at <<registering_field_filters,registering field filters>> and <<example_field_filter_usages,common examples>>, it is good to know the alternatives.
+This will allow you to take the most reasonable course of action for your application.
+
+* The flexibility of <<matchers,matchers>> can resolve filtering on a per-test basis.
+* Inject mockable services that generate the fields you need to ignore.
+This provides control over the returned result and thus the verified result.
+Hence, field filters would become obsolete when services can be mocked.
+
+[#registering_field_filters]
+=== Registering field filters
+
+To register field filters with the test fixture, you need to customize it.
+Hence, instead of using `AxonTestFixture#with(ApplicationConfigurer)`, you use the `AxonTestFixture#with(ApplicationConfigurer, UnaryOperator<Customization>)` operation.
+The lambda on the `Customization` provides two methods to register field filters, which are:
+
+1. `Customization#registerIgnoredField(Class<?> declaringClass, String fieldName)`
+2. `Customization#registerFieldFilter(FieldFilter)`
+
+Thus, if you want to ignore a field for a specific message, you can use the `registerIgnoredField` operation:
+
+[source,java]
+----
+import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.test.fixture.AxonTestFixture;
+import org.junit.jupiter.api.*;
+
+class AccountTest {
+
+    private ApplicationConfigurer configurer;
+
+    private AxonTestFixture fixture;
+
+    @BeforeEach
+    void setUp() {
+        fixture = AxonTestFixture.with(
+                configurer,
+                customization -> customization.registerIgnoredField(
+                        AccountCreatedEvent.class, "accountId"
+                )
+        );
+    }
+}
+----
+
+With this filter in place, the fixture will ignore fields named `"accountId"` for messages with the payload type `AccountCreatedEvent`.
+If you need more control, you can provide a (custom) `FieldFilter` through the `registerFieldFilter` method:
+
+[source,java]
+----
+import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.test.fixture.AxonTestFixture;
+import org.junit.jupiter.api.*;
+
+class AccountTest {
+
+    private ApplicationConfigurer configurer;
+
+    private AxonTestFixture fixture;
+
+    @BeforeEach
+    void setUp() {
+        fixture = AxonTestFixture.with(
+                configurer,
+                customization -> customization.registerFieldFilter(
+                        field -> !field.getName().equals("accountId")
+                )
+        );
+    }
+}
+----
+
+The above example will filter out **all** occurrences of fields name `"accountId"` regardless of the message type.
+Note that the `FieldFilter` is a functional interface:
+
+[source,java]
+----
+@FunctionalInterface
+public interface FieldFilter {
+    boolean accept(Field field);
+}
+----
+
+Returning `true` will include the field in comparison.
+Thus `false` will ignore it.
+
+=== Built-in field filters
+
+Axon provides several built-in field filters that you can use instead of constructing your own:
+
+1. `AllFieldsFilter` - Accepts all fields (the default behavior).
+2. `NonStaticFieldsFilter` - Excludes static fields from comparison.
+3. `NonTransientFieldsFilter` - Excludes transient fields from comparison.
+4. `IgnoreField` - Ignores a specific field; this is what `registerIgnoredField()` uses internally.
+5. `MatchAllFieldFilter` - Combines multiple filters using AND logic (all filters must accept the field).
+
+[#example_field_filter_usages]
+=== Example field filter usages
+
+The tabs below show a couple of common scenarios for which you could use field filters in your test fixtures,
+
+[tabs]
+======
+Filter timestamp fields::
++
+--
+
+This custom `FieldFilter` registered below will ignore fields that are named `"timestamp"`, `"createdate"`, or `"updatedate"`, and if the type is an `Instant`.
+
+[source,java]
+----
+import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.test.fixture.AxonTestFixture;
+
+import java.time.Instant;
+
+class AccountTest {
+
+    private ApplicationConfigurer configurer;
+
+    private AxonTestFixture fixture;
+
+    @BeforeEach
+    void setUp() {
+        fixture = AxonTestFixture.with(
+                configurer,
+                customization -> customization.registerFieldFilter(field -> {
+                    String name = field.getName();
+                    return !(name.contains("timestamp")
+                            || name.contains("createDate")
+                            || name.contains("updateDate"))
+                            && !field.getType().equals(Instant.class);
+                })
+        );
+    }
+}
+----
+--
+
+Filter identifier fields::
++
+--
+
+This custom `FieldFilter` registered below will ignore fields that are contain `"id"` in the name and are of type `UUID`.
+
+[source,java]
+----
+import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.test.fixture.AxonTestFixture;
+import org.junit.jupiter.api.*;
+
+import java.util.UUID;
+
+class AccountTest {
+
+    private ApplicationConfigurer configurer;
+
+    private AxonTestFixture fixture;
+
+    @BeforeEach
+    void setUp() {
+        fixture = AxonTestFixture.with(
+                configurer,
+                customization -> customization.registerFieldFilter(
+                        field -> !field.getType().equals(UUID.class)
+                                && !field.getName().toLowerCase().contains("id")
+                )
+        );
+    }
+}
+----
+--
+
+Filter annotated fields::
++
+--
+
+You can filter on annotations as well, since the `FieldFilter` receive a `Field`.
+Thus, you can define a custom annotation to mark fields that should be ignored.
+In the example below, we have constructed an `@IgnoreInTest` annotation that we filter on.
+
+[source,java]
+----
+import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.test.fixture.AxonTestFixture;
+import org.junit.jupiter.api.*;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.FIELD)
+@interface IgnoreInTest {
+    // Annotation is named as-s for example purposes only!
+}
+
+record AccountCreatedEvent(
+        @IgnoreInTest String accountId,
+        double amount
+) {
+}
+
+class AccountTest {
+
+    private ApplicationConfigurer configurer;
+
+    private AxonTestFixture fixture;
+
+    @BeforeEach
+    void setUp() {
+        fixture = AxonTestFixture.with(
+                configurer,
+                customization -> customization.registerFieldFilter(
+                        field -> !field.isAnnotationPresent(IgnoreInTest.class)
+                )
+        );
+    }
+}
+----
+
+--
+
+Combining filters::
++
+--
+Combine multiple filters.
+All filters are combined with AND logic - a field must pass all filters to be included.
+
+[source,java]
+----
+import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.test.fixture.AxonTestFixture;
+import org.axonframework.test.matchers.NonTransientFieldsFilter;
+import org.junit.jupiter.api.*;
+
+class AccountTest {
+
+    private ApplicationConfigurer configurer;
+
+    private AxonTestFixture fixture;
+
+    @BeforeEach
+    void setUp() {
+        fixture = AxonTestFixture.with(configurer, AccountTest::registerFilters);
+    }
+
+    private static AxonTestFixture.Customization registerFilters(
+            AxonTestFixture.Customization customization
+    ) {
+        return customization.registerIgnoredField(AccountCreatedEvent.class, "accountId")
+                            .registerIgnoredField(OrderCreatedEvent.class, "orderId")
+                            .registerFieldFilter(NonTransientFieldsFilter.instance())
+                            .registerFieldFilter(field -> !field.getName().contains("internal"));
+    }
+}
+----
+--
+======
