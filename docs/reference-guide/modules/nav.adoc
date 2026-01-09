@@ -1,5 +1,7 @@
 * xref::index.adoc[]
 
+include::migration:partial$nav.adoc[]
+
 include::messaging-concepts:partial$nav.adoc[]
 
 include::commands:partial$nav.adoc[]
