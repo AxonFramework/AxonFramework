@@ -1,3 +1,4 @@
+= Why Upgrade to Axon Framework 5?
 = Why Upgrade To Axon Framework 5?
 
 Now if you’re already convinced that you want to upgrade to Axon Framework 5, then jump straight to the next section on the prerequisites that are needed.
