@@ -18,6 +18,7 @@ package org.axonframework.messaging.eventhandling.processing.streaming.token;
 
 import org.junit.jupiter.api.*;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;

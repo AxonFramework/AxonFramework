@@ -469,11 +469,10 @@ class Coordinator {
         }
 
         /**
-         * A {@link UnitOfWorkFactory} that spawns {@link UnitOfWork} used to
-         * invoke all {@link TokenStore} operations inside a unit of work.
+         * A {@link UnitOfWorkFactory} that spawns {@link UnitOfWork} used to invoke all {@link TokenStore} operations
+         * inside a unit of work.
          *
-         * @param unitOfWorkFactory a {@link UnitOfWorkFactory} that spawns
-         *                          {@link UnitOfWork} used to invoke all
+         * @param unitOfWorkFactory a {@link UnitOfWorkFactory} that spawns {@link UnitOfWork} used to invoke all
          *                          {@link TokenStore} operations inside a unit of work
          * @return the current Builder instance, for fluent interfacing
          */
@@ -1113,16 +1112,19 @@ class Coordinator {
                 eventStream = eventSource.open(
                         StreamingCondition.conditionFor(startStreamingFrom, eventCriteria), null
                 );
-                logger.debug("Processor [{}] (Coordination Task [{}]) opened stream with tracking token [{}] and criteria [{}].",
-                             name, generation, trackingToken, eventCriteria);
+                logger.debug(
+                        "Processor [{}] (Coordination Task [{}]) opened stream with tracking token [{}] and criteria [{}].",
+                        name, generation, trackingToken, eventCriteria
+                );
                 availabilityCallbackSupported = true;
                 eventStream.setCallback(() -> {
-                            logger.trace(
-                                    "Processor [{}] (Coordination Task [{}]). Events became available (callback triggered). "
-                                            + "Scheduling immediate coordination task (itself).",
-                                    name, generation);
-                            scheduleImmediateCoordinationTask();
-                        });
+                    logger.trace(
+                            "Processor [{}] (Coordination Task [{}]). Events became available (callback triggered). "
+                                    + "Scheduling immediate coordination task (itself).",
+                            name, generation
+                    );
+                    scheduleImmediateCoordinationTask();
+                });
                 lastScheduledToken = trackingToken;
             }
         }

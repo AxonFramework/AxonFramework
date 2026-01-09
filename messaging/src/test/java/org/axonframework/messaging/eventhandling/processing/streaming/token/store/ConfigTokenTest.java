@@ -16,9 +16,9 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.token.store;
 
-import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.conversion.TestConverter;
-import org.junit.jupiter.api.Test;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 

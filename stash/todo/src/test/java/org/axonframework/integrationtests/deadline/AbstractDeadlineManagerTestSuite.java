@@ -428,8 +428,10 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
     @Test
     void deadlineCancellationOnCancelledDeadlineOnSaga() {
-        configuration.eventStore().publish(asEventMessage(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE)));
-        configuration.eventStore().publish(asEventMessage(new CancelCancelledDeadline(IDENTIFIER)));
+        configuration.getComponent(EventSink.class)
+                     .publish(null, asEventMessage(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE)));
+        configuration.getComponent(EventSink.class)
+                     .publish(null, asEventMessage(new CancelCancelledDeadline(IDENTIFIER)));
 
         assertPublishedEvents(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE),
                 new CancelCancelledDeadline(IDENTIFIER));
