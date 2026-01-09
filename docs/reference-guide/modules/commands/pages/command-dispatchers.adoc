@@ -1,12 +1,16 @@
 = Command Dispatchers
 :navtitle: Dispatching
 
-The xref:command-handlers.adoc[Command handlers] pages provide the background on how to handle command messages in your application.
-The dispatching process is the starting point of such a command message.
-Axon provides three interfaces you can use to send commands to your command handlers: the <<command-bus,CommandBus>>, the <<command-gateway,CommandGateway>>, and the <<command-dispatcher,CommandDispatcher>>.
+The dispatching of a command is the starting point of such a message.
+Commands have to be dispatched, just like any type of message, before they can be handled.
+To that end Axon provides three interfaces:
+
+1. The <<command-bus,CommandBus>>,
+2. the <<command-gateway,CommandGateway>>, and
+3. the <<command-dispatcher,CommandDispatcher>>.
 
 This page shows how and when to use these components.
-How to configure and specifics on the command gateway and bus implementations are discussed in the xref:infrastructure.adoc[infrastructure section].
+How to configure and specifics of the gateway, dispatcher, and bus are discussed in the xref:infrastructure.adoc[infrastructure section].
 
 [[command-bus]]
 == The `CommandBus`

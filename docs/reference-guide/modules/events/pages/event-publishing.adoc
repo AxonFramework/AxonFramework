@@ -1,14 +1,13 @@
 = Event Publishing
 :navtitle: Publishing
 
-The xref:event-handlers.adoc[event handlers] pages provide the background on how to handle event messages in your application.
-The publishing process is the starting point of such an event message.
-
+The publishing of an event is the starting point of such a message.
+Events have to be published, just like any type of message, before they can be handled.
 Event publication can originate from a couple of locations within your Axon Framework application.
 In general, these can be grouped in two major areas:
 
-. Publishing events from an entity, and
-. Publishing events from regular components
+1. Publishing events from an entity, and
+2. Publishing events from regular components
 
 Axon provides five interfaces you can use to publish event to your event handlers:
 
