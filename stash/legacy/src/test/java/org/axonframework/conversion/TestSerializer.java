@@ -17,6 +17,9 @@
 package org.axonframework.conversion;
 
 import com.fasterxml.jackson.annotation.JsonCreator.Mode;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.cfg.MapperConfig;
 import com.fasterxml.jackson.databind.introspect.Annotated;
@@ -46,10 +49,10 @@ public enum TestSerializer {
     },
     CBOR {
         private final Serializer serializer = JacksonSerializer.builder()
-                .objectMapper(CBORMapper
-                        .builder()
-                        .findAndAddModules()
-                        .build()).build();
+                                                               .objectMapper(CBORMapper
+                                                                                     .builder()
+                                                                                     .findAndAddModules()
+                                                                                     .build()).build();
 
         @Override
         public Serializer getSerializer() {
@@ -61,6 +64,18 @@ public enum TestSerializer {
                 JacksonSerializer.builder()
                                  .objectMapper(OnlyAcceptConstructorPropertiesAnnotation.attachTo(new ObjectMapper()))
                                  .build();
+
+        @Override
+        public Serializer getSerializer() {
+            return serializer;
+        }
+    },
+    JACKSON_IGNORE_NULL {
+        private final ObjectMapper objectMapper = new ObjectMapper()
+                .setSerializationInclusion(Include.NON_NULL);
+        private final Serializer serializer = JacksonSerializer.builder()
+                                                               .objectMapper(objectMapper)
+                                                               .build();
 
         @Override
         public Serializer getSerializer() {
