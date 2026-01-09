@@ -150,9 +150,9 @@ Setting `timeoutMs` on the global configuration and the annotation to `-1` will 
 Similarly, setting `warningThresholdMs` to `-1` on both will disable the warning messages for that message handler.
 
 [#unit-of-work-timeouts]
-== Unit of work timeouts
+== Unit of Work timeouts
 
-The xref:unit-of-work.adoc[unit of work] is the context in which one or more messages are processed.
+The xref:unit-of-work.adoc[Unit of Work] is the context in which one or more messages are processed.
 While xref:#handler-timeouts[handler timeouts] only set timeouts for the invocation if the handler functions, the `UnitOfWork` timeout sets a timeout for the entire processing of the message.
 This includes the loading of resources (such as the aggregate of the command), the invocation of the handler function, and the committing of the `UnitOfWork`.
 
@@ -163,7 +163,7 @@ You can customize this for each component separately, such as the `CommandBus`, 
 Spring Boot::
 +
 --
-For Spring Boot, the defaults for all unit of works are set to of 60 seconds.
+For Spring Boot, the defaults for all Unit of Works are set to of 60 seconds.
 In addition, by default, they will start warning every second after 10 seconds have passed.
 You can tweak these settings by setting the following properties in your `application.properties` or `application.yml`:
 
