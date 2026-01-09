@@ -92,6 +92,7 @@ public class EventProcessorConfiguration implements DescribableComponent {
         this.errorHandler = base.errorHandler();
         this.unitOfWorkFactory = base.unitOfWorkFactory();
         this.interceptors = base.interceptors();
+        this.messageMonitor = base.messageMonitor;
     }
 
     /**
