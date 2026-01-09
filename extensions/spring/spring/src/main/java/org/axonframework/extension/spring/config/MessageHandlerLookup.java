@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,7 +78,7 @@ public class MessageHandlerLookup implements BeanDefinitionRegistryPostProcessor
      *
      * @param messageType The type of message to find handlers for.
      * @param registry    The registry to find these handlers in.
-     * @param includeProtoypeBeans Whether to include prototype beans.
+     * @param includePrototypeBeans Whether to include prototype beans.
      * @return A list of bean names with message handlers.
      */
     public static List<String> messageHandlerBeans(Class<? extends Message> messageType,
