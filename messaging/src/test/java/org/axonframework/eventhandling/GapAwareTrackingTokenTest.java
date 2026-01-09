@@ -217,6 +217,10 @@ class GapAwareTrackingTokenTest {
         assertTrue(token1.samePositionAs(token2));
         assertTrue(token2.samePositionAs(token1));
 
+        // Null is never the same
+        assertFalse(token1.samePositionAs(null));
+        assertFalse(token2.samePositionAs(null));
+
         // Same index, one with gaps one without = same position
         GapAwareTrackingToken token3 = GapAwareTrackingToken.newInstance(3L, emptySortedSet());
         assertTrue(token1.samePositionAs(token3));
