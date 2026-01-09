@@ -21,7 +21,7 @@ The query gateway provides methods for:
 
 All methods support an optional `ProcessingContext` parameter for correlation data propagation when dispatching from within a message handler.
 
-The query gateway automatically handles message construction, dispatch interceptors, and result conversion.It's configured with access to the query bus and dispatch interceptors.
+The query gateway automatically handles message construction, dispatch interceptors, and result conversion. It's configured with access to the query bus and dispatch interceptors.
 
 [#query_bus]
 == Query bus
