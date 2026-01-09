@@ -1,4 +1,5 @@
 = Application Design Problems Solved by Axon Framework 5
+:navtitle: Resolved Problems
 
 Now let's explore some of the most significant architectural changes you'll encounter when migrating from Axon Framework 4.x to Axon Framework 5. Each change builds upon a core philosophy, such as: embracing asynchronicity, eliminating hidden state management, decoupling business logic from technical concerns, and providing developers with clearer, more expressive APIs.
 
