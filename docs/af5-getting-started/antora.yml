@@ -9,4 +9,4 @@ asciidoc:
     group: beginner
 
 nav:
-  - modules/ROOT/nav.adoc
+  - modules/nav.adoc
