@@ -228,7 +228,7 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
     private static GapAwareTrackingToken assertGapAwareTrackingToken(TrackingToken other) {
         Assert.isTrue(
                 other instanceof GapAwareTrackingToken,
-                () -> "Incompatible token type provided:" + (other != null ? other.getClass().getSimpleName() : "null")
+                () -> "Incompatible token type provided: " + (other != null ? other.getClass().getSimpleName() : "null")
         );
         return (GapAwareTrackingToken) other;
     }
