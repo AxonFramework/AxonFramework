@@ -1,4 +1,5 @@
 = Migrating to Axon Framework 5.0: Prerequisites and System Requirements
+:navtitle: Prerequisites
 
 Axon Framework 5.0 represents a significant change for event-sourced applications and services that will enable them to perform faster, be more adaptable, and future proof your application architecture. Below is a list of the prerequisites that your systems must have in order to get started with Axon Framework 5.0:
 

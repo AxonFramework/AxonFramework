@@ -1,4 +1,5 @@
 = Axon Framework 5 Migration Guide
+:navtitle: Migration Guide
 
 Axon Framework 5 represents the most significant evolution in the framework's history.
 This comprehensive migration guide will help you navigate the transition from Axon Framework 4.x to Axon Framework 5, equipping you with the knowledge, patterns, and practical steps needed to modernize your event-sourced applications successfully.
