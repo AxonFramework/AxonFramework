@@ -19,13 +19,15 @@ package org.axonframework.common.configuration;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.Assert;
-import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.common.annotation.DontCopyToChildRegistry;
 import org.axonframework.common.configuration.Component.Identifier;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -39,8 +41,11 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.function.Predicate.not;
+import static org.axonframework.common.annotation.AnnotationUtils.isTypeAnnotatedWith;
 
 /**
  * Default implementation of the {@link ComponentRegistry} allowing for reuse of {@link Component},
@@ -56,20 +61,69 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final Components components = new Components();
-    private final List<DecoratorDefinition.CompletedDecoratorDefinition<?, ?>> decoratorDefinitions = new ArrayList<>();
-    private final Map<String, ConfigurationEnhancer> enhancers = new LinkedHashMap<>();
-    private final Map<String, Module> modules = new ConcurrentHashMap<>();
-    private final List<ComponentFactory<?>> factories = new ArrayList<>();
-
-    private final AtomicReference<Configuration> initialized = new AtomicReference<>();
-    private final Map<String, Configuration> moduleConfigurations = new ConcurrentHashMap<>();
-
     private OverridePolicy overridePolicy = OverridePolicy.WARN;
+    private final List<DecoratorDefinition.CompletedDecoratorDefinition<?, ?>> decoratorDefinitions = new ArrayList<>();
+
+    private final Map<String, ConfigurationEnhancer> enhancers = new LinkedHashMap<>();
     private boolean enhancerScanning = true;
     private final List<Class<? extends ConfigurationEnhancer>> disabledEnhancers = new ArrayList<>();
     private final List<Class<? extends ConfigurationEnhancer>> invokedEnhancers = new ArrayList<>();
 
-    private Optional<Configuration> parentConfig = Optional.empty();
+    private final Map<String, Module> modules = new ConcurrentHashMap<>();
+    private final List<ComponentFactory<?>> factories = new ArrayList<>();
+
+    private final AtomicReference<Configuration> parentConfig = new AtomicReference<>();
+    private final AtomicReference<Configuration> initializedConfiguration = new AtomicReference<>();
+    private final Map<String, Configuration> moduleConfigurations = new ConcurrentHashMap<>();
+
+    /**
+     * Creates a clone of this registry from existing registry. The clone will include the same enhancers, disabled
+     * enhancers and decorator definitions as the original. The enhancerScanning flag is set to false.
+     *
+     * @return A clone of the original.
+     */
+    DefaultComponentRegistry copyWithDecoratorsAndEnhancers() {
+        return create(
+                this.enhancers.values(),
+                this.disabledEnhancers,
+                this.decoratorDefinitions
+        );
+    }
+
+    /**
+     * Creates a new registry. This will include the provided enhancers, disabled enhancers and decorator definitions
+     * except those annotated with {@link DontCopyToChildRegistry}. The enhancerScanning flag is set to false.
+     *
+     * @param enhancers            The list of enhancers to copy.
+     * @param disabledEnhancers    The list of disabled enhancer types to copy.
+     * @param decoratorDefinitions The list of decorator definitions to copy.
+     * @return A new default component registry.
+     */
+    public static DefaultComponentRegistry create(
+            @Nonnull Collection<ConfigurationEnhancer> enhancers,
+            @Nonnull Collection<Class<? extends ConfigurationEnhancer>> disabledEnhancers,
+            @Nonnull Collection<DecoratorDefinition.CompletedDecoratorDefinition<?, ?>> decoratorDefinitions) {
+        var registry = new DefaultComponentRegistry().disableEnhancerScanning();
+        registry.enhancers.putAll(
+                enhancers.stream()
+                         .filter(not(isTypeAnnotatedWith(DontCopyToChildRegistry.class)))
+                         .collect(Collectors.toMap(e -> e.getClass().getName(), e -> e))
+        );
+        registry.disabledEnhancers.addAll(
+                disabledEnhancers
+                        .stream()
+                        .filter(not(isTypeAnnotatedWith(DontCopyToChildRegistry.class)))
+                        .toList()
+        );
+        registry.decoratorDefinitions.addAll(
+                decoratorDefinitions
+                        .stream()
+                        .filter(not(isTypeAnnotatedWith(DontCopyToChildRegistry.class)))
+                        .collect(Collectors.toSet())
+        );
+        return registry;
+    }
+
 
     @Override
     public <C> ComponentRegistry registerComponent(@Nonnull ComponentDefinition<? extends C> definition) {
@@ -120,7 +174,8 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     }
 
     private Boolean parentHasComponent(Class<?> type, String name) {
-        return parentConfig.map(parent -> parent.hasComponent(type, name)).orElse(false);
+        return Optional.ofNullable(parentConfig.get())
+                       .map(parent -> parent.hasComponent(type, name)).orElse(false);
     }
 
     @Override
@@ -185,23 +240,39 @@ public class DefaultComponentRegistry implements ComponentRegistry {
 
     private Configuration doBuild(@Nullable Configuration optionalParent,
                                   @Nonnull LifecycleRegistry lifecycleRegistry) {
-        Configuration configuration = initialized.get();
+        Configuration configuration = initializedConfiguration.get();
         if (configuration != null) {
             return configuration;
         }
-        this.parentConfig = Optional.ofNullable(optionalParent);
+        this.parentConfig.set(optionalParent);
         if (enhancerScanning) {
             scanForConfigurationEnhancers();
         }
         invokeEnhancers();
         decorateComponents();
-        Configuration config = new LocalConfiguration(optionalParent);
-        buildModules(config, lifecycleRegistry);
-        initializeComponents(config, lifecycleRegistry);
-        registerFactoryShutdownHandlers(lifecycleRegistry);
-        initialized.set(config);
+        Configuration currentConfiguration = createLocalConfiguration(this.parentConfig.get());
 
-        return config;
+        buildModules(currentConfiguration, lifecycleRegistry);
+        initializeComponents(currentConfiguration, lifecycleRegistry);
+        registerFactoryShutdownHandlers(lifecycleRegistry);
+        initializedConfiguration.set(currentConfiguration);
+
+        return currentConfiguration;
+    }
+
+    /**
+     * Creates a local configuration, for a given parent and current registry as a component.
+     *
+     * @param parent The parent configuration to serve as parent for the created result.
+     * @return new local configuration with parent referencing to components of teh current registry.
+     */
+    public Configuration createLocalConfiguration(Configuration parent) {
+        Configuration currentConfiguration = new LocalConfiguration(parent);
+        if (!this.hasComponent(ComponentRegistry.class, SearchScope.CURRENT)) {
+            registerComponent(ComponentDefinition.ofType(ComponentRegistry.class)
+                                                 .withInstance(this)); // register itself
+        }
+        return currentConfiguration;
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -264,12 +335,18 @@ public class DefaultComponentRegistry implements ComponentRegistry {
      * Ensure all registered {@link Module Modules} are built too. Store their {@link Configuration} results for
      * exposure on {@link Configuration#getModuleConfigurations()}.
      */
-    private void buildModules(Configuration config, LifecycleRegistry lifecycleRegistry) {
+    private void buildModules(Configuration configuration, LifecycleRegistry lifecycleRegistry) {
         for (Module module : modules.values()) {
-            var builtModule = HierarchicalConfiguration.build(
-                    lifecycleRegistry, (childLifecycleRegistry) -> module.build(config, childLifecycleRegistry)
+            var moduleRegistry = this.copyWithDecoratorsAndEnhancers();
+            var builtModuleConfiguration = HierarchicalLifecycleRegistry.build(
+                    lifecycleRegistry,
+                    (childLifecycleRegistry) -> {
+                        var local = moduleRegistry.createLocalConfiguration(configuration);
+                        var moduleConfiguration = module.build(local, childLifecycleRegistry);
+                        return moduleRegistry.buildNested(moduleConfiguration, childLifecycleRegistry);
+                    }
             );
-            moduleConfigurations.put(module.name(), builtModule);
+            moduleConfigurations.put(module.name(), builtModuleConfiguration);
         }
     }
 
@@ -277,10 +354,11 @@ public class DefaultComponentRegistry implements ComponentRegistry {
      * Initialize the components defined in this registry, allowing them to register their lifecycle actions with given
      * {@code lifecycleRegistry}.
      *
+     * @param configuration     The current configuration to apply.
      * @param lifecycleRegistry The registry where components may register their lifecycle actions.
      */
-    private void initializeComponents(Configuration config, LifecycleRegistry lifecycleRegistry) {
-        components.postProcessComponents(c -> c.initLifecycle(config, lifecycleRegistry));
+    private void initializeComponents(Configuration configuration, LifecycleRegistry lifecycleRegistry) {
+        components.postProcessComponents(c -> c.initLifecycle(configuration, lifecycleRegistry));
     }
 
     /**
@@ -328,14 +406,16 @@ public class DefaultComponentRegistry implements ComponentRegistry {
                         enhancerClass.getSimpleName());
             return this;
         }
-        if (logger.isInfoEnabled()) {
-            logger.info(
-                    "Configuration Enhancer [{}] has been disabled. "
-                            + "Ensure components set by this enhancer are not mandatory in this application.",
-                    enhancerClass
-            );
+        if (!this.disabledEnhancers.contains(enhancerClass)) {
+            if (logger.isInfoEnabled()) {
+                logger.info(
+                        "Configuration Enhancer [{}] has been disabled. "
+                                + "Ensure components set by this enhancer are not mandatory in this application.",
+                        enhancerClass
+                );
+            }
+            this.disabledEnhancers.add(enhancerClass);
         }
-        this.disabledEnhancers.add(enhancerClass);
         return this;
     }
 
@@ -369,7 +449,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
 
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
-        descriptor.describeProperty("initialized", initialized.get() != null);
+        descriptor.describeProperty("initialized", initializedConfiguration.get() != null);
         descriptor.describeProperty("components", components);
         descriptor.describeProperty("decorators", decoratorDefinitions);
         descriptor.describeProperty("configurerEnhancers", enhancers);

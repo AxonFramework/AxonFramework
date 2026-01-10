@@ -55,25 +55,25 @@ public class UpdateCheckerConfigurationEnhancer implements ConfigurationEnhancer
             logger.debug("Skipping AxonIQ UpdateChecker as a testsuite environment was detected.");
             return;
         }
-        componentRegistry.registerIfNotPresent(ofType(UsagePropertyProvider.class)
-                                                       .withBuilder(c -> UsagePropertyProvider.create()))
-                         .registerIfNotPresent(ofType(UpdateCheckerHttpClient.class)
-                                                       .withBuilder(c -> {
-                                                           UsagePropertyProvider propertyProvider = c.getComponent(
-                                                                   UsagePropertyProvider.class);
-                                                           return new UpdateCheckerHttpClient(propertyProvider);
-                                                       }))
-                         .registerIfNotPresent(ofType(UpdateCheckerReporter.class)
-                                                       .withBuilder(c -> new LoggingUpdateCheckerReporter())
-                         )
-                         .registerIfNotPresent(ofType(UpdateChecker.class)
-                                                       .withBuilder(c -> new UpdateChecker(
-                                                               c.getComponent(UpdateCheckerHttpClient.class),
-                                                               c.getComponent(UpdateCheckerReporter.class),
-                                                               c.getComponent(UsagePropertyProvider.class)
-                                                       ))
-                                                       .onStart(Phase.EXTERNAL_CONNECTIONS, UpdateChecker::start)
-                                                       .onShutdown(Phase.EXTERNAL_CONNECTIONS, UpdateChecker::stop));
+        componentRegistry
+                .registerIfNotPresent(
+                        ofType(UsagePropertyProvider.class).withBuilder(c -> UsagePropertyProvider.create())
+                ).registerIfNotPresent(
+                        ofType(UpdateCheckerHttpClient.class).withBuilder(c -> new UpdateCheckerHttpClient(c.getComponent(
+                                UsagePropertyProvider.class)))
+                )
+                .registerIfNotPresent(
+                        ofType(UpdateCheckerReporter.class).withBuilder(c -> new LoggingUpdateCheckerReporter())
+                )
+                .registerIfNotPresent(
+                        ofType(UpdateChecker.class).withBuilder(c -> new UpdateChecker(
+                                                           c.getComponent(UpdateCheckerHttpClient.class),
+                                                           c.getComponent(UpdateCheckerReporter.class),
+                                                           c.getComponent(UsagePropertyProvider.class)
+                                                   ))
+                                                   .onStart(Phase.EXTERNAL_CONNECTIONS, UpdateChecker::start)
+                                                   .onShutdown(Phase.EXTERNAL_CONNECTIONS, UpdateChecker::stop)
+                );
     }
 
     @Override

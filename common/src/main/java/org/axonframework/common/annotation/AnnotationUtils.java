@@ -328,6 +328,15 @@ public final class AnnotationUtils {
         return it ->  it instanceof AnnotatedElement &&  isAnnotationPresent((AnnotatedElement)it, annotationType);
     }
 
+    /**
+     * Returns a predicate testing if a type of the given instance is annotated with provided annotation type.
+     * @param annotationType An annotated type to check for.
+     * @return The predicate.
+     */
+    public static Predicate<Object> isTypeAnnotatedWith(Class<? extends Annotation> annotationType) {
+        return instance -> isAnnotationPresent(instance.getClass(), annotationType);
+    }
+
     private AnnotationUtils() {
         // Utility class
     }
