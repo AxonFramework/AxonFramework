@@ -35,8 +35,9 @@ import java.lang.annotation.*;
  * not present.</li>
  * <li>Parameters of type {@link MetaData} will have the entire Meta Data of an Event Message
  * injected.</li>
- * <li>Parameters of type {@link java.time.Instant} (or any of its super classes or implemented interfaces) will
- * resolve to the timestamp of the EventMessage. This is the time at which the Event was generated.</li>
+ * <li>Parameters of type {@link java.time.Instant} annotated with
+ * {@link org.axonframework.eventhandling.Timestamp @Timestamp} will resolve to the timestamp of
+ * the EventMessage. This is the time at which the Event was generated.</li>
  * <li>Parameters assignable to {@link Message} will have the entire {@link
  * EventMessage} injected (if the message is assignable to that parameter). If the first
  * parameter is of type message, it effectively matches an Event of any type, even if generic parameters would suggest
