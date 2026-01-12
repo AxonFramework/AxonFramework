@@ -33,8 +33,8 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 
 /**
- * Abstract implementation of an EventGateway, which handles the dispatch interceptors. The
- * actual publishing of events is left to the subclasses.
+ * Abstract implementation of an EventGateway, which handles the dispatch interceptors. The actual publishing of events
+ * is left to the subclasses.
  *
  * @author Bert Laverman
  * @since 4.1
@@ -47,8 +47,8 @@ public abstract class AbstractEventGateway {
     /**
      * Instantiate an {@link AbstractEventGateway} based on the fields contained in the {@link Builder}.
      * <p>
-     * Will assert that the {@link EventBus} is not {@code null} and throws an {@link AxonConfigurationException}
-     * if it is.
+     * Will assert that the {@link EventBus} is not {@code null} and throws an {@link AxonConfigurationException} if it
+     * is.
      *
      * @param builder the {@link Builder} used to instantiate a {@link AbstractEventGateway} instance
      */
@@ -77,6 +77,9 @@ public abstract class AbstractEventGateway {
                                                         .map(GenericEventMessage::asEventMessage)
                                                         .map(this::processInterceptors)
                                                         .collect(Collectors.toList());
+        if (interceptedEvents.isEmpty()) {
+            return;
+        }
         this.eventBus.publish(interceptedEvents);
     }
 
@@ -119,8 +122,8 @@ public abstract class AbstractEventGateway {
     /**
      * Abstract Builder class to instantiate {@link AbstractEventGateway} implementations.
      * <p>
-     * The {@code dispatchInterceptors} are defaulted to an empty list.
-     * The {@link EventBus} is a <b>hard requirement</b> and as such should be provided.
+     * The {@code dispatchInterceptors} are defaulted to an empty list. The {@link EventBus} is a <b>hard
+     * requirement</b> and as such should be provided.
      */
     public abstract static class Builder {
 
@@ -141,8 +144,8 @@ public abstract class AbstractEventGateway {
         }
 
         /**
-         * Sets the {@link List} of {@link MessageDispatchInterceptor}s for {@link EventMessage}s.
-         * Are invoked when an event is being dispatched.
+         * Sets the {@link List} of {@link MessageDispatchInterceptor}s for {@link EventMessage}s. Are invoked when an
+         * event is being dispatched.
          *
          * @param dispatchInterceptors which are invoked when an event is being dispatched
          * @return the current Builder instance, for fluent interfacing
@@ -153,8 +156,8 @@ public abstract class AbstractEventGateway {
         }
 
         /**
-         * Sets the {@link List} of {@link MessageDispatchInterceptor}s for {@link EventMessage}s.
-         * Are invoked when an event is being dispatched.
+         * Sets the {@link List} of {@link MessageDispatchInterceptor}s for {@link EventMessage}s. Are invoked when an
+         * event is being dispatched.
          *
          * @param dispatchInterceptors which are invoked when an event is being dispatched
          * @return the current Builder instance, for fluent interfacing
