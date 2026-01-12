@@ -22,6 +22,7 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -96,5 +97,18 @@ class DefaultEventGatewayTest {
         assertEquals(2, interceptedResult.size());
         assertEquals("Event2", interceptedResult.get(0).getPayload());
         assertEquals("Event3", interceptedResult.get(1).getPayload());
+    }
+
+    @Test
+    void publishNoEvents() {
+        //Given
+        ArrayList<Object> noEvents = new ArrayList<>();
+
+        //When
+        testSubject.publish(noEvents);
+
+        //Then
+        verifyNoInteractions(mockEventBus);
+        verifyNoInteractions(mockEventMessageTransformer);
     }
 }

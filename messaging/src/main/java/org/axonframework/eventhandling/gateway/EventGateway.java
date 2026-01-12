@@ -51,7 +51,7 @@ public interface EventGateway extends MessageDispatchInterceptorSupport<EventMes
      * listeners.
      * <p>
      * Implementations may treat the given {@code events} as a single batch and distribute the events as such to all
-     * subscribed EventListeners.
+     * subscribed EventListeners. When the given {@code events} is an empty list, nothing happens.
      *
      * @param events The collection of events to publish
      */
