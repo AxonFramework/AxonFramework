@@ -4,3 +4,4 @@
 ** xref:migration:prerequisites.adoc[]
 ** xref:migration:solved-architecture-choices.adoc[]
 ** xref:migration:understanding-architecture-principles.adoc[]
+* xref:migration:paths/index.adoc[]
