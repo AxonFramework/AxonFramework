@@ -42,7 +42,6 @@ public interface TrackingToken {
      *
      * @param context The {@link Context} to add the given {@code token} to.
      * @param token   The {TrackingToken} to add to the given {@code context} using the {@link #RESOURCE_KEY}.
-     *
      * @return The resulting context.
      */
     static Context addToContext(Context context, TrackingToken token) {
@@ -50,12 +49,12 @@ public interface TrackingToken {
     }
 
     /**
-     * Returns an {@link Optional} of {TrackingToken}, returning the resource keyed under the
-     * {@link #RESOURCE_KEY} in the given {@code context}.
+     * Returns an {@link Optional} of {TrackingToken}, returning the resource keyed under the {@link #RESOURCE_KEY} in
+     * the given {@code context}.
      *
      * @param context The {@link Context} to retrieve the {@link TrackingToken} from, if present.
-     * @return An {@link Optional} of {TrackingToken}, returning the resource keyed under the
-     * {@link #RESOURCE_KEY} in the given {@code context}.
+     * @return An {@link Optional} of {TrackingToken}, returning the resource keyed under the {@link #RESOURCE_KEY} in
+     * the given {@code context}.
      */
     static Optional<TrackingToken> fromContext(Context context) {
         return Optional.ofNullable(context.getResource(RESOURCE_KEY));
@@ -116,5 +115,24 @@ public interface TrackingToken {
      */
     default OptionalLong position() {
         return OptionalLong.empty();
+    }
+
+    /**
+     * Indicates whether {@code this} token is at the exact same spot in the event stream as the {@code other} token.
+     * <p>
+     * This method is particularly useful when comparing tokens from different points in time, such as during replay
+     * detection, where token implementations may naturally differ.
+     * <p>
+     * By default, this method checks bidirectional coverage: {@code this.covers(other) && other.covers(this)}, which
+     * ensures both tokens are at the same position.
+     *
+     * @param other The token to validate against {@code this} token.
+     * @return {@code true} if this token is at the same location as the other token, otherwise {@code false}.
+     *         Returns {@code false} if {@code other} is {@code null}.
+     * @see #covers(TrackingToken)
+     * @since 4.12.3
+     */
+    default boolean samePositionAs(TrackingToken other) {
+        return other != null && covers(other) && other.covers(this);
     }
 }

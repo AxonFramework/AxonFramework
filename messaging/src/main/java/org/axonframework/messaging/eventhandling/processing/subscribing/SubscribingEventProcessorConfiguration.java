@@ -32,6 +32,8 @@ import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorHandler;
 import org.axonframework.messaging.eventhandling.processing.errorhandling.PropagatingErrorHandler;
 
+import java.util.function.Consumer;
+
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
@@ -47,6 +49,8 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 public class SubscribingEventProcessorConfiguration extends EventProcessorConfiguration {
 
     private SubscribableEventSource eventSource;
+    private Consumer<? super EventMessage> ignoredMessageHandler =
+            eventMessage -> messageMonitor.onMessageIngested(eventMessage).reportIgnored();
 
     /**
      * Constructs a new {@code SubscribingEventProcessorConfiguration}.
@@ -105,6 +109,22 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
         return this;
     }
 
+    /**
+     * Sets the handler, that is invoked when the event is ignored by all
+     * {@link org.axonframework.messaging.eventhandling.EventHandlingComponent EventHandlingComponents} this
+     * {@link SubscribingEventProcessor} controls. Defaults to a no-op.
+     *
+     * @param ignoredMessageHandler The handler, that is invoked when the event is ignored by all
+     *                              {@link org.axonframework.messaging.eventhandling.EventHandlingComponent
+     *                              EventHandlingComponents} this {@link {@link SubscribingEventProcessor}} controls.
+     * @return The current Builder instance, for fluent interfacing.
+     */
+    public SubscribingEventProcessorConfiguration ignoredMessageHandler(
+            Consumer<? super EventMessage> ignoredMessageHandler) {
+        this.ignoredMessageHandler = ignoredMessageHandler;
+        return this;
+    }
+
     @Override
     public SubscribingEventProcessorConfiguration unitOfWorkFactory(@Nonnull UnitOfWorkFactory unitOfWorkFactory) {
         super.unitOfWorkFactory(unitOfWorkFactory);
@@ -147,6 +167,15 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      */
     public SubscribableEventSource eventSource() {
         return eventSource;
+    }
+
+    /**
+     * Returns the handler for ignored messages.
+     *
+     * @return The ignored message handler.
+     */
+    public Consumer<? super EventMessage> ignoredMessageHandler() {
+        return ignoredMessageHandler;
     }
 
     @Override

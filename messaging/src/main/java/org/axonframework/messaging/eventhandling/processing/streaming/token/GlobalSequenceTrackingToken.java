@@ -78,7 +78,7 @@ public class GlobalSequenceTrackingToken implements TrackingToken, Comparable<Gl
     @Override
     public TrackingToken lowerBound(TrackingToken other) {
         isTrue(other instanceof GlobalSequenceTrackingToken,
-               () -> "Incompatible token type provided:" + other.getClass().getSimpleName());
+               () -> "Incompatible token type provided: " + other.getClass().getSimpleName());
 
         GlobalSequenceTrackingToken otherToken = (GlobalSequenceTrackingToken) other;
         if (otherToken.globalIndex < this.globalIndex) {
@@ -91,7 +91,7 @@ public class GlobalSequenceTrackingToken implements TrackingToken, Comparable<Gl
     @Override
     public TrackingToken upperBound(TrackingToken other) {
         isTrue(other instanceof GlobalSequenceTrackingToken,
-               () -> "Incompatible token type provided:" + other.getClass().getSimpleName());
+               () -> "Incompatible token type provided: " + other.getClass().getSimpleName());
 
         if (((GlobalSequenceTrackingToken) other).globalIndex > this.globalIndex) {
             return other;
@@ -102,10 +102,22 @@ public class GlobalSequenceTrackingToken implements TrackingToken, Comparable<Gl
     @Override
     public boolean covers(TrackingToken other) {
         isTrue(other == null || other instanceof GlobalSequenceTrackingToken,
-               () -> "Incompatible token type provided:" + (other != null ? other.getClass().getSimpleName() : "null"));
+               () -> "Incompatible token type provided: " + (other != null ? other.getClass().getSimpleName() : "null"));
         GlobalSequenceTrackingToken otherToken = (GlobalSequenceTrackingToken) other;
 
         return otherToken == null || otherToken.globalIndex <= this.globalIndex;
+    }
+
+    @Override
+    public boolean samePositionAs(TrackingToken other) {
+        if (other == null) {
+            return false;
+        }
+        if (other instanceof GlobalSequenceTrackingToken) {
+            GlobalSequenceTrackingToken otherToken = (GlobalSequenceTrackingToken) other;
+            return otherToken.globalIndex == this.globalIndex;
+        }
+        throw new IllegalArgumentException("Incompatible token type provided: " + other.getClass().getSimpleName());
     }
 
     @Override
