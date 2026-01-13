@@ -1,4 +1,0 @@
-= Migration Path: Message Changes
-:navtitle: Message Changes
-
-TODO
