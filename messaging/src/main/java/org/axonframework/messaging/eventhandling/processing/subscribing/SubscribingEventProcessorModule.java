@@ -101,7 +101,7 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
     private void registerEventProcessor() {
         var processorComponentDefinition = ComponentDefinition
                 .ofTypeAndName(SubscribingEventProcessor.class, processorName)
-                .withBuilder(cfg -> new SubscribingEventProcessor(
+                .withBuilder(cfg -> new SimpleSubscribingEventProcessor(
                         processorName,
                         getEventHandlingComponents(cfg),
                         cfg.getComponent(SubscribingEventProcessorConfiguration.class)
