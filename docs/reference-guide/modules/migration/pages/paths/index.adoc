@@ -30,124 +30,145 @@ Many classes have been moved to better align with the new modular structure. The
 
 [tabs]
 ====
-Extension Moves::
+Framework::
 +
-[cols="1,1,1"]
+[cols="1,2"]
 |===
-| Description | Axon 4 package name | Axon 5 package name
-
-| Core Spring support
-| `org.axonframework.spring`
-| `org.axonframework.extension.spring`
-
-| Spring Boot auto-configuration
-| `org.axonframework.springboot`
-| `org.axonframework.extension.springboot`
-
-| Spring Boot Actuator support
-| `org.axonframework.actuator`
-| `org.axonframework.extension.springboot.actuator`
-
-| Dropwizard Metrics support
-| `org.axonframework.metrics`
-| `org.axonframework.extension.metrics.dropwizard`
-
-| Micrometer support
-| `org.axonframework.micrometer`
-| `org.axonframework.extension.metrics.micrometer`
-
-| OpenTelemetry support
-| `org.axonframework.tracing.opentelemetry`
-| `org.axonframework.extension.tracing.opentelemetry`
-|===
-
-Annotation Moves::
-+
-[cols="1,1,1"]
-|===
-| Description | Axon 4 package name | Axon 5 package name
+| Description | Changes (AF4 to AF5)
 
 | Command Handler annotation
 | `org.axonframework.commandhandling.CommandHandler`
-| `org.axonframework.messaging.commandhandling.annotation.CommandHandler`
+
+to
+
+`org.axonframework.messaging.commandhandling.annotation.CommandHandler`
 
 | Event Handler annotation
 | `org.axonframework.eventhandling.EventHandler`
-| `org.axonframework.messaging.eventhandling.annotation.EventHandler`
+
+to
+
+`org.axonframework.messaging.eventhandling.annotation.EventHandler`
 
 | Query Handler annotation
 | `org.axonframework.queryhandling.QueryHandler`
-| `org.axonframework.messaging.queryhandling.annotation.QueryHandler`
+
+to
+
+`org.axonframework.messaging.queryhandling.annotation.QueryHandler`
 
 | Message Handler Interceptor annotation
 | `org.axonframework.messaging.interceptors.MessageHandlerInterceptor`
-| `org.axonframework.messaging.core.annotation.interceptors.MessageHandlerInterceptor`
 
-| Aggregate Identifier annotation (Legacy)
-| `org.axonframework.modelling.command.AggregateIdentifier`
-| `org.axonframework.modelling.command.AggregateIdentifier` (Legacy Stash)
+to
 
-| Saga Event Handler annotation (Legacy)
-| `org.axonframework.modelling.saga.SagaEventHandler`
-| `org.axonframework.modelling.saga.SagaEventHandler` (Legacy Stash)
-|===
-
-Core Infrastructure & Configuration::
-+
-[cols="1,1,1"]
-|===
-| Description | Axon 4 package name | Axon 5 package name
+`org.axonframework.messaging.core.annotation.interceptors.MessageHandlerInterceptor`
 
 | Configuration API
 | `org.axonframework.config`
-| `org.axonframework.common.configuration`
+
+to
+
+`org.axonframework.common.configuration`
 
 | Serialization API (replaced by Conversion)
 | `org.axonframework.serialization`
-| `org.axonframework.conversion`
+
+to
+
+`org.axonframework.conversion`
 
 | Command Handling Core
 | `org.axonframework.commandhandling`
-| `org.axonframework.messaging.commandhandling`
+
+to
+
+`org.axonframework.messaging.commandhandling`
 
 | Event Handling Core
 | `org.axonframework.eventhandling`
-| `org.axonframework.messaging.eventhandling`
+
+to
+
+`org.axonframework.messaging.eventhandling`
 
 | Query Handling Core
 | `org.axonframework.queryhandling`
-| `org.axonframework.messaging.queryhandling`
+
+to
+
+`org.axonframework.messaging.queryhandling`
 
 | Unit of Work
 | `org.axonframework.messaging.unitofwork`
-| `org.axonframework.messaging.core.unitofwork`
-|===
 
-Modelling Changes::
-+
-[cols="1,1,1"]
-|===
-| Description | Axon 4 package name | Axon 5 package name
+to
+
+`org.axonframework.messaging.core.unitofwork`
 
 | Modelling (Aggregates to Entities)
 | `org.axonframework.modelling.command`
-| `org.axonframework.modelling.entity`
 
-| Entity Member annotation
-| N/A
-| `org.axonframework.modelling.entity.annotation.EntityMember`
+to
+
+`org.axonframework.modelling.entity`
 
 | Target Entity Id annotation
 | `org.axonframework.modelling.command.TargetAggregateIdentifier`
-| `org.axonframework.modelling.annotation.TargetEntityId`
 
-| Inject Entity annotation
-| N/A
-| `org.axonframework.modelling.annotation.InjectEntity`
+to
 
-| Entity Id Resolver (formerly CommandTargetResolver)
-| `org.axonframework.modelling.command.CommandTargetResolver`
-| `org.axonframework.modelling.EntityIdResolver`
+`org.axonframework.modelling.annotation.TargetEntityId`
+
+|===
+
+Extension::
++
+[cols="1,2"]
+|===
+| Description | Changes (AF4 to AF5)
+
+| Core Spring support
+| `org.axonframework.spring`
+
+to
+
+`org.axonframework.extension.spring`
+
+| Spring Boot auto-configuration
+| `org.axonframework.springboot`
+
+to
+
+`org.axonframework.extension.springboot`
+
+| Spring Boot Actuator support
+| `org.axonframework.actuator`
+
+to
+
+`org.axonframework.extension.springboot.actuator`
+
+| Dropwizard Metrics support
+| `org.axonframework.metrics`
+
+to
+
+`org.axonframework.extension.metrics.dropwizard`
+
+| Micrometer support
+| `org.axonframework.micrometer`
+
+to
+
+`org.axonframework.extension.metrics.micrometer`
+
+| OpenTelemetry support
+| `org.axonframework.tracing.opentelemetry`
+
+to
+
+`org.axonframework.extension.tracing.opentelemetry`
 |===
 ====
 
@@ -159,7 +180,7 @@ Axon Framework 5 has been restructured into more focused modules. This allows fo
 
 [cols="1,1,1"]
 |===
-| Description | Old Module (AF 4.x) | New Module (AF 5.x)
+| Description | Axon 4 module name | Axon 5 module name
 
 | **New.** Contains shared utilities, configuration basics, and common exceptions.
 | N/A
