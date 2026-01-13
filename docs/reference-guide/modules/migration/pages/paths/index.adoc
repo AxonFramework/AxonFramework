@@ -1,7 +1,7 @@
 = Migration Paths
 :navtitle: Migration Paths
 
-Axon Framework 5.0 introduces several architectural shifts that may require different migration strategies depending on your application's complexity and the features you use.
+Axon Framework 5 introduces several architectural shifts that may require different migration strategies depending on your application's complexity and the features you use.
 This section outlines the common migration tasks and provides detailed "paths" for specific components.
 
 Whether you are performing a straightforward version bump or a deep architectural refactoring to embrace Dynamic Consistency Boundaries (DCB), the following sections will guide you through the process.
@@ -241,10 +241,10 @@ Axon Framework 5 has been restructured into more focused modules. This allows fo
 
 Users should update their dependency management (Maven/Gradle) to reflect these changes. Note that the modules in `extensions` have moved to a different group ID (`org.axonframework.extensions.*`) as well.
 
-[TIP]
-.Axon Framework BOM
-====
+=== Axon Framework BOM
+
 For ease of dependency management, it is highly recommended to use the Axon Framework Bill of Materials (BOM). This ensures that all Axon modules in your project use the same compatible version.
+
 
 [source,xml]
 ----
@@ -260,18 +260,17 @@ For ease of dependency management, it is highly recommended to use the Axon Fram
     </dependencies>
 </dependencyManagement>
 ----
-====
 
 == What is not yet there
 
-As Axon Framework 5.0 and 5.1 are the first steps in this new major version, not all features from the 4.x lineage have been fully migrated or redesigned yet.
+As Axon Framework 5.0 is the first step in this new major version, not all features from the 4.x lineage have been fully migrated or redesigned yet.
 
 - **Saga & Deadline Overhaul**: Sagas and Deadlines do not have a native "async-native" replacement yet. A full redesign is in progress.
-- **Event Upcasters**: Event upcasting is not yet available in Axon Framework 5.0/5.1.
-- **Snapshots**: The snapshotting feature for entities is not yet available in 5.0.
-- **Dead-Letter Queue (DLQ)**: Support for DLQs in event processors is currently missing.
+- **Event Upcasters**: Event upcasting is not yet available.
+- **Snapshots**: The snapshotting feature for entities is not yet available. Currently scheduled for 5.1.
+- **Dead-Letter Queue (DLQ)**: Support for DLQs in event processors is not yet available.
 - **Event Replaying**: The ability to replay events for streaming event processors is not yet implemented.
-- **Multiple Event Sources**: `MultiStreamableEventSource` support is currently not available.
+- **Multiple Event Sources**: `MultiStreamableEventSource` support is not yet available. Currently scheduled for 5.1.
 - **Annotated Features (Coming in 5.2.0)**:
     *   **Timeouts**: Built-in timeout support for message handlers and processing contexts.
     *   **Interceptors**: Declarative and annotated interceptor support for message handling components.
