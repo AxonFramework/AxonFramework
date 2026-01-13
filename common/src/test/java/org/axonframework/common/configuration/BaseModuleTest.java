@@ -20,6 +20,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -55,6 +56,19 @@ class BaseModuleTest {
     void throwsIllegalArgumentExceptionForNullNameString() {
         assertThrows(IllegalArgumentException.class, () -> new SimpleModule(null));
     }
+
+    @Test
+    void simpleModuleDoesNotAllowToRegisterComponentRegistryHooksAfterBuild() {
+        AtomicReference<ComponentRegistry> detected = new AtomicReference<>();
+        var registry = new StubLifecycleRegistry();
+        var config = new DefaultComponentRegistry().build(registry);
+        testSubject.build(config, registry);
+
+        var exc = assertThrows(IllegalStateException.class, () -> testSubject.componentRegistry(detected::set));
+        assertThat(exc.getMessage()).isEqualTo("Module has already been built.");
+        assertNull(detected.get());
+    }
+
 
     private static class SimpleModule extends BaseModule<SimpleModule> {
 

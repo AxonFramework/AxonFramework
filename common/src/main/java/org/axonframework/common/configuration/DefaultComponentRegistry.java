@@ -19,7 +19,8 @@ package org.axonframework.common.configuration;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.Assert;
-import org.axonframework.common.annotation.DontCopyToChildRegistry;
+import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.annotation.RegistrationScope;
 import org.axonframework.common.configuration.Component.Identifier;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.slf4j.Logger;
@@ -45,7 +46,8 @@ import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.function.Predicate.not;
-import static org.axonframework.common.annotation.AnnotationUtils.isTypeAnnotatedWith;
+import static java.util.stream.Collectors.toMap;
+import static org.axonframework.common.annotation.AnnotationUtils.isTypeAnnotatedWithHavingAttributeValue;
 
 /**
  * Default implementation of the {@link ComponentRegistry} allowing for reuse of {@link Component},
@@ -84,42 +86,42 @@ public class DefaultComponentRegistry implements ComponentRegistry {
      */
     DefaultComponentRegistry copyWithDecoratorsAndEnhancers() {
         return create(
-                this.enhancers.values(),
-                this.disabledEnhancers,
-                this.decoratorDefinitions
+                this.decoratorDefinitions, this.enhancers.values(),
+                this.disabledEnhancers
         );
     }
 
     /**
      * Creates a new registry. This will include the provided enhancers, disabled enhancers and decorator definitions
-     * except those annotated with {@link DontCopyToChildRegistry}. The enhancerScanning flag is set to false.
+     * except those annotated with {@link RegistrationScope}. The enhancerScanning flag is set to false.
      *
+     * @param decoratorDefinitions The list of decorator definitions to copy.
      * @param enhancers            The list of enhancers to copy.
      * @param disabledEnhancers    The list of disabled enhancer types to copy.
-     * @param decoratorDefinitions The list of decorator definitions to copy.
      * @return A new default component registry.
      */
+    @Internal
     public static DefaultComponentRegistry create(
+            @Nonnull Collection<DecoratorDefinition.CompletedDecoratorDefinition<?, ?>> decoratorDefinitions,
             @Nonnull Collection<ConfigurationEnhancer> enhancers,
-            @Nonnull Collection<Class<? extends ConfigurationEnhancer>> disabledEnhancers,
-            @Nonnull Collection<DecoratorDefinition.CompletedDecoratorDefinition<?, ?>> decoratorDefinitions) {
+            @Nonnull Collection<Class<? extends ConfigurationEnhancer>> disabledEnhancers) {
         var registry = new DefaultComponentRegistry().disableEnhancerScanning();
+        var registrationsForAncestors = not(
+                isTypeAnnotatedWithHavingAttributeValue(
+                        RegistrationScope.class,
+                        "registrationScope",
+                        RegistrationScope.Scope.CURRENT
+                )
+        );
         registry.enhancers.putAll(
-                enhancers.stream()
-                         .filter(not(isTypeAnnotatedWith(DontCopyToChildRegistry.class)))
-                         .collect(Collectors.toMap(e -> e.getClass().getName(), e -> e))
+                enhancers.stream().filter(registrationsForAncestors)
+                         .collect(toMap(e -> e.getClass().getName(), e -> e))
         );
         registry.disabledEnhancers.addAll(
-                disabledEnhancers
-                        .stream()
-                        .filter(not(isTypeAnnotatedWith(DontCopyToChildRegistry.class)))
-                        .toList()
+                disabledEnhancers.stream().filter(registrationsForAncestors).toList()
         );
         registry.decoratorDefinitions.addAll(
-                decoratorDefinitions
-                        .stream()
-                        .filter(not(isTypeAnnotatedWith(DontCopyToChildRegistry.class)))
-                        .collect(Collectors.toSet())
+                decoratorDefinitions.stream().filter(registrationsForAncestors).collect(Collectors.toSet())
         );
         return registry;
     }
@@ -264,8 +266,9 @@ public class DefaultComponentRegistry implements ComponentRegistry {
      * Creates a local configuration, for a given parent and current registry as a component.
      *
      * @param parent The parent configuration to serve as parent for the created result.
-     * @return new local configuration with parent referencing to components of teh current registry.
+     * @return new local configuration with parent referencing to components of the current registry.
      */
+    @Internal
     public Configuration createLocalConfiguration(Configuration parent) {
         Configuration currentConfiguration = new LocalConfiguration(parent);
         if (!this.hasComponent(ComponentRegistry.class, SearchScope.CURRENT)) {

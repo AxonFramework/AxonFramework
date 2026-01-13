@@ -17,7 +17,7 @@
 package org.axonframework.extension.spring.config;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.annotation.DontCopyToChildRegistry;
+import org.axonframework.common.annotation.RegistrationScope;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.Configuration;
@@ -36,7 +36,7 @@ import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
  * @since 4.6.0
  */
 @Internal
-@DontCopyToChildRegistry
+@RegistrationScope
 public class SpringEventSourcedEntityConfigurer<ID, T> implements ConfigurationEnhancer {
 
     private final Class<T> entityType;

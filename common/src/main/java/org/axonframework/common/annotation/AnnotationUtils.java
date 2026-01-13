@@ -17,6 +17,7 @@
 package org.axonframework.common.annotation;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 
 import java.lang.annotation.Annotation;
@@ -274,18 +275,18 @@ public final class AnnotationUtils {
     }
 
     /**
-     * Validate whether the given {@code target} annotation {@link Class} is meta-annotated with the given {@code
-     * subject}. If this is the case for the {@code target} itself or any meta-annotation on any level of the {@code
-     * target}, {@code true} will be returned.
+     * Validate whether the given {@code target} annotation {@link Class} is meta-annotated with the given
+     * {@code subject}. If this is the case for the {@code target} itself or any meta-annotation on any level of the
+     * {@code target}, {@code true} will be returned.
      * <p>
      * Any {@link Annotation} classes which are directly annotated or meta-annotated with the given {@code subject} will
      * be stored in the {@code annotatedWithSubject} {@link Set}. The {@code visited} {@code Set} is used to ignore
      * annotations which have already been validated.
      *
-     * @param target               the annotation {@link Class} to validate if it is annotated with the given {@code
-     *                             subject}
-     * @param subject              the annotation {@link Class} to check whether it is present on the given {@code
-     *                             target}, directly or through meta-annotations
+     * @param target               the annotation {@link Class} to validate if it is annotated with the given
+     *                             {@code subject}
+     * @param subject              the annotation {@link Class} to check whether it is present on the given
+     *                             {@code target}, directly or through meta-annotations
      * @param annotatedWithSubject a {@link Set} to store all class' in which are annotated with the {@code subject},
      *                             either directly or through meta-annotations
      * @param visited              a {@link Set} containing all annotation class' which have been visited in the process
@@ -318,23 +319,48 @@ public final class AnnotationUtils {
     }
 
     /**
-     * Creates a {@link Predicate} that checks whether the given {@link Member} is annotated with the given {@code annotationType}.
+     * Creates a {@link Predicate} that checks whether the given {@link Member} is annotated with the given
+     * {@code annotationType}.
      *
      * @param annotationType The annotation type to check.
      * @return Predicate that checks whether the given annotation is present.
      */
     @Nonnull
     public static Predicate<Member> isAnnotatedWith(@Nonnull Class<? extends Annotation> annotationType) {
-        return it ->  it instanceof AnnotatedElement &&  isAnnotationPresent((AnnotatedElement)it, annotationType);
+        return it -> it instanceof AnnotatedElement && isAnnotationPresent((AnnotatedElement) it, annotationType);
     }
 
     /**
      * Returns a predicate testing if a type of the given instance is annotated with provided annotation type.
+     *
      * @param annotationType An annotated type to check for.
      * @return The predicate.
      */
-    public static Predicate<Object> isTypeAnnotatedWith(Class<? extends Annotation> annotationType) {
+    @Nonnull
+    public static Predicate<Object> isTypeAnnotatedWith(@Nonnull Class<? extends Annotation> annotationType) {
         return instance -> isAnnotationPresent(instance.getClass(), annotationType);
+    }
+
+    /**
+     * Returns a predicate testing id a type of given instance us annotated with provided annotation type having a
+     * single attribute value equals to the provided one.
+     *
+     * @param annotationType The annotation type to check for.
+     * @param attributeName  The name of the attribute.
+     * @param value          The value of the attribute.
+     * @return The predicate.
+     */
+    @Nonnull
+    public static Predicate<Object> isTypeAnnotatedWithHavingAttributeValue(
+            @Nonnull Class<? extends Annotation> annotationType,
+            @Nonnull String attributeName,
+            @Nullable Object value) {
+        return instance -> findAnnotationAttributes(instance.getClass(), annotationType)
+                .filter(attribute -> (value != null)
+                        ? attribute.containsKey(attributeName) && value.equals(attribute.get(attributeName))
+                        : attribute.containsKey(attributeName) && attribute.get(attributeName) == null
+                )
+                .isPresent();
     }
 
     private AnnotationUtils() {

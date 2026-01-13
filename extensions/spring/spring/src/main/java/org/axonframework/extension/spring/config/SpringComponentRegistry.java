@@ -127,9 +127,8 @@ public class SpringComponentRegistry implements
      */
     DefaultComponentRegistry copyWithDecoratorsAndEnhancers() {
         return create(
-                this.enhancers.values(),
-                this.disabledEnhancers,
-                this.decorators
+          this.decorators, this.enhancers.values(),
+                this.disabledEnhancers
         );
     }
     /**

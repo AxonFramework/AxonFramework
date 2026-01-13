@@ -17,7 +17,7 @@
 package org.axonframework.extension.spring.config;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.annotation.DontCopyToChildRegistry;
+import org.axonframework.common.annotation.RegistrationScope;
 import org.axonframework.common.configuration.LazyInitializedModule;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
@@ -67,7 +67,7 @@ import java.util.stream.Collectors;
  * @since 4.6.0
  */
 @Internal
-@DontCopyToChildRegistry("Don't copy this enhancer in order to avoid cyclic module build in Spring Boot.")
+@RegistrationScope("Don't copy this enhancer in order to avoid cyclic module build in Spring Boot.")
 public class MessageHandlerConfigurer implements ConfigurationEnhancer, ApplicationContextAware {
 
     private final Type type;
