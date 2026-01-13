@@ -92,7 +92,7 @@ The `CommandDispatcher` automatically provides the current `ProcessingContext` a
 [[command-gateway]]
 == The `CommandGateway`
 
-The 'command gateway' is a convenience approach towards dispatching commands.
+The `CommandGateway` is a convenience approach towards dispatching commands.
 It abstracts certain aspects for you when dispatching a command, while using the `CommandBus` underneath to perform the actual dispatching of the message.
 While you are not required to use a gateway to dispatch commands, it is generally the easiest option to do so.
 
@@ -283,13 +283,13 @@ Use the `CommandGateway` (with `null` for `ProcessingContext`) when dispatching 
 
 == Command dispatching results
 
-Dispatching commands will generally have two possible outcomes:
+Dispatching commands generally has two possible outcomes:
 
-. Command handled successfully, and
-. command handled exceptionally
+. The command is handled successfully.
+. The command is handled exceptionally.
 
 The outcome depends on the implementation of the command handler.
-If the `@CommandHandler` annotated function throws an exception due to some business logic, it will be that exception which will be the result of dispatching the command.
+If the `@CommandHandler` annotated method throws an exception due to some business logic, it will be that exception which will be the result of dispatching the command.
 
 === Return values from command handlers
 
@@ -305,7 +305,7 @@ If the primary purpose of sending a message is to obtain a result value, conside
 That said, there are legitimate cases where command handlers return values:
 
 * **Entity identifiers**: Returning the identifier of a newly created aggregate or entity is a common pattern.
-The framework has built-in support for this: when a `@CommandHandler` annotated static handler executes successfully, the value of the `@AggregateIdentifier` annotated field is automatically returned.
+The framework has built-in support for this: when a `@CommandHandler` annotated static handler executes successfully, the value of the `@EntityId` annotated field is automatically returned.
 * **Confirmation data**: Sometimes you may need to return confirmation information or generated values (such as reference numbers, timestamps, or other data produced during command handling).
 * **Synchronous workflows**: In certain integration scenarios, returning a value from a command handler may be necessary for synchronous processing flows.
 

@@ -692,12 +692,12 @@ For stateful command handlers, there is a critical separation of concerns:
 
 * **Command handlers** validate whether the handler is in the correct state to execute the command.
 If yes, they publish events.
-If not, they throw an exception, ignore the command, or publish entirely different events,depending on business requirements.
+If not, they throw an exception, ignore the command, or publish entirely different events, depending on business requirements.
 
 * **Event sourcing handlers** apply state changes based on events.
 They must *never* contain business logic—only state updates.
 
-State changes should *never* occur in command handling functions.
+State changes should *never* occur in command handling methods.
 Event sourcing handlers should be the only methods where state is updated.
 Failing to follow this principle means the handler will miss state changes when it is being sourced from its events.
 
