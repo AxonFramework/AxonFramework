@@ -16,19 +16,20 @@
 
 package org.axonframework.extension.spring.config;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
 
 import java.util.Set;
 
 /**
- * Factory for building {@link EventProcessorModule}s from a set of discovered event handler components.
+ * Factory for building {@link EventProcessorModule EventProcessorModules} from a set of discovered event handler components.
  * <p>
  * This interface should only be implemented if the default assignment rules for event processors need to be
  * customized beyond what {@link ProcessorDefinition} provides. The factory is responsible for determining which event
  * handlers should be assigned to which processors and creating the corresponding modules.
  * <p>
- * The default implementation ({@link DefaultProcessorModuleFactory}) uses {@link ProcessorDefinition}s to assign
- * handlers based on their selectors. If no matching processor definition is found for a handler, it defaults to
+ * The default implementation ({@link DefaultProcessorModuleFactory}) uses {@link ProcessorDefinition ProcessorDefinitions}
+ * to assign handlers based on their selectors. If no matching processor definition is found for a handler, it defaults to
  * assigning the handler to a processor named after the handler's package.
  * <p>
  * Custom implementations can provide completely different assignment logic, such as:
@@ -40,20 +41,21 @@ import java.util.Set;
  * </ul>
  *
  * @author Allard Buijze
- * @since 5.0.0
+ * @since 5.0.2
  * @see DefaultProcessorModuleFactory
  * @see ProcessorDefinition
  */
 public interface ProcessorModuleFactory {
 
     /**
-     * Builds a set of {@link EventProcessorModule}s from the given event handler descriptors.
+     * Builds a set of {@link EventProcessorModule EventProcessorModules} from the given event handler descriptors.
      * <p>
      * Each module represents an event processor with its assigned event handlers. The factory determines the
      * assignment logic and creates appropriately configured modules.
      *
-     * @param handlers the set of discovered event handler components to be assigned to processors
-     * @return a set of event processor modules, each containing its assigned event handlers
+     * @param handlers The set of discovered event handler components to be assigned to processors.
+     * @return A set of event processor modules, each containing its assigned event handlers.
      */
-    Set<EventProcessorModule> buildProcessorModules(Set<ProcessorDefinition.EventHandlerDescriptor> handlers);
+    @Nonnull
+    Set<EventProcessorModule> buildProcessorModules(@Nonnull Set<ProcessorDefinition.EventHandlerDescriptor> handlers);
 }

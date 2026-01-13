@@ -16,6 +16,8 @@
 
 package org.axonframework.extension.spring.config;
 
+import jakarta.annotation.Nonnull;
+import org.axonframework.common.Assert;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.extension.spring.config.ProcessorDefinition.ProcessorDefinitionConfigurationStep;
 import org.axonframework.extension.spring.config.ProcessorDefinition.ProcessorDefinitionSelectorStep;
@@ -30,12 +32,12 @@ import java.util.function.Predicate;
  * This class implements all steps of the processor definition fluent API and maintains the state for the definition
  * being built.
  *
- * @param <T> the type of {@link EventProcessorConfiguration} for this processor
+ * @param <T> The type of {@link EventProcessorConfiguration} for this processor.
  * @author Allard Buijze
- * @since 5.0.0
+ * @since 5.0.2
  */
 @Internal
-public class ProcessorDefinitionBuilder<T extends EventProcessorConfiguration>
+class ProcessorDefinitionBuilder<T extends EventProcessorConfiguration>
         implements ProcessorDefinitionSelectorStep<T>, ProcessorDefinitionConfigurationStep<T>, ProcessorDefinition {
 
     private final EventProcessorSettings.ProcessorMode mode;
@@ -46,41 +48,49 @@ public class ProcessorDefinitionBuilder<T extends EventProcessorConfiguration>
     /**
      * Creates a new builder for a processor definition with the given mode and name.
      *
-     * @param name the processor name
-     * @param mode the processor mode (type)
+     * @param name The processor name.
+     * @param mode The processor mode (type).
      */
-    public ProcessorDefinitionBuilder(String name, EventProcessorSettings.ProcessorMode mode) {
+    public ProcessorDefinitionBuilder(@Nonnull String name, @Nonnull EventProcessorSettings.ProcessorMode mode) {
+        Assert.notNull(name, () -> "Processor name must not be null");
+        Assert.notNull(mode, () -> "Processor mode must not be null");
         this.mode = mode;
         this.name = name;
     }
 
     @Override
-    public ProcessorDefinition withConfiguration(Function<T, T> configurer) {
+    @Nonnull
+    public ProcessorDefinition withConfiguration(@Nonnull Function<T, T> configurer) {
+        Assert.notNull(configurer, () -> "Configuration customizer must not be null");
         this.configurationCustomizer = configurer;
         return this;
     }
 
     @Override
+    @Nonnull
     public ProcessorDefinition withDefaultSettings() {
         this.configurationCustomizer = Function.identity();
         return this;
     }
 
     @Override
+    @Nonnull
     public ProcessorDefinitionConfigurationStep<T> assigningHandlers(
-            Predicate<ProcessorDefinition.EventHandlerDescriptor> selector) {
+            @Nonnull Predicate<ProcessorDefinition.EventHandlerDescriptor> selector) {
+        Assert.notNull(selector, () -> "Selector predicate must not be null");
         this.selector = selector;
         return this;
     }
 
     @Override
-    public boolean matchesSelector(EventHandlerDescriptor eventHandlerDescriptor) {
+    public boolean matchesSelector(@Nonnull EventHandlerDescriptor eventHandlerDescriptor) {
         return selector.test(eventHandlerDescriptor);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public EventProcessorConfiguration applySettings(EventProcessorConfiguration settings) {
+    @Nonnull
+    public EventProcessorConfiguration applySettings(@Nonnull EventProcessorConfiguration settings) {
         return configurationCustomizer.apply((T) settings);
     }
 

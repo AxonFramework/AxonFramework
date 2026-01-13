@@ -218,23 +218,23 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
                 implements ProcessorDefinition.EventHandlerDescriptor {
 
         @Override
-            public BeanDefinition beanDefinition() {
-                return beanFactory.getBeanDefinition(beanName);
-            }
-
-            @Override
-            public Class<?> beanType() {
-                return beanFactory.getType(beanName);
-            }
-
-            @Override
-            public Object resolveBean() {
-                return beanFactory.getBean(beanName);
-            }
-
-            @Override
-            public ComponentBuilder<Object> component() {
-                return c -> resolveBean();
-            }
+        public BeanDefinition beanDefinition() {
+            return beanFactory.getBeanDefinition(beanName);
         }
+
+        @Override
+        public Class<?> beanType() {
+            return beanFactory.getType(beanName);
+        }
+
+        @Override
+        public Object resolveBean() {
+            return beanFactory.getBean(beanName);
+        }
+
+        @Override
+        public ComponentBuilder<Object> component() {
+            return c -> resolveBean();
+        }
+    }
 }
