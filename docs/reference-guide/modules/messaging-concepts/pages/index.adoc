@@ -37,7 +37,8 @@ This guarantees that messages are safe to use in a multi-threaded and distribute
 == Commands
 
 Commands describe an intent to change the application's state.
-They are implemented as POJOs that are wrapped in a `CommandMessage`.Axon Framework refers to your command as the "command payload." Thus, to retrieve it from a `CommandMessage` you use the `CommandMessage#payload` method.
+They are implemented as POJOs that are wrapped in a `CommandMessage`.  Axon Framework refers to your command as the "command payload".
+Thus, to retrieve it from a `CommandMessage` you use the `CommandMessage#payload` method.
 
 Commands always have exactly one destination.
 While the sender does not care which component handles the command or where that component resides, it may want to know the outcome.
@@ -45,7 +46,8 @@ Command messages sent over the command bus allow for a result to be returned.
 
 Next to the command payload, you can store information in the metadata of a command message.
 The intent of the metadata is to store additional information about a command that is not primarily intended as business information.
-Auditing information is a typical example - it allows you to see under which circumstances an command was raised, such as the user account that triggered the processing, or the name of the machine that processed the event.
+Auditing information is a typical example - it allows you to see under which circumstances an command was raised, such as the user account that triggered the processing, or the name of the machine that processed
+the command.
 
 [TIP]
 .Do not base business decisions on metadata
