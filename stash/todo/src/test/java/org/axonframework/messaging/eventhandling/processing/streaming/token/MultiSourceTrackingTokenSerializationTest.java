@@ -17,6 +17,7 @@
 package org.axonframework.messaging.eventhandling.processing.streaming.token;
 
 import org.axonframework.conversion.TestConverter;
+import org.axonframework.messaging.eventstreaming.MultiSourceTrackingToken;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 

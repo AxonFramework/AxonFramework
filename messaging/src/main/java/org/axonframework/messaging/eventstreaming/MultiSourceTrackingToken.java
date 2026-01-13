@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.eventhandling.processing.streaming.token;
+package org.axonframework.messaging.eventstreaming;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
-import org.axonframework.messaging.eventhandling.processing.streaming.MultiStreamableMessageSource;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 
-import javax.annotation.Nonnull;
 import java.beans.ConstructorProperties;
 import java.util.HashMap;
 import java.util.Map;
@@ -33,10 +33,10 @@ import java.util.StringJoiner;
 
 /**
  * A {@link TrackingToken} implementation combining several {@code TrackingTokens} into one. Used to keep track of
- * several message sources at once, like the {@link MultiStreamableMessageSource}.
+ * several event sources at once, like the {@link MultiStreamableEventSource}.
  *
  * @author Greg Woods
- * @since 4.2
+ * @since 5.0
  */
 public class MultiSourceTrackingToken implements TrackingToken {
 
@@ -59,7 +59,7 @@ public class MultiSourceTrackingToken implements TrackingToken {
      * Compares this token to {@code other} by comparing each member token with its counterpart in the {@code other}
      * token. If the two tokens contain different number of constituent tokens, or have the same number but
      * different names, then these two {@link MultiSourceTrackingToken}s must be tracking different
-     * {@code MultiStreamableMessageSource}s.
+     * {@code MultiStreamableEventSource}s.
      *
      * @param other The token to compare to this one
      * @return token representing the lower bound of both tokens
@@ -83,13 +83,13 @@ public class MultiSourceTrackingToken implements TrackingToken {
      * Compares this token to {@code other} by comparing each member token with its counterpart in the {@code other}
      * token. If the two tokens contain different number of constituent tokens, or have the same number but
      * different names, then these two {@link MultiSourceTrackingToken}s must be tracking different
-     * {@code MultiStreamableMessageSource}s.
+     * {@code MultiStreamableEventSource}s.
      *
      * @param other The token to compare this token to
      * @return a token that represents the furthest position of this or the other streams
      */
     @Override
-    public TrackingToken upperBound(TrackingToken other) {
+    public MultiSourceTrackingToken upperBound(TrackingToken other) {
         MultiSourceTrackingToken otherMultiToken = assertSameKeysMultiSourceTrackingToken(other);
 
         Map<String, TrackingToken> tokenMap = new HashMap<>();
@@ -115,7 +115,7 @@ public class MultiSourceTrackingToken implements TrackingToken {
      * Compares this token to {@code other} checking each member token with its counterpart to see if they are covered
      * in the {@code other} token. If the two tokens contain different number of constituent tokens, or have the same number but
      * different names, then these two {@link MultiSourceTrackingToken}s must be tracking different
-     * {@code MultiStreamableMessageSource}s.
+     * {@code MultiStreamableEventSource}s.
      *
      * @param other The token to compare to this one
      * @return {@code true} if this token covers the other, otherwise {@code false}
