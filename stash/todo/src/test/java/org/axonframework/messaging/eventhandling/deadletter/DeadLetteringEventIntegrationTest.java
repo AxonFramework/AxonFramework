@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -204,13 +204,7 @@ public abstract class DeadLetteringEventIntegrationTest {
                 .workerExecutor(Executors.newSingleThreadScheduledExecutor())
                 .initialSegmentCount(1)
                 .claimExtensionThreshold(1000);
-        var eventHandlingComponent = new TracingEventHandlingComponent(
-                (event) -> configuration.spanFactory().createProcessEventSpan(true, event),
-                new InterceptingEventHandlingComponent(
-                        Collections.emptyList(),
-                        new LegacyEventHandlingComponent(deadLetteringInvoker)
-                )
-        );
+        var eventHandlingComponent = new LegacyEventHandlingComponent(deadLetteringInvoker);
         streamingProcessor = new PooledStreamingEventProcessor(
                 PROCESSING_GROUP,
                 List.of(eventHandlingComponent),
