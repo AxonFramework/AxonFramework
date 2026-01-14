@@ -138,13 +138,7 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
         CompletableFuture<MessageStream<Message>> enqueueFuture = queue.enqueueIfPresent(
                 sequenceIdentifier,
                 () -> new GenericDeadLetter<>(sequenceIdentifier, event)
-        ).handle((enqueued, error) -> {
-            if (error != null) {
-                logger.warn("Failed to enqueue follow-up dead letter for event [{}]: {}",
-                            event.identifier(), error.getMessage());
-            }
-            return MessageStream.<Message>empty();
-        });
+        ).thenApply(enqueued -> MessageStream.empty());
 
         return DelayedMessageStream.create(enqueueFuture);
     }
@@ -212,13 +206,7 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
 
         CompletableFuture<MessageStream<Message>> enqueueFuture = queue.enqueue(
                 sequenceIdentifier, letterToEnqueue
-        ).handle((v, enqueueError) -> {
-            if (enqueueError != null) {
-                logger.warn("Failed to enqueue dead letter for event [{}]: {}",
-                            event.identifier(), enqueueError.getMessage());
-            }
-            return MessageStream.<Message>empty();
-        });
+        ).thenApply(v -> MessageStream.empty());
 
         return DelayedMessageStream.create(enqueueFuture);
     }
