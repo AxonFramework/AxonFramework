@@ -69,7 +69,6 @@ class BaseModuleTest {
         assertNull(detected.get());
     }
 
-
     private static class SimpleModule extends BaseModule<SimpleModule> {
 
         public SimpleModule(String name) {
