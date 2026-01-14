@@ -30,7 +30,7 @@ import org.axonframework.messaging.eventhandling.EventMessage;
 class InMemoryDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegrationTest {
 
     @Override
-    protected SequencedDeadLetterQueue<EventMessage> createDeadLetterQueue() {
+    protected SequencedDeadLetterQueue<EventMessage> buildDeadLetterQueue() {
         return InMemorySequencedDeadLetterQueue.<EventMessage>builder()
                                                .maxSequences(1024)
                                                .maxSequenceSize(1024)
