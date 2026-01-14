@@ -54,7 +54,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * An implementation of the {@link DeadLetteringEventIntegrationTest} validating the
  * {@link JdbcSequencedDeadLetterQueue} with an {@link EventProcessor} and
- * {@code DeadLetteringEventHandlerInvoker}.
+ * {@code DeadLetteringEventHandlingComponent}.
  *
  * @author Steven van Beelen
  */
@@ -70,7 +70,7 @@ class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegratio
     private final DeadLetterSchema schema = DeadLetterSchema.defaultSchema();
 
     @Override
-    protected SequencedDeadLetterQueue<EventMessage> createDeadLetterQueue() {
+    protected SequencedDeadLetterQueue<EventMessage> buildDeadLetterQueue() {
         dataSource = dataSource();
         transactionManager = transactionManager(dataSource);
         Serializer eventSerializer = JacksonSerializer.defaultSerializer();
