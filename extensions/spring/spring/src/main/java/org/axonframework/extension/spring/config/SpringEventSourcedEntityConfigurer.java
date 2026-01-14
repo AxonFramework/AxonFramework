@@ -36,7 +36,7 @@ import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
  * @since 4.6.0
  */
 @Internal
-@RegistrationScope
+@RegistrationScope("Don't copy this enhancer in order to avoid cyclic module build in Spring Boot.")
 public class SpringEventSourcedEntityConfigurer<ID, T> implements ConfigurationEnhancer {
 
     private final Class<T> entityType;
