@@ -78,7 +78,7 @@ public class HierarchicalLifecycleRegistry implements LifecycleRegistry {
     @Override
     public LifecycleRegistry onStart(int phase, @Nonnull LifecycleHandler startHandler) {
         parentLifecycleRegistry.onStart(phase, parentConfiguration -> {
-            startHandler.run(childConfiguration);
+            return startHandler.run(childConfiguration);
         });
         return this;
     }
@@ -86,7 +86,7 @@ public class HierarchicalLifecycleRegistry implements LifecycleRegistry {
     @Override
     public LifecycleRegistry onShutdown(int phase, @Nonnull LifecycleHandler shutdownHandler) {
         parentLifecycleRegistry.onShutdown(phase, parentConfiguration -> {
-            shutdownHandler.run(childConfiguration);
+            return shutdownHandler.run(childConfiguration);
         });
         return this;
     }

@@ -106,8 +106,9 @@ class AnnotatedEventSourcedEntityModuleTest {
         StateManager stateManager = parentConfiguration.getComponent(StateManager.class);
         Repository<CourseId, Course> result = stateManager.repository(Course.class, CourseId.class);
 
-        assertThat(result).isNotNull();
-        assertThat(result).isInstanceOf(EventSourcingRepository.class);
+        assertThat(result)
+                .isNotNull()
+                .isInstanceOf(EventSourcingRepository.class);
     }
 
     @Test
@@ -124,8 +125,8 @@ class AnnotatedEventSourcedEntityModuleTest {
         Repository<CourseId, CustomCriteriaResolverCourse> result = stateManager.repository(CustomCriteriaResolverCourse.class,
                                                                                             CourseId.class);
 
-        assertThat(result).isNotNull();
-        assertThat(result).isInstanceOf(EventSourcingRepository.class);
+        assertThat(result).isNotNull()
+                          .isInstanceOf(EventSourcingRepository.class);
         result.describeTo(componentDescriptor);
         verify(componentDescriptor).describeProperty(eq("criteriaResolver"), isA(CustomCriteriaResolver.class));
     }
