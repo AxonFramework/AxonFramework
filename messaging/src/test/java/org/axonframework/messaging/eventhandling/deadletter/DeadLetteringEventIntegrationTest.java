@@ -189,11 +189,9 @@ public abstract class DeadLetteringEventIntegrationTest {
                 eventHandler
         );
 
-        deadLetteringComponent = DeadLetteringEventHandlingComponent.builder()
-                                                                     .delegate(simpleComponent)
-                                                                     .queue(deadLetterQueue)
-                                                                     .enqueuePolicy(enqueuePolicy)
-                                                                     .build();
+        deadLetteringComponent = new DeadLetteringEventHandlingComponent(
+                simpleComponent, deadLetterQueue, enqueuePolicy, true
+        );
 
         eventSource = new AsyncInMemoryStreamableEventSource();
         coordinatorExecutor = Executors.newSingleThreadScheduledExecutor();
