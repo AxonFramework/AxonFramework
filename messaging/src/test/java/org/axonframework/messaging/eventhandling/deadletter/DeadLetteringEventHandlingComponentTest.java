@@ -136,8 +136,8 @@ class DeadLetteringEventHandlingComponentTest {
             // when
             MessageStream.Empty<Message> result = testSubject.handle(testEvent, context);
 
-            // then - error should be present (enqueued)
-            assertFailedStream(result);
+            // then
+            assertSuccessfulStream(result);
             assertTrue(delegate.wasHandled());
             assertTrue(queue.contains(TEST_SEQUENCE_ID).join());
             assertThat(queue.sequenceSize(TEST_SEQUENCE_ID).join()).isEqualTo(1);
@@ -159,8 +159,8 @@ class DeadLetteringEventHandlingComponentTest {
             // when
             MessageStream.Empty<Message> result = testSubject.handle(testEvent, context);
 
-            // then - Ignore.shouldEnqueue() returns true, so event should be enqueued, error present
-            assertFailedStream(result);
+            // then
+            assertSuccessfulStream(result);
             assertTrue(delegate.wasHandled());
             assertTrue(queue.contains(TEST_SEQUENCE_ID).join());
         }
@@ -181,8 +181,8 @@ class DeadLetteringEventHandlingComponentTest {
             // when
             MessageStream.Empty<Message> result = testSubject.handle(testEvent, context);
 
-            // then - error should be present but not enqueued
-            assertFailedStream(result);
+            // then
+            assertSuccessfulStream(result);
             assertTrue(delegate.wasHandled());
             assertFalse(queue.contains(TEST_SEQUENCE_ID).join());
         }
@@ -380,10 +380,6 @@ class DeadLetteringEventHandlingComponentTest {
 
     private static void assertSuccessfulStream(MessageStream.Empty<Message> result) {
         assertTrue(result.error().isEmpty());
-    }
-
-    private static void assertFailedStream(MessageStream.Empty<Message> result) {
-        assertTrue(result.error().isPresent());
     }
 
     private static void assertFailedStreamWithError(MessageStream.Empty<Message> result,
