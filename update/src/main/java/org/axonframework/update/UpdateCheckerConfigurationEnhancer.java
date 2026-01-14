@@ -18,6 +18,7 @@ package org.axonframework.update;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.annotation.RegistrationScope;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.common.lifecycle.Phase;
@@ -36,6 +37,7 @@ import static org.axonframework.common.configuration.ComponentDefinition.ofType;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
+@RegistrationScope
 @Internal
 public class UpdateCheckerConfigurationEnhancer implements ConfigurationEnhancer {
 

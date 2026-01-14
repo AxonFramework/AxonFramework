@@ -61,10 +61,12 @@ class UpdateCheckerAutoConfigurationTest {
         System.setProperty(AXONIQ_USAGE_FORCE_TEST_ENVIRONMENT, "true");
 
         testContext.run(context -> {
+            assertThat(context).hasBean("usagePropertyProvider");
             assertThat(context).hasSingleBean(UpdateCheckerHttpClient.class);
             assertThat(context).hasSingleBean(UpdateCheckerReporter.class);
             assertThat(context).hasSingleBean(UpdateChecker.class);
-            assertThat(context).hasSingleBean(UsagePropertyProvider.class);
+            assertThat(context.getBean("usagePropertyProvider", UsagePropertyProvider.class)
+                              .getUrl()).isEqualTo("https://get.axoniq.io/updates/framework");
         });
     }
 
@@ -76,10 +78,10 @@ class UpdateCheckerAutoConfigurationTest {
         testContext.withPropertyValues("axon.update-check.disabled:true")
                 .withPropertyValues("axon.update-check.url:https://test.example.com")
                 .run(context -> {
-                    // assertThat(context).hasBean("usagePropertyProvider");
-                    assertThat(context.getBean(UsagePropertyProvider.class)
+                    assertThat(context).hasBean("usagePropertyProvider");
+                    assertThat(context.getBean("usagePropertyProvider", UsagePropertyProvider.class)
                                       .getDisabled()).isTrue();
-                    assertThat(context.getBean(UsagePropertyProvider.class)
+                    assertThat(context.getBean("usagePropertyProvider", UsagePropertyProvider.class)
                                       .getUrl()).isEqualTo("https://test.example.com");
                     assertThat(context).hasSingleBean(UpdateCheckerHttpClient.class);
                     assertThat(context).hasSingleBean(UpdateCheckerReporter.class);

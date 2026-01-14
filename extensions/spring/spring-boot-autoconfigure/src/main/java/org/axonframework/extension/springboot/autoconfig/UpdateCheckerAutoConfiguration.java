@@ -51,6 +51,17 @@ import static org.axonframework.common.configuration.ComponentDefinition.ofType;
 @EnableConfigurationProperties(UpdateCheckerProperties.class)
 public class UpdateCheckerAutoConfiguration {
 
+    /**
+     * Constructs a usage property provider based on update checker properties, if no other provider is in place.
+     * @param properties The update checker properties to use.
+     * @return Constructed usage property provider.
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    @Conditional(NotTestEnvironmentCondition.class)
+    public UsagePropertyProvider usagePropertyProvider(UpdateCheckerProperties properties) {
+        return UsagePropertyProvider.create(properties);
+    }
 
     /**
      * Bean creation method for a {@link ConfigurationEnhancer} for Spring-specific {@link UpdateChecker} components.
