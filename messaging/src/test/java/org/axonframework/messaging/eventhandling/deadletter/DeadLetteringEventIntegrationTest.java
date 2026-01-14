@@ -37,7 +37,6 @@ import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.ThrowableCause;
 import org.axonframework.messaging.eventhandling.AsyncInMemoryStreamableEventSource;
 import org.axonframework.messaging.eventhandling.EventHandler;
-import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
@@ -58,7 +57,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.OptionalLong;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -104,7 +102,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-abstract class DeadLetteringEventIntegrationTest {
+public abstract class DeadLetteringEventIntegrationTest {
 
     private static final String PROCESSING_GROUP = "problematicProcessingGroup";
     private static final boolean SUCCEED = true;
@@ -150,17 +148,16 @@ abstract class DeadLetteringEventIntegrationTest {
     private final AtomicBoolean returnReferenceErrorFromPolicy = new AtomicBoolean(false);
 
     /**
-     * Creates the {@link SequencedDeadLetterQueue} to be used by this integration test. Subclasses should implement
-     * this method to provide specific queue implementations (e.g., in-memory, JPA, JDBC).
+     * Constructs the {@link SequencedDeadLetterQueue} implementation used during the integration test.
      *
-     * @return A new instance of {@link SequencedDeadLetterQueue} for testing.
+     * @return A {@link SequencedDeadLetterQueue} implementation used during the integration test.
      */
-    protected abstract SequencedDeadLetterQueue<EventMessage> createDeadLetterQueue();
+    protected abstract SequencedDeadLetterQueue<EventMessage> buildDeadLetterQueue();
 
     @BeforeEach
     void setUp() {
         eventHandler = new ProblematicEventHandler();
-        deadLetterQueue = createDeadLetterQueue();
+        deadLetterQueue = buildDeadLetterQueue();
 
         // A policy that ensures a letter is only retried once by adding diagnostics.
         EnqueuePolicy<EventMessage> enqueuePolicy = (letter, cause) -> {
