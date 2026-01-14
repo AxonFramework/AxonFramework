@@ -20,11 +20,11 @@ Whether you are performing a straightforward version bump or a deep architectura
 3. **What is not yet there**
 4. **Missing a Migration Path?**
 
-== Base Migration Changes
+== Base migration changes
 
 Every user migrating from Axon Framework 4.x to 5.x will encounter a set of base changes. These primarily involve package renames and module restructurings.
 
-=== Import and Package Changes
+=== Import and package changes
 
 Many classes have been moved to better align with the new modular structure. The most notable change is the move of Spring-specific and monitoring components into their own extension namespaces, and the nesting of core messaging components under the `org.axonframework.messaging` package.
 
@@ -174,7 +174,7 @@ to
 
 For an exhaustive list of all class-level renames and moves, please refer to the `api-changes.md` file in the root of the Axon Framework repository.
 
-=== Module Restructuring
+=== Module restructuring
 
 Axon Framework 5 has been restructured into more focused modules. This allows for better dependency management and smaller deployment footprints. The following table provides an exhaustive list of the modules available in Axon Framework 5 and their Axon Framework 4 equivalents.
 
@@ -279,7 +279,7 @@ As Axon Framework 5.0 is the first step in this new major version, not all featu
 
 If your application relies heavily on these features, we recommend checking the release notes for future 5.x versions or contacting us for guidance.
 
-== Missing a Migration Path?
+== Missing a migration path?
 
 We aim to cover the most common migration scenarios in the following subsections. However, every application is unique.
 
