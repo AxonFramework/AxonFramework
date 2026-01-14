@@ -30,8 +30,8 @@ import java.util.function.Function;
  * become available at a later stage. For this purpose, the construction is delayed by encapsulating into a function
  * call, invoked on the module build phase.
  * <p>
- * This module represents a workaround for the cases above, since the {@link ModuleBuilder} provides no means
- * to access {@link Configuration} or other components by design.
+ * This module represents a workaround for the cases above, since the {@link ModuleBuilder} provides no means to access
+ * {@link Configuration} or other components by design.
  *
  * @param <S> Type of module to configure lazily.
  * @author Simon Zambrovski
@@ -73,7 +73,11 @@ public class LazyInitializedModule<S extends Module> extends BaseModule<LazyInit
 
         Optional.of(parent.getComponent(ComponentRegistry.class, () -> null))
                 .ifPresentOrElse((r) -> r.registerModule(module),
-                                 () -> componentRegistry(r -> r.registerModule(module)));
+                                 () -> {
+                                     throw new IllegalStateException(
+                                             "Passed configuration contained no component registry.");
+                                 }
+                );
 
         return configuration;
     }

@@ -19,6 +19,7 @@ package org.axonframework.eventsourcing.configuration;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.configuration.DefaultComponentRegistry;
 import org.axonframework.common.configuration.StubLifecycleRegistry;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventsourcing.CriteriaResolver;
@@ -41,6 +42,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.Set;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -50,16 +52,17 @@ import static org.mockito.Mockito.*;
  *
  * @author Mitchell Herrijgers
  * @author Steven van Beelen
+ * @author Simon Zambrovski
  */
 class AnnotatedEventSourcedEntityModuleTest {
 
-    private Configuration parentConfiguration;
     private StubLifecycleRegistry lifecycleRegistry;
+    private DefaultComponentRegistry componentRegistry;
 
     @BeforeEach
     void setUp() {
-        parentConfiguration = EventSourcingConfigurer.create().build();
         lifecycleRegistry = new StubLifecycleRegistry();
+        componentRegistry = new DefaultComponentRegistry();
     }
 
     @Test
@@ -87,33 +90,43 @@ class AnnotatedEventSourcedEntityModuleTest {
         EventSourcedEntityModule<CourseId, Course> testSubject =
                 EventSourcedEntityModule.autodetected(CourseId.class, Course.class);
 
-        assertEquals(expectedEntityName, testSubject.entityName());
+        assertThat(testSubject.entityName()).isEqualTo(expectedEntityName);
     }
 
     @Test
     void repositoryConstructsEventSourcingRepositoryForEntityFactory() {
-        EventSourcedEntityModule.autodetected(CourseId.class, Course.class)
-                                .build(parentConfiguration, lifecycleRegistry);
+
+        componentRegistry.registerModule(EventSourcedEntityModule
+                                                 .autodetected(CourseId.class, Course.class)
+        );
+
+        var parentConfiguration = componentRegistry.build(lifecycleRegistry);
         lifecycleRegistry.start(parentConfiguration);
 
         StateManager stateManager = parentConfiguration.getComponent(StateManager.class);
         Repository<CourseId, Course> result = stateManager.repository(Course.class, CourseId.class);
 
-        assertInstanceOf(EventSourcingRepository.class, result);
+        assertThat(result)
+                .isNotNull()
+                .isInstanceOf(EventSourcingRepository.class);
     }
 
     @Test
     void customCriteriaResolverIsPresentOnResultingEventSourcingRepository() {
-        EventSourcedEntityModule.autodetected(CourseId.class, CustomCriteriaResolverCourse.class)
-                                .build(parentConfiguration, lifecycleRegistry);
-        lifecycleRegistry.start(parentConfiguration);
+        componentRegistry.registerModule(
+                EventSourcedEntityModule.autodetected(CourseId.class, CustomCriteriaResolverCourse.class)
+        );
         ComponentDescriptor componentDescriptor = mock(ComponentDescriptor.class);
+
+        var parentConfiguration = componentRegistry.build(lifecycleRegistry);
+        lifecycleRegistry.start(parentConfiguration);
 
         StateManager stateManager = parentConfiguration.getComponent(StateManager.class);
         Repository<CourseId, CustomCriteriaResolverCourse> result = stateManager.repository(CustomCriteriaResolverCourse.class,
                                                                                             CourseId.class);
 
-        assertInstanceOf(EventSourcingRepository.class, result);
+        assertThat(result).isNotNull()
+                          .isInstanceOf(EventSourcingRepository.class);
         result.describeTo(componentDescriptor);
         verify(componentDescriptor).describeProperty(eq("criteriaResolver"), isA(CustomCriteriaResolver.class));
     }
@@ -121,29 +134,40 @@ class AnnotatedEventSourcedEntityModuleTest {
     @Test
     void customEntityFactoryIsPresentOnResultingEventSourcingRepository() {
         ComponentDescriptor componentDescriptor = mock(ComponentDescriptor.class);
-        EventSourcedEntityModule.autodetected(CourseId.class, CustomEntityFactoryCourse.class)
-                                .build(parentConfiguration, lifecycleRegistry);
+        componentRegistry.registerModule(
+                EventSourcedEntityModule.autodetected(CourseId.class, CustomEntityFactoryCourse.class)
+        );
+
+        var parentConfiguration = componentRegistry.build(lifecycleRegistry);
         lifecycleRegistry.start(parentConfiguration);
 
         StateManager stateManager = parentConfiguration.getComponent(StateManager.class);
         Repository<CourseId, CustomEntityFactoryCourse> result = stateManager.repository(CustomEntityFactoryCourse.class,
                                                                                          CourseId.class);
 
-        assertInstanceOf(EventSourcingRepository.class, result);
+        assertThat(result)
+                .isNotNull()
+                .isInstanceOf(EventSourcingRepository.class);
         result.describeTo(componentDescriptor);
         verify(componentDescriptor).describeProperty(eq("entityFactory"), isA(CustomEventSourcedEntityFactory.class));
     }
 
     @Test
     void metaAnnotatedEventSourcedEntityConstructsAnEventSourcingRepository() {
-        StateManager stateManager = parentConfiguration.getComponent(StateManager.class);
-        EventSourcedEntityModule.autodetected(CourseId.class, MetaAnnotatedCourse.class)
-                                .build(parentConfiguration, lifecycleRegistry);
-        lifecycleRegistry.start(parentConfiguration);
-        Repository<CourseId, MetaAnnotatedCourse> result = stateManager.repository(MetaAnnotatedCourse.class,
-                                                                                   CourseId.class);
+        var module = EventSourcedEntityModule.autodetected(CourseId.class, MetaAnnotatedCourse.class);
+        componentRegistry.registerModule(module);
 
-        assertInstanceOf(EventSourcingRepository.class, result);
+        var parentConfiguration = componentRegistry.build(lifecycleRegistry);
+        lifecycleRegistry.start(parentConfiguration);
+
+
+        StateManager stateManager = parentConfiguration.getComponent(StateManager.class);
+        Repository<CourseId, MetaAnnotatedCourse> result =
+                stateManager.repository(MetaAnnotatedCourse.class, CourseId.class);
+
+        assertThat(result)
+                .isNotNull()
+                .isInstanceOf(EventSourcingRepository.class);
     }
 
     @Test

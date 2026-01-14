@@ -18,15 +18,17 @@ package org.axonframework.extension.springboot;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
+import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.configuration.DefaultComponentRegistry;
 import org.axonframework.common.configuration.Module;
+import org.axonframework.extension.spring.config.SpringComponentRegistry;
+import org.axonframework.extension.springboot.fixture.event.test1.FirstHandler;
+import org.axonframework.extension.springboot.fixture.event.test2.Test2EventHandlingConfiguration;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorModule;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessorModule;
-import org.axonframework.extension.spring.config.SpringComponentRegistry;
-import org.axonframework.extension.springboot.fixture.event.test1.FirstHandler;
-import org.axonframework.extension.springboot.fixture.event.test2.Test2EventHandlingConfiguration;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
@@ -93,20 +95,12 @@ class EventProcessorConfigurationTest {
 
             assertThat(properties.getProcessors().get(KEY1)).isNotNull();
 
-            assertThat(context.getBean(SpringComponentRegistry.class)).isNotNull();
-            Map<String, Module> modules = ReflectionUtils.getFieldValue(
-                    SpringComponentRegistry.class.getDeclaredField("modules"),
-                    context.getBean(SpringComponentRegistry.class)
-            );
-            assertThat(modules).isNotNull();
-            assertThat(modules).hasSize(4);
-            var module1 = modules.get("EventProcessor[" + KEY1 + "]");
-            assertThat(module1).isNotNull();
-            assertThat(module1).isInstanceOf(PooledStreamingEventProcessorModule.class);
+            var springComponentRegistry = context.getBean(SpringComponentRegistry.class);
+            assertThat(springComponentRegistry).isNotNull();
 
-            var module2 = modules.get("EventProcessor[" + KEY2 + "]");
-            assertThat(module2).isNotNull();
-            assertThat(module2).isInstanceOf(PooledStreamingEventProcessorModule.class);
+            assertTwoModulesOfType(springComponentRegistry,
+                                   PooledStreamingEventProcessorModule.class,
+                                   PooledStreamingEventProcessorModule.class);
         }
     }
 
@@ -135,34 +129,50 @@ class EventProcessorConfigurationTest {
             assertThat(settings).isNotNull();
             assertThat(settings.getMode()).isEqualTo(EventProcessorProperties.Mode.SUBSCRIBING);
 
-            assertThat(context.getBean(SpringComponentRegistry.class)).isNotNull();
-            Map<String, Module> modules = ReflectionUtils.getFieldValue(
-                    SpringComponentRegistry.class.getDeclaredField("modules"),
-                    context.getBean(SpringComponentRegistry.class)
-            );
-            assertThat(modules).isNotNull();
-            assertThat(modules).hasSize(4);
+            var springComponentRegistry = context.getBean(SpringComponentRegistry.class);
 
-            Map<String, Configuration> modulesConfigurations = ReflectionUtils.getFieldValue(
-                    SpringComponentRegistry.class.getDeclaredField("moduleConfigurations"),
-                    context.getBean(SpringComponentRegistry.class)
-            );
-
-            var ep1 = "EventProcessor[" + KEY1 + "]";
-            var ep2 = "EventProcessor[" + KEY2 + "]";
-
-            assertThat(modulesConfigurations).hasSize(2);
-            assertThat(modulesConfigurations).containsKeys(ep1, ep2);
-
-            var module1 = modules.get(ep1);
-            assertThat(module1).isNotNull();
-            assertThat(module1).isInstanceOf(SubscribingEventProcessorModule.class);
-
-            var module2 = modules.get(ep2);
-            assertThat(module2).isNotNull();
-            assertThat(module2).isInstanceOf(PooledStreamingEventProcessorModule.class);
+            assertThat(springComponentRegistry).isNotNull();
+            assertTwoModulesOfType(springComponentRegistry,
+                                   SubscribingEventProcessorModule.class,
+                                   PooledStreamingEventProcessorModule.class);
         }
     }
+
+    static void assertTwoModulesOfType(
+            SpringComponentRegistry springComponentRegistry,
+            Class<?> expectedClass1,
+            Class<?> expectedClass2) throws Exception {
+        Map<String, Configuration> moduleConfigurations = ReflectionUtils.getFieldValue(
+                SpringComponentRegistry.class.getDeclaredField("moduleConfigurations"),
+                springComponentRegistry
+        );
+
+        assertThat(moduleConfigurations).isNotNull();
+        assertThat(moduleConfigurations).hasSize(2);
+
+        var moduleConfiguration1 = moduleConfigurations.get("EventProcessor[" + KEY1 + "]");
+        assertThat(moduleConfiguration1).isNotNull();
+        var module1registry = moduleConfiguration1.getComponent(ComponentRegistry.class);
+        Map<String, Module> modules1 = ReflectionUtils.getFieldValue(
+                DefaultComponentRegistry.class.getDeclaredField("modules"),
+                module1registry
+        );
+        assertThat(modules1).isNotNull();
+        assertThat(modules1).hasSize(1);
+        assertThat(modules1.get("EventProcessor[" + KEY1 + "]")).isInstanceOf(expectedClass1);
+
+        var moduleConfiguration2 = moduleConfigurations.get("EventProcessor[" + KEY2 + "]");
+        assertThat(moduleConfiguration2).isNotNull();
+        var module2registry = moduleConfiguration2.getComponent(ComponentRegistry.class);
+        Map<String, Module> modules2 = ReflectionUtils.getFieldValue(
+                DefaultComponentRegistry.class.getDeclaredField("modules"),
+                module2registry
+        );
+        assertThat(modules2).isNotNull();
+        assertThat(modules2).hasSize(1);
+        assertThat(modules2.get("EventProcessor[" + KEY2 + "]")).isInstanceOf(expectedClass2);
+    }
+
 
     @Nested
     class FailToLoadProcessorTest {
@@ -200,7 +210,7 @@ class EventProcessorConfigurationTest {
         @ParameterizedTest
         @MethodSource("configToError")
         @Disabled("Stopped working with port-already-in-use")
-        void dontStartWithWrongConfiguredProcessor(Map<String, String> parameters, String message, int port) throws Exception {
+        void dontStartWithWrongConfiguredProcessor(Map<String, String> parameters, String message, int port) {
             var app = new SpringApplication(MyCustomContext.class);
             app.setLogStartupInfo(false);
             Map<String, Object> props = new HashMap<>();

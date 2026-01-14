@@ -35,6 +35,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 import static org.axonframework.common.util.AssertUtils.assertWithin;
@@ -1685,26 +1686,31 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             TestComponent levelTwoModuleComponent = new TestComponent("root-two");
 
             testSubject.componentRegistry(
-                    cr -> cr.registerComponent(TestComponent.class, "root", rootConfig -> rootComponent)
-                            .registerModule(new TestModule("one").componentRegistry(
-                                    mcr -> mcr.registerComponent(
-                                                      TestComponent.class, "one",
-                                                      c -> c.getOptionalComponent(TestComponent.class, "root")
-                                                            .map(delegate -> new TestComponent(delegate.state + "-one"))
-                                                            .orElseThrow()
-                                              )
-                                              .registerModule(
-                                                      new TestModule("two").componentRegistry(
-                                                              cr2 -> cr2.registerComponent(
-                                                                      TestComponent.class, "two",
-                                                                      c -> c.getOptionalComponent(
-                                                                                    TestComponent.class, "root"
-                                                                            )
-                                                                            .map(delegate -> new TestComponent(
-                                                                                    delegate.state + "-two"
-                                                                            ))
-                                                                            .orElseThrow()))))
-                            )
+                    cr -> {
+                        cr.registerComponent(TestComponent.class, "root", rootConfig -> rootComponent);
+                        cr.registerModule(
+                                new TestModule("one").componentRegistry(
+                                        mcr -> {
+                                            mcr.registerComponent(
+                                                    TestComponent.class, "one",
+                                                    c -> c.getOptionalComponent(TestComponent.class, "root")
+                                                          .map(delegate -> new TestComponent(delegate.state + "-one"))
+                                                          .orElseThrow()
+                                            );
+                                            mcr.registerModule(
+                                                    new TestModule("two").componentRegistry(
+                                                            cr2 -> cr2.registerComponent(
+                                                                    TestComponent.class, "two",
+                                                                    c -> c.getOptionalComponent(
+                                                                                  TestComponent.class, "root"
+                                                                          )
+                                                                          .map(delegate -> new TestComponent(
+                                                                                  delegate.state + "-two"
+                                                                          ))
+                                                                          .orElseThrow())));
+                                        })
+                        );
+                    }
             );
 
             // Root configurer outcome only has own components.
@@ -1714,14 +1720,14 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             assertFalse(rootConfig.getOptionalComponent(TestComponent.class, "two").isPresent());
             // Level one module outcome has own components and access to parent.
             List<Configuration> levelOneConfigurations = rootConfig.getModuleConfigurations();
-            assertEquals(1, levelOneConfigurations.size());
+            assertThat(levelOneConfigurations).hasSize(1);
             Configuration levelOneConfig = levelOneConfigurations.getFirst();
-            assertTrue(levelOneConfig.getOptionalComponent(TestComponent.class, "root").isPresent());
+            assertThat(levelOneConfig.getOptionalComponent(TestComponent.class, "root")).isPresent();
             assertEquals(levelOneModuleComponent, levelOneConfig.getComponent(TestComponent.class, "one"));
             assertFalse(levelOneConfig.getOptionalComponent(TestComponent.class, "two").isPresent());
             // Level two module outcome has own components and access to parent, and parent's parent.
             List<Configuration> levelTwoConfigurations = levelOneConfig.getModuleConfigurations();
-            assertEquals(1, levelTwoConfigurations.size());
+            assertThat(levelTwoConfigurations).hasSize(1);
             Configuration levelTwoConfig = levelTwoConfigurations.getFirst();
             assertTrue(levelTwoConfig.getOptionalComponent(TestComponent.class, "root").isPresent());
             assertTrue(levelTwoConfig.getOptionalComponent(TestComponent.class, "one").isPresent());
@@ -1764,10 +1770,10 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
         }
 
         @Test
-        void decoratingOnlyOccursOnTheModuleLevelItIsInvokedOn() {
+        void decoratingIsInheritedAcrossLevels() {
             String expectedRootComponentState = "root-decorated-by-root";
-            String expectedLevelOneComponentState = "level-one-decorated-by-level-one";
-            String expectedLevelTwoComponentState = "level-two-decorated-by-level-two";
+            String expectedLevelOneComponentState = "level-one-decorated-by-root-decorated-by-level-one";
+            String expectedLevelTwoComponentState = "level-two-decorated-by-root-decorated-by-level-one-decorated-by-level-two";
             testSubject.componentRegistry(
                     cr -> cr.registerComponent(TestComponent.class,
                                                rootConfig -> new TestComponent("root"))
@@ -1784,7 +1790,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                                                               c -> new TestComponent("level-one")
                                                       )
                                                       .registerDecorator(
-                                                              TestComponent.class, 0,
+                                                              TestComponent.class, 1,
                                                               (config, name, delegate) -> new TestComponent(
                                                                       delegate.state() + "-decorated-by-level-one"
                                                               )
@@ -1798,7 +1804,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                                                                                           )
                                                                                   )
                                                                                   .registerDecorator(
-                                                                                          TestComponent.class, 0,
+                                                                                          TestComponent.class, 2,
                                                                                           (config, name, delegate) -> new TestComponent(
                                                                                                   delegate.state()
                                                                                                           + "-decorated-by-level-two")
@@ -1816,14 +1822,14 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             assertNotEquals(expectedLevelTwoComponentState, root.getComponent(TestComponent.class).state());
             // Check decoration on level one.
             List<Configuration> rootModuleConfigs = root.getModuleConfigurations();
-            assertEquals(1, rootModuleConfigs.size());
+            assertThat(rootModuleConfigs).hasSize(1);
             Configuration levelOne = rootModuleConfigs.getFirst();
             assertNotEquals(expectedRootComponentState, levelOne.getComponent(TestComponent.class).state());
             assertEquals(expectedLevelOneComponentState, levelOne.getComponent(TestComponent.class).state());
             assertNotEquals(expectedLevelTwoComponentState, levelOne.getComponent(TestComponent.class).state());
             // Check decoration on level two.
             List<Configuration> levelOneConfigs = levelOne.getModuleConfigurations();
-            assertEquals(1, levelOneConfigs.size());
+            assertThat(levelOneConfigs).hasSize(1);
             Configuration levelTwo = levelOneConfigs.getFirst();
             assertNotEquals(expectedRootComponentState, levelTwo.getComponent(TestComponent.class).state());
             assertNotEquals(expectedLevelOneComponentState, levelTwo.getComponent(TestComponent.class).state());

@@ -24,7 +24,7 @@ import java.util.function.Consumer;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-class HierarchicalConfigurationTest {
+class HierarchicalLifecycleRegistryTest {
 
     @Test
     void childLifecycleHandlersReceiveModuleConfigurationInsteadOfParent() {
@@ -33,15 +33,15 @@ class HierarchicalConfigurationTest {
         var lifecycleRegistry = new StubLifecycleRegistry();
         var startHandlerCalled = new AtomicBoolean();
         var shutdownHandlerCalled = new AtomicBoolean();
-        Configuration configuration = HierarchicalConfiguration.build(
+        Configuration configuration = HierarchicalLifecycleRegistry.build(
                 lifecycleRegistry,
-                (childLifecycleRegistry) -> {
+                childLifecycleRegistry -> {
                     assertNotSame(lifecycleRegistry, childLifecycleRegistry);
-                    childLifecycleRegistry.onStart(42, (c) -> {
+                    childLifecycleRegistry.onStart(42, c -> {
                         assertSame(childConfiguration, c);
                         startHandlerCalled.set(true);
                     });
-                    childLifecycleRegistry.onShutdown(42, (c) -> {
+                    childLifecycleRegistry.onShutdown(42, c -> {
                         assertSame(childConfiguration, c);
                         shutdownHandlerCalled.set(true);
                     });
@@ -65,10 +65,10 @@ class HierarchicalConfigurationTest {
     void propagatesExceptionInLifecycleHandler() {
         var parentConfiguration = mock(Configuration.class);
         var lifecycleRegistry = new StubLifecycleRegistry();
-        Configuration configuration = HierarchicalConfiguration.build(
+        HierarchicalLifecycleRegistry.build(
                 lifecycleRegistry,
-                (childLifecycleRegistry) -> {
-                    childLifecycleRegistry.onStart(42, (Consumer<Configuration>) (c) -> {
+                childLifecycleRegistry -> {
+                    childLifecycleRegistry.onStart(42, (Consumer<Configuration>)c -> {
                         throw new RuntimeException("Expected exception");
                     });
                     return parentConfiguration;

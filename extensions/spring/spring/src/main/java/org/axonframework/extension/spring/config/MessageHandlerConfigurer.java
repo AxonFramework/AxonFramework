@@ -17,6 +17,7 @@
 package org.axonframework.extension.spring.config;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotation.RegistrationScope;
 import org.axonframework.common.configuration.LazyInitializedModule;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
@@ -66,6 +67,7 @@ import java.util.stream.Collectors;
  * @since 4.6.0
  */
 @Internal
+@RegistrationScope("Don't copy this enhancer in order to avoid cyclic module build in Spring Boot.")
 public class MessageHandlerConfigurer implements ConfigurationEnhancer, ApplicationContextAware {
 
     private final Type type;
@@ -166,10 +168,8 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
             var commandHandlingModuleBuilder = CommandHandlingModule
                     .named(moduleName)
                     .commandHandlers();
-            beanDefs.forEach(namedBeanDefinition -> {
-                commandHandlingModuleBuilder
-                        .annotatedCommandHandlingComponent(this.createComponentBuilder(namedBeanDefinition));
-            });
+            beanDefs.forEach(namedBeanDefinition -> commandHandlingModuleBuilder
+                    .annotatedCommandHandlingComponent(this.createComponentBuilder(namedBeanDefinition)));
             registry.registerModule(commandHandlingModuleBuilder.build());
         });
     }
@@ -243,10 +243,8 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
 
         private final Class<? extends Message> messageType;
 
-        // Suppressed to allow instantiation of enumeration.
-        @SuppressWarnings({"rawtypes", "unchecked"})
         Type(Class<? extends Message> messageType) {
-            this.messageType = (Class<? extends Message>) messageType;
+            this.messageType = messageType;
         }
 
         /**

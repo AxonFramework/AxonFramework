@@ -228,10 +228,10 @@ class GenericJpaRepositoryTest {
 
         LegacyDefaultUnitOfWork.startAndGet(null)
                                .executeWithResult((ctx) -> {
-                                   Aggregate<StubJpaAggregate> aggregate = testSubject.newInstance(
+                                   Aggregate<StubJpaAggregate> aggregate1 = testSubject.newInstance(
                                            () -> new StubJpaAggregate("id", expectedFirstPayload, expectedSecondPayload)
                                    );
-                                   aggregate.execute(e -> e.doSomething(expectedThirdPayload));
+                                   aggregate1.execute(e -> e.doSomething(expectedThirdPayload));
                                    return null;
                                });
         CurrentUnitOfWork.commit();
