@@ -239,13 +239,4 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
         );
         return queue.process(sequenceFilter, letter -> processingTask.process(letter, context));
     }
-
-    /**
-     * Returns the {@link SequencedDeadLetterQueue} used by this component.
-     *
-     * @return The dead letter queue.
-     */
-    public SequencedDeadLetterQueue<EventMessage> getQueue() {
-        return queue;
-    }
 }
