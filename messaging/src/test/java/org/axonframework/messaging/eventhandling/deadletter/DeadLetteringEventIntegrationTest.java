@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,6 @@ import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.Decisions;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
-import org.axonframework.messaging.deadletter.InMemorySequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.ThrowableCause;
 import org.axonframework.messaging.eventhandling.AsyncInMemoryStreamableEventSource;
@@ -105,7 +104,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-class DeadLetteringEventIntegrationTest {
+abstract class DeadLetteringEventIntegrationTest {
 
     private static final String PROCESSING_GROUP = "problematicProcessingGroup";
     private static final boolean SUCCEED = true;
@@ -150,13 +149,18 @@ class DeadLetteringEventIntegrationTest {
     private ScheduledExecutorService workerExecutor;
     private final AtomicBoolean returnReferenceErrorFromPolicy = new AtomicBoolean(false);
 
+    /**
+     * Creates the {@link SequencedDeadLetterQueue} to be used by this integration test. Subclasses should implement
+     * this method to provide specific queue implementations (e.g., in-memory, JPA, JDBC).
+     *
+     * @return A new instance of {@link SequencedDeadLetterQueue} for testing.
+     */
+    protected abstract SequencedDeadLetterQueue<EventMessage> createDeadLetterQueue();
+
     @BeforeEach
     void setUp() {
         eventHandler = new ProblematicEventHandler();
-        deadLetterQueue = InMemorySequencedDeadLetterQueue.<EventMessage>builder()
-                                                          .maxSequences(1024)
-                                                          .maxSequenceSize(1024)
-                                                          .build();
+        deadLetterQueue = createDeadLetterQueue();
 
         // A policy that ensures a letter is only retried once by adding diagnostics.
         EnqueuePolicy<EventMessage> enqueuePolicy = (letter, cause) -> {
