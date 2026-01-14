@@ -65,7 +65,7 @@ class HierarchicalLifecycleRegistryTest {
     void propagatesExceptionInLifecycleHandler() {
         var parentConfiguration = mock(Configuration.class);
         var lifecycleRegistry = new StubLifecycleRegistry();
-        Configuration configuration = HierarchicalLifecycleRegistry.build(
+        HierarchicalLifecycleRegistry.build(
                 lifecycleRegistry,
                 (childLifecycleRegistry) -> {
                     childLifecycleRegistry.onStart(42, (Consumer<Configuration>) (c) -> {

@@ -51,12 +51,6 @@ import static org.axonframework.common.configuration.ComponentDefinition.ofType;
 @EnableConfigurationProperties(UpdateCheckerProperties.class)
 public class UpdateCheckerAutoConfiguration {
 
- //   @Bean
- //   @ConditionalOnMissingBean
- //   @Conditional(NotTestEnvironmentCondition.class)
-//    public UsagePropertyProvider usagePropertyProvider(UpdateCheckerProperties properties) {
-//        return UsagePropertyProvider.create(properties);
-//    }
 
     /**
      * Bean creation method for a {@link ConfigurationEnhancer} for Spring-specific {@link UpdateChecker} components.
@@ -103,7 +97,7 @@ public class UpdateCheckerAutoConfiguration {
     static class NotTestEnvironmentCondition implements Condition {
 
         @Override
-        public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
+        public boolean matches(@Nonnull ConditionContext context, @Nonnull AnnotatedTypeMetadata metadata) {
             return !TestEnvironmentDetector.isTestEnvironment();
         }
     }
