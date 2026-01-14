@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.deadletter;
 
-import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -54,7 +53,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -85,11 +83,7 @@ class DeadLetteringEventHandlingComponentTest {
         delegate = new RecordingEventHandlingComponent(TEST_SEQUENCE_ID);
         enqueuePolicy = (letter, cause) -> Decisions.enqueue(cause);
 
-        testSubject = DeadLetteringEventHandlingComponent.builder()
-                                                          .delegate(delegate)
-                                                          .queue(queue)
-                                                          .enqueuePolicy(enqueuePolicy)
-                                                          .build();
+        testSubject = new DeadLetteringEventHandlingComponent(delegate, queue, enqueuePolicy, true);
     }
 
     @Nested
@@ -157,11 +151,9 @@ class DeadLetteringEventHandlingComponentTest {
         @Test
         void enqueuesWhenPolicyDecidesToIgnore() {
             // given - Ignore means "use default behavior" which is to enqueue
-            testSubject = DeadLetteringEventHandlingComponent.builder()
-                                                              .delegate(delegate)
-                                                              .queue(queue)
-                                                              .enqueuePolicy((letter, cause) -> Decisions.ignore())
-                                                              .build();
+            testSubject = new DeadLetteringEventHandlingComponent(
+                    delegate, queue, (letter, cause) -> Decisions.ignore(), true
+            );
 
             RuntimeException testException = new RuntimeException("test failure");
             delegate.setFailWith(testException);
@@ -181,11 +173,9 @@ class DeadLetteringEventHandlingComponentTest {
         @Test
         void doesNotEnqueueWhenPolicyDecidesToDoNotEnqueue() {
             // given
-            testSubject = DeadLetteringEventHandlingComponent.builder()
-                                                              .delegate(delegate)
-                                                              .queue(queue)
-                                                              .enqueuePolicy((letter, cause) -> Decisions.doNotEnqueue())
-                                                              .build();
+            testSubject = new DeadLetteringEventHandlingComponent(
+                    delegate, queue, (letter, cause) -> Decisions.doNotEnqueue(), true
+            );
 
             RuntimeException testException = new RuntimeException("test failure");
             delegate.setFailWith(testException);
@@ -208,11 +198,7 @@ class DeadLetteringEventHandlingComponentTest {
             RuntimeException enqueueException = new RuntimeException("queue failure");
             SequencedDeadLetterQueue<EventMessage> failingQueue = new FailingDeadLetterQueue(enqueueException);
 
-            testSubject = DeadLetteringEventHandlingComponent.builder()
-                                                              .delegate(delegate)
-                                                              .queue(failingQueue)
-                                                              .enqueuePolicy(enqueuePolicy)
-                                                              .build();
+            testSubject = new DeadLetteringEventHandlingComponent(delegate, failingQueue, enqueuePolicy, true);
 
             RuntimeException handlerException = new RuntimeException("handler failure");
             delegate.setFailWith(handlerException);
@@ -236,11 +222,7 @@ class DeadLetteringEventHandlingComponentTest {
             FailingDeadLetterQueue failingQueue = new FailingDeadLetterQueue(enqueueException);
             failingQueue.setContainsResult(true); // Simulate sequence already present
 
-            testSubject = DeadLetteringEventHandlingComponent.builder()
-                                                              .delegate(delegate)
-                                                              .queue(failingQueue)
-                                                              .enqueuePolicy(enqueuePolicy)
-                                                              .build();
+            testSubject = new DeadLetteringEventHandlingComponent(delegate, failingQueue, enqueuePolicy, true);
 
             EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
             ProcessingContext context = new StubProcessingContext();
@@ -261,12 +243,7 @@ class DeadLetteringEventHandlingComponentTest {
         @Test
         void clearsQueueWhenAllowResetIsTrue() {
             // given
-            testSubject = DeadLetteringEventHandlingComponent.builder()
-                                                              .delegate(delegate)
-                                                              .queue(queue)
-                                                              .enqueuePolicy(enqueuePolicy)
-                                                              .allowReset(true)
-                                                              .build();
+            testSubject = new DeadLetteringEventHandlingComponent(delegate, queue, enqueuePolicy, true);
 
             EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
             queue.enqueue(TEST_SEQUENCE_ID, new GenericDeadLetter<>(TEST_SEQUENCE_ID, testEvent)).join();
@@ -287,12 +264,7 @@ class DeadLetteringEventHandlingComponentTest {
         @Test
         void doesNotClearQueueWhenAllowResetIsFalse() {
             // given
-            testSubject = DeadLetteringEventHandlingComponent.builder()
-                                                              .delegate(delegate)
-                                                              .queue(queue)
-                                                              .enqueuePolicy(enqueuePolicy)
-                                                              .allowReset(false)
-                                                              .build();
+            testSubject = new DeadLetteringEventHandlingComponent(delegate, queue, enqueuePolicy, false);
 
             EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
             queue.enqueue(TEST_SEQUENCE_ID, new GenericDeadLetter<>(TEST_SEQUENCE_ID, testEvent)).join();
@@ -366,11 +338,7 @@ class DeadLetteringEventHandlingComponentTest {
                     return otherSequenceId;
                 }
             };
-            testSubject = DeadLetteringEventHandlingComponent.builder()
-                                                              .delegate(delegate)
-                                                              .queue(queue)
-                                                              .enqueuePolicy(enqueuePolicy)
-                                                              .build();
+            testSubject = new DeadLetteringEventHandlingComponent(delegate, queue, enqueuePolicy, true);
 
             queue.enqueue(TEST_SEQUENCE_ID, new GenericDeadLetter<>(TEST_SEQUENCE_ID, testEvent1)).join();
             queue.enqueue(otherSequenceId, new GenericDeadLetter<>(otherSequenceId, testEvent2)).join();
@@ -414,69 +382,39 @@ class DeadLetteringEventHandlingComponentTest {
     }
 
     @Nested
-    class WhenBuilding {
+    class WhenConstructing {
 
         @Test
-        void buildWithDefaultsSucceeds() {
-            // given
-            DeadLetteringEventHandlingComponent.Builder builder = DeadLetteringEventHandlingComponent.builder()
-                    .delegate(delegate)
-                    .queue(queue);
+        void constructsWithDefaultEnqueuePolicyAndAllowReset() {
+            // when
+            DeadLetteringEventHandlingComponent result =
+                    new DeadLetteringEventHandlingComponent(delegate, queue);
 
-            // when / then
-            assertDoesNotThrow(builder::build);
+            // then
+            assertThat(result.getQueue()).isSameAs(queue);
         }
 
         @Test
-        void buildWithNullDelegateThrowsAxonConfigurationException() {
+        void constructsWithCustomEnqueuePolicyAndAllowReset() {
             // given
-            DeadLetteringEventHandlingComponent.Builder builder = DeadLetteringEventHandlingComponent.builder();
+            EnqueuePolicy<EventMessage> customPolicy = (letter, cause) -> Decisions.doNotEnqueue();
 
-            // when / then
-            assertThatThrownBy(() -> builder.delegate(null))
-                    .isInstanceOf(AxonConfigurationException.class);
+            // when
+            DeadLetteringEventHandlingComponent result =
+                    new DeadLetteringEventHandlingComponent(delegate, queue, customPolicy, true);
+
+            // then
+            assertThat(result.getQueue()).isSameAs(queue);
         }
 
         @Test
-        void buildWithoutDelegateThrowsAxonConfigurationException() {
-            // given
-            DeadLetteringEventHandlingComponent.Builder builder = DeadLetteringEventHandlingComponent.builder()
-                    .queue(queue);
+        void constructsWithAllowResetFalse() {
+            // when
+            DeadLetteringEventHandlingComponent result =
+                    new DeadLetteringEventHandlingComponent(delegate, queue, enqueuePolicy, false);
 
-            // when / then
-            assertThatThrownBy(builder::build)
-                    .isInstanceOf(AxonConfigurationException.class);
-        }
-
-        @Test
-        void buildWithNullQueueThrowsAxonConfigurationException() {
-            // given
-            DeadLetteringEventHandlingComponent.Builder builder = DeadLetteringEventHandlingComponent.builder();
-
-            // when / then
-            assertThatThrownBy(() -> builder.queue(null))
-                    .isInstanceOf(AxonConfigurationException.class);
-        }
-
-        @Test
-        void buildWithoutQueueThrowsAxonConfigurationException() {
-            // given
-            DeadLetteringEventHandlingComponent.Builder builder = DeadLetteringEventHandlingComponent.builder()
-                    .delegate(delegate);
-
-            // when / then
-            assertThatThrownBy(builder::build)
-                    .isInstanceOf(AxonConfigurationException.class);
-        }
-
-        @Test
-        void buildWithNullEnqueuePolicyThrowsAxonConfigurationException() {
-            // given
-            DeadLetteringEventHandlingComponent.Builder builder = DeadLetteringEventHandlingComponent.builder();
-
-            // when / then
-            assertThatThrownBy(() -> builder.enqueuePolicy(null))
-                    .isInstanceOf(AxonConfigurationException.class);
+            // then
+            assertThat(result.getQueue()).isSameAs(queue);
         }
     }
 
