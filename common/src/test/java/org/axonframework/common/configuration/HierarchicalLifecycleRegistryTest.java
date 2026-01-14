@@ -35,13 +35,13 @@ class HierarchicalLifecycleRegistryTest {
         var shutdownHandlerCalled = new AtomicBoolean();
         Configuration configuration = HierarchicalLifecycleRegistry.build(
                 lifecycleRegistry,
-                (childLifecycleRegistry) -> {
+                childLifecycleRegistry -> {
                     assertNotSame(lifecycleRegistry, childLifecycleRegistry);
-                    childLifecycleRegistry.onStart(42, (c) -> {
+                    childLifecycleRegistry.onStart(42, c -> {
                         assertSame(childConfiguration, c);
                         startHandlerCalled.set(true);
                     });
-                    childLifecycleRegistry.onShutdown(42, (c) -> {
+                    childLifecycleRegistry.onShutdown(42, c -> {
                         assertSame(childConfiguration, c);
                         shutdownHandlerCalled.set(true);
                     });
@@ -67,8 +67,8 @@ class HierarchicalLifecycleRegistryTest {
         var lifecycleRegistry = new StubLifecycleRegistry();
         HierarchicalLifecycleRegistry.build(
                 lifecycleRegistry,
-                (childLifecycleRegistry) -> {
-                    childLifecycleRegistry.onStart(42, (Consumer<Configuration>) (c) -> {
+                childLifecycleRegistry -> {
+                    childLifecycleRegistry.onStart(42, (Consumer<Configuration>)c -> {
                         throw new RuntimeException("Expected exception");
                     });
                     return parentConfiguration;

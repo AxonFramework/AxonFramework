@@ -349,7 +349,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
             var moduleRegistry = this.copyWithDecoratorsAndEnhancers();
             var builtModuleConfiguration = HierarchicalLifecycleRegistry.build(
                     lifecycleRegistry,
-                    (childLifecycleRegistry) -> {
+                    childLifecycleRegistry -> {
                         var local = moduleRegistry.createLocalConfiguration(configuration);
                         var moduleConfiguration = module.build(local, childLifecycleRegistry);
                         return moduleRegistry.buildNested(moduleConfiguration, childLifecycleRegistry);
