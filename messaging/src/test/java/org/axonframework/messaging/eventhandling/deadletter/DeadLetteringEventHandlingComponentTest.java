@@ -22,6 +22,7 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.Decisions;
+import org.axonframework.messaging.deadletter.EnqueueDecision;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.InMemorySequencedDeadLetterQueue;
@@ -48,8 +49,13 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Collections;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -68,7 +74,7 @@ class DeadLetteringEventHandlingComponentTest {
     private static final String TEST_SEQUENCE_ID = "test-aggregate-id";
 
     private SequencedDeadLetterQueue<EventMessage> queue;
-    private RecordingEventHandlingComponent delegate;
+    private StubEventHandlingComponent delegate;
     private EnqueuePolicy<EventMessage> enqueuePolicy;
 
     private DeadLetteringEventHandlingComponent testSubject;
@@ -80,7 +86,7 @@ class DeadLetteringEventHandlingComponentTest {
                                                  .maxSequences(128)
                                                  .maxSequenceSize(128)
                                                  .build();
-        delegate = new RecordingEventHandlingComponent(TEST_SEQUENCE_ID);
+        delegate = new StubEventHandlingComponent(TEST_SEQUENCE_ID);
         enqueuePolicy = (letter, cause) -> Decisions.enqueue(cause);
 
         testSubject = new DeadLetteringEventHandlingComponent(delegate, queue, enqueuePolicy, true);
@@ -328,7 +334,7 @@ class DeadLetteringEventHandlingComponentTest {
             EventMessage testEvent2 = EventTestUtils.asEventMessage("payload-2");
 
             // Create delegate that returns different sequence IDs based on event
-            delegate = new RecordingEventHandlingComponent(TEST_SEQUENCE_ID) {
+            delegate = new StubEventHandlingComponent(TEST_SEQUENCE_ID) {
                 @Nonnull
                 @Override
                 public Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
@@ -429,16 +435,16 @@ class DeadLetteringEventHandlingComponentTest {
     }
 
     /**
-     * A recording {@link EventHandlingComponent} that tracks handled events and can be configured to fail.
+     * A stub {@link EventHandlingComponent} that tracks handled events and can be configured to fail.
      */
-    private static class RecordingEventHandlingComponent implements EventHandlingComponent {
+    private static class StubEventHandlingComponent implements EventHandlingComponent {
 
         private final String sequenceId;
         private final AtomicBoolean handled = new AtomicBoolean(false);
         private final AtomicReference<EventMessage> handledEvent = new AtomicReference<>();
         private RuntimeException failWith;
 
-        RecordingEventHandlingComponent(String sequenceId) {
+        StubEventHandlingComponent(String sequenceId) {
             this.sequenceId = sequenceId;
         }
 
@@ -486,15 +492,15 @@ class DeadLetteringEventHandlingComponentTest {
 
         @Nonnull
         @Override
-        public RecordingEventHandlingComponent subscribe(@Nonnull QualifiedName name,
-                                                         @Nonnull EventHandler handler) {
+        public StubEventHandlingComponent subscribe(@Nonnull QualifiedName name,
+                                                    @Nonnull EventHandler handler) {
             // No-op for test purposes
             return this;
         }
 
         @Nonnull
         @Override
-        public RecordingEventHandlingComponent subscribe(@Nonnull ResetHandler resetHandler) {
+        public StubEventHandlingComponent subscribe(@Nonnull ResetHandler resetHandler) {
             // No-op for test purposes
             return this;
         }
@@ -518,92 +524,92 @@ class DeadLetteringEventHandlingComponentTest {
 
         @Nonnull
         @Override
-        public java.util.concurrent.CompletableFuture<Void> enqueue(@Nonnull Object sequenceIdentifier,
+        public CompletableFuture<Void> enqueue(@Nonnull Object sequenceIdentifier,
                                                                      @Nonnull DeadLetter<? extends EventMessage> letter) {
-            return java.util.concurrent.CompletableFuture.failedFuture(failureException);
+            return CompletableFuture.failedFuture(failureException);
         }
 
         @Nonnull
         @Override
-        public java.util.concurrent.CompletableFuture<Boolean> enqueueIfPresent(
+        public CompletableFuture<Boolean> enqueueIfPresent(
                 @Nonnull Object sequenceIdentifier,
-                @Nonnull java.util.function.Supplier<DeadLetter<? extends EventMessage>> letterBuilder) {
+                @Nonnull Supplier<DeadLetter<? extends EventMessage>> letterBuilder) {
             if (containsResult) {
-                return java.util.concurrent.CompletableFuture.failedFuture(failureException);
+                return CompletableFuture.failedFuture(failureException);
             }
-            return java.util.concurrent.CompletableFuture.completedFuture(false);
+            return CompletableFuture.completedFuture(false);
         }
 
         @Nonnull
         @Override
-        public java.util.concurrent.CompletableFuture<Void> evict(@Nonnull DeadLetter<? extends EventMessage> letter) {
-            return java.util.concurrent.CompletableFuture.completedFuture(null);
+        public CompletableFuture<Void> evict(@Nonnull DeadLetter<? extends EventMessage> letter) {
+            return CompletableFuture.completedFuture(null);
         }
 
         @Nonnull
         @Override
-        public java.util.concurrent.CompletableFuture<Void> requeue(
+        public CompletableFuture<Void> requeue(
                 @Nonnull DeadLetter<? extends EventMessage> letter,
-                @Nonnull java.util.function.UnaryOperator<DeadLetter<? extends EventMessage>> letterUpdater) {
-            return java.util.concurrent.CompletableFuture.completedFuture(null);
+                @Nonnull UnaryOperator<DeadLetter<? extends EventMessage>> letterUpdater) {
+            return CompletableFuture.completedFuture(null);
         }
 
         @Nonnull
         @Override
-        public java.util.concurrent.CompletableFuture<Boolean> contains(@Nonnull Object sequenceIdentifier) {
-            return java.util.concurrent.CompletableFuture.completedFuture(containsResult);
+        public CompletableFuture<Boolean> contains(@Nonnull Object sequenceIdentifier) {
+            return CompletableFuture.completedFuture(containsResult);
         }
 
         @Nonnull
         @Override
-        public java.util.concurrent.CompletableFuture<Iterable<DeadLetter<? extends EventMessage>>> deadLetterSequence(
+        public CompletableFuture<Iterable<DeadLetter<? extends EventMessage>>> deadLetterSequence(
                 @Nonnull Object sequenceIdentifier) {
-            return java.util.concurrent.CompletableFuture.completedFuture(Collections.emptyList());
+            return CompletableFuture.completedFuture(Collections.emptyList());
         }
 
         @Nonnull
         @Override
-        public java.util.concurrent.CompletableFuture<Iterable<Iterable<DeadLetter<? extends EventMessage>>>> deadLetters() {
-            return java.util.concurrent.CompletableFuture.completedFuture(Collections.emptyList());
+        public CompletableFuture<Iterable<Iterable<DeadLetter<? extends EventMessage>>>> deadLetters() {
+            return CompletableFuture.completedFuture(Collections.emptyList());
         }
 
         @Nonnull
         @Override
-        public java.util.concurrent.CompletableFuture<Boolean> isFull(@Nonnull Object sequenceIdentifier) {
-            return java.util.concurrent.CompletableFuture.completedFuture(false);
+        public CompletableFuture<Boolean> isFull(@Nonnull Object sequenceIdentifier) {
+            return CompletableFuture.completedFuture(false);
         }
 
         @Nonnull
         @Override
-        public java.util.concurrent.CompletableFuture<Long> size() {
-            return java.util.concurrent.CompletableFuture.completedFuture(0L);
+        public CompletableFuture<Long> size() {
+            return CompletableFuture.completedFuture(0L);
         }
 
         @Nonnull
         @Override
-        public java.util.concurrent.CompletableFuture<Long> sequenceSize(@Nonnull Object sequenceIdentifier) {
-            return java.util.concurrent.CompletableFuture.completedFuture(0L);
+        public CompletableFuture<Long> sequenceSize(@Nonnull Object sequenceIdentifier) {
+            return CompletableFuture.completedFuture(0L);
         }
 
         @Nonnull
         @Override
-        public java.util.concurrent.CompletableFuture<Long> amountOfSequences() {
-            return java.util.concurrent.CompletableFuture.completedFuture(0L);
+        public CompletableFuture<Long> amountOfSequences() {
+            return CompletableFuture.completedFuture(0L);
         }
 
         @Nonnull
         @Override
-        public java.util.concurrent.CompletableFuture<Boolean> process(
-                @Nonnull java.util.function.Predicate<DeadLetter<? extends EventMessage>> sequenceFilter,
-                @Nonnull java.util.function.Function<DeadLetter<? extends EventMessage>,
-                        java.util.concurrent.CompletableFuture<org.axonframework.messaging.deadletter.EnqueueDecision<EventMessage>>> processingTask) {
-            return java.util.concurrent.CompletableFuture.completedFuture(false);
+        public CompletableFuture<Boolean> process(
+                @Nonnull Predicate<DeadLetter<? extends EventMessage>> sequenceFilter,
+                @Nonnull Function<DeadLetter<? extends EventMessage>,
+                                        CompletableFuture<EnqueueDecision<EventMessage>>> processingTask) {
+            return CompletableFuture.completedFuture(false);
         }
 
         @Nonnull
         @Override
-        public java.util.concurrent.CompletableFuture<Void> clear() {
-            return java.util.concurrent.CompletableFuture.completedFuture(null);
+        public CompletableFuture<Void> clear() {
+            return CompletableFuture.completedFuture(null);
         }
     }
 }
