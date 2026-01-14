@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,38 +54,23 @@ import static org.axonframework.messaging.deadletter.ThrowableCause.truncated;
  * {@link SequencedDeadLetterQueue#enqueue(Object, DeadLetter) enqueued}. Subsequent events belonging to an already
  * enqueued "sequence identifier" are also enqueued to maintain event ordering in the face of failures.
  * <p>
- * This component provides operations to {@link #processAny() process} {@link DeadLetter dead letters} it has enqueued
- * through the {@link SequencedDeadLetterProcessor} contract. It ensures the same delegate
+ * This component provides operations to {@link #processAny(ProcessingContext)} {@link DeadLetter dead letters} it has
+ * enqueued through the {@link SequencedDeadLetterProcessor} contract. It ensures the same delegate
  * {@link EventHandlingComponent} is used when processing dead letters as with regular event handling.
  * <p>
- * Key differences from AF4's {@code DeadLetteringEventHandlerInvoker}:
- * <ul>
- *   <li>Uses the decorator pattern via {@link DelegatingEventHandlingComponent}</li>
- *   <li>All queue operations are async via {@link CompletableFuture}</li>
- *   <li>Uses {@link ProcessingContext} for sequence identifier caching (no per-Segment cache needed)</li>
- *   <li>Error detection via {@link MessageStream#onErrorContinue} instead of try/catch</li>
- * </ul>
  *
  * @author Steven van Beelen
  * @author Mitchell Herrijgers
  * @author Mateusz Nowak
- * @since 5.0.0
  * @see SequencedDeadLetterQueue
  * @see SequencedDeadLetterProcessor
  * @see EnqueuePolicy
+ * @since 5.0.0
  */
-public class DeadLetteringEventHandlingComponent
-        extends DelegatingEventHandlingComponent
+public class DeadLetteringEventHandlingComponent extends DelegatingEventHandlingComponent
         implements SequencedDeadLetterProcessor<EventMessage> {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-
-    /**
-     * A {@link Context.ResourceKey} to cache sequence identifiers during processing. The cache is stored in the
-     * {@link ProcessingContext} and automatically cleaned up when processing completes.
-     */
-    private static final Context.ResourceKey<SequenceIdentifierCache> CACHE_KEY =
-            Context.ResourceKey.withLabel("DeadLetteringEventHandlingComponent.sequenceCache");
 
     private final SequencedDeadLetterQueue<EventMessage> queue;
     private final EnqueuePolicy<EventMessage> enqueuePolicy;
@@ -107,8 +92,8 @@ public class DeadLetteringEventHandlingComponent
      * Instantiate a builder to construct a {@link DeadLetteringEventHandlingComponent}.
      * <p>
      * The {@link EnqueuePolicy} defaults to returning {@link Decisions#enqueue(Throwable)} that truncates the
-     * {@link Throwable#getMessage()} size to {@code 1024} characters when invoked for any dead letter.
-     * The {@code allowReset} defaults to {@code false}.
+     * {@link Throwable#getMessage()} size to {@code 1024} characters when invoked for any dead letter. The
+     * {@code allowReset} defaults to {@code false}.
      * <p>
      * Providing a {@code delegate} {@link EventHandlingComponent} and a {@link SequencedDeadLetterQueue} are
      * <b>hard requirements</b> and must be provided.
@@ -123,33 +108,22 @@ public class DeadLetteringEventHandlingComponent
     @Override
     public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
                                                @Nonnull ProcessingContext context) {
-        Object sequenceIdentifier = getSequenceIdentifier(event, context);
+        Object sequenceIdentifier = sequenceIdentifierFor(event, context);
 
         // Check if the sequence is already dead-lettered (async operation)
         CompletableFuture<MessageStream<Message>> resultFuture = queue.contains(sequenceIdentifier)
-                .thenCompose(isDeadLettered -> {
-                    if (isDeadLettered) {
-                        return handleAlreadyDeadLettered(event, sequenceIdentifier);
-                    } else {
-                        return handleNormally(event, context, sequenceIdentifier);
-                    }
-                });
+                                                                      .thenCompose(isDeadLettered -> {
+                                                                          if (isDeadLettered) {
+                                                                              return handleAlreadyDeadLettered(event,
+                                                                                                               sequenceIdentifier);
+                                                                          } else {
+                                                                              return handleNormally(event,
+                                                                                                    context,
+                                                                                                    sequenceIdentifier);
+                                                                          }
+                                                                      });
 
         return DelayedMessageStream.create(resultFuture).ignoreEntries().cast();
-    }
-
-    /**
-     * Gets the sequence identifier for the given event, using the cache stored in the {@link ProcessingContext}.
-     * <p>
-     * The cache is created per processing batch and automatically cleaned up when processing completes.
-     *
-     * @param event   The event to get the sequence identifier for.
-     * @param context The processing context containing the cache.
-     * @return The sequence identifier for the event.
-     */
-    private Object getSequenceIdentifier(EventMessage event, ProcessingContext context) {
-        SequenceIdentifierCache cache = context.computeResourceIfAbsent(CACHE_KEY, SequenceIdentifierCache::new);
-        return cache.computeIfAbsent(event.identifier(), key -> delegate.sequenceIdentifierFor(event, context));
     }
 
     /**
@@ -200,9 +174,9 @@ public class DeadLetteringEventHandlingComponent
     /**
      * Handles an error during event processing by applying the enqueue policy.
      * <p>
-     * After the dead-letter decision is made and executed (enqueue or evict), processing continues normally.
-     * The error is considered "handled" by being dead-lettered or evicted, and is not propagated to the processor.
-     * This allows the processor to continue with the next event rather than aborting the work package.
+     * After the dead-letter decision is made and executed (enqueue or evict), processing continues normally. The error
+     * is considered "handled" by being dead-lettered or evicted, and is not propagated to the processor. This allows
+     * the processor to continue with the next event rather than aborting the work package.
      *
      * @param event              The event that failed.
      * @param sequenceIdentifier The sequence identifier.
@@ -248,7 +222,8 @@ public class DeadLetteringEventHandlingComponent
     public MessageStream.Empty<Message> handle(@Nonnull ResetContext resetContext, @Nonnull ProcessingContext context) {
         if (allowReset) {
             CompletableFuture<MessageStream<Message>> resultFuture = queue.clear()
-                    .thenApply(v -> delegate.handle(resetContext, context));
+                                                                          .thenApply(v -> delegate.handle(resetContext,
+                                                                                                          context));
             return DelayedMessageStream.create(resultFuture).ignoreEntries().cast();
         }
         return delegate.handle(resetContext, context);
@@ -274,30 +249,11 @@ public class DeadLetteringEventHandlingComponent
     }
 
     /**
-     * A cache for sequence identifiers, stored in the {@link ProcessingContext} to avoid repeated lookups.
-     */
-    private static class SequenceIdentifierCache {
-
-        private final Map<String, Object> cache = new ConcurrentHashMap<>();
-
-        /**
-         * Computes the sequence identifier if absent, using the given computation function.
-         *
-         * @param eventId The event identifier.
-         * @param compute The function to compute the sequence identifier.
-         * @return The cached or computed sequence identifier.
-         */
-        Object computeIfAbsent(String eventId, java.util.function.Function<String, Object> compute) {
-            return cache.computeIfAbsent(eventId, compute);
-        }
-    }
-
-    /**
      * Builder class to instantiate a {@link DeadLetteringEventHandlingComponent}.
      * <p>
      * The {@link EnqueuePolicy} defaults to returning {@link Decisions#enqueue(Throwable)} that truncates the
-     * {@link Throwable#getMessage()} size to {@code 1024} characters when invoked for any dead letter.
-     * The {@code allowReset} defaults to {@code false}.
+     * {@link Throwable#getMessage()} size to {@code 1024} characters when invoked for any dead letter. The
+     * {@code allowReset} defaults to {@code false}.
      * <p>
      * Providing a {@code delegate} {@link EventHandlingComponent} and a {@link SequencedDeadLetterQueue} are
      * <b>hard requirements</b> and must be provided.
@@ -334,11 +290,11 @@ public class DeadLetteringEventHandlingComponent
         }
 
         /**
-         * Sets the {@link EnqueuePolicy} used to decide whether a {@link DeadLetter dead letter} should be added to
-         * the {@link SequencedDeadLetterQueue}.
+         * Sets the {@link EnqueuePolicy} used to decide whether a {@link DeadLetter dead letter} should be added to the
+         * {@link SequencedDeadLetterQueue}.
          * <p>
-         * Defaults to returning {@link Decisions#enqueue(Throwable)} that truncates the
-         * {@link Throwable#getMessage()} size to {@code 1024} characters when invoked for any dead letter.
+         * Defaults to returning {@link Decisions#enqueue(Throwable)} that truncates the {@link Throwable#getMessage()}
+         * size to {@code 1024} characters when invoked for any dead letter.
          *
          * @param enqueuePolicy The {@link EnqueuePolicy} to use for enqueue decisions.
          * @return The current Builder instance for fluent interfacing.
