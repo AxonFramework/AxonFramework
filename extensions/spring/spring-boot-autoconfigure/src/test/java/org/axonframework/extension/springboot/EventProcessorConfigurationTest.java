@@ -104,7 +104,6 @@ class EventProcessorConfigurationTest {
         }
     }
 
-
     @Nested
     @SpringBootTest(
             classes = {EventProcessorConfigurationTest.MyCustomContext.class},
