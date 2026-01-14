@@ -30,10 +30,9 @@ import org.axonframework.messaging.deadletter.DeadLetterQueueOverflowException;
 import org.axonframework.messaging.deadletter.EnqueueDecision;
 import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.NoSuchDeadLetterException;
-import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
+import org.axonframework.messaging.deadletter.SyncSequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.WrongDeadLetterTypeException;
 import org.axonframework.conversion.Serializer;
-import org.axonframework.common.FutureUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +43,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
@@ -53,7 +51,7 @@ import jakarta.annotation.Nonnull;
 import static org.axonframework.common.BuilderUtils.*;
 
 /**
- * JPA-backed implementation of the {@link SequencedDeadLetterQueue}, used for storing dead letters containing
+ * JPA-backed implementation of the {@link SyncSequencedDeadLetterQueue}, used for storing dead letters containing
  * {@link EventMessage Eventmessages} durably as a {@link DeadLetterEntry}.
  * <p>
  * Keeps the insertion order intact by saving an incremented index within each unique sequence, backed by the
@@ -76,7 +74,7 @@ import static org.axonframework.common.BuilderUtils.*;
  * @author Mitchell Herrijgers
  * @since 4.6.0
  */
-public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements SequencedDeadLetterQueue<M> {
+public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements SyncSequencedDeadLetterQueue<M> {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -95,7 +93,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
     private final Duration claimDuration;
 
     /**
-     * Instantiate a JPA {@link SequencedDeadLetterQueue} based on the given {@link Builder builder}.
+     * Instantiate a JPA {@link SyncSequencedDeadLetterQueue} based on the given {@link Builder builder}.
      *
      * @param builder The {@link Builder} used to instantiate a {@link JpaSequencedDeadLetterQueue} instance.
      */
@@ -126,15 +124,15 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
         return new Builder<>();
     }
 
-    @Nonnull
     @Override
-    public CompletableFuture<Void> enqueue(@Nonnull Object sequenceIdentifier, @Nonnull DeadLetter<? extends M> letter) {
+    public void enqueue(@Nonnull Object sequenceIdentifier, @Nonnull DeadLetter<? extends M> letter)
+            throws DeadLetterQueueOverflowException {
         String stringSequenceIdentifier = toStringSequenceIdentifier(sequenceIdentifier);
-        if (isFullSync(stringSequenceIdentifier)) {
-            return CompletableFuture.failedFuture(new DeadLetterQueueOverflowException(
+        if (isFull(stringSequenceIdentifier)) {
+            throw new DeadLetterQueueOverflowException(
                     "No room left to enqueue [" + letter.message() + "] for identifier ["
                             + stringSequenceIdentifier + "] since the queue is full."
-            ));
+            );
         }
 
         Optional<Cause> optionalCause = letter.cause();
@@ -177,13 +175,11 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
                         processingGroup);
             entityManager().persist(deadLetter);
         });
-        return CompletableFuture.completedFuture(null);
     }
 
-    @Nonnull
     @Override
     @SuppressWarnings("unchecked")
-    public CompletableFuture<Void> evict(@Nonnull DeadLetter<? extends M> letter) {
+    public void evict(DeadLetter<? extends M> letter) {
         if (!(letter instanceof JpaDeadLetter)) {
             throw new WrongDeadLetterTypeException(
                     String.format("Evict should be called with a JpaDeadLetter instance. Instead got: [%s]",
@@ -208,13 +204,12 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
                                     jpaDeadLetter.getSequenceIdentifier());
                     }
                 });
-        return CompletableFuture.completedFuture(null);
     }
 
-    @Nonnull
     @Override
-    public CompletableFuture<Void> requeue(@Nonnull DeadLetter<? extends M> letter,
-                                           @Nonnull UnaryOperator<DeadLetter<? extends M>> letterUpdater) {
+    public void requeue(@Nonnull DeadLetter<? extends M> letter,
+                        @Nonnull UnaryOperator<DeadLetter<? extends M>> letterUpdater)
+            throws NoSuchDeadLetterException {
         if (!(letter instanceof JpaDeadLetter)) {
             throw new WrongDeadLetterTypeException(String.format(
                     "Requeue should be called with a JpaDeadLetter instance. Instead got: [%s]",
@@ -225,9 +220,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
         String id = ((JpaDeadLetter<? extends M>) letter).getId();
         DeadLetterEntry letterEntity = entityManager.find(DeadLetterEntry.class, id);
         if (letterEntity == null) {
-            return CompletableFuture.failedFuture(
-                    new NoSuchDeadLetterException(String.format("Can not find dead letter with id [%s] to requeue.", id))
-            );
+            throw new NoSuchDeadLetterException(String.format("Can not find dead letter with id [%s] to requeue.", id));
         }
         letterEntity.setDiagnostics(updatedLetter.diagnostics(), eventSerializer);
         letterEntity.setLastTouched(updatedLetter.lastTouched());
@@ -238,22 +231,19 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
                     letterEntity.getDeadLetterId(),
                     updatedLetter.cause());
         entityManager.persist(letterEntity);
-        return CompletableFuture.completedFuture(null);
     }
 
-    @Nonnull
     @Override
-    public CompletableFuture<Boolean> contains(@Nonnull Object sequenceIdentifier) {
+    public boolean contains(@Nonnull Object sequenceIdentifier) {
         String stringSequenceIdentifier = toStringSequenceIdentifier(sequenceIdentifier);
-        return CompletableFuture.completedFuture(sequenceSizeSync(stringSequenceIdentifier) > 0);
+        return sequenceSize(stringSequenceIdentifier) > 0;
     }
 
-    @Nonnull
     @Override
-    public CompletableFuture<Iterable<DeadLetter<? extends M>>> deadLetterSequence(@Nonnull Object sequenceIdentifier) {
+    public Iterable<DeadLetter<? extends M>> deadLetterSequence(@Nonnull Object sequenceIdentifier) {
         String stringSequenceIdentifier = toStringSequenceIdentifier(sequenceIdentifier);
 
-        Iterable<DeadLetter<? extends M>> result = new PagingJpaQueryIterable<>(
+        return new PagingJpaQueryIterable<>(
                 queryPageSize,
                 transactionManager,
                 () -> entityManagerProvider
@@ -269,12 +259,10 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
                         .setParameter("identifier", stringSequenceIdentifier),
                 this::toLetter
         );
-        return CompletableFuture.completedFuture(result);
     }
 
-    @Nonnull
     @Override
-    public CompletableFuture<Iterable<Iterable<DeadLetter<? extends M>>>> deadLetters() {
+    public Iterable<Iterable<DeadLetter<? extends M>>> deadLetters() {
         List<String> sequenceIdentifiers = entityManagerProvider
                 .getEntityManager()
                 .createQuery(
@@ -287,7 +275,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
                 .getResultList();
 
 
-        Iterable<Iterable<DeadLetter<? extends M>>> result = () -> {
+        return () -> {
             Iterator<String> sequenceIterator = sequenceIdentifiers.iterator();
             return new Iterator<>() {
                 @Override
@@ -298,30 +286,10 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
                 @Override
                 public Iterable<DeadLetter<? extends M>> next() {
                     String next = sequenceIterator.next();
-                    return deadLetterSequenceSync(next);
+                    return deadLetterSequence(next);
                 }
             };
         };
-        return CompletableFuture.completedFuture(result);
-    }
-
-    private Iterable<DeadLetter<? extends M>> deadLetterSequenceSync(String sequenceIdentifier) {
-        return new PagingJpaQueryIterable<>(
-                queryPageSize,
-                transactionManager,
-                () -> entityManagerProvider
-                        .getEntityManager()
-                        .createQuery(
-                                "select dl from DeadLetterEntry dl "
-                                        + "where dl.processingGroup=:processingGroup "
-                                        + "and dl.sequenceIdentifier=:identifier "
-                                        + "order by dl.sequenceIndex",
-                                DeadLetterEntry.class
-                        )
-                        .setParameter(PROCESSING_GROUP_PARAM, processingGroup)
-                        .setParameter("identifier", sequenceIdentifier),
-                this::toLetter
-        );
     }
 
     /**
@@ -347,22 +315,16 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
                                    converter.convert(entry.getMessage(), eventSerializer, genericSerializer));
     }
 
-    @Nonnull
     @Override
-    public CompletableFuture<Boolean> isFull(@Nonnull Object sequenceIdentifier) {
+    public boolean isFull(@Nonnull Object sequenceIdentifier) {
         String stringSequenceIdentifier = toStringSequenceIdentifier(sequenceIdentifier);
-        return CompletableFuture.completedFuture(isFullSync(stringSequenceIdentifier));
+        long numberInSequence = sequenceSize(stringSequenceIdentifier);
+        return numberInSequence > 0 ? numberInSequence >= maxSequenceSize : amountOfSequences() >= maxSequences;
     }
 
-    private boolean isFullSync(String sequenceIdentifier) {
-        long numberInSequence = sequenceSizeSync(sequenceIdentifier);
-        return numberInSequence > 0 ? numberInSequence >= maxSequenceSize : amountOfSequencesSync() >= maxSequences;
-    }
-
-    @Nonnull
     @Override
-    public CompletableFuture<Boolean> process(@Nonnull Predicate<DeadLetter<? extends M>> sequenceFilter,
-                           @Nonnull Function<DeadLetter<? extends M>, CompletableFuture<EnqueueDecision<M>>> processingTask) {
+    public boolean process(@Nonnull Predicate<DeadLetter<? extends M>> sequenceFilter,
+                           @Nonnull Function<DeadLetter<? extends M>, EnqueueDecision<M>> processingTask) {
 
         JpaDeadLetter<M> claimedLetter = null;
         Iterator<JpaDeadLetter<M>> iterator = findFirstLetterOfEachAvailableSequence(10);
@@ -374,10 +336,21 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
         }
 
         if (claimedLetter != null) {
-            return CompletableFuture.completedFuture(processLetterAndFollowing(claimedLetter, processingTask));
+            return processLetterAndFollowing(claimedLetter, processingTask);
         }
         logger.info("No claimable and/or matching dead letters found to process.");
-        return CompletableFuture.completedFuture(false);
+        return false;
+    }
+
+    @Override
+    public boolean process(@Nonnull Function<DeadLetter<? extends M>, EnqueueDecision<M>> processingTask) {
+        Iterator<JpaDeadLetter<M>> iterator = findFirstLetterOfEachAvailableSequence(1);
+        if (iterator.hasNext()) {
+            JpaDeadLetter<M> deadLetter = iterator.next();
+            claimDeadLetter(deadLetter);
+            return processLetterAndFollowing(deadLetter, processingTask);
+        }
+        return false;
     }
 
     /**
@@ -395,11 +368,11 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
      * @return Whether processing all letters in this sequence was successful.
      */
     private boolean processLetterAndFollowing(JpaDeadLetter<M> firstDeadLetter,
-                                              Function<DeadLetter<? extends M>, CompletableFuture<EnqueueDecision<M>>> processingTask) {
+                                              Function<DeadLetter<? extends M>, EnqueueDecision<M>> processingTask) {
         JpaDeadLetter<M> deadLetter = firstDeadLetter;
         while (deadLetter != null) {
             logger.info("Processing dead letter with id [{}] at index [{}]", deadLetter.getId(), deadLetter.getIndex());
-            EnqueueDecision<M> decision = FutureUtils.joinAndUnwrap(processingTask.apply(deadLetter));
+            EnqueueDecision<M> decision = processingTask.apply(deadLetter);
             if (!decision.shouldEnqueue()) {
                 JpaDeadLetter<M> oldLetter = deadLetter;
                 DeadLetterEntry deadLetterEntry = findNextDeadLetter(oldLetter);
@@ -515,26 +488,18 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
         return GenericDeadLetter.clock.instant().minus(claimDuration);
     }
 
-    @Nonnull
     @Override
-    public CompletableFuture<Void> clear() {
+    public void clear() {
         transactionManager.executeInTransaction(
                 () -> entityManagerProvider.getEntityManager()
                                            .createQuery(
                                                    "delete from DeadLetterEntry dl where dl.processingGroup=:processingGroup")
                                            .setParameter(PROCESSING_GROUP_PARAM, processingGroup)
                                            .executeUpdate());
-        return CompletableFuture.completedFuture(null);
     }
 
-    @Nonnull
     @Override
-    public CompletableFuture<Long> sequenceSize(@Nonnull Object sequenceIdentifier) {
-        String stringSequenceIdentifier = toStringSequenceIdentifier(sequenceIdentifier);
-        return CompletableFuture.completedFuture(sequenceSizeSync(stringSequenceIdentifier));
-    }
-
-    private long sequenceSizeSync(String sequenceIdentifier) {
+    public long sequenceSize(@Nonnull Object sequenceIdentifier) {
         return transactionManager.fetchInTransaction(
                 () -> entityManagerProvider.getEntityManager().createQuery(
                                                    "select count(dl) from DeadLetterEntry dl "
@@ -547,26 +512,20 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
                                            .getSingleResult());
     }
 
-    @Nonnull
     @Override
-    public CompletableFuture<Long> size() {
-        return CompletableFuture.completedFuture(transactionManager.fetchInTransaction(
+    public long size() {
+        return transactionManager.fetchInTransaction(
                 () -> entityManagerProvider.getEntityManager().createQuery(
                                                    "select count(dl) from DeadLetterEntry dl "
                                                            + "where dl.processingGroup=:processingGroup",
                                                    Long.class
                                            )
                                            .setParameter(PROCESSING_GROUP_PARAM, processingGroup)
-                                           .getSingleResult()));
+                                           .getSingleResult());
     }
 
-    @Nonnull
     @Override
-    public CompletableFuture<Long> amountOfSequences() {
-        return CompletableFuture.completedFuture(amountOfSequencesSync());
-    }
-
-    private long amountOfSequencesSync() {
+    public long amountOfSequences() {
         return transactionManager.fetchInTransaction(
                 () -> entityManagerProvider.getEntityManager().createQuery(
                                                    "select count(distinct dl.sequenceIdentifier) from DeadLetterEntry dl "
