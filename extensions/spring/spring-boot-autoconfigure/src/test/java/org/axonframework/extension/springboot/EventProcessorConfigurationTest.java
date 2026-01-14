@@ -210,8 +210,7 @@ class EventProcessorConfigurationTest {
         @ParameterizedTest
         @MethodSource("configToError")
         @Disabled("Stopped working with port-already-in-use")
-        void dontStartWithWrongConfiguredProcessor(Map<String, String> parameters, String message, int port)
-                throws Exception {
+        void dontStartWithWrongConfiguredProcessor(Map<String, String> parameters, String message, int port) {
             var app = new SpringApplication(MyCustomContext.class);
             app.setLogStartupInfo(false);
             Map<String, Object> props = new HashMap<>();

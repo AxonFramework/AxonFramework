@@ -145,8 +145,9 @@ class AnnotatedEventSourcedEntityModuleTest {
         Repository<CourseId, CustomEntityFactoryCourse> result = stateManager.repository(CustomEntityFactoryCourse.class,
                                                                                          CourseId.class);
 
-        assertThat(result).isNotNull();
-        assertThat(result).isInstanceOf(EventSourcingRepository.class);
+        assertThat(result)
+                .isNotNull()
+                .isInstanceOf(EventSourcingRepository.class);
         result.describeTo(componentDescriptor);
         verify(componentDescriptor).describeProperty(eq("entityFactory"), isA(CustomEventSourcedEntityFactory.class));
     }
@@ -164,8 +165,9 @@ class AnnotatedEventSourcedEntityModuleTest {
         Repository<CourseId, MetaAnnotatedCourse> result =
                 stateManager.repository(MetaAnnotatedCourse.class, CourseId.class);
 
-        assertThat(result).isNotNull();
-        assertThat(result).isInstanceOf(EventSourcingRepository.class);
+        assertThat(result)
+                .isNotNull()
+                .isInstanceOf(EventSourcingRepository.class);
     }
 
     @Test
