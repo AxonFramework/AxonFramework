@@ -50,7 +50,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -76,10 +75,7 @@ class DeadLetteringEventHandlingComponentTest {
     @BeforeEach
     void setUp() {
         GenericDeadLetter.clock = Clock.systemDefaultZone();
-        queue = InMemorySequencedDeadLetterQueue.<EventMessage>builder()
-                                                .maxSequences(128)
-                                                .maxSequenceSize(128)
-                                                .build();
+        queue = InMemorySequencedDeadLetterQueue.<EventMessage>builder().build();
         delegate = new StubEventHandlingComponent(TEST_SEQUENCE_ID);
         enqueuePolicy = (letter, cause) -> Decisions.enqueue(cause);
 
@@ -97,9 +93,9 @@ class DeadLetteringEventHandlingComponentTest {
 
             // when
             MessageStream.Empty<Message> result = testSubject.handle(testEvent, context);
-            result.asCompletableFuture().join();
 
             // then
+            assertSuccessfulStream(result);
             assertTrue(delegate.wasHandled());
             assertThat(delegate.handledEvent()).isEqualTo(testEvent);
             assertFalse(queue.contains(TEST_SEQUENCE_ID).join());
@@ -119,9 +115,9 @@ class DeadLetteringEventHandlingComponentTest {
 
             // when
             MessageStream.Empty<Message> result = testSubject.handle(secondEvent, context);
-            result.asCompletableFuture().join();
 
             // then - delegate should NOT be called because sequence is already dead-lettered
+            assertSuccessfulStream(result);
             assertFalse(delegate.wasHandled());
             assertThat(queue.sequenceSize(TEST_SEQUENCE_ID).join()).isEqualTo(2);
         }
@@ -139,10 +135,9 @@ class DeadLetteringEventHandlingComponentTest {
 
             // when
             MessageStream.Empty<Message> result = testSubject.handle(testEvent, context);
-            // The stream should complete even with error (error is enqueued)
-            result.asCompletableFuture().exceptionally(ex -> null).join();
 
-            // then
+            // then - error should be present (enqueued)
+            assertFailedStream(result);
             assertTrue(delegate.wasHandled());
             assertTrue(queue.contains(TEST_SEQUENCE_ID).join());
             assertThat(queue.sequenceSize(TEST_SEQUENCE_ID).join()).isEqualTo(1);
@@ -163,9 +158,9 @@ class DeadLetteringEventHandlingComponentTest {
 
             // when
             MessageStream.Empty<Message> result = testSubject.handle(testEvent, context);
-            result.asCompletableFuture().exceptionally(ex -> null).join();
 
-            // then - Ignore.shouldEnqueue() returns true, so event should be enqueued
+            // then - Ignore.shouldEnqueue() returns true, so event should be enqueued, error present
+            assertFailedStream(result);
             assertTrue(delegate.wasHandled());
             assertTrue(queue.contains(TEST_SEQUENCE_ID).join());
         }
@@ -185,9 +180,9 @@ class DeadLetteringEventHandlingComponentTest {
 
             // when
             MessageStream.Empty<Message> result = testSubject.handle(testEvent, context);
-            result.asCompletableFuture().exceptionally(ex -> null).join();
 
-            // then
+            // then - error should be present but not enqueued
+            assertFailedStream(result);
             assertTrue(delegate.wasHandled());
             assertFalse(queue.contains(TEST_SEQUENCE_ID).join());
         }
@@ -213,9 +208,7 @@ class DeadLetteringEventHandlingComponentTest {
             MessageStream.Empty<Message> result = testSubject.handle(testEvent, context);
 
             // then - the enqueue failure should propagate
-            assertThatThrownBy(() -> result.asCompletableFuture().join())
-                    .hasCauseInstanceOf(RuntimeException.class)
-                    .hasMessageContaining("queue failure");
+            assertFailedStreamWithError(result, RuntimeException.class, "queue failure");
         }
 
         @Test
@@ -237,9 +230,7 @@ class DeadLetteringEventHandlingComponentTest {
             MessageStream.Empty<Message> result = testSubject.handle(testEvent, context);
 
             // then - the enqueueIfPresent failure should propagate
-            assertThatThrownBy(() -> result.asCompletableFuture().join())
-                    .hasCauseInstanceOf(RuntimeException.class)
-                    .hasMessageContaining("queue failure");
+            assertFailedStreamWithError(result, RuntimeException.class, "queue failure");
         }
     }
 
@@ -260,9 +251,9 @@ class DeadLetteringEventHandlingComponentTest {
 
             // when
             MessageStream.Empty<Message> result = testSubject.handle(resetContext, context);
-            result.asCompletableFuture().join();
 
             // then
+            assertSuccessfulStream(result);
             assertFalse(queue.contains(TEST_SEQUENCE_ID).join());
             assertThat(queue.size().join()).isEqualTo(0L);
         }
@@ -281,9 +272,9 @@ class DeadLetteringEventHandlingComponentTest {
 
             // when
             MessageStream.Empty<Message> result = testSubject.handle(resetContext, context);
-            result.asCompletableFuture().join();
 
             // then - queue should NOT be cleared
+            assertSuccessfulStream(result);
             assertTrue(queue.contains(TEST_SEQUENCE_ID).join());
             assertThat(queue.size().join()).isEqualTo(1L);
         }
@@ -385,6 +376,23 @@ class DeadLetteringEventHandlingComponentTest {
             assertTrue(queue.contains(TEST_SEQUENCE_ID).join());
             assertThat(queue.sequenceSize(TEST_SEQUENCE_ID).join()).isEqualTo(1);
         }
+    }
+
+    private static void assertSuccessfulStream(MessageStream.Empty<Message> result) {
+        assertTrue(result.error().isEmpty());
+    }
+
+    private static void assertFailedStream(MessageStream.Empty<Message> result) {
+        assertTrue(result.error().isPresent());
+    }
+
+    private static void assertFailedStreamWithError(MessageStream.Empty<Message> result,
+                                                    Class<? extends Throwable> expectedType,
+                                                    String expectedMessage) {
+        assertTrue(result.error().isPresent());
+        Throwable error = result.error().get();
+        assertThat(error).isInstanceOf(expectedType);
+        assertThat(error.getMessage()).contains(expectedMessage);
     }
 
     /**
