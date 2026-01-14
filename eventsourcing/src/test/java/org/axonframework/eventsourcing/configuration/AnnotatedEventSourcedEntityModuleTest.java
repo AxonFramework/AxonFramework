@@ -152,7 +152,6 @@ class AnnotatedEventSourcedEntityModuleTest {
 
     @Test
     void metaAnnotatedEventSourcedEntityConstructsAnEventSourcingRepository() {
-
         var module = EventSourcedEntityModule.autodetected(CourseId.class, MetaAnnotatedCourse.class);
         componentRegistry.registerModule(module);
 
@@ -161,8 +160,8 @@ class AnnotatedEventSourcedEntityModuleTest {
 
 
         StateManager stateManager = parentConfiguration.getComponent(StateManager.class);
-        Repository<CourseId, MetaAnnotatedCourse> result = stateManager.repository(MetaAnnotatedCourse.class,
-                                                                                   CourseId.class);
+        Repository<CourseId, MetaAnnotatedCourse> result =
+                stateManager.repository(MetaAnnotatedCourse.class, CourseId.class);
 
         assertThat(result).isNotNull();
         assertThat(result).isInstanceOf(EventSourcingRepository.class);
