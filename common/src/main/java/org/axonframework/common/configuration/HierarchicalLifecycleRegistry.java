@@ -24,10 +24,10 @@ import java.util.function.Function;
 import static java.util.Objects.requireNonNull;
 
 /**
- * The HierarchicalLifecycleRegistry is a configuration that will ensure the to-be-built child configuration will be passed
- * a {@link LifecycleRegistry} that is a child of the parent configuration's {@link LifecycleRegistry}. This will ensure
- * that the child configuration's start- and shutdown handlers receive the child configuration, so they can retrieve
- * their own components.
+ * The HierarchicalLifecycleRegistry is a configuration that will ensure the to-be-built child configuration will be
+ * passed a {@link LifecycleRegistry} that is a child of the parent configuration's {@link LifecycleRegistry}. This will
+ * ensure that the child configuration's start- and shutdown handlers receive the child configuration, so they can
+ * retrieve their own components.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0
@@ -38,9 +38,9 @@ public class HierarchicalLifecycleRegistry implements LifecycleRegistry {
     private final Configuration childConfiguration;
 
     /**
-     * Builds a {@link Configuration} based on the passed {@code childConfigurationBuilder}. This builder will
-     * receive a {@link LifecycleRegistry} that is a child of the passed {@code parentLifecycleRegistry}.  The builder
-     * is created with a new {@link LifecycleRegistry} that is scoped to the child configuration. This will ensure child
+     * Builds a {@link Configuration} based on the passed {@code childConfigurationBuilder}. This builder will receive a
+     * {@link LifecycleRegistry} that is a child of the passed {@code parentLifecycleRegistry}.  The builder is created
+     * with a new {@link LifecycleRegistry} that is scoped to the child configuration. This will ensure child
      * configuration lifecycle handlers are called with the child configuration, not with the parent, which would leave
      * them unable to find their own components due to the encapsulation.
      *
@@ -50,12 +50,10 @@ public class HierarchicalLifecycleRegistry implements LifecycleRegistry {
      *                                  {@code parentLifecycleRegistry}.
      * @return The child configuration that was built using the passed {@code childConfigurationBuilder}.
      */
-    public static Configuration build(
-            LifecycleRegistry parentLifecycleRegistry,
-            Function<LifecycleRegistry, Configuration> childConfigurationBuilder
-    ) {
-        HierarchicalLifecycleRegistry hierarchicalLifecycleRegistry = new HierarchicalLifecycleRegistry(parentLifecycleRegistry,
-                                                                                            childConfigurationBuilder);
+    public static Configuration build(LifecycleRegistry parentLifecycleRegistry,
+                                      Function<LifecycleRegistry, Configuration> childConfigurationBuilder) {
+        HierarchicalLifecycleRegistry hierarchicalLifecycleRegistry =
+                new HierarchicalLifecycleRegistry(parentLifecycleRegistry, childConfigurationBuilder);
         return hierarchicalLifecycleRegistry.getConfiguration();
     }
 
