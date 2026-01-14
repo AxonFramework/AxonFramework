@@ -86,7 +86,8 @@ public class DefaultComponentRegistry implements ComponentRegistry {
      */
     DefaultComponentRegistry copyWithDecoratorsAndEnhancers() {
         return create(
-                this.decoratorDefinitions, this.enhancers.values(),
+                this.decoratorDefinitions,
+                this.enhancers.values(),
                 this.disabledEnhancers
         );
     }
@@ -106,22 +107,27 @@ public class DefaultComponentRegistry implements ComponentRegistry {
             @Nonnull Collection<ConfigurationEnhancer> enhancers,
             @Nonnull Collection<Class<? extends ConfigurationEnhancer>> disabledEnhancers) {
         var registry = new DefaultComponentRegistry().disableEnhancerScanning();
-        var registrationsForAncestors = not(
+        var shouldRegisterForChildRegistry = not(
                 isTypeAnnotatedWithHavingAttributeValue(
                         RegistrationScope.class,
-                        "registrationScope",
+                        "scope",
                         RegistrationScope.Scope.CURRENT
                 )
         );
         registry.enhancers.putAll(
-                enhancers.stream().filter(registrationsForAncestors)
+                enhancers.stream()
+                         .filter(shouldRegisterForChildRegistry)
                          .collect(toMap(e -> e.getClass().getName(), e -> e))
         );
         registry.disabledEnhancers.addAll(
-                disabledEnhancers.stream().filter(registrationsForAncestors).toList()
+                disabledEnhancers.stream()
+                                 .filter(shouldRegisterForChildRegistry)
+                                 .toList()
         );
         registry.decoratorDefinitions.addAll(
-                decoratorDefinitions.stream().filter(registrationsForAncestors).collect(Collectors.toSet())
+                decoratorDefinitions.stream()
+                                    .filter(shouldRegisterForChildRegistry)
+                                    .collect(Collectors.toSet())
         );
         return registry;
     }
@@ -266,7 +272,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
      * Creates a local configuration, for a given parent and current registry as a component.
      *
      * @param parent The parent configuration to serve as parent for the created result.
-     * @return new local configuration with parent referencing to components of the current registry.
+     * @return A new local configuration with parent referencing to components of the current registry.
      */
     @Internal
     public Configuration createLocalConfiguration(Configuration parent) {
