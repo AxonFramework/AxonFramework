@@ -71,7 +71,7 @@
         <slf4j.version>2.0.17</slf4j.version>
         <!-- Metrics -->
         <dropwizard.metrics.version>4.2.37</dropwizard.metrics.version>
-        <micrometer.version>1.16.1</micrometer.version>
+        <micrometer.version>1.16.2</micrometer.version>
         <!-- Other -->
         <byte-buddy.version>1.18.3</byte-buddy.version>
         <commons-io.version>2.21.0</commons-io.version>
@@ -81,7 +81,7 @@
         <eaio-uuid.version>3.2</eaio-uuid.version>
         <equalsverifier.version>4.3</equalsverifier.version>
         <!-- Reactive -->
-        <projectreactor.version>3.8.1</projectreactor.version>
+        <projectreactor.version>3.8.2</projectreactor.version>
         <reactive.streams.spec.version>1.0.4</reactive.streams.spec.version>
         <!-- Conversion -->
         <avro.version>1.12.1</avro.version>
