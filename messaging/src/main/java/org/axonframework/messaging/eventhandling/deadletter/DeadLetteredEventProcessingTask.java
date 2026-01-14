@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.deadletter;
 
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -37,20 +38,13 @@ import java.util.concurrent.CompletableFuture;
  * Used by {@link DeadLetteringEventHandlingComponent} to process dead letters through the delegate
  * {@link EventHandlingComponent}. The task ensures the dead letter is stored in the {@link ProcessingContext} so that
  * parameter resolvers can access it during processing.
- * <p>
- * Key differences from AF4's implementation:
- * <ul>
- *   <li>Uses {@link ProcessingContext} instead of {@code LegacyUnitOfWork}</li>
- *   <li>Returns {@link CompletableFuture CompletableFuture&lt;EnqueueDecision&gt;} for async processing</li>
- *   <li>Stores dead letter in {@link ProcessingContext} using {@link DeadLetter#RESOURCE_KEY}</li>
- *   <li>Error detection via {@link MessageStream} completion instead of try/catch</li>
- * </ul>
  *
  * @author Steven van Beelen
  * @author Mitchell Herrijgers
  * @author Mateusz Nowak
  * @since 5.0.0
  */
+@Internal
 class DeadLetteredEventProcessingTask {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
@@ -92,12 +86,12 @@ class DeadLetteredEventProcessingTask {
             logger.debug("Start evaluation of dead letter with message id [{}].", letter.message().identifier());
         }
 
-        // Add dead letter and message to context for parameter resolvers
         context.putResource(DeadLetter.RESOURCE_KEY, letter);
         Message.addToContext(context, letter.message());
 
         MessageStream.Empty<Message> result = delegate.handle(letter.message(), context);
 
+        // todo: should I attach to result or ProcessingContext lifecycle?
         return result.reduce(null, (acc, entry) -> acc)
                      .handle((ignored, error) -> {
                          if (error != null) {
