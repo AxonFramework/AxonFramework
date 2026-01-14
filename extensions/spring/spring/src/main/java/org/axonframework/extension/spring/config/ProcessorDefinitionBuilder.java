@@ -52,10 +52,9 @@ class ProcessorDefinitionBuilder<T extends EventProcessorConfiguration>
      * @param mode The processor mode (type).
      */
     public ProcessorDefinitionBuilder(@Nonnull String name, @Nonnull EventProcessorSettings.ProcessorMode mode) {
-        Assert.notNull(name, () -> "Processor name must not be null");
         Assert.notNull(mode, () -> "Processor mode must not be null");
         this.mode = mode;
-        this.name = name;
+        this.name = Assert.nonEmpty(name, "Processor name must not be null");
     }
 
     @Override
@@ -76,7 +75,8 @@ class ProcessorDefinitionBuilder<T extends EventProcessorConfiguration>
     @Override
     @Nonnull
     public ProcessorDefinitionConfigurationStep<T> assigningHandlers(
-            @Nonnull Predicate<ProcessorDefinition.EventHandlerDescriptor> selector) {
+            @Nonnull Predicate<ProcessorDefinition.EventHandlerDescriptor> selector
+    ) {
         Assert.notNull(selector, () -> "Selector predicate must not be null");
         this.selector = selector;
         return this;
@@ -95,11 +95,13 @@ class ProcessorDefinitionBuilder<T extends EventProcessorConfiguration>
     }
 
     @Override
+    @Nonnull
     public EventProcessorSettings.ProcessorMode mode() {
         return mode;
     }
 
     @Override
+    @Nonnull
     public String name() {
         return name;
     }

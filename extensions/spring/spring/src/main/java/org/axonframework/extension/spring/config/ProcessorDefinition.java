@@ -17,6 +17,7 @@
 package org.axonframework.extension.spring.config;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorConfiguration;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorConfiguration;
@@ -66,7 +67,8 @@ public interface ProcessorDefinition {
      */
     @Nonnull
     static ProcessorDefinitionSelectorStep<PooledStreamingEventProcessorConfiguration> pooledStreamingProcessor(
-            @Nonnull String name) {
+            @Nonnull String name
+    ) {
         return new ProcessorDefinitionBuilder<>(name, EventProcessorSettings.ProcessorMode.POOLED);
     }
 
@@ -82,9 +84,9 @@ public interface ProcessorDefinition {
      */
     @Nonnull
     static ProcessorDefinitionSelectorStep<SubscribingEventProcessorConfiguration> subscribingProcessor(
-            @Nonnull String name) {
-        return new ProcessorDefinitionBuilder<>(name, EventProcessorSettings.ProcessorMode.SUBSCRIBING
-        );
+            @Nonnull String name
+    ) {
+        return new ProcessorDefinitionBuilder<>(name, EventProcessorSettings.ProcessorMode.SUBSCRIBING);
     }
 
     /**
@@ -109,6 +111,7 @@ public interface ProcessorDefinition {
      *
      * @return The processor name.
      */
+    @Nonnull
     String name();
 
     /**
@@ -116,6 +119,7 @@ public interface ProcessorDefinition {
      *
      * @return The processor mode.
      */
+    @Nonnull
     EventProcessorSettings.ProcessorMode mode();
 
     /**
@@ -131,6 +135,7 @@ public interface ProcessorDefinition {
          *
          * @return The bean name.
          */
+        @Nonnull
         String beanName();
 
         /**
@@ -145,6 +150,7 @@ public interface ProcessorDefinition {
          *
          * @return The bean type.
          */
+        @Nullable
         Class<?> beanType();
 
         /**
@@ -152,6 +158,7 @@ public interface ProcessorDefinition {
          *
          * @return The event handler bean.
          */
+        @Nonnull
         Object resolveBean();
 
         /**
@@ -159,6 +166,7 @@ public interface ProcessorDefinition {
          *
          * @return The component builder.
          */
+        @Nonnull
         ComponentBuilder<Object> component();
     }
 

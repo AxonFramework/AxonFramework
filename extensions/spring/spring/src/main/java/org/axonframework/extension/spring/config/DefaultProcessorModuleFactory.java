@@ -79,7 +79,7 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
      * {@inheritDoc}
      * <p>
      * This implementation groups handlers by their assigned processor name (determined by
-     * {@link #resolveProcessorName(ProcessorDefinition.EventHandlerDescriptor)}), then creates an
+     * {@link #assignedProcessor(ProcessorDefinition.EventHandlerDescriptor)}), then creates an
      * {@link EventProcessorModule} for each processor with its assigned handlers.
      */
     @Nonnull
@@ -88,7 +88,7 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
 
         Set<EventProcessorModule> modules = new LinkedHashSet<>();
 
-        var assignments = handlers.stream().collect(Collectors.groupingBy(this::resolveProcessorName));
+        var assignments = handlers.stream().collect(Collectors.groupingBy(this::assignedProcessor));
 
         for (ProcessorDefinition definition : processorDefinitions) {
             if (!assignments.containsKey(definition.name())) {
@@ -175,7 +175,7 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
      * @return The name of the processor this handler should be assigned to.
      * @throws AxonConfigurationException If multiple processor definitions match the handler.
      */
-    private String resolveProcessorName(ProcessorDefinition.EventHandlerDescriptor handler) {
+    private String assignedProcessor(ProcessorDefinition.EventHandlerDescriptor handler) {
         Set<String> matches = new HashSet<>();
         for (ProcessorDefinition processorDefinition : processorDefinitions) {
             if (processorDefinition.matchesSelector(handler)) {

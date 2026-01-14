@@ -17,6 +17,7 @@
 package org.axonframework.extension.spring.config;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.ComponentRegistry;
@@ -223,16 +224,19 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
         }
 
         @Override
+        @Nullable
         public Class<?> beanType() {
             return beanFactory.getType(beanName);
         }
 
         @Override
+        @Nonnull
         public Object resolveBean() {
             return beanFactory.getBean(beanName);
         }
 
         @Override
+        @Nonnull
         public ComponentBuilder<Object> component() {
             return c -> resolveBean();
         }
