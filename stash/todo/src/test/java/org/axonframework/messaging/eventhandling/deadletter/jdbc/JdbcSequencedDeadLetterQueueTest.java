@@ -25,8 +25,8 @@ import org.axonframework.messaging.core.unitofwork.transaction.TransactionManage
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.GenericDeadLetter;
-import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
-import org.axonframework.messaging.deadletter.SequencedDeadLetterQueueTest;
+import org.axonframework.messaging.deadletter.SyncSequencedDeadLetterQueue;
+import org.axonframework.messaging.deadletter.SyncSequencedDeadLetterQueueTest;
 import org.axonframework.messaging.deadletter.WrongDeadLetterTypeException;
 import org.axonframework.conversion.json.JacksonSerializer;
 import org.hsqldb.jdbc.JDBCDataSource;
@@ -49,11 +49,11 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Implementation of the {@link SequencedDeadLetterQueueTest}, validating the {@link JdbcSequencedDeadLetterQueue}.
+ * Implementation of the {@link SyncSequencedDeadLetterQueueTest}, validating the {@link JdbcSequencedDeadLetterQueue}.
  *
  * @author Steven van Beelen
  */
-class JdbcSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<EventMessage> {
+class JdbcSequencedDeadLetterQueueTest extends SyncSequencedDeadLetterQueueTest<EventMessage> {
 
     private static final int MAX_SEQUENCES_AND_SEQUENCE_SIZE = 64;
     private static final String TEST_PROCESSING_GROUP = "some-processing-group";
@@ -65,7 +65,7 @@ class JdbcSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Even
     private final DeadLetterSchema schema = DeadLetterSchema.defaultSchema();
 
     @Override
-    protected SequencedDeadLetterQueue<EventMessage> buildTestSubject() {
+    protected SyncSequencedDeadLetterQueue<EventMessage> buildTestSubject() {
         dataSource = dataSource();
         transactionManager = transactionManager(dataSource);
         jdbcDeadLetterQueue = JdbcSequencedDeadLetterQueue.builder()
