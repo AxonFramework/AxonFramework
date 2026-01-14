@@ -25,15 +25,16 @@ import java.lang.annotation.Target;
 /**
  * Marker to specify the registration scope for objects that are registered in the registry.
  * <p>
- *
- * {@link Scope#CURRENT} never be copied to the child registry, if that is created. {@link Scope#ANCESTORS} will be copied
- * to the child registry (and later to its children), if that is created.
- * <br />
+ * Whenever the scope is set to {@link Scope#CURRENT}, the annotated component will never be copied to a child registry
+ * once it's created. Using the scope {@link Scope#CHILDREN} will ensure the annotated component is copied to a child
+ * registry (and later to its children), once it's created.
+ * <p>
  * This annotation is intended to be put on {@link org.axonframework.common.configuration.ConfigurationEnhancer} and
  * {@link org.axonframework.common.configuration.DecoratorDefinition} classes to control their registration scopes.
  * </p>
  *
  * @author Simon Zambrovski
+ * @since 5.1.0
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
@@ -49,9 +50,10 @@ public @interface RegistrationScope {
 
     /**
      * Sets the registration scope for the instance.
+     *
      * @return The registration scope.
      */
-    Scope registrationScope() default Scope.CURRENT;
+    Scope scope() default Scope.CURRENT;
 
     /**
      * Registration scope.
@@ -62,8 +64,8 @@ public @interface RegistrationScope {
          */
         CURRENT,
         /**
-         * Register for current registry, but copy to all ancestor registries, created from it.
+         * Register for current registry, but copy to all child registries, created from it.
          */
-        ANCESTORS
+        CHILDREN
     }
 }
