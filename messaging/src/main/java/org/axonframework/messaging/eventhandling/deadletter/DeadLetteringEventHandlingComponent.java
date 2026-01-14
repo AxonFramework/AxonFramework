@@ -17,7 +17,6 @@
 package org.axonframework.messaging.eventhandling.deadletter;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.core.DelayedMessageStream;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
@@ -40,7 +39,6 @@ import java.lang.invoke.MethodHandles;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 
-import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.messaging.deadletter.ThrowableCause.truncated;
 
 /**
@@ -68,37 +66,46 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
         implements SequencedDeadLetterProcessor<EventMessage> {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+    private static final EnqueuePolicy<EventMessage> DEFAULT_ENQUEUE_POLICY =
+            (letter, cause) -> Decisions.enqueue(truncated(cause));
 
     private final SequencedDeadLetterQueue<EventMessage> queue;
     private final EnqueuePolicy<EventMessage> enqueuePolicy;
     private final boolean allowReset;
 
     /**
-     * Instantiate a {@link DeadLetteringEventHandlingComponent} based on the given {@link Builder builder}.
+     * Instantiate a {@link DeadLetteringEventHandlingComponent} with the given {@code delegate} and {@code queue},
+     * using the default {@link EnqueuePolicy} and allowing reset.
+     * <p>
+     * The default policy returns {@link Decisions#enqueue(Throwable)} that truncates the
+     * {@link Throwable#getMessage()} size to {@code 1024} characters when invoked for any dead letter.
      *
-     * @param builder The {@link Builder} used to instantiate a {@link DeadLetteringEventHandlingComponent} instance.
+     * @param delegate The {@link EventHandlingComponent} to delegate event handling to.
+     * @param queue    The {@link SequencedDeadLetterQueue} to store dead letters in.
      */
-    protected DeadLetteringEventHandlingComponent(Builder builder) {
-        super(builder.delegate);
-        this.queue = builder.queue;
-        this.enqueuePolicy = builder.enqueuePolicy;
-        this.allowReset = builder.allowReset;
+    public DeadLetteringEventHandlingComponent(@Nonnull EventHandlingComponent delegate,
+                                               @Nonnull SequencedDeadLetterQueue<EventMessage> queue) {
+        this(delegate, queue, DEFAULT_ENQUEUE_POLICY, true);
     }
 
     /**
-     * Instantiate a builder to construct a {@link DeadLetteringEventHandlingComponent}.
-     * <p>
-     * The {@link EnqueuePolicy} defaults to returning {@link Decisions#enqueue(Throwable)} that truncates the
-     * {@link Throwable#getMessage()} size to {@code 1024} characters when invoked for any dead letter. The
-     * {@code allowReset} defaults to {@code false}.
-     * <p>
-     * Providing a {@code delegate} {@link EventHandlingComponent} and a {@link SequencedDeadLetterQueue} are
-     * <b>hard requirements</b> and must be provided.
+     * Instantiate a {@link DeadLetteringEventHandlingComponent} with the given {@code delegate}, {@code queue},
+     * custom {@link EnqueuePolicy}, and reset behavior.
      *
-     * @return A builder that can construct a {@link DeadLetteringEventHandlingComponent}.
+     * @param delegate      The {@link EventHandlingComponent} to delegate event handling to.
+     * @param queue         The {@link SequencedDeadLetterQueue} to store dead letters in.
+     * @param enqueuePolicy The {@link EnqueuePolicy} to decide whether a failed event should be dead-lettered.
+     * @param allowReset    Whether to clear the queue on reset. If {@code true},
+     *                      {@link SequencedDeadLetterQueue#clear()} will be invoked upon a reset.
      */
-    public static Builder builder() {
-        return new Builder();
+    public DeadLetteringEventHandlingComponent(@Nonnull EventHandlingComponent delegate,
+                                               @Nonnull SequencedDeadLetterQueue<EventMessage> queue,
+                                               @Nonnull EnqueuePolicy<EventMessage> enqueuePolicy,
+                                               boolean allowReset) {
+        super(delegate);
+        this.queue = queue;
+        this.enqueuePolicy = enqueuePolicy;
+        this.allowReset = allowReset;
     }
 
     @Nonnull
@@ -240,100 +247,5 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
      */
     public SequencedDeadLetterQueue<EventMessage> getQueue() {
         return queue;
-    }
-
-    /**
-     * Builder class to instantiate a {@link DeadLetteringEventHandlingComponent}.
-     * <p>
-     * The {@link EnqueuePolicy} defaults to returning {@link Decisions#enqueue(Throwable)} that truncates the
-     * {@link Throwable#getMessage()} size to {@code 1024} characters when invoked for any dead letter. The
-     * {@code allowReset} defaults to {@code false}.
-     * <p>
-     * Providing a {@code delegate} {@link EventHandlingComponent} and a {@link SequencedDeadLetterQueue} are
-     * <b>hard requirements</b> and must be provided.
-     */
-    public static class Builder {
-
-        private EventHandlingComponent delegate;
-        private SequencedDeadLetterQueue<EventMessage> queue;
-        private EnqueuePolicy<EventMessage> enqueuePolicy = (letter, cause) -> Decisions.enqueue(truncated(cause));
-        private boolean allowReset = false;
-
-        /**
-         * Sets the {@link EventHandlingComponent} this decorator wraps.
-         *
-         * @param delegate The {@link EventHandlingComponent} to delegate event handling to.
-         * @return The current Builder instance for fluent interfacing.
-         */
-        public Builder delegate(@Nonnull EventHandlingComponent delegate) {
-            assertNonNull(delegate, "The delegate EventHandlingComponent may not be null");
-            this.delegate = delegate;
-            return this;
-        }
-
-        /**
-         * Sets the {@link SequencedDeadLetterQueue} this component maintains dead letters with.
-         *
-         * @param queue The {@link SequencedDeadLetterQueue} to store dead letters in.
-         * @return The current Builder instance for fluent interfacing.
-         */
-        public Builder queue(@Nonnull SequencedDeadLetterQueue<EventMessage> queue) {
-            assertNonNull(queue, "The SequencedDeadLetterQueue may not be null");
-            this.queue = queue;
-            return this;
-        }
-
-        /**
-         * Sets the {@link EnqueuePolicy} used to decide whether a {@link DeadLetter dead letter} should be added to the
-         * {@link SequencedDeadLetterQueue}.
-         * <p>
-         * Defaults to returning {@link Decisions#enqueue(Throwable)} that truncates the {@link Throwable#getMessage()}
-         * size to {@code 1024} characters when invoked for any dead letter.
-         *
-         * @param enqueuePolicy The {@link EnqueuePolicy} to use for enqueue decisions.
-         * @return The current Builder instance for fluent interfacing.
-         */
-        public Builder enqueuePolicy(@Nonnull EnqueuePolicy<EventMessage> enqueuePolicy) {
-            assertNonNull(enqueuePolicy, "The EnqueuePolicy may not be null");
-            this.enqueuePolicy = enqueuePolicy;
-            return this;
-        }
-
-        /**
-         * Sets whether this component supports resets of the {@link SequencedDeadLetterQueue}.
-         * <p>
-         * If set to {@code true}, {@link SequencedDeadLetterQueue#clear()} will be invoked upon a
-         * {@link EventHandlingComponent#handle(ResetContext, ProcessingContext)} invocation.
-         * <p>
-         * Defaults to {@code false}.
-         *
-         * @param allowReset Whether to clear the queue on reset.
-         * @return The current Builder instance for fluent interfacing.
-         */
-        public Builder allowReset(boolean allowReset) {
-            this.allowReset = allowReset;
-            return this;
-        }
-
-        /**
-         * Initializes a {@link DeadLetteringEventHandlingComponent} as specified through this Builder.
-         *
-         * @return A {@link DeadLetteringEventHandlingComponent} as specified through this Builder.
-         */
-        public DeadLetteringEventHandlingComponent build() {
-            validate();
-            return new DeadLetteringEventHandlingComponent(this);
-        }
-
-        /**
-         * Validates whether the fields contained in this Builder are set accordingly.
-         *
-         * @throws AxonConfigurationException When one field asserts to be incorrect according to the Builder's
-         *                                    specifications.
-         */
-        protected void validate() {
-            assertNonNull(delegate, "The delegate EventHandlingComponent is a hard requirement and should be provided");
-            assertNonNull(queue, "The SequencedDeadLetterQueue is a hard requirement and should be provided");
-        }
     }
 }
