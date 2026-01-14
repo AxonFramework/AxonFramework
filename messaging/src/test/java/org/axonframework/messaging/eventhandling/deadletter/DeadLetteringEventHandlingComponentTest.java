@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -200,6 +200,58 @@ class DeadLetteringEventHandlingComponentTest {
             // then
             assertTrue(delegate.wasHandled());
             assertFalse(queue.contains(TEST_SEQUENCE_ID).join());
+        }
+
+        @Test
+        void propagatesErrorWhenEnqueueFails() {
+            // given
+            RuntimeException enqueueException = new RuntimeException("queue failure");
+            SequencedDeadLetterQueue<EventMessage> failingQueue = new FailingDeadLetterQueue(enqueueException);
+
+            testSubject = DeadLetteringEventHandlingComponent.builder()
+                                                              .delegate(delegate)
+                                                              .queue(failingQueue)
+                                                              .enqueuePolicy(enqueuePolicy)
+                                                              .build();
+
+            RuntimeException handlerException = new RuntimeException("handler failure");
+            delegate.setFailWith(handlerException);
+
+            EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
+            ProcessingContext context = new StubProcessingContext();
+
+            // when
+            MessageStream.Empty<Message> result = testSubject.handle(testEvent, context);
+
+            // then - the enqueue failure should propagate
+            assertThatThrownBy(() -> result.asCompletableFuture().join())
+                    .hasCauseInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("queue failure");
+        }
+
+        @Test
+        void propagatesErrorWhenEnqueueIfPresentFails() {
+            // given
+            RuntimeException enqueueException = new RuntimeException("queue failure");
+            FailingDeadLetterQueue failingQueue = new FailingDeadLetterQueue(enqueueException);
+            failingQueue.setContainsResult(true); // Simulate sequence already present
+
+            testSubject = DeadLetteringEventHandlingComponent.builder()
+                                                              .delegate(delegate)
+                                                              .queue(failingQueue)
+                                                              .enqueuePolicy(enqueuePolicy)
+                                                              .build();
+
+            EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
+            ProcessingContext context = new StubProcessingContext();
+
+            // when
+            MessageStream.Empty<Message> result = testSubject.handle(testEvent, context);
+
+            // then - the enqueueIfPresent failure should propagate
+            assertThatThrownBy(() -> result.asCompletableFuture().join())
+                    .hasCauseInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("queue failure");
         }
     }
 
@@ -507,6 +559,113 @@ class DeadLetteringEventHandlingComponentTest {
         public RecordingEventHandlingComponent subscribe(@Nonnull ResetHandler resetHandler) {
             // No-op for test purposes
             return this;
+        }
+    }
+
+    /**
+     * A {@link SequencedDeadLetterQueue} that fails on enqueue operations.
+     */
+    private static class FailingDeadLetterQueue implements SequencedDeadLetterQueue<EventMessage> {
+
+        private final RuntimeException failureException;
+        private boolean containsResult = false;
+
+        FailingDeadLetterQueue(RuntimeException failureException) {
+            this.failureException = failureException;
+        }
+
+        void setContainsResult(boolean containsResult) {
+            this.containsResult = containsResult;
+        }
+
+        @Nonnull
+        @Override
+        public java.util.concurrent.CompletableFuture<Void> enqueue(@Nonnull Object sequenceIdentifier,
+                                                                     @Nonnull DeadLetter<? extends EventMessage> letter) {
+            return java.util.concurrent.CompletableFuture.failedFuture(failureException);
+        }
+
+        @Nonnull
+        @Override
+        public java.util.concurrent.CompletableFuture<Boolean> enqueueIfPresent(
+                @Nonnull Object sequenceIdentifier,
+                @Nonnull java.util.function.Supplier<DeadLetter<? extends EventMessage>> letterBuilder) {
+            if (containsResult) {
+                return java.util.concurrent.CompletableFuture.failedFuture(failureException);
+            }
+            return java.util.concurrent.CompletableFuture.completedFuture(false);
+        }
+
+        @Nonnull
+        @Override
+        public java.util.concurrent.CompletableFuture<Void> evict(@Nonnull DeadLetter<? extends EventMessage> letter) {
+            return java.util.concurrent.CompletableFuture.completedFuture(null);
+        }
+
+        @Nonnull
+        @Override
+        public java.util.concurrent.CompletableFuture<Void> requeue(
+                @Nonnull DeadLetter<? extends EventMessage> letter,
+                @Nonnull java.util.function.UnaryOperator<DeadLetter<? extends EventMessage>> letterUpdater) {
+            return java.util.concurrent.CompletableFuture.completedFuture(null);
+        }
+
+        @Nonnull
+        @Override
+        public java.util.concurrent.CompletableFuture<Boolean> contains(@Nonnull Object sequenceIdentifier) {
+            return java.util.concurrent.CompletableFuture.completedFuture(containsResult);
+        }
+
+        @Nonnull
+        @Override
+        public java.util.concurrent.CompletableFuture<Iterable<DeadLetter<? extends EventMessage>>> deadLetterSequence(
+                @Nonnull Object sequenceIdentifier) {
+            return java.util.concurrent.CompletableFuture.completedFuture(Collections.emptyList());
+        }
+
+        @Nonnull
+        @Override
+        public java.util.concurrent.CompletableFuture<Iterable<Iterable<DeadLetter<? extends EventMessage>>>> deadLetters() {
+            return java.util.concurrent.CompletableFuture.completedFuture(Collections.emptyList());
+        }
+
+        @Nonnull
+        @Override
+        public java.util.concurrent.CompletableFuture<Boolean> isFull(@Nonnull Object sequenceIdentifier) {
+            return java.util.concurrent.CompletableFuture.completedFuture(false);
+        }
+
+        @Nonnull
+        @Override
+        public java.util.concurrent.CompletableFuture<Long> size() {
+            return java.util.concurrent.CompletableFuture.completedFuture(0L);
+        }
+
+        @Nonnull
+        @Override
+        public java.util.concurrent.CompletableFuture<Long> sequenceSize(@Nonnull Object sequenceIdentifier) {
+            return java.util.concurrent.CompletableFuture.completedFuture(0L);
+        }
+
+        @Nonnull
+        @Override
+        public java.util.concurrent.CompletableFuture<Long> amountOfSequences() {
+            return java.util.concurrent.CompletableFuture.completedFuture(0L);
+        }
+
+        @Nonnull
+        @Override
+        public java.util.concurrent.CompletableFuture<Boolean> process(
+                @Nonnull java.util.function.Predicate<DeadLetter<? extends EventMessage>> sequenceFilter,
+                @Nonnull java.util.function.Function<DeadLetter<? extends EventMessage>,
+                        java.util.concurrent.CompletableFuture<org.axonframework.messaging.deadletter.EnqueueDecision<EventMessage>>> processingTask) {
+            return java.util.concurrent.CompletableFuture.completedFuture(false);
+        }
+
+        @Nonnull
+        @Override
+        public java.util.concurrent.CompletableFuture<Void> clear() {
+            return java.util.concurrent.CompletableFuture.completedFuture(null);
         }
     }
 }
