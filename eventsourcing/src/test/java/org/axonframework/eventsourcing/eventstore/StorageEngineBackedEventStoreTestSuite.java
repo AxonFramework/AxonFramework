@@ -1,0 +1,568 @@
+/*
+ * Copyright (c) 2010-2026. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.axonframework.eventsourcing.eventstore;
+
+import jakarta.annotation.Nonnull;
+import org.assertj.core.api.AbstractIterableAssert;
+import org.axonframework.conversion.json.JacksonConverter;
+import org.axonframework.eventsourcing.annotation.EventTag;
+import org.axonframework.messaging.core.EmptyApplicationContext;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.MessageStream.Entry;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.annotation.AnnotationMessageTypeResolver;
+import org.axonframework.messaging.core.unitofwork.ProcessingLifecycle;
+import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.messaging.core.unitofwork.UnitOfWork;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.eventhandling.SimpleEventBus;
+import org.axonframework.messaging.eventhandling.annotation.Event;
+import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.axonframework.messaging.eventstreaming.StreamingCondition;
+import org.axonframework.messaging.eventstreaming.Tag;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+
+/**
+ * Test suite for the {@link StorageEngineBackedEventStore} which can be parameterized
+ * with an {@link EventStorageEngine}. The suite uses the full processing lifecycle
+ * and units of work to do all its test.
+ * <p>
+ * All test in this suite are {@code protected} to make it possible to (temporarily)
+ * disable some tests for a specific engine. All helper methods in this suite are also
+ * {@code protected} to make it easier to write additional engine specific tests.
+ * <p>
+ * Note that this suite expects that the engine used it only created once. This means
+ * events from previous tests may be present in the store. The tests therefore use
+ * a base token and base time for all tests. Classes which implement this test suite
+ * that wish to include additional test cases should use these to ensure the tests
+ * are independent of each other.
+ *
+ * @author John Hendrikx
+ */
+public abstract class StorageEngineBackedEventStoreTestSuite<E extends EventStorageEngine> {
+
+    /**
+     * A {@link Comparator} for event messages. This can be used with AssertJ's
+     * {@link AbstractIterableAssert#usingComparatorForType(Comparator, Class)} to compare
+     * lists of events.
+     */
+    protected static final Comparator<GenericEventMessage> EVENT_COMPARATOR = Comparator
+        .comparing(GenericEventMessage::payload, Comparator.comparing(Object::toString))
+        .thenComparing(GenericEventMessage::timestamp)
+        .thenComparing(GenericEventMessage::identifier)
+        .thenComparing(GenericEventMessage::metadata, Comparator.comparing(Object::toString));
+
+    private static final EventConverter CONVERTER = new DelegatingEventConverter(new JacksonConverter());
+    private static final AnnotationMessageTypeResolver RESOLVER = new AnnotationMessageTypeResolver();
+
+    private static Instant nextEventTimestamp = Instant.EPOCH;  // tracks auto time incrementing for created events
+    private static long messageId;
+
+    /**
+     * A tag for some of the messages inserted by the tests. Created
+     * anew for each test as the event store may not be reset between
+     * tests.
+     */
+    protected Tag TAG1 = new Tag("Course", UUID.randomUUID().toString());
+
+    /**
+     * A tag for some of the messages inserted by the tests. Created
+     * anew for each test as the event store may not be reset between
+     * tests.
+     */
+    protected Tag TAG2 = new Tag("Course", UUID.randomUUID().toString());
+
+    /**
+     * The {@link EventStorageEngine} that was created.
+     */
+    protected E engine;
+
+    /**
+     * Contains the token of the first event of this test run. As a new event store
+     * is not created per test, use this to ignore events from previous tests.
+     */
+    protected TrackingToken baseToken;
+
+    /**
+     * Contains the time of the first event created for this test run. As a new event
+     * store is not created per test, use this to ignore events from previous tests.
+     */
+    protected Instant baseTime;
+
+    private StorageEngineBackedEventStore eventStore;
+
+    @BeforeEach
+    void beforeEach() throws Exception {
+        engine = getStorageEngine(CONVERTER);  // expected to be the same for each test
+        eventStore = new StorageEngineBackedEventStore(
+            engine,
+            new SimpleEventBus(),
+            new AnnotationBasedTagResolver()
+        );
+
+        /*
+         * There is only one event storage engine ever created; in order for tests to
+         * share the same underlying store without interference, each test gets its
+         * own baseToken and baseTime. The baseTime is incremented one day for each test.
+         */
+
+        baseTime = nextEventTimestamp.plusSeconds(24 * 60 * 60).truncatedTo(ChronoUnit.DAYS);
+        baseToken = unitOfWork().executeWithResult(eventStore::latestToken).join();
+        nextEventTimestamp = baseTime;
+    }
+
+    /**
+     * Constructs the {@link EventStorageEngine} used in this test suite.
+     *
+     * @param The converter to use, cannot be {@code null}.
+     * @return The {@link EventStorageEngine} used in this test suite.
+     */
+    @Nonnull
+    protected abstract E getStorageEngine(@Nonnull EventConverter converter) throws Exception;
+
+    /**
+     * This can be used to hook into the lifecycle of each unit of work created by this
+     * test, for example to install a custom transactional executor as a resource for
+     * engines that need one.
+     *
+     * @param lifecycle The {@link ProcessingLifecycle}, cannot be {@code null}.
+     */
+    protected abstract void enhanceProcessingLifecycle(@Nonnull ProcessingLifecycle lifecycle);
+
+    @Nested
+    protected class GivenSomePublishedEvents {
+        protected EventMessage event1;
+        protected EventMessage event2;
+        protected EventMessage event3;
+        protected EventMessage event4;
+        protected EventMessage event5;
+
+        @BeforeEach
+        void beforeEach() {
+            this.event1 = message(new CourseUpdated(TAG1.value(), "1"));
+            this.event2 = message(new CourseUpdated(TAG1.value(), "2"));
+            this.event3 = message(new CourseUpdated(TAG2.value(), "A"));
+            this.event4 = message(new CourseUpdated(TAG2.value(), "B"));
+            this.event5 = message(new CourseUpdated(TAG1.value(), "3"));
+
+            unitOfWork().executeWithResult(pc -> eventStore.publish(pc, event1, event2, event3, event4, event5)).join();
+        }
+
+        @Test
+        protected void latestTokenShouldCoverFirstToken() {
+            TrackingToken firstToken = unitOfWork().executeWithResult(eventStore::firstToken).join();
+            TrackingToken latestToken = unitOfWork().executeWithResult(eventStore::latestToken).join();
+
+            assertThat(latestToken.covers(firstToken)).isTrue();
+            assertThat(firstToken.covers(latestToken)).isFalse();
+        }
+
+        @Test
+        protected void tokenAtShouldReturnValidTokens() {
+            TrackingToken ancient = unitOfWork().executeWithResult(pc -> eventStore.tokenAt(baseTime.plusSeconds(-1000), pc)).join();
+            TrackingToken old = unitOfWork().executeWithResult(pc -> eventStore.tokenAt(baseTime.plusSeconds(5), pc)).join();
+            TrackingToken recent = unitOfWork().executeWithResult(pc -> eventStore.tokenAt(baseTime.plusSeconds(15), pc)).join();
+            TrackingToken future = unitOfWork().executeWithResult(pc -> eventStore.tokenAt(baseTime.plusSeconds(1000), pc)).join();
+
+            assertThat(ancient.covers(ancient)).isTrue();
+            assertThat(ancient.covers(old)).isFalse();
+            assertThat(ancient.covers(recent)).isFalse();
+            assertThat(ancient.covers(future)).isFalse();
+
+            assertThat(old.covers(ancient)).isTrue();
+            assertThat(old.covers(old)).isTrue();
+            assertThat(old.covers(recent)).isFalse();
+            assertThat(old.covers(future)).isFalse();
+
+            assertThat(recent.covers(ancient)).isTrue();
+            assertThat(recent.covers(old)).isTrue();
+            assertThat(recent.covers(recent)).isTrue();
+            assertThat(recent.covers(future)).isFalse();
+
+            assertThat(future.covers(ancient)).isTrue();
+            assertThat(future.covers(old)).isTrue();
+            assertThat(future.covers(recent)).isTrue();
+            assertThat(future.covers(future)).isTrue();
+        }
+
+        @Test
+        @Disabled("#3997 - When queried with tokenAt('1970-01-06T23:58:20Z') both Axon Server and in-memory return a token that includes a far older event: '1970-01-06T00:00:20Z'")
+        // TODO #3997 - it looks like they return a token that's one position too low?  Postgres does not do this
+        protected void shouldStreamSameEventsWithSimilarStartingPositions() {
+            TrackingToken ancient = unitOfWork().executeWithResult(pc -> eventStore.tokenAt(baseTime.minusSeconds(100), pc)).join();
+            TrackingToken recent = unitOfWork().executeWithResult(pc -> eventStore.tokenAt(baseTime.plusSeconds(15), pc)).join();
+
+            List<EventMessage> allEvents = stream(StreamingCondition.startingFrom(baseToken), 5);
+
+            assertThat(allEvents)
+                .usingComparatorForType(EVENT_COMPARATOR, GenericEventMessage.class)
+                .containsExactlyElementsOf(stream(StreamingCondition.startingFrom(ancient), 5));
+
+            assertThat(allEvents.subList(3, 5))
+                .usingComparatorForType(EVENT_COMPARATOR, GenericEventMessage.class)
+                .containsExactlyElementsOf(stream(StreamingCondition.startingFrom(recent), 2));
+        }
+
+        @Test
+        protected void sourcingShouldOnlyReturnEventsMatchingCriteria() throws Exception {
+            assertThat(source(SourcingCondition.conditionFor(EventCriteria.havingTags(TAG1))))
+                .usingComparatorForType(EVENT_COMPARATOR, GenericEventMessage.class)
+                .containsExactly(event1, event2, event5);
+
+            assertThat(source(SourcingCondition.conditionFor(EventCriteria.havingTags(TAG2))))
+                .usingComparatorForType(EVENT_COMPARATOR, GenericEventMessage.class)
+                .containsExactly(event3, event4);
+        }
+
+        @Test
+        protected void streamingShouldOnlyReturnEventsMatchingCriteria() throws Exception {
+            assertThat(stream(StreamingCondition.conditionFor(baseToken, EventCriteria.havingTags(TAG1)), 3))
+                .usingComparatorForType(EVENT_COMPARATOR, GenericEventMessage.class)
+                .containsExactly(event1, event2, event5);
+
+            assertThat(stream(StreamingCondition.conditionFor(baseToken, EventCriteria.havingTags(TAG2)), 2))
+                .usingComparatorForType(EVENT_COMPARATOR, GenericEventMessage.class)
+                .containsExactly(event3, event4);
+        }
+
+        @Test
+        protected void shouldAppendEventAfterSourcing() {
+            UnitOfWork workUnit = unitOfWork();
+            EventMessage newMessage = message(new CourseUpdated(TAG1.value(), "4"));
+
+            workUnit.runOnInvocation(pc -> {
+                EventStoreTransaction tx = eventStore.transaction(pc);
+                MessageStream<? extends EventMessage> sourcing = tx.source(SourcingCondition.conditionFor(EventCriteria.havingTags(TAG1)));
+
+                assertThat(sourcing.reduce(0, (c, m) -> ++c).join()).isEqualTo(3);
+                assertThat(tx.appendPosition()).isNotEqualTo(ConsistencyMarker.ORIGIN);
+
+                tx.appendEvent(newMessage);
+            });
+
+            execute(workUnit);
+
+            assertThat(stream(StreamingCondition.conditionFor(baseToken, EventCriteria.havingTags(TAG1)), 4))
+                .usingComparatorForType(EVENT_COMPARATOR, GenericEventMessage.class)
+                .containsExactly(event1, event2, event5, newMessage);
+        }
+
+        @Test
+        protected void shouldDetectConflictWhenAppendingWithSameConsistencyMarker() {
+            UnitOfWork workUnit1 = unitOfWork();
+            UnitOfWork workUnit2 = unitOfWork();
+            EventMessage newMessage1 = message(new CourseUpdated(TAG1.value(), "4a"));
+            EventMessage newMessage2 = message(new CourseUpdated(TAG1.value(), "4b"));
+
+            CountDownLatch sourcingFinished = new CountDownLatch(2);
+            CountDownLatch latch1 = new CountDownLatch(1);
+            CountDownLatch latch2 = new CountDownLatch(1);
+
+            /*
+             * Transaction 1:
+             */
+
+            workUnit1.runOnInvocation(pc -> {
+                EventStoreTransaction tx = eventStore.transaction(pc);
+                MessageStream<? extends EventMessage> sourcing = tx.source(SourcingCondition.conditionFor(EventCriteria.havingTags(TAG1)));
+
+                assertThat(sourcing.reduce(0, (c, m) -> ++c).join()).isEqualTo(3);
+                assertThat(tx.appendPosition()).isNotEqualTo(ConsistencyMarker.ORIGIN);
+
+                sourcingFinished.countDown();
+                awaitLatch(latch1);
+
+                tx.appendEvent(newMessage1);
+            });
+
+            /*
+             * Transaction 2:
+             */
+
+            workUnit2.runOnInvocation(pc -> {
+                EventStoreTransaction tx = eventStore.transaction(pc);
+                MessageStream<? extends EventMessage> sourcing = tx.source(SourcingCondition.conditionFor(EventCriteria.havingTags(TAG1)));
+
+                assertThat(sourcing.reduce(0, (c, m) -> ++c).join()).isEqualTo(3);
+                assertThat(tx.appendPosition()).isNotEqualTo(ConsistencyMarker.ORIGIN);
+
+                sourcingFinished.countDown();
+                awaitLatch(latch2);
+
+                tx.appendEvent(newMessage2);
+            });
+
+            /*
+             * Start both units of work, and wait until they finished sourcing:
+             */
+
+            CompletableFuture<Void> execute1 = workUnit1.execute();
+            CompletableFuture<Void> execute2 = workUnit2.execute();
+
+            awaitLatch(sourcingFinished);
+
+            /*
+             * Unblock transaction 2 and verifies it commits succesfully:
+             */
+
+            latch2.countDown();
+
+            assertDoesNotThrow(() -> execute2.join());
+
+            /*
+             * Unblock transaction 1 and verify there is a conflict:
+             */
+
+            latch1.countDown();
+
+            assertThatThrownBy(() -> execute1.join())
+                .isInstanceOf(CompletionException.class)
+                .cause()
+                .isInstanceOf(AppendEventsTransactionRejectedException.class);
+
+            /*
+             * Verify that the store only contains the message from Transaction 2:
+             */
+
+            assertThat(stream(StreamingCondition.conditionFor(baseToken, EventCriteria.havingTags(TAG1)), 4))
+                .usingComparatorForType(EVENT_COMPARATOR, GenericEventMessage.class)
+                .containsExactly(event1, event2, event5, newMessage2);
+        }
+
+        @Nested
+        protected class AndActivelyStreamingEvents {
+            protected List<EventMessage> seenEvents = new ArrayList<>();
+            protected MessageStream<EventMessage> stream;
+
+            @BeforeEach
+            void beforeEach() {
+                this.stream = eventStore.open(
+                    StreamingCondition.conditionFor(baseToken, EventCriteria.havingTags(TAG1)),
+                    null  // processing context makes no sense for streams
+                );
+
+                stream.setCallback(() -> Thread.ofVirtual().start(() -> {
+                    synchronized(seenEvents) {
+                        int lastSize = -1;
+
+                        while(seenEvents.size() != lastSize) {
+                            lastSize = seenEvents.size();
+                            stream.next()
+                                .map(Entry::message)
+                                .map(m -> m.withConvertedPayload(CourseUpdated.class, CONVERTER))
+                                .ifPresent(seenEvents::add);
+                        }
+                    }
+                }));
+
+                // wait before starting further tests until all base events are present:
+                await().untilAsserted(() -> assertThat(seenEvents)
+                    .usingComparatorForType(EVENT_COMPARATOR, GenericEventMessage.class)
+                    .containsExactly(event1, event2, event5)
+                );
+            }
+
+            @AfterEach
+            void afterEach() {
+                stream.close();
+            }
+
+            @Test
+            protected void shouldSeeNewMessageWhenAppended() {
+                UnitOfWork workUnit = unitOfWork();
+                EventMessage newMessage = message(new CourseUpdated(TAG1.value(), "4"));
+
+                workUnit.runOnInvocation(pc -> {
+                    EventStoreTransaction tx = eventStore.transaction(pc);
+                    MessageStream<? extends EventMessage> sourcing = tx.source(SourcingCondition.conditionFor(EventCriteria.havingTags(TAG1)));
+
+                    assertThat(sourcing.reduce(0, (c, m) -> ++c).join()).isEqualTo(3);
+                    assertThat(tx.appendPosition()).isNotEqualTo(ConsistencyMarker.ORIGIN);
+
+                    tx.appendEvent(newMessage);
+                });
+
+                execute(workUnit);
+
+                await().untilAsserted(() -> assertThat(seenEvents)
+                    .usingComparatorForType(EVENT_COMPARATOR, GenericEventMessage.class)
+                    .containsExactly(event1, event2, event5, newMessage)
+                );
+            }
+        }
+    }
+
+    private void awaitLatch(CountDownLatch latch) {
+        try {
+            latch.await(10, TimeUnit.SECONDS);
+        }
+        catch (InterruptedException e) {
+            throw new AssertionError(e);
+        }
+    }
+
+    /**
+     * Creates a new message. Messages automatically get timestamps spaced 5 seconds apart.
+     *
+     * @param payload The event's payload.
+     * @return An event message.
+     */
+    protected final EventMessage message(Object payload) {
+        Instant timestamp = nextEventTimestamp;
+
+        // accuracy limited as not all storage engines support nanosecond accuracy (which makes comparisons annoying)
+        nextEventTimestamp = timestamp.plusSeconds(5).truncatedTo(ChronoUnit.MILLIS);
+
+        MessageType messageType = RESOLVER.resolve(payload).orElseThrow();
+
+        return new GenericEventMessage(
+            "id-" + messageId++,
+            messageType,
+            payload,
+            Map.of("meta", "data"),
+            timestamp
+        );
+    }
+
+    /**
+     * Streams messages using the given condition until the specified number of messages
+     * have become available, and returns a list with exactly {@code minMessages} messages.
+     * <p>
+     * If the expected number of messages were not streamed within a few seconds, an
+     * assertion error is thrown.
+     *
+     * @param condition The condition, cannot be {@code null}.
+     * @param minMessages The number of messages we expect.
+     * @return The list containing the streamed messages.
+     */
+    protected final List<EventMessage> stream(StreamingCondition condition, int minMessages) {
+        List<EventMessage> messages = new ArrayList<>();
+        MessageStream<? extends EventMessage> stream = eventStore.open(condition, null);
+
+        stream.setCallback(() -> Thread.ofVirtual().start(() -> {
+            synchronized(messages) {
+                int lastSize = -1;
+
+                while(messages.size() != lastSize) {
+                    lastSize = messages.size();
+                    stream.next()
+                        .map(Entry::message)
+                        .map(m -> m.withConvertedPayload(CourseUpdated.class, CONVERTER))
+                        .ifPresent(messages::add);
+                }
+            }
+        }));
+
+        await().untilAsserted(() -> {
+            synchronized(messages) {
+                assertThat(messages).hasSizeGreaterThanOrEqualTo(minMessages);
+            }
+        });
+
+        stream.close();
+
+        return messages.subList(0, minMessages);
+    }
+
+    /**
+     * Fully sources all messages with the given sourcing condition and returns
+     * them as a list.
+     *
+     * @param condition The condition, cannot be {@code null}.
+     * @return The list containing the sourced messages.
+     */
+    protected final List<EventMessage> source(SourcingCondition condition) {
+        return unitOfWork().executeWithResult(pc -> {
+            EventStoreTransaction tx = eventStore.transaction(pc);
+            MessageStream<? extends EventMessage> stream = tx.source(condition);
+
+            return stream.reduce(
+                new ArrayList<EventMessage>(),
+                (list, entry) -> {
+                    list.add(entry.message().withConvertedPayload(CourseUpdated.class, CONVERTER));
+
+                    return list;
+                }
+            );
+        }).join();
+    }
+
+    /**
+     * Creates a {@link UnitOfWork} with its transactional resource configured.
+     *
+     * @return A {@link UnitOfWork}.
+     */
+    protected final UnitOfWork unitOfWork() {
+        SimpleUnitOfWorkFactory factory = new SimpleUnitOfWorkFactory(
+            EmptyApplicationContext.INSTANCE,
+            c -> c.workScheduler(Executors.newFixedThreadPool(4))
+                .registerProcessingLifecycleEnhancer(this::enhanceProcessingLifecycle)
+        );
+
+        return factory.create();
+    }
+
+    /**
+     * Executes a {@link UnitOfWork} and returns when it has completed.
+     *
+     * @param workUnit The {@link UnitOfWork} to execute.
+     */
+    protected final void execute(UnitOfWork workUnit) {
+        try {
+            workUnit.execute().join();
+        }
+        catch(CompletionException e) {
+            if(e.getCause() instanceof Error error) {
+                throw error;
+            }
+            if(e.getCause() instanceof RuntimeException re) {
+                throw re;
+            }
+
+            throw e;
+        }
+    }
+
+    @Event
+    record CourseUpdated(@EventTag(key = "Course") String id, String data) {}
+}

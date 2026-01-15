@@ -1,0 +1,73 @@
+/*
+ * Copyright (c) 2010-2026. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.axonframework.examples.university;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+public class ConfigurationProperties {
+    private static final Logger logger = Logger.getLogger(ConfigurationProperties.class.getName());
+
+    boolean axonServerEnabled = true;
+
+    public static ConfigurationProperties defaults() {
+        return new ConfigurationProperties();
+    }
+
+    public static ConfigurationProperties load() {
+        ConfigurationProperties props = new ConfigurationProperties();
+
+        Properties properties = loadPropertiesFile("application.properties");
+
+        if (properties != null) {
+            String axonServerEnabled = properties.getProperty("axon.server.enabled");
+            if (axonServerEnabled != null) {
+                props.axonServerEnabled = Boolean.parseBoolean(axonServerEnabled);
+            }
+        } else {
+            logger.info("No properties file found, using default configuration");
+        }
+
+        return props;
+    }
+
+    private static Properties loadPropertiesFile(String filename) {
+        Properties properties = new Properties();
+        try (InputStream input = ConfigurationProperties.class.getClassLoader().getResourceAsStream(filename)) {
+            if (input != null) {
+                properties.load(input);
+                logger.info("Loaded configuration from " + filename);
+                return properties;
+            }
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Error loading properties file " + filename + ": " + e.getMessage());
+        }
+        return null;
+    }
+
+    public boolean axonServerEnabled() {
+        return axonServerEnabled;
+    }
+
+    public ConfigurationProperties axonServerEnabled(boolean axonServerEnabled) {
+        this.axonServerEnabled = axonServerEnabled;
+        return this;
+    }
+}

@@ -1,0 +1,218 @@
+= Modules
+
+Axon Framework consists of a number of modules that provide specific capabilities.
+Depending on the exact needs of your project, you will need to include one or more of these modules.
+
+There are currently two ways of obtaining the module binaries: either download the binaries from our website or preferably configure a repository for your build system (http://maven.apache.org/[Maven], https://gradle.org/[Gradle]).
+
+To not be bothered with version compatibility issues between <<Main modules,framework>> and the <<Extension modules,extensions>>, it is recommended to use the <<Axon Bill of Materials,BOM>>.
+
+Axon modules are available on https://central.sonatype.com/search?q=axonframework[Maven Central].
+
+== Main modules
+
+Axon 'Main Modules' are the modules that have been thoroughly tested and are robust enough to use in demanding production environments.
+The maven `groupId` of all these modules is `org.axonframework`.
+Visit https://central.sonatype.com/search?q=g:org.axonframework[Maven Central Repository] to copy coordinates for the version you need.
+
+____
+
+*Quick start an Axon Application*
+
+The Axon Spring Boot Starter extension is the quickest start in to an Axon project as it will retrieve all the required modules/dependencies transitively.
+See the <<Extension modules>> section below for details.
+Alternatively, you can manually select individual modules for a customized configuration.
+
+____
+
+[cols="<,<,<,^"]
+|===
+|Module |Artifact Id |Group Id |Maven Central
+
+|<<Axon common>>                |`axon-common`                   |`org.axonframework`       |https://central.sonatype.com/search?q=a:axon-common[available]
+|<<Axon conversion>>            |`axon-conersion`                |`org.axonframework`       |https://central.sonatype.com/search?q=a:axon-conversion[available]
+|<<Axon messaging>>             |`axon-messaging`                |`org.axonframework`       |https://central.sonatype.com/search?q=a:axon-messaging[available]
+|<<Axon modelling>>             |`axon-modelling`                |`org.axonframework`       |https://central.sonatype.com/search?q=a:axon-modelling[available]
+|<<Axon Event Sourcing>>        |`axon-eventsourcing`            |`org.axonframework`       |https://central.sonatype.com/search?q=a:axon-eventsourcing[available]
+|<<Axon test>>                  |`axon-test`                     |`org.axonframework`       |https://central.sonatype.com/search?q=a:axon-test[available]
+|<<Axon Server connector>>      |`axon-server-connector`         |`org.axonframework`       |https://central.sonatype.com/search?q=a:axon-server-connector[available]
+|<<Axon update>>                |`axon-update`                   |`org.axonframework`       |https://central.sonatype.com/search?q=a:axon-update[available]
+|===
+
+=== Axon common
+
+This module contains all common components utilized by Axon Framework throughout.
+Examples of what is container are Axon's caching integration, configuration implementation, application descriptors, and numerous utility classes.
+
+=== Axon conversion
+
+This module provides the conversion interfaces and implementations, used to (for example) convert every `Message#payload` when sending and receiving them.
+
+=== Axon messaging
+
+This module contains all necessary components and building blocks to support command, event, and query messaging.
+
+=== Axon modelling
+
+This module contains the necessary components to create domain models and entities.
+
+=== Axon Event Sourcing
+
+This module contains all necessary infrastructure components to support Event Sourcing, Command Models, and Query Models.
+
+=== Axon test
+
+This module contains test fixtures that you can use to test Axon based components, such as your command handlers and entities.
+You typically do not need this module at runtime and will only need to be added to the classpath for running tests.
+
+=== Axon Server connector
+
+This module provides infrastructure components that connect to Axon Server.
+
+=== Axon update
+
+This module Axon Framework's update checker, ensuring your Axon application is as up to date as possible. For more details on this component we refer to link:https://docs.axoniq.io/axon-framework-update-checker/[this] section of our documentation.
+
+== Extension modules
+
+Besides main modules, there are several extension modules which complement Axon Framework.
+The maven `groupId` of these extensions starts with `org.axonframework.extensions.*`.
+Visit https://central.sonatype.com/search?q=axonframework%20extensions[Maven Central Repository] to copy coordinates for the version you need.
+
+=== Framework extensions
+
+These extensions are part of the main Axon Framework repository and provide essential integration and monitoring capabilities.
+
+[cols="<,<,<,^"]
+|===
+|Module |Artifact Id |Group Id |Maven Central
+
+|<<Axon Spring>>                        |`axon-spring`                     |`org.axonframework.extensions.spring`   |https://central.sonatype.com/search?q=a:axon-spring[available]
+|<<Axon Spring Boot Starter>>           |`axon-spring-boot-starter`        |`org.axonframework.extensions.spring`   |https://central.sonatype.com/search?q=a:axon-spring-boot-starter[available]
+|<<Dropwizard metrics>>            |`axon-metrics-dropwizard`         |`org.axonframework.extensions.metrics`  |https://central.sonatype.com/search?q=a:axon-metrics-dropwizard[available]
+|<<Micrometer metrics>>            |`axon-metrics-micrometer`         |`org.axonframework.extensions.metrics`  |https://central.sonatype.com/search?q=a:axon-metrics-micrometer[available]
+|<<Axon Tracing OpenTelemetry>>         |`axon-tracing-opentelemetry`      |`org.axonframework.extensions.tracing`  |https://central.sonatype.com/search?q=a:axon-tracing-opentelemetry[available]
+|===
+
+==== Axon Spring
+
+This extension allows Axon Framework components to be configured in the Spring application context.
+It provides integration with Spring Framework, enabling bean-based registration and lifecycle management of Axon components.
+
+==== Axon Spring Boot Starter
+
+This extension provides Spring Boot auto-configuration for your project.
+It is by far the easiest option to get started as it automatically configures all Axon components.
+It is explained in more details xref:spring-boot-integration.adoc[here].
+
+==== Dropwizard metrics
+
+This extension provides basic implementations based on Dropwizard to collect monitoring information.
+
+==== Micrometer metrics
+
+This extension provides basic implementations based on Micrometer to collect monitoring information.
+https://micrometer.io/[Micrometer] is a dimensional-first metrics collection facade whose aim is to allow you to time, count, and gauge your code with a vendor neutral API.
+
+==== Axon Tracing OpenTelemetry
+
+This extension contains the components needed to xref:axon-framework-reference:monitoring:tracing.adoc[enable tracing with OpenTelemetry].
+
+=== External extensions
+
+These extensions are maintained in separate repositories and address distribution concerns of Axon Framework towards non-Axon Server solutions.
+These extensions can be found under the group identifier `io.axoniq.framework` and are listed below:
+
+[cols="<,<,<,<,^"]
+|===
+|Module |Artifact Id |Group Id |Maven Central |GitHub
+
+| <<Axon PostgreSQL>>   |`postgresql`   |`io.axoniq.framework.postgresql` |https://central.sonatype.com/search?q=axon+postgresql[available] |https://github.com/AxonIQ/extension-postgresql[available]
+|===
+
+=== Axon PostgreSQL
+
+This module provides a storage solution optimized for use with link:https://www.postgresql.org/[PostgreSQL] by taking advantage of PostgreSQL-specifics.
+It supported the Dynamic-Consistency Boundary, just as Axon Server does
+
+== Axon Bill of Materials
+
+In addition to the main framework modules and the extensions, Axon also has a https://en.wikipedia.org/wiki/Software_bill_of_materials[Bill of Materials], or BOM.
+The BOM is provided to ensure the use of compatible framework and extension dependencies inside an Axon application.
+As such, it is the recommended approach towards defining the overall Axon version used inside of an application.
+
+[cols="<,<,<,^"]
+|===
+|Module |Artifact Id |Group Id |Maven Central
+
+|<<Axon Bill of Materials>> |`axon-framework-bom` |`org.axonframework` |https://central.sonatype.com/search?q=a:axon-framework-bom[available]
+|===
+
+For using the BOM, you would add the `axon-bom` dependency to your dependency management system:
+
+[tabs]
+====
+Maven::
++
+--
+
+[source,xml]
+----
+<!--...-->
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>org.axonframework</groupId>
+            <artifactId>axon-framework-bom</artifactId>
+            <version>${version.axon}</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+
+        ...
+
+    </dependencies>
+</dependencyManagement>
+<!--...-->
+----
+--
+
+Gradle::
++
+--
+
+For usage with *Gradle Version 4.x* and below, apply the dependency-management-plugin like so:
+
+[source,groovy]
+----
+buildscript {
+  repositories {
+    jcenter()
+  }
+  dependencies {
+    classpath "io.spring.gradle:dependency-management-plugin:0.5.1.RELEASE"
+  }
+}
+
+apply plugin: "io.spring.dependency-management"
+----
+
+After this, import the Axon BOM:
+
+[source,groovy]
+----
+dependencyManagement {
+  imports {
+    mavenBom 'org.axonframework:axon-framework-bom:<VERSION>'
+  }
+}
+----
+
+Beginning with *https://docs.gradle.org/5.0/userguide/managing_transitive_dependencies.html#sec:bom_import[Gradle version 5.0]*, you can also omit the dependency-management plugin and instead use the `platform` dependency DSL to import maven BOMs:
+
+`implementation(platform("org.axonframework:axon-bom:<VERSION>"))`
+--
+====
+
+After that is in place, you can add any of the mentioned dependencies from <<Main modules,framework>> and the <<Extension modules,extensions>> without specifying versions.
+Furthermore, you will be guaranteed that the provided versions in the BOM are compatible with one another.

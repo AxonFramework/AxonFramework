@@ -1,0 +1,60 @@
+/*
+ * Copyright (c) 2010-2026. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.axonframework.examples.university.automation;
+
+import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+import org.axonframework.examples.university.shared.CourseId;
+import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
+import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
+import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorModule;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
+import org.axonframework.modelling.configuration.EntityModule;
+
+import java.util.concurrent.CompletableFuture;
+
+public class CourseFullyBookedNotifierConfiguration {
+
+    public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
+        EntityModule<CourseId, WhenCourseFullyBookedThenSendNotification.State> automationState =
+                EventSourcedEntityModule.autodetected(CourseId.class,
+                                                      WhenCourseFullyBookedThenSendNotification.State.class);
+
+        PooledStreamingEventProcessorModule automationProcessor = EventProcessorModule
+                .pooledStreaming("Automation_WhenCourseFullyBookedThenSendNotification_Processor")
+                .eventHandlingComponents(
+                        c -> c.autodetected(cfg -> new WhenCourseFullyBookedThenSendNotification())
+                )
+                // Due to a minor bug in the InMemoryEventStorageEngine this customization is needed if you want to use the implementation in the tests
+                .customized((c, cus) -> cus.initialToken(s -> CompletableFuture.completedFuture(new GlobalSequenceTrackingToken(
+                        0))));
+
+        var commandHandlingModule = CommandHandlingModule.named("SendCoursFullyBookedCommandHandler")
+                                                         .commandHandlers()
+                                                         .annotatedCommandHandlingComponent(cfg -> new WhenCourseFullyBookedThenSendNotification())
+                                                         .build();
+
+        return configurer
+                .registerEntity(automationState)
+                .registerCommandHandlingModule(commandHandlingModule)
+                .modelling(modelling -> modelling.messaging(messaging -> messaging.eventProcessing(eventProcessing ->
+                                                                                                           eventProcessing.pooledStreaming(
+                                                                                                                   ps -> ps.processor(
+                                                                                                                           automationProcessor))
+                )));
+    }
+}

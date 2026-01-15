@@ -1,0 +1,53 @@
+:navtitle: Introduction
+:reftext: Building an Axon Framework 5 Application from Scratch
+
+= Introduction
+
+Welcome to the Axon Framework 5 Getting Started Guide!
+
+Building a new application from scratch can be daunting, especially when learning a new framework.
+This tutorial will guide you through the various stages of development,
+starting with creating your first project and explaining the capabilities of Axon Framework 5.
+
+Axon Framework 5 introduces a lot of changes,
+so even if you are already familiar with Axon Framework 4, we still recommend you to go through this tutorial.
+
+== What's New in Axon Framework 5?
+Axon Framework 5 represents a significant evolution with major improvements to the framework's architecture:
+
+Dynamic Consistency Boundary (DCB) - A revolutionary concept that allows more flexible event sourcing patterns overcoming traditional aggregates limitations.
+With this mind-shift, you can organize your code  around features than entities with ease, called link:https://www.baeldung.com/java-vertical-slice-architecture[Vertical Slice Architecture].
+
+* Revisited Configuration - A new, more flexible configuration model.
+* Improved Testing Support - Enhanced testing fixtures that allow you to verify your app configured as same as in the production code.
+* Java 21 Baseline - Taking advantage of the latest Java features.
+* Async Native Architecture - The new Unit of Work is fully composable from async functions. With the removal of `ThreadLocal` usage, the framework now better supports asynchronous programming models like Project Reactor, Kotlin Coroutines, and the upcoming Java Fiber.
+
+Whether you're new to Axon Framework or upgrading from version 4,
+this tutorial will help you understand these new concepts through practical examples.
+
+== About this tutorial
+This tutorial will guide you through creating a "Axon University Registration Application" using Axon Framework 5.
+We will implement features using Vertical Slice Architecture using "Test First" approach.
+You will also see the DCB in action along with persisting the events in the Axon Server 2025.
+
+You can either:
+
+* Follow the steps in the tutorial to build the project from scratch
+* Check out our link:https://github.com/AxonIQ/university-demo/[Axon University Demo repository on GitHub,role=external,window=_blank] for the complete code
+
+
+== Your feedback matters!
+
+Keep in mind that Axon Framework 5 is currently in a milestone version, so it may be subject to change.
+This is where you come in!
+Your feedback is incredibly valuable as we refine the framework.
+
+Because of that, your opinion is even more valuable to us.
+Your input will help shape the future of event sourcing with Axon Framework!
+After playing around with the Axon Framework 5, please share your feedback on link:https://discuss.axoniq.io/t/feedback-template/6034[AxonIQ Discuss].
+If you'd like to, please don't hesitate to reach out to our team directly on LinkedIn,
+we will be so happy to talk with you.
+
+Are you ready?
+Let's get started building our application!

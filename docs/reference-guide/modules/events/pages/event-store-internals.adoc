@@ -1,0 +1,253 @@
+= Event Store Internals
+:navtitle: Event Store Internals
+
+This chapter covers the specifics of working with an Event Store in Axon Framework.
+Most users do not need to interact with these components directly, but understanding them provides valuable insight into how Axon manages event storage and consistency.
+Furthermore, if you do need to customize these parts, it's good to know that they're there.
+
+It explains Dynamic Consistency Boundaries (DCB), a flexible approach to organizing events beyond traditional aggregate-based storage.
+You will learn about event tags and the `TagResolver` for attaching metadata to events, as well as `EventCriteria` and the `CriteriaResolver` for querying events based on those tags.
+Finally, the chapter covers consistency markers, which ensure write conflict detection when working with tag-based event groupings.
+
+[#dynamic_consistency_boundaries_dcb]
+== Dynamic Consistency Boundary
+
+The Dynamic Consistency Boundary, or DCB for short, allows for a flexible boundary to _what_ should be appended
+_consistently_ with other existing event streams in the event store.
+In other words, DCB provides a flexible approach to organizing and querying events.
+In doing so, it eliminates the focus on the aggregate identifier, replacing it for user defined <<tags,tags>>.
+Note that tags are plural.
+As such, an event is no longer either attached to zero or one aggregate/entity, but potentially **several** due to DCB.
+
+This shift provides great flexibility in deriving models, as there is no longer a hard boundary around, for example, an aggregate stream.
+It allows users to depend on N-"aggregate" streams in one sourcing operation, allowing commands to span a complete view of the task at hand.
+
+To not overencumber the sourcing operation of an `EventStore`, not only tags, but also (event) "types" are used when reading events.
+The types act as a filter on the entity streams that matches the tags.
+The tags and the types combined from the <<event_criteria,event criteria>>.
+It is this `EventCriteria` that Axon Framework uses for xref:commands:command-handlers.adoc#publishing_events_with_eventappender[appending events], xref:commands:command-handlers.adoc#_command_handlers[sourcing events to recreate entities], and xref:event-processors/streaming.adoc[streaming events].
+
+You could conclude that DCB makes the base event store operations of appending, sourcing, and streaming focus on an 0-N event stream focus instead of 0-or-1 event stream.
+
+[#tags]
+== Tags
+
+Aligning with the dynamic consistency boundary means that an event has zero to N tags.
+Axon has the `Tag` class for this, which typically:
+
+* Represent a (domain/business specific) identifier.
+* Represent an event type.
+
+You are only ever required to directly construct a `Tag` in Axon if you are constructing an `EventCriteria` from scratch.
+The <<event_criteria,event criteria>> section provides more details on this.
+
+In most cases, the `TagResolver` will take the task of resolving the `Tags` for an event.
+The `TagResolver` inspects events and derives tags based on annotations or custom logic, reducing boilerplate and ensuring consistent tagging across your application.
+
+Axon provides the `@EventTag` annotation for tag definition on event classes:
+
+[source,java]
+----
+import org.axonframework.eventsourcing.annotation.EventTag;
+import org.axonframework.messaging.eventhandling.annotation.Event;
+
+@Event(name = "orderPlaced")
+record OrderPlacedEvent(
+    @EventTag OrderId customerId,
+    @EventTag(key = "region") String orderRegion,
+    String orderId
+) {
+}
+----
+
+When an `OrderPlacedEvent` is appended, the `TagResolver` automatically extracts `customerId` and `region` as tags from the annotated fields.
+By default, the tag key matches the field name, but you can override it by specifying a value in the annotation (as shown with `"region"`).
+
+For more complex scenarios, you can implement a custom `TagResolver`:
+
+[source,java]
+----
+import jakarta.annotation.Nonnull;
+import org.axonframework.eventsourcing.eventstore.TagResolver;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventstreaming.Tag;
+
+import java.util.Set;
+
+public class CustomTagResolver implements TagResolver {
+
+    @Override
+    public Set<Tag> resolve(@Nonnull EventMessage event) {
+        Object payload = event.payload();
+        if (payload instanceof OrderPlacedEvent orderEvent) {
+            return Set.of(
+                    Tag.of("orderId", orderEvent.orderId().toString())
+            );
+        }
+        // You will require an if for every event (set)!
+        return Set.of();
+    }
+}
+----
+
+This example shows use of the `Tag#of(String, String)` operation, clarifying Axon expects the tag key and value to resolve to a workable `String`.
+Note that this will require you to write an if-block for every type of or set of events to be able to deduce an actual tag.
+
+[#event_criteria]
+== Event criteria
+
+Where <<tags,tags>> form the basis for an event query, these tags need to be combined in the right order to come to an actual criteria.
+This is the job of the event criteria, or `EventCriteria`, in Axon.
+The `EventCriteria` will be used in specific <<conditions,conditions>> when querying events.
+Here's an example of an event criteria with a identifier tag and type tag:
+
+[source,java]
+----
+import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.axonframework.messaging.eventstreaming.Tag;
+
+public EventCriteria createCriteriaFor(OrderPlacedEvent event) {
+    return EventCriteria.havingTags(Tag.of("orderId", event.orderId().toString()))
+                        .andBeingOneOfTypes("OrderPlaced");
+}
+----
+
+It is the `EventCriteria` that allows you to define "slices" of an otherwise potentially large entity.
+Events that (although part of the entity's stream) don't influence the decision-making, can be omitted when sourcing an entity.
+
+In most cases, Axon can construct an `EventCriteria` for you automatically:
+
+* Appending - When appending, we combine the condition used for sourcing with the outcome of invoking the <<tags,tag resolver>> with newly appended events.
+* Sourcing - When sourcing a single entity stream we use the entity's identifier.
+* Streaming - When streaming we combine the names of all subscribed event handlers into a criteria.
+
+There are two scenarios remaining where you would be required to construct an `EventCriteria` yourself.
+
+If you want to event source an entity based on several streams, you need to define a `CriteriaResolver` yourself, as we (currently) cannot deduce the correct `EventCriteria` to construct for this.
+
+When using an autodetected entity, you can add an `@EventCriteriaBuilder` annotated method to your event sourced entity:
+
+[source,java]
+----
+import org.axonframework.eventsourcing.annotation.EventCriteriaBuilder;
+import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.axonframework.messaging.eventstreaming.Tag;
+
+@EventSourcedEntity
+public class StudentSubscribedToCourseState {
+
+    @EventCriteriaBuilder
+    private static EventCriteria resolveCriteria(SubscriptionId id) {
+        String courseId = id.courseId().toString();
+        String studentId = id.studentId().toString();
+        return EventCriteria.either(
+                EventCriteria
+                        .havingTags(Tag.of("courseID", courseId))
+                        .andBeingOneOfTypes(
+                                CourseCreated.class.getName(),
+                                CourseCapacityChanged.class.getName(),
+                                StudentSubscribedToCourse.class.getName(),
+                                StudentUnsubscribedFromCourse.class.getName()
+                        ),
+                EventCriteria
+                        .havingTags(Tag.of("studentId", studentId))
+                        .andBeingOneOfTypes(
+                                StudentEnrolledInFaculty.class.getName(),
+                                StudentSubscribedToCourse.class.getName(),
+                                StudentUnsubscribedFromCourse.class.getName()
+                        )
+        );
+    }
+
+    // Entity fields and event sourcing handlers omitted...
+}
+----
+
+When an `StudentSubscribedToCourseState` entity is loaded, the `CriteriaResolver` automatically calls the `@EventCriteriaBuilder` method to determine which events to source.
+The method must be static and return an `EventCriteria`.
+If no `@EventCriteriaBuilder` method is defined, the resolver falls back to the `tagKey` attribute of `@EventSourcedEntity`, or uses the entity's simple class name as the tag key.
+
+For more complex scenarios or when taking a declarative configuration approach, you can implement a custom `CriteriaResolver`:
+
+[source,java]
+----
+import org.axonframework.eventsourcing.CriteriaResolver;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.axonframework.messaging.eventstreaming.Tag;
+
+public class CustomCriteriaResolver implements CriteriaResolver<SubscriptionId> {
+
+    @Override
+    public EventCriteria resolve(SubscriptionId identifier, ProcessingContext context) {
+        String courseId = id.courseId().toString();
+        String studentId = id.studentId().toString();
+        return EventCriteria.either(
+                EventCriteria
+                        .havingTags(Tag.of("courseID", courseId))
+                        .andBeingOneOfTypes(
+                                CourseCreated.class.getName(),
+                                CourseCapacityChanged.class.getName(),
+                                StudentSubscribedToCourse.class.getName(),
+                                StudentUnsubscribedFromCourse.class.getName()
+                        ),
+                EventCriteria
+                        .havingTags(Tag.of("studentId", studentId))
+                        .andBeingOneOfTypes(
+                                StudentEnrolledInFaculty.class.getName(),
+                                StudentSubscribedToCourse.class.getName(),
+                                StudentUnsubscribedFromCourse.class.getName()
+                        )
+        );
+    }
+}
+----
+
+[#conditions]
+== Append, source, and stream conditions
+
+While <<event_criteria,event criteria>> define _what_ events to match, conditions wrap this criteria with additional context for specific event store operations.
+Axon provides three condition types, each tailored for a different operation:
+
+**AppendCondition**::
+Used when appending events to the event store.
+It combines an `EventCriteria` with a `ConsistencyMarker` to enforce write conflict detection.
+The <<consistency_marker,consistency marker>> tracks the position until which the criteria should be validated—if events matching the criteria were appended after this position, the append operation fails.
+This ensures that concurrent writes to the same logical boundary are detected.
++
+For events that don't participate in any consistency boundary (such as standalone events), use `AppendCondition.none()`.
+
+**SourcingCondition**::
+Used when sourcing events to rebuild entity state.
+It combines an `EventCriteria` with a starting `Position` in the event sequence.
+The criteria determines which events to retrieve, while the position allows sourcing from a specific point (useful when loading from a snapshot).
++
+This condition is what the `CriteriaResolver` ultimately produces when loading an event-sourced entity.
+
+**StreamingCondition**::
+Used when streaming events for event processors.
+It combines an `EventCriteria` with a `TrackingToken` that marks the position to start streaming from.
+Unlike sourcing (which retrieves a bounded sequence), streaming is continuous and open-ended.
++
+The criteria defaults to matching any tag, making it suitable for processors that need to observe all events rather than a specific entity stream.
+
+In practice, most users won't construct these conditions directly, as you do not have to interact with the `EventStore` directly.
+Axon builds the appropriate condition based on the operation:
+
+* When **appending**, the framework combines the sourcing condition with tags from newly appended events.
+* When **sourcing**, the `CriteriaResolver` constructs the condition from the entity identifier.
+* When **streaming**, event processors construct the condition from their subscribed event handler names.
+
+[#consistency_marker]
+== Consistency marker
+
+To support a dynamic consistency boundary with an event store, a **consistency marker** is a hard requirement.
+The consistency marker is returned as the final entry when sourcing events from an event store.
+As such, it tracks the logical grouping of sourced events.
+
+When appending events with tags, thus as part of a sourced entity, Axon automatically attaches this consistency marker to the <<conditions,append condition>>.
+In doing so, we prevent write conflicts, ensuring that concurrent writes to the same logical boundary are detected and handled appropriately.
+
+As with many components in this chapter, the chance is slim you will need to interact with the `ConsistencyMarker` directly.
+However, being aware of the internals could just be what you are searching for.

@@ -1,0 +1,13 @@
+* xref:commands:index.adoc[]
+
+** xref:commands:command-handlers.adoc[]
+** xref:commands:command-dispatchers.adoc[]
+// TODO - Decide what to do with modeling section
+// ** xref:commands:modeling/aggregate.adoc[]
+// *** xref:commands:modeling/multi-entity-aggregates.adoc[]
+// *** xref:commands:modeling/state-stored-aggregates.adoc[]
+// *** xref:commands:modeling/aggregate-creation-from-another-aggregate.adoc[]
+// *** xref:commands:modeling/aggregate-polymorphism.adoc[]
+
+** xref:commands:infrastructure.adoc[]
+** xref:commands:configuration.adoc[]

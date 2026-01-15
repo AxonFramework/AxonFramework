@@ -1,0 +1,383 @@
+= Feature: Send Notification To The Administrator When All Courses Are Fully Booked
+
+In this example, we will implement a stateful event handler that monitors course availability and sends a notification to the administrator when all courses become fully booked.
+This enables administrators to take immediate action such as opening additional course sections, adjusting capacity, or coordinating with other faculties to meet student demand.
+
+== What is a stateful event handler?
+
+A stateful event handler is a component that reacts to events while maintaining internal state between event processing.
+Unlike stateless handlers that simply perform actions in response to single events, stateful handlers accumulate information from multiple events to make decisions.
+
+Common use cases for stateful event handlers include:
+- Building read models and projections, like dashboards or reprorting views
+- Triggering actions when conditions are met across time, like in Saga or Process Manager
+
+== Understanding the administrator notification feature
+
+image::EventModeling_WhenAllCoursesFullyBookedThenSendNotification.jpg[]
+
+The diagram shows an Event Modeling flow with an **Automation pattern**. The gear symbol (⚙️) represents an automated process that monitors the system state and triggers actions when conditions are met. In Event Modeling terminology, this automation works like a "todo list that a process goes and does and marks items as done" - it continuously evaluates whether all courses are fully booked and sends notifications when needed.
+The stateful handler implements this automation pattern by monitoring multiple events to determine when all courses are fully booked, then triggering the notification to the administrator.
+
+This is a perfect example of a stateful operation because:
+
+1. **State tracking required** - We need to monitor capacity and enrollment across all courses
+2. **Multiple event types** - We react to course creation, capacity changes, and student subscriptions
+3. **Conditional logic** - Notification is sent only when all courses are fully booked
+
+== Setting up the stateful event handler
+
+We'll build upon the notification infrastructure from the previous tutorial, so make sure you have the `NotificationService` configured.
+
+=== Step 1: Define the command and event
+
+First, let's define the command that will be sent internally and the event that tracks notification status:
+
+[source,java]
+.src/main/java/io/axoniq/demo/university/faculty/automation/allcoursesfullybookednotifier/SendAllCoursesFullyBookedNotification.java
+----
+public record SendAllCoursesFullyBookedNotification(String facultyId) { // <1>
+}
+----
+
+<1> Simple command to trigger the notification sending - contains faculty ID for targeting
+
+[source,java]
+.src/main/java/io/axoniq/demo/university/faculty/events/AllCoursesFullyBookedNotificationSent.java
+----
+public record AllCoursesFullyBookedNotificationSent( // <1>
+        @EventTag(key = FacultyTags.FACULTY_ID) // <2>
+        String facultyId
+) {
+}
+----
+
+<1> Event indicating that the notification has been sent
+<2> Tagged with faculty ID for proper event stream organization
+
+=== Step 2: Implement the stateful event handler
+
+Now let's create the main stateful event handler with its internal state management:
+
+[source,java]
+.src/main/java/io/axoniq/demo/university/faculty/automation/allcoursesfullybookednotifier/WhenAllCoursesFullyBookedThenSendNotification.java
+----
+public class WhenAllCoursesFullyBookedThenSendNotification {
+
+    private static final String FACULTY_ID = "ONLY_FACULTY_ID"; // <1>
+
+    @EventSourcedEntity // <2>
+    record State(Map<CourseId, Course> courses, boolean notified) {
+
+        record Course(int capacity, int students) { // <3>
+
+            Course capacity(int newCapacity) {
+                return new Course(newCapacity, this.students);
+            }
+
+            Course studentSubscribed() {
+                return new Course(this.capacity, this.students + 1);
+            }
+
+            Course studentUnsubscribed() {
+                return new Course(this.capacity, this.students - 1);
+            }
+
+            boolean isFullyBooked() { // <4>
+                return students >= capacity;
+            }
+        }
+
+        @EntityCreator // <5>
+        State() {
+            this(new HashMap<>(), false);
+        }
+
+        @EventSourcingHandler // <6>
+        State evolve(CourseCreated event) {
+            courses.put(event.courseId(), new Course(event.capacity(), 0));
+            return new State(courses, notified);
+        }
+
+        @EventSourcingHandler
+        State evolve(CourseCapacityChanged event) {
+            courses.computeIfPresent(event.courseId(), (id, course) -> course.capacity(event.capacity()));
+            return new State(courses, notified);
+        }
+
+        @EventSourcingHandler
+        State evolve(StudentSubscribedToCourse event) {
+            courses.computeIfPresent(event.courseId(), (id, course) -> course.studentSubscribed());
+            return new State(courses, notified);
+        }
+
+        @EventSourcingHandler
+        State evolve(StudentUnsubscribedFromCourse event) {
+            courses.computeIfPresent(event.courseId(), (id, course) -> course.studentUnsubscribed());
+            return new State(courses, notified);
+        }
+
+        @EventSourcingHandler
+        State evolve(AllCoursesFullyBookedNotificationSent event) { // <7>
+            return new State(courses, true);
+        }
+    }
+
+    // Command and Event handlers will be added in next steps...
+}
+----
+
+<1> Simplified to use a single faculty ID for this tutorial
+<2> Event-sourced entity that maintains state across multiple events
+<3> Inner record representing individual course state with capacity and current enrollment
+<4> Business logic to determine if a course is fully booked
+<5> Default constructor creating empty state
+<6> Event sourcing handlers that evolve state based on different event types
+<7> Handler to track when notification has already been sent - allows you to track it in your EventStore instead of external systems
+
+=== Step 3: Add command handler for notification
+
+Now let's add the command handler that actually sends the notification:
+
+[source,java]
+.src/main/java/io/axoniq/demo/university/faculty/automation/allcoursesfullybookednotifier/WhenAllCoursesFullyBookedThenSendNotification.java (continued)
+----
+    static class AutomationCommandHandler { // <1>
+
+        @CommandHandler
+        public void decide(
+                SendAllCoursesFullyBookedNotification command,
+                @InjectEntity(idProperty = FacultyTags.FACULTY_ID) State state, // <2>
+                ProcessingContext context
+        ) {
+            var canNotify = state != null && !state.notified(); // <3>
+            if (canNotify) {
+                var notification = new NotificationService.Notification("admin", "All courses are fully booked now."); // <4>
+                context.component(NotificationService.class).sendNotification(notification);
+                var eventAppender = EventAppender.forContext(context); // <5>
+                eventAppender.append(new AllCoursesFullyBookedNotificationSent(command.facultyId()));
+            }
+        }
+    }
+----
+
+<1> Internal command handler class for better organization
+<2> Inject the current state to check if we can send notification
+<3> Only send if we haven't notified already
+<4> Create and send the notification to admin
+<5> Record that we've sent the notification by emitting an event
+
+=== Step 4: Add event handlers for state monitoring
+
+Finally, let's add event handlers that monitor course state changes and trigger notifications:
+
+[source,java]
+.src/main/java/io/axoniq/demo/university/faculty/automation/allcoursesfullybookednotifier/WhenAllCoursesFullyBookedThenSendNotification.java (continued)
+----
+    static class AutomationEventHandler { // <1>
+
+        CompletableFuture<?> react(
+                StudentSubscribedToCourse event, // <2>
+                CommandDispatcher commandDispatcher,
+                ProcessingContext context
+        ) {
+            var state = context.component(StateManager.class).loadEntity(State.class, FACULTY_ID, context).join(); // <3>
+            return sendNotificationIfAllCoursesFullyBooked(state, commandDispatcher);
+        }
+
+        @EventHandler
+        CompletableFuture<?> react(
+                CourseCapacityChanged event, // <4>
+                CommandDispatcher commandDispatcher,
+                ProcessingContext context
+        ) {
+            var state = context.component(StateManager.class).loadEntity(State.class, FACULTY_ID, context).join();
+            return sendNotificationIfAllCoursesFullyBooked(state, commandDispatcher);
+        }
+
+        private CompletableFuture<?> sendNotificationIfAllCoursesFullyBooked( // <5>
+                State state,
+                CommandDispatcher commandDispatcher
+        ) {
+            var automationState = state != null ? state : new State();
+            var allCoursesFullyBooked = automationState.courses.values().stream().allMatch(State.Course::isFullyBooked); // <6>
+            var shouldNotify = allCoursesFullyBooked &amp;&amp; !automationState.notified();  // <7>
+            if (!shouldNotify) {
+                return CompletableFuture.completedFuture(null);
+            }
+            return commandDispatcher.send(new SendAllCoursesFullyBookedNotification(FACULTY_ID), Object.class); // <8>
+        }
+
+    }
+----
+
+<1> Event handler class that monitors relevant events
+<2> React to student subscriptions - might trigger notification if this makes all courses full
+<3> Load current state to evaluate condition
+<4> React to capacity changes - might affect whether all courses are full
+<5> Common logic to check condition and send command if needed
+<6> Business rule: all courses must be fully booked
+<7> Only notify if condition is met AND we haven't notified before
+<8> Send command to trigger notification (which goes to command handler above). The `CommandDispatcher` allows to execute the command within the current `ProcessingContext`.
+
+=== Step 5: Configuration
+
+Now we need to configure all the components - the event-sourced entity, command handler, and event processor:
+
+[source,java]
+.src/main/java/io/axoniq/demo/university/faculty/automation/allcoursesfullybookednotifier/AllCoursesFullyBookedNotifierConfiguration.java
+----
+public class AllCoursesFullyBookedNotifierConfiguration {
+
+    public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
+        EntityModule<String, WhenAllCoursesFullyBookedThenSendNotification.State> automationState = // <1>
+                EventSourcedEntityModule.autodetected(String.class, WhenAllCoursesFullyBookedThenSendNotification.State.class);
+
+        PooledStreamingEventProcessorModule automationProcessor = EventProcessorModule // <2>
+                .pooledStreaming("Automation_WhenAllCoursesFullyBookedThenSendNotification_Processor")
+                .eventHandlingComponents(
+                        c -> c.autodetected(cfg -> new WhenAllCoursesFullyBookedThenSendNotification.AutomationEventHandler()) // <3>
+                )
+                .notCustomized();
+
+        var commandHandlingModule = CommandHandlingModule.named("SendAllCoursesFullyBookedCommandHandler") // <4>
+                .commandHandlers()
+                .annotatedCommandHandlingComponent(cfg -> new WhenAllCoursesFullyBookedThenSendNotification.AutomationCommandHandler()) // <5>
+                .build();
+
+        return configurer
+                .componentRegistry(cr -> cr.registerModule(automationState)) // <6>
+                .registerCommandHandlingModule(commandHandlingModule) // <7>
+                .modelling(modelling -> modelling.messaging(messaging -> messaging.eventProcessing(eventProcessing ->
+                        eventProcessing.pooledStreaming(ps -> ps.processor(automationProcessor)) // <8>
+                )));
+    }
+}
+----
+
+<1> Configure the event-sourced entity module for state management
+<2> Configure the event processor for handling incoming events
+<3> Register the event handler component
+<4> Configure command handling module with descriptive name
+<5> Register the command handler component
+<6> Register the entity module for state persistence
+<7> Register the command handling module
+<8> Register the event processor module
+
+== Testing the stateful event handler
+
+Let's create a comprehensive test that verifies the stateful behavior:
+
+[source,java]
+.src/test/java/io/axoniq/demo/university/faculty/automation/allcoursesfullybookednotifier/WhenAllCoursesFullyBookedThenSendNotificationTest.java
+----
+public class WhenAllCoursesFullyBookedThenSendNotificationAxonFixtureTest {
+
+    private AxonTestFixture fixture;
+
+    @BeforeEach
+    void beforeEach() {
+        var application = new UniversityAxonApplication();
+        var sliceConfigurer = application.configurer(configurer -> { // <1>
+            configurer = NotificationServiceConfiguration.configure(configurer);
+            return AllCoursesFullyBookedNotifierConfiguration.configure(configurer);
+        });
+        fixture = AxonTestFixture.with(sliceConfigurer);
+    }
+
+    @AfterEach
+    void afterEach() {
+        fixture.stop();
+    }
+
+    @Test
+    void automationTest() {
+        var studentId1 = StudentId.random();
+        var studentId2 = StudentId.random();
+        var courseId1 = CourseId.random();
+        var courseId2 = CourseId.random();
+
+        var expectedNotification = new NotificationService.Notification("admin", "All courses are fully booked now.");
+
+        fixture.given()
+                .events( // <2>
+                        new CourseCreated(courseId1, "Course 1", 2), // Create course with capacity 2
+                        new CourseCreated(courseId2, "Course 2", 2), // Create course with capacity 2
+                        new StudentSubscribedToCourse(studentId1, courseId1), // Fill first course
+                        new StudentSubscribedToCourse(studentId2, courseId1),
+                        new StudentSubscribedToCourse(studentId1, courseId2), // Fill second course
+                        new StudentSubscribedToCourse(studentId2, courseId2)  // This should trigger notification
+                )
+                .then()
+                .await(r -> r.expect(cfg -> assertNotificationSent(cfg, expectedNotification)));
+    }
+
+    private void assertNotificationSent(Configuration configuration, NotificationService.Notification expectedNotification) {
+        var notificationService = (RecordingNotificationService) configuration.getComponent(NotificationService.class);
+        assertThat(notificationService.sent()).contains(expectedNotification); // <3>
+    }
+
+}
+----
+
+<.> Configure both notification service and our stateful handler
+<.> Sequence of events that gradually fills all courses to capacity
+<.> **Then**: Verify the notification was sent when condition was met
+
+== Key concepts review
+
+=== Stateless vs stateful event handlers
+
+|===
+|Aspect |Stateless Event Handler |Stateful Event Handler
+
+|**State Management** |No internal state |Maintains state across events
+|**Complexity** |Simple, single-event reactions |Complex, multi-event conditions
+|**Use Cases** |Notifications, logging, integrations |Read models, Process Managers / Sagas, complex conditions, monitoring
+|**Performance** |Fast, no state loading |Slower due to state management
+|**Concurrency** |High parallelism possible |Limited by state consistency needs
+|===
+
+== Integration with the main application
+
+To use this feature in your main application, register the configuration:
+
+[source,java]
+.src/main/java/io/axoniq/demo/university/UniversityAxonApplication.java
+----
+public class UniversityAxonApplication {
+
+    public static ApplicationConfigurer configurer() {
+        return configurer(c -> {
+            // Other configurations...
+            NotificationServiceConfiguration.configure(c); // <1>
+            AllCoursesFullyBookedNotifierConfiguration.configure(c); // <2>
+        });
+    }
+
+    // rest omitted for brevity
+}
+----
+
+<1> Register the notification service infrastructure
+<2> Register the stateful automation configuration
+
+== Summary
+
+In this section, you learned how to implement a stateful event handler for complex condition monitoring. Key takeaways:
+
+- **Stateful handlers** maintain state across multiple events to implement complex business logic
+- **Event sourcing** provides reliable state management and complete auditability for the automation logic
+- **Event Modeling Automation pattern** provides a clear way to visualize and design automated processes that monitor system state and trigger actions
+
+=== Command-based reactions
+
+Notice that in this example, when the automation condition is met, we trigger a **Command** (`SendAllCoursesFullyBookedNotification`) rather than directly calling the notification service. This demonstrates a key principle: stateful event handlers can execute any business logic and interact with other parts of your application through the Event-Driven Architecture.
+
+This approach provides several benefits:
+- **Decoupling**: The automation logic is separated from the notification implementation
+- **Flexibility**: You can trigger complex business processes, not just simple notifications
+- **Consistency**: All business operations flow through the same command handling infrastructure
+- **Testability**: Each part can be tested independently
+
+This pattern enables sophisticated automation scenarios: building complex dashboards, and creating intelligent alerting systems.
