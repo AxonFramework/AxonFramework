@@ -25,6 +25,10 @@ import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.eventhandling.deadletter.CachingSequencedDeadLetterQueue;
+import org.axonframework.messaging.eventhandling.deadletter.DeadLetteringEventHandlingComponent;
+import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
+import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.eventhandling.processing.EventProcessingException;
 import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.eventhandling.processing.ProcessorEventHandlingComponents;
@@ -100,6 +104,8 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     private final ScheduledExecutorService workerExecutor;
     private final Coordinator coordinator;
     private final WorkPackage.EventFilter workPackageEventFilter;
+    private final SequencedDeadLetterProcessor<EventMessage> deadLetterProcessor;
+    private final CachingSequencedDeadLetterQueue<EventMessage> cachingDeadLetterQueue;
 
     private final AtomicReference<String> tokenStoreIdentifier = new AtomicReference<>();
     private final Map<Integer, TrackerStatus> processingStatus = new ConcurrentHashMap<>();
@@ -136,14 +142,48 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         this.eventSource = configuration.eventSource();
         this.tokenStore = configuration.tokenStore();
         this.unitOfWorkFactory = configuration.unitOfWorkFactory();
+        this.workerExecutor = configuration.workerExecutor();
 
-        this.eventHandlingComponents = new ProcessorEventHandlingComponents(eventHandlingComponents);
+        // Set up DLQ with caching if configured
+        SequencedDeadLetterQueue<EventMessage> configuredDlq = configuration.deadLetterQueue();
+        Consumer<Segment> segmentReleasedAction;
+        if (configuredDlq != null) {
+            this.cachingDeadLetterQueue = new CachingSequencedDeadLetterQueue<>(configuredDlq);
+            // Combine any user-configured segment release action with cache clearing
+            Consumer<Segment> userAction = configuration.segmentReleasedAction();
+            segmentReleasedAction = segment -> {
+                cachingDeadLetterQueue.onSegmentReleased();
+                userAction.accept(segment);
+            };
+        } else {
+            this.cachingDeadLetterQueue = null;
+            segmentReleasedAction = configuration.segmentReleasedAction();
+        }
+
+        // Wrap event handling components with DLQ support if configured
+        if (this.cachingDeadLetterQueue != null) {
+            List<EventHandlingComponent> wrappedComponents = eventHandlingComponents.stream()
+                    .map(component -> new DeadLetteringEventHandlingComponent(
+                            component,
+                            this.cachingDeadLetterQueue,
+                            configuration.deadLetterEnqueuePolicy(),
+                            configuration.clearDeadLetterQueueOnReset()
+                    ))
+                    .map(c -> (EventHandlingComponent) c)
+                    .toList();
+            this.eventHandlingComponents = new ProcessorEventHandlingComponents(wrappedComponents);
+            // Use the first component as the dead letter processor for processing dead letters
+            this.deadLetterProcessor = (DeadLetteringEventHandlingComponent) wrappedComponents.getFirst();
+        } else {
+            this.eventHandlingComponents = new ProcessorEventHandlingComponents(eventHandlingComponents);
+            this.deadLetterProcessor = null;
+        }
+
         this.workPackageEventFilter = new DefaultWorkPackageEventFilter(
                 this.name,
                 this.eventHandlingComponents,
                 configuration.errorHandler()
         );
-        this.workerExecutor = configuration.workerExecutor();
         var supportedEvents = this.eventHandlingComponents.supportedEvents();
         this.eventCriteria = Objects.requireNonNull(
                 configuration.eventCriteriaProvider().apply(supportedEvents),
@@ -167,7 +207,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
                                       .initialToken(configuration.initialToken())
                                       .coordinatorClaimExtension(configuration.coordinatorExtendsClaims())
                                       .eventCriteria(eventCriteria)
-                                      // .segmentReleasedAction(segment -> eventHandlerInvoker().segmentReleased(segment)) // TODO #3304 - Integrate event replay logic into Event Handling Component
+                                      .segmentReleasedAction(segmentReleasedAction)
                                       .build();
     }
 
