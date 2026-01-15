@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -254,7 +254,7 @@ class SimpleQueryBusTest {
                                                           .thenApply(entry -> entry.message().payload());
             // then...
             assertEquals("query1234", result.get());
-            verify(transactionManager).registerHandlers(any(UnitOfWork.class));
+            verify(transactionManager).attachToProcessingLifecycle(any(UnitOfWork.class));
         }
 
         @Test
@@ -274,7 +274,7 @@ class SimpleQueryBusTest {
             List<String> completedResult = result.get();
             assertTrue(completedResult.contains("query1234"));
             assertTrue(completedResult.contains("query5678"));
-            verify(transactionManager).registerHandlers(any(UnitOfWork.class));
+            verify(transactionManager).attachToProcessingLifecycle(any(UnitOfWork.class));
         }
     }
 

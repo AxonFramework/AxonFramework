@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,6 @@
  */
 
 package org.axonframework.messaging.core.unitofwork.transaction;
-
-import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.core.unitofwork.ProcessingLifecycle;
 
 /**
  * A {@link TransactionManager} implementation that does nothing.
@@ -37,7 +34,7 @@ public enum NoTransactionManager implements TransactionManager {
     /**
      * Returns the singleton instance of this {@link TransactionManager}.
      *
-     * @return The singleton instance of this {@link TransactionManager}.
+     * @return the singleton instance of this {@link TransactionManager}
      */
     public static TransactionManager instance() {
         return INSTANCE;
@@ -47,11 +44,6 @@ public enum NoTransactionManager implements TransactionManager {
     @Override
     public Transaction startTransaction() {
         return TRANSACTION;
-    }
-
-    @Override
-    public void registerHandlers(@Nonnull ProcessingLifecycle processingLifecycle) {
-        // no-op
     }
 
     private static final Transaction TRANSACTION = new Transaction() {
