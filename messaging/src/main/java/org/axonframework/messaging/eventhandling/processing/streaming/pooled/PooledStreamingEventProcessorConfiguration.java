@@ -38,7 +38,13 @@ import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorH
 import org.axonframework.messaging.eventhandling.processing.errorhandling.PropagatingErrorHandler;
 import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
+import org.axonframework.messaging.eventhandling.deadletter.CachingSequencedDeadLetterQueue;
+import org.axonframework.messaging.deadletter.Decisions;
+import org.axonframework.messaging.deadletter.EnqueuePolicy;
+import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
+
+import static org.axonframework.messaging.deadletter.ThrowableCause.truncated;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
 import org.axonframework.messaging.eventstreaming.EventCriteria;
@@ -107,6 +113,11 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
             eventMessage -> messageMonitor.onMessageIngested(eventMessage).reportIgnored();
     private Supplier<ProcessingContext> schedulingProcessingContextProvider =
             () -> new EventSchedulingProcessingContext(EmptyApplicationContext.INSTANCE);
+    private Consumer<Segment> segmentReleasedAction = segment -> {
+    };
+    private SequencedDeadLetterQueue<EventMessage> deadLetterQueue;
+    private EnqueuePolicy<EventMessage> deadLetterEnqueuePolicy = (letter, cause) -> Decisions.enqueue(truncated(cause));
+    private boolean clearDeadLetterQueueOnReset = true;
 
     /**
      * Constructs a new {@code PooledStreamingEventProcessorConfiguration} with just default values. Do not retrieve any
@@ -487,6 +498,92 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
         return this;
     }
 
+    /**
+     * Registers an action to perform when a segment is released. This action is invoked when a segment's claim is
+     * released, either due to shutdown, rebalancing, or explicit release.
+     * <p>
+     * This is particularly useful for clearing caches that are scoped to segment processing. For example, the
+     * {@link CachingSequencedDeadLetterQueue} uses this to clear its sequence identifier cache when a segment is
+     * released, ensuring cache consistency across processor instances.
+     * <p>
+     * Defaults to a no-op.
+     *
+     * @param segmentReleasedAction The action to perform when a segment is released.
+     * @return The current instance, for fluent interfacing.
+     */
+    public PooledStreamingEventProcessorConfiguration segmentReleasedAction(
+            @Nonnull Consumer<Segment> segmentReleasedAction
+    ) {
+        assertNonNull(segmentReleasedAction, "Segment released action may not be null");
+        this.segmentReleasedAction = segmentReleasedAction;
+        return this;
+    }
+
+    /**
+     * Configures a {@link SequencedDeadLetterQueue} to be used by this processor for handling failed events.
+     * <p>
+     * When configured, the processor will automatically wrap the event handling components with a dead-lettering
+     * decorator. Failed events will be enqueued in the provided queue based on the configured
+     * {@link #deadLetterEnqueuePolicy(EnqueuePolicy) enqueue policy}.
+     * <p>
+     * The queue will be automatically wrapped with a {@link CachingSequencedDeadLetterQueue} to optimize
+     * {@code contains()} lookups. The cache is cleared when segments are released to ensure consistency.
+     * <p>
+     * <b>Note:</b> When this is configured, the {@link #segmentReleasedAction(Consumer)} will be overwritten
+     * to clear the DLQ cache. If you need custom segment release behavior in addition to cache clearing,
+     * configure it after calling this method and chain the actions together.
+     *
+     * @param deadLetterQueue The {@link SequencedDeadLetterQueue} to store dead letters in.
+     * @return The current instance, for fluent interfacing.
+     * @see CachingSequencedDeadLetterQueue
+     * @see #deadLetterEnqueuePolicy(EnqueuePolicy)
+     * @see #clearDeadLetterQueueOnReset(boolean)
+     */
+    public PooledStreamingEventProcessorConfiguration deadLetterQueue(
+            @Nonnull SequencedDeadLetterQueue<EventMessage> deadLetterQueue
+    ) {
+        assertNonNull(deadLetterQueue, "Dead letter queue may not be null");
+        this.deadLetterQueue = deadLetterQueue;
+        return this;
+    }
+
+    /**
+     * Configures the {@link EnqueuePolicy} to use when deciding whether to dead-letter a failed event.
+     * <p>
+     * The policy is invoked for each failed event and can decide whether to enqueue it in the dead-letter queue,
+     * and with what diagnostics information. The default policy always enqueues with a truncated cause message.
+     * <p>
+     * Defaults to a policy that always enqueues with the cause message truncated to 1024 characters.
+     *
+     * @param deadLetterEnqueuePolicy The {@link EnqueuePolicy} to use for dead-lettering decisions.
+     * @return The current instance, for fluent interfacing.
+     * @see #deadLetterQueue(SequencedDeadLetterQueue)
+     */
+    public PooledStreamingEventProcessorConfiguration deadLetterEnqueuePolicy(
+            @Nonnull EnqueuePolicy<EventMessage> deadLetterEnqueuePolicy
+    ) {
+        assertNonNull(deadLetterEnqueuePolicy, "Dead letter enqueue policy may not be null");
+        this.deadLetterEnqueuePolicy = deadLetterEnqueuePolicy;
+        return this;
+    }
+
+    /**
+     * Configures whether to clear the dead-letter queue when the processor is reset.
+     * <p>
+     * When {@code true} (the default), the dead-letter queue will be cleared when a processor reset is triggered.
+     * This ensures that dead-lettered events from before the reset are not processed again.
+     * <p>
+     * Set to {@code false} if you want to preserve dead-lettered events across resets.
+     *
+     * @param clearDeadLetterQueueOnReset Whether to clear the dead-letter queue on reset.
+     * @return The current instance, for fluent interfacing.
+     * @see #deadLetterQueue(SequencedDeadLetterQueue)
+     */
+    public PooledStreamingEventProcessorConfiguration clearDeadLetterQueueOnReset(boolean clearDeadLetterQueueOnReset) {
+        this.clearDeadLetterQueueOnReset = clearDeadLetterQueueOnReset;
+        return this;
+    }
+
     @Override
     protected void validate() throws AxonConfigurationException {
         super.validate();
@@ -646,6 +743,42 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      */
     public Supplier<ProcessingContext> schedulingProcessingContextProvider() {
         return schedulingProcessingContextProvider;
+    }
+
+    /**
+     * Returns the action to perform when a segment is released.
+     *
+     * @return The segment released action.
+     */
+    public Consumer<Segment> segmentReleasedAction() {
+        return segmentReleasedAction;
+    }
+
+    /**
+     * Returns the configured {@link SequencedDeadLetterQueue}, or {@code null} if not configured.
+     *
+     * @return The dead letter queue, or {@code null}.
+     */
+    public SequencedDeadLetterQueue<EventMessage> deadLetterQueue() {
+        return deadLetterQueue;
+    }
+
+    /**
+     * Returns the configured {@link EnqueuePolicy} for dead-lettering decisions.
+     *
+     * @return The dead letter enqueue policy.
+     */
+    public EnqueuePolicy<EventMessage> deadLetterEnqueuePolicy() {
+        return deadLetterEnqueuePolicy;
+    }
+
+    /**
+     * Returns whether to clear the dead-letter queue on reset.
+     *
+     * @return {@code true} if the queue should be cleared on reset, {@code false} otherwise.
+     */
+    public boolean clearDeadLetterQueueOnReset() {
+        return clearDeadLetterQueueOnReset;
     }
 
     @Override
