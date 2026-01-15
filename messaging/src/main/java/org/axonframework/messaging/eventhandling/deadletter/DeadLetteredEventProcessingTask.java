@@ -91,13 +91,11 @@ class DeadLetteredEventProcessingTask {
 
         MessageStream.Empty<Message> result = delegate.handle(letter.message(), context);
 
-        // todo: should I attach to result or ProcessingContext lifecycle?
-        return result.reduce(null, (acc, entry) -> acc)
+        // todo: should I attach to result or ProcessingContext lifecycle? Test it with TransactionalUnitOfWork and check consistency
+        return result.asCompletableFuture()
                      .handle((ignored, error) -> {
                          if (error != null) {
                              return onError(letter, error);
-                         } else if (result.error().isPresent()) {
-                             return onError(letter, result.error().get());
                          } else {
                              return onSuccess(letter);
                          }
