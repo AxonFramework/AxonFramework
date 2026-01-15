@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,12 +40,13 @@ import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorH
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 import static org.axonframework.common.BuilderUtils.assertThat;
 
 /**
- * Event processor implementation that {@link EventBus#subscribe(Consumer) subscribes} to the {@link EventBus} for
+ * Event processor implementation that {@link EventBus#subscribe(BiFunction) subscribes} to the {@link EventBus} for
  * events. Events published on the event bus are supplied to this processor in the publishing thread.
  * <p>
  *

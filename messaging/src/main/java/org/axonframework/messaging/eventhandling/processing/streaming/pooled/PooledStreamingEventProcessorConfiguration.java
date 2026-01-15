@@ -41,14 +41,9 @@ import org.axonframework.messaging.eventhandling.processing.streaming.segmenting
 import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
-import org.axonframework.messaging.eventhandling.tracing.DefaultEventProcessorSpanFactory;
-import org.axonframework.messaging.eventhandling.tracing.EventProcessorSpanFactory;
 import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.messaging.eventstreaming.StreamableEventSource;
 import org.axonframework.messaging.eventstreaming.TrackingTokenSource;
-import org.axonframework.messaging.monitoring.MessageMonitor;
-import org.axonframework.messaging.monitoring.NoOpMessageMonitor;
-import org.axonframework.messaging.tracing.NoOpSpanFactory;
 
 import java.time.Clock;
 import java.util.Objects;
@@ -68,17 +63,15 @@ import static org.axonframework.common.BuilderUtils.assertStrictPositive;
  * Upon initialization of this configuration, the following fields are defaulted:
  * <ul>
  *     <li>The {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}.</li>
- *     <li>The {@link MessageMonitor} defaults to a {@link NoOpMessageMonitor}.</li>
  *     <li>The {@code initialSegmentCount} defaults to {@code 16}.</li>
  *     <li>The {@code initialToken} function defaults to a {@link ReplayToken} that starts streaming
- *          from the {@link StreamableEventSource#latestToken() tail} with the replay flag enabled until the
- *          {@link StreamableEventSource#firstToken() head} at the moment of initialization is reached.</li>
+ *          from the {@link StreamableEventSource#latestToken(ProcessingContext) tail} with the replay flag enabled until the
+ *          {@link StreamableEventSource#firstToken(ProcessingContext) head} at the moment of initialization is reached.</li>
  *     <li>The {@code tokenClaimInterval} defaults to {@code 5000} milliseconds.</li>
  *     <li>The {@link MaxSegmentProvider} (used by {@link PooledStreamingEventProcessor#maxCapacity()}) defaults to {@link MaxSegmentProvider#maxShort()}.</li>
  *     <li>The {@code claimExtensionThreshold} defaults to {@code 5000} milliseconds.</li>
  *     <li>The {@code batchSize} defaults to {@code 1}.</li>
  *     <li>The {@link Clock} defaults to {@link GenericEventMessage#clock}.</li>
- *     <li>The {@link EventProcessorSpanFactory} defaults to a {@link DefaultEventProcessorSpanFactory} backed by a {@link NoOpSpanFactory}.</li>
  *     <li>The {@code coordinatorExtendsClaims} defaults to a {@code false}.</li>
  * </ul>
  * The following fields of this configuration are <b>hard requirements</b> and as such should be provided:
@@ -110,9 +103,10 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
     private boolean coordinatorExtendsClaims = false;
     private Function<Set<QualifiedName>, EventCriteria> eventCriteriaProvider =
             (supportedEvents) -> EventCriteria.havingAnyTag().andBeingOneOfTypes(supportedEvents);
-    private Consumer<? super EventMessage> ignoredMessageHandler = eventMessage -> messageMonitor.onMessageIngested(
-            eventMessage).reportIgnored();
-    private Supplier<ProcessingContext> schedulingProcessingContextProvider = () -> new EventSchedulingProcessingContext(EmptyApplicationContext.INSTANCE);
+    private Consumer<? super EventMessage> ignoredMessageHandler =
+            eventMessage -> messageMonitor.onMessageIngested(eventMessage).reportIgnored();
+    private Supplier<ProcessingContext> schedulingProcessingContextProvider =
+            () -> new EventSchedulingProcessingContext(EmptyApplicationContext.INSTANCE);
 
     /**
      * Constructs a new {@code PooledStreamingEventProcessorConfiguration} with just default values. Do not retrieve any
@@ -161,19 +155,6 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
     @Override
     public PooledStreamingEventProcessorConfiguration errorHandler(@Nonnull ErrorHandler errorHandler) {
         super.errorHandler(errorHandler);
-        return this;
-    }
-
-    @Override
-    public PooledStreamingEventProcessorConfiguration messageMonitor(
-            @Nonnull MessageMonitor<? super EventMessage> messageMonitor) {
-        super.messageMonitor(messageMonitor);
-        return this;
-    }
-
-    @Override
-    public PooledStreamingEventProcessorConfiguration spanFactory(@Nonnull EventProcessorSpanFactory spanFactory) {
-        super.spanFactory(spanFactory);
         return this;
     }
 
@@ -319,8 +300,8 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * Defaults to an automatic replay since the start of the stream.
      * <p>
      * More specifically, it defaults to a {@link ReplayToken} that starts streaming from the
-     * {@link StreamableEventSource#latestToken() tail} with the replay flag enabled until the
-     * {@link StreamableEventSource#firstToken() head} at the moment of initialization is reached.
+     * {@link StreamableEventSource#latestToken(ProcessingContext) tail} with the replay flag enabled until the
+     * {@link StreamableEventSource#firstToken(ProcessingContext) head} at the moment of initialization is reached.
      *
      * @param initialToken The {@link Function} generating the initial {@link TrackingToken} based on a given
      *                     {@link StreamableEventSource}.
@@ -492,8 +473,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * {@link WorkPackage}. The provided {@code ProcessingContext} is enriched with resources from the
      * {@link MessageStream.Entry} to evaluate whether the event can be handled by this package's {@link Segment}.
      * Currently, the only usage of the context is for
-     * {@link EventHandlingComponent#sequenceIdentifierFor(EventMessage,
-     * ProcessingContext)} execution.
+     * {@link EventHandlingComponent#sequenceIdentifierFor(EventMessage, ProcessingContext)} execution.
      *
      * @param schedulingProcessingContextProvider The {@link ProcessingContext} provider.
      * @return The current Builder instance, for fluent interfacing.

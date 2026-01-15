@@ -31,7 +31,7 @@ import org.springframework.context.annotation.Bean;
  * @since 3.0.3
  */
 @AutoConfiguration
-@AutoConfigureAfter(TransactionAutoConfiguration.class)
+@AutoConfigureAfter({JpaTransactionAutoConfiguration.class, JdbcTransactionAutoConfiguration.class})
 public class NoOpTransactionAutoConfiguration {
 
     /**

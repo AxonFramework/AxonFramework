@@ -28,7 +28,7 @@ import org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedJpaEventStor
 import org.axonframework.eventsourcing.eventstore.jpa.JpaPollingEventCoordinator;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaTransactionalExecutorProvider;
 import org.axonframework.extension.spring.messaging.unitofwork.SpringTransactionManager;
-import org.axonframework.extension.springboot.autoconfig.TransactionAutoConfiguration;
+import org.axonframework.extension.springboot.autoconfig.JpaTransactionAutoConfiguration;
 import org.axonframework.extension.springboot.eventsourcing.eventstore.jpa.AggregateBasedJpaStorageEngineBackedEventStoreIT.TestConfig;
 import org.axonframework.messaging.core.EmptyApplicationContext;
 import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
@@ -57,7 +57,7 @@ import javax.sql.DataSource;
  * @author John Hendrikx
  */
 @SpringBootTest(classes = TestConfig.class)
-@ImportAutoConfiguration(TransactionAutoConfiguration.class)
+@ImportAutoConfiguration(JpaTransactionAutoConfiguration.class)
 class AggregateBasedJpaStorageEngineBackedEventStoreIT extends StorageEngineBackedEventStoreTestSuite<AggregateBasedJpaEventStorageEngine> {
 
     private static AggregateBasedJpaEventStorageEngine engine;
