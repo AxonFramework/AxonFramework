@@ -38,12 +38,11 @@ import java.util.function.Predicate;
  */
 @Internal
 class ProcessorDefinitionBuilder<T extends EventProcessorConfiguration>
-        implements ProcessorDefinitionSelectorStep<T>, ProcessorDefinitionConfigurationStep<T>, ProcessorDefinition {
+        implements ProcessorDefinitionSelectorStep<T>, ProcessorDefinitionConfigurationStep<T> {
 
     private final EventProcessorSettings.ProcessorMode mode;
     private final String name;
     private Predicate<ProcessorDefinition.EventHandlerDescriptor> selector;
-    private Function<T, T> configurationCustomizer;
 
     /**
      * Creates a new builder for a processor definition with the given mode and name.
@@ -61,15 +60,13 @@ class ProcessorDefinitionBuilder<T extends EventProcessorConfiguration>
     @Nonnull
     public ProcessorDefinition withConfiguration(@Nonnull Function<T, T> configurer) {
         Assert.notNull(configurer, () -> "Configuration customizer must not be null");
-        this.configurationCustomizer = configurer;
-        return this;
+        return new CompletedProcessorDefinitionImpl<>(mode, name, selector, configurer);
     }
 
     @Override
     @Nonnull
     public ProcessorDefinition withDefaultSettings() {
-        this.configurationCustomizer = Function.identity();
-        return this;
+        return withConfiguration(Function.identity());
     }
 
     @Override
@@ -82,27 +79,22 @@ class ProcessorDefinitionBuilder<T extends EventProcessorConfiguration>
         return this;
     }
 
-    @Override
-    public boolean matchesSelector(@Nonnull EventHandlerDescriptor eventHandlerDescriptor) {
-        return selector.test(eventHandlerDescriptor);
-    }
+    private record CompletedProcessorDefinitionImpl<T extends EventProcessorConfiguration>(
+            @Override EventProcessorSettings.ProcessorMode mode,
+            @Override String name,
+            Predicate<EventHandlerDescriptor> selector,
+            Function<T, T> configurationCustomizer) implements ProcessorDefinition {
 
-    @SuppressWarnings("unchecked")
-    @Override
-    @Nonnull
-    public EventProcessorConfiguration applySettings(@Nonnull EventProcessorConfiguration settings) {
-        return configurationCustomizer.apply((T) settings);
-    }
+        @Override
+        public boolean matchesSelector(@Nonnull EventHandlerDescriptor eventHandlerDescriptor) {
+            return selector.test(eventHandlerDescriptor);
+        }
 
-    @Override
-    @Nonnull
-    public EventProcessorSettings.ProcessorMode mode() {
-        return mode;
-    }
-
-    @Override
-    @Nonnull
-    public String name() {
-        return name;
+        @Nonnull
+        @Override
+        public EventProcessorConfiguration applySettings(@Nonnull EventProcessorConfiguration settings) {
+            //noinspection unchecked
+            return configurationCustomizer.apply((T) settings);
+        }
     }
 }

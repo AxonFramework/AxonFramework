@@ -31,10 +31,8 @@ import org.axonframework.messaging.eventhandling.configuration.EventProcessorMod
 import org.axonframework.messaging.queryhandling.QueryMessage;
 import org.axonframework.messaging.queryhandling.configuration.QueryHandlingModule;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -143,24 +141,7 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
         return handlerBeansRefs
                 .stream()
                 .map(name -> new NamedBeanDefinition(name, beanFactory.getBeanDefinition(name)))
-                .collect(Collectors.groupingBy(
-                                 nbd -> {
-                                     String className = nbd.definition().getBeanClassName();
-                                     if (className == null) {
-                                         if (nbd.definition() instanceof AbstractBeanDefinition abstractBeanDefinition) {
-                                             if (abstractBeanDefinition.hasBeanClass()) {
-                                                 className = abstractBeanDefinition.getBeanClass().getName();
-                                             } else if (nbd.definition() instanceof AnnotatedBeanDefinition annotatedBeanDefinition) {
-                                                 className = annotatedBeanDefinition.getMetadata().getClassName();
-                                             }
-                                         }
-                                     }
-                                     return (className != null && className.contains("."))
-                                             ? className.substring(0, className.lastIndexOf('.'))
-                                             : "default";
-                                 }
-                         )
-                );
+                .collect(Collectors.groupingBy( nbd -> BeanDefinitionUtils.extractPackageName(nbd.definition)));
     }
 
     @Override

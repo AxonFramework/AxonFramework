@@ -67,9 +67,9 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
      * @param settings             The map of processor settings, keyed by processor name.
      * @param axonConfiguration    The Axon configuration to retrieve components from.
      */
-    public DefaultProcessorModuleFactory(List<ProcessorDefinition> processorDefinitions,
-                                         Map<String, EventProcessorSettings> settings,
-                                         Configuration axonConfiguration) {
+    public DefaultProcessorModuleFactory(@Nonnull List<ProcessorDefinition> processorDefinitions,
+                                         @Nonnull Map<String, EventProcessorSettings> settings,
+                                         @Nonnull Configuration axonConfiguration) {
         this.processorDefinitions = processorDefinitions;
         this.allSettings = settings;
         this.axonConfiguration = axonConfiguration;
@@ -184,15 +184,7 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
         }
         if (matches.isEmpty()) {
             // we try to detect the package from the bean definition
-            String className = handler.beanDefinition().getBeanClassName();
-            if (className == null || className.isBlank()) {
-                return handler.beanType().getPackageName();
-            }
-            if (className.contains(".")) {
-                return className.substring(0, className.lastIndexOf('.'));
-            } else {
-                return "default";
-            }
+            return BeanDefinitionUtils.extractPackageName(handler.beanDefinition());
         }
         if (matches.size() == 1) {
             return matches.iterator().next();
