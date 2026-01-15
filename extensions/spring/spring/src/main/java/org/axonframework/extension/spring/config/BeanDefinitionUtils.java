@@ -22,6 +22,8 @@ import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 
+import java.util.Optional;
+
 /**
  * Utility methods for working with Spring {@link BeanDefinition}s.
  *
@@ -29,7 +31,7 @@ import org.springframework.beans.factory.support.AbstractBeanDefinition;
  * @since 5.0.2
  */
 @Internal
-class BeanDefinitionUtils {
+public class BeanDefinitionUtils {
 
     private BeanDefinitionUtils() {
         // Utility class
@@ -51,14 +53,11 @@ class BeanDefinitionUtils {
      * @return The package name, or "default" if the package cannot be determined.
      */
     @Nonnull
-    static String extractPackageName(@Nonnull BeanDefinition definition) {
-        String className = resolveClassName(definition);
-
-        if (className != null && className.contains(".")) {
-            return className.substring(0, className.lastIndexOf('.'));
-        }
-
-        return "default";
+    public static String extractPackageName(@Nonnull BeanDefinition definition) {
+        return resolveClassName(definition)
+                .filter(className -> className.contains("."))
+                .map(className -> className.substring(0, className.lastIndexOf('.')))
+                .orElse("default");
     }
 
     /**
@@ -67,26 +66,27 @@ class BeanDefinitionUtils {
      * Attempts multiple strategies to obtain the class name, returning the first non-null value.
      *
      * @param definition The bean definition to resolve the class name from.
-     * @return The fully qualified class name, or null if it cannot be determined.
+     * @return An Optional containing the fully qualified class name, or empty if it cannot be determined.
      */
-    private static String resolveClassName(BeanDefinition definition) {
+    @Nonnull
+    public static Optional<String> resolveClassName(@Nonnull BeanDefinition definition) {
         // Standard bean class name
         String className = definition.getBeanClassName();
         if (className != null) {
-            return className;
+            return Optional.of(className);
         }
 
         // Try AbstractBeanDefinition
         if (definition instanceof AbstractBeanDefinition abstractBeanDefinition
                 && abstractBeanDefinition.hasBeanClass()) {
-            return abstractBeanDefinition.getBeanClass().getName();
+            return Optional.of(abstractBeanDefinition.getBeanClass().getName());
         }
 
         // Try AnnotatedBeanDefinition
         if (definition instanceof AnnotatedBeanDefinition annotatedBeanDefinition) {
-            return annotatedBeanDefinition.getMetadata().getClassName();
+            return Optional.of(annotatedBeanDefinition.getMetadata().getClassName());
         }
 
-        return null;
+        return Optional.empty();
     }
 }
