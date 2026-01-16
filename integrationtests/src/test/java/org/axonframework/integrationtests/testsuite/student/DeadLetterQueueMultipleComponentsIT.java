@@ -30,7 +30,6 @@ import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.messaging.eventhandling.deadletter.CachingSequencedDeadLetterQueue;
-import org.axonframework.messaging.eventhandling.deadletter.DeadLetterQueueConfiguration;
 import org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy;
 import org.junit.jupiter.api.*;
 
@@ -58,41 +57,32 @@ import static org.awaitility.Awaitility.await;
 class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
 
     private static final String PROCESSOR_NAME = "dlq-multi-component-processor";
-    private static final String FAIL_MARKER_1 = "-fail-1";
-    private static final String FAIL_MARKER_2 = "-fail-2";
+    private static final String[] FAIL_MARKERS = {"-fail-0", "-fail-1"};
 
-    private FailingRecordingEventHandlingComponent component1;
-    private FailingRecordingEventHandlingComponent component2;
+    private FailingRecordingEventHandlingComponent[] components;
 
     @BeforeEach
     void setUpComponents() {
         purgeEventStorage();
 
-        component1 = new FailingRecordingEventHandlingComponent(
-                "component1",
-                studentId -> studentId.contains(FAIL_MARKER_1)
-        );
-        component2 = new FailingRecordingEventHandlingComponent(
-                "component2",
-                studentId -> studentId.contains(FAIL_MARKER_2)
-        );
+        components = new FailingRecordingEventHandlingComponent[]{
+                new FailingRecordingEventHandlingComponent("component0", studentId -> studentId.contains(FAIL_MARKERS[0])),
+                new FailingRecordingEventHandlingComponent("component1", studentId -> studentId.contains(FAIL_MARKERS[1]))
+        };
     }
 
     @Override
     protected EventSourcingConfigurer testSuiteConfigurer(EventSourcingConfigurer configurer) {
         var processorModule = EventProcessorModule
                 .pooledStreaming(PROCESSOR_NAME)
-                .eventHandlingComponents(components -> components
-                        .declarative(cfg -> component1)
-                        .declarative(cfg -> component2))
-                .customized((cfg, c) -> c
-                        .deadLetterQueue(dlq -> dlq.enabled()));
+                .eventHandlingComponents(c -> c
+                        .declarative(cfg -> components[0])
+                        .declarative(cfg -> components[1]))
+                .customized((cfg, c) -> c.deadLetterQueue(dlq -> dlq.enabled()));
 
         return configurer.messaging(
                 messaging -> messaging.eventProcessing(
-                        ep -> ep.pooledStreaming(
-                                ps -> ps.processor(processorModule)
-                        )
+                        ep -> ep.pooledStreaming(ps -> ps.processor(processorModule))
                 )
         );
     }
@@ -102,11 +92,11 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
     class IndependentDlqTests {
 
         @Test
-        @DisplayName("When component1 fails an event, it should go to component1's DLQ only")
-        void failedEventInComponent1ShouldOnlyGoToComponent1Dlq() {
+        @DisplayName("When component0 fails an event, it should go to component0's DLQ only")
+        void failedEventInComponent0ShouldOnlyGoToComponent0Dlq() {
             // given
             startApp();
-            var failingStudentId = createId("student" + FAIL_MARKER_1);
+            var failingStudentId = createId("student" + FAIL_MARKERS[0]);
             var successStudentId = createId("student-ok");
             var courseId = createId("course");
 
@@ -117,28 +107,23 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
             // then
             await().atMost(10, TimeUnit.SECONDS)
                    .untilAsserted(() -> {
-                       // Component1's DLQ should contain the failed event
-                       var dlq1 = getComponent1Dlq();
-                       assertThat(dlq1.contains(failingStudentId).join()).isTrue();
-                       assertThat(dlq1.size().join()).isEqualTo(1L);
+                       assertThat(getDlq(0).contains(failingStudentId).join()).isTrue();
+                       assertThat(getDlq(0).size().join()).isEqualTo(1L);
 
-                       // Component2's DLQ should be empty
-                       var dlq2 = getComponent2Dlq();
-                       assertThat(dlq2.contains(failingStudentId).join()).isFalse();
-                       assertThat(dlq2.size().join()).isEqualTo(0L);
+                       assertThat(getDlq(1).contains(failingStudentId).join()).isFalse();
+                       assertThat(getDlq(1).size().join()).isEqualTo(0L);
 
-                       // Successful event should be handled by both components
-                       assertThat(component1.successfullyHandled()).contains(successStudentId);
-                       assertThat(component2.successfullyHandled()).contains(successStudentId);
+                       assertThat(components[0].successfullyHandled()).contains(successStudentId);
+                       assertThat(components[1].successfullyHandled()).contains(successStudentId);
                    });
         }
 
         @Test
-        @DisplayName("When component2 fails an event, it should go to component2's DLQ only")
-        void failedEventInComponent2ShouldOnlyGoToComponent2Dlq() {
+        @DisplayName("When component1 fails an event, it should go to component1's DLQ only")
+        void failedEventInComponent1ShouldOnlyGoToComponent1Dlq() {
             // given
             startApp();
-            var failingStudentId = createId("student" + FAIL_MARKER_2);
+            var failingStudentId = createId("student" + FAIL_MARKERS[1]);
             var successStudentId = createId("student-ok");
             var courseId = createId("course");
 
@@ -149,19 +134,14 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
             // then
             await().atMost(10, TimeUnit.SECONDS)
                    .untilAsserted(() -> {
-                       // Component1's DLQ should be empty
-                       var dlq1 = getComponent1Dlq();
-                       assertThat(dlq1.contains(failingStudentId).join()).isFalse();
-                       assertThat(dlq1.size().join()).isEqualTo(0L);
+                       assertThat(getDlq(0).contains(failingStudentId).join()).isFalse();
+                       assertThat(getDlq(0).size().join()).isEqualTo(0L);
 
-                       // Component2's DLQ should contain the failed event
-                       var dlq2 = getComponent2Dlq();
-                       assertThat(dlq2.contains(failingStudentId).join()).isTrue();
-                       assertThat(dlq2.size().join()).isEqualTo(1L);
+                       assertThat(getDlq(1).contains(failingStudentId).join()).isTrue();
+                       assertThat(getDlq(1).size().join()).isEqualTo(1L);
 
-                       // Successful event should be handled by both components
-                       assertThat(component1.successfullyHandled()).contains(successStudentId);
-                       assertThat(component2.successfullyHandled()).contains(successStudentId);
+                       assertThat(components[0].successfullyHandled()).contains(successStudentId);
+                       assertThat(components[1].successfullyHandled()).contains(successStudentId);
                    });
         }
     }
@@ -175,7 +155,7 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
         void subsequentEventsForFailedSequenceShouldBeEnqueuedInSameComponentDlq() {
             // given
             startApp();
-            var failingStudentId = createId("student" + FAIL_MARKER_1);
+            var failingStudentId = createId("student" + FAIL_MARKERS[0]);
             var courseId1 = createId("course-1");
             var courseId2 = createId("course-2");
             var courseId3 = createId("course-3");
@@ -188,14 +168,10 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
             // then
             await().atMost(10, TimeUnit.SECONDS)
                    .untilAsserted(() -> {
-                       // Component1's DLQ should contain all 3 events for the same sequence
-                       var dlq1 = getComponent1Dlq();
-                       assertThat(dlq1.contains(failingStudentId).join()).isTrue();
-                       assertThat(dlq1.sequenceSize(failingStudentId).join()).isEqualTo(3L);
+                       assertThat(getDlq(0).contains(failingStudentId).join()).isTrue();
+                       assertThat(getDlq(0).sequenceSize(failingStudentId).join()).isEqualTo(3L);
 
-                       // Component2's DLQ should have no events (different fail marker)
-                       var dlq2 = getComponent2Dlq();
-                       assertThat(dlq2.contains(failingStudentId).join()).isFalse();
+                       assertThat(getDlq(1).contains(failingStudentId).join()).isFalse();
                    });
         }
     }
@@ -205,36 +181,31 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
     class BothComponentsFailIndependentlyTests {
 
         @Test
-        @DisplayName("Component1 fails on student-1, Component2 fails on student-2 - each goes to correct DLQ")
+        @DisplayName("Component0 fails on student-0, Component1 fails on student-1 - each goes to correct DLQ")
         void bothComponentsCanFailOnDifferentSequences() {
             // given
             startApp();
-            var failingStudent1 = createId("student" + FAIL_MARKER_1);
-            var failingStudent2 = createId("student" + FAIL_MARKER_2);
+            var failingStudent0 = createId("student" + FAIL_MARKERS[0]);
+            var failingStudent1 = createId("student" + FAIL_MARKERS[1]);
             var successStudent = createId("student-ok");
             var courseId = createId("course");
 
             // when
+            studentEnrolledToCourse(failingStudent0, courseId);
             studentEnrolledToCourse(failingStudent1, courseId);
-            studentEnrolledToCourse(failingStudent2, courseId);
             studentEnrolledToCourse(successStudent, courseId);
 
             // then
             await().atMost(10, TimeUnit.SECONDS)
                    .untilAsserted(() -> {
-                       // Component1's DLQ should have student1
-                       var dlq1 = getComponent1Dlq();
-                       assertThat(dlq1.contains(failingStudent1).join()).isTrue();
-                       assertThat(dlq1.contains(failingStudent2).join()).isFalse();
+                       assertThat(getDlq(0).contains(failingStudent0).join()).isTrue();
+                       assertThat(getDlq(0).contains(failingStudent1).join()).isFalse();
 
-                       // Component2's DLQ should have student2
-                       var dlq2 = getComponent2Dlq();
-                       assertThat(dlq2.contains(failingStudent2).join()).isTrue();
-                       assertThat(dlq2.contains(failingStudent1).join()).isFalse();
+                       assertThat(getDlq(1).contains(failingStudent1).join()).isTrue();
+                       assertThat(getDlq(1).contains(failingStudent0).join()).isFalse();
 
-                       // Success event should be handled by both
-                       assertThat(component1.successfullyHandled()).contains(successStudent);
-                       assertThat(component2.successfullyHandled()).contains(successStudent);
+                       assertThat(components[0].successfullyHandled()).contains(successStudent);
+                       assertThat(components[1].successfullyHandled()).contains(successStudent);
                    });
         }
     }
@@ -248,34 +219,33 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
         void processingDeadLettersFromOneComponentShouldNotAffectOtherComponentDlq() {
             // given
             startApp();
-            var failingStudent1 = createId("student" + FAIL_MARKER_1);
-            var failingStudent2 = createId("student" + FAIL_MARKER_2);
+            var failingStudent0 = createId("student" + FAIL_MARKERS[0]);
+            var failingStudent1 = createId("student" + FAIL_MARKERS[1]);
             var courseId = createId("course");
 
             // and - both components have dead letters
+            studentEnrolledToCourse(failingStudent0, courseId);
             studentEnrolledToCourse(failingStudent1, courseId);
-            studentEnrolledToCourse(failingStudent2, courseId);
 
             await().atMost(10, TimeUnit.SECONDS)
                    .untilAsserted(() -> {
-                       assertThat(getComponent1Dlq().size().join()).isEqualTo(1L);
-                       assertThat(getComponent2Dlq().size().join()).isEqualTo(1L);
+                       assertThat(getDlq(0).size().join()).isEqualTo(1L);
+                       assertThat(getDlq(1).size().join()).isEqualTo(1L);
                    });
 
-            // and - fix component1's failure condition
-            component1.stopFailing();
+            // and - fix component0's failure condition
+            components[0].stopFailing();
 
-            // when - process dead letters from component1
-            processDeadLettersForComponent1();
+            // when - process dead letters from component0
+            processDeadLetters(0);
 
-            // then - component1's DLQ should be empty, component2's DLQ unchanged
+            // then - component0's DLQ should be empty, component1's DLQ unchanged
             await().atMost(10, TimeUnit.SECONDS)
                    .untilAsserted(() -> {
-                       assertThat(getComponent1Dlq().size().join()).isEqualTo(0L);
-                       assertThat(getComponent2Dlq().size().join()).isEqualTo(1L);
+                       assertThat(getDlq(0).size().join()).isEqualTo(0L);
+                       assertThat(getDlq(1).size().join()).isEqualTo(1L);
 
-                       // Component1 should have now successfully processed the dead letter
-                       assertThat(component1.successfullyHandled()).contains(failingStudent1);
+                       assertThat(components[0].successfullyHandled()).contains(failingStudent0);
                    });
         }
 
@@ -284,37 +254,36 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
         void shouldProcessDeadLettersFromBothComponentsIndependently() {
             // given
             startApp();
-            var failingStudent1 = createId("student" + FAIL_MARKER_1);
-            var failingStudent2 = createId("student" + FAIL_MARKER_2);
+            var failingStudent0 = createId("student" + FAIL_MARKERS[0]);
+            var failingStudent1 = createId("student" + FAIL_MARKERS[1]);
             var courseId = createId("course");
 
             // and - both components have dead letters
+            studentEnrolledToCourse(failingStudent0, courseId);
             studentEnrolledToCourse(failingStudent1, courseId);
-            studentEnrolledToCourse(failingStudent2, courseId);
 
             await().atMost(10, TimeUnit.SECONDS)
                    .untilAsserted(() -> {
-                       assertThat(getComponent1Dlq().size().join()).isEqualTo(1L);
-                       assertThat(getComponent2Dlq().size().join()).isEqualTo(1L);
+                       assertThat(getDlq(0).size().join()).isEqualTo(1L);
+                       assertThat(getDlq(1).size().join()).isEqualTo(1L);
                    });
 
             // and - fix both components' failure conditions
-            component1.stopFailing();
-            component2.stopFailing();
+            components[0].stopFailing();
+            components[1].stopFailing();
 
             // when - process dead letters from both components
-            processDeadLettersForComponent1();
-            processDeadLettersForComponent2();
+            processDeadLetters(0);
+            processDeadLetters(1);
 
             // then - both DLQs should be empty
             await().atMost(10, TimeUnit.SECONDS)
                    .untilAsserted(() -> {
-                       assertThat(getComponent1Dlq().size().join()).isEqualTo(0L);
-                       assertThat(getComponent2Dlq().size().join()).isEqualTo(0L);
+                       assertThat(getDlq(0).size().join()).isEqualTo(0L);
+                       assertThat(getDlq(1).size().join()).isEqualTo(0L);
 
-                       // Both components should have successfully processed their dead letters
-                       assertThat(component1.successfullyHandled()).contains(failingStudent1);
-                       assertThat(component2.successfullyHandled()).contains(failingStudent2);
+                       assertThat(components[0].successfullyHandled()).contains(failingStudent0);
+                       assertThat(components[1].successfullyHandled()).contains(failingStudent1);
                    });
         }
     }
@@ -322,54 +291,30 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
     // --- Helper Methods ---
 
     @SuppressWarnings("unchecked")
-    private CachingSequencedDeadLetterQueue<EventMessage> getComponent1Dlq() {
+    private CachingSequencedDeadLetterQueue<EventMessage> getDlq(int componentIndex) {
         return startedConfiguration.getModuleConfiguration(PROCESSOR_NAME)
                                    .flatMap(m -> m.getOptionalComponent(
                                            CachingSequencedDeadLetterQueue.class,
-                                           "CachingDeadLetterQueue[" + PROCESSOR_NAME + "][0]"
+                                           "CachingDeadLetterQueue[" + PROCESSOR_NAME + "][" + componentIndex + "]"
                                    ))
-                                   .orElseThrow(() -> new IllegalStateException("Component1 DLQ not found"));
+                                   .orElseThrow(() -> new IllegalStateException(
+                                           "DLQ not found for component " + componentIndex));
     }
 
     @SuppressWarnings("unchecked")
-    private CachingSequencedDeadLetterQueue<EventMessage> getComponent2Dlq() {
-        return startedConfiguration.getModuleConfiguration(PROCESSOR_NAME)
-                                   .flatMap(m -> m.getOptionalComponent(
-                                           CachingSequencedDeadLetterQueue.class,
-                                           "CachingDeadLetterQueue[" + PROCESSOR_NAME + "][1]"
-                                   ))
-                                   .orElseThrow(() -> new IllegalStateException("Component2 DLQ not found"));
-    }
-
-    @SuppressWarnings("unchecked")
-    private SequencedDeadLetterProcessor<EventMessage> getComponent1DeadLetterProcessor() {
+    private SequencedDeadLetterProcessor<EventMessage> getDeadLetterProcessor(int componentIndex) {
         return startedConfiguration.getModuleConfiguration(PROCESSOR_NAME)
                                    .flatMap(m -> m.getOptionalComponent(
                                            SequencedDeadLetterProcessor.class,
-                                           "EventHandlingComponent[" + PROCESSOR_NAME + "][0]"
+                                           "EventHandlingComponent[" + PROCESSOR_NAME + "][" + componentIndex + "]"
                                    ))
-                                   .orElseThrow(() -> new IllegalStateException("Component1 DLP not found"));
+                                   .orElseThrow(() -> new IllegalStateException(
+                                           "DeadLetterProcessor not found for component " + componentIndex));
     }
 
-    @SuppressWarnings("unchecked")
-    private SequencedDeadLetterProcessor<EventMessage> getComponent2DeadLetterProcessor() {
-        return startedConfiguration.getModuleConfiguration(PROCESSOR_NAME)
-                                   .flatMap(m -> m.getOptionalComponent(
-                                           SequencedDeadLetterProcessor.class,
-                                           "EventHandlingComponent[" + PROCESSOR_NAME + "][1]"
-                                   ))
-                                   .orElseThrow(() -> new IllegalStateException("Component2 DLP not found"));
-    }
-
-    private void processDeadLettersForComponent1() {
+    private void processDeadLetters(int componentIndex) {
         UnitOfWork uow = unitOfWorkFactory.create();
-        uow.runOnInvocation(context -> getComponent1DeadLetterProcessor().processAny(context));
-        uow.execute().join();
-    }
-
-    private void processDeadLettersForComponent2() {
-        UnitOfWork uow = unitOfWorkFactory.create();
-        uow.runOnInvocation(context -> getComponent2DeadLetterProcessor().processAny(context));
+        uow.runOnInvocation(context -> getDeadLetterProcessor(componentIndex).processAny(context));
         uow.execute().join();
     }
 
@@ -408,7 +353,6 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
         @Nonnull
         @Override
         public Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
-            // Use studentId as sequence identifier
             var converter = context.component(Converter.class);
             var payload = event.payloadAs(StudentEnrolledEvent.class, converter);
             return payload.studentId();
