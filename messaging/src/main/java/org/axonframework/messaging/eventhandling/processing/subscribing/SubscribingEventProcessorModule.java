@@ -30,6 +30,7 @@ import org.axonframework.messaging.eventhandling.configuration.EventProcessorCon
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorCustomization;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.messaging.eventhandling.interception.InterceptingEventHandlingComponent;
+import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SequenceCachingEventHandlingComponent;
 import org.axonframework.common.lifecycle.Phase;
 
@@ -100,8 +101,8 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
 
     private void registerEventProcessor() {
         var processorComponentDefinition = ComponentDefinition
-                .ofTypeAndName(SubscribingEventProcessor.class, processorName)
-                .withBuilder(cfg -> new SimpleSubscribingEventProcessor(
+                .ofTypeAndName(EventProcessor.class, processorName)
+                .withBuilder(cfg -> new SubscribingEventProcessor(
                         processorName,
                         getEventHandlingComponents(cfg),
                         cfg.getComponent(SubscribingEventProcessorConfiguration.class)
