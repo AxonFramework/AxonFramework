@@ -42,8 +42,8 @@ import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorH
 import org.axonframework.messaging.eventhandling.processing.errorhandling.PropagatingErrorHandler;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.inmemory.InMemoryTokenStore;
-import org.axonframework.messaging.deadletter.InMemorySequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
+import org.axonframework.messaging.eventhandling.deadletter.DeadLetterQueueConfiguration;
 import org.axonframework.messaging.eventstreaming.StreamableEventSource;
 import org.junit.jupiter.api.*;
 
@@ -420,7 +420,7 @@ class PooledStreamingEventProcessorModuleTest {
                     .eventHandlingComponents(components -> components.declarative(cfg -> component))
                     .customized((cfg, c) -> c
                             .eventSource(new AsyncInMemoryStreamableEventSource())
-                            .deadLetterQueue(dlq -> dlq.queue(InMemorySequencedDeadLetterQueue.defaultQueue())));
+                            .deadLetterQueue(DeadLetterQueueConfiguration::enabled));
 
             var configurer = MessagingConfigurer.create();
             configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps.processor(module)));
@@ -450,7 +450,7 @@ class PooledStreamingEventProcessorModuleTest {
                     .eventHandlingComponents(components -> components.declarative(cfg -> component0).declarative(cfg -> component1))
                     .customized((cfg, c) -> c
                             .eventSource(new AsyncInMemoryStreamableEventSource())
-                            .deadLetterQueue(dlq -> dlq.queue(InMemorySequencedDeadLetterQueue.defaultQueue())));
+                            .deadLetterQueue(DeadLetterQueueConfiguration::enabled));
 
             var configurer = MessagingConfigurer.create();
             configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps.processor(module)));
@@ -479,7 +479,7 @@ class PooledStreamingEventProcessorModuleTest {
                     .eventHandlingComponents(components -> components.declarative(cfg -> component0).declarative(cfg -> component1))
                     .customized((cfg, c) -> c
                             .eventSource(new AsyncInMemoryStreamableEventSource())
-                            .deadLetterQueue(dlq -> dlq.queue(InMemorySequencedDeadLetterQueue.defaultQueue())));
+                            .deadLetterQueue(DeadLetterQueueConfiguration::enabled));
 
             var configurer = MessagingConfigurer.create();
             configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps.processor(module)));

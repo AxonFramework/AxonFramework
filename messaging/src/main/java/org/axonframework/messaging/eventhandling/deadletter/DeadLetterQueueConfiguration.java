@@ -19,7 +19,6 @@ package org.axonframework.messaging.eventhandling.deadletter;
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.deadletter.Decisions;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
-import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.eventhandling.EventMessage;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -31,7 +30,7 @@ import static org.axonframework.messaging.deadletter.ThrowableCause.truncated;
  * <p>
  * This class provides a fluent API for configuring the DLQ behavior, including:
  * <ul>
- *     <li>The {@link SequencedDeadLetterQueue} to store failed events</li>
+ *     <li>Whether DLQ is enabled</li>
  *     <li>The {@link EnqueuePolicy} to decide which events to dead-letter</li>
  *     <li>Whether to clear the DLQ on processor reset</li>
  *     <li>The maximum size of the sequence identifier cache</li>
@@ -44,7 +43,7 @@ import static org.axonframework.messaging.deadletter.ThrowableCause.truncated;
  * Example usage:
  * <pre>{@code
  * config.deadLetterQueue(dlq -> dlq
- *     .queue(InMemorySequencedDeadLetterQueue.defaultQueue())
+ *     .enabled()
  *     .enqueuePolicy((letter, cause) -> Decisions.enqueue(cause))
  *     .clearOnReset(false)
  *     .cacheMaxSize(2048)
@@ -52,7 +51,6 @@ import static org.axonframework.messaging.deadletter.ThrowableCause.truncated;
  * }</pre>
  *
  * @author Mateusz Nowak
- * @see SequencedDeadLetterQueue
  * @see EnqueuePolicy
  * @see CachingSequencedDeadLetterQueue
  * @since 5.0.0
@@ -65,7 +63,7 @@ public class DeadLetterQueueConfiguration {
     public static final EnqueuePolicy<EventMessage> DEFAULT_ENQUEUE_POLICY =
             (letter, cause) -> Decisions.enqueue(truncated(cause));
 
-    private SequencedDeadLetterQueue<EventMessage> queue;
+    private boolean enabled = false;
     private EnqueuePolicy<EventMessage> enqueuePolicy = DEFAULT_ENQUEUE_POLICY;
     private boolean clearOnReset = true;
     private int cacheMaxSize = SequenceIdentifierCache.DEFAULT_MAX_SIZE;
@@ -75,7 +73,7 @@ public class DeadLetterQueueConfiguration {
      * <p>
      * By default:
      * <ul>
-     *     <li>No queue is configured (DLQ is disabled)</li>
+     *     <li>DLQ is disabled</li>
      *     <li>Enqueue policy always enqueues with truncated cause</li>
      *     <li>Clear on reset is enabled</li>
      *     <li>Cache max size is {@link SequenceIdentifierCache#DEFAULT_MAX_SIZE}</li>
@@ -86,17 +84,16 @@ public class DeadLetterQueueConfiguration {
     }
 
     /**
-     * Sets the {@link SequencedDeadLetterQueue} to store dead letters in.
+     * Enables dead-letter queue functionality for this processor.
      * <p>
-     * This is the only required setting to enable DLQ functionality. When set, the processor
-     * will automatically wrap event handling components with dead-lettering support.
+     * When enabled, failed events will be stored in a dead-letter queue for later processing.
+     * The actual queue implementation is provided by a {@link org.axonframework.common.configuration.ComponentFactory}
+     * registered with the configuration.
      *
-     * @param queue The {@link SequencedDeadLetterQueue} to store dead letters.
      * @return This configuration instance for fluent chaining.
      */
-    public DeadLetterQueueConfiguration queue(@Nonnull SequencedDeadLetterQueue<EventMessage> queue) {
-        assertNonNull(queue, "Dead letter queue may not be null");
-        this.queue = queue;
+    public DeadLetterQueueConfiguration enabled() {
+        this.enabled = true;
         return this;
     }
 
@@ -154,15 +151,6 @@ public class DeadLetterQueueConfiguration {
     }
 
     /**
-     * Returns the configured {@link SequencedDeadLetterQueue}, or {@code null} if not configured.
-     *
-     * @return The dead letter queue, or {@code null}.
-     */
-    public SequencedDeadLetterQueue<EventMessage> queue() {
-        return queue;
-    }
-
-    /**
      * Returns the configured {@link EnqueuePolicy}.
      *
      * @return The enqueue policy.
@@ -190,11 +178,11 @@ public class DeadLetterQueueConfiguration {
     }
 
     /**
-     * Checks if the DLQ is enabled (i.e., a queue has been configured).
+     * Checks if the DLQ is enabled.
      *
-     * @return {@code true} if a queue is configured, {@code false} otherwise.
+     * @return {@code true} if DLQ is enabled, {@code false} otherwise.
      */
     public boolean isEnabled() {
-        return queue != null;
+        return enabled;
     }
 }
