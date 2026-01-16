@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,20 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
+import jakarta.annotation.Nonnull;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.extension.spring.config.DefaultProcessorModuleFactory;
 import org.axonframework.extension.spring.config.EventProcessorSettings;
+import org.axonframework.extension.spring.config.ProcessorDefinition;
+import org.axonframework.extension.spring.config.ProcessorModuleFactory;
 import org.axonframework.extension.springboot.EventProcessorProperties;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.context.properties.bind.Bindable;
-import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -34,28 +40,32 @@ import java.util.Map;
  * @since 4.0
  */
 @AutoConfiguration
+@EnableConfigurationProperties(EventProcessorProperties.class)
 public class EventProcessingAutoConfiguration {
 
     /**
      * Constructs event processing settings.
      *
-     * @param environment The spring environment containing the event processor properties.
+     * @param environment The spring boot environment.
      * @return The event processor settings keyed by processor name.
+     * @see EventProcessorProperties#getProcessors(Environment)
      */
     @Bean
-    public EventProcessorSettings.MapWrapper eventProcessorSettings(Environment environment) {
-        Binder binder = Binder.get(environment);
-
-        // Bind the same structure that EventProcessorProperties would expose
-        Map<String, EventProcessorProperties.ProcessorSettings> raw =
-                binder.bind("axon.eventhandling.processors",
-                            Bindable.mapOf(String.class, EventProcessorProperties.ProcessorSettings.class))
-                      .orElseGet(java.util.HashMap::new);
-
-        Map<String, EventProcessorSettings> map = new java.util.HashMap<>(raw);
+    public EventProcessorSettings.MapWrapper eventProcessorSettings(@Nonnull Environment environment) {
+        Map<String, EventProcessorSettings> map = EventProcessorProperties.getProcessors(environment);
         // Retain the default behavior
         map.putIfAbsent(EventProcessorSettings.DEFAULT, new EventProcessorProperties.ProcessorSettings());
 
         return new EventProcessorSettings.MapWrapper(map);
+    }
+
+    @ConditionalOnMissingBean
+    @Bean
+    ProcessorModuleFactory processorModuleFactory(List<ProcessorDefinition> processorDefinitions,
+                                                  EventProcessorSettings.MapWrapper eventProcessorSettings,
+                                                  Configuration axonConfiguration) {
+        return new DefaultProcessorModuleFactory(processorDefinitions,
+                                                 eventProcessorSettings.settings(),
+                                                 axonConfiguration);
     }
 }

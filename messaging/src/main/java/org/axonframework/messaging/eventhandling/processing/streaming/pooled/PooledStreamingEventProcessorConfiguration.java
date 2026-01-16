@@ -18,6 +18,7 @@ package org.axonframework.messaging.eventhandling.processing.streaming.pooled;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -88,8 +89,8 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
 
     private StreamableEventSource eventSource;
     private TokenStore tokenStore;
-    private ScheduledExecutorService coordinatorExecutor;
-    private ScheduledExecutorService workerExecutor;
+    private Supplier<ScheduledExecutorService> coordinatorExecutor = () -> null;
+    private Supplier<ScheduledExecutorService> workerExecutor = () -> null;
     private int initialSegmentCount = 16;
     private Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialToken =
             es -> es.firstToken(null).thenApply(ReplayToken::createReplayToken);
@@ -222,7 +223,42 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
             @Nonnull ScheduledExecutorService coordinatorExecutor
     ) {
         assertNonNull(coordinatorExecutor, "The Coordinator's ScheduledExecutorService may not be null");
-        this.coordinatorExecutor = coordinatorExecutor;
+        this.coordinatorExecutor = () -> coordinatorExecutor;
+        return this;
+    }
+
+    /**
+     * Specifies the {@link ScheduledExecutorService} used by the coordinator of this
+     * {@link PooledStreamingEventProcessor}.
+     *
+     * @param coordinatorExecutor The {@link ScheduledExecutorService} to be used by the coordinator of this
+     *                            {@link PooledStreamingEventProcessor}.
+     * @return The current instance, for fluent interfacing.
+     */
+    public PooledStreamingEventProcessorConfiguration coordinatorExecutor(
+            @Nonnull Supplier<ScheduledExecutorService> coordinatorExecutor
+    ) {
+        assertNonNull(coordinatorExecutor, "The Coordinator's ScheduledExecutorService may not be null");
+        this.coordinatorExecutor = ObjectUtils.sameInstanceSupplier(coordinatorExecutor);
+        return this;
+    }
+
+    /**
+     * Specifies the {@link ScheduledExecutorService} to be provided to the {@link WorkPackage}s created by this
+     * {@link PooledStreamingEventProcessor}.
+     * </p>
+     * Note that {@link #workerExecutor(Supplier)} is favored over this method, as it avoids eager initialization of
+     * an executor that may be overridden by other components.
+     *
+     * @param workerExecutor The {@link ScheduledExecutorService} to be provided to the {@link WorkPackage}s created by
+     *                       this {@link PooledStreamingEventProcessor}.
+     * @return The current instance, for fluent interfacing.
+     */
+    public PooledStreamingEventProcessorConfiguration workerExecutor(
+            @Nonnull ScheduledExecutorService workerExecutor
+    ) {
+        assertNonNull(workerExecutor, "The Worker's ScheduledExecutorService may not be null");
+        this.workerExecutor = () -> workerExecutor;
         return this;
     }
 
@@ -235,10 +271,10 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * @return The current instance, for fluent interfacing.
      */
     public PooledStreamingEventProcessorConfiguration workerExecutor(
-            @Nonnull ScheduledExecutorService workerExecutor
+            @Nonnull Supplier<ScheduledExecutorService> workerExecutor
     ) {
         assertNonNull(workerExecutor, "The Worker's ScheduledExecutorService may not be null");
-        this.workerExecutor = workerExecutor;
+        this.workerExecutor = ObjectUtils.sameInstanceSupplier(workerExecutor);
         return this;
     }
 
@@ -500,7 +536,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * @return The coordinator executor.
      */
     public ScheduledExecutorService coordinatorExecutor() {
-        return coordinatorExecutor;
+        return coordinatorExecutor.get();
     }
 
     /**
@@ -509,7 +545,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * @return The worker executor.
      */
     public ScheduledExecutorService workerExecutor() {
-        return workerExecutor;
+        return workerExecutor.get();
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,22 +17,31 @@
 package org.axonframework.extension.springboot;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.ReflectionUtils;
+import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.common.configuration.Configuration;
-import org.axonframework.common.configuration.Module;
 import org.axonframework.extension.spring.config.EventProcessorSettings;
-import org.axonframework.extension.spring.config.SpringComponentRegistry;
+import org.axonframework.extension.spring.config.ProcessorDefinition;
 import org.axonframework.extension.springboot.fixture.event.test1.FirstHandler;
 import org.axonframework.extension.springboot.fixture.event.test2.Test2EventHandlingConfiguration;
-import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorModule;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageHandlerInterceptor;
+import org.axonframework.messaging.core.MessageHandlerInterceptorChain;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.processing.EventProcessor;
+import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessor;
+import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorConfiguration;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.inmemory.InMemoryTokenStore;
-import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessorModule;
+import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessor;
+import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessorConfiguration;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
@@ -50,7 +59,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -63,6 +72,68 @@ class EventProcessorConfigurationTest {
 
     private static final String KEY1 = "org.axonframework.extension.springboot.fixture.event.test1";
     private static final String KEY2 = "org.axonframework.extension.springboot.fixture.event.test2";
+
+    @SuppressWarnings("unused")
+    @ContextConfiguration
+    @EnableAutoConfiguration
+    @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
+    @ComponentScan(basePackageClasses = FirstHandler.class) // explicit scan to a location not in the same sub-package
+    @Import(Test2EventHandlingConfiguration.class) // explicit configuration import
+    private static class MyCustomContext {
+
+        @Bean(name = "tokenStore")
+        public TokenStore store1() {
+            return new InMemoryTokenStore();
+        }
+
+        @Bean(name = "store2")
+        public TokenStore store2() {
+            return new InMemoryTokenStore();
+        }
+    }
+
+    @org.springframework.context.annotation.Configuration
+    public static class SubscribingEventProcessorDefinitionContext {
+
+        @Bean
+        public ProcessorDefinition processor1Definition() {
+            return ProcessorDefinition.subscribingProcessor(KEY1)
+                                      .assigningHandlers(p -> p.beanType().getPackageName().equals(KEY1))
+                                      .withConfiguration(c -> c.withInterceptor(new StubInterceptor()));
+        }
+    }
+
+    @org.springframework.context.annotation.Configuration
+    public static class PooledStreamingEventProcessorDefinitionContext {
+
+        @Bean
+        public ProcessorDefinition processor2Definition() {
+            return ProcessorDefinition.pooledStreamingProcessor(KEY2)
+                                      .assigningHandlers(p -> p.beanType().getPackageName().equals(KEY2))
+                                      .withConfiguration(c -> c.withInterceptor(new StubInterceptor()));
+        }
+    }
+
+    @org.springframework.context.annotation.Configuration
+    public static class BroadlyMatchingProcessorDefinitionContext {
+
+        @Bean
+        public ProcessorDefinition processor3Definition() {
+            return ProcessorDefinition.pooledStreamingProcessor(KEY2)
+                                      .assigningHandlers(p -> true)
+                                      .withDefaultSettings();
+        }
+    }
+
+    private static class StubInterceptor implements MessageHandlerInterceptor<Message> {
+
+        @Override
+        public @NonNull MessageStream<?> interceptOnHandle(@NonNull Message message,
+                                                           @NonNull ProcessingContext context,
+                                                           @NonNull MessageHandlerInterceptorChain<Message> interceptorChain) {
+            return interceptorChain.proceed(message, context);
+        }
+    }
 
     @Nested
     @SpringBootTest(
@@ -89,76 +160,22 @@ class EventProcessorConfigurationTest {
         private EventProcessorSettings.MapWrapper properties;
 
         @Test
-        void processorConfigurationWithCustomValues() throws Exception {
+        void processorConfigurationWithCustomValues() {
             assertThat(properties.settings().get(KEY1)).isNotNull();
 
-            assertThat(context.getBean(SpringComponentRegistry.class)).isNotNull();
-            Map<String, Module> modules = ReflectionUtils.getFieldValue(
-                    SpringComponentRegistry.class.getDeclaredField("modules"),
-                    context.getBean(SpringComponentRegistry.class)
-            );
-            assertThat(modules).isNotNull();
-            assertThat(modules).hasSize(4);
-            var module1 = modules.get("EventProcessor[" + KEY1 + "]");
-            assertThat(module1).isNotNull();
-            assertThat(module1).isInstanceOf(PooledStreamingEventProcessorModule.class);
+            AxonConfiguration axonApplication = context.getBean(AxonConfiguration.class);
 
-            var module2 = modules.get("EventProcessor[" + KEY2 + "]");
-            assertThat(module2).isNotNull();
-            assertThat(module2).isInstanceOf(PooledStreamingEventProcessorModule.class);
-        }
-    }
+            Configuration eventProcessorConfig1 = axonApplication.getModuleConfiguration(
+                    "EventProcessor[" + KEY1 + "]").orElseThrow();
+            assertThat(eventProcessorConfig1.getComponents(EventProcessor.class)).isNotEmpty();
+            assertThat(eventProcessorConfig1.getOptionalComponent(PooledStreamingEventProcessor.class,
+                                                                  "EventProcessor[" + KEY1 + "]")).isPresent();
 
-    @Nested
-    @SpringBootTest(
-            classes = {EventProcessorConfigurationTest.MyCustomContext.class},
-            properties = {
-                    "axon.axonserver.enabled=false",
-                    "axon.eventstorage.jpa.polling-interval=0",
-                    "axon.eventhandling.processors[org.axonframework.extension.springboot.fixture.event.test1].mode=subscribing",
-            },
-            webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
-    )
-    class PooledAndSubscribingProcessorTest {
-
-        @Autowired
-        private ApplicationContext context;
-
-        @Autowired
-        private EventProcessorSettings.MapWrapper properties;
-
-        @Test
-        void processorConfigurationSubscribed() throws Exception {
-            var settings = properties.settings().get(KEY1);
-            assertThat(settings).isNotNull();
-            assertThat(settings.processorMode()).isEqualTo(EventProcessorSettings.ProcessorMode.SUBSCRIBING);
-
-            assertThat(context.getBean(SpringComponentRegistry.class)).isNotNull();
-            Map<String, Module> modules = ReflectionUtils.getFieldValue(
-                    SpringComponentRegistry.class.getDeclaredField("modules"),
-                    context.getBean(SpringComponentRegistry.class)
-            );
-            assertThat(modules).isNotNull();
-            assertThat(modules).hasSize(4);
-
-            Map<String, Configuration> modulesConfigurations = ReflectionUtils.getFieldValue(
-                    SpringComponentRegistry.class.getDeclaredField("moduleConfigurations"),
-                    context.getBean(SpringComponentRegistry.class)
-            );
-
-            var ep1 = "EventProcessor[" + KEY1 + "]";
-            var ep2 = "EventProcessor[" + KEY2 + "]";
-
-            assertThat(modulesConfigurations).hasSize(2);
-            assertThat(modulesConfigurations).containsKeys(ep1, ep2);
-
-            var module1 = modules.get(ep1);
-            assertThat(module1).isNotNull();
-            assertThat(module1).isInstanceOf(SubscribingEventProcessorModule.class);
-
-            var module2 = modules.get(ep2);
-            assertThat(module2).isNotNull();
-            assertThat(module2).isInstanceOf(PooledStreamingEventProcessorModule.class);
+            Configuration eventProcessorConfig2 = axonApplication.getModuleConfiguration(
+                    "EventProcessor[" + KEY2 + "]").orElseThrow();
+            assertThat(eventProcessorConfig2.getComponents(EventProcessor.class)).isNotEmpty();
+            assertThat(eventProcessorConfig2.getOptionalComponent(PooledStreamingEventProcessor.class,
+                                                                  "EventProcessor[" + KEY2 + "]")).isPresent();
         }
     }
 
@@ -197,10 +214,9 @@ class EventProcessorConfigurationTest {
 
         @ParameterizedTest
         @MethodSource("configToError")
-        @Disabled("Stopped working with port-already-in-use")
         void dontStartWithWrongConfiguredProcessor(Map<String, String> parameters,
                                                    String message,
-                                                   int port) throws Exception {
+                                                   int port) {
             var app = new SpringApplication(MyCustomContext.class);
             app.setLogStartupInfo(false);
             Map<String, Object> props = new HashMap<>();
@@ -229,23 +245,161 @@ class EventProcessorConfigurationTest {
         }
     }
 
+    @Nested
+    @SpringBootTest(
+            classes = {EventProcessorConfigurationTest.MyCustomContext.class},
+            properties = {
+                    "axon.axonserver.enabled=false",
+                    "axon.eventstorage.jpa.polling-interval=0",
+                    "axon.eventhandling.processors[org.axonframework.extension.springboot.fixture.event.test1].mode=subscribing",
+            },
+            webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
+    )
+    class PooledAndSubscribingProcessorTest {
 
-    @SuppressWarnings("unused")
-    @ContextConfiguration
-    @EnableAutoConfiguration
-    @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
-    @ComponentScan(basePackageClasses = FirstHandler.class) // explicit scan to a location not in the same sub-package
-    @Import(Test2EventHandlingConfiguration.class) // explicit configuration import
-    private static class MyCustomContext {
+        @Autowired
+        private ApplicationContext context;
 
-        @Bean(name = "tokenStore")
-        public TokenStore store1() {
-            return new InMemoryTokenStore();
+        @Autowired
+        private EventProcessorSettings.MapWrapper properties;
+
+        @Test
+        void processorConfigurationSubscribed() {
+            var settings = properties.settings().get(KEY1);
+            assertThat(settings).isNotNull();
+            assertThat(settings.processorMode()).isEqualTo(EventProcessorSettings.ProcessorMode.SUBSCRIBING);
+
+            assertThat(properties.settings().get(KEY1)).isNotNull();
+
+            AxonConfiguration axonApplication = context.getBean(AxonConfiguration.class);
+
+            Configuration eventProcessorConfig1 = axonApplication.getModuleConfiguration(
+                    "EventProcessor[" + KEY1 + "]").orElseThrow();
+            assertThat(eventProcessorConfig1.getComponents(EventProcessor.class)).isNotEmpty();
+            assertThat(eventProcessorConfig1.getOptionalComponent(SubscribingEventProcessor.class,
+                                                                  "EventProcessor[" + KEY1 + "]")).isPresent();
+
+            Configuration eventProcessorConfig2 = axonApplication.getModuleConfiguration(
+                    "EventProcessor[" + KEY2 + "]").orElseThrow();
+            assertThat(eventProcessorConfig2.getComponents(EventProcessor.class)).isNotEmpty();
+            assertThat(eventProcessorConfig2.getOptionalComponent(PooledStreamingEventProcessor.class,
+                                                                  "EventProcessor[" + KEY2 + "]")).isPresent();
         }
+    }
 
-        @Bean(name = "store2")
-        public TokenStore store2() {
-            return new InMemoryTokenStore();
+    @Nested
+    @SpringBootTest(
+            classes = {EventProcessorConfigurationTest.MyCustomContext.class,
+                    SubscribingEventProcessorDefinitionContext.class},
+            properties = {
+                    "axon.axonserver.enabled=false",
+                    "axon.eventstorage.jpa.polling-interval=0"
+            },
+            webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
+    )
+    class PooledAndSubscribingProcessorUsingSingleBeanConfigurationTest {
+
+        @Autowired
+        private ApplicationContext context;
+
+        @Autowired
+        private EventProcessorSettings.MapWrapper properties;
+
+        @Test
+        void processorConfigurationSubscribed() {
+            // we expect no explicit settings for this processor
+            assertThat(properties.settings().get(KEY1)).isNull();
+
+            AxonConfiguration axonApplication = context.getBean(AxonConfiguration.class);
+
+            Configuration eventProcessorConfig1 = axonApplication.getModuleConfiguration(
+                    "EventProcessor[" + KEY1 + "]").orElseThrow();
+            assertThat(eventProcessorConfig1.getComponents(EventProcessor.class)).isNotEmpty();
+            assertThat(eventProcessorConfig1.getOptionalComponent(SubscribingEventProcessor.class,
+                                                                  "EventProcessor[" + KEY1 + "]")).isPresent();
+            assertThat(eventProcessorConfig1.getOptionalComponent(SubscribingEventProcessorConfiguration.class)).hasValueSatisfying(
+                    // there is an additional custom interceptor
+                    config -> assertThatCollection(config.interceptors()).anyMatch(StubInterceptor.class::isInstance)
+            );
+
+            Configuration eventProcessorConfig2 = axonApplication.getModuleConfiguration(
+                    "EventProcessor[" + KEY2 + "]").orElseThrow();
+            assertThat(eventProcessorConfig2.getComponents(EventProcessor.class)).isNotEmpty();
+            assertThat(eventProcessorConfig2.getOptionalComponent(PooledStreamingEventProcessor.class,
+                                                                  "EventProcessor[" + KEY2 + "]")).isPresent();
+            assertThat(eventProcessorConfig2.getOptionalComponent(PooledStreamingEventProcessorConfiguration.class)).hasValueSatisfying(
+                    // we should not see the custom interceptor here
+                    config -> assertThatCollection(config.interceptors()).noneMatch(StubInterceptor.class::isInstance)
+            );
+        }
+    }
+
+    @Nested
+    @SpringBootTest(
+            classes = {EventProcessorConfigurationTest.MyCustomContext.class,
+                    SubscribingEventProcessorDefinitionContext.class,
+                    PooledStreamingEventProcessorDefinitionContext.class},
+            properties = {
+                    "axon.axonserver.enabled=false",
+                    "axon.eventstorage.jpa.polling-interval=0"
+            },
+            webEnvironment = SpringBootTest.WebEnvironment.NONE
+    )
+    class PooledAndSubscribingProcessorUsingBothBeanConfigurationTest {
+
+        @Autowired
+        private ApplicationContext context;
+
+        @Autowired
+        private EventProcessorSettings.MapWrapper properties;
+
+        @Test
+        void processorConfigurationSubscribed() {
+            // we expect no explicit settings for this processor
+            assertThat(properties.settings().get(KEY1)).isNull();
+
+            AxonConfiguration axonApplication = context.getBean(AxonConfiguration.class);
+
+            Configuration eventProcessorConfig1 = axonApplication.getModuleConfiguration(
+                    "EventProcessor[" + KEY1 + "]").orElseThrow();
+            assertThat(eventProcessorConfig1.getComponents(EventProcessor.class)).isNotEmpty();
+            assertThat(eventProcessorConfig1.getOptionalComponent(SubscribingEventProcessor.class,
+                                                                  "EventProcessor[" + KEY1 + "]")).isPresent();
+            assertThat(eventProcessorConfig1.getOptionalComponent(SubscribingEventProcessorConfiguration.class)).hasValueSatisfying(
+                    // there is an additional custom interceptor
+                    config -> assertThatCollection(config.interceptors()).anyMatch(StubInterceptor.class::isInstance)
+            );
+
+            Configuration eventProcessorConfig2 = axonApplication.getModuleConfiguration(
+                    "EventProcessor[" + KEY2 + "]").orElseThrow();
+            assertThat(eventProcessorConfig2.getComponents(EventProcessor.class)).isNotEmpty();
+            assertThat(eventProcessorConfig2.getOptionalComponent(PooledStreamingEventProcessor.class,
+                                                                  "EventProcessor[" + KEY2 + "]")).isPresent();
+            assertThat(eventProcessorConfig2.getOptionalComponent(PooledStreamingEventProcessorConfiguration.class)).hasValueSatisfying(
+                    // we should not see the custom interceptor here
+                    config -> assertThatCollection(config.interceptors()).anyMatch(StubInterceptor.class::isInstance)
+            );
+        }
+    }
+
+    @Nested
+    class OverlappingBeanAssignmentConfigurationTest {
+
+        @Test
+        void processorConfigurationSubscribed() {
+            var app = new SpringApplication(MyCustomContext.class,
+                                            SubscribingEventProcessorDefinitionContext.class,
+                                            BroadlyMatchingProcessorDefinitionContext.class);
+            app.setDefaultProperties(Map.of("axon.axonserver.enabled",
+                                            "false",
+                                            "axon.eventstorage.jpa.polling-interval",
+                                            "0"));
+            app.setLogStartupInfo(false);
+
+            app.setWebApplicationType(WebApplicationType.NONE);
+            assertThatException().isThrownBy(app::run)
+                                 .havingRootCause()
+                                 .withMessageContaining("multiple processors selectors");
         }
     }
 }

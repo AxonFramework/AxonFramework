@@ -17,6 +17,7 @@
 package org.axonframework.extension.springboot;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.eventhandling.EventBus;
 import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
@@ -27,6 +28,9 @@ import org.axonframework.extension.spring.config.EventProcessorSettings;
 import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
 import org.axonframework.messaging.eventhandling.sequencing.SequentialPerAggregatePolicy;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.bind.Bindable;
+import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.core.env.Environment;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -41,6 +45,29 @@ import java.util.concurrent.TimeUnit;
  */
 @ConfigurationProperties("axon.eventhandling")
 public class EventProcessorProperties {
+
+    /**
+     * Provides ProcessorSettings per processor name via Environment.
+     * <p>
+     * <i>This is required due to changes on how spring boot 4 loads configurations properties.
+     * If the application configures WebMvc we get cyclic application context. By using {@link Environment} and {@link Binder}
+     * to manually create the processors map we avoid this problem. See <a href="https://github.com/AxonFramework/AxonFramework/issues/4010">issue #4010</a> for details.</i>
+     *
+     * @param environment The spring boot environment.
+     * @return The map of {@link ProcessorSettings} per processor name.
+     */
+    @Internal
+    public static Map<String, EventProcessorSettings> getProcessors(Environment environment) {
+        Binder binder = Binder.get(environment);
+
+        // Bind the same structure that EventProcessorProperties would expose
+        Map<String, ProcessorSettings> raw =
+                binder.bind("axon.eventhandling.processors",
+                            Bindable.mapOf(String.class, EventProcessorProperties.ProcessorSettings.class))
+                      .orElseGet(java.util.HashMap::new);
+
+        return new HashMap<>(raw);
+    }
 
     /**
      * The configuration of each of the processors. The key is the name of the processor, the value represents the
