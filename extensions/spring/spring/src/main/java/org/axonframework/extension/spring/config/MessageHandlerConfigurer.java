@@ -23,6 +23,7 @@ import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
+import org.axonframework.extension.spring.BeanDefinitionUtils;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.messaging.core.Message;

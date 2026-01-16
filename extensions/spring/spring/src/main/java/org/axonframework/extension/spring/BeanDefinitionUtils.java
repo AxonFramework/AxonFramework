@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.extension.spring.config;
+package org.axonframework.extension.spring;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;

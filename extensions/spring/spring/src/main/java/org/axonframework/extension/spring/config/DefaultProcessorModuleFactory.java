@@ -19,6 +19,7 @@ package org.axonframework.extension.spring.config;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.configuration.Configuration;
+import org.axonframework.extension.spring.BeanDefinitionUtils;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorConfiguration;
