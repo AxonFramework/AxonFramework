@@ -169,8 +169,10 @@ public abstract class AbstractStudentIT extends AbstractAxonServerIT {
         return commandGateway.sendAndWait(payload, expectedResultType);
     }
 
-    protected void studentEnrolledToCourse(String studentId, String courseId) {
-        storeEvent(StudentEnrolledEvent.class, new StudentEnrolledEvent(studentId, courseId));
+    protected StudentEnrolledEvent studentEnrolledToCourse(String studentId, String courseId) {
+        StudentEnrolledEvent event = new StudentEnrolledEvent(studentId, courseId);
+        storeEvent(StudentEnrolledEvent.class, event);
+        return event;
     }
 
     protected <T> void storeEvent(Class<T> clazz, T payload) {
