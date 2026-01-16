@@ -57,7 +57,6 @@ import static org.awaitility.Awaitility.await;
 class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
 
     private static final String PROCESSOR_NAME = "dlq-multi-component-processor";
-    private static final String[] FAIL_MARKERS = {"-fail-0", "-fail-1"};
 
     private FailingRecordingEventHandlingComponent[] components;
 
@@ -66,8 +65,8 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
         purgeEventStorage();
 
         components = new FailingRecordingEventHandlingComponent[]{
-                new FailingRecordingEventHandlingComponent("component0", studentId -> studentId.contains(FAIL_MARKERS[0])),
-                new FailingRecordingEventHandlingComponent("component1", studentId -> studentId.contains(FAIL_MARKERS[1]))
+                new FailingRecordingEventHandlingComponent("component0", studentId -> studentId.contains("-fail-0")),
+                new FailingRecordingEventHandlingComponent("component1", studentId -> studentId.contains("-fail-1"))
         };
     }
 
@@ -96,7 +95,7 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
         void failedEventInComponent0ShouldOnlyGoToComponent0Dlq() {
             // given
             startApp();
-            var failingStudentId = createId("student" + FAIL_MARKERS[0]);
+            var failingStudentId = createId("student-fail-0");
             var successStudentId = createId("student-ok");
             var courseId = createId("course");
 
@@ -105,17 +104,16 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
             studentEnrolledToCourse(successStudentId, courseId);
 
             // then
-            await().atMost(10, TimeUnit.SECONDS)
-                   .untilAsserted(() -> {
-                       assertThat(getDlq(0).contains(failingStudentId).join()).isTrue();
-                       assertThat(getDlq(0).size().join()).isEqualTo(1L);
+            await().untilAsserted(() -> {
+                assertThat(getDlq(0).contains(failingStudentId).join()).isTrue();
+                assertThat(getDlq(0).size().join()).isEqualTo(1L);
 
-                       assertThat(getDlq(1).contains(failingStudentId).join()).isFalse();
-                       assertThat(getDlq(1).size().join()).isEqualTo(0L);
+                assertThat(getDlq(1).contains(failingStudentId).join()).isFalse();
+                assertThat(getDlq(1).size().join()).isEqualTo(0L);
 
-                       assertThat(components[0].successfullyHandled()).contains(successStudentId);
-                       assertThat(components[1].successfullyHandled()).contains(successStudentId);
-                   });
+                assertThat(components[0].successfullyHandled()).contains(successStudentId);
+                assertThat(components[1].successfullyHandled()).contains(successStudentId);
+            });
         }
 
         @Test
@@ -123,7 +121,7 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
         void failedEventInComponent1ShouldOnlyGoToComponent1Dlq() {
             // given
             startApp();
-            var failingStudentId = createId("student" + FAIL_MARKERS[1]);
+            var failingStudentId = createId("student-fail-1");
             var successStudentId = createId("student-ok");
             var courseId = createId("course");
 
@@ -132,17 +130,16 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
             studentEnrolledToCourse(successStudentId, courseId);
 
             // then
-            await().atMost(10, TimeUnit.SECONDS)
-                   .untilAsserted(() -> {
-                       assertThat(getDlq(0).contains(failingStudentId).join()).isFalse();
-                       assertThat(getDlq(0).size().join()).isEqualTo(0L);
+            await().untilAsserted(() -> {
+                assertThat(getDlq(0).contains(failingStudentId).join()).isFalse();
+                assertThat(getDlq(0).size().join()).isEqualTo(0L);
 
-                       assertThat(getDlq(1).contains(failingStudentId).join()).isTrue();
-                       assertThat(getDlq(1).size().join()).isEqualTo(1L);
+                assertThat(getDlq(1).contains(failingStudentId).join()).isTrue();
+                assertThat(getDlq(1).size().join()).isEqualTo(1L);
 
-                       assertThat(components[0].successfullyHandled()).contains(successStudentId);
-                       assertThat(components[1].successfullyHandled()).contains(successStudentId);
-                   });
+                assertThat(components[0].successfullyHandled()).contains(successStudentId);
+                assertThat(components[1].successfullyHandled()).contains(successStudentId);
+            });
         }
     }
 
@@ -155,7 +152,7 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
         void subsequentEventsForFailedSequenceShouldBeEnqueuedInSameComponentDlq() {
             // given
             startApp();
-            var failingStudentId = createId("student" + FAIL_MARKERS[0]);
+            var failingStudentId = createId("student-fail-0");
             var courseId1 = createId("course-1");
             var courseId2 = createId("course-2");
             var courseId3 = createId("course-3");
@@ -166,13 +163,12 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
             studentEnrolledToCourse(failingStudentId, courseId3);
 
             // then
-            await().atMost(10, TimeUnit.SECONDS)
-                   .untilAsserted(() -> {
-                       assertThat(getDlq(0).contains(failingStudentId).join()).isTrue();
-                       assertThat(getDlq(0).sequenceSize(failingStudentId).join()).isEqualTo(3L);
+            await().untilAsserted(() -> {
+                assertThat(getDlq(0).contains(failingStudentId).join()).isTrue();
+                assertThat(getDlq(0).sequenceSize(failingStudentId).join()).isEqualTo(3L);
 
-                       assertThat(getDlq(1).contains(failingStudentId).join()).isFalse();
-                   });
+                assertThat(getDlq(1).contains(failingStudentId).join()).isFalse();
+            });
         }
     }
 
@@ -185,8 +181,8 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
         void bothComponentsCanFailOnDifferentSequences() {
             // given
             startApp();
-            var failingStudent0 = createId("student" + FAIL_MARKERS[0]);
-            var failingStudent1 = createId("student" + FAIL_MARKERS[1]);
+            var failingStudent0 = createId("student-fail-0");
+            var failingStudent1 = createId("student-fail-1");
             var successStudent = createId("student-ok");
             var courseId = createId("course");
 
@@ -196,17 +192,16 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
             studentEnrolledToCourse(successStudent, courseId);
 
             // then
-            await().atMost(10, TimeUnit.SECONDS)
-                   .untilAsserted(() -> {
-                       assertThat(getDlq(0).contains(failingStudent0).join()).isTrue();
-                       assertThat(getDlq(0).contains(failingStudent1).join()).isFalse();
+            await().untilAsserted(() -> {
+                assertThat(getDlq(0).contains(failingStudent0).join()).isTrue();
+                assertThat(getDlq(0).contains(failingStudent1).join()).isFalse();
 
-                       assertThat(getDlq(1).contains(failingStudent1).join()).isTrue();
-                       assertThat(getDlq(1).contains(failingStudent0).join()).isFalse();
+                assertThat(getDlq(1).contains(failingStudent1).join()).isTrue();
+                assertThat(getDlq(1).contains(failingStudent0).join()).isFalse();
 
-                       assertThat(components[0].successfullyHandled()).contains(successStudent);
-                       assertThat(components[1].successfullyHandled()).contains(successStudent);
-                   });
+                assertThat(components[0].successfullyHandled()).contains(successStudent);
+                assertThat(components[1].successfullyHandled()).contains(successStudent);
+            });
         }
     }
 
@@ -219,19 +214,18 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
         void processingDeadLettersFromOneComponentShouldNotAffectOtherComponentDlq() {
             // given
             startApp();
-            var failingStudent0 = createId("student" + FAIL_MARKERS[0]);
-            var failingStudent1 = createId("student" + FAIL_MARKERS[1]);
+            var failingStudent0 = createId("student-fail-0");
+            var failingStudent1 = createId("student-fail-1");
             var courseId = createId("course");
 
             // and - both components have dead letters
             studentEnrolledToCourse(failingStudent0, courseId);
             studentEnrolledToCourse(failingStudent1, courseId);
 
-            await().atMost(10, TimeUnit.SECONDS)
-                   .untilAsserted(() -> {
-                       assertThat(getDlq(0).size().join()).isEqualTo(1L);
-                       assertThat(getDlq(1).size().join()).isEqualTo(1L);
-                   });
+            await().untilAsserted(() -> {
+                assertThat(getDlq(0).size().join()).isEqualTo(1L);
+                assertThat(getDlq(1).size().join()).isEqualTo(1L);
+            });
 
             // and - fix component0's failure condition
             components[0].stopFailing();
@@ -240,13 +234,12 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
             processDeadLetters(0);
 
             // then - component0's DLQ should be empty, component1's DLQ unchanged
-            await().atMost(10, TimeUnit.SECONDS)
-                   .untilAsserted(() -> {
-                       assertThat(getDlq(0).size().join()).isEqualTo(0L);
-                       assertThat(getDlq(1).size().join()).isEqualTo(1L);
+            await().untilAsserted(() -> {
+                assertThat(getDlq(0).size().join()).isEqualTo(0L);
+                assertThat(getDlq(1).size().join()).isEqualTo(1L);
 
-                       assertThat(components[0].successfullyHandled()).contains(failingStudent0);
-                   });
+                assertThat(components[0].successfullyHandled()).contains(failingStudent0);
+            });
         }
 
         @Test
@@ -254,19 +247,18 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
         void shouldProcessDeadLettersFromBothComponentsIndependently() {
             // given
             startApp();
-            var failingStudent0 = createId("student" + FAIL_MARKERS[0]);
-            var failingStudent1 = createId("student" + FAIL_MARKERS[1]);
+            var failingStudent0 = createId("student-fail-0");
+            var failingStudent1 = createId("student-fail-1");
             var courseId = createId("course");
 
             // and - both components have dead letters
             studentEnrolledToCourse(failingStudent0, courseId);
             studentEnrolledToCourse(failingStudent1, courseId);
 
-            await().atMost(10, TimeUnit.SECONDS)
-                   .untilAsserted(() -> {
-                       assertThat(getDlq(0).size().join()).isEqualTo(1L);
-                       assertThat(getDlq(1).size().join()).isEqualTo(1L);
-                   });
+            await().untilAsserted(() -> {
+                assertThat(getDlq(0).size().join()).isEqualTo(1L);
+                assertThat(getDlq(1).size().join()).isEqualTo(1L);
+            });
 
             // and - fix both components' failure conditions
             components[0].stopFailing();
@@ -277,14 +269,13 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
             processDeadLetters(1);
 
             // then - both DLQs should be empty
-            await().atMost(10, TimeUnit.SECONDS)
-                   .untilAsserted(() -> {
-                       assertThat(getDlq(0).size().join()).isEqualTo(0L);
-                       assertThat(getDlq(1).size().join()).isEqualTo(0L);
+            await().untilAsserted(() -> {
+                assertThat(getDlq(0).size().join()).isEqualTo(0L);
+                assertThat(getDlq(1).size().join()).isEqualTo(0L);
 
-                       assertThat(components[0].successfullyHandled()).contains(failingStudent0);
-                       assertThat(components[1].successfullyHandled()).contains(failingStudent1);
-                   });
+                assertThat(components[0].successfullyHandled()).contains(failingStudent0);
+                assertThat(components[1].successfullyHandled()).contains(failingStudent1);
+            });
         }
     }
 
