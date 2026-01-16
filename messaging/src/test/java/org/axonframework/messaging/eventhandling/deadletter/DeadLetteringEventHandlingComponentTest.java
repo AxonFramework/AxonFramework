@@ -386,15 +386,43 @@ class DeadLetteringEventHandlingComponentTest {
         class DuringEventHandling {
 
             @Test
-            void enqueuePolicyWithoutCauseEnqueuesLetter() {
+            void enqueuePolicyWithoutCausePreservesOriginalCause() {
                 // given
                 GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
 
+                // Decisions.enqueue() without cause means "use the original error from the dead letter"
                 testSubject = new DeadLetteringEventHandlingComponent(
                         delegate, queue, (letter, cause) -> Decisions.enqueue(), true
                 );
 
-                RuntimeException testException = new RuntimeException("test failure");
+                RuntimeException testException = new RuntimeException("original failure");
+                delegate.failingWith(testException);
+
+                EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
+                ProcessingContext context = new StubProcessingContext();
+
+                // when
+                MessageStream.Empty<Message> result = testSubject.handle(testEvent, context);
+
+                // then - the original error is preserved since no cause was provided by the policy
+                assertSuccessfulStream(result);
+                DeadLetter<? extends EventMessage> deadLetter = getFirstDeadLetter(TEST_SEQUENCE_ID);
+                assertThat(deadLetter.message().payload()).isEqualTo("test-payload");
+                assertThat(deadLetter.cause()).hasValueSatisfying(
+                        cause -> assertThat(cause.message()).contains("original failure")
+                );
+            }
+
+            @Test
+            void enqueuePolicyWithCauseEnqueuesLetterWithCause() {
+                // given
+                GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
+
+                testSubject = new DeadLetteringEventHandlingComponent(
+                        delegate, queue, (letter, cause) -> Decisions.enqueue(cause), true
+                );
+
+                RuntimeException testException = new RuntimeException("specific failure reason");
                 delegate.failingWith(testException);
 
                 EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
@@ -405,7 +433,11 @@ class DeadLetteringEventHandlingComponentTest {
 
                 // then
                 assertSuccessfulStream(result);
-                assertTrue(queue.contains(TEST_SEQUENCE_ID).join());
+                DeadLetter<? extends EventMessage> deadLetter = getFirstDeadLetter(TEST_SEQUENCE_ID);
+                assertThat(deadLetter.message().payload()).isEqualTo("test-payload");
+                assertThat(deadLetter.cause()).hasValueSatisfying(
+                        cause -> assertThat(cause.message()).contains("specific failure reason")
+                );
             }
 
             @Test
@@ -433,7 +465,9 @@ class DeadLetteringEventHandlingComponentTest {
 
                 // then
                 assertSuccessfulStream(result);
-                assertTrue(queue.contains(TEST_SEQUENCE_ID).join());
+                DeadLetter<? extends EventMessage> deadLetter = getFirstDeadLetter(TEST_SEQUENCE_ID);
+                assertThat(deadLetter.message().payload()).isEqualTo("test-payload");
+                assertThat(deadLetter.diagnostics().get("custom-key")).isEqualTo("custom-value");
             }
 
             @Test
@@ -454,7 +488,7 @@ class DeadLetteringEventHandlingComponentTest {
 
                 // then
                 assertSuccessfulStream(result);
-                assertFalse(queue.contains(TEST_SEQUENCE_ID).join());
+                assertThat(queue.sequenceSize(TEST_SEQUENCE_ID).join()).isZero();
             }
 
             @Test
@@ -471,7 +505,6 @@ class DeadLetteringEventHandlingComponentTest {
 
                 testSubject = new DeadLetteringEventHandlingComponent(delegate, queue, exceptionTypePolicy, true);
 
-                // Configure to throw IllegalArgumentException
                 IllegalArgumentException expectedEnqueue = new IllegalArgumentException("should enqueue");
                 delegate.failingWith(expectedEnqueue);
 
@@ -483,7 +516,11 @@ class DeadLetteringEventHandlingComponentTest {
 
                 // then
                 assertSuccessfulStream(result);
-                assertTrue(queue.contains(TEST_SEQUENCE_ID).join());
+                DeadLetter<? extends EventMessage> deadLetter = getFirstDeadLetter(TEST_SEQUENCE_ID);
+                assertThat(deadLetter.message().payload()).isEqualTo("test-payload");
+                assertThat(deadLetter.cause()).hasValueSatisfying(
+                        cause -> assertThat(cause.type()).contains("IllegalArgumentException")
+                );
             }
 
             @Test
@@ -498,7 +535,6 @@ class DeadLetteringEventHandlingComponentTest {
 
                 testSubject = new DeadLetteringEventHandlingComponent(delegate, queue, exceptionTypePolicy, true);
 
-                // Configure to throw RuntimeException (not IllegalArgumentException)
                 RuntimeException notExpectedEnqueue = new RuntimeException("should not enqueue");
                 delegate.failingWith(notExpectedEnqueue);
 
@@ -510,17 +546,17 @@ class DeadLetteringEventHandlingComponentTest {
 
                 // then
                 assertSuccessfulStream(result);
-                assertFalse(queue.contains(TEST_SEQUENCE_ID).join());
+                assertThat(queue.sequenceSize(TEST_SEQUENCE_ID).join()).isZero();
             }
 
             @Test
-            void policyCanInspectDeadLetterMessage() {
+            void policyCanInspectDeadLetterMessageAndEnqueue() {
                 // given
                 GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
 
                 EnqueuePolicy<EventMessage> messageInspectingPolicy = (letter, cause) -> {
-                    String payload = letter.message().payload().toString();
-                    if (payload.contains("important")) {
+                    Object payload = letter.message().payload();
+                    if (payload != null && payload.toString().contains("important")) {
                         return Decisions.enqueue(cause);
                     }
                     return Decisions.doNotEnqueue();
@@ -539,15 +575,16 @@ class DeadLetteringEventHandlingComponentTest {
 
                 // then
                 assertSuccessfulStream(result);
-                assertTrue(queue.contains(TEST_SEQUENCE_ID).join());
+                DeadLetter<? extends EventMessage> deadLetter = getFirstDeadLetter(TEST_SEQUENCE_ID);
+                assertThat(deadLetter.message().payload()).isEqualTo("important-payload");
             }
 
             @Test
             void policyCanInspectDeadLetterMessageAndRejectNonImportant() {
                 // given
                 EnqueuePolicy<EventMessage> messageInspectingPolicy = (letter, cause) -> {
-                    String payload = letter.message().payload().toString();
-                    if (payload.contains("important")) {
+                    Object payload = letter.message().payload();
+                    if (payload != null && payload.toString().contains("important")) {
                         return Decisions.enqueue(cause);
                     }
                     return Decisions.doNotEnqueue();
@@ -566,7 +603,7 @@ class DeadLetteringEventHandlingComponentTest {
 
                 // then
                 assertSuccessfulStream(result);
-                assertFalse(queue.contains(TEST_SEQUENCE_ID).join());
+                assertThat(queue.sequenceSize(TEST_SEQUENCE_ID).join()).isZero();
             }
         }
 
@@ -585,7 +622,6 @@ class DeadLetteringEventHandlingComponentTest {
                 EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
                 queue.enqueue(TEST_SEQUENCE_ID, new GenericDeadLetter<>(TEST_SEQUENCE_ID, testEvent)).join();
 
-                // Configure delegate to fail
                 RuntimeException testException = new RuntimeException("processing failed");
                 delegate.failingWith(testException);
 
@@ -596,7 +632,7 @@ class DeadLetteringEventHandlingComponentTest {
 
                 // then - letter should be evicted despite failure
                 assertTrue(result);
-                assertFalse(queue.contains(TEST_SEQUENCE_ID).join());
+                assertThat(queue.sequenceSize(TEST_SEQUENCE_ID).join()).isZero();
             }
 
             @Test
@@ -611,7 +647,6 @@ class DeadLetteringEventHandlingComponentTest {
                 EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
                 queue.enqueue(TEST_SEQUENCE_ID, new GenericDeadLetter<>(TEST_SEQUENCE_ID, testEvent)).join();
 
-                // Configure delegate to fail
                 RuntimeException testException = new RuntimeException("processing failed");
                 delegate.failingWith(testException);
 
@@ -622,11 +657,11 @@ class DeadLetteringEventHandlingComponentTest {
 
                 // then - letter should be evicted despite failure
                 assertTrue(result);
-                assertFalse(queue.contains(TEST_SEQUENCE_ID).join());
+                assertThat(queue.sequenceSize(TEST_SEQUENCE_ID).join()).isZero();
             }
 
             @Test
-            void processRequeuesLetterWhenPolicyReturnsRequeue() {
+            void processRequeuesLetterWhenPolicyReturnsRequeueAndPreservesCause() {
                 // given
                 GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
 
@@ -637,7 +672,6 @@ class DeadLetteringEventHandlingComponentTest {
                 EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
                 queue.enqueue(TEST_SEQUENCE_ID, new GenericDeadLetter<>(TEST_SEQUENCE_ID, testEvent)).join();
 
-                // Configure delegate to fail
                 RuntimeException testException = new RuntimeException("processing failed");
                 delegate.failingWith(testException);
 
@@ -646,9 +680,13 @@ class DeadLetteringEventHandlingComponentTest {
                 // when
                 boolean result = testSubject.processAny(context).join();
 
-                // then - letter should remain in queue
+                // then - letter should remain in queue with updated cause
                 assertFalse(result);
-                assertTrue(queue.contains(TEST_SEQUENCE_ID).join());
+                DeadLetter<? extends EventMessage> deadLetter = getFirstDeadLetter(TEST_SEQUENCE_ID);
+                assertThat(deadLetter.message().payload()).isEqualTo("test-payload");
+                assertThat(deadLetter.cause()).hasValueSatisfying(
+                        cause -> assertThat(cause.message()).contains("processing failed")
+                );
             }
 
             @Test
@@ -656,7 +694,6 @@ class DeadLetteringEventHandlingComponentTest {
                 // given
                 GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
 
-                // Policy that always says requeue - but success should still evict
                 EnqueuePolicy<EventMessage> alwaysRequeuePolicy = (letter, cause) -> Decisions.requeue(cause);
 
                 testSubject = new DeadLetteringEventHandlingComponent(delegate, queue, alwaysRequeuePolicy, true);
@@ -671,7 +708,7 @@ class DeadLetteringEventHandlingComponentTest {
 
                 // then - letter should be evicted on success
                 assertTrue(result);
-                assertFalse(queue.contains(TEST_SEQUENCE_ID).join());
+                assertThat(queue.sequenceSize(TEST_SEQUENCE_ID).join()).isZero();
             }
         }
 
@@ -699,7 +736,6 @@ class DeadLetteringEventHandlingComponentTest {
                 EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
                 queue.enqueue(TEST_SEQUENCE_ID, new GenericDeadLetter<>(TEST_SEQUENCE_ID, testEvent)).join();
 
-                // Configure delegate to always fail
                 RuntimeException testException = new RuntimeException("processing failed");
                 delegate.failingWith(testException);
 
@@ -714,11 +750,11 @@ class DeadLetteringEventHandlingComponentTest {
                 assertFalse(result1);
                 assertFalse(result2);
                 assertTrue(result3);
-                assertFalse(queue.contains(TEST_SEQUENCE_ID).join());
+                assertThat(queue.sequenceSize(TEST_SEQUENCE_ID).join()).isZero();
             }
 
             @Test
-            void policyRequeuesBeforeMaxRetries() {
+            void policyRequeuesBeforeMaxRetriesAndLetterRemainsInQueue() {
                 // given
                 GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
 
@@ -738,7 +774,6 @@ class DeadLetteringEventHandlingComponentTest {
                 EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
                 queue.enqueue(TEST_SEQUENCE_ID, new GenericDeadLetter<>(TEST_SEQUENCE_ID, testEvent)).join();
 
-                // Configure delegate to always fail
                 RuntimeException testException = new RuntimeException("processing failed");
                 delegate.failingWith(testException);
 
@@ -748,11 +783,12 @@ class DeadLetteringEventHandlingComponentTest {
                 boolean result1 = testSubject.processAny(context).join();
                 boolean result2 = testSubject.processAny(context).join();
 
-                // then - both should requeue, letter still in queue
+                // then - both should requeue, letter still in queue with same payload
                 assertFalse(result1);
                 assertFalse(result2);
-                assertTrue(queue.contains(TEST_SEQUENCE_ID).join());
                 assertThat(retryCount.get()).isEqualTo(2);
+                DeadLetter<? extends EventMessage> deadLetter = getFirstDeadLetter(TEST_SEQUENCE_ID);
+                assertThat(deadLetter.message().payload()).isEqualTo("test-payload");
             }
         }
 
@@ -760,7 +796,7 @@ class DeadLetteringEventHandlingComponentTest {
         class WithConditionalPolicies {
 
             @Test
-            void policyBasedOnCauseMessageEnqueues() {
+            void policyBasedOnCauseMessageEnqueuesWithCause() {
                 // given
                 GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
 
@@ -784,7 +820,11 @@ class DeadLetteringEventHandlingComponentTest {
 
                 // then
                 assertSuccessfulStream(result);
-                assertTrue(queue.contains(TEST_SEQUENCE_ID).join());
+                DeadLetter<? extends EventMessage> deadLetter = getFirstDeadLetter(TEST_SEQUENCE_ID);
+                assertThat(deadLetter.message().payload()).isEqualTo("test-payload");
+                assertThat(deadLetter.cause()).hasValueSatisfying(
+                        cause -> assertThat(cause.message()).contains("transient error")
+                );
             }
 
             @Test
@@ -810,11 +850,11 @@ class DeadLetteringEventHandlingComponentTest {
 
                 // then
                 assertSuccessfulStream(result);
-                assertFalse(queue.contains(TEST_SEQUENCE_ID).join());
+                assertThat(queue.sequenceSize(TEST_SEQUENCE_ID).join()).isZero();
             }
 
             @Test
-            void policyWithNullCauseHandlesGracefully() {
+            void policyWithNullCauseHandlesGracefullyAndEnqueuesWithCause() {
                 // given
                 GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
 
@@ -838,8 +878,17 @@ class DeadLetteringEventHandlingComponentTest {
 
                 // then
                 assertSuccessfulStream(result);
-                assertTrue(queue.contains(TEST_SEQUENCE_ID).join());
+                DeadLetter<? extends EventMessage> deadLetter = getFirstDeadLetter(TEST_SEQUENCE_ID);
+                assertThat(deadLetter.message().payload()).isEqualTo("test-payload");
+                assertThat(deadLetter.cause()).hasValueSatisfying(
+                        cause -> assertThat(cause.message()).contains("test failure")
+                );
             }
+        }
+
+        private DeadLetter<? extends EventMessage> getFirstDeadLetter(String sequenceId) {
+            Iterable<DeadLetter<? extends EventMessage>> sequence = queue.deadLetterSequence(sequenceId).join();
+            return sequence.iterator().next();
         }
     }
 
