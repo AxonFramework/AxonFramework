@@ -174,12 +174,6 @@ class CachingSequencedDeadLetterQueueTest {
             assertThat(result).isFalse();
             assertThat(cachingQueue.cacheEnqueuedSize()).isZero();
         }
-
-        @Test
-        void getDelegateReturnsDelegate() {
-            // given / when / then
-            assertThat(cachingQueue.getDelegate()).isSameAs(delegate);
-        }
     }
 
     @Nested

@@ -26,9 +26,6 @@ import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.eventhandling.deadletter.CachingSequencedDeadLetterQueue;
-import org.axonframework.messaging.eventhandling.deadletter.DeadLetteringEventHandlingComponent;
-import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
-import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.eventhandling.processing.EventProcessingException;
 import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.eventhandling.processing.ProcessorEventHandlingComponents;
@@ -104,7 +101,6 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     private final ScheduledExecutorService workerExecutor;
     private final Coordinator coordinator;
     private final WorkPackage.EventFilter workPackageEventFilter;
-    private final SequencedDeadLetterProcessor<EventMessage> deadLetterProcessor;
     private final CachingSequencedDeadLetterQueue<EventMessage> cachingDeadLetterQueue;
 
     private final AtomicReference<String> tokenStoreIdentifier = new AtomicReference<>();
@@ -135,6 +131,42 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
             @Nonnull List<EventHandlingComponent> eventHandlingComponents,
             @Nonnull PooledStreamingEventProcessorConfiguration configuration
     ) {
+        this(name, eventHandlingComponents, configuration, null);
+    }
+
+    /**
+     * Instantiate a {@code PooledStreamingEventProcessor} with given {@code name}, {@code eventHandlingComponents},
+     * {@code configuration}, and an optional {@code cachingDeadLetterQueue}.
+     * <p>
+     * This constructor is primarily used by the {@link PooledStreamingEventProcessorModule} to pass the caching dead
+     * letter queue which is created and managed at the module level. The caching queue is used to clear the cache when
+     * a segment is released.
+     * <p>
+     * Will assert the following for their presence in the configuration, prior to constructing this processor:
+     * <ul>
+     *     <li>A {@link StreamableEventSource}.</li>
+     *     <li>A {@link TokenStore}.</li>
+     *     <li>A {@link UnitOfWorkFactory}.</li>
+     *     <li>A {@link ScheduledExecutorService} for coordination.</li>
+     *     <li>A {@link ScheduledExecutorService} to process work packages.</li>
+     * </ul>
+     * If any of these is not present or does not comply to the requirements an {@link AxonConfigurationException} is thrown.
+     *
+     * @param name                    A {@link String} defining this {@link EventProcessor} instance.
+     * @param eventHandlingComponents The {@link EventHandlingComponent}s which will handle all the individual
+     *                                {@link EventMessage}s. These components should already be wrapped with
+     *                                dead-lettering support if needed.
+     * @param configuration           The {@link PooledStreamingEventProcessorConfiguration} used to configure a
+     *                                {@code PooledStreamingEventProcessor} instance.
+     * @param cachingDeadLetterQueue  The optional {@link CachingSequencedDeadLetterQueue} to clear when segments are
+     *                                released. May be {@code null} if dead-lettering is not enabled.
+     */
+    public PooledStreamingEventProcessor(
+            @Nonnull String name,
+            @Nonnull List<EventHandlingComponent> eventHandlingComponents,
+            @Nonnull PooledStreamingEventProcessorConfiguration configuration,
+            CachingSequencedDeadLetterQueue<EventMessage> cachingDeadLetterQueue
+    ) {
         this.name = Objects.requireNonNull(name, "Name may not be null");
         assertThat(name, n -> Objects.nonNull(n) && !n.isEmpty(), "Event Processor name may not be null or empty");
         this.configuration = Objects.requireNonNull(configuration, "Configuration may not be null");
@@ -143,41 +175,22 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         this.tokenStore = configuration.tokenStore();
         this.unitOfWorkFactory = configuration.unitOfWorkFactory();
         this.workerExecutor = configuration.workerExecutor();
+        this.cachingDeadLetterQueue = cachingDeadLetterQueue;
 
-        // Set up DLQ with caching if configured
-        SequencedDeadLetterQueue<EventMessage> configuredDlq = configuration.deadLetterQueue();
+        // Set up segment release action with cache clearing if caching DLQ is provided
         Consumer<Segment> segmentReleasedAction;
-        if (configuredDlq != null) {
-            this.cachingDeadLetterQueue = new CachingSequencedDeadLetterQueue<>(configuredDlq);
-            // Combine any user-configured segment release action with cache clearing
+        if (cachingDeadLetterQueue != null) {
             Consumer<Segment> userAction = configuration.segmentReleasedAction();
             segmentReleasedAction = segment -> {
                 cachingDeadLetterQueue.onSegmentReleased();
                 userAction.accept(segment);
             };
         } else {
-            this.cachingDeadLetterQueue = null;
             segmentReleasedAction = configuration.segmentReleasedAction();
         }
 
-        // Wrap event handling components with DLQ support if configured
-        if (this.cachingDeadLetterQueue != null) {
-            List<EventHandlingComponent> wrappedComponents = eventHandlingComponents.stream()
-                    .map(component -> new DeadLetteringEventHandlingComponent(
-                            component,
-                            this.cachingDeadLetterQueue,
-                            configuration.deadLetterEnqueuePolicy(),
-                            configuration.clearDeadLetterQueueOnReset()
-                    ))
-                    .map(c -> (EventHandlingComponent) c)
-                    .toList();
-            this.eventHandlingComponents = new ProcessorEventHandlingComponents(wrappedComponents);
-            // Use the first component as the dead letter processor for processing dead letters
-            this.deadLetterProcessor = (DeadLetteringEventHandlingComponent) wrappedComponents.getFirst();
-        } else {
-            this.eventHandlingComponents = new ProcessorEventHandlingComponents(eventHandlingComponents);
-            this.deadLetterProcessor = null;
-        }
+        // Use event handling components directly (they should already be wrapped at module level if needed)
+        this.eventHandlingComponents = new ProcessorEventHandlingComponents(eventHandlingComponents);
 
         this.workPackageEventFilter = new DefaultWorkPackageEventFilter(
                 this.name,

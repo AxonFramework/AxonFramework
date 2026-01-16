@@ -31,6 +31,9 @@ import org.axonframework.messaging.eventhandling.configuration.EventProcessingCo
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorConfiguration;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorCustomization;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
+import org.axonframework.messaging.eventhandling.deadletter.CachingSequencedDeadLetterQueue;
+import org.axonframework.messaging.eventhandling.deadletter.DeadLetterQueueConfiguration;
+import org.axonframework.messaging.eventhandling.deadletter.DeadLetteringEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.interception.InterceptingEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SequenceCachingEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
@@ -93,6 +96,7 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
     @Override
     public PooledStreamingEventProcessorModule build() {
         registerCustomizedConfiguration();
+        registerCachingDeadLetterQueue();
         registerTokenStore();
         registerUnitOfWorkFactory();
         registerEventHandlingComponents();
@@ -125,6 +129,27 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
         ));
     }
 
+    @SuppressWarnings("unchecked")
+    private void registerCachingDeadLetterQueue() {
+        componentRegistry(cr -> cr.registerComponent(
+                ComponentDefinition
+                        .ofTypeAndName(CachingSequencedDeadLetterQueue.class,
+                                       "CachingDeadLetterQueue[" + processorName + "]")
+                        .withBuilder(cfg -> {
+                            DeadLetterQueueConfiguration dlqConfig =
+                                    cfg.getComponent(PooledStreamingEventProcessorConfiguration.class)
+                                       .deadLetterQueueConfiguration();
+                            if (dlqConfig.isEnabled()) {
+                                return new CachingSequencedDeadLetterQueue<>(
+                                        dlqConfig.queue(),
+                                        dlqConfig.cacheMaxSize()
+                                );
+                            }
+                            return null;
+                        })
+        ));
+    }
+
     private void registerTokenStore() {
         componentRegistry(cr -> cr.registerComponent(
                 ComponentDefinition
@@ -146,11 +171,18 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
     private void registerEventProcessor() {
         var processorComponentDefinition = ComponentDefinition
                 .ofTypeAndName(PooledStreamingEventProcessor.class, processorName)
-                .withBuilder(cfg -> new PooledStreamingEventProcessor(
-                        processorName,
-                        getEventHandlingComponents(cfg),
-                        cfg.getComponent(PooledStreamingEventProcessorConfiguration.class)
-                ))
+                .withBuilder(cfg -> {
+                    var cachingDlq = cfg.getOptionalComponent(
+                            CachingSequencedDeadLetterQueue.class,
+                            "CachingDeadLetterQueue[" + processorName + "]"
+                    ).orElse(null);
+                    return new PooledStreamingEventProcessor(
+                            processorName,
+                            getEventHandlingComponents(cfg),
+                            cfg.getComponent(PooledStreamingEventProcessorConfiguration.class),
+                            cachingDlq
+                    );
+                })
                 .onStart(Phase.INBOUND_EVENT_CONNECTORS, (cfg, component) -> {
                     return component.start();
                 })
@@ -179,6 +211,25 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
                                          return new InterceptingEventHandlingComponent(
                                                  configuration.interceptors(),
                                                  delegate
+                                         );
+                                     });
+                cr.registerDecorator(EventHandlingComponent.class, componentName,
+                                     DeadLetteringEventHandlingComponent.DECORATION_ORDER,
+                                     (config, name, delegate) -> {
+                                         var cachingDlq = config.getOptionalComponent(
+                                                 CachingSequencedDeadLetterQueue.class,
+                                                 "CachingDeadLetterQueue[" + processorName + "]"
+                                         ).orElse(null);
+                                         if (cachingDlq == null) {
+                                             return delegate;
+                                         }
+                                         var dlqConfig = config.getComponent(PooledStreamingEventProcessorConfiguration.class)
+                                                               .deadLetterQueueConfiguration();
+                                         return new DeadLetteringEventHandlingComponent(
+                                                 delegate,
+                                                 cachingDlq,
+                                                 dlqConfig.enqueuePolicy(),
+                                                 dlqConfig.clearOnReset()
                                          );
                                      });
             });

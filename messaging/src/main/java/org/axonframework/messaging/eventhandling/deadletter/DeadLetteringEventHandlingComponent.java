@@ -69,6 +69,13 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
     private static final EnqueuePolicy<EventMessage> DEFAULT_ENQUEUE_POLICY =
             (letter, cause) -> Decisions.enqueue(truncated(cause));
 
+    /**
+     * The order for decorating {@link EventHandlingComponent}s with dead-lettering support.
+     * <p>
+     * This order is applied after interceptors to ensure dead-lettering wraps the fully decorated component.
+     */
+    public static final int DECORATION_ORDER = Integer.MIN_VALUE + 200;
+
     private final SequencedDeadLetterQueue<EventMessage> queue;
     private final EnqueuePolicy<EventMessage> enqueuePolicy;
     private final boolean allowReset;
