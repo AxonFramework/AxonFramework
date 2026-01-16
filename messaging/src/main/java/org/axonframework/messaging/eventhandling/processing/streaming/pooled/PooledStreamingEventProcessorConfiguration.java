@@ -497,10 +497,6 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * Registers an action to perform when a segment is released. This action is invoked when a segment's claim is
      * released, either due to shutdown, rebalancing, or explicit release.
      * <p>
-     * This is particularly useful for clearing caches that are scoped to segment processing. For example, the
-     * {@link CachingSequencedDeadLetterQueue} uses this to clear its sequence identifier cache when a segment is
-     * released, ensuring cache consistency across processor instances.
-     * <p>
      * Defaults to a no-op.
      *
      * @param segmentReleasedAction The action to perform when a segment is released.
