@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import io.grpc.ManagedChannelBuilder;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.command.AxonServerCommandBusConnector;
+import org.axonframework.conversion.json.JacksonConverter;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandPriorityCalculator;
 import org.axonframework.messaging.commandhandling.GenericCommandResultMessage;
@@ -39,7 +40,6 @@ import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
-import org.axonframework.conversion.json.JacksonConverter;
 import org.axonframework.test.server.AxonServerContainer;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
@@ -47,7 +47,6 @@ import org.slf4j.LoggerFactory;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import java.util.Collections;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -103,7 +102,7 @@ class MessagePriorityIntegrationTest {
                 EmptyApplicationContext.INSTANCE,
                 c -> c.workScheduler(Executors.newSingleThreadExecutor())
         );
-        var localCommandBus = new SimpleCommandBus(unitOfWorkFactory, Collections.emptyList());
+        var localCommandBus = new SimpleCommandBus(unitOfWorkFactory);
         var commandBusConnector =
                 new AxonServerCommandBusConnector(connectionManager.getConnection(), new AxonServerConfiguration());
         CommandBusConnector serializingConnector = new PayloadConvertingCommandBusConnector(

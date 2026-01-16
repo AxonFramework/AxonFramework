@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,8 +44,8 @@ public class TransactionalUnitOfWorkFactory implements UnitOfWorkFactory {
      * Initializes a factory with the given {@code transactionManager} and a delegate {@link UnitOfWorkFactory}. The
      * unit of work's lifecycle will be bound to transaction managed by the provided {@code transactionManager}.
      *
-     * @param transactionManager The transaction manager used to create and manage transactions for the units of work.
-     * @param delegate           The delegate factory used to create units of work.
+     * @param transactionManager the transaction manager used to create and manage transactions for the units of work
+     * @param delegate           the delegate factory used to create units of work
      */
     public TransactionalUnitOfWorkFactory(
             @Nonnull TransactionManager transactionManager,
@@ -68,7 +68,7 @@ public class TransactionalUnitOfWorkFactory implements UnitOfWorkFactory {
      * </ul>
      * The transaction is stored as a resource in the unit of work's context using a resource key with label "transaction".
      *
-     * @return A new transactional unit of work.
+     * @return a new transactional unit of work
      */
     @Nonnull
     @Override
@@ -81,7 +81,7 @@ public class TransactionalUnitOfWorkFactory implements UnitOfWorkFactory {
         }
         var unitOfWork = delegate.create(identifier, customization);
 
-        transactionManager.registerHandlers(unitOfWork);
+        transactionManager.attachToProcessingLifecycle(unitOfWork);
 
         return unitOfWork;
     }

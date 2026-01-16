@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,10 @@
 
 package org.axonframework.springboot.integration;
 
+import org.axonframework.extension.spring.config.annotation.SpringBeanDependencyResolverFactory;
+import org.axonframework.extension.spring.config.annotation.SpringBeanParameterResolverFactory;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.SimpleCommandBus;
-import org.axonframework.messaging.eventhandling.annotation.AnnotationEventHandlerAdapter;
-import org.axonframework.messaging.eventhandling.EventBus;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.eventhandling.SimpleEventBus;
-import org.axonframework.messaging.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.core.EmptyApplicationContext;
 import org.axonframework.messaging.core.Message;
@@ -34,8 +30,12 @@ import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
-import org.axonframework.extension.spring.config.annotation.SpringBeanDependencyResolverFactory;
-import org.axonframework.extension.spring.config.annotation.SpringBeanParameterResolverFactory;
+import org.axonframework.messaging.eventhandling.EventBus;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.eventhandling.SimpleEventBus;
+import org.axonframework.messaging.eventhandling.annotation.AnnotationEventHandlerAdapter;
+import org.axonframework.messaging.eventhandling.annotation.EventHandler;
 import org.axonframework.test.FixtureExecutionException;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.NoUniqueBeanDefinitionException;
@@ -51,7 +51,6 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Scope;
 import org.springframework.test.annotation.DirtiesContext;
 
-import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -389,7 +388,7 @@ class SpringBeanResolverFactoryTest {
 
         @Bean
         public CommandBus commandBus() {
-            return new SimpleCommandBus(new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE), Collections.emptyList());
+            return new SimpleCommandBus(new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE));
         }
 
         @Bean
