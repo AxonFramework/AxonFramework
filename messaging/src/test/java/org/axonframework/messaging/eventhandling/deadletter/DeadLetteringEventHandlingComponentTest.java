@@ -47,6 +47,7 @@ import java.time.ZoneId;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -375,6 +376,519 @@ class DeadLetteringEventHandlingComponentTest {
             assertFalse(result);
             assertTrue(queue.contains(TEST_SEQUENCE_ID).join());
             assertThat(queue.sequenceSize(TEST_SEQUENCE_ID).join()).isEqualTo(1);
+        }
+    }
+
+    @Nested
+    class WhenUsingDifferentEnqueuePolicies {
+
+        @Nested
+        class DuringEventHandling {
+
+            @Test
+            void enqueuePolicyWithoutCausePreservesOriginalCause() {
+                // given
+                GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
+
+                // Decisions.enqueue() without cause means "use the original error from the dead letter"
+                testSubject = new DeadLetteringEventHandlingComponent(
+                        delegate, queue, (letter, cause) -> Decisions.enqueue(), true
+                );
+
+                RuntimeException testException = new RuntimeException("original failure");
+                delegate.failingWith(testException);
+
+                EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
+                ProcessingContext context = new StubProcessingContext();
+
+                // when
+                MessageStream.Empty<Message> result = testSubject.handle(testEvent, context);
+
+                // then - the original error is preserved since no cause was provided by the policy
+                assertSuccessfulStream(result);
+                DeadLetter<? extends EventMessage> deadLetter = getFirstDeadLetter(TEST_SEQUENCE_ID);
+                assertThat(deadLetter.message().payload()).isEqualTo("test-payload");
+                assertThat(deadLetter.cause()).hasValueSatisfying(
+                        cause -> assertThat(cause.message()).contains("original failure")
+                );
+            }
+
+            @Test
+            void enqueuePolicyWithCauseEnqueuesLetterWithCause() {
+                // given
+                GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
+
+                testSubject = new DeadLetteringEventHandlingComponent(
+                        delegate, queue, (letter, cause) -> Decisions.enqueue(cause), true
+                );
+
+                RuntimeException testException = new RuntimeException("specific failure reason");
+                delegate.failingWith(testException);
+
+                EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
+                ProcessingContext context = new StubProcessingContext();
+
+                // when
+                MessageStream.Empty<Message> result = testSubject.handle(testEvent, context);
+
+                // then
+                assertSuccessfulStream(result);
+                DeadLetter<? extends EventMessage> deadLetter = getFirstDeadLetter(TEST_SEQUENCE_ID);
+                assertThat(deadLetter.message().payload()).isEqualTo("test-payload");
+                assertThat(deadLetter.cause()).hasValueSatisfying(
+                        cause -> assertThat(cause.message()).contains("specific failure reason")
+                );
+            }
+
+            @Test
+            void enqueuePolicyWithCustomDiagnosticsEnqueuesWithDiagnostics() {
+                // given
+                GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
+
+                testSubject = new DeadLetteringEventHandlingComponent(
+                        delegate, queue,
+                        (letter, cause) -> Decisions.enqueue(
+                                cause,
+                                l -> l.diagnostics().and("custom-key", "custom-value")
+                        ),
+                        true
+                );
+
+                RuntimeException testException = new RuntimeException("test failure");
+                delegate.failingWith(testException);
+
+                EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
+                ProcessingContext context = new StubProcessingContext();
+
+                // when
+                MessageStream.Empty<Message> result = testSubject.handle(testEvent, context);
+
+                // then
+                assertSuccessfulStream(result);
+                DeadLetter<? extends EventMessage> deadLetter = getFirstDeadLetter(TEST_SEQUENCE_ID);
+                assertThat(deadLetter.message().payload()).isEqualTo("test-payload");
+                assertThat(deadLetter.diagnostics().get("custom-key")).isEqualTo("custom-value");
+            }
+
+            @Test
+            void evictDecisionDoesNotEnqueue() {
+                // given
+                testSubject = new DeadLetteringEventHandlingComponent(
+                        delegate, queue, (letter, cause) -> Decisions.evict(), true
+                );
+
+                RuntimeException testException = new RuntimeException("test failure");
+                delegate.failingWith(testException);
+
+                EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
+                ProcessingContext context = new StubProcessingContext();
+
+                // when
+                MessageStream.Empty<Message> result = testSubject.handle(testEvent, context);
+
+                // then
+                assertSuccessfulStream(result);
+                assertThat(queue.sequenceSize(TEST_SEQUENCE_ID).join()).isZero();
+            }
+
+            @Test
+            void policyBasedOnExceptionTypeEnqueuesOnlyForSpecificExceptions() {
+                // given
+                GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
+
+                EnqueuePolicy<EventMessage> exceptionTypePolicy = (letter, cause) -> {
+                    if (cause instanceof IllegalArgumentException) {
+                        return Decisions.enqueue(cause);
+                    }
+                    return Decisions.doNotEnqueue();
+                };
+
+                testSubject = new DeadLetteringEventHandlingComponent(delegate, queue, exceptionTypePolicy, true);
+
+                IllegalArgumentException expectedEnqueue = new IllegalArgumentException("should enqueue");
+                delegate.failingWith(expectedEnqueue);
+
+                EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
+                ProcessingContext context = new StubProcessingContext();
+
+                // when
+                MessageStream.Empty<Message> result = testSubject.handle(testEvent, context);
+
+                // then
+                assertSuccessfulStream(result);
+                DeadLetter<? extends EventMessage> deadLetter = getFirstDeadLetter(TEST_SEQUENCE_ID);
+                assertThat(deadLetter.message().payload()).isEqualTo("test-payload");
+                assertThat(deadLetter.cause()).hasValueSatisfying(
+                        cause -> assertThat(cause.type()).contains("IllegalArgumentException")
+                );
+            }
+
+            @Test
+            void policyBasedOnExceptionTypeDoesNotEnqueueForOtherExceptions() {
+                // given
+                EnqueuePolicy<EventMessage> exceptionTypePolicy = (letter, cause) -> {
+                    if (cause instanceof IllegalArgumentException) {
+                        return Decisions.enqueue(cause);
+                    }
+                    return Decisions.doNotEnqueue();
+                };
+
+                testSubject = new DeadLetteringEventHandlingComponent(delegate, queue, exceptionTypePolicy, true);
+
+                RuntimeException notExpectedEnqueue = new RuntimeException("should not enqueue");
+                delegate.failingWith(notExpectedEnqueue);
+
+                EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
+                ProcessingContext context = new StubProcessingContext();
+
+                // when
+                MessageStream.Empty<Message> result = testSubject.handle(testEvent, context);
+
+                // then
+                assertSuccessfulStream(result);
+                assertThat(queue.sequenceSize(TEST_SEQUENCE_ID).join()).isZero();
+            }
+
+            @Test
+            void policyCanInspectDeadLetterMessageAndEnqueue() {
+                // given
+                GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
+
+                EnqueuePolicy<EventMessage> messageInspectingPolicy = (letter, cause) -> {
+                    Object payload = letter.message().payload();
+                    if (payload != null && payload.toString().contains("important")) {
+                        return Decisions.enqueue(cause);
+                    }
+                    return Decisions.doNotEnqueue();
+                };
+
+                testSubject = new DeadLetteringEventHandlingComponent(delegate, queue, messageInspectingPolicy, true);
+
+                RuntimeException testException = new RuntimeException("test failure");
+                delegate.failingWith(testException);
+
+                EventMessage importantEvent = EventTestUtils.asEventMessage("important-payload");
+                ProcessingContext context = new StubProcessingContext();
+
+                // when
+                MessageStream.Empty<Message> result = testSubject.handle(importantEvent, context);
+
+                // then
+                assertSuccessfulStream(result);
+                DeadLetter<? extends EventMessage> deadLetter = getFirstDeadLetter(TEST_SEQUENCE_ID);
+                assertThat(deadLetter.message().payload()).isEqualTo("important-payload");
+            }
+
+            @Test
+            void policyCanInspectDeadLetterMessageAndRejectNonImportant() {
+                // given
+                EnqueuePolicy<EventMessage> messageInspectingPolicy = (letter, cause) -> {
+                    Object payload = letter.message().payload();
+                    if (payload != null && payload.toString().contains("important")) {
+                        return Decisions.enqueue(cause);
+                    }
+                    return Decisions.doNotEnqueue();
+                };
+
+                testSubject = new DeadLetteringEventHandlingComponent(delegate, queue, messageInspectingPolicy, true);
+
+                RuntimeException testException = new RuntimeException("test failure");
+                delegate.failingWith(testException);
+
+                EventMessage regularEvent = EventTestUtils.asEventMessage("regular-payload");
+                ProcessingContext context = new StubProcessingContext();
+
+                // when
+                MessageStream.Empty<Message> result = testSubject.handle(regularEvent, context);
+
+                // then
+                assertSuccessfulStream(result);
+                assertThat(queue.sequenceSize(TEST_SEQUENCE_ID).join()).isZero();
+            }
+        }
+
+        @Nested
+        class DuringDeadLetterProcessing {
+
+            @Test
+            void processEvictsLetterWhenPolicyReturnsDoNotEnqueueOnFailure() {
+                // given
+                GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
+
+                EnqueuePolicy<EventMessage> evictOnFailurePolicy = (letter, cause) -> Decisions.doNotEnqueue();
+
+                testSubject = new DeadLetteringEventHandlingComponent(delegate, queue, evictOnFailurePolicy, true);
+
+                EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
+                queue.enqueue(TEST_SEQUENCE_ID, new GenericDeadLetter<>(TEST_SEQUENCE_ID, testEvent)).join();
+
+                RuntimeException testException = new RuntimeException("processing failed");
+                delegate.failingWith(testException);
+
+                ProcessingContext context = new StubProcessingContext();
+
+                // when
+                boolean result = testSubject.processAny(context).join();
+
+                // then - letter should be evicted despite failure
+                assertTrue(result);
+                assertThat(queue.sequenceSize(TEST_SEQUENCE_ID).join()).isZero();
+            }
+
+            @Test
+            void processEvictsLetterWhenPolicyReturnsEvictOnFailure() {
+                // given
+                GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
+
+                EnqueuePolicy<EventMessage> evictPolicy = (letter, cause) -> Decisions.evict();
+
+                testSubject = new DeadLetteringEventHandlingComponent(delegate, queue, evictPolicy, true);
+
+                EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
+                queue.enqueue(TEST_SEQUENCE_ID, new GenericDeadLetter<>(TEST_SEQUENCE_ID, testEvent)).join();
+
+                RuntimeException testException = new RuntimeException("processing failed");
+                delegate.failingWith(testException);
+
+                ProcessingContext context = new StubProcessingContext();
+
+                // when
+                boolean result = testSubject.processAny(context).join();
+
+                // then - letter should be evicted despite failure
+                assertTrue(result);
+                assertThat(queue.sequenceSize(TEST_SEQUENCE_ID).join()).isZero();
+            }
+
+            @Test
+            void processRequeuesLetterWhenPolicyReturnsRequeueAndPreservesCause() {
+                // given
+                GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
+
+                EnqueuePolicy<EventMessage> requeuePolicy = (letter, cause) -> Decisions.requeue(cause);
+
+                testSubject = new DeadLetteringEventHandlingComponent(delegate, queue, requeuePolicy, true);
+
+                EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
+                queue.enqueue(TEST_SEQUENCE_ID, new GenericDeadLetter<>(TEST_SEQUENCE_ID, testEvent)).join();
+
+                RuntimeException testException = new RuntimeException("processing failed");
+                delegate.failingWith(testException);
+
+                ProcessingContext context = new StubProcessingContext();
+
+                // when
+                boolean result = testSubject.processAny(context).join();
+
+                // then - letter should remain in queue with updated cause
+                assertFalse(result);
+                DeadLetter<? extends EventMessage> deadLetter = getFirstDeadLetter(TEST_SEQUENCE_ID);
+                assertThat(deadLetter.message().payload()).isEqualTo("test-payload");
+                assertThat(deadLetter.cause()).hasValueSatisfying(
+                        cause -> assertThat(cause.message()).contains("processing failed")
+                );
+            }
+
+            @Test
+            void successfulProcessingEvictsLetterRegardlessOfPolicy() {
+                // given
+                GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
+
+                EnqueuePolicy<EventMessage> alwaysRequeuePolicy = (letter, cause) -> Decisions.requeue(cause);
+
+                testSubject = new DeadLetteringEventHandlingComponent(delegate, queue, alwaysRequeuePolicy, true);
+
+                EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
+                queue.enqueue(TEST_SEQUENCE_ID, new GenericDeadLetter<>(TEST_SEQUENCE_ID, testEvent)).join();
+
+                ProcessingContext context = new StubProcessingContext();
+
+                // when - delegate does not fail, so processing succeeds
+                boolean result = testSubject.processAny(context).join();
+
+                // then - letter should be evicted on success
+                assertTrue(result);
+                assertThat(queue.sequenceSize(TEST_SEQUENCE_ID).join()).isZero();
+            }
+        }
+
+        @Nested
+        class WithRetryLimitPolicy {
+
+            @Test
+            void policyEvictsAfterMaxRetries() {
+                // given
+                GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
+
+                int maxRetries = 3;
+                AtomicInteger retryCount = new AtomicInteger(0);
+
+                EnqueuePolicy<EventMessage> retryLimitPolicy = (letter, cause) -> {
+                    int currentRetry = retryCount.incrementAndGet();
+                    if (currentRetry >= maxRetries) {
+                        return Decisions.evict();
+                    }
+                    return Decisions.requeue(cause);
+                };
+
+                testSubject = new DeadLetteringEventHandlingComponent(delegate, queue, retryLimitPolicy, true);
+
+                EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
+                queue.enqueue(TEST_SEQUENCE_ID, new GenericDeadLetter<>(TEST_SEQUENCE_ID, testEvent)).join();
+
+                RuntimeException testException = new RuntimeException("processing failed");
+                delegate.failingWith(testException);
+
+                ProcessingContext context = new StubProcessingContext();
+
+                // when - process three times
+                boolean result1 = testSubject.processAny(context).join();
+                boolean result2 = testSubject.processAny(context).join();
+                boolean result3 = testSubject.processAny(context).join();
+
+                // then - first two should requeue (return false), third should evict (return true)
+                assertFalse(result1);
+                assertFalse(result2);
+                assertTrue(result3);
+                assertThat(queue.sequenceSize(TEST_SEQUENCE_ID).join()).isZero();
+            }
+
+            @Test
+            void policyRequeuesBeforeMaxRetriesAndLetterRemainsInQueue() {
+                // given
+                GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
+
+                int maxRetries = 5;
+                AtomicInteger retryCount = new AtomicInteger(0);
+
+                EnqueuePolicy<EventMessage> retryLimitPolicy = (letter, cause) -> {
+                    int currentRetry = retryCount.incrementAndGet();
+                    if (currentRetry >= maxRetries) {
+                        return Decisions.evict();
+                    }
+                    return Decisions.requeue(cause);
+                };
+
+                testSubject = new DeadLetteringEventHandlingComponent(delegate, queue, retryLimitPolicy, true);
+
+                EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
+                queue.enqueue(TEST_SEQUENCE_ID, new GenericDeadLetter<>(TEST_SEQUENCE_ID, testEvent)).join();
+
+                RuntimeException testException = new RuntimeException("processing failed");
+                delegate.failingWith(testException);
+
+                ProcessingContext context = new StubProcessingContext();
+
+                // when - process only twice (before max retries)
+                boolean result1 = testSubject.processAny(context).join();
+                boolean result2 = testSubject.processAny(context).join();
+
+                // then - both should requeue, letter still in queue with same payload
+                assertFalse(result1);
+                assertFalse(result2);
+                assertThat(retryCount.get()).isEqualTo(2);
+                DeadLetter<? extends EventMessage> deadLetter = getFirstDeadLetter(TEST_SEQUENCE_ID);
+                assertThat(deadLetter.message().payload()).isEqualTo("test-payload");
+            }
+        }
+
+        @Nested
+        class WithConditionalPolicies {
+
+            @Test
+            void policyBasedOnCauseMessageEnqueuesWithCause() {
+                // given
+                GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
+
+                EnqueuePolicy<EventMessage> causeMessagePolicy = (letter, cause) -> {
+                    if (cause.getMessage() != null && cause.getMessage().contains("transient")) {
+                        return Decisions.enqueue(cause);
+                    }
+                    return Decisions.doNotEnqueue();
+                };
+
+                testSubject = new DeadLetteringEventHandlingComponent(delegate, queue, causeMessagePolicy, true);
+
+                RuntimeException transientException = new RuntimeException("transient error");
+                delegate.failingWith(transientException);
+
+                EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
+                ProcessingContext context = new StubProcessingContext();
+
+                // when
+                MessageStream.Empty<Message> result = testSubject.handle(testEvent, context);
+
+                // then
+                assertSuccessfulStream(result);
+                DeadLetter<? extends EventMessage> deadLetter = getFirstDeadLetter(TEST_SEQUENCE_ID);
+                assertThat(deadLetter.message().payload()).isEqualTo("test-payload");
+                assertThat(deadLetter.cause()).hasValueSatisfying(
+                        cause -> assertThat(cause.message()).contains("transient error")
+                );
+            }
+
+            @Test
+            void policyBasedOnCauseMessageDoesNotEnqueue() {
+                // given
+                EnqueuePolicy<EventMessage> causeMessagePolicy = (letter, cause) -> {
+                    if (cause.getMessage() != null && cause.getMessage().contains("transient")) {
+                        return Decisions.enqueue(cause);
+                    }
+                    return Decisions.doNotEnqueue();
+                };
+
+                testSubject = new DeadLetteringEventHandlingComponent(delegate, queue, causeMessagePolicy, true);
+
+                RuntimeException permanentException = new RuntimeException("permanent error");
+                delegate.failingWith(permanentException);
+
+                EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
+                ProcessingContext context = new StubProcessingContext();
+
+                // when
+                MessageStream.Empty<Message> result = testSubject.handle(testEvent, context);
+
+                // then
+                assertSuccessfulStream(result);
+                assertThat(queue.sequenceSize(TEST_SEQUENCE_ID).join()).isZero();
+            }
+
+            @Test
+            void policyWithNullCauseHandlesGracefullyAndEnqueuesWithCause() {
+                // given
+                GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
+
+                EnqueuePolicy<EventMessage> nullSafePolicy = (letter, cause) -> {
+                    if (cause == null) {
+                        return Decisions.doNotEnqueue();
+                    }
+                    return Decisions.enqueue(cause);
+                };
+
+                testSubject = new DeadLetteringEventHandlingComponent(delegate, queue, nullSafePolicy, true);
+
+                RuntimeException testException = new RuntimeException("test failure");
+                delegate.failingWith(testException);
+
+                EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
+                ProcessingContext context = new StubProcessingContext();
+
+                // when
+                MessageStream.Empty<Message> result = testSubject.handle(testEvent, context);
+
+                // then
+                assertSuccessfulStream(result);
+                DeadLetter<? extends EventMessage> deadLetter = getFirstDeadLetter(TEST_SEQUENCE_ID);
+                assertThat(deadLetter.message().payload()).isEqualTo("test-payload");
+                assertThat(deadLetter.cause()).hasValueSatisfying(
+                        cause -> assertThat(cause.message()).contains("test failure")
+                );
+            }
+        }
+
+        private DeadLetter<? extends EventMessage> getFirstDeadLetter(String sequenceId) {
+            Iterable<DeadLetter<? extends EventMessage>> sequence = queue.deadLetterSequence(sequenceId).join();
+            return sequence.iterator().next();
         }
     }
 
