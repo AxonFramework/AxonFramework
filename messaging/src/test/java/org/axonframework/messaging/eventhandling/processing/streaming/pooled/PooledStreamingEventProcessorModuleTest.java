@@ -437,6 +437,36 @@ class PooledStreamingEventProcessorModuleTest {
         }
 
         @Test
+        void shouldWrapAllEventHandlingComponentsWithDeadLetterProcessorWhenDlqConfigured() {
+            // given
+            var processorName = "testProcessor";
+            var component0 = new SimpleEventHandlingComponent();
+            component0.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
+            var component1 = new SimpleEventHandlingComponent();
+            component1.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
+
+            var module = EventProcessorModule
+                    .pooledStreaming(processorName)
+                    .eventHandlingComponents(components -> components.declarative(cfg -> component0).declarative(cfg -> component1))
+                    .customized((cfg, c) -> c
+                            .eventSource(new AsyncInMemoryStreamableEventSource())
+                            .deadLetterQueue(dlq -> dlq.queue(InMemorySequencedDeadLetterQueue.defaultQueue())));
+
+            var configurer = MessagingConfigurer.create();
+            configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps.processor(module)));
+            var configuration = configurer.build();
+
+            // when
+            var registeredComponents = configuration.getModuleConfiguration(processorName)
+                                                   .map(m -> m.getComponents(EventHandlingComponent.class));
+
+            // then
+            assertThat(registeredComponents).isPresent();
+            assertThat(registeredComponents.get().values()).allSatisfy(c -> assertThat(c).isInstanceOf(SequencedDeadLetterProcessor.class));
+        }
+
+
+        @Test
         void shouldNotWrapEventHandlingComponentsWithDeadLetterProcessorWhenDlqNotConfigured() {
             // given
             var processorName = "testProcessor";
