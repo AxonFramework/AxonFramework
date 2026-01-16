@@ -34,6 +34,7 @@ import org.axonframework.messaging.eventhandling.deadletter.DeadLetterQueueConfi
 import org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy;
 import org.junit.jupiter.api.*;
 
+import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
@@ -58,21 +59,37 @@ import static org.awaitility.Awaitility.await;
 class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
 
     private static final String PROCESSOR_NAME = "dlq-multi-component-processor";
-    private static final String FAIL_MARKER = "-fail";
 
     private FailingRecordingEventHandlingComponent component1;
     private FailingRecordingEventHandlingComponent component2;
 
+    /**
+     * Unique identifier for each test run to ensure test isolation. Events from previous test runs will not match
+     * the failure predicates of the current test.
+     */
+    private String testRunId;
+
     @BeforeEach
     void setUpComponents() {
+        // Generate a unique test run ID to isolate events between tests
+        testRunId = UUID.randomUUID().toString().substring(0, 8);
+
         component1 = new FailingRecordingEventHandlingComponent(
                 "component1",
-                studentId -> studentId.contains(FAIL_MARKER + "-1")
+                studentId -> studentId.contains(failMarker1())
         );
         component2 = new FailingRecordingEventHandlingComponent(
                 "component2",
-                studentId -> studentId.contains(FAIL_MARKER + "-2")
+                studentId -> studentId.contains(failMarker2())
         );
+    }
+
+    private String failMarker1() {
+        return "-fail1-" + testRunId;
+    }
+
+    private String failMarker2() {
+        return "-fail2-" + testRunId;
     }
 
     @Override
@@ -103,8 +120,8 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
         void failedEventInComponent1ShouldOnlyGoToComponent1Dlq() {
             // given
             startApp();
-            var failingStudentId = createId("student" + FAIL_MARKER + "-1");
-            var successStudentId = createId("student-ok");
+            var failingStudentId = createId("student" + failMarker1());
+            var successStudentId = createId("student-ok-" + testRunId);
             var courseId = createId("course");
 
             // when
@@ -135,8 +152,8 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
         void failedEventInComponent2ShouldOnlyGoToComponent2Dlq() {
             // given
             startApp();
-            var failingStudentId = createId("student" + FAIL_MARKER + "-2");
-            var successStudentId = createId("student-ok");
+            var failingStudentId = createId("student" + failMarker2());
+            var successStudentId = createId("student-ok-" + testRunId);
             var courseId = createId("course");
 
             // when
@@ -172,7 +189,7 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
         void subsequentEventsForFailedSequenceShouldBeEnqueuedInSameComponentDlq() {
             // given
             startApp();
-            var failingStudentId = createId("student" + FAIL_MARKER + "-1");
+            var failingStudentId = createId("student" + failMarker1());
             var courseId1 = createId("course-1");
             var courseId2 = createId("course-2");
             var courseId3 = createId("course-3");
@@ -206,9 +223,9 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
         void bothComponentsCanFailOnDifferentSequences() {
             // given
             startApp();
-            var failingStudent1 = createId("student" + FAIL_MARKER + "-1");
-            var failingStudent2 = createId("student" + FAIL_MARKER + "-2");
-            var successStudent = createId("student-ok");
+            var failingStudent1 = createId("student" + failMarker1());
+            var failingStudent2 = createId("student" + failMarker2());
+            var successStudent = createId("student-ok-" + testRunId);
             var courseId = createId("course");
 
             // when
@@ -245,8 +262,8 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
         void processingDeadLettersFromOneComponentShouldNotAffectOtherComponentDlq() {
             // given
             startApp();
-            var failingStudent1 = createId("student" + FAIL_MARKER + "-1");
-            var failingStudent2 = createId("student" + FAIL_MARKER + "-2");
+            var failingStudent1 = createId("student" + failMarker1());
+            var failingStudent2 = createId("student" + failMarker2());
             var courseId = createId("course");
 
             // and - both components have dead letters
@@ -281,8 +298,8 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
         void shouldProcessDeadLettersFromBothComponentsIndependently() {
             // given
             startApp();
-            var failingStudent1 = createId("student" + FAIL_MARKER + "-1");
-            var failingStudent2 = createId("student" + FAIL_MARKER + "-2");
+            var failingStudent1 = createId("student" + failMarker1());
+            var failingStudent2 = createId("student" + failMarker2());
             var courseId = createId("course");
 
             // and - both components have dead letters
