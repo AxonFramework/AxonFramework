@@ -35,6 +35,7 @@ import org.axonframework.messaging.eventhandling.deadletter.CachingSequencedDead
 import org.axonframework.messaging.eventhandling.deadletter.DeadLetterQueueConfiguration;
 import org.axonframework.messaging.eventhandling.deadletter.DeadLetteringEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.interception.InterceptingEventHandlingComponent;
+import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SequenceCachingEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
 import org.axonframework.common.lifecycle.Phase;
@@ -137,20 +138,6 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
         ));
     }
 
-    private PooledStreamingEventProcessorConfiguration ifDlqEnabledThenClearCacheOnSegmentReleased(
-            Configuration cfg,
-            PooledStreamingEventProcessorConfiguration configuration
-    ) {
-        var segmentReleasedAction = configuration.segmentReleasedAction();
-        return configuration.segmentReleasedAction(segment -> {
-            cfg.getOptionalComponent(
-                    CachingSequencedDeadLetterQueue.class,
-                    "CachingDeadLetterQueue[" + processorName + "]"
-            ).ifPresent(CachingSequencedDeadLetterQueue::onSegmentReleased);
-            segmentReleasedAction.accept(segment);
-        });
-    }
-
     @SuppressWarnings("unchecked")
     private void registerCachingDeadLetterQueue() {
         componentRegistry(cr -> cr.registerComponent(
@@ -246,6 +233,17 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
                                                  dlqConfig.enqueuePolicy(),
                                                  dlqConfig.clearOnReset()
                                          );
+                                     });
+                // Register the decorated component also as SequencedDeadLetterProcessor when DLQ is enabled
+                cr.registerComponent(SequencedDeadLetterProcessor.class, componentName,
+                                     cfg -> {
+                                         var eventHandlingComponent = cfg.getComponent(
+                                                 EventHandlingComponent.class, componentName
+                                         );
+                                         if (eventHandlingComponent instanceof SequencedDeadLetterProcessor dlp) {
+                                             return dlp;
+                                         }
+                                         return null;
                                      });
             });
         }
