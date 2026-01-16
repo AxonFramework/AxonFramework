@@ -460,7 +460,7 @@ class PooledStreamingEventProcessorModuleTest {
 
             // when
             var registeredComponents = configuration.getModuleConfiguration(processorName)
-                                                   .map(m -> m.getComponents(EventHandlingComponent.class));
+                                                   .map(m -> m.getComponents(SequencedDeadLetterProcessor.class));
 
             // then
             assertThat(registeredComponents).isPresent();
