@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -63,13 +64,15 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final SequencedDeadLetterQueue<M> delegate;
-    private final SequenceIdentifierCache cache;
+    private final int cacheMaxSize;
+    private final AtomicReference<SequenceIdentifierCache> cacheRef = new AtomicReference<>();
 
     /**
      * Constructs a caching decorator with the given delegate and default cache settings.
      * <p>
-     * The cache is initialized by checking if the delegate queue is empty. If empty, the cache
-     * operates in an optimized mode where unknown identifiers are assumed to not be present.
+     * The cache is lazily initialized on first use by checking if the delegate queue is empty.
+     * If empty, the cache operates in an optimized mode where unknown identifiers are assumed
+     * to not be present.
      *
      * @param delegate The underlying {@link SequencedDeadLetterQueue} to delegate to.
      */
@@ -80,45 +83,71 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
     /**
      * Constructs a caching decorator with the given delegate and cache max size.
      * <p>
-     * The cache is initialized by checking if the delegate queue is empty. If empty, the cache
-     * operates in an optimized mode where unknown identifiers are assumed to not be present.
+     * The cache is lazily initialized on first use by checking if the delegate queue is empty.
+     * If empty, the cache operates in an optimized mode where unknown identifiers are assumed
+     * to not be present.
      *
      * @param delegate     The underlying {@link SequencedDeadLetterQueue} to delegate to.
      * @param cacheMaxSize The maximum size of the non-enqueued identifiers cache.
      */
     public CachingSequencedDeadLetterQueue(SequencedDeadLetterQueue<M> delegate, int cacheMaxSize) {
         this.delegate = delegate;
-        boolean startedEmpty = delegate.amountOfSequences().join() == 0L;
-        this.cache = new SequenceIdentifierCache(startedEmpty, cacheMaxSize);
-        if (logger.isDebugEnabled()) {
-            logger.debug("Initialized caching dead letter queue. Delegate started empty: [{}], cache max size: [{}].",
-                         startedEmpty, cacheMaxSize);
-        }
+        this.cacheMaxSize = cacheMaxSize;
     }
 
     /**
-     * Constructs a caching decorator with the given delegate and pre-configured cache.
+     * Gets the cache, initializing it lazily if necessary.
      * <p>
-     * This constructor allows for fine-grained control over cache initialization.
+     * The initialization checks if the delegate queue is empty. This check is performed
+     * asynchronously and the returned future completes when the cache is ready.
      *
-     * @param delegate The underlying {@link SequencedDeadLetterQueue} to delegate to.
-     * @param cache    The pre-configured {@link SequenceIdentifierCache} to use.
+     * @return A future that completes with the initialized cache.
      */
-    public CachingSequencedDeadLetterQueue(SequencedDeadLetterQueue<M> delegate, SequenceIdentifierCache cache) {
-        this.delegate = delegate;
-        this.cache = cache;
+    private CompletableFuture<SequenceIdentifierCache> getOrInitializeCache() {
+        SequenceIdentifierCache existingCache = cacheRef.get();
+        if (existingCache != null) {
+            return CompletableFuture.completedFuture(existingCache);
+        }
+
+        return delegate.amountOfSequences()
+                       .thenApply(count -> {
+                           boolean startedEmpty = count == 0L;
+                           SequenceIdentifierCache newCache = new SequenceIdentifierCache(startedEmpty, cacheMaxSize);
+                           // Use compareAndSet to handle race conditions - only first initializer wins
+                           if (cacheRef.compareAndSet(null, newCache)) {
+                               if (logger.isDebugEnabled()) {
+                                   logger.debug("Lazily initialized caching dead letter queue. "
+                                                        + "Delegate started empty: [{}], cache max size: [{}].",
+                                                startedEmpty, cacheMaxSize);
+                               }
+                               return newCache;
+                           }
+                           // Another thread won the race, use their cache
+                           return cacheRef.get();
+                       });
+    }
+
+    /**
+     * Gets the cache if already initialized, or null if not yet initialized.
+     *
+     * @return The cache if initialized, null otherwise.
+     */
+    private SequenceIdentifierCache getCacheIfInitialized() {
+        return cacheRef.get();
     }
 
     @Nonnull
     @Override
     public CompletableFuture<Void> enqueue(@Nonnull Object sequenceIdentifier,
                                            @Nonnull DeadLetter<? extends M> letter) {
-        return delegate.enqueue(sequenceIdentifier, letter)
-                       .whenComplete((result, error) -> {
-                           if (error == null) {
-                               cache.markEnqueued(sequenceIdentifier);
-                           }
-                       });
+        // Initialize cache before enqueue to ensure we track this sequence
+        return getOrInitializeCache()
+                .thenCompose(cache -> delegate.enqueue(sequenceIdentifier, letter)
+                                              .whenComplete((result, error) -> {
+                                                  if (error == null) {
+                                                      cache.markEnqueued(sequenceIdentifier);
+                                                  }
+                                              }));
     }
 
     @Nonnull
@@ -126,16 +155,20 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
     public CompletableFuture<Boolean> enqueueIfPresent(@Nonnull Object sequenceIdentifier,
                                                        @Nonnull Supplier<DeadLetter<? extends M>> letterBuilder) {
         // Check cache first - if we know it's not present, skip the delegate call
-        if (!cache.mightBePresent(sequenceIdentifier)) {
+        SequenceIdentifierCache cache = getCacheIfInitialized();
+        if (cache != null && !cache.mightBePresent(sequenceIdentifier)) {
             return CompletableFuture.completedFuture(false);
         }
         return delegate.enqueueIfPresent(sequenceIdentifier, letterBuilder)
                        .whenComplete((result, error) -> {
                            if (error == null) {
-                               if (Boolean.TRUE.equals(result)) {
-                                   cache.markEnqueued(sequenceIdentifier);
-                               } else {
-                                   cache.markNotEnqueued(sequenceIdentifier);
+                               SequenceIdentifierCache c = getCacheIfInitialized();
+                               if (c != null) {
+                                   if (Boolean.TRUE.equals(result)) {
+                                       c.markEnqueued(sequenceIdentifier);
+                                   } else {
+                                       c.markNotEnqueued(sequenceIdentifier);
+                                   }
                                }
                            }
                        });
@@ -160,25 +193,27 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
     @Nonnull
     @Override
     public CompletableFuture<Boolean> contains(@Nonnull Object sequenceIdentifier) {
-        // Check cache first - if we know it's not present, return false immediately
-        if (!cache.mightBePresent(sequenceIdentifier)) {
+        // Check cache first - if initialized and we know it's not present, return false immediately
+        SequenceIdentifierCache existingCache = getCacheIfInitialized();
+        if (existingCache != null && !existingCache.mightBePresent(sequenceIdentifier)) {
             if (logger.isTraceEnabled()) {
                 logger.trace("Cache indicates sequenceIdentifier [{}] is not present.", sequenceIdentifier);
             }
             return CompletableFuture.completedFuture(false);
         }
 
-        // Cache says it might be present, verify with delegate
-        return delegate.contains(sequenceIdentifier)
-                       .whenComplete((result, error) -> {
-                           if (error == null) {
-                               if (Boolean.TRUE.equals(result)) {
-                                   cache.markEnqueued(sequenceIdentifier);
-                               } else {
-                                   cache.markNotEnqueued(sequenceIdentifier);
-                               }
-                           }
-                       });
+        // Cache not initialized or says it might be present - initialize cache and verify with delegate
+        return getOrInitializeCache()
+                .thenCompose(cache -> delegate.contains(sequenceIdentifier)
+                                              .whenComplete((result, error) -> {
+                                                  if (error == null) {
+                                                      if (Boolean.TRUE.equals(result)) {
+                                                          cache.markEnqueued(sequenceIdentifier);
+                                                      } else {
+                                                          cache.markNotEnqueued(sequenceIdentifier);
+                                                      }
+                                                  }
+                                              }));
     }
 
     @Nonnull
@@ -233,7 +268,10 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
         return delegate.clear()
                        .whenComplete((result, error) -> {
                            if (error == null) {
-                               cache.clear();
+                               SequenceIdentifierCache cache = getCacheIfInitialized();
+                               if (cache != null) {
+                                   cache.clear();
+                               }
                            }
                        });
     }
@@ -249,24 +287,29 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
         if (logger.isDebugEnabled()) {
             logger.debug("Segment released. Clearing sequence identifier cache.");
         }
-        cache.clear();
+        SequenceIdentifierCache cache = getCacheIfInitialized();
+        if (cache != null) {
+            cache.clear();
+        }
     }
 
     /**
      * Returns the current size of identifiers cached as enqueued.
      *
-     * @return The count of enqueued identifiers in the cache.
+     * @return The count of enqueued identifiers in the cache, or 0 if cache is not yet initialized.
      */
     public int cacheEnqueuedSize() {
-        return cache.enqueuedSize();
+        SequenceIdentifierCache cache = getCacheIfInitialized();
+        return cache != null ? cache.enqueuedSize() : 0;
     }
 
     /**
      * Returns the current size of identifiers cached as not enqueued.
      *
-     * @return The count of non-enqueued identifiers in the cache.
+     * @return The count of non-enqueued identifiers in the cache, or 0 if cache is not yet initialized.
      */
     public int cacheNonEnqueuedSize() {
-        return cache.nonEnqueuedSize();
+        SequenceIdentifierCache cache = getCacheIfInitialized();
+        return cache != null ? cache.nonEnqueuedSize() : 0;
     }
 }
