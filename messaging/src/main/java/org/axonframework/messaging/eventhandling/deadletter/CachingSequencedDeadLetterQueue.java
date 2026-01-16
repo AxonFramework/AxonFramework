@@ -132,7 +132,7 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
      *
      * @return The cache if initialized, null otherwise.
      */
-    private SequenceIdentifierCache getCacheIfInitialized() {
+    private SequenceIdentifierCache getInitializedCacheOrNull() {
         return cacheRef.get();
     }
 
@@ -154,15 +154,14 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
     @Override
     public CompletableFuture<Boolean> enqueueIfPresent(@Nonnull Object sequenceIdentifier,
                                                        @Nonnull Supplier<DeadLetter<? extends M>> letterBuilder) {
-        // Check cache first - if we know it's not present, skip the delegate call
-        SequenceIdentifierCache cache = getCacheIfInitialized();
+        SequenceIdentifierCache cache = getInitializedCacheOrNull();
         if (cache != null && !cache.mightBePresent(sequenceIdentifier)) {
             return CompletableFuture.completedFuture(false);
         }
         return delegate.enqueueIfPresent(sequenceIdentifier, letterBuilder)
                        .whenComplete((result, error) -> {
                            if (error == null) {
-                               SequenceIdentifierCache c = getCacheIfInitialized();
+                               SequenceIdentifierCache c = getInitializedCacheOrNull();
                                if (c != null) {
                                    if (Boolean.TRUE.equals(result)) {
                                        c.markEnqueued(sequenceIdentifier);
@@ -194,7 +193,7 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
     @Override
     public CompletableFuture<Boolean> contains(@Nonnull Object sequenceIdentifier) {
         // Check cache first - if initialized and we know it's not present, return false immediately
-        SequenceIdentifierCache existingCache = getCacheIfInitialized();
+        SequenceIdentifierCache existingCache = getInitializedCacheOrNull();
         if (existingCache != null && !existingCache.mightBePresent(sequenceIdentifier)) {
             if (logger.isTraceEnabled()) {
                 logger.trace("Cache indicates sequenceIdentifier [{}] is not present.", sequenceIdentifier);
@@ -268,7 +267,7 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
         return delegate.clear()
                        .whenComplete((result, error) -> {
                            if (error == null) {
-                               SequenceIdentifierCache cache = getCacheIfInitialized();
+                               SequenceIdentifierCache cache = getInitializedCacheOrNull();
                                if (cache != null) {
                                    cache.clear();
                                }
@@ -283,11 +282,11 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
      * is released, another processor instance may modify the queue, making the cached information
      * potentially stale.
      */
-    public void onSegmentReleased() {
+    public void onSegmentReleased() { // todo: change to not segment aware naming
         if (logger.isDebugEnabled()) {
             logger.debug("Segment released. Clearing sequence identifier cache.");
         }
-        SequenceIdentifierCache cache = getCacheIfInitialized();
+        SequenceIdentifierCache cache = getInitializedCacheOrNull();
         if (cache != null) {
             cache.clear();
         }
@@ -299,7 +298,7 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
      * @return The count of enqueued identifiers in the cache, or 0 if cache is not yet initialized.
      */
     public int cacheEnqueuedSize() {
-        SequenceIdentifierCache cache = getCacheIfInitialized();
+        SequenceIdentifierCache cache = getInitializedCacheOrNull();
         return cache != null ? cache.enqueuedSize() : 0;
     }
 
@@ -309,7 +308,7 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
      * @return The count of non-enqueued identifiers in the cache, or 0 if cache is not yet initialized.
      */
     public int cacheNonEnqueuedSize() {
-        SequenceIdentifierCache cache = getCacheIfInitialized();
+        SequenceIdentifierCache cache = getInitializedCacheOrNull();
         return cache != null ? cache.nonEnqueuedSize() : 0;
     }
 }
