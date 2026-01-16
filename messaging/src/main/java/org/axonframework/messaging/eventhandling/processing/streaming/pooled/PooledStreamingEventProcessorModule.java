@@ -118,6 +118,15 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
                                     Optional.ofNullable(configuration.coordinatorExecutor())
                                             .orElseGet(() -> defaultExecutor(1, "Coordinator[" + processorName + "]"))
                             );
+                            // Wrap segmentReleasedAction to include cache clearing if DLQ is enabled
+                            var originalAction = configuration.segmentReleasedAction();
+                            configuration.segmentReleasedAction(segment -> {
+                                cfg.getOptionalComponent(
+                                        CachingSequencedDeadLetterQueue.class,
+                                        "CachingDeadLetterQueue[" + processorName + "]"
+                                ).ifPresent(CachingSequencedDeadLetterQueue::onSegmentReleased);
+                                originalAction.accept(segment);
+                            });
                             return configuration;
                         }).onShutdown(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, (cfg, processor) -> {
                             processor.workerExecutor().shutdown();
@@ -171,18 +180,11 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
     private void registerEventProcessor() {
         var processorComponentDefinition = ComponentDefinition
                 .ofTypeAndName(PooledStreamingEventProcessor.class, processorName)
-                .withBuilder(cfg -> {
-                    var cachingDlq = cfg.getOptionalComponent(
-                            CachingSequencedDeadLetterQueue.class,
-                            "CachingDeadLetterQueue[" + processorName + "]"
-                    ).orElse(null);
-                    return new PooledStreamingEventProcessor(
-                            processorName,
-                            getEventHandlingComponents(cfg),
-                            cfg.getComponent(PooledStreamingEventProcessorConfiguration.class),
-                            cachingDlq
-                    );
-                })
+                .withBuilder(cfg -> new PooledStreamingEventProcessor(
+                        processorName,
+                        getEventHandlingComponents(cfg),
+                        cfg.getComponent(PooledStreamingEventProcessorConfiguration.class)
+                ))
                 .onStart(Phase.INBOUND_EVENT_CONNECTORS, (cfg, component) -> {
                     return component.start();
                 })

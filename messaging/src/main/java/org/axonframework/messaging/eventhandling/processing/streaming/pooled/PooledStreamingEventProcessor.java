@@ -25,7 +25,6 @@ import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.eventhandling.deadletter.CachingSequencedDeadLetterQueue;
 import org.axonframework.messaging.eventhandling.processing.EventProcessingException;
 import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.eventhandling.processing.ProcessorEventHandlingComponents;
@@ -101,7 +100,6 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     private final ScheduledExecutorService workerExecutor;
     private final Coordinator coordinator;
     private final WorkPackage.EventFilter workPackageEventFilter;
-    private final CachingSequencedDeadLetterQueue<EventMessage> cachingDeadLetterQueue;
 
     private final AtomicReference<String> tokenStoreIdentifier = new AtomicReference<>();
     private final Map<Integer, TrackerStatus> processingStatus = new ConcurrentHashMap<>();
@@ -122,7 +120,8 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
      *
      * @param name                    A {@link String} defining this {@link EventProcessor} instance.
      * @param eventHandlingComponents The {@link EventHandlingComponent}s which will handle all the individual
-     *                                {@link EventMessage}s.
+     *                                {@link EventMessage}s. These components should already be wrapped with
+     *                                any decorations (such as dead-lettering support) at the module level.
      * @param configuration           The {@link PooledStreamingEventProcessorConfiguration} used to configure a
      *                                {@code PooledStreamingEventProcessor} instance.
      */
@@ -130,42 +129,6 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
             @Nonnull String name,
             @Nonnull List<EventHandlingComponent> eventHandlingComponents,
             @Nonnull PooledStreamingEventProcessorConfiguration configuration
-    ) {
-        this(name, eventHandlingComponents, configuration, null);
-    }
-
-    /**
-     * Instantiate a {@code PooledStreamingEventProcessor} with given {@code name}, {@code eventHandlingComponents},
-     * {@code configuration}, and an optional {@code cachingDeadLetterQueue}.
-     * <p>
-     * This constructor is primarily used by the {@link PooledStreamingEventProcessorModule} to pass the caching dead
-     * letter queue which is created and managed at the module level. The caching queue is used to clear the cache when
-     * a segment is released.
-     * <p>
-     * Will assert the following for their presence in the configuration, prior to constructing this processor:
-     * <ul>
-     *     <li>A {@link StreamableEventSource}.</li>
-     *     <li>A {@link TokenStore}.</li>
-     *     <li>A {@link UnitOfWorkFactory}.</li>
-     *     <li>A {@link ScheduledExecutorService} for coordination.</li>
-     *     <li>A {@link ScheduledExecutorService} to process work packages.</li>
-     * </ul>
-     * If any of these is not present or does not comply to the requirements an {@link AxonConfigurationException} is thrown.
-     *
-     * @param name                    A {@link String} defining this {@link EventProcessor} instance.
-     * @param eventHandlingComponents The {@link EventHandlingComponent}s which will handle all the individual
-     *                                {@link EventMessage}s. These components should already be wrapped with
-     *                                dead-lettering support if needed.
-     * @param configuration           The {@link PooledStreamingEventProcessorConfiguration} used to configure a
-     *                                {@code PooledStreamingEventProcessor} instance.
-     * @param cachingDeadLetterQueue  The optional {@link CachingSequencedDeadLetterQueue} to clear when segments are
-     *                                released. May be {@code null} if dead-lettering is not enabled.
-     */
-    public PooledStreamingEventProcessor(
-            @Nonnull String name,
-            @Nonnull List<EventHandlingComponent> eventHandlingComponents,
-            @Nonnull PooledStreamingEventProcessorConfiguration configuration,
-            CachingSequencedDeadLetterQueue<EventMessage> cachingDeadLetterQueue
     ) {
         this.name = Objects.requireNonNull(name, "Name may not be null");
         assertThat(name, n -> Objects.nonNull(n) && !n.isEmpty(), "Event Processor name may not be null or empty");
@@ -175,21 +138,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         this.tokenStore = configuration.tokenStore();
         this.unitOfWorkFactory = configuration.unitOfWorkFactory();
         this.workerExecutor = configuration.workerExecutor();
-        this.cachingDeadLetterQueue = cachingDeadLetterQueue;
 
-        // Set up segment release action with cache clearing if caching DLQ is provided
-        Consumer<Segment> segmentReleasedAction;
-        if (cachingDeadLetterQueue != null) {
-            Consumer<Segment> userAction = configuration.segmentReleasedAction();
-            segmentReleasedAction = segment -> {
-                cachingDeadLetterQueue.onSegmentReleased();
-                userAction.accept(segment);
-            };
-        } else {
-            segmentReleasedAction = configuration.segmentReleasedAction();
-        }
-
-        // Use event handling components directly (they should already be wrapped at module level if needed)
         this.eventHandlingComponents = new ProcessorEventHandlingComponents(eventHandlingComponents);
 
         this.workPackageEventFilter = new DefaultWorkPackageEventFilter(
@@ -220,7 +169,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
                                       .initialToken(configuration.initialToken())
                                       .coordinatorClaimExtension(configuration.coordinatorExtendsClaims())
                                       .eventCriteria(eventCriteria)
-                                      .segmentReleasedAction(segmentReleasedAction)
+                                      .segmentReleasedAction(configuration.segmentReleasedAction())
                                       .build();
     }
 
