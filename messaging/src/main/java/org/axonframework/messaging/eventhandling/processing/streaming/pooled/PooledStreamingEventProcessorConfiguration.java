@@ -725,7 +725,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      *
      * @return The merged dead letter queue configuration.
      */
-    public DeadLetterQueueConfiguration deadLetterQueueConfiguration() {
+    public DeadLetterQueueConfiguration deadLetterQueue() {
         return deadLetterQueueCustomization.apply(new DeadLetterQueueConfiguration());
     }
 
@@ -745,5 +745,6 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
         descriptor.describeProperty("clock", clock);
         descriptor.describeProperty("coordinatorExtendsClaims", coordinatorExtendsClaims);
         descriptor.describeProperty("eventCriteriaProvider", eventCriteriaProvider);
+        descriptor.describeProperty("deadLetterQueue", deadLetterQueue());
     }
 }
