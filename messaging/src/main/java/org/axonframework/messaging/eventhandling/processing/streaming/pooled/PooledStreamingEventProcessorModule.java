@@ -31,6 +31,9 @@ import org.axonframework.messaging.eventhandling.configuration.EventProcessingCo
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorConfiguration;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorCustomization;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
+import org.axonframework.messaging.eventhandling.deadletter.CachingSequencedDeadLetterQueue;
+import org.axonframework.messaging.eventhandling.deadletter.DeadLetterQueueConfiguration;
+import org.axonframework.messaging.eventhandling.deadletter.DeadLetteringEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.interception.InterceptingEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SequenceCachingEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
@@ -93,6 +96,7 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
     @Override
     public PooledStreamingEventProcessorModule build() {
         registerCustomizedConfiguration();
+        registerCachingDeadLetterQueue();
         registerTokenStore();
         registerUnitOfWorkFactory();
         registerEventHandlingComponents();
@@ -114,13 +118,53 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
                                     Optional.ofNullable(configuration.coordinatorExecutor())
                                             .orElseGet(() -> defaultExecutor(1, "Coordinator[" + processorName + "]"))
                             );
-                            return configuration;
+                            return ifDlqEnabledThenClearCacheOnSegmentReleased(cfg, configuration);
                         }).onShutdown(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, (cfg, processor) -> {
                             processor.workerExecutor().shutdown();
                             return FutureUtils.emptyCompletedFuture();
                         }).onShutdown(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, (cfg, processor) -> {
                             processor.coordinatorExecutor().shutdown();
                             return FutureUtils.emptyCompletedFuture();
+                        })
+        ));
+    }
+
+    private PooledStreamingEventProcessorConfiguration ifDlqEnabledThenClearCacheOnSegmentReleased(
+            Configuration cfg,
+            PooledStreamingEventProcessorConfiguration configuration
+    ) {
+        var dlqConfiguration = cfg.getOptionalComponent(
+                CachingSequencedDeadLetterQueue.class,
+                "CachingDeadLetterQueue[" + processorName + "]"
+        );
+        var dlqConfigured = dlqConfiguration.isPresent();
+        if (dlqConfigured) {
+            var originalAction = configuration.segmentReleasedAction();
+            configuration = configuration.segmentReleasedAction(segment -> {
+                dlqConfiguration.get().onSegmentReleased();
+                originalAction.accept(segment);
+            });
+        }
+        return configuration;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void registerCachingDeadLetterQueue() {
+        componentRegistry(cr -> cr.registerComponent(
+                ComponentDefinition
+                        .ofTypeAndName(CachingSequencedDeadLetterQueue.class,
+                                       "CachingDeadLetterQueue[" + processorName + "]")
+                        .withBuilder(cfg -> {
+                            DeadLetterQueueConfiguration dlqConfig =
+                                    cfg.getComponent(PooledStreamingEventProcessorConfiguration.class)
+                                       .deadLetterQueueConfiguration();
+                            if (dlqConfig.isEnabled()) {
+                                return new CachingSequencedDeadLetterQueue<>(
+                                        dlqConfig.queue(),
+                                        dlqConfig.cacheMaxSize()
+                                );
+                            }
+                            return null;
                         })
         ));
     }
@@ -179,6 +223,25 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
                                          return new InterceptingEventHandlingComponent(
                                                  configuration.interceptors(),
                                                  delegate
+                                         );
+                                     });
+                cr.registerDecorator(EventHandlingComponent.class, componentName,
+                                     DeadLetteringEventHandlingComponent.DECORATION_ORDER,
+                                     (config, name, delegate) -> {
+                                         var cachingDlq = config.getOptionalComponent(
+                                                 CachingSequencedDeadLetterQueue.class,
+                                                 "CachingDeadLetterQueue[" + processorName + "]"
+                                         ).orElse(null);
+                                         if (cachingDlq == null) {
+                                             return delegate;
+                                         }
+                                         var dlqConfig = config.getComponent(PooledStreamingEventProcessorConfiguration.class)
+                                                               .deadLetterQueueConfiguration();
+                                         return new DeadLetteringEventHandlingComponent(
+                                                 delegate,
+                                                 cachingDlq,
+                                                 dlqConfig.enqueuePolicy(),
+                                                 dlqConfig.clearOnReset()
                                          );
                                      });
             });
