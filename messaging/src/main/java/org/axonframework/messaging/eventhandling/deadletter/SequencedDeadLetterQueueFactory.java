@@ -33,12 +33,10 @@ import java.util.function.Function;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
- * A {@link ComponentFactory} implementation that creates {@link SequencedDeadLetterQueue} instances
- * for event handling components.
+ * A {@link ComponentFactory} implementation that creates {@link SequencedDeadLetterQueue} instances for event handling
+ * components.
  * <p>
  * This factory is used to create DLQ instances on-demand based on the component name.
- * By default, it uses {@link InMemorySequencedDeadLetterQueue} as the implementation, but a custom
- * factory function can be provided to create different implementations.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
@@ -68,19 +66,18 @@ public class SequencedDeadLetterQueueFactory implements ComponentFactory<Sequenc
 
     @Override
     @Nonnull
-    public Optional<Component<SequencedDeadLetterQueue<EventMessage>>> construct(@Nonnull String name,
-                                                                                  @Nonnull Configuration config) {
-        SequencedDeadLetterQueue<EventMessage> dlq = factoryFn.apply(name);
-
+    public Optional<Component<SequencedDeadLetterQueue<EventMessage>>> construct(
+            @Nonnull String name,
+            @Nonnull Configuration config
+    ) {
         return Optional.of(new InstantiatedComponentDefinition<>(
                 new Component.Identifier<>(forType(), name),
-                dlq
+                factoryFn.apply(name)
         ));
     }
 
     @Override
     public void registerShutdownHandlers(@Nonnull LifecycleRegistry registry) {
-        // Nothing to do here - shutdown handling depends on the specific implementation
     }
 
     @Override
