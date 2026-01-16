@@ -42,8 +42,10 @@ import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorH
 import org.axonframework.messaging.eventhandling.processing.errorhandling.PropagatingErrorHandler;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.inmemory.InMemoryTokenStore;
-import org.axonframework.messaging.deadletter.InMemorySequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
+import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
+import org.axonframework.messaging.eventhandling.deadletter.CachingSequencedDeadLetterQueue;
+import org.axonframework.messaging.eventhandling.deadletter.DeadLetterQueueConfiguration;
 import org.axonframework.messaging.eventstreaming.StreamableEventSource;
 import org.junit.jupiter.api.*;
 
@@ -420,7 +422,7 @@ class PooledStreamingEventProcessorModuleTest {
                     .eventHandlingComponents(components -> components.declarative(cfg -> component))
                     .customized((cfg, c) -> c
                             .eventSource(new AsyncInMemoryStreamableEventSource())
-                            .deadLetterQueue(dlq -> dlq.queue(InMemorySequencedDeadLetterQueue.defaultQueue())));
+                            .deadLetterQueue(DeadLetterQueueConfiguration::enabled));
 
             var configurer = MessagingConfigurer.create();
             configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps.processor(module)));
@@ -450,7 +452,7 @@ class PooledStreamingEventProcessorModuleTest {
                     .eventHandlingComponents(components -> components.declarative(cfg -> component0).declarative(cfg -> component1))
                     .customized((cfg, c) -> c
                             .eventSource(new AsyncInMemoryStreamableEventSource())
-                            .deadLetterQueue(dlq -> dlq.queue(InMemorySequencedDeadLetterQueue.defaultQueue())));
+                            .deadLetterQueue(DeadLetterQueueConfiguration::enabled));
 
             var configurer = MessagingConfigurer.create();
             configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps.processor(module)));
@@ -479,7 +481,7 @@ class PooledStreamingEventProcessorModuleTest {
                     .eventHandlingComponents(components -> components.declarative(cfg -> component0).declarative(cfg -> component1))
                     .customized((cfg, c) -> c
                             .eventSource(new AsyncInMemoryStreamableEventSource())
-                            .deadLetterQueue(dlq -> dlq.queue(InMemorySequencedDeadLetterQueue.defaultQueue())));
+                            .deadLetterQueue(DeadLetterQueueConfiguration::enabled));
 
             var configurer = MessagingConfigurer.create();
             configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps.processor(module)));
@@ -546,6 +548,44 @@ class PooledStreamingEventProcessorModuleTest {
             // then
             assertThat(registeredComponent).isPresent();
             assertThat(registeredComponent.get()).isNotInstanceOf(SequencedDeadLetterProcessor.class);
+        }
+
+        @Test
+        void shouldNotShareSequencedDeadLetterQueueBetweenEventHandlingComponentsInSingleProcessor() {
+            // given
+            var processorName = "testProcessor";
+            var component0 = new SimpleEventHandlingComponent();
+            component0.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
+            var component1 = new SimpleEventHandlingComponent();
+            component1.subscribe(new QualifiedName(Integer.class), (event, context) -> MessageStream.empty());
+
+            var module = EventProcessorModule
+                    .pooledStreaming(processorName)
+                    .eventHandlingComponents(components -> components.declarative(cfg -> component0).declarative(cfg -> component1))
+                    .customized((cfg, c) -> c
+                            .eventSource(new AsyncInMemoryStreamableEventSource())
+                            .deadLetterQueue(DeadLetterQueueConfiguration::enabled));
+
+            var configurer = MessagingConfigurer.create();
+            configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps.processor(module)));
+            var configuration = configurer.build();
+
+            // when
+            var dlq0 = configuration.getModuleConfiguration(processorName)
+                                    .flatMap(m -> m.getOptionalComponent(
+                                            CachingSequencedDeadLetterQueue.class,
+                                            "CachingDeadLetterQueue[" + processorName + "][0]"
+                                    ));
+            var dlq1 = configuration.getModuleConfiguration(processorName)
+                                    .flatMap(m -> m.getOptionalComponent(
+                                            CachingSequencedDeadLetterQueue.class,
+                                            "CachingDeadLetterQueue[" + processorName + "][1]"
+                                    ));
+
+            // then
+            assertThat(dlq0).isPresent();
+            assertThat(dlq1).isPresent();
+            assertThat(dlq0.get()).isNotSameAs(dlq1.get());
         }
     }
 
