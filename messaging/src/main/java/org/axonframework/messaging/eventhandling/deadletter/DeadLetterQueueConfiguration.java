@@ -17,6 +17,8 @@
 package org.axonframework.messaging.eventhandling.deadletter;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.deadletter.Decisions;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.eventhandling.EventMessage;
@@ -55,7 +57,7 @@ import static org.axonframework.messaging.deadletter.ThrowableCause.truncated;
  * @see CachingSequencedDeadLetterQueue
  * @since 5.0.0
  */
-public class DeadLetterQueueConfiguration {
+public class DeadLetterQueueConfiguration implements DescribableComponent {
 
     /**
      * The default enqueue policy that always enqueues with a truncated cause message.
@@ -184,5 +186,12 @@ public class DeadLetterQueueConfiguration {
      */
     public boolean isEnabled() {
         return enabled;
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("enabled", enabled);
+        descriptor.describeProperty("clearOnReset", clearOnReset);
+        descriptor.describeProperty("cacheMaxSize", cacheMaxSize);
     }
 }

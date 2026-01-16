@@ -25,6 +25,7 @@ import org.axonframework.common.configuration.LifecycleRegistry;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.deadletter.InMemorySequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
+import org.axonframework.messaging.eventhandling.EventMessage;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -42,31 +43,34 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class SequencedDeadLetterQueueFactory implements ComponentFactory<SequencedDeadLetterQueue> {
+public class SequencedDeadLetterQueueFactory implements ComponentFactory<SequencedDeadLetterQueue<EventMessage>> {
 
-    private final Function<String, SequencedDeadLetterQueue<?>> factoryFn;
+    private final Function<String, SequencedDeadLetterQueue<EventMessage>> factoryFn;
 
     /**
      * Constructs a factory with a custom factory function.
      *
      * @param factoryFn The function that creates a {@link SequencedDeadLetterQueue} for a given name.
      */
-    public SequencedDeadLetterQueueFactory(@Nonnull Function<String, SequencedDeadLetterQueue<?>> factoryFn) {
+    public SequencedDeadLetterQueueFactory(
+            @Nonnull Function<String, SequencedDeadLetterQueue<EventMessage>> factoryFn
+    ) {
         assertNonNull(factoryFn, "Factory function may not be null");
         this.factoryFn = factoryFn;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     @Nonnull
-    public Class<SequencedDeadLetterQueue> forType() {
-        return SequencedDeadLetterQueue.class;
+    public Class<SequencedDeadLetterQueue<EventMessage>> forType() {
+        return (Class<SequencedDeadLetterQueue<EventMessage>>) (Class<?>) SequencedDeadLetterQueue.class;
     }
 
     @Override
     @Nonnull
-    public Optional<Component<SequencedDeadLetterQueue>> construct(@Nonnull String name,
-                                                                    @Nonnull Configuration config) {
-        SequencedDeadLetterQueue<?> dlq = factoryFn.apply(name);
+    public Optional<Component<SequencedDeadLetterQueue<EventMessage>>> construct(@Nonnull String name,
+                                                                                  @Nonnull Configuration config) {
+        SequencedDeadLetterQueue<EventMessage> dlq = factoryFn.apply(name);
 
         return Optional.of(new InstantiatedComponentDefinition<>(
                 new Component.Identifier<>(forType(), name),
