@@ -149,7 +149,7 @@ class CachingSequencedDeadLetterQueueTest {
             long delegateSizeBefore = delegate.size().join();
 
             // when
-            cachingQueue.onSegmentReleased();
+            cachingQueue.invalidateCache();
 
             // then
             assertThat(cachingQueue.cacheEnqueuedSize()).isZero();
@@ -258,7 +258,7 @@ class CachingSequencedDeadLetterQueueTest {
             assertThat(cachingQueue.cacheNonEnqueuedSize()).isEqualTo(1);
 
             // when
-            cachingQueue.onSegmentReleased();
+            cachingQueue.invalidateCache();
 
             // then
             assertThat(cachingQueue.cacheNonEnqueuedSize()).isZero();

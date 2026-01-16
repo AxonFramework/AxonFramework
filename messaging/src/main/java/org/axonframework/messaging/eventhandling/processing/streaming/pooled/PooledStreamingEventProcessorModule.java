@@ -124,7 +124,7 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
                                 cfg.getOptionalComponent(
                                         CachingSequencedDeadLetterQueue.class,
                                         "CachingDeadLetterQueue[" + processorName + "]"
-                                ).ifPresent(CachingSequencedDeadLetterQueue::onSegmentReleased);
+                                ).ifPresent(CachingSequencedDeadLetterQueue::invalidateCache);
                                 segmentReleasedAction.accept(segment);
                             });
                             return configuration;
