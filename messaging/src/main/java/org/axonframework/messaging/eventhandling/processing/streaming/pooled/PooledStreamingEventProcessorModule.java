@@ -118,16 +118,7 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
                                     Optional.ofNullable(configuration.coordinatorExecutor())
                                             .orElseGet(() -> defaultExecutor(1, "Coordinator[" + processorName + "]"))
                             );
-                            // Wrap segmentReleasedAction to include cache clearing if DLQ is enabled
-                            var originalAction = configuration.segmentReleasedAction();
-                            configuration.segmentReleasedAction(segment -> {
-                                cfg.getOptionalComponent(
-                                        CachingSequencedDeadLetterQueue.class,
-                                        "CachingDeadLetterQueue[" + processorName + "]"
-                                ).ifPresent(CachingSequencedDeadLetterQueue::onSegmentReleased);
-                                originalAction.accept(segment);
-                            });
-                            return configuration;
+                            return ifDlqEnabledThenClearCacheOnSegmentReleased(cfg, configuration);
                         }).onShutdown(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, (cfg, processor) -> {
                             processor.workerExecutor().shutdown();
                             return FutureUtils.emptyCompletedFuture();
@@ -136,6 +127,25 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
                             return FutureUtils.emptyCompletedFuture();
                         })
         ));
+    }
+
+    private PooledStreamingEventProcessorConfiguration ifDlqEnabledThenClearCacheOnSegmentReleased(
+            Configuration cfg,
+            PooledStreamingEventProcessorConfiguration configuration
+    ) {
+        var dlqConfiguration = cfg.getOptionalComponent(
+                CachingSequencedDeadLetterQueue.class,
+                "CachingDeadLetterQueue[" + processorName + "]"
+        );
+        var dlqConfigured = dlqConfiguration.isPresent();
+        if (dlqConfigured) {
+            var originalAction = configuration.segmentReleasedAction();
+            configuration = configuration.segmentReleasedAction(segment -> {
+                dlqConfiguration.get().onSegmentReleased();
+                originalAction.accept(segment);
+            });
+        }
+        return configuration;
     }
 
     @SuppressWarnings("unchecked")
