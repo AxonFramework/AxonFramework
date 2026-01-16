@@ -25,7 +25,7 @@ import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import java.util.Optional;
 
 /**
- * Utility methods for working with Spring {@link BeanDefinition}s.
+ * Utility methods for working with Spring {@link BeanDefinition BeanDefinitions}.
  *
  * @author Allard Buijze
  * @since 5.0.2
