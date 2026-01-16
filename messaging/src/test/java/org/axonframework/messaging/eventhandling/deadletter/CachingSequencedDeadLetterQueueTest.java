@@ -149,7 +149,7 @@ class CachingSequencedDeadLetterQueueTest {
             long delegateSizeBefore = delegate.size().join();
 
             // when
-            cachingQueue.onSegmentReleased();
+            cachingQueue.invalidateCache();
 
             // then
             assertThat(cachingQueue.cacheEnqueuedSize()).isZero();
@@ -157,16 +157,37 @@ class CachingSequencedDeadLetterQueueTest {
         }
 
         @Test
-        void containsDoesNotQueryDelegateForUnknownSequenceWhenStartedEmpty() {
+        void containsWithLazyInitReturnsCorrectResultWhenDelegateModifiedBeforeFirstUse() {
             // given
-            // When the queue started empty, the cache optimizes by assuming
-            // any unknown identifier is not present (since nothing was added yet)
+            // With lazy initialization, the cache checks delegate state on first use.
+            // If delegate is modified before first cache use, the cache will see that state.
             EventMessage event = EventTestUtils.createEvent(1);
-            // Bypass caching queue and add directly to delegate
+            // Bypass caching queue and add directly to delegate BEFORE first cache use
             delegate.enqueue(SEQUENCE_ID_1, new GenericDeadLetter<>(SEQUENCE_ID_1, event)).join();
 
             // when
-            // Cache thinks this is not present since queue started empty
+            // First cache use initializes by checking amountOfSequences(), which is now 1.
+            // Cache sees queue as non-empty, so it queries delegate for the sequence.
+            Boolean result = cachingQueue.contains(SEQUENCE_ID_1).join();
+
+            // then
+            // With lazy init, cache discovers the entry that was added directly to delegate
+            assertThat(result).isTrue();
+            assertThat(cachingQueue.cacheEnqueuedSize()).isEqualTo(1);
+        }
+
+        @Test
+        void containsDoesNotQueryDelegateForUnknownSequenceWhenCacheInitializedWhileEmpty() {
+            // given
+            // Initialize cache while queue is empty by calling any method that triggers init
+            cachingQueue.contains("trigger-init").join();
+            // Now add directly to delegate - cache won't know about this
+            EventMessage event = EventTestUtils.createEvent(1);
+            delegate.enqueue(SEQUENCE_ID_1, new GenericDeadLetter<>(SEQUENCE_ID_1, event)).join();
+
+            // when
+            // Cache was initialized when queue was empty, so it optimizes by assuming
+            // any unknown identifier is not present
             Boolean result = cachingQueue.contains(SEQUENCE_ID_1).join();
 
             // then
@@ -237,7 +258,7 @@ class CachingSequencedDeadLetterQueueTest {
             assertThat(cachingQueue.cacheNonEnqueuedSize()).isEqualTo(1);
 
             // when
-            cachingQueue.onSegmentReleased();
+            cachingQueue.invalidateCache();
 
             // then
             assertThat(cachingQueue.cacheNonEnqueuedSize()).isZero();

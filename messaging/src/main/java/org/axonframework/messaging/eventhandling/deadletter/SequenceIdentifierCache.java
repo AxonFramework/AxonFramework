@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.deadletter;
 
+import org.axonframework.common.annotation.Internal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,6 +50,7 @@ import java.util.Set;
  * @see CachingSequencedDeadLetterQueue
  * @since 5.0.0
  */
+@Internal
 public class SequenceIdentifierCache {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
