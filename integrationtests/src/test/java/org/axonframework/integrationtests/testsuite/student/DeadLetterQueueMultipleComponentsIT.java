@@ -34,7 +34,6 @@ import org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -223,7 +222,10 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
             studentEnrolledToCourse(failingStudent1, courseId);
 
             await().untilAsserted(() -> {
+                assertThat(getDlq(0).contains(failingStudent0).join()).isTrue();
                 assertThat(getDlq(0).size().join()).isEqualTo(1L);
+
+                assertThat(getDlq(1).contains(failingStudent1).join()).isTrue();
                 assertThat(getDlq(1).size().join()).isEqualTo(1L);
             });
 
@@ -235,7 +237,10 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
 
             // then - component0's DLQ should be empty, component1's DLQ unchanged
             await().untilAsserted(() -> {
+                assertThat(getDlq(0).contains(failingStudent0).join()).isFalse();
                 assertThat(getDlq(0).size().join()).isEqualTo(0L);
+
+                assertThat(getDlq(1).contains(failingStudent1).join()).isTrue();
                 assertThat(getDlq(1).size().join()).isEqualTo(1L);
 
                 assertThat(components[0].successfullyHandled()).contains(failingStudent0);
@@ -256,7 +261,10 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
             studentEnrolledToCourse(failingStudent1, courseId);
 
             await().untilAsserted(() -> {
+                assertThat(getDlq(0).contains(failingStudent0).join()).isTrue();
                 assertThat(getDlq(0).size().join()).isEqualTo(1L);
+
+                assertThat(getDlq(1).contains(failingStudent1).join()).isTrue();
                 assertThat(getDlq(1).size().join()).isEqualTo(1L);
             });
 
@@ -270,7 +278,10 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
 
             // then - both DLQs should be empty
             await().untilAsserted(() -> {
+                assertThat(getDlq(0).contains(failingStudent0).join()).isFalse();
                 assertThat(getDlq(0).size().join()).isEqualTo(0L);
+
+                assertThat(getDlq(1).contains(failingStudent1).join()).isFalse();
                 assertThat(getDlq(1).size().join()).isEqualTo(0L);
 
                 assertThat(components[0].successfullyHandled()).contains(failingStudent0);
