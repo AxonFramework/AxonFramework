@@ -253,15 +253,6 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
     }
 
     /**
-     * Returns the underlying delegate queue.
-     *
-     * @return The delegate {@link SequencedDeadLetterQueue}.
-     */
-    public SequencedDeadLetterQueue<M> getDelegate() {
-        return delegate;
-    }
-
-    /**
      * Returns the current size of identifiers cached as enqueued.
      *
      * @return The count of enqueued identifiers in the cache.
