@@ -118,7 +118,15 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
                                     Optional.ofNullable(configuration.coordinatorExecutor())
                                             .orElseGet(() -> defaultExecutor(1, "Coordinator[" + processorName + "]"))
                             );
-                            return ifDlqEnabledThenClearCacheOnSegmentReleased(cfg, configuration);
+                            var segmentReleasedAction = configuration.segmentReleasedAction();
+                            configuration.segmentReleasedAction(segment -> {
+                                cfg.getOptionalComponent(
+                                        CachingSequencedDeadLetterQueue.class,
+                                        "CachingDeadLetterQueue[" + processorName + "]"
+                                ).ifPresent(CachingSequencedDeadLetterQueue::onSegmentReleased);
+                                segmentReleasedAction.accept(segment);
+                            });
+                            return configuration;
                         }).onShutdown(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, (cfg, processor) -> {
                             processor.workerExecutor().shutdown();
                             return FutureUtils.emptyCompletedFuture();
@@ -133,19 +141,14 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
             Configuration cfg,
             PooledStreamingEventProcessorConfiguration configuration
     ) {
-        var dlqConfiguration = cfg.getOptionalComponent(
-                CachingSequencedDeadLetterQueue.class,
-                "CachingDeadLetterQueue[" + processorName + "]"
-        );
-        var dlqConfigured = dlqConfiguration.isPresent();
-        if (dlqConfigured) {
-            var originalAction = configuration.segmentReleasedAction();
-            configuration = configuration.segmentReleasedAction(segment -> {
-                dlqConfiguration.get().onSegmentReleased();
-                originalAction.accept(segment);
-            });
-        }
-        return configuration;
+        var segmentReleasedAction = configuration.segmentReleasedAction();
+        return configuration.segmentReleasedAction(segment -> {
+            cfg.getOptionalComponent(
+                    CachingSequencedDeadLetterQueue.class,
+                    "CachingDeadLetterQueue[" + processorName + "]"
+            ).ifPresent(CachingSequencedDeadLetterQueue::onSegmentReleased);
+            segmentReleasedAction.accept(segment);
+        });
     }
 
     @SuppressWarnings("unchecked")
