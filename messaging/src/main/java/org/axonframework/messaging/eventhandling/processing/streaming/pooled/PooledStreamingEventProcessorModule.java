@@ -24,7 +24,6 @@ import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.ComponentDefinition;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.ModuleBuilder;
-import org.axonframework.messaging.deadletter.InMemorySequencedDeadLetterQueue;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.configuration.DefaultEventHandlingComponentsConfigurer;
@@ -151,7 +150,12 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
     }
 
     private void registerSequencedDeadLetterQueueFactory() {
-        componentRegistry(cr -> cr.registerFactory(new SequencedDeadLetterQueueFactory(ignored -> InMemorySequencedDeadLetterQueue.defaultQueue())));
+        componentRegistry(cr -> cr.registerFactory(new SequencedDeadLetterQueueFactory(
+                (name, config) -> config.getComponent(PooledStreamingEventProcessorConfiguration.class)
+                                        .deadLetterQueue()
+                                        .factory()
+                                        .apply(name)
+        )));
     }
 
     @SuppressWarnings("unchecked")

@@ -21,7 +21,11 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.deadletter.Decisions;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
+import org.axonframework.messaging.deadletter.InMemorySequencedDeadLetterQueue;
+import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.eventhandling.EventMessage;
+
+import java.util.function.Function;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertStrictPositive;
@@ -69,6 +73,8 @@ public class DeadLetterQueueConfiguration implements DescribableComponent {
     private EnqueuePolicy<EventMessage> enqueuePolicy = DEFAULT_ENQUEUE_POLICY;
     private boolean clearOnReset = true;
     private int cacheMaxSize = SequenceIdentifierCache.DEFAULT_MAX_SIZE;
+    private Function<String, SequencedDeadLetterQueue<EventMessage>> factory =
+            ignored -> InMemorySequencedDeadLetterQueue.defaultQueue();
 
     /**
      * Creates a new {@code DeadLetterQueueConfiguration} with default settings.
@@ -79,6 +85,7 @@ public class DeadLetterQueueConfiguration implements DescribableComponent {
      *     <li>Enqueue policy always enqueues with truncated cause</li>
      *     <li>Clear on reset is enabled</li>
      *     <li>Cache max size is {@link SequenceIdentifierCache#DEFAULT_MAX_SIZE}</li>
+     *     <li>Factory creates {@link InMemorySequencedDeadLetterQueue} instances</li>
      * </ul>
      */
     public DeadLetterQueueConfiguration() {
@@ -153,6 +160,28 @@ public class DeadLetterQueueConfiguration implements DescribableComponent {
     }
 
     /**
+     * Sets the factory function used to create {@link SequencedDeadLetterQueue} instances.
+     * <p>
+     * The factory receives the component name (e.g., "EventHandlingComponent[processorName][componentIndex]")
+     * and should return a new {@link SequencedDeadLetterQueue} instance for that component.
+     * <p>
+     * This allows using different DLQ implementations such as JPA or JDBC-backed queues
+     * instead of the default in-memory implementation.
+     * <p>
+     * Defaults to a factory that creates {@link InMemorySequencedDeadLetterQueue} instances.
+     *
+     * @param factory The factory function that creates a {@link SequencedDeadLetterQueue} for a given name.
+     * @return This configuration instance for fluent chaining.
+     */
+    public DeadLetterQueueConfiguration factory(
+            @Nonnull Function<String, SequencedDeadLetterQueue<EventMessage>> factory
+    ) {
+        assertNonNull(factory, "Factory function may not be null");
+        this.factory = factory;
+        return this;
+    }
+
+    /**
      * Returns the configured {@link EnqueuePolicy}.
      *
      * @return The enqueue policy.
@@ -177,6 +206,15 @@ public class DeadLetterQueueConfiguration implements DescribableComponent {
      */
     public int cacheMaxSize() {
         return cacheMaxSize;
+    }
+
+    /**
+     * Returns the factory function used to create {@link SequencedDeadLetterQueue} instances.
+     *
+     * @return The factory function.
+     */
+    public Function<String, SequencedDeadLetterQueue<EventMessage>> factory() {
+        return factory;
     }
 
     /**
