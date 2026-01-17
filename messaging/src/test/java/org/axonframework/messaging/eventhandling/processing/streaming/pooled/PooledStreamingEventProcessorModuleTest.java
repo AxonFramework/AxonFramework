@@ -42,6 +42,7 @@ import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorH
 import org.axonframework.messaging.eventhandling.processing.errorhandling.PropagatingErrorHandler;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.inmemory.InMemoryTokenStore;
+import org.axonframework.messaging.deadletter.InMemorySequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.eventhandling.deadletter.CachingSequencedDeadLetterQueue;
@@ -50,7 +51,9 @@ import org.axonframework.messaging.eventstreaming.StreamableEventSource;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -588,6 +591,166 @@ class PooledStreamingEventProcessorModuleTest {
             assertThat(dlq0).isPresent();
             assertThat(dlq1).isPresent();
             assertThat(dlq0.get()).isNotSameAs(dlq1.get());
+        }
+
+        @Test
+        void shouldUseCustomDlqFactoryForProcessorWithMultipleEventHandlingComponents() {
+            // given
+            var processorName = "testProcessor";
+            var component0 = new SimpleEventHandlingComponent();
+            component0.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
+            var component1 = new SimpleEventHandlingComponent();
+            component1.subscribe(new QualifiedName(Integer.class), (event, context) -> MessageStream.empty());
+            var component2 = new SimpleEventHandlingComponent();
+            component2.subscribe(new QualifiedName(Long.class), (event, context) -> MessageStream.empty());
+
+            // and - custom factory that tracks created queues
+            Map<String, SequencedDeadLetterQueue<EventMessage>> createdQueues = new ConcurrentHashMap<>();
+            var module = EventProcessorModule
+                    .pooledStreaming(processorName)
+                    .eventHandlingComponents(components -> components
+                            .declarative(cfg -> component0)
+                            .declarative(cfg -> component1)
+                            .declarative(cfg -> component2))
+                    .customized((cfg, c) -> c
+                            .eventSource(new AsyncInMemoryStreamableEventSource())
+                            .deadLetterQueue(dlq -> dlq
+                                    .enabled()
+                                    .factory(name -> {
+                                        SequencedDeadLetterQueue<EventMessage> queue =
+                                                InMemorySequencedDeadLetterQueue.defaultQueue();
+                                        createdQueues.put(name, queue);
+                                        return queue;
+                                    })));
+
+            var configurer = MessagingConfigurer.create();
+            configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps.processor(module)));
+            var configuration = configurer.build();
+
+            // when
+            var dlq0 = configuration.getModuleConfiguration(processorName)
+                                    .flatMap(m -> m.getOptionalComponent(
+                                            CachingSequencedDeadLetterQueue.class,
+                                            "CachingDeadLetterQueue[" + processorName + "][0]"
+                                    ));
+            var dlq1 = configuration.getModuleConfiguration(processorName)
+                                    .flatMap(m -> m.getOptionalComponent(
+                                            CachingSequencedDeadLetterQueue.class,
+                                            "CachingDeadLetterQueue[" + processorName + "][1]"
+                                    ));
+            var dlq2 = configuration.getModuleConfiguration(processorName)
+                                    .flatMap(m -> m.getOptionalComponent(
+                                            CachingSequencedDeadLetterQueue.class,
+                                            "CachingDeadLetterQueue[" + processorName + "][2]"
+                                    ));
+
+            // then - all DLQs are present
+            assertThat(dlq0).isPresent();
+            assertThat(dlq1).isPresent();
+            assertThat(dlq2).isPresent();
+
+            // and - custom factory was used for each component
+            assertThat(createdQueues).hasSize(3);
+            assertThat(createdQueues).containsKey("DeadLetterQueue[" + processorName + "][0]");
+            assertThat(createdQueues).containsKey("DeadLetterQueue[" + processorName + "][1]");
+            assertThat(createdQueues).containsKey("DeadLetterQueue[" + processorName + "][2]");
+        }
+
+        @Test
+        void shouldUseCustomDlqFactoryFromDefaults() {
+            // given
+            var processorName = "testProcessor";
+            var component0 = new SimpleEventHandlingComponent();
+            component0.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
+            var component1 = new SimpleEventHandlingComponent();
+            component1.subscribe(new QualifiedName(Integer.class), (event, context) -> MessageStream.empty());
+
+            // and - custom factory that tracks created queues
+            Map<String, SequencedDeadLetterQueue<EventMessage>> createdQueues = new ConcurrentHashMap<>();
+            var module = EventProcessorModule
+                    .pooledStreaming(processorName)
+                    .eventHandlingComponents(components -> components
+                            .declarative(cfg -> component0)
+                            .declarative(cfg -> component1))
+                    .customized((cfg, c) -> c.deadLetterQueue(DeadLetterQueueConfiguration::enabled));
+
+            var configurer = MessagingConfigurer.create();
+            configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps
+                    .defaults(d -> d
+                            .eventSource(new AsyncInMemoryStreamableEventSource())
+                            .deadLetterQueue(dlq -> dlq.factory(name -> {
+                                SequencedDeadLetterQueue<EventMessage> queue =
+                                        InMemorySequencedDeadLetterQueue.defaultQueue();
+                                createdQueues.put(name, queue);
+                                return queue;
+                            })))
+                    .processor(module)));
+            var configuration = configurer.build();
+
+            // when
+            var dlq0 = configuration.getModuleConfiguration(processorName)
+                                    .flatMap(m -> m.getOptionalComponent(
+                                            CachingSequencedDeadLetterQueue.class,
+                                            "CachingDeadLetterQueue[" + processorName + "][0]"
+                                    ));
+            var dlq1 = configuration.getModuleConfiguration(processorName)
+                                    .flatMap(m -> m.getOptionalComponent(
+                                            CachingSequencedDeadLetterQueue.class,
+                                            "CachingDeadLetterQueue[" + processorName + "][1]"
+                                    ));
+
+            // then - all DLQs are present
+            assertThat(dlq0).isPresent();
+            assertThat(dlq1).isPresent();
+
+            // and - custom factory from defaults was used for each component
+            assertThat(createdQueues).hasSize(2);
+            assertThat(createdQueues).containsKey("DeadLetterQueue[" + processorName + "][0]");
+            assertThat(createdQueues).containsKey("DeadLetterQueue[" + processorName + "][1]");
+        }
+
+        @Test
+        @DisplayName("Processor can disable DLQ even when enabled in defaults")
+        void shouldDisableDlqForProcessorEvenWhenEnabledInDefaults() {
+            // given - DLQ is enabled in defaults
+            var processorWithDlq = "processorWithDlq";
+            var processorWithoutDlq = "processorWithoutDlq";
+
+            var configurer = MessagingConfigurer.create();
+            configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps
+                    .defaults(d -> d
+                            .eventSource(new AsyncInMemoryStreamableEventSource())
+                            .deadLetterQueue(dlq -> dlq.enabled()))
+                    // Processor that keeps DLQ enabled (default from defaults)
+                    .processor(EventProcessorModule
+                                       .pooledStreaming(processorWithDlq)
+                                       .eventHandlingComponents(singleTestEventHandlingComponent())
+                                       .notCustomized())
+                    // Processor that explicitly disables DLQ
+                    .processor(EventProcessorModule
+                                       .pooledStreaming(processorWithoutDlq)
+                                       .eventHandlingComponents(singleTestEventHandlingComponent())
+                                       .customized((cfg, c) -> c.deadLetterQueue(dlq -> dlq.disabled())))
+            ));
+
+            // when
+            var configuration = configurer.build();
+
+            // then - processorWithDlq should have DLQ
+            var dlqEnabled = configuration.getModuleConfiguration(processorWithDlq)
+                                          .flatMap(m -> m.getOptionalComponent(
+                                                  CachingSequencedDeadLetterQueue.class,
+                                                  "CachingDeadLetterQueue[" + processorWithDlq + "][0]"
+                                          ));
+            assertThat(dlqEnabled).isPresent();
+
+            // and - processorWithoutDlq should NOT have DLQ (disabled overrides enabled from defaults)
+            var dlqDisabled = configuration.getModuleConfiguration(processorWithoutDlq)
+                                           .flatMap(m -> m.getOptionalComponent(
+                                                   CachingSequencedDeadLetterQueue.class,
+                                                   "CachingDeadLetterQueue[" + processorWithoutDlq + "][0]"
+                                           ));
+            assertThat(dlqDisabled).isEmpty();
         }
     }
 
