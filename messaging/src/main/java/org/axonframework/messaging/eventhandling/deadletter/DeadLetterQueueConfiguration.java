@@ -100,9 +100,36 @@ public class DeadLetterQueueConfiguration implements DescribableComponent {
      * registered with the configuration.
      *
      * @return This configuration instance for fluent chaining.
+     * @see #disabled()
      */
     public DeadLetterQueueConfiguration enabled() {
         this.enabled = true;
+        return this;
+    }
+
+    /**
+     * Disables dead-letter queue functionality for this processor.
+     * <p>
+     * This method is useful when DLQ is enabled by default (e.g., via shared defaults) but needs to be
+     * disabled for a specific processor.
+     * <p>
+     * Example usage:
+     * <pre>{@code
+     * // Enable DLQ for all processors by default
+     * configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps
+     *     .defaults(d -> d.deadLetterQueue(dlq -> dlq.enabled()))
+     *     // But disable for this specific processor
+     *     .processor(EventProcessorModule.pooledStreaming("no-dlq-processor")
+     *         .eventHandlingComponents(...)
+     *         .customized((cfg, c) -> c.deadLetterQueue(dlq -> dlq.disabled())))
+     * ));
+     * }</pre>
+     *
+     * @return This configuration instance for fluent chaining.
+     * @see #enabled()
+     */
+    public DeadLetterQueueConfiguration disabled() {
+        this.enabled = false;
         return this;
     }
 

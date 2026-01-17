@@ -706,6 +706,50 @@ class PooledStreamingEventProcessorModuleTest {
             assertThat(createdQueues).containsKey("DeadLetterQueue[" + processorName + "][0]");
             assertThat(createdQueues).containsKey("DeadLetterQueue[" + processorName + "][1]");
         }
+
+        @Test
+        @DisplayName("Processor can disable DLQ even when enabled in defaults")
+        void shouldDisableDlqForProcessorEvenWhenEnabledInDefaults() {
+            // given - DLQ is enabled in defaults
+            var processorWithDlq = "processorWithDlq";
+            var processorWithoutDlq = "processorWithoutDlq";
+
+            var configurer = MessagingConfigurer.create();
+            configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps
+                    .defaults(d -> d
+                            .eventSource(new AsyncInMemoryStreamableEventSource())
+                            .deadLetterQueue(dlq -> dlq.enabled()))
+                    // Processor that keeps DLQ enabled (default from defaults)
+                    .processor(EventProcessorModule
+                                       .pooledStreaming(processorWithDlq)
+                                       .eventHandlingComponents(singleTestEventHandlingComponent())
+                                       .notCustomized())
+                    // Processor that explicitly disables DLQ
+                    .processor(EventProcessorModule
+                                       .pooledStreaming(processorWithoutDlq)
+                                       .eventHandlingComponents(singleTestEventHandlingComponent())
+                                       .customized((cfg, c) -> c.deadLetterQueue(dlq -> dlq.disabled())))
+            ));
+
+            // when
+            var configuration = configurer.build();
+
+            // then - processorWithDlq should have DLQ
+            var dlqEnabled = configuration.getModuleConfiguration(processorWithDlq)
+                                          .flatMap(m -> m.getOptionalComponent(
+                                                  CachingSequencedDeadLetterQueue.class,
+                                                  "CachingDeadLetterQueue[" + processorWithDlq + "][0]"
+                                          ));
+            assertThat(dlqEnabled).isPresent();
+
+            // and - processorWithoutDlq should NOT have DLQ (disabled overrides enabled from defaults)
+            var dlqDisabled = configuration.getModuleConfiguration(processorWithoutDlq)
+                                           .flatMap(m -> m.getOptionalComponent(
+                                                   CachingSequencedDeadLetterQueue.class,
+                                                   "CachingDeadLetterQueue[" + processorWithoutDlq + "][0]"
+                                           ));
+            assertThat(dlqDisabled).isEmpty();
+        }
     }
 
     @Nested
