@@ -60,7 +60,8 @@ class SimpleEventSourcedEntityModule<ID, E> extends BaseModule<SimpleEventSource
     private final Class<E> entityType;
 
     private ComponentBuilder<EventSourcedEntityFactory<ID, E>> entityFactory;
-    private ComponentBuilder<CriteriaResolver<ID>> criteriaResolver;
+    private ComponentBuilder<CriteriaResolver<ID>> sourceCriteriaResolver;
+    private ComponentBuilder<CriteriaResolver<ID>> appendCriteriaResolver;
     private ComponentBuilder<EntityMetamodel<E>> entityModel;
     private ComponentBuilder<EntityIdResolver<ID>> entityIdResolver;
 
@@ -91,7 +92,20 @@ class SimpleEventSourcedEntityModule<ID, E> extends BaseModule<SimpleEventSource
     public EntityIdResolverPhase<ID, E> criteriaResolver(
             @Nonnull ComponentBuilder<CriteriaResolver<ID>> criteriaResolver
     ) {
-        this.criteriaResolver = requireNonNull(criteriaResolver, "The criteria resolver cannot be null.");
+        requireNonNull(criteriaResolver, "The criteria resolver cannot be null.");
+        // Use the same resolver for both sourcing and appending (default backward-compatible behavior)
+        this.sourceCriteriaResolver = criteriaResolver;
+        this.appendCriteriaResolver = criteriaResolver;
+        return this;
+    }
+
+    @Override
+    public EntityIdResolverPhase<ID, E> criteriaResolvers(
+            @Nonnull ComponentBuilder<CriteriaResolver<ID>> sourceCriteriaResolver,
+            @Nonnull ComponentBuilder<CriteriaResolver<ID>> appendCriteriaResolver
+    ) {
+        this.sourceCriteriaResolver = requireNonNull(sourceCriteriaResolver, "The source criteria resolver cannot be null.");
+        this.appendCriteriaResolver = requireNonNull(appendCriteriaResolver, "The append criteria resolver cannot be null.");
         return this;
     }
 
@@ -121,14 +135,16 @@ class SimpleEventSourcedEntityModule<ID, E> extends BaseModule<SimpleEventSource
 
     private void validate() {
         requireNonNull(entityFactory, "The EntityFactory must be provided to module [%s].".formatted(name()));
-        requireNonNull(criteriaResolver, "The CriteriaResolver must be provided to module [%s].".formatted(name()));
+        requireNonNull(sourceCriteriaResolver, "The source CriteriaResolver must be provided to module [%s].".formatted(name()));
+        requireNonNull(appendCriteriaResolver, "The append CriteriaResolver must be provided to module [%s].".formatted(name()));
         requireNonNull(entityModel, "The EntityModel must be provided to module [%s].".formatted(name()));
     }
 
     private void registerComponents() {
         componentRegistry(cr -> {
             cr.registerComponent(entityFactory());
-            cr.registerComponent(criteriaResolver());
+            cr.registerComponent(sourceCriteriaResolver());
+            cr.registerComponent(appendCriteriaResolver());
             cr.registerComponent(entityModel());
             cr.registerComponent(repository());
 
@@ -165,7 +181,8 @@ class SimpleEventSourcedEntityModule<ID, E> extends BaseModule<SimpleEventSource
                             entityType,
                             config.getComponent(EventStore.class),
                             config.getComponent(EventSourcedEntityFactory.class, entityName()),
-                            config.getComponent(CriteriaResolver.class, entityName()),
+                            config.getComponent(CriteriaResolver.class, sourceCriteriaResolverName()),
+                            config.getComponent(CriteriaResolver.class, appendCriteriaResolverName()),
                             config.getComponent(EntityMetamodel.class, entityName())
                     );
                 })
@@ -203,12 +220,28 @@ class SimpleEventSourcedEntityModule<ID, E> extends BaseModule<SimpleEventSource
                 .withBuilder(entityFactory);
     }
 
-    private ComponentDefinition<CriteriaResolver<ID>> criteriaResolver() {
+    private String sourceCriteriaResolverName() {
+        return entityName() + "#source";
+    }
+
+    private String appendCriteriaResolverName() {
+        return entityName() + "#append";
+    }
+
+    private ComponentDefinition<CriteriaResolver<ID>> sourceCriteriaResolver() {
         TypeReference<CriteriaResolver<ID>> type = new TypeReference<>() {
         };
         return ComponentDefinition
-                .ofTypeAndName(type, entityName())
-                .withBuilder(criteriaResolver);
+                .ofTypeAndName(type, sourceCriteriaResolverName())
+                .withBuilder(sourceCriteriaResolver);
+    }
+
+    private ComponentDefinition<CriteriaResolver<ID>> appendCriteriaResolver() {
+        TypeReference<CriteriaResolver<ID>> type = new TypeReference<>() {
+        };
+        return ComponentDefinition
+                .ofTypeAndName(type, appendCriteriaResolverName())
+                .withBuilder(appendCriteriaResolver);
     }
 
     @Override

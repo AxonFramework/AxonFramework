@@ -16,15 +16,16 @@
 
 package org.axonframework.eventsourcing;
 
-import  jakarta.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
-import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.messaging.core.Context.ResourceKey;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.repository.ManagedEntity;
 import org.axonframework.modelling.repository.Repository;
@@ -58,7 +59,8 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
     private final Class<ID> idType;
     private final Class<E> entityType;
     private final EventStore eventStore;
-    private final CriteriaResolver<ID> criteriaResolver;
+    private final CriteriaResolver<ID> sourceCriteriaResolver;
+    private final CriteriaResolver<ID> appendCriteriaResolver;
     private final EntityEvolver<E> entityEvolver;
     private final EventSourcedEntityFactory<ID, E> entityFactory;
 
@@ -66,6 +68,8 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
      * Initialize the repository to load events from the given {@code eventStore} using the given {@code applier} to
      * apply state transitions to the entity based on the events received, and given {@code criteriaResolver} to resolve
      * the {@link EventCriteria} of the given identifier type used to source an entity.
+     * <p>
+     * This constructor uses the same criteria resolver for both sourcing and appending (default backward-compatible behavior).
      *
      * @param idType           The type of the identifier for the event sourced entity this repository serves.
      * @param entityType       The type of the event sourced entity this repository serves.
@@ -73,7 +77,7 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
      * @param entityFactory    A factory method to create new instances of the entity based on the entity's type and a
      *                         provided identifier.
      * @param criteriaResolver Converts the given identifier to an {@link EventCriteria} used to load a matching event
-     *                         stream.
+     *                         stream. Used for both sourcing and appending criteria.
      * @param entityEvolver    The function used to evolve the state of loaded entities based on events.
      */
     public EventSourcingRepository(@Nonnull Class<ID> idType,
@@ -82,11 +86,47 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
                                    @Nonnull EventSourcedEntityFactory<ID, E> entityFactory,
                                    @Nonnull CriteriaResolver<ID> criteriaResolver,
                                    @Nonnull EntityEvolver<E> entityEvolver) {
+        this(idType, entityType, eventStore, entityFactory, criteriaResolver, criteriaResolver, entityEvolver);
+    }
+
+    /**
+     * Initialize the repository to load events from the given {@code eventStore} using the given {@code applier} to
+     * apply state transitions to the entity based on the events received. This constructor enables Dynamic Consistency
+     * Boundaries (DCB) where the criteria used for sourcing events (loading state) can differ from the criteria used
+     * for consistency checking (appending events).
+     * <p>
+     * <b>Example - Accounting Use Case:</b>
+     * <ul>
+     *   <li><b>sourceCriteriaResolver</b>: Resolves to criteria that loads both CreditsIncreased AND CreditsDecreased
+     *       events to calculate the balance.</li>
+     *   <li><b>appendCriteriaResolver</b>: Resolves to criteria that only checks for conflicts on CreditsDecreased
+     *       events, allowing concurrent credit increases.</li>
+     * </ul>
+     *
+     * @param idType                 The type of the identifier for the event sourced entity this repository serves.
+     * @param entityType             The type of the event sourced entity this repository serves.
+     * @param eventStore             The event store to load events from.
+     * @param entityFactory          A factory method to create new instances of the entity based on the entity's type and a
+     *                               provided identifier.
+     * @param sourceCriteriaResolver Converts the given identifier to an {@link EventCriteria} used to load (source)
+     *                               the entity's event stream.
+     * @param appendCriteriaResolver Converts the given identifier to an {@link EventCriteria} used for consistency
+     *                               checking when appending events.
+     * @param entityEvolver          The function used to evolve the state of loaded entities based on events.
+     */
+    public EventSourcingRepository(@Nonnull Class<ID> idType,
+                                   @Nonnull Class<E> entityType,
+                                   @Nonnull EventStore eventStore,
+                                   @Nonnull EventSourcedEntityFactory<ID, E> entityFactory,
+                                   @Nonnull CriteriaResolver<ID> sourceCriteriaResolver,
+                                   @Nonnull CriteriaResolver<ID> appendCriteriaResolver,
+                                   @Nonnull EntityEvolver<E> entityEvolver) {
         this.idType = requireNonNull(idType, "The id type must not be null.");
         this.entityType = requireNonNull(entityType, "The entity type must not be null.");
         this.eventStore = requireNonNull(eventStore, "The event store must not be null.");
         this.entityFactory = requireNonNull(entityFactory, "The entity factory must not be null.");
-        this.criteriaResolver = requireNonNull(criteriaResolver, "The criteria resolver must not be null.");
+        this.sourceCriteriaResolver = requireNonNull(sourceCriteriaResolver, "The source criteria resolver must not be null.");
+        this.appendCriteriaResolver = requireNonNull(appendCriteriaResolver, "The append criteria resolver must not be null.");
         this.entityEvolver = requireNonNull(entityEvolver, "The entity evolver must not be null.");
     }
 
@@ -155,9 +195,12 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
     }
 
     private CompletableFuture<EventSourcedEntity<ID, E>> doLoad(ID identifier, ProcessingContext context) {
+        EventCriteria sourceCriteria = sourceCriteriaResolver.resolve(identifier, context);
+        EventCriteria appendCriteria = appendCriteriaResolver.resolve(identifier, context);
+
         return eventStore
-                .transaction(context)
-                .source(SourcingCondition.conditionFor(criteriaResolver.resolve(identifier, context)))
+                .transaction(AppendCondition.withCriteria(appendCriteria), context)
+                .source(SourcingCondition.conditionFor(sourceCriteria))
                 .reduce(new EventSourcedEntity<>(identifier),
                         (entity, entry) -> {
                             entity.ensureInitialState(() -> entityFactory.create(identifier, entry.message(), context));
@@ -213,7 +256,8 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
         descriptor.describeProperty("entityType", entityType);
         descriptor.describeProperty("eventStore", eventStore);
         descriptor.describeProperty("entityFactory", entityFactory);
-        descriptor.describeProperty("criteriaResolver", criteriaResolver);
+        descriptor.describeProperty("sourceCriteriaResolver", sourceCriteriaResolver);
+        descriptor.describeProperty("appendCriteriaResolver", appendCriteriaResolver);
         descriptor.describeProperty("entityEvolver", entityEvolver);
     }
 

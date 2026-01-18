@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine.AppendTransaction;
 import org.axonframework.messaging.core.Context.ResourceKey;
@@ -51,6 +52,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
     private final EventStorageEngine eventStorageEngine;
     private final ProcessingContext processingContext;
     private final Function<EventMessage, TaggedEventMessage<?>> eventTagger;
+    private final AppendCondition explicitAppendCondition;
 
     private final List<Consumer<EventMessage>> callbacks;
 
@@ -61,6 +63,9 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
     /**
      * Constructs a {@code DefaultEventStoreTransaction} using the given {@code eventStorageEngine} to
      * {@link #appendEvent(EventMessage) append events} originating from the given {@code context}.
+     * <p>
+     * This constructor creates a transaction where the append criteria is derived from the source criteria
+     * (default behavior for backward compatibility).
      *
      * @param eventStorageEngine The {@link EventStorageEngine} used to {@link #appendEvent(EventMessage) append events}
      *                           with.
@@ -73,9 +78,34 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
     public DefaultEventStoreTransaction(@Nonnull EventStorageEngine eventStorageEngine,
                                         @Nonnull ProcessingContext processingContext,
                                         @Nonnull Function<EventMessage, TaggedEventMessage<?>> eventTagger) {
+        this(eventStorageEngine, processingContext, eventTagger, null);
+    }
+
+    /**
+     * Constructs a {@code DefaultEventStoreTransaction} using the given {@code eventStorageEngine} to
+     * {@link #appendEvent(EventMessage) append events} originating from the given {@code context}, with an
+     * optional explicit {@link AppendCondition} for consistency checking.
+     * <p>
+     * This constructor enables Dynamic Consistency Boundaries (DCB) where the criteria used for sourcing events
+     * (loading state) can differ from the criteria used for consistency checking (appending events).
+     *
+     * @param eventStorageEngine       The {@link EventStorageEngine} used to {@link #appendEvent(EventMessage) append events}
+     *                                 with.
+     * @param processingContext        The {@link ProcessingContext} from which to
+     *                                 {@link #appendEvent(EventMessage) append events} and attach resources to.
+     * @param eventTagger              A function that will process each {@link EventMessage} to attach
+     *                                 {@link Tag Tags}, before it is added to the transaction.
+     * @param explicitAppendCondition  An optional explicit {@link AppendCondition} for consistency checking.
+     *                                 If {@code null}, the append criteria will be derived from the source criteria.
+     */
+    public DefaultEventStoreTransaction(@Nonnull EventStorageEngine eventStorageEngine,
+                                        @Nonnull ProcessingContext processingContext,
+                                        @Nonnull Function<EventMessage, TaggedEventMessage<?>> eventTagger,
+                                        @Nullable AppendCondition explicitAppendCondition) {
         this.eventStorageEngine = eventStorageEngine;
         this.processingContext = processingContext;
         this.eventTagger = eventTagger;
+        this.explicitAppendCondition = explicitAppendCondition;
         this.callbacks = new CopyOnWriteArrayList<>();
 
         this.appendConditionKey = ResourceKey.withLabel("appendCondition");
@@ -85,12 +115,30 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
 
     @Override
     public MessageStream<? extends EventMessage> source(@Nonnull SourcingCondition condition) {
-        var appendCondition = processingContext.updateResource(
-                appendConditionKey,
-                ac -> ac == null
-                        ? AppendCondition.withCriteria(condition.criteria())
-                        : ac.orCriteria(condition.criteria())
-        );
+        // CRITERIA handling:
+        // The marker is ORTHOGONAL to the criteria - marker represents read position,
+        // criteria defines which events to check for conflicts
+        AppendCondition appendCondition;
+        if (explicitAppendCondition != null) {
+            // Use explicit append condition (set once at transaction creation)
+            // This enables DCB where source criteria differs from append criteria
+            appendCondition = processingContext.computeResourceIfAbsent(
+                    appendConditionKey,
+                    () -> explicitAppendCondition
+            );
+        } else {
+            // Default behavior: derive append criteria from source criteria
+            appendCondition = processingContext.updateResource(
+                    appendConditionKey,
+                    ac -> ac == null
+                            ? AppendCondition.withCriteria(condition.criteria())
+                            : ac.orCriteria(condition.criteria())
+            );
+        }
+
+        // MARKER handling: Always extract from sourced events
+        // The marker represents the read position - it is always determined by what was actually read,
+        // regardless of which criteria will be used for consistency checking
         MessageStream<EventMessage> source = eventStorageEngine.source(condition, processingContext);
         if (appendCondition.consistencyMarker() != ConsistencyMarker.ORIGIN) {
             return source;

@@ -101,9 +101,10 @@ public class InterceptingEventStore implements EventStore {
     }
 
     @Override
-    public EventStoreTransaction transaction(@Nonnull ProcessingContext processingContext) {
+    public EventStoreTransaction transaction(@Nullable AppendCondition appendCondition,
+                                             @Nonnull ProcessingContext processingContext) {
         // Set the delegate transaction to ensure the InterceptingAppender can reach the correct EventStoreTransaction.
-        EventStoreTransaction delegateTransaction = getAndSetDelegateTransaction(processingContext);
+        EventStoreTransaction delegateTransaction = getAndSetDelegateTransaction(appendCondition, processingContext);
         // Set the intercepting transaction to ensure subsequent transaction operation receive the same intercepting transaction.
         return processingContext.computeResourceIfAbsent(
                 interceptingTransactionKey,
@@ -114,8 +115,8 @@ public class InterceptingEventStore implements EventStore {
     /**
      * Gets the {@link EventStoreTransaction} from given {@code context}, if present.
      * <p>
-     * If not present, we invoked the delegate {@link EventStore#transaction(ProcessingContext)} operation and set it
-     * afterward. This is deliberately not done in a
+     * If not present, we invoked the delegate {@link EventStore#transaction(AppendCondition, ProcessingContext)} operation
+     * and set it afterward. This is deliberately not done in a
      * {@link ProcessingContext#computeResourceIfAbsent(Context.ResourceKey, Supplier)}, as the delegate
      * {@link EventStore} typically uses the {@code computeResourceIfAbsent}. Hence, we are optionally faced with
      * concurrency exceptions by using {@code computeResourceIfAbsent} here.
@@ -128,16 +129,18 @@ public class InterceptingEventStore implements EventStore {
      * Lastly, note that we are making this loop to ensure the {@code InterceptingEventStore} does not have to create a
      * {@link DefaultMessageDispatchInterceptorChain} for every new transaction!
      *
-     * @param context The context to retrieve the delegate {@code EventStoreTransaction} from. When not present, it will
-     *                be added to this context.
+     * @param appendCondition The optional explicit {@link AppendCondition} for consistency checking.
+     * @param context         The context to retrieve the delegate {@code EventStoreTransaction} from. When not present, it will
+     *                        be added to this context.
      * @return The {@code EventStoreTransaction} from the delegate {@link EventStore}.
      */
-    private EventStoreTransaction getAndSetDelegateTransaction(@Nonnull ProcessingContext context) {
+    private EventStoreTransaction getAndSetDelegateTransaction(@Nullable AppendCondition appendCondition,
+                                                               @Nonnull ProcessingContext context) {
         EventStoreTransaction delegateTransaction;
         if (context.containsResource(delegateTransactionKey)) {
             delegateTransaction = context.getResource(delegateTransactionKey);
         } else {
-            delegateTransaction = delegate.transaction(context);
+            delegateTransaction = delegate.transaction(appendCondition, context);
             context.putResourceIfAbsent(delegateTransactionKey, delegateTransaction);
         }
         return delegateTransaction;

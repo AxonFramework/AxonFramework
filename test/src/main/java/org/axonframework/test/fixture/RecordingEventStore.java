@@ -23,6 +23,7 @@ import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
+import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
 import org.axonframework.messaging.eventstreaming.StreamingCondition;
@@ -62,8 +63,9 @@ public class RecordingEventStore extends RecordingEventSink implements EventStor
     }
 
     @Override
-    public EventStoreTransaction transaction(@NotNull ProcessingContext processingContext) {
-        return eventStore.transaction(processingContext);
+    public EventStoreTransaction transaction(@Nullable AppendCondition appendCondition,
+                                             @NotNull ProcessingContext processingContext) {
+        return eventStore.transaction(appendCondition, processingContext);
     }
 
     @Override

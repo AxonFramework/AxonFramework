@@ -128,7 +128,9 @@ class AnnotatedEventSourcedEntityModuleTest {
         assertThat(result).isNotNull()
                           .isInstanceOf(EventSourcingRepository.class);
         result.describeTo(componentDescriptor);
-        verify(componentDescriptor).describeProperty(eq("criteriaResolver"), isA(CustomCriteriaResolver.class));
+        // When using CriteriaResolverDefinition, both source and append resolvers use the same custom resolver
+        verify(componentDescriptor).describeProperty(eq("sourceCriteriaResolver"), isA(CustomCriteriaResolver.class));
+        verify(componentDescriptor).describeProperty(eq("appendCriteriaResolver"), isA(CustomCriteriaResolver.class));
     }
 
     @Test
