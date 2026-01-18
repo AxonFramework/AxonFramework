@@ -31,6 +31,7 @@ import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.messaging.eventstreaming.Tag;
 import org.axonframework.integrationtests.testsuite.AbstractAxonServerIT;
 import org.axonframework.integrationtests.testsuite.student.events.StudentEnrolledEvent;
+import org.axonframework.integrationtests.testsuite.student.events.StudentUnenrolledEvent;
 import org.axonframework.integrationtests.testsuite.student.state.Course;
 import org.axonframework.integrationtests.testsuite.student.state.Student;
 import org.axonframework.messaging.core.MessageType;
@@ -63,8 +64,8 @@ public abstract class AbstractStudentIT extends AbstractAxonServerIT {
 
     protected UnitOfWorkFactory unitOfWorkFactory;
 
-    private EventSourcedEntityModule<String, Course> courseEntity;
-    private EventSourcedEntityModule<String, Student> studentEntity;
+    protected EventSourcedEntityModule<String, Course> courseEntity;
+    protected EventSourcedEntityModule<String, Student> studentEntity;
 
     @BeforeEach
     protected void prepareModule() {
@@ -122,10 +123,15 @@ public abstract class AbstractStudentIT extends AbstractAxonServerIT {
      */
     protected EntityEvolver<Course> courseEvolver(@Nonnull Configuration config) {
         return (course, event, context) -> {
+            Converter converter = config.getComponent(Converter.class);
             if (event.type().name().equals(StudentEnrolledEvent.class.getName())) {
                 // Convert the payload to the expected type
-                Converter converter = config.getComponent(Converter.class);
                 StudentEnrolledEvent convert = converter.convert(event.payload(), StudentEnrolledEvent.class);
+                Objects.requireNonNull(convert, "The converted payload must not be null.");
+                course.handle(convert);
+            } else if (event.type().name().equals(StudentUnenrolledEvent.class.getName())) {
+                // Convert the payload to the expected type
+                StudentUnenrolledEvent convert = converter.convert(event.payload(), StudentUnenrolledEvent.class);
                 Objects.requireNonNull(convert, "The converted payload must not be null.");
                 course.handle(convert);
             }
