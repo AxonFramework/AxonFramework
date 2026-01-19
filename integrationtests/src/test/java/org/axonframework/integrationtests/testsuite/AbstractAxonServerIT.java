@@ -26,6 +26,7 @@ import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.Random;
 
 /**
@@ -39,7 +40,8 @@ public abstract class AbstractAxonServerIT {
 
     protected static final Logger logger = LoggerFactory.getLogger(AbstractAxonServerIT.class);
 
-    private static final AxonServerContainer container = new AxonServerContainer("docker.axoniq.io/axoniq/axonserver:2025.2.0")
+    private static final AxonServerContainer container = new AxonServerContainer(
+            "docker.axoniq.io/axoniq/axonserver:2025.2.0")
             .withAxonServerHostname("localhost")
             .withDevMode(true)
             .withReuse(true)
@@ -70,6 +72,17 @@ public abstract class AbstractAxonServerIT {
                                                  ))
                                                  .start();
         commandGateway = startedConfiguration.getComponent(CommandGateway.class);
+    }
+
+    protected void purgeAxonServer() {
+        try {
+            AxonServerContainerUtils.purgeEventsFromAxonServer(container.getHost(),
+                                                               container.getHttpPort(),
+                                                               "default",
+                                                               AxonServerContainerUtils.DCB_CONTEXT);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
