@@ -766,6 +766,143 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
             .contains("Hello From Engine 2");
     }
 
+    /**
+     * Tests verifying Dynamic Consistency Boundary (DCB) behavior where the append criteria
+     * can filter by event type, allowing certain concurrent modifications to proceed without conflict.
+     * <p>
+     * This is valuable in scenarios like course enrollment where:
+     * <ul>
+     *   <li><b>Source criteria</b>: Load both enrollments AND unenrollments to calculate accurate state</li>
+     *   <li><b>Append criteria</b>: Only check for concurrent enrollments to allow concurrent unenrollments</li>
+     * </ul>
+     */
+    @Nested
+    protected class DynamicConsistencyBoundaryConflictDetection {
+
+        private static final String ENROLLMENT_TYPE = "StudentEnrolledEvent";
+        private static final String UNENROLLMENT_TYPE = "StudentUnenrolledEvent";
+
+        /**
+         * Demonstrates that an event with a different type stored after our read position
+         * does NOT cause a conflict when the AppendCriteria filters by event type.
+         * <p>
+         * This is the core DCB behavior: by narrowing the append criteria to specific event types,
+         * concurrent modifications with different event types are allowed.
+         */
+        @Test
+        protected void eventNotMatchingAppendCriteriaTypeDoesNotCauseConflict() throws Exception {
+            // given - append initial event
+            appendEvents(AppendCondition.none(), taggedEventMessageWithType("event-0", TEST_CRITERIA_TAGS, ENROLLMENT_TYPE));
+
+            // Get marker after initial event
+            ConsistencyMarker markerAfterInitial = getMarkerAfterSourcing(TEST_CRITERIA);
+
+            // Simulate concurrent modification with DIFFERENT event type (unenrollment)
+            appendEvents(AppendCondition.none(), taggedEventMessageWithType("event-1", TEST_CRITERIA_TAGS, UNENROLLMENT_TYPE));
+
+            // when - try to append with criteria that only matches enrollment type
+            EventCriteria enrollmentOnlyCriteria = EventCriteria.havingTags(TEST_CRITERIA_TAGS)
+                                                                .andBeingOneOfTypes(ENROLLMENT_TYPE);
+            AppendCondition appendCondition = AppendCondition.withCriteria(enrollmentOnlyCriteria)
+                                                             .withMarker(markerAfterInitial);
+
+            CompletableFuture<ConsistencyMarker> result =
+                    asyncAppendEvents(appendCondition, taggedEventMessageWithType("event-2", TEST_CRITERIA_TAGS, ENROLLMENT_TYPE));
+
+            // then - no conflict because unenrollment doesn't match append criteria
+            assertDoesNotThrow(() -> result.get(5, TimeUnit.SECONDS),
+                               "Event with different type should NOT cause conflict when append criteria filters by type");
+        }
+
+        /**
+         * Demonstrates that an event matching the append criteria type stored after our read position
+         * DOES cause a conflict.
+         * <p>
+         * This proves that conflict detection works correctly when the concurrent event matches the append criteria.
+         */
+        @Test
+        protected void eventMatchingAppendCriteriaTypeCausesConflict() throws Exception {
+            // given - append initial event
+            appendEvents(AppendCondition.none(), taggedEventMessageWithType("event-0", TEST_CRITERIA_TAGS, ENROLLMENT_TYPE));
+
+            // Get marker after initial event
+            ConsistencyMarker markerAfterInitial = getMarkerAfterSourcing(TEST_CRITERIA);
+
+            // Simulate concurrent modification with SAME event type (enrollment)
+            appendEvents(AppendCondition.none(), taggedEventMessageWithType("event-1", TEST_CRITERIA_TAGS, ENROLLMENT_TYPE));
+
+            // when - try to append with criteria that matches enrollment type
+            EventCriteria enrollmentOnlyCriteria = EventCriteria.havingTags(TEST_CRITERIA_TAGS)
+                                                                .andBeingOneOfTypes(ENROLLMENT_TYPE);
+            AppendCondition appendCondition = AppendCondition.withCriteria(enrollmentOnlyCriteria)
+                                                             .withMarker(markerAfterInitial);
+
+            CompletableFuture<ConsistencyMarker> result =
+                    asyncAppendEvents(appendCondition, taggedEventMessageWithType("event-2", TEST_CRITERIA_TAGS, ENROLLMENT_TYPE));
+
+            // then - conflict because concurrent enrollment matches append criteria
+            ExecutionException exception =
+                    assertThrows(ExecutionException.class, () -> result.get(5, TimeUnit.SECONDS));
+            assertInstanceOf(AppendEventsTransactionRejectedException.class, exception.getCause(),
+                             "Concurrent event matching append criteria should cause conflict");
+        }
+
+        /**
+         * Contrast test: When using broad criteria that includes both event types,
+         * a concurrent event with the "non-conflicting" type DOES cause a conflict.
+         * <p>
+         * This demonstrates why DCB (filtering by event type in append criteria) is valuable -
+         * without it, all concurrent modifications to the same tags would cause conflicts.
+         */
+        @Test
+        protected void eventCausesConflictWhenAppendCriteriaIncludesAllTypes() throws Exception {
+            // given - append initial event
+            appendEvents(AppendCondition.none(), taggedEventMessageWithType("event-0", TEST_CRITERIA_TAGS, ENROLLMENT_TYPE));
+
+            // Get marker after initial event
+            ConsistencyMarker markerAfterInitial = getMarkerAfterSourcing(TEST_CRITERIA);
+
+            // Simulate concurrent modification with different event type
+            appendEvents(AppendCondition.none(), taggedEventMessageWithType("event-1", TEST_CRITERIA_TAGS, UNENROLLMENT_TYPE));
+
+            // when - try to append with criteria that matches BOTH types (no DCB benefit)
+            EventCriteria broadCriteria = EventCriteria.havingTags(TEST_CRITERIA_TAGS)
+                                                       .andBeingOneOfTypes(ENROLLMENT_TYPE, UNENROLLMENT_TYPE);
+            AppendCondition appendCondition = AppendCondition.withCriteria(broadCriteria)
+                                                             .withMarker(markerAfterInitial);
+
+            CompletableFuture<ConsistencyMarker> result =
+                    asyncAppendEvents(appendCondition, taggedEventMessageWithType("event-2", TEST_CRITERIA_TAGS, ENROLLMENT_TYPE));
+
+            // then - conflict because unenrollment matches the broad append criteria
+            ExecutionException exception =
+                    assertThrows(ExecutionException.class, () -> result.get(5, TimeUnit.SECONDS));
+            assertInstanceOf(AppendEventsTransactionRejectedException.class, exception.getCause(),
+                             "Concurrent event should cause conflict when append criteria includes all types");
+        }
+
+        private ConsistencyMarker getMarkerAfterSourcing(EventCriteria criteria) {
+            return FluxUtils.of(testSubject.source(SourcingCondition.conditionFor(criteria), processingContext()))
+                            .collectList()
+                            .map(List::getLast)
+                            .map(entry -> entry.getResource(ConsistencyMarker.RESOURCE_KEY))
+                            .block();
+        }
+
+        private TaggedEventMessage<EventMessage> taggedEventMessageWithType(String payload, Set<Tag> tags, String eventType) {
+            return new GenericTaggedEventMessage<>(
+                    new GenericEventMessage(
+                            UUID.randomUUID().toString(),
+                            new MessageType(eventType),
+                            payload,
+                            Map.of("key", "value"),
+                            Instant.now()
+                    ),
+                    tags
+            );
+        }
+    }
+
     @Nested
     protected class Peek {
 
