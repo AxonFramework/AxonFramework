@@ -18,7 +18,7 @@ package org.axonframework.integrationtests.testsuite.student.commands;
 
 import org.axonframework.modelling.annotation.TargetEntityId;
 
-public record EnrollStudentToCourseCommand(
+public record UnenrollStudentFromCourseCommand(
         String studentId,
         @TargetEntityId String courseId
 ) {

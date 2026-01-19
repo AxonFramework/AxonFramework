@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-package org.axonframework.integrationtests.testsuite.student.commands;
+package org.axonframework.integrationtests.testsuite.student.events;
 
-import org.axonframework.modelling.annotation.TargetEntityId;
+import org.axonframework.eventsourcing.annotation.EventTag;
 
-public record EnrollStudentToCourseCommand(
+public record StudentUnenrolledEvent(
+        @EventTag(key = "Student")
         String studentId,
-        @TargetEntityId String courseId
+        @EventTag(key = "Course")
+        String courseId
 ) {
 
 }

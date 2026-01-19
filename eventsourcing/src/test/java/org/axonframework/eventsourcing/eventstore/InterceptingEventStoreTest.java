@@ -68,7 +68,8 @@ class InterceptingEventStoreTest {
         eventStoreTransaction = mock(EventStoreTransaction.class);
         eventStore = mock(EventStore.class);
         processingContext = mock(ProcessingContext.class);
-        when(eventStore.transaction(any())).thenReturn(eventStoreTransaction);
+        when(eventStore.transaction(any(ProcessingContext.class))).thenReturn(eventStoreTransaction);
+        when(eventStore.transaction(any(), any(ProcessingContext.class))).thenReturn(eventStoreTransaction);
         //noinspection unchecked
         when(eventStore.publish(any(), any(List.class)))
                 .thenReturn(FutureUtils.emptyCompletedFuture());
@@ -99,7 +100,8 @@ class InterceptingEventStoreTest {
         transaction.appendEvent(testEvent);
 
         ArgumentCaptor<EventMessage> appendedEvent = ArgumentCaptor.forClass(EventMessage.class);
-        verify(eventStore).transaction(testContext);
+        // InterceptingEventStore.transaction(context) delegates to transaction(null, context)
+        verify(eventStore).transaction(isNull(), eq(testContext));
         verify(eventStoreTransaction).appendEvent(appendedEvent.capture());
 
         assertThat(appendedEvent.getValue()).isEqualTo(testEvent);

@@ -38,6 +38,7 @@ import org.axonframework.messaging.eventhandling.processing.streaming.token.Trac
 import org.axonframework.messaging.eventsourcing.AggregateFactory;
 import org.axonframework.messaging.eventsourcing.GenericAggregateFactory;
 import org.axonframework.messaging.eventsourcing.LegacyEventSourcingRepository;
+import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
 import org.axonframework.messaging.eventstreaming.StreamingCondition;
@@ -1082,6 +1083,12 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
         @Override
         public EventStoreTransaction transaction(@Nonnull ProcessingContext processingContext) {
+            return null;
+        }
+
+        @Override
+        public EventStoreTransaction transaction(@Nullable AppendCondition appendCondition,
+                                                 @Nonnull ProcessingContext processingContext) {
             return null;
         }
 

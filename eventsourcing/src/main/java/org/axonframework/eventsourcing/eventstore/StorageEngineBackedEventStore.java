@@ -77,11 +77,13 @@ public class StorageEngineBackedEventStore implements EventStore {
     }
 
     @Override
-    public EventStoreTransaction transaction(@Nonnull ProcessingContext processingContext) {
+    public EventStoreTransaction transaction(@Nullable AppendCondition appendCondition,
+                                             @Nonnull ProcessingContext processingContext) {
         return processingContext.computeResourceIfAbsent(
                 eventStoreTransactionKey,
                 () -> {
-                    var eventStoreTransaction = new DefaultEventStoreTransaction(eventStorageEngine, processingContext, this::tagEvents);
+                    var eventStoreTransaction = new DefaultEventStoreTransaction(
+                            eventStorageEngine, processingContext, this::tagEvents, appendCondition);
                     eventStoreTransaction.onAppend(events -> eventBus.publish(processingContext, events).join());
                     return eventStoreTransaction;
                 }
