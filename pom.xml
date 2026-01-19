@@ -20,7 +20,7 @@
 
     <groupId>org.axonframework</groupId>
     <artifactId>axon</artifactId>
-    <version>5.0.2</version>
+    <version>5.0.3-SNAPSHOT</version>
 
     <modules>
         <module>build/parent</module>
@@ -242,7 +242,7 @@
         <connection>scm:git:git://github.com/AxonFramework/AxonFramework.git</connection>
         <developerConnection>scm:git:git@github.com:AxonFramework/AxonFramework.git</developerConnection>
         <url>https://github.com/AxonFramework/AxonFramework</url>
-        <tag>axon-5.0.2</tag>
+        <tag>axon-5.0.0-RC3</tag>
     </scm>
 
     <developers>

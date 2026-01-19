@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.axonframework</groupId>
         <artifactId>axon</artifactId>
-        <version>5.0.2</version>
+        <version>5.0.3-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 

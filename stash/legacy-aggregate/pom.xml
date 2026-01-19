@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.axonframework</groupId>
         <artifactId>axon-parent</artifactId>
-        <version>5.0.2</version>
+        <version>5.0.3-SNAPSHOT</version>
         <relativePath>../../build/parent/pom.xml</relativePath>
     </parent>
 
@@ -210,8 +210,4 @@
             <artifactId>awaitility</artifactId>
         </dependency>
     </dependencies>
-
-  <scm>
-    <tag>axon-5.0.2</tag>
-  </scm>
 </project>
