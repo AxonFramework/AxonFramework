@@ -113,8 +113,8 @@ class DeadLetterParameterResolverFactoryTest {
             DeadLetter<EventMessage> expected = new GenericDeadLetter<>(
                     "sequenceId", testMessage, new RuntimeException("some-cause")
             );
-            ProcessingContext context = StubProcessingContext.forMessage(testMessage);
-            context.putResource(DeadLetter.RESOURCE_KEY, expected);
+            ProcessingContext context = StubProcessingContext.forMessage(testMessage)
+                    .withResource(DeadLetter.RESOURCE_KEY, expected);
 
             ParameterResolver<DeadLetter<?>> resolver =
                     testSubject.createInstance(deadLetterMethod, deadLetterMethod.getParameters(), 0);

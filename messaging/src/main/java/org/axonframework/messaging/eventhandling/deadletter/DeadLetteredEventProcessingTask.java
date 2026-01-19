@@ -82,14 +82,16 @@ class DeadLetteredEventProcessingTask {
      */
     public CompletableFuture<EnqueueDecision<EventMessage>> process(DeadLetter<? extends EventMessage> letter,
                                                                     ProcessingContext context) {
+        EventMessage message = letter.message();
         if (logger.isDebugEnabled()) {
-            logger.debug("Start evaluation of dead letter with message id [{}].", letter.message().identifier());
+            logger.debug("Start evaluation of dead letter with message id [{}].", message.identifier());
         }
 
-        context.putResource(DeadLetter.RESOURCE_KEY, letter);
-        Message.addToContext(context, letter.message());
-
-        MessageStream.Empty<Message> result = delegate.handle(letter.message(), context);
+        MessageStream.Empty<Message> result = delegate.handle(
+                message,
+                context.withResource(DeadLetter.RESOURCE_KEY, letter)
+                       .withResource(Message.RESOURCE_KEY, message)
+        );
 
         // todo: should I attach to result or ProcessingContext lifecycle? Test it with TransactionalUnitOfWork and check consistency
         return result.asCompletableFuture()

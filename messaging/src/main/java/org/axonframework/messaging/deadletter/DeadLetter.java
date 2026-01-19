@@ -19,6 +19,7 @@ package org.axonframework.messaging.deadletter;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -40,13 +41,21 @@ import java.util.function.UnaryOperator;
 public interface DeadLetter<M extends Message> {
 
     /**
-     * A {@link Context.ResourceKey} to store and retrieve a {@link DeadLetter} from a
-     * {@link org.axonframework.messaging.eventhandling.processing.ProcessingContext ProcessingContext}.
-     * <p>
-     * This key is used by the dead letter processing infrastructure to make the dead letter being processed
-     * available to parameter resolvers and other components during retry processing.
+     * The {@link Context.ResourceKey} used whenever a {@link Context} would contain a {@link DeadLetter}.
      */
-    Context.ResourceKey<DeadLetter<?>> RESOURCE_KEY = Context.ResourceKey.withLabel("DeadLetter");
+    Context.ResourceKey<DeadLetter<?>> RESOURCE_KEY = Context.ResourceKey.withLabel("deadLetter");
+
+    /**
+     * Returns an {@link Optional} of {DeadLetter}, returning the resource keyed under the
+     * {@link #RESOURCE_KEY} in the given {@code context}.
+     *
+     * @param context The {@link Context} to retrieve the {@code DeadLetter} from, if present.
+     * @return An {@link Optional} of {DeadLetter}, returning the resource keyed under the
+     * {@link #RESOURCE_KEY} in the given {@code context}.
+     */
+    static Optional<DeadLetter<?>> fromContext(Context context) {
+        return Optional.ofNullable(context.getResource(RESOURCE_KEY));
+    }
 
     /**
      * The {@link Message} of type {@code M} contained in this letter.

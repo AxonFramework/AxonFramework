@@ -32,8 +32,8 @@ import java.util.concurrent.CompletableFuture;
  * being processed.
  * <p>
  * Expects the {@code DeadLetter} to reside in the {@link ProcessingContext} using the {@link DeadLetter#RESOURCE_KEY}.
- * Hence, the {@code DeadLetter} processor is required to add it to the context before invoking the message handlers.
- * If no {@code DeadLetter} is present in the context, the resolver will return {@code null}.
+ * Hence, the {@code DeadLetter} processor is required to add it to the context before invoking the message handlers. If
+ * no {@code DeadLetter} is present in the context, the resolver will return {@code null}.
  * <p>
  * The parameter resolver matches for any type of {@link Message}.
  *
@@ -62,7 +62,7 @@ public class DeadLetterParameterResolverFactory implements ParameterResolverFact
         @Nonnull
         @Override
         public CompletableFuture<DeadLetter<?>> resolveParameterValue(@Nonnull ProcessingContext context) {
-            return CompletableFuture.completedFuture(context.getResource(DeadLetter.RESOURCE_KEY));
+            return CompletableFuture.completedFuture(DeadLetter.fromContext(context).orElse(null));
         }
 
         @Override
