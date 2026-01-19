@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.axonframework.extensions.metrics</groupId>
         <artifactId>axon-metrics-extension</artifactId>
-        <version>5.0.2-SNAPSHOT</version>
+        <version>5.0.2</version>
     </parent>
 
     <artifactId>axon-metrics-dropwizard</artifactId>
@@ -68,4 +68,8 @@
             </plugin>
         </plugins>
     </build>
+
+  <scm>
+    <tag>axon-5.0.2</tag>
+  </scm>
 </project>

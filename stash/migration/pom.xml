@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.axonframework</groupId>
         <artifactId>axon-parent</artifactId>
-        <version>5.0.2-SNAPSHOT</version>
+        <version>5.0.2</version>
         <relativePath>../../build/parent/pom.xml</relativePath>
     </parent>
 
@@ -44,4 +44,8 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+  <scm>
+    <tag>axon-5.0.2</tag>
+  </scm>
 </project>
