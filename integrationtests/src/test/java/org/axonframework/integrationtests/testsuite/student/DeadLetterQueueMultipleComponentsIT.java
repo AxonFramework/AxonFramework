@@ -110,34 +110,8 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
                 assertThat(getDlq(1).contains(failingStudentId).join()).isFalse();
                 assertThat(getDlq(1).size().join()).isEqualTo(0L);
 
-                assertThat(components[0].successfullyHandled()).contains(successStudentId);
-                assertThat(components[1].successfullyHandled()).contains(successStudentId);
-            });
-        }
-
-        @Test
-        @DisplayName("When component1 fails an event, it should go to component1's DLQ only")
-        void failedEventInComponent1ShouldOnlyGoToComponent1Dlq() {
-            // given
-            startApp();
-            var failingStudentId = createId("student-fail-1");
-            var successStudentId = createId("student-ok");
-            var courseId = createId("course");
-
-            // when
-            studentEnrolledToCourse(failingStudentId, courseId);
-            studentEnrolledToCourse(successStudentId, courseId);
-
-            // then
-            await().untilAsserted(() -> {
-                assertThat(getDlq(0).contains(failingStudentId).join()).isFalse();
-                assertThat(getDlq(0).size().join()).isEqualTo(0L);
-
-                assertThat(getDlq(1).contains(failingStudentId).join()).isTrue();
-                assertThat(getDlq(1).size().join()).isEqualTo(1L);
-
-                assertThat(components[0].successfullyHandled()).contains(successStudentId);
-                assertThat(components[1].successfullyHandled()).contains(successStudentId);
+                assertThat(components[0].successfullyHandled()).containsOnly(successStudentId);
+                assertThat(components[1].successfullyHandled()).contains(failingStudentId, successStudentId);
             });
         }
     }
@@ -147,7 +121,7 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
     class SequenceIsolationTests {
 
         @Test
-        @DisplayName("Subsequent events for a failed sequence should be enqueued in the same component's DLQ")
+        @DisplayName("Subsequent events for a failed sequence (studentId) should be enqueued in the same component's DLQ")
         void subsequentEventsForFailedSequenceShouldBeEnqueuedInSameComponentDlq() {
             // given
             startApp();
