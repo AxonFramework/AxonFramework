@@ -45,15 +45,6 @@ import jakarta.annotation.Nonnull;
  * <p>
  * The cache should be cleared when a segment is released to ensure consistency. Use {@link #invalidateCache()} to clear
  * the cache when segment ownership changes.
- * <p>
- * Example usage:
- * <pre>{@code
- * SequencedDeadLetterQueue<EventMessage<?>> delegate = InMemorySequencedDeadLetterQueue.defaultQueue();
- * CachingSequencedDeadLetterQueue<EventMessage<?>> cachingQueue = new CachingSequencedDeadLetterQueue<>(delegate);
- *
- * // Later, when segment is released:
- * cachingQueue.invalidateCache();
- * }</pre>
  *
  * @param <M> The type of {@link Message} contained in the {@link DeadLetter dead letters} within this queue.
  * @author Mateusz Nowak
