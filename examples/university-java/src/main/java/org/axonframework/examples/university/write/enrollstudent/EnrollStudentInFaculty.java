@@ -27,7 +27,7 @@ import org.axonframework.messaging.commandhandling.annotation.Command;
  * @param firstName student first name.
  * @param lastName  student last name.
  */
-record EnrollStudentInFaculty(
+public record EnrollStudentInFaculty(
         @NotEmpty
         String studentId,
         @NotEmpty

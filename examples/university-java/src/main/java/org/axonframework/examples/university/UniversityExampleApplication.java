@@ -89,7 +89,7 @@ public class UniversityExampleApplication {
     }
 
 
-    EventSourcingConfigurer configurer(
+    public EventSourcingConfigurer configurer(
             ConfigurationProperties configProps,
             UnaryOperator<EventSourcingConfigurer> customization
     ) {
