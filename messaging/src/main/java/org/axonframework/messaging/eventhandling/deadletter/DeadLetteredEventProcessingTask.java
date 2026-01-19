@@ -93,7 +93,7 @@ class DeadLetteredEventProcessingTask {
                        .withResource(Message.RESOURCE_KEY, message)
         );
 
-        // todo: should I attach to result or ProcessingContext lifecycle? Test it with TransactionalUnitOfWork and check consistency
+        // TODO #3517: should I attach to result or ProcessingContext lifecycle? Test it with TransactionalUnitOfWork with JPA/JDBC implementation
         return result.asCompletableFuture()
                      .handle((ignored, error) -> {
                          if (error != null) {
