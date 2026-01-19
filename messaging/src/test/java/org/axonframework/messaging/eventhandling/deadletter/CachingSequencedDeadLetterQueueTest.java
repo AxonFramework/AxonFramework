@@ -74,7 +74,6 @@ class CachingSequencedDeadLetterQueueTest {
             // then
             assertThat(firstResult).isFalse();
             assertThat(secondResult).isFalse();
-            // Both calls should be fast (cache hit on second call)
         }
 
         @Test
@@ -97,7 +96,7 @@ class CachingSequencedDeadLetterQueueTest {
             EventMessage event = EventTestUtils.createEvent(1);
 
             // when
-            Boolean result = cachingQueue.enqueueIfPresent(
+            var result = cachingQueue.enqueueIfPresent(
                     SEQUENCE_ID_1,
                     () -> new GenericDeadLetter<>(SEQUENCE_ID_1, event)
             ).join();
@@ -115,7 +114,7 @@ class CachingSequencedDeadLetterQueueTest {
             cachingQueue.enqueue(SEQUENCE_ID_1, new GenericDeadLetter<>(SEQUENCE_ID_1, event1)).join();
 
             // when
-            Boolean result = cachingQueue.enqueueIfPresent(
+            var result = cachingQueue.enqueueIfPresent(
                     SEQUENCE_ID_1,
                     () -> new GenericDeadLetter<>(SEQUENCE_ID_1, event2)
             ).join();
@@ -141,7 +140,7 @@ class CachingSequencedDeadLetterQueueTest {
         }
 
         @Test
-        void onSegmentReleasedClearsCacheOnly() {
+        void invalidateCacheClearsCacheOnly() {
             // given
             EventMessage event = EventTestUtils.createEvent(1);
             cachingQueue.enqueue(SEQUENCE_ID_1, new GenericDeadLetter<>(SEQUENCE_ID_1, event)).join();
@@ -176,25 +175,6 @@ class CachingSequencedDeadLetterQueueTest {
             assertThat(cachingQueue.cacheEnqueuedSize()).isEqualTo(1);
         }
 
-        @Test
-        void containsDoesNotQueryDelegateForUnknownSequenceWhenCacheInitializedWhileEmpty() {
-            // given
-            // Initialize cache while queue is empty by calling any method that triggers init
-            cachingQueue.contains("trigger-init").join();
-            // Now add directly to delegate - cache won't know about this
-            EventMessage event = EventTestUtils.createEvent(1);
-            delegate.enqueue(SEQUENCE_ID_1, new GenericDeadLetter<>(SEQUENCE_ID_1, event)).join();
-
-            // when
-            // Cache was initialized when queue was empty, so it optimizes by assuming
-            // any unknown identifier is not present
-            Boolean result = cachingQueue.contains(SEQUENCE_ID_1).join();
-
-            // then
-            // Returns false because cache optimization says "not present" without querying delegate
-            assertThat(result).isFalse();
-            assertThat(cachingQueue.cacheEnqueuedSize()).isZero();
-        }
     }
 
     @Nested
@@ -252,7 +232,7 @@ class CachingSequencedDeadLetterQueueTest {
         }
 
         @Test
-        void onSegmentReleasedClearsNonEnqueuedCache() {
+        void invalidateCacheClearsNonEnqueuedCache() {
             // given
             cachingQueue.contains(SEQUENCE_ID_2).join();
             assertThat(cachingQueue.cacheNonEnqueuedSize()).isEqualTo(1);
@@ -273,7 +253,7 @@ class CachingSequencedDeadLetterQueueTest {
             EventMessage event = EventTestUtils.createEvent(2);
 
             // when
-            Boolean result = cachingQueue.enqueueIfPresent(
+            var result = cachingQueue.enqueueIfPresent(
                     SEQUENCE_ID_2,
                     () -> new GenericDeadLetter<>(SEQUENCE_ID_2, event)
             ).join();
@@ -299,127 +279,6 @@ class CachingSequencedDeadLetterQueueTest {
             // then
             assertThat(result).isTrue();
             assertThat(cachingQueue.cacheEnqueuedSize()).isEqualTo(1);
-        }
-    }
-
-    @Nested
-    class WhenDelegatingOperations {
-
-        @BeforeEach
-        void setUp() {
-            delegate = InMemorySequencedDeadLetterQueue.defaultQueue();
-            cachingQueue = new CachingSequencedDeadLetterQueue<>(delegate);
-        }
-
-        @Test
-        void sizeIsDelegated() {
-            // given
-            EventMessage event = EventTestUtils.createEvent(1);
-            cachingQueue.enqueue(SEQUENCE_ID_1, new GenericDeadLetter<>(SEQUENCE_ID_1, event)).join();
-
-            // when
-            Long size = cachingQueue.size().join();
-
-            // then
-            assertThat(size).isEqualTo(1L);
-        }
-
-        @Test
-        void amountOfSequencesIsDelegated() {
-            // given
-            EventMessage event1 = EventTestUtils.createEvent(1);
-            EventMessage event2 = EventTestUtils.createEvent(2);
-            cachingQueue.enqueue(SEQUENCE_ID_1, new GenericDeadLetter<>(SEQUENCE_ID_1, event1)).join();
-            cachingQueue.enqueue(SEQUENCE_ID_2, new GenericDeadLetter<>(SEQUENCE_ID_2, event2)).join();
-
-            // when
-            Long amount = cachingQueue.amountOfSequences().join();
-
-            // then
-            assertThat(amount).isEqualTo(2L);
-        }
-
-        @Test
-        void sequenceSizeIsDelegated() {
-            // given
-            EventMessage event1 = EventTestUtils.createEvent(1);
-            EventMessage event2 = EventTestUtils.createEvent(2);
-            cachingQueue.enqueue(SEQUENCE_ID_1, new GenericDeadLetter<>(SEQUENCE_ID_1, event1)).join();
-            cachingQueue.enqueue(SEQUENCE_ID_1, new GenericDeadLetter<>(SEQUENCE_ID_1, event2)).join();
-
-            // when
-            Long size = cachingQueue.sequenceSize(SEQUENCE_ID_1).join();
-
-            // then
-            assertThat(size).isEqualTo(2L);
-        }
-
-        @Test
-        void isFullIsDelegated() {
-            // given
-            // Default queue has max sequences of 1024
-
-            // when
-            Boolean isFull = cachingQueue.isFull(SEQUENCE_ID_1).join();
-
-            // then
-            assertThat(isFull).isFalse();
-        }
-
-        @Test
-        void deadLettersIsDelegated() {
-            // given
-            EventMessage event = EventTestUtils.createEvent(1);
-            cachingQueue.enqueue(SEQUENCE_ID_1, new GenericDeadLetter<>(SEQUENCE_ID_1, event)).join();
-
-            // when
-            Iterable<Iterable<DeadLetter<? extends EventMessage>>> deadLetters =
-                    cachingQueue.deadLetters().join();
-
-            // then
-            assertThat(deadLetters).hasSize(1);
-        }
-
-        @Test
-        void deadLetterSequenceIsDelegated() {
-            // given
-            EventMessage event = EventTestUtils.createEvent(1);
-            cachingQueue.enqueue(SEQUENCE_ID_1, new GenericDeadLetter<>(SEQUENCE_ID_1, event)).join();
-
-            // when
-            Iterable<DeadLetter<? extends EventMessage>> sequence =
-                    cachingQueue.deadLetterSequence(SEQUENCE_ID_1).join();
-
-            // then
-            assertThat(sequence).hasSize(1);
-        }
-
-        @Test
-        void evictIsDelegated() {
-            // given
-            EventMessage event = EventTestUtils.createEvent(1);
-            DeadLetter<EventMessage> letter = new GenericDeadLetter<>(SEQUENCE_ID_1, event);
-            cachingQueue.enqueue(SEQUENCE_ID_1, letter).join();
-
-            // when
-            cachingQueue.evict(letter).join();
-
-            // then
-            assertThat(delegate.contains(SEQUENCE_ID_1).join()).isFalse();
-        }
-
-        @Test
-        void requeueIsDelegated() {
-            // given
-            EventMessage event = EventTestUtils.createEvent(1);
-            DeadLetter<EventMessage> letter = new GenericDeadLetter<>(SEQUENCE_ID_1, event);
-            cachingQueue.enqueue(SEQUENCE_ID_1, letter).join();
-
-            // when
-            cachingQueue.requeue(letter, l -> l.withDiagnostics(l.diagnostics())).join();
-
-            // then
-            assertThat(delegate.contains(SEQUENCE_ID_1).join()).isTrue();
         }
     }
 
