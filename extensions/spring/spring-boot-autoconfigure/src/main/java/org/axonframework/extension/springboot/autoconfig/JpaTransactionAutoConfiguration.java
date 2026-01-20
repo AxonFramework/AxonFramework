@@ -53,9 +53,9 @@ public class JpaTransactionAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public TransactionManager axonTransactionManager(
-        PlatformTransactionManager transactionManager,
-        @Nullable EntityManagerProvider entityManagerProvider,
-        @Nullable ConnectionProvider connectionProvider
+            PlatformTransactionManager transactionManager,
+            @Nullable EntityManagerProvider entityManagerProvider,
+            @Nullable ConnectionProvider connectionProvider
     ) {
         return new SpringTransactionManager(transactionManager, entityManagerProvider, connectionProvider);
     }
