@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ public interface EventStoreTransaction {
      * Sources a {@link MessageStream} of type {@link EventMessage} based on the given {@code condition} that can be
      * used to rehydrate a model.
      * <p>
-     * Note that the usage of {@link EventCriteria#havingAnyTag criteria} does not make sense for sourcing, as it is
+     * Note that using {@link EventCriteria#havingAnyTag no criteria} does not make sense for sourcing, as it is
      * <b>not</b> recommended to source the entire event store.
      * <p>
      * <b>Any</b> {@code EventStoreTransaction} using the {@link EventStorageEngine#source(SourcingCondition)} is
@@ -57,11 +57,7 @@ public interface EventStoreTransaction {
     MessageStream<? extends EventMessage> source(@Nonnull SourcingCondition condition);
 
     /**
-     * Appends an {@code eventMessage} to be appended to an {@link EventStore} in this transaction with the given
-     * {@code condition}.
-     * <p>
-     * Use the {@link EventCriteria#havingAnyTag} when there are no consistency
-     * boundaries to validate during appending.
+     * Appends an {@code eventMessage} to be appended to an {@link EventStore} in this transaction.
      *
      * @param eventMessage The {@link EventMessage} to append.
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,9 +44,9 @@ import java.lang.annotation.Target;
  * match and prevent the method from being invoked when the metadata value is not present.</li>
  * <li>Parameters of type {@code Metadata} will have the entire {@link EventMessage#metadata() event message metadata}
  * injected.</li>
- * <li>Parameters of type {@link java.time.Instant} (or any of its super classes or implemented interfaces) will
- * resolve to the {@link EventMessage#timestamp() timestamp} of the {@code EventMessage}. This is the time at which the
- * Event was generated.</li>
+ * <li>Parameters of type {@link java.time.Instant} annotated with {@link Timestamp @Timestamp} will resolve to the
+ * {@link EventMessage#timestamp() timestamp} of the {@code EventMessage}. This is the time at which the Event was
+ * generated.</li>
  * <li>Parameters assignable to {@link org.axonframework.messaging.core.Message} will have the entire {@link
  * EventMessage} injected (if the message is assignable to that parameter). If the first parameter is of type message,
  * it effectively matches an event of any type. Due to type erasure, Axon cannot detect what parameter is expected. In

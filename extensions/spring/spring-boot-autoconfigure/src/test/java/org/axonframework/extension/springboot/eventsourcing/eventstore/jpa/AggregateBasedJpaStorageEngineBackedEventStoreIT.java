@@ -16,6 +16,7 @@
 
 package org.axonframework.extension.springboot.eventsourcing.eventstore.jpa;
 
+import jakarta.annotation.Nonnull;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.PersistenceContext;
@@ -28,14 +29,14 @@ import org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedJpaEventStor
 import org.axonframework.eventsourcing.eventstore.jpa.JpaPollingEventCoordinator;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaTransactionalExecutorProvider;
 import org.axonframework.extension.spring.messaging.unitofwork.SpringTransactionManager;
-import org.axonframework.extension.springboot.autoconfig.TransactionAutoConfiguration;
+import org.axonframework.extension.springboot.autoconfig.JpaTransactionAutoConfiguration;
 import org.axonframework.extension.springboot.eventsourcing.eventstore.jpa.AggregateBasedJpaStorageEngineBackedEventStoreIT.TestConfig;
 import org.axonframework.messaging.core.EmptyApplicationContext;
 import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.core.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.core.unitofwork.UnitOfWork;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
-import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -48,7 +49,6 @@ import org.springframework.orm.jpa.support.PersistenceAnnotationBeanPostProcesso
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 
 import java.time.Duration;
-
 import javax.sql.DataSource;
 
 /**
@@ -57,7 +57,7 @@ import javax.sql.DataSource;
  * @author John Hendrikx
  */
 @SpringBootTest(classes = TestConfig.class)
-@ImportAutoConfiguration(TransactionAutoConfiguration.class)
+@ImportAutoConfiguration(JpaTransactionAutoConfiguration.class)
 class AggregateBasedJpaStorageEngineBackedEventStoreIT extends StorageEngineBackedEventStoreTestSuite<AggregateBasedJpaEventStorageEngine> {
 
     private static AggregateBasedJpaEventStorageEngine engine;
@@ -76,8 +76,9 @@ class AggregateBasedJpaStorageEngineBackedEventStoreIT extends StorageEngineBack
         }
     }
 
+    @Nonnull
     @Override
-    protected AggregateBasedJpaEventStorageEngine getStorageEngine(EventConverter converter) {
+    protected AggregateBasedJpaEventStorageEngine getStorageEngine(@Nonnull EventConverter converter) {
         if(engine == null) {
             FactoryBasedEntityManagerProvider entityManagerProvider = new FactoryBasedEntityManagerProvider(entityManagerFactory);
 
@@ -104,11 +105,12 @@ class AggregateBasedJpaStorageEngineBackedEventStoreIT extends StorageEngineBack
         return engine;
     }
 
+    @Nonnull
     @Override
     protected UnitOfWork unitOfWork() {
         TransactionalUnitOfWorkFactory factory = new TransactionalUnitOfWorkFactory(
-            springTransactionManager,
-            new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE)
+                springTransactionManager,
+                new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE)
         );
 
         return factory.create();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.ConfigToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.UnableToClaimTokenException;
@@ -426,6 +427,37 @@ class JpaTokenStoreTest {
         assertEquals(new GlobalSequenceTrackingToken(2), actual);
     }
 
+    @Test
+    void storeAndLoadReplayTokenWithCustomContext() {
+        // given
+        var ctx = createProcessingContext();
+        var converter = TestConverter.JACKSON.getConverter();
+        var resetContext = new MyResetContext(List.of(1L, 2L, 3L));
+        var replayToken = ReplayToken.createReplayToken(
+                new GlobalSequenceTrackingToken(10L),
+                new GlobalSequenceTrackingToken(5L),
+                resetContext
+        );
+        joinAndUnwrap(jpaTokenStore.initializeTokenSegments("replay-context-test", 1, null, ctx));
+        newTransaction();
+
+        // when
+        joinAndUnwrap(jpaTokenStore.fetchToken("replay-context-test", 0, null));
+        joinAndUnwrap(jpaTokenStore.storeToken(replayToken, "replay-context-test", 0, ctx));
+        newTransaction();
+
+        TrackingToken loadedToken = joinAndUnwrap(jpaTokenStore.fetchToken("replay-context-test", 0, null));
+
+        // then
+        assertThat(loadedToken).isInstanceOf(ReplayToken.class);
+        var loadedReplayContext = ReplayToken.replayContext(loadedToken, MyResetContext.class, converter);
+        assertThat(loadedReplayContext).isPresent();
+        assertThat(loadedReplayContext.get().sequences()).containsExactly(1L, 2L, 3L);
+    }
+
+    private record MyResetContext(List<Long> sequences) {
+
+    }
 
     private ProcessingContext createProcessingContext() {
         return new StubProcessingContext();

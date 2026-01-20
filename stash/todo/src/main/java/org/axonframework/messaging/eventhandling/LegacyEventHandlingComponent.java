@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,13 @@ package org.axonframework.messaging.eventhandling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
+import org.axonframework.messaging.eventhandling.replay.ResetContext;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
 import java.util.Set;
@@ -96,6 +98,23 @@ public class LegacyEventHandlingComponent implements EventHandlingComponent {
         };
     }
 
+    @Override
+    public boolean supportsReset() {
+        return eventHandlerInvoker.supportsReset();
+    }
+
+    @Override
+    public @NotNull MessageStream.Empty<Message> handle(@NotNull ResetContext resetContext,
+                                                        @NotNull ProcessingContext context) {
+        eventHandlerInvoker.performReset(resetContext, context);
+        return MessageStream.empty();
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        // Unimplemented as this is legacy flow.
+    }
+
     /**
      * Returns the wrapped {@link EventHandlerInvoker}.
      *
@@ -103,10 +122,5 @@ public class LegacyEventHandlingComponent implements EventHandlingComponent {
      */
     public EventHandlerInvoker getEventHandlerInvoker() {
         return eventHandlerInvoker;
-    }
-
-    @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
-        // Unimplemented as this is legacy flow.
     }
 }

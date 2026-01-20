@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,12 @@ package org.axonframework.extension.spring.messaging.unitofwork;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.jdbc.ConnectionExecutor;
+import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jpa.EntityManagerExecutor;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.conversion.CachingSupplier;
+import org.axonframework.eventsourcing.eventstore.jdbc.JdbcTransactionalExecutorProvider;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaTransactionalExecutorProvider;
 import org.axonframework.messaging.core.unitofwork.ProcessingLifecycle;
 import org.axonframework.messaging.core.unitofwork.transaction.Transaction;
@@ -34,7 +37,8 @@ import java.util.Objects;
 
 /**
  * TransactionManager implementation that uses a {@link org.springframework.transaction.PlatformTransactionManager} as
- * underlying transaction manager.
+ * underlying transaction manager. This implementation provides a {@link ConnectionExecutor} and/or
+ * {@link EntityManagerExecutor} when attached to a processing lifecycle, if available.
  *
  * @author Allard Buijze
  * @since 2.0
@@ -43,20 +47,24 @@ public class SpringTransactionManager implements TransactionManager {
 
     private final PlatformTransactionManager transactionManager;
     private final EntityManagerProvider entityManagerProvider;
+    private final ConnectionProvider connectionProvider;
     private final TransactionDefinition transactionDefinition;
 
     /**
      * Constructs a new instance.
      *
      * @param transactionManager    The transaction manager to use.
-     * @param entityManagerProvider The entity manager provider to use.
-     * @param transactionDefinition The definition for transactions to create.
+     * @param entityManagerProvider The optional entity manager provider to use.
+     * @param connectionProvider    The optional connection provider to use.
+     * @param transactionDefinition The optional definition for transactions to create.
      */
     public SpringTransactionManager(@Nonnull PlatformTransactionManager transactionManager,
                                     @Nullable EntityManagerProvider entityManagerProvider,
+                                    @Nullable ConnectionProvider connectionProvider,
                                     @Nullable TransactionDefinition transactionDefinition) {
         this.transactionManager = Objects.requireNonNull(transactionManager, "transactionManager");
         this.entityManagerProvider = entityManagerProvider;
+        this.connectionProvider = connectionProvider;
         this.transactionDefinition = transactionDefinition;
     }
 
@@ -64,11 +72,11 @@ public class SpringTransactionManager implements TransactionManager {
      * Constructs a new instance.
      *
      * @param transactionManager    The transaction manager to use.
-     * @param transactionDefinition The definition for transactions to create.
+     * @param transactionDefinition The optional definition for transactions to create.
      */
     public SpringTransactionManager(@Nonnull PlatformTransactionManager transactionManager,
                                     @Nullable TransactionDefinition transactionDefinition) {
-        this(transactionManager, null, transactionDefinition);
+        this(transactionManager, null, null, transactionDefinition);
     }
 
     /**
@@ -76,11 +84,13 @@ public class SpringTransactionManager implements TransactionManager {
      * transaction definition.
      *
      * @param transactionManager the transaction manager to use.
-     * @param entityManagerProvider The entity manager provider to use.
+     * @param entityManagerProvider The optional entity manager provider to use.
+     * @param connectionProvider    The optional connection provider to use.
      */
     public SpringTransactionManager(@Nonnull PlatformTransactionManager transactionManager,
-                                    @Nullable EntityManagerProvider entityManagerProvider) {
-        this(transactionManager, entityManagerProvider, new DefaultTransactionDefinition());
+                                    @Nullable EntityManagerProvider entityManagerProvider,
+                                    @Nullable ConnectionProvider connectionProvider) {
+        this(transactionManager, entityManagerProvider, connectionProvider, new DefaultTransactionDefinition());
     }
 
     /**
@@ -89,7 +99,7 @@ public class SpringTransactionManager implements TransactionManager {
      * @param transactionManager The transaction manager to use.
      */
     public SpringTransactionManager(@Nonnull PlatformTransactionManager transactionManager) {
-        this(transactionManager, null, new DefaultTransactionDefinition());
+        this(transactionManager, null, null, new DefaultTransactionDefinition());
     }
 
     @Override
@@ -101,6 +111,13 @@ public class SpringTransactionManager implements TransactionManager {
                 pc.putResource(
                     JpaTransactionalExecutorProvider.SUPPLIER_KEY,
                     CachingSupplier.of(() -> new EntityManagerExecutor(entityManagerProvider))
+                );
+            }
+
+            if (connectionProvider != null) {
+                pc.putResource(
+                    JdbcTransactionalExecutorProvider.SUPPLIER_KEY,
+                    CachingSupplier.of(() -> new ConnectionExecutor(connectionProvider))
                 );
             }
 

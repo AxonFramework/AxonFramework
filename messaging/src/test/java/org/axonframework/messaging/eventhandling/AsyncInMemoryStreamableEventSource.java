@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * This implementation intentionally matches the destructive behavior of the original
  * {@code InMemoryStreamableEventSource} for testing purposes:
  * <ul>
- *   <li><strong>All events are deleted when any stream is closed</strong> - This provides test isolation
+ *   <li><strong>All events are deleted when any stream is closed and the `clearOnClose` property is false</strong> - This provides test isolation
  *       and simulates recovery scenarios where processing continues with fresh events published after errors.</li>
  * </ul>
  * <p>
@@ -84,21 +84,24 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
      * An {@link EventMessage} representing a failed event.
      */
     public static final EventMessage FAIL_EVENT = EventTestUtils.asEventMessage(FAIL_PAYLOAD);
+    private boolean clearOnClose = true;
 
     private volatile NavigableMap<Long, EventMessage> eventStorage = new ConcurrentSkipListMap<>();
     private final AtomicLong nextIndex = new AtomicLong(0);
     private final boolean streamCallbackSupported;
     private final List<EventMessage> ignoredEvents = new CopyOnWriteArrayList<>();
     private final Set<AsyncMessageStream> openStreams = new CopyOnWriteArraySet<>();
-    private Runnable onOpen = () -> {};
-    private Runnable onClose = () -> {};
+    private Runnable onOpen = () -> {
+    };
+    private Runnable onClose = () -> {
+    };
 
     /**
      * Construct a default {@link AsyncInMemoryStreamableEventSource}. If stream callbacks should be supported for
-     * testing, use {@link AsyncInMemoryStreamableEventSource#AsyncInMemoryStreamableEventSource(boolean)}.
+     * testing, use {@link AsyncInMemoryStreamableEventSource#AsyncInMemoryStreamableEventSource(boolean, boolean)}.
      */
     public AsyncInMemoryStreamableEventSource() {
-        this(false);
+        this(false, true);
     }
 
     /**
@@ -107,12 +110,14 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
      * @param streamCallbackSupported A {@code boolean} dictating whether the {@link StreamableEventSource} should
      *                                support callbacks.
      */
-    public AsyncInMemoryStreamableEventSource(boolean streamCallbackSupported) {
+    public AsyncInMemoryStreamableEventSource(boolean streamCallbackSupported, boolean clearOnClose) {
         this.streamCallbackSupported = streamCallbackSupported;
+        this.clearOnClose = clearOnClose;
     }
 
     @Override
-    public MessageStream<EventMessage> open(@Nonnull StreamingCondition condition, @Nullable ProcessingContext context) {
+    public MessageStream<EventMessage> open(@Nonnull StreamingCondition condition,
+                                            @Nullable ProcessingContext context) {
         AsyncMessageStream stream = new AsyncMessageStream(condition);
         openStreams.add(stream);
         onOpen.run();
@@ -183,18 +188,22 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
 
     /**
      * Set a handler to be called whenever a stream is opened.
+     *
      * @param onOpen the handler to call
      */
     public void setOnOpen(Runnable onOpen) {
-        this.onOpen = onOpen != null ? onOpen : () -> {};
+        this.onOpen = onOpen != null ? onOpen : () -> {
+        };
     }
 
     /**
      * Set a handler to be called whenever a stream is closed.
+     *
      * @param onClose the handler to call
      */
     public void setOnClose(Runnable onClose) {
-        this.onClose = onClose != null ? onClose : () -> {};
+        this.onClose = onClose != null ? onClose : () -> {
+        };
     }
 
     /**
@@ -354,10 +363,12 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
             closed = true;
             openStreams.remove(this);
 
-            // DESTRUCTIVE BEHAVIOR: Clear all messages when ANY stream is closed
-            // This matches the original InMemoryStreamableEventSource behavior and provides
-            // test isolation, allowing recovery scenarios where new events are published after errors
-            clearAllMessages();
+            if (clearOnClose) {
+                // DESTRUCTIVE BEHAVIOR: Clear all messages when ANY stream is closed
+                // This matches the original InMemoryStreamableEventSource behavior and provides
+                // test isolation, allowing recovery scenarios where new events are published after errors
+                clearAllMessages();
+            }
             onClose.run();
         }
 

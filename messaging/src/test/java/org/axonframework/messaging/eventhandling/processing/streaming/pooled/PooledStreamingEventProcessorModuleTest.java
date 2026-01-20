@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,19 @@ package org.axonframework.messaging.eventhandling.processing.streaming.pooled;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.messaging.eventhandling.EventHandlingComponent;
-import org.axonframework.messaging.core.unitofwork.transaction.NoOpTransactionManager;
 import org.axonframework.common.configuration.AxonConfiguration;
+import org.axonframework.messaging.core.EmptyApplicationContext;
+import org.axonframework.messaging.core.MessageHandlerInterceptor;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.messaging.core.unitofwork.TransactionalUnitOfWorkFactory;
+import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
+import org.axonframework.messaging.core.unitofwork.UnitOfWorkTestUtils;
+import org.axonframework.messaging.core.unitofwork.transaction.NoOpTransactionManager;
+import org.axonframework.messaging.eventhandling.AsyncInMemoryStreamableEventSource;
+import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventTestUtils;
 import org.axonframework.messaging.eventhandling.RecordingEventHandlingComponent;
@@ -34,15 +43,6 @@ import org.axonframework.messaging.eventhandling.processing.errorhandling.Propag
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.eventstreaming.StreamableEventSource;
-import org.axonframework.messaging.core.EmptyApplicationContext;
-import org.axonframework.messaging.core.MessageHandlerInterceptor;
-import org.axonframework.messaging.core.MessageStream;
-import org.axonframework.messaging.core.QualifiedName;
-import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
-import org.axonframework.messaging.core.unitofwork.TransactionalUnitOfWorkFactory;
-import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
-import org.axonframework.messaging.core.unitofwork.UnitOfWorkTestUtils;
-import org.axonframework.messaging.eventhandling.AsyncInMemoryStreamableEventSource;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;
@@ -173,10 +173,10 @@ class PooledStreamingEventProcessorModuleTest {
 
             // then
             await().untilAsserted(() -> {
-                       assertThat(component1.handled(sampleEvent)).isTrue();
-                       assertThat(component2.handled(sampleEvent)).isTrue();
-                       assertThat(component3HandledPayload.get()).isEqualTo(sampleEvent.payload());
-                   });
+                assertThat(component1.handled(sampleEvent)).isTrue();
+                assertThat(component2.handled(sampleEvent)).isTrue();
+                assertThat(component3HandledPayload.get()).isEqualTo(sampleEvent.payload());
+            });
 
             // cleanup
             configuration.shutdown();
@@ -219,18 +219,18 @@ class PooledStreamingEventProcessorModuleTest {
                                         .eventHandlingComponents(
                                                 components -> components.declarative(cfg -> componentOne)
                                         )
-                                        .customized(
-                                                (config, psepConfig) -> psepConfig.withInterceptor(specificInterceptorOne)
-                                        );
+                                        .customized((config, psepConfig) -> psepConfig.withInterceptor(
+                                                specificInterceptorOne
+                                        ));
             RecordingEventHandlingComponent componentTwo = simpleRecordingTestComponent(new QualifiedName(Integer.class));
             PooledStreamingEventProcessorModule psepModuleTwo =
                     EventProcessorModule.pooledStreaming("processor-two")
                                         .eventHandlingComponents(
                                                 components -> components.declarative(cfg -> componentTwo)
                                         )
-                                        .customized(
-                                                (config, psepConfig) -> psepConfig.withInterceptor(specificInterceptorTwo)
-                                        );
+                                        .customized((config, psepConfig) -> psepConfig.withInterceptor(
+                                                specificInterceptorTwo
+                                        ));
             // Register the global interceptor
             configurer.registerEventHandlerInterceptor(c -> globalInterceptor);
             // Register the default interceptor and attach both PSEP modules.
@@ -319,8 +319,12 @@ class PooledStreamingEventProcessorModuleTest {
             var configuration = configurer.build();
 
             // when
-            var registeredTokenStore = configuration.getModuleConfiguration(processorName)
-                                                    .flatMap(m -> m.getOptionalComponent(TokenStore.class, "TokenStore[" + processorName + "]"));
+            var registeredTokenStore =
+                    configuration.getModuleConfiguration(processorName)
+                                 .flatMap(m -> m.getOptionalComponent(
+                                         TokenStore.class,
+                                         "TokenStore[" + processorName + "]"
+                                 ));
 
             // then
             assertThat(registeredTokenStore).isPresent();
@@ -344,8 +348,12 @@ class PooledStreamingEventProcessorModuleTest {
             var configuration = configurer.build();
 
             // when
-            var registeredUnitOfWorkFactory = configuration.getModuleConfiguration(processorName)
-                                                           .flatMap(m -> m.getOptionalComponent(UnitOfWorkFactory.class, "UnitOfWorkFactory[" + processorName + "]"));
+            var registeredUnitOfWorkFactory =
+                    configuration.getModuleConfiguration(processorName)
+                                 .flatMap(m -> m.getOptionalComponent(
+                                         UnitOfWorkFactory.class,
+                                         "UnitOfWorkFactory[" + processorName + "]"
+                                 ));
 
             // then
             assertThat(registeredUnitOfWorkFactory).isPresent();
@@ -366,8 +374,8 @@ class PooledStreamingEventProcessorModuleTest {
             var module = EventProcessorModule
                     .pooledStreaming(processorName)
                     .eventHandlingComponents(components -> components.declarative(cfg -> component1)
-                                                                      .declarative(cfg -> component2)
-                                                                      .declarative(cfg -> component3))
+                                                                     .declarative(cfg -> component2)
+                                                                     .declarative(cfg -> component3))
                     .customized((cfg, c) -> c.eventSource(new AsyncInMemoryStreamableEventSource()));
 
             var configurer = MessagingConfigurer.create();
@@ -375,15 +383,24 @@ class PooledStreamingEventProcessorModuleTest {
             var configuration = configurer.build();
 
             // when
-            var registeredComponent1 = configuration.getModuleConfiguration(processorName)
-                                                    .flatMap(m -> m.getOptionalComponent(EventHandlingComponent.class,
-                                                                                          "EventHandlingComponent[" + processorName + "][0]"));
-            var registeredComponent2 = configuration.getModuleConfiguration(processorName)
-                                                    .flatMap(m -> m.getOptionalComponent(EventHandlingComponent.class,
-                                                                                          "EventHandlingComponent[" + processorName + "][1]"));
-            var registeredComponent3 = configuration.getModuleConfiguration(processorName)
-                                                    .flatMap(m -> m.getOptionalComponent(EventHandlingComponent.class,
-                                                                                          "EventHandlingComponent[" + processorName + "][2]"));
+            var registeredComponent1 =
+                    configuration.getModuleConfiguration(processorName)
+                                 .flatMap(m -> m.getOptionalComponent(
+                                         EventHandlingComponent.class,
+                                         "EventHandlingComponent[" + processorName + "][0]"
+                                 ));
+            var registeredComponent2 =
+                    configuration.getModuleConfiguration(processorName)
+                                 .flatMap(m -> m.getOptionalComponent(
+                                         EventHandlingComponent.class,
+                                         "EventHandlingComponent[" + processorName + "][1]"
+                                 ));
+            var registeredComponent3 =
+                    configuration.getModuleConfiguration(processorName)
+                                 .flatMap(m -> m.getOptionalComponent(
+                                         EventHandlingComponent.class,
+                                         "EventHandlingComponent[" + processorName + "][2]"
+                                 ));
 
             // then
             assertThat(registeredComponent1).isPresent();

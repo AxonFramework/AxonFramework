@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.conversion.Converter;
 import jakarta.annotation.Nullable;
 import java.beans.ConstructorProperties;
 import java.util.Objects;
@@ -145,21 +146,45 @@ public class ReplayToken implements TrackingToken, WrappedToken {
     }
 
     /**
-     * Extracts the context from a {@code message} of the matching {@code contextClass}.
+     * Extracts the context from a {@code trackingToken} of the matching {@code contextClass}, using the provided
+     * {@code converter} for type conversion if necessary.
      * <p>
-     * Will resolve to an empty {@code Optional} if the provided token is not a {@link ReplayToken}, or the context
-     * isn't an instance of the provided {@code contextClass}, or there is no context at all.
+     * Will resolve to an empty {@code Optional} if the provided token is not a {@link ReplayToken}, or there is no
+     * context at all.
+     * <p>
+     * If the context is directly assignable to the given {@code contextClass}, no conversion is performed.
+     * Otherwise, the provided {@code converter} is used to attempt conversion.
      *
-     * @param trackingToken The tracking token to extract the context from
-     * @param contextClass  The class the context should match
-     * @param <T>           The type of the context
-     * @return The context, if present in the token
+     * @param trackingToken The tracking token to extract the context from.
+     * @param contextClass  The class the context should be converted to.
+     * @param converter     The {@link Converter} to use for type conversion.
+     * @param <T>           The type of the context.
+     * @return The context converted to the expected type, if present in the token and convertible.
+     * @throws org.axonframework.conversion.ConversionException If the context cannot be converted to the expected type.
      */
-    public static <T> Optional<T> replayContext(TrackingToken trackingToken, @Nonnull Class<T> contextClass) {
+    public static <T> Optional<T> replayContext(
+            TrackingToken trackingToken,
+            @Nonnull Class<T> contextClass,
+            @Nonnull Converter converter
+    ) {
         return WrappedToken.unwrap(trackingToken, ReplayToken.class)
                            .map(ReplayToken::context)
-                           .filter(c -> c.getClass().isAssignableFrom(contextClass))
-                           .map(contextClass::cast);
+                           .flatMap(c -> convertContext(c, contextClass, converter));
+    }
+
+    private static <T> Optional<T> convertContext(
+            @Nullable Object context,
+            @Nonnull Class<T> contextClass,
+            @Nonnull Converter converter
+    ) {
+        if (context == null) {
+            return Optional.empty();
+        }
+        if (contextClass.isAssignableFrom(context.getClass())) {
+            return Optional.of(contextClass.cast(context));
+        }
+        T converted = converter.convert(context, contextClass);
+        return Optional.ofNullable(converted);
     }
 
     /**

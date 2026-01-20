@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.axonframework.messaging.eventhandling.processing;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
@@ -25,10 +26,15 @@ import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
+import org.axonframework.messaging.eventhandling.replay.ResetContext;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 /**
@@ -100,8 +106,15 @@ public class ProcessorEventHandlingComponents {
             @Nonnull EventMessage event,
             @Nonnull ProcessingContext context
     ) {
+        Optional<TrackingToken> token = TrackingToken.fromContext(context);
+        boolean isReplaying = token.isPresent() && ReplayToken.isReplay(token.get());
+
         MessageStream<Message> result = MessageStream.empty();
         for (var component : components) {
+            // During replay, skip components that don't support reset
+            if (isReplaying && !component.supportsReset()) {
+                continue;
+            }
             if (component.supports(event.type().qualifiedName())) {
                 var componentResult = component.handle(event, context);
                 result = result.concatWith(componentResult);
@@ -144,5 +157,41 @@ public class ProcessorEventHandlingComponents {
         return components.stream()
                          .map(c -> c.sequenceIdentifierFor(event, context))
                          .collect(Collectors.toSet());
+    }
+
+    /**
+     * Handles reset for all components that support it.
+     * <p>
+     * This method invokes the reset handler on each component that supports reset operations. All handlers must
+     * complete successfully for the operation to succeed.
+     *
+     * @param resetContext The reset context message.
+     * @param context      The processing context.
+     * @return A future that completes when all reset handlers have completed.
+     */
+    @Nonnull
+    public CompletableFuture<Void> handleReset(@Nonnull ResetContext resetContext,
+                                               @Nonnull ProcessingContext context) {
+        MessageStream<Message> result = MessageStream.empty();
+
+        for (var component : components) {
+            if (component.supportsReset()) {
+                result = result.concatWith(component.handle(resetContext, context).cast());
+            }
+        }
+
+        return result.ignoreEntries()
+                     .asCompletableFuture()
+                     .thenApply(FutureUtils::ignoreResult);
+    }
+
+    /**
+     * Checks if any component supports reset operations.
+     *
+     * @return {@code true} if at least one component supports reset, {@code false} otherwise.
+     */
+    public boolean supportsReset() {
+        return components.stream()
+                         .anyMatch(EventHandlingComponent::supportsReset);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -131,7 +131,6 @@ public class AnnotatedHandlerInspector<T> {
      * @param <T>                      the handler's type
      * @return a new inspector instance for the inspected class
      */
-    // TODO #3936 Clean-up methods only used by stashed code
     public static <T> AnnotatedHandlerInspector<T> inspectType(Class<T> handlerType,
                                                                ParameterResolverFactory parameterResolverFactory,
                                                                HandlerDefinition handlerDefinition,

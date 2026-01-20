@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,6 +95,10 @@ public class UpdateCheckerHttpClient {
             }
             logger.debug("Reported anonymous usage data successfully, received response: {}", response.body());
             return Optional.of(UpdateCheckResponse.fromRequest(response.body()));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.warn("Failed to report anonymous usage data. Thread interrupted.", e);
+            return Optional.empty();
         } catch (Exception e) {
             logger.warn("Failed to report anonymous usage data", e);
             return Optional.empty();

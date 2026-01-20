@@ -17,11 +17,14 @@
 package org.axonframework.extension.spring.config;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.annotation.RegistrationScope;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
+import org.axonframework.extension.spring.BeanDefinitionUtils;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.messaging.core.Message;
@@ -30,10 +33,8 @@ import org.axonframework.messaging.eventhandling.configuration.EventProcessorMod
 import org.axonframework.messaging.queryhandling.QueryMessage;
 import org.axonframework.messaging.queryhandling.configuration.QueryHandlingModule;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -57,6 +58,7 @@ import java.util.stream.Collectors;
  * @since 4.6.0
  */
 @Internal
+@RegistrationScope("Don't copy this enhancer in order to avoid cyclic module build in Spring Boot.")
 public class MessageHandlerConfigurer implements ConfigurationEnhancer, ApplicationContextAware {
 
     private final Type type;
@@ -142,24 +144,7 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
         return handlerBeansRefs
                 .stream()
                 .map(name -> new NamedBeanDefinition(name, beanFactory.getBeanDefinition(name)))
-                .collect(Collectors.groupingBy(
-                                 nbd -> {
-                                     String className = nbd.definition().getBeanClassName();
-                                     if (className == null) {
-                                         if (nbd.definition() instanceof AbstractBeanDefinition abstractBeanDefinition) {
-                                             if (abstractBeanDefinition.hasBeanClass()) {
-                                                 className = abstractBeanDefinition.getBeanClass().getName();
-                                             } else if (nbd.definition() instanceof AnnotatedBeanDefinition annotatedBeanDefinition) {
-                                                 className = annotatedBeanDefinition.getMetadata().getClassName();
-                                             }
-                                         }
-                                     }
-                                     return (className != null && className.contains("."))
-                                             ? className.substring(0, className.lastIndexOf('.'))
-                                             : "default";
-                                 }
-                         )
-                );
+                .collect(Collectors.groupingBy(nbd -> BeanDefinitionUtils.extractPackageName(nbd.definition)));
     }
 
     @Override
@@ -215,26 +200,29 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
     }
 
     private record SimpleEventHandlerDescriptor(String beanName, ConfigurableListableBeanFactory beanFactory)
-                implements ProcessorDefinition.EventHandlerDescriptor {
+            implements ProcessorDefinition.EventHandlerDescriptor {
 
         @Override
-            public BeanDefinition beanDefinition() {
-                return beanFactory.getBeanDefinition(beanName);
-            }
-
-            @Override
-            public Class<?> beanType() {
-                return beanFactory.getType(beanName);
-            }
-
-            @Override
-            public Object resolveBean() {
-                return beanFactory.getBean(beanName);
-            }
-
-            @Override
-            public ComponentBuilder<Object> component() {
-                return c -> resolveBean();
-            }
+        public BeanDefinition beanDefinition() {
+            return beanFactory.getBeanDefinition(beanName);
         }
+
+        @Override
+        @Nullable
+        public Class<?> beanType() {
+            return beanFactory.getType(beanName);
+        }
+
+        @Override
+        @Nonnull
+        public Object resolveBean() {
+            return beanFactory.getBean(beanName);
+        }
+
+        @Override
+        @Nonnull
+        public ComponentBuilder<Object> component() {
+            return c -> resolveBean();
+        }
+    }
 }

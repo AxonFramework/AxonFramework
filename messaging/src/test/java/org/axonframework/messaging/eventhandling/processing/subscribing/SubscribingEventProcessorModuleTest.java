@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import jakarta.annotation.Nullable;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.common.configuration.DefaultComponentRegistry;
-import org.axonframework.common.util.StubLifecycleRegistry;
+import org.axonframework.common.configuration.StubLifecycleRegistry;
 import org.axonframework.conversion.json.JacksonConverter;
 import org.axonframework.messaging.core.ConfigurationApplicationContext;
 import org.axonframework.messaging.core.EmptyApplicationContext;
@@ -564,7 +564,6 @@ class SubscribingEventProcessorModuleTest {
             );
 
             // and
-            @SuppressWarnings("unchecked")
             var module = EventProcessorModule
                     .subscribing(processorName)
                     .eventHandlingComponents(singleTestEventHandlingComponent())

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,37 +18,37 @@ package org.axonframework.modelling.entity.annotation;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.messaging.commandhandling.CommandMessage;
-import org.axonframework.messaging.commandhandling.CommandResultMessage;
-import org.axonframework.messaging.commandhandling.GenericCommandResultMessage;
-import org.axonframework.messaging.commandhandling.annotation.CommandHandlingMember;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.axonframework.conversion.ConversionException;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.commandhandling.CommandResultMessage;
+import org.axonframework.messaging.commandhandling.GenericCommandResultMessage;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandlingMember;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.annotation.AnnotatedHandlerInspector;
+import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.conversion.MessageConverter;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.modelling.annotation.AnnotationBasedEntityEvolvingComponent;
 import org.axonframework.modelling.entity.ConcreteEntityMetamodel;
 import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.entity.EntityMetamodelBuilder;
 import org.axonframework.modelling.entity.PolymorphicEntityMetamodel;
 import org.axonframework.modelling.entity.child.EntityChildMetamodel;
-import org.axonframework.conversion.ConversionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -62,7 +62,9 @@ import java.util.ServiceLoader;
 import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.StreamSupport.stream;
+import static org.axonframework.common.ReflectionUtils.collectMethodsAndFields;
+import static org.axonframework.common.ReflectionUtils.collectSealedHierarchyIfSealed;
+import static org.axonframework.common.annotation.AnnotationUtils.isAnnotatedWith;
 import static org.axonframework.messaging.core.annotation.AnnotatedHandlerInspector.inspectType;
 
 /**
@@ -102,7 +104,6 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
     private final List<AnnotatedEntityMetamodel<?>> childMetamodels = new LinkedList<>();
     private final List<QualifiedName> commandsToSkip;
 
-
     /**
      * Instantiate an annotated {@link EntityMetamodel} of a concrete entity type.
      *
@@ -132,6 +133,41 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
                                               messageConverter,
                                               eventConverter,
                                               List.of());
+    }
+
+    /**
+     * Instantiate an annotated {@link EntityMetamodel} of a polymorphic sealed entity type. At least one concrete type
+     * must exist, as this metamodel is meant to describe a polymorphic entity type with multiple concrete
+     * implementations.
+     *
+     * @param entityType               The polymorphic sealed entity type this metamodel describes.
+     * @param parameterResolverFactory The {@link ParameterResolverFactory} to use for resolving parameters.
+     * @param messageTypeResolver      The {@link MessageTypeResolver} to use for resolving message types from payload
+     *                                 classes.
+     * @param messageConverter         The converter used to convert the {@link CommandMessage#payload()} to the desired
+     *                                 format.
+     * @param eventConverter           The event converter used to convert the {@link EventMessage#payload()} to the
+     *                                 desired format.
+     * @param <E>                      The type of the polymorphic entity.
+     * @return An annotated {@link EntityMetamodel} backed by a {@link PolymorphicEntityMetamodel} for the given entity
+     * type.
+     * @see AnnotatedEntityMetamodel#forPolymorphicType(Class, Set, ParameterResolverFactory, MessageTypeResolver,
+     * MessageConverter, EventConverter)
+     */
+    public static <E> AnnotatedEntityMetamodel<E> forPolymorphicSealedType(
+            @Nonnull Class<E> entityType,
+            @Nonnull ParameterResolverFactory parameterResolverFactory,
+            @Nonnull MessageTypeResolver messageTypeResolver,
+            @Nonnull MessageConverter messageConverter,
+            @Nonnull EventConverter eventConverter
+    ) {
+        Assert.isTrue(entityType.isSealed(), () -> "The entity type [" + entityType + "] is not sealed.");
+        return forPolymorphicType(entityType,
+                                  collectSealedHierarchyIfSealed(entityType),
+                                  parameterResolverFactory,
+                                  messageTypeResolver,
+                                  messageConverter, eventConverter
+        );
     }
 
     /**
@@ -174,8 +210,10 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
 
     /**
      * Instantiate an annotated {@link EntityMetamodel} of an entity type. If the supplied {@code concreteTypes} is not
-     * empty, the entity type is considered polymorphic and will be a {@link PolymorphicEntityMetamodel}. If no concrete
-     * types are supplied, the entity type is considered concrete and will be a {@link ConcreteEntityMetamodel}.
+     * empty, the entity type is considered polymorphic and will be a {@link PolymorphicEntityMetamodel}. If the entity
+     * type is sealed, all concrete types in the sealed hierarchy will be automatically discovered and their event
+     * handlers will be registered. If no concrete types are supplied, the entity type is considered concrete and will
+     * be a {@link ConcreteEntityMetamodel}.
      *
      * @param entityType               The concrete entity type this metamodel describes.
      * @param parameterResolverFactory The {@link ParameterResolverFactory} to use for resolving parameters.
@@ -226,7 +264,21 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
 
     private EntityMetamodel<E> initializePolymorphicMetamodel(Class<E> entityType,
                                                               Set<Class<? extends E>> concreteTypes) {
-        AnnotatedHandlerInspector<E> inspected = inspectType(entityType, parameterResolverFactory);
+        // #3784: inspection of concrete (sub) types does not work with EntityMembers, that's why we need to
+        // differentiate here.
+        var hasMemberEntities = !ReflectionUtils.collectMatchingMethodsAndFields(entityType, isAnnotatedWith(EntityMember.class))
+                                                .isEmpty() || concreteTypes.stream()
+                                                                           .anyMatch(concreteType -> !ReflectionUtils.collectMatchingMethodsAndFields(
+                                                                                                                             concreteType,
+                                                                                                                             isAnnotatedWith(EntityMember.class))
+                                                                                                                     .isEmpty());
+        AnnotatedHandlerInspector<E> inspected = inspectType(
+                entityType,
+                parameterResolverFactory,
+                ClasspathHandlerDefinition.forClass(entityType),
+                hasMemberEntities ? Collections.emptySet() : concreteTypes
+        );
+
         var builder = PolymorphicEntityMetamodel.forSuperType(entityType);
         builder.entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(entityType,
                                                                            inspected,
@@ -339,33 +391,10 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
     private void initializeChildren(EntityMetamodelBuilder<E> builder) {
         ServiceLoader<EntityChildModelDefinition> childEntityDefinitions =
                 ServiceLoader.load(EntityChildModelDefinition.class, entityType.getClassLoader());
-        List<Method> methods = stream(ReflectionUtils.methodsOf(entityType).spliterator(), false).toList();
-        List<Field> fields = stream(ReflectionUtils.fieldsOf(entityType).spliterator(), false).toList();
 
-        methods.forEach(method -> createOptionalChildForMember(builder, method, childEntityDefinitions));
-
-        if (entityType.isRecord()) {
-            fields = deduplicateRecordFields(fields, methods);
-        }
-        fields.forEach(field -> createOptionalChildForMember(builder, field, childEntityDefinitions));
-    }
-
-    /**
-     * Each property of a record has both a backing {@link Field} and a {@link Method} (the accessor). This method
-     * filters out the fields that have a corresponding method, as these would result in duplicate child entity
-     * otherwise.
-     *
-     * @param fields  The list of fields to deduplicate.
-     * @param methods The list of methods to check against the fields.
-     * @return A list of fields that do not have a corresponding method, thus deduplicated.
-     */
-    private static List<Field> deduplicateRecordFields(List<Field> fields, List<Method> methods) {
-        return fields.stream().filter(field -> methods
-                             .stream()
-                             .noneMatch(method -> method.getName().equals(field.getName())
-                                     && method.getParameterCount() == 0
-                                     && method.getReturnType().equals(field.getType())))
-                     .toList();
+        collectMethodsAndFields(entityType).forEach(
+                it -> createOptionalChildForMember(builder, it, childEntityDefinitions)
+        );
     }
 
     private void createOptionalChildForMember(EntityMetamodelBuilder<E> builder,

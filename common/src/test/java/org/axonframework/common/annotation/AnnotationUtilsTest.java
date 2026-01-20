@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.axonframework.common.annotation.AnnotationUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -165,6 +166,57 @@ class AnnotationUtilsTest {
         assertEquals(expectedVisited, resultVisited);
     }
 
+    @Test
+    void isAnnotatedTrueWhenAnnotationExists() throws NoSuchMethodException {
+        var method = AnnotationUtilsTest.class.getDeclaredMethod("directAnnotated");
+        assertThat(isAnnotatedWith(TheTarget.class)).accepts(method);
+    }
+
+    @Test
+    void isAnnotatedFalseWhenAnnotationNotExists() throws NoSuchMethodException {
+        var method = AnnotationUtilsTest.class.getDeclaredMethod("directAnnotated");
+        assertThat(isAnnotatedWith(AnotherMetaAnnotation.class)).rejects(method);
+    }
+
+    @Test
+    void isTypeAnnotatedWith() {
+        var predicate = AnnotationUtils.isTypeAnnotatedWith(TheTypeTarget.class);
+        assertThat(predicate.test(new SomeType())).isTrue();
+        assertThat(predicate.test(new SomeMetaAnnotatedType())).isTrue();
+        assertThat(predicate.test("")).isFalse();
+    }
+
+    @Test
+    void isTypeAnnotatedHavingAttributeValue() {
+        var predicate = AnnotationUtils.isTypeAnnotatedWithHavingAttributeValue(TheTypeTarget.class, "property", "selected");
+        assertThat(predicate.test(new SomeType())).isFalse();
+        assertThat(predicate.test(new SomeType2())).isTrue();
+        assertThat(predicate.test(new SomeMetaAnnotatedType())).isFalse();
+        assertThat(predicate.test(new SomeMetaAnnotatedType2())).isTrue();
+        assertThat(predicate.test("")).isFalse();
+    }
+
+    @TheTypeTarget
+    static class SomeType {
+
+    }
+
+    @TheTypeTarget(property = "selected")
+    static class SomeType2 {
+
+    }
+
+
+    @MetaAnnotatedTypeTarget
+    static class SomeMetaAnnotatedType {
+
+    }
+
+    @MetaAnnotatedTypeTarget(property = "selected")
+    static class SomeMetaAnnotatedType2 {
+
+    }
+
     @TheTarget
     public void directAnnotated() {
     }
@@ -188,6 +240,19 @@ class AnnotationUtilsTest {
         String property() default "value";
 
         String value() default "value()";
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target({ElementType.ANNOTATION_TYPE, ElementType.TYPE})
+    public @interface TheTypeTarget {
+        String property() default "default";
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target({ElementType.TYPE})
+    @TheTypeTarget
+    public @interface MetaAnnotatedTypeTarget {
+        String property() default "otherDefault";
     }
 
     @Retention(RetentionPolicy.RUNTIME)

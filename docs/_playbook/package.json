@@ -8,6 +8,6 @@
     "@axoniq/antora-vale-extension": "^0.1.1",
     "asciidoctor-kroki": "^0.17.0",
     "chokidar": "^4.0.3",
-    "express": "^5.1.0"
+    "express": "^5.2.0"
   }
 }

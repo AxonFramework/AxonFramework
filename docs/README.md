@@ -1,6 +1,6 @@
 # Documentation For Axon Framework.
 
-This folder contains the docs related to the Axon Framework project. The docs in this folder are written as part of the [AxonIQ Documentation](https://docs.axoniq.io), and are [written in Ascii and built with Antora.](https://docs.axoniq.io/contribution_guide/overview/platform.html)
+This folder contains the docs related to the Axon Framework project. The docs in this folder are written as part of the [AxonIQ Documentation](https://docs.axoniq.io), and are [written in AsciiDoc and built with Antora.](https://docs.axoniq.io/contribution_guide/overview/platform.html)
 
 The following are the current documentation sources (folders):
 

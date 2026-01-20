@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package org.axonframework.modelling.annotation;
 
 import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.common.configuration.Configuration;
+import org.axonframework.messaging.core.GenericMessage;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.annotation.ParameterResolver;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -29,6 +29,7 @@ import org.axonframework.modelling.StateManager;
 import java.util.concurrent.CompletableFuture;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElseGet;
 
 /**
  * A {@link ParameterResolver} implementation that loads an entity from the {@link StateManager} of the given
@@ -76,7 +77,7 @@ class InjectEntityParameterResolver implements ParameterResolver<Object> {
     @Nonnull
     @Override
     public CompletableFuture<Object> resolveParameterValue(@Nonnull ProcessingContext context) {
-        Message message = Message.fromContext(context);
+        Message message = requireNonNullElseGet(Message.fromContext(context), GenericMessage::emptyMessage);
 
         try {
             Object resolvedId = identifierResolver.resolve(message, context);

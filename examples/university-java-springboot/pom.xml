@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2010-2025. Axon Framework
+  ~ Copyright (c) 2010-2026. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.axonframework.examples</groupId>
         <artifactId>axon-framework-examples</artifactId>
-        <version>5.0.2-SNAPSHOT</version>
+        <version>5.1.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>university-java-springboot</artifactId>
@@ -30,7 +30,8 @@
     <description>Spring Boot Example application for demo and integration testing.</description>
 
     <properties>
-        <testcontainers.version>2.0.2</testcontainers.version>
+        <spring.boot.version>3.5.9</spring.boot.version>
+        <testcontainers.version>2.0.3</testcontainers.version>
     </properties>
 
     <profiles>
@@ -119,7 +120,7 @@
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
-            <version>2.8.13</version>
+            <version>2.8.15</version>
         </dependency>
 
 

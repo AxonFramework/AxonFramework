@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.axonframework.messaging.eventhandling.gateway;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventSink;
 import org.axonframework.messaging.core.MessageTypeResolver;
@@ -26,6 +27,7 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 /**
@@ -61,6 +63,8 @@ public class DefaultEventGateway implements EventGateway {
                 events.stream()
                       .map(event -> EventPublishingUtils.asEventMessage(event, messageTypeResolver))
                       .collect(Collectors.toList());
-        return eventSink.publish(context, eventMessages);
+        return eventMessages.isEmpty()
+                ? FutureUtils.emptyCompletedFuture()
+                : eventSink.publish(context, eventMessages);
     }
 }

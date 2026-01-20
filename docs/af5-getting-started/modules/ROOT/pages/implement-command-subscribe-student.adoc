@@ -5,7 +5,7 @@ One of the major benefits of Axon Framework 5's Vertical Slice Architecture is t
 Now we'll implement the `SubscribeStudentToCourse` feature without needing to implement every feature in between.
 As long as we keep the `State` needed for command validation private to each slice, the only shared code between slices are the events, which serve as the backbone contract of our system.
 
-You don't even need to stick to certain order. How many times have you heard in the development team: "I'm waiting till the feature X is implemented, so I can implement my feature Y"?
+You don't even need to stick to certain order. How many times have you heard in the development team: "I'm waiting till the feature X is implemented, to be able to start implementing feature Y"?
 
 
 == Define messages

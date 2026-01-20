@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,8 +44,9 @@ import java.lang.annotation.Target;
  * present.</li>
  * <li>Parameters of type {@link Metadata} will have the entire metadata of an Event Message
  * injected.</li>
- * <li>Parameters of type {@link java.time.Instant} will resolve to the timestamp of the EventMessage. This is the
- * time at which the Event was generated.</li>
+ * <li>Parameters of type {@link java.time.Instant} annotated with
+ * {@link org.axonframework.messaging.eventhandling.annotation.Timestamp @Timestamp} will resolve to the timestamp of
+ * the EventMessage. This is the time at which the Event was generated.</li>
  * <li>Parameters assignable to {@link Message} will have the entire {@link
  * EventMessage} injected (if the message is assignable to that parameter). If the first
  * parameter is of type message, it effectively matches an Event of any type, even if generic parameters would suggest

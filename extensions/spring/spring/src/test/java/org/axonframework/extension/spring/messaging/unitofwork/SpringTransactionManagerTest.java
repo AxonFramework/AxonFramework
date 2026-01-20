@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,28 +16,43 @@
 
 package org.axonframework.extension.spring.messaging.unitofwork;
 
+import org.axonframework.common.jdbc.ConnectionProvider;
+import org.axonframework.common.jpa.EntityManagerProvider;
+import org.axonframework.eventsourcing.eventstore.jdbc.JdbcTransactionalExecutorProvider;
+import org.axonframework.eventsourcing.eventstore.jpa.JpaTransactionalExecutorProvider;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.ProcessingLifecycle;
+import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.core.unitofwork.transaction.Transaction;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
+import java.util.function.Consumer;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
  */
+@ExtendWith(MockitoExtension.class)
 class SpringTransactionManagerTest {
 
+    @Mock private TransactionStatus underlyingTransactionStatus;
+    @Mock private PlatformTransactionManager transactionManager;
+
     private SpringTransactionManager testSubject;
-    private PlatformTransactionManager transactionManager;
-    private TransactionStatus underlyingTransactionStatus;
 
     @BeforeEach
     void setUp() {
-        underlyingTransactionStatus = mock(TransactionStatus.class);
-        transactionManager = mock(PlatformTransactionManager.class);
         testSubject = new SpringTransactionManager(transactionManager);
         when(transactionManager.getTransaction(isA(TransactionDefinition.class)))
                 .thenReturn(underlyingTransactionStatus);
@@ -95,5 +110,27 @@ class SpringTransactionManagerTest {
         transaction.rollback();
 
         verify(transactionManager, never()).rollback(underlyingTransactionStatus);
+    }
+
+    @Test
+    void shouldAttachToProcessingLifecycle(@Captor ArgumentCaptor<Consumer<ProcessingContext>> captor) {
+        SpringTransactionManager txManager = new SpringTransactionManager(transactionManager, mock(EntityManagerProvider.class), mock(ConnectionProvider.class));
+        ProcessingLifecycle processingLifecycle = mock(ProcessingLifecycle.class);
+        StubProcessingContext processingContext = new StubProcessingContext();
+
+        txManager.attachToProcessingLifecycle(processingLifecycle);
+
+        verify(processingLifecycle).runOnPreInvocation(captor.capture());
+
+        Consumer<ProcessingContext> preInvocationConsumer = captor.getValue();
+
+        preInvocationConsumer.accept(processingContext);
+
+        assertThat(processingContext.getResource(JpaTransactionalExecutorProvider.SUPPLIER_KEY)).isNotNull();
+        assertThat(processingContext.getResource(JdbcTransactionalExecutorProvider.SUPPLIER_KEY)).isNotNull();
+
+        processingContext.moveToPhase(ProcessingLifecycle.DefaultPhases.COMMIT);
+
+        verify(transactionManager).commit(underlyingTransactionStatus);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,10 @@ import org.axonframework.messaging.core.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -45,7 +48,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * {@code message} under {@link ResourceKey} {@link #CORRELATION_DATA}. On
  * {@link #interceptOnDispatch(Message, ProcessingContext, MessageDispatchInterceptorChain)}, the
  * {@code ProcessingContext} is checked for the existence of this resource. When present, the given {@link Message}
- * receive the correlation data as additional {@link org.axonframework.messaging.MetaData}.
+ * receive the correlation data as additional {@link org.axonframework.messaging.core.Metadata}.
  * <p>
  * Users can expect that this {@code CorrelationDataInterceptor} is <b>always</b> set for the user to ensure any
  * correlation data is present at all time.
@@ -58,6 +61,8 @@ import java.util.concurrent.ConcurrentHashMap;
 @Internal
 public class CorrelationDataInterceptor<M extends Message>
         implements MessageDispatchInterceptor<M>, MessageHandlerInterceptor<M> {
+
+    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     /**
      * Resource key the correlation data is stored in the {@link ProcessingContext}.
@@ -111,7 +116,19 @@ public class CorrelationDataInterceptor<M extends Message>
                                               @Nonnull ProcessingContext context,
                                               @Nonnull MessageHandlerInterceptorChain<M> chain) {
         Map<String, String> correlationData = new ConcurrentHashMap<>();
-        correlationDataProviders.forEach(provider -> correlationData.putAll(provider.correlationDataFor(message)));
+        correlationDataProviders.forEach(provider -> {
+            try {
+                Map<String, String> data = provider.correlationDataFor(message);
+                correlationData.putAll(data);
+            } catch (Exception e) {
+                logger.warn(
+                        "Encountered exception creating correlation data for message with id: '{}' "
+                                + "using correlation provider with class: '{}'"
+                                + "will continue without as this might otherwise prevent a rollback.",
+                        message.identifier(), provider.getClass(), e
+                );
+            }
+        });
         return chain.proceed(message, context.withResource(CORRELATION_DATA, correlationData));
     }
 }

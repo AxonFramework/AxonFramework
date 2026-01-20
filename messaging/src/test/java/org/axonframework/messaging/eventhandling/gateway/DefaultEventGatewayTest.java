@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,17 @@
 
 package org.axonframework.messaging.eventhandling.gateway;
 
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.EventSink;
-import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.messaging.eventhandling.gateway.DefaultEventGateway;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.EventSink;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -125,6 +125,18 @@ class DefaultEventGatewayTest {
                 isNull(),
                 argThat((List<EventMessage> events) -> events.size() == 1 && events.getFirst().equals(eventMessage))
         );
+    }
+
+    @Test
+    void publishNoEvents() {
+        //Given
+        ArrayList<Object> noEvents = new ArrayList<>();
+
+        //When
+        testSubject.publish(noEvents);
+
+        //Then
+        verifyNoInteractions(mockEventSink);
     }
 
     private record TestPayload(String value) {

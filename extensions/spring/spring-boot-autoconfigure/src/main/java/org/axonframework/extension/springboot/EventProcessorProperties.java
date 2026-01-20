@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.axonframework.extension.springboot;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.eventhandling.EventBus;
 import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
@@ -55,6 +56,7 @@ public class EventProcessorProperties {
      * @param environment The spring boot environment.
      * @return The map of {@link ProcessorSettings} per processor name.
      */
+    @Internal
     public static Map<String, EventProcessorSettings> getProcessors(Environment environment) {
         Binder binder = Binder.get(environment);
 

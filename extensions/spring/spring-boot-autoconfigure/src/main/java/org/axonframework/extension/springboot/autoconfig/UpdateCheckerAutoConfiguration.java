@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,6 +53,11 @@ import static org.axonframework.common.configuration.ComponentDefinition.ofType;
 @EnableConfigurationProperties(UpdateCheckerProperties.class)
 public class UpdateCheckerAutoConfiguration {
 
+    /**
+     * Constructs a usage property provider based on update checker properties, if no other provider is in place.
+     * @param properties The update checker properties to use.
+     * @return Constructed usage property provider.
+     */
     @Bean
     @ConditionalOnMissingBean
     @Conditional(NotTestEnvironmentCondition.class)
@@ -105,7 +110,7 @@ public class UpdateCheckerAutoConfiguration {
     static class NotTestEnvironmentCondition implements Condition {
 
         @Override
-        public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
+        public boolean matches(@Nonnull ConditionContext context, @Nonnull AnnotatedTypeMetadata metadata) {
             return !TestEnvironmentDetector.isTestEnvironment();
         }
     }

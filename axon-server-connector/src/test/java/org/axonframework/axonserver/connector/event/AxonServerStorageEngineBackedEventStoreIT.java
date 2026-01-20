@@ -19,6 +19,7 @@ package org.axonframework.axonserver.connector.event;
 import io.axoniq.axonserver.connector.AxonServerConnection;
 import io.axoniq.axonserver.connector.AxonServerConnectionFactory;
 import io.axoniq.axonserver.connector.impl.ServerAddress;
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.MockComponentDescriptor;
 import org.axonframework.eventsourcing.eventstore.StorageEngineBackedEventStoreTestSuite;
 import org.axonframework.messaging.core.EmptyApplicationContext;
@@ -27,16 +28,13 @@ import org.axonframework.messaging.core.unitofwork.UnitOfWork;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.test.server.AxonServerContainer;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test suite implementation validating the {@link AxonServerEventStorageEngine}.
@@ -44,16 +42,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author John Hendrikx
  */
 @Testcontainers
-class AxonServerStorageEngineBackedEventStoreIT extends StorageEngineBackedEventStoreTestSuite<AxonServerEventStorageEngine> {
+class AxonServerStorageEngineBackedEventStoreIT
+        extends StorageEngineBackedEventStoreTestSuite<AxonServerEventStorageEngine> {
 
     private static final UnitOfWorkFactory FACTORY = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
     private static final String CONTEXT = "default";
 
     @SuppressWarnings("resource")
     @Container
-    private static final AxonServerContainer container = new AxonServerContainer("docker.axoniq.io/axoniq/axonserver:2025.2.0")
-        .withDevMode(true)
-        .withDcbContext(true);
+    private static final AxonServerContainer container =
+            new AxonServerContainer("docker.axoniq.io/axoniq/axonserver:2025.2.0")
+                    .withDevMode(true)
+                    .withDcbContext(true);
 
     private static AxonServerConnection connection;
 
@@ -75,8 +75,9 @@ class AxonServerStorageEngineBackedEventStoreIT extends StorageEngineBackedEvent
         container.stop();
     }
 
+    @Nonnull
     @Override
-    protected AxonServerEventStorageEngine getStorageEngine(EventConverter converter) {
+    protected AxonServerEventStorageEngine getStorageEngine(@Nonnull EventConverter converter) {
         if (engine == null) {
             engine = new AxonServerEventStorageEngine(connection, converter);
         }
@@ -84,6 +85,7 @@ class AxonServerStorageEngineBackedEventStoreIT extends StorageEngineBackedEvent
         return engine;
     }
 
+    @Nonnull
     @Override
     protected UnitOfWork unitOfWork() {
         return FACTORY.create();

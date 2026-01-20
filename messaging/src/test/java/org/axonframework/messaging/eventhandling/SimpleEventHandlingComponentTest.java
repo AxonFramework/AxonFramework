@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,18 @@ package org.axonframework.messaging.eventhandling;
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.eventhandling.replay.GenericResetContext;
+import org.axonframework.messaging.eventhandling.replay.ResetHandler;
 import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -143,6 +147,51 @@ class SimpleEventHandlingComponentTest {
                 invoked.set(true);
                 return super.handle(event, context);
             }
+        }
+    }
+
+    @Nested
+    class ResetHandlerTest {
+
+        @Test
+        void subscribedResetHandlerIsInvoked() {
+            // given
+            var invocationCount = new AtomicInteger(0);
+            ResetHandler resetHandler = (resetContext, context) -> {
+                invocationCount.incrementAndGet();
+                return MessageStream.empty();
+            };
+
+            var component = SimpleEventHandlingComponent.create("test");
+            component.subscribe(resetHandler);
+
+            // when
+            var resetContext = new GenericResetContext(new MessageType(String.class), "reset-payload");
+            component.handle(resetContext, STUB_PROCESSING_CONTEXT);
+
+            // then
+            assertThat(invocationCount.get()).isEqualTo(1);
+        }
+
+        @Test
+        void sameResetHandlerSubscribedTwiceIsInvokedOnlyOnce() {
+            // given
+            var invocationCount = new AtomicInteger(0);
+            ResetHandler resetHandler = (resetContext, context) -> {
+                invocationCount.incrementAndGet();
+                return MessageStream.empty();
+            };
+
+            var component = SimpleEventHandlingComponent.create("test");
+            component.subscribe(resetHandler);
+            component.subscribe(resetHandler);
+
+            // when
+            var resetContext = new GenericResetContext(new MessageType(String.class), "reset-payload");
+            component.handle(resetContext, STUB_PROCESSING_CONTEXT);
+
+            // then
+            assertThat(invocationCount.get()).isEqualTo(1);
         }
     }
 }

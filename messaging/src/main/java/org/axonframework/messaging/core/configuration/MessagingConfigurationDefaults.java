@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,11 @@
 package org.axonframework.messaging.core.configuration;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.configuration.ConfigurationEnhancer;
+import org.axonframework.conversion.Converter;
+import org.axonframework.conversion.json.JacksonConverter;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandPriorityCalculator;
@@ -27,16 +32,6 @@ import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
 import org.axonframework.messaging.commandhandling.gateway.ConvertingCommandGateway;
 import org.axonframework.messaging.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.messaging.commandhandling.interception.InterceptingCommandBus;
-import org.axonframework.common.configuration.ComponentRegistry;
-import org.axonframework.common.configuration.Configuration;
-import org.axonframework.common.configuration.ConfigurationEnhancer;
-import org.axonframework.messaging.core.unitofwork.transaction.NoTransactionManager;
-import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
-import org.axonframework.messaging.eventhandling.EventSink;
-import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
-import org.axonframework.messaging.eventhandling.conversion.EventConverter;
-import org.axonframework.messaging.eventhandling.gateway.DefaultEventGateway;
-import org.axonframework.messaging.eventhandling.gateway.EventGateway;
 import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.core.ConfigurationApplicationContext;
 import org.axonframework.messaging.core.MessageDispatchInterceptor;
@@ -55,10 +50,16 @@ import org.axonframework.messaging.core.interception.DefaultDispatchInterceptorR
 import org.axonframework.messaging.core.interception.DefaultHandlerInterceptorRegistry;
 import org.axonframework.messaging.core.interception.DispatchInterceptorRegistry;
 import org.axonframework.messaging.core.interception.HandlerInterceptorRegistry;
-import org.axonframework.messaging.core.unitofwork.ProcessingLifecycleHandlerRegistrar;
 import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.core.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
+import org.axonframework.messaging.core.unitofwork.transaction.NoTransactionManager;
+import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
+import org.axonframework.messaging.eventhandling.EventSink;
+import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.axonframework.messaging.eventhandling.gateway.DefaultEventGateway;
+import org.axonframework.messaging.eventhandling.gateway.EventGateway;
 import org.axonframework.messaging.monitoring.NoOpMessageMonitor;
 import org.axonframework.messaging.monitoring.configuration.DefaultMessageMonitorRegistry;
 import org.axonframework.messaging.monitoring.configuration.MessageMonitorRegistry;
@@ -78,10 +79,7 @@ import org.axonframework.messaging.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.messaging.queryhandling.gateway.DefaultQueryGateway;
 import org.axonframework.messaging.queryhandling.gateway.QueryGateway;
 import org.axonframework.messaging.queryhandling.interception.InterceptingQueryBus;
-import org.axonframework.conversion.Converter;
-import org.axonframework.conversion.json.JacksonConverter;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
@@ -248,13 +246,7 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
     }
 
     private static CommandBus defaultCommandBus(Configuration config) {
-        return new SimpleCommandBus(
-                config.getComponent(UnitOfWorkFactory.class),
-                config.getOptionalComponent(TransactionManager.class)
-                      .map(tm -> (ProcessingLifecycleHandlerRegistrar) tm)
-                      .map(List::of)
-                      .orElse(Collections.emptyList())
-        );
+        return new SimpleCommandBus(config.getComponent(UnitOfWorkFactory.class));
     }
 
     private static RoutingStrategy defaultRoutingStrategy(Configuration config) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,9 +74,16 @@ public class SimpleUnitOfWorkFactory implements UnitOfWorkFactory {
         Objects.requireNonNull(identifier, "The identifier may not be null.");
         Objects.requireNonNull(customization, "The customization may not be null.");
         var configuration = customization.apply(factoryCustomization.apply(UnitOfWorkConfiguration.defaultValues()));
-        return new UnitOfWork(identifier,
-                              configuration.workScheduler(),
-                              !configuration.allowAsyncProcessing(),
-                              applicationContext);
+
+        UnitOfWork uow = new UnitOfWork(
+            identifier,
+            configuration.workScheduler(),
+            !configuration.allowAsyncProcessing(),
+            applicationContext
+        );
+
+        configuration.processingLifecycleEnhancers().forEach(enhancer -> enhancer.accept(uow));
+
+        return uow;
     }
 }

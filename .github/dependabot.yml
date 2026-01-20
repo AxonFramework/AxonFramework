@@ -35,9 +35,13 @@ updates:
         - "minor"
         - "major"
   ignore:
-    - dependency-name: "com.github.kagkarlsson:db-scheduler"
-      versions: [ "[14.0.0,)" ] # TODO #3194 Remove ignore rule to auto-update to recent db-scheduler versions
-    - dependency-name: "org.springframework:spring-framework-bom"
+    - dependency-name: "org.springframework:*"
       versions: [ "[7.0.0,)" ]
-    - dependency-name: "org.springframework.security:spring-security-bom"
+    - dependency-name: "org.springframework.security:*"
       versions: [ "[7.0.0,)" ]
+    - dependency-name: "org.springframework.boot:*"
+      versions: [ "[4.0.0,)" ]
+    - dependency-name: "org.springdoc:*"
+      versions: [ "[3.0.0,)" ]
+    - dependency-name: "org.springframework.data:*"
+      versions: [ "[2025.0.0,)" ]

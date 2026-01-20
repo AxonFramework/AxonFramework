@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,9 @@ import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SequenceOverridingEventHandlingComponent;
+import org.axonframework.messaging.eventhandling.replay.ResetContext;
+import org.axonframework.messaging.eventhandling.replay.ResetHandler;
+import org.axonframework.messaging.eventhandling.replay.ResetHandlerRegistry;
 import org.axonframework.messaging.eventhandling.sequencing.HierarchicalSequencingPolicy;
 import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
 import org.axonframework.messaging.eventhandling.sequencing.SequentialPerAggregatePolicy;
@@ -37,15 +40,20 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * Simple implementation of the {@link EventHandlingComponent}, containing a collection of
- * {@link EventHandler EventHandlers} to invoke on {@link #handle(EventMessage, ProcessingContext)}.
+ * Simple implementation of the {@link EventHandlingComponent}, {@link EventHandlerRegistry}, and
+ * {@link ResetHandlerRegistry}.
+ * <p>
+ * As such, it contains a collection of {@link EventHandler EventHandlers} to invoke on
+ * {@link #handle(EventMessage, ProcessingContext) handle}, and a set of {@link ResetHandler ResetHandlers} to invoke on
+ * {@link #handle(ResetContext, ProcessingContext) reset}.
  *
  * @author Steven van Beelen
  * @since 5.0.0
  */
 public class SimpleEventHandlingComponent implements
         EventHandlingComponent,
-        EventHandlerRegistry<SimpleEventHandlingComponent> {
+        EventHandlerRegistry<SimpleEventHandlingComponent>,
+        ResetHandlerRegistry<SimpleEventHandlingComponent> {
 
     private static final SequencingPolicy DEFAULT_SEQUENCING_POLICY = new HierarchicalSequencingPolicy(
             SequentialPerAggregatePolicy.instance(),
@@ -55,13 +63,14 @@ public class SimpleEventHandlingComponent implements
     private final String name;
     private final ConcurrentHashMap<QualifiedName, List<EventHandler>> eventHandlers = new ConcurrentHashMap<>();
     private final SequencingPolicy sequencingPolicy;
+    private final Set<ResetHandler> resetHandlers = ConcurrentHashMap.newKeySet();
 
     /**
      * Instantiates a simple {@link EventHandlingComponent} that is able to handle events and delegate them to
      * subcomponents.
      * <p>
-     * Uses a default sequencing policy that will first try for the {@link SequentialPerAggregatePolicy}, falling
-     * back to the {@link SequentialPolicy} when the former returns no sequence value.
+     * Uses a default sequencing policy that will first try for the {@link SequentialPerAggregatePolicy}, falling back
+     * to the {@link SequentialPolicy} when the former returns no sequence value.
      *
      * @param name The name of the component, used for {@link DescribableComponent describing} the component.
      * @return A simple {@link EventHandlingComponent} instance with the given {@code name}.
@@ -103,6 +112,7 @@ public class SimpleEventHandlingComponent implements
             );
         }
         MessageStream<Message> result = MessageStream.empty();
+
         for (var handler : handlers) {
             var handlerResult = handler.handle(event, context);
             result = result.concatWith(handlerResult);
@@ -172,10 +182,31 @@ public class SimpleEventHandlingComponent implements
                        .orElse(sequencingPolicy.getSequenceIdentifierFor(event, context).get());
     }
 
+    @Nonnull
+    @Override
+    public MessageStream.Empty<Message> handle(@Nonnull ResetContext resetContext, @Nonnull ProcessingContext context) {
+        MessageStream<Message> result = MessageStream.empty();
+
+        for (ResetHandler handler : resetHandlers) {
+            MessageStream<Message> handlerResult = handler.handle(resetContext, context);
+            result = result.concatWith(handlerResult);
+        }
+
+        return result.ignoreEntries().cast();
+    }
+
+    @Nonnull
+    @Override
+    public SimpleEventHandlingComponent subscribe(@Nonnull ResetHandler resetHandler) {
+        resetHandlers.add(resetHandler);
+        return this;
+    }
+
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("name", name);
         descriptor.describeProperty("eventHandlers", eventHandlers);
+        descriptor.describeProperty("resetHandlers", resetHandlers);
         descriptor.describeProperty("sequencingPolicy", sequencingPolicy);
     }
 }

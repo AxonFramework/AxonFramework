@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.replay.ResetContext;
 
 import java.util.Objects;
 import java.util.Set;
@@ -67,8 +68,21 @@ public abstract class DelegatingEventHandlingComponent implements EventHandlingC
 
     @Nonnull
     @Override
-    public Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+    public Object sequenceIdentifierFor(@Nonnull EventMessage event,
+                                        @Nonnull ProcessingContext context) {
         return delegate.sequenceIdentifierFor(event, context);
+    }
+
+    @Override
+    public boolean supportsReset() {
+        return delegate.supportsReset();
+    }
+
+    @Nonnull
+    @Override
+    public MessageStream.Empty<Message> handle(@Nonnull ResetContext resetContext,
+                                               @Nonnull ProcessingContext context) {
+        return delegate.handle(resetContext, context);
     }
 
     @Override

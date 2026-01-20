@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2010-2025. Axon Framework
+  ~ Copyright (c) 2010-2026. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.axonframework</groupId>
         <artifactId>axon</artifactId>
-        <version>5.0.2-SNAPSHOT</version>
+        <version>5.1.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -55,9 +55,9 @@
         <c3p0.version>0.9.1.2</c3p0.version>
         <hikari.version>7.0.2</hikari.version>
         <hsqldb.version>2.7.2</hsqldb.version>
-        <hibernate-core.version>7.1.8.Final</hibernate-core.version>
+        <hibernate-core.version>7.2.1.Final</hibernate-core.version>
         <mysql-connector-java.version>9.5.0</mysql-connector-java.version>
-        <postgresql.version>42.7.8</postgresql.version>
+        <postgresql.version>42.7.9</postgresql.version>
         <ojdbc.version>23.26.0.0.0</ojdbc.version>
         <!-- Jakarta -->
         <jakarta.annotation.version>3.0.0</jakarta.annotation.version>
@@ -67,21 +67,21 @@
         <jakarta.persistence.version>3.2.0</jakarta.persistence.version>
         <jakarta.validation.version>3.1.1</jakarta.validation.version>
         <!-- Logging -->
-        <log4j.version>2.25.2</log4j.version>
+        <log4j.version>2.25.3</log4j.version>
         <slf4j.version>2.0.17</slf4j.version>
         <!-- Metrics -->
         <dropwizard.metrics.version>4.2.37</dropwizard.metrics.version>
-        <micrometer.version>1.16.0</micrometer.version>
+        <micrometer.version>1.16.2</micrometer.version>
         <!-- Other -->
-        <byte-buddy.version>1.18.1</byte-buddy.version>
+        <byte-buddy.version>1.18.4</byte-buddy.version>
         <commons-io.version>2.21.0</commons-io.version>
         <disruptor.version>4.0.0</disruptor.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
         <javassist.version>3.30.2-GA</javassist.version>
         <eaio-uuid.version>3.2</eaio-uuid.version>
-        <equalsverifier.version>4.2.3</equalsverifier.version>
+        <equalsverifier.version>4.3</equalsverifier.version>
         <!-- Reactive -->
-        <projectreactor.version>3.8.0</projectreactor.version>
+        <projectreactor.version>3.8.2</projectreactor.version>
         <reactive.streams.spec.version>1.0.4</reactive.streams.spec.version>
         <!-- Conversion -->
         <avro.version>1.12.1</avro.version>
@@ -89,19 +89,20 @@
         <gson.version>2.13.2</gson.version>
         <jackson.version>2.20.1</jackson.version>
         <!-- Scheduling -->
-        <db-scheduler.version>13.0.0</db-scheduler.version>
-        <jobrunr.version>8.2.4</jobrunr.version>
-        <quartz.version>2.5.1</quartz.version>
+        <db-scheduler.version>16.7.0</db-scheduler.version>
+        <jobrunr.version>8.4.0</jobrunr.version>
+        <quartz.version>2.5.2</quartz.version>
         <!-- Spring -->
-        <spring.version>6.2.14</spring.version>
-        <spring.boot.version>3.5.8</spring.boot.version>
+        <spring.version>6.2.15</spring.version>
+        <spring.boot.version>3.5.9</spring.boot.version>
+        <spring-data.version>2025.0.7</spring-data.version>
         <spring-security.version>6.5.7</spring-security.version>
         <!-- Testing -->
         <awaitility.version>4.3.0</awaitility.version>
         <hamcrest.version>3.0</hamcrest.version>
-        <junit.jupiter.version>6.0.1</junit.jupiter.version>
-        <mockito.version>5.20.0</mockito.version>
-        <testcontainers.version>2.0.2</testcontainers.version>
+        <junit.jupiter.version>6.0.2</junit.jupiter.version>
+        <mockito.version>5.21.0</mockito.version>
+        <testcontainers.version>2.0.3</testcontainers.version>
         <assertj.version>3.27.6</assertj.version>
         <archunit.version>1.4.1</archunit.version>
         <!-- Validation -->
@@ -305,6 +306,13 @@
                 <groupId>org.springframework</groupId>
                 <artifactId>spring-framework-bom</artifactId>
                 <version>${spring.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.data</groupId>
+                <artifactId>spring-data-bom</artifactId>
+                <version>${spring-data.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -675,49 +683,6 @@
                                 </goals>
                             </execution>
                         </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-        <profile>
-            <id>javadoc</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>${maven-javadoc.version}</version>
-                        <executions>
-                            <execution>
-                                <id>attach-javadoc</id>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>jar</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                        <configuration>
-                            <doclint>none</doclint>
-                            <!-- These parameters are in preparation for resolution of this issue: -->
-                            <!-- https://bugs.openjdk.java.net/browse/JDK-8068562 -->
-                            <tags>
-                                <tag>
-                                    <name>apiNote</name>
-                                    <placement>a</placement>
-                                    <head>API Note:</head>
-                                </tag>
-                                <tag>
-                                    <name>implSpec</name>
-                                    <placement>a</placement>
-                                    <head>Implementation Requirements:</head>
-                                </tag>
-                                <tag>
-                                    <name>implNote</name>
-                                    <placement>a</placement>
-                                    <head>Implementation Note:</head>
-                                </tag>
-                            </tags>
-                        </configuration>
                     </plugin>
                 </plugins>
             </build>

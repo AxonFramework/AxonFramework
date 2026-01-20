@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,10 +28,10 @@ import org.axonframework.messaging.commandhandling.annotation.AnnotationRoutingS
 import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
 import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
 import org.axonframework.messaging.commandhandling.gateway.DefaultCommandGateway;
-import org.axonframework.messaging.core.unitofwork.transaction.Transaction;
-import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
 import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.unitofwork.transaction.Transaction;
+import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
@@ -76,7 +76,7 @@ public abstract class AbstractPolymorphicAggregateAnnotationCommandHandlerTestSu
 
         transactionManager = new EntityManagerTransactionManager(entityManager);
 
-        commandBus = new SimpleCommandBus(transactionalUnitOfWorkFactory(transactionManager), Collections.emptyList());
+        commandBus = new SimpleCommandBus(transactionalUnitOfWorkFactory(transactionManager));
         commandGateway = new DefaultCommandGateway(commandBus,
                                                    new ClassBasedMessageTypeResolver(),
                                                    CommandPriorityCalculator.defaultCalculator(),

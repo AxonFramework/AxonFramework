@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -228,10 +228,10 @@ class GenericJpaRepositoryTest {
 
         LegacyDefaultUnitOfWork.startAndGet(null)
                                .executeWithResult((ctx) -> {
-                                   Aggregate<StubJpaAggregate> aggregate = testSubject.newInstance(
+                                   Aggregate<StubJpaAggregate> aggregate1 = testSubject.newInstance(
                                            () -> new StubJpaAggregate("id", expectedFirstPayload, expectedSecondPayload)
                                    );
-                                   aggregate.execute(e -> e.doSomething(expectedThirdPayload));
+                                   aggregate1.execute(e -> e.doSomething(expectedThirdPayload));
                                    return null;
                                });
         CurrentUnitOfWork.commit();

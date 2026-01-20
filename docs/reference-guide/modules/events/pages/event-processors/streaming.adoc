@@ -228,8 +228,6 @@ The `assigningHandlers` method receives an `EventHandlerDescriptor` that provide
 
 This allows flexible handler selection based on naming conventions, packages, types, or other criteria.
 
-[TIP]
-====
 Use `withDefaultSettings()` instead of `withConfiguration()` when you don't need custom processor settings but still want explicit handler assignment:
 
 [source,java]
@@ -238,7 +236,6 @@ ProcessorDefinition.pooledStreamingProcessor("example-processor")
         .assigningHandlers(descriptor -> descriptor.beanName().startsWith("order"))
         .withDefaultSettings();
 ----
-====
 
 [IMPORTANT]
 ====
@@ -354,6 +351,15 @@ Of course, you can completely disregard the `StreamableEventSource` input parame
 This will, for example, allow you to use predefined token positions like:
 - `TrackingToken.FIRST`: Start from the beginning of the stream.
 - `TrackingToken.LATEST`: Start from the latest position, processing only new events.
+
+The configuration function receives a `TrackingTokenSource` which provides methods to create tokens at different positions:
+
+* `firstToken()` - Start from the beginning of the event stream
+* `latestToken()` - Start from the latest position (skip historical events)
+* `tokenAt(Instant)` - Start from a specific point in time
+
+These functions may require a `ProcessingContext` parameter. It is safe to pass `null` if no ProcessingContext is available.
+
 Consider the following snippets if you want to configure a different initial token:
 
 [tabs]
@@ -416,15 +422,7 @@ public class EventProcessorConfig {
     }
 }
 ----
-
-The provided function receives a `TrackingTokenSource` which provides methods to create tokens at different positions:
-
-* `firstToken()` - Start from the beginning of the event stream
-* `latestToken()` - Start from the latest position (skip historical events)
-* `tokenAt(Instant)` - Start from a specific point in time
-
-These functions may require a `ProcessingContext` parameter. It is safe to pass `null` if no ProcessingContext is available.
-
+--
 ====
 
 [NOTE]
@@ -511,9 +509,6 @@ public class EventProcessorConfig {
     }
 }
 ----
-
-The `claimExtensionThreshold` determines how long to wait before extending a claim in the absence of events, while `tokenClaimInterval` defines how frequently the processor attempts to claim segments.
-Both values are specified in milliseconds.
 --
 ====
 
@@ -1053,29 +1048,10 @@ Autodetected Sequencing Policy configuration - Spring Boot::
 +
 --
 
-When using `ProcessorDefinition` with autodetected event handlers, you can define the processor configuration:
-
 [source,java]
 ----
-import org.axonframework.extension.spring.config.ProcessorDefinition;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-
-@Configuration
-public class EventProcessorConfig {
-
-    @Bean
-    public ProcessorDefinition exampleProcessorDefinition() {
-        return ProcessorDefinition.pooledStreamingProcessor("example-processor")
-                .assigningHandlers(descriptor ->
-                    descriptor.beanName().equals("customEventHandlingComponent"))
-                .withDefaultSettings();
-    }
-}
+// TODO #4053 - Introduce Event Processor Specification bean example.
 ----
-When using `ProcessorDefinition` with Spring Boot, sequencing policies should still be configured using the `@SequencingPolicy` annotation on the event handler class or methods (as shown <<Sequencing Policies,earlier in this chapter>>).
-The programmatic configuration through `ProcessorDefinition` focuses on processor-level settings, while sequencing policies are defined at the handler level.
-
 --
 
 Autodetected Sequencing Policy configuration - Spring Boot properties::
@@ -1225,9 +1201,6 @@ public class EventProcessorConfig {
     }
 }
 ----
-
-The `coordinatorExecutor` manages segment claiming and coordination (typically 1 thread suffices), while the `workerExecutor` handles actual event processing.
-Increase the worker thread pool size to match your desired parallelism level.
 --
 
 Spring Boot properties::
@@ -1306,160 +1279,6 @@ class StreamingProcessorService {
     }
 }
 ----
-
-[#common_configuration_scenarios]
-== Common configuration scenarios with ProcessorDefinition
-
-This section provides complete examples for common event processor configuration scenarios using `ProcessorDefinition` in Spring Boot applications.
-
-[#scenario_high_throughput]
-=== High-throughput order processing
-
-Configure a processor optimized for high-throughput order event processing with increased parallelism and batching:
-
-[source,java]
-----
-import org.axonframework.extension.spring.config.ProcessorDefinition;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-
-@Configuration
-public class OrderEventProcessorConfig {
-
-    @Bean
-    public ProcessorDefinition orderProcessor() {
-        return ProcessorDefinition.pooledStreamingProcessor("order-processor")
-                .assigningHandlers(descriptor ->
-                    descriptor.beanName().startsWith("order"))
-                .withConfiguration(config -> config
-                    .initialSegmentCount(32)  // High parallelism
-                    .batchSize(100)            // Process events in batches
-                    .tokenClaimInterval(3000)
-                    .claimExtensionThreshold(3000));
-    }
-}
-----
-
-[#scenario_multiple_processors]
-=== Multiple domain-specific processors
-
-Separate processors for different bounded contexts, each with tailored configuration:
-
-[source,java]
-----
-import org.axonframework.extension.spring.config.ProcessorDefinition;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-
-@Configuration
-public class DomainEventProcessorConfig {
-
-    @Bean
-    public ProcessorDefinition orderProcessor() {
-        return ProcessorDefinition.pooledStreamingProcessor("order-processor")
-                .assigningHandlers(descriptor ->
-                    descriptor.beanType().getPackageName()
-                              .startsWith("com.example.orders"))
-                .withConfiguration(config -> config
-                    .initialSegmentCount(16)
-                    .batchSize(50));
-    }
-
-    @Bean
-    public ProcessorDefinition inventoryProcessor() {
-        return ProcessorDefinition.pooledStreamingProcessor("inventory-processor")
-                .assigningHandlers(descriptor ->
-                    descriptor.beanType().getPackageName()
-                              .startsWith("com.example.inventory"))
-                .withConfiguration(config -> config
-                    .initialSegmentCount(8)
-                    .batchSize(25));
-    }
-
-    @Bean
-    public ProcessorDefinition shippingProcessor() {
-        return ProcessorDefinition.pooledStreamingProcessor("shipping-processor")
-                .assigningHandlers(descriptor ->
-                    descriptor.beanType().getPackageName()
-                              .startsWith("com.example.shipping"))
-                .withConfiguration(config -> config
-                    .initialSegmentCount(4)
-                    .batchSize(10));
-    }
-}
-----
-
-[#scenario_custom_token_store]
-=== Custom token store per processor
-
-Use different token stores for different processors to separate concerns or optimize storage:
-
-[source,java]
-----
-import org.axonframework.common.jpa.EntityManagerProvider;
-import org.axonframework.conversion.Converter;
-import org.axonframework.extension.spring.config.ProcessorDefinition;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.store.jpa.JpaTokenStore;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.store.jpa.JpaTokenStoreConfiguration;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-
-@Configuration
-public class TokenStoreConfig {
-
-    @Bean
-    public TokenStore orderTokenStore(EntityManagerProvider entityManagerProvider,
-                                      Converter converter) {
-        return new JpaTokenStore(
-                entityManagerProvider,
-                converter,
-                JpaTokenStoreConfiguration.DEFAULT
-        );
-    }
-
-    @Bean
-    public ProcessorDefinition orderProcessor(TokenStore orderTokenStore) {
-        return ProcessorDefinition.pooledStreamingProcessor("order-processor")
-                .assigningHandlers(descriptor ->
-                    descriptor.beanName().startsWith("order"))
-                .withConfiguration(config -> config
-                    .tokenStore(orderTokenStore));
-    }
-}
-----
-
-[#scenario_latest_events]
-=== Starting from latest events
-
-Configure a processor to start from the latest position, skipping historical events:
-
-[source,java]
-----
-import org.axonframework.extension.spring.config.ProcessorDefinition;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-
-@Configuration
-public class RealtimeEventProcessorConfig {
-
-    @Bean
-    public ProcessorDefinition realtimeProcessor() {
-        return ProcessorDefinition.pooledStreamingProcessor("realtime-processor")
-                .assigningHandlers(descriptor ->
-                    descriptor.beanName().contains("realtime"))
-                .withConfiguration(config -> config
-                    .initialToken(source -> source.latestToken())
-                    .initialSegmentCount(8));
-    }
-}
-----
-
-[NOTE]
-====
-The `initialToken` configuration only applies when the processor starts for the first time.
-If tracking tokens already exist, the processor will resume from its last known position.
-====
 
 [[splitting_and_merging_segments]]
 === Splitting and merging segments

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,27 +16,32 @@
 
 package org.axonframework.modelling;
 
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
-import org.axonframework.messaging.eventhandling.conversion.EventConverter;
-import org.axonframework.messaging.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.eventhandling.annotation.SequenceNumber;
-import org.axonframework.messaging.eventhandling.annotation.Timestamp;
-import org.axonframework.messaging.eventhandling.annotation.EventHandler;
+import org.axonframework.conversion.json.JacksonConverter;
 import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.core.annotation.MetadataValue;
 import org.axonframework.messaging.core.annotation.SourceId;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.eventhandling.annotation.EventHandler;
+import org.axonframework.messaging.eventhandling.annotation.SequenceNumber;
+import org.axonframework.messaging.eventhandling.annotation.Timestamp;
+import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.modelling.annotation.AnnotationBasedEntityEvolvingComponent;
-import org.axonframework.conversion.json.JacksonConverter;
 import org.junit.jupiter.api.*;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.Set;
 
+import static org.axonframework.messaging.core.annotation.AnnotatedHandlerInspector.inspectType;
+import static org.axonframework.messaging.eventhandling.EventTestUtils.asEventMessage;
 import static org.axonframework.messaging.eventhandling.EventTestUtils.createEvent;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -44,6 +49,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Test class validating the {@link AnnotationBasedEntityEvolvingComponent}.
  *
  * @author Mateusz Nowak
+ * @author Jakob Hatzl
  * @since 5.0.0
  */
 class AnnotationBasedEntityEvolvingComponentTest {
@@ -355,6 +361,99 @@ class AnnotationBasedEntityEvolvingComponentTest {
         @EventHandler
         void handle(String event) {
             this.handledCount++;
+        }
+    }
+
+    @Nested
+    class PolymorphicEntitySupport {
+
+        // Sealed interface where the ENTITY ITSELF is polymorphic (not state inside)
+        sealed interface Course permits InitialCourse, CreatedCourse, PublishedCourse {
+
+        }
+
+        @SuppressWarnings("unused")
+        private record InitialCourse() implements Course {
+
+            @EventHandler
+            CreatedCourse onCreate(String courseCreatedEvent) {
+                // Handler returns a different type of entity (sibling type)
+                return new CreatedCourse(courseCreatedEvent);
+            }
+        }
+
+        @SuppressWarnings("unused")
+        private record CreatedCourse(String courseName) implements Course {
+
+            @EventHandler
+            PublishedCourse onPublish(Integer coursePublishedEvent) {
+                // Handler returns a different type of entity (sibling type)
+                return new PublishedCourse(courseName, coursePublishedEvent);
+            }
+        }
+
+        @SuppressWarnings("unused")
+        private record PublishedCourse(String courseName, Integer publishedVersion) implements Course {
+
+        }
+
+        private static final EntityEvolver<Course> COURSE_EVOLVER = new AnnotationBasedEntityEvolvingComponent<>(
+                Course.class,
+                inspectType(Course.class, ClasspathParameterResolverFactory.forClass(Course.class),
+                            ClasspathHandlerDefinition.forClass(Course.class),
+                            Set.of(InitialCourse.class, CreatedCourse.class, PublishedCourse.class)),
+                converter,
+                messageTypeResolver
+        );
+
+        @Test
+        void evolvesPolymorphicEntityFromInitialToCreatedType() {
+            // given
+            Course course = new InitialCourse();
+            var event = asEventMessage("Introduction to Axon");
+            var context = StubProcessingContext.forMessage(event);
+
+            // when
+            course = COURSE_EVOLVER.evolve(course, event, context);
+
+            // then
+            assertInstanceOf(CreatedCourse.class, course);
+            assertEquals("Introduction to Axon", ((CreatedCourse) course).courseName());
+        }
+
+        @Test
+        void evolvesPolymorphicEntityFromCreatedToPublishedType() {
+            // given
+            Course course = new CreatedCourse("Introduction to Axon");
+            var event = asEventMessage(1);
+            var context = StubProcessingContext.forMessage(event);
+
+            // when
+            course = COURSE_EVOLVER.evolve(course, event, context);
+
+            // then
+            assertInstanceOf(PublishedCourse.class, course);
+            assertEquals("Introduction to Axon", ((PublishedCourse) course).courseName());
+            assertEquals(1, ((PublishedCourse) course).publishedVersion());
+        }
+
+        @Test
+        void evolvesPolymorphicEntityThroughMultipleTypeTransitions() {
+            // given
+            Course course = new InitialCourse();
+            var createEvent = asEventMessage("Introduction to Axon");
+            var publishEvent = asEventMessage(1);
+            var createContext = StubProcessingContext.forMessage(createEvent);
+            var publishContext = StubProcessingContext.forMessage(publishEvent);
+
+            // when
+            course = COURSE_EVOLVER.evolve(course, createEvent, createContext);
+            course = COURSE_EVOLVER.evolve(course, publishEvent, publishContext);
+
+            // then
+            assertInstanceOf(PublishedCourse.class, course);
+            assertEquals("Introduction to Axon", ((PublishedCourse) course).courseName());
+            assertEquals(1, ((PublishedCourse) course).publishedVersion());
         }
     }
 }

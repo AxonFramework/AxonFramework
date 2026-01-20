@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -51,10 +52,7 @@ import java.util.function.UnaryOperator;
  * @author Simon Zambrovski
  * @since 4.0
  */
-@AutoConfiguration(after = {
-        org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration.class,
-        org.axonframework.extension.springboot.autoconfig.AxonServerAutoConfiguration.class,
-        JpaAutoConfiguration.class})
+@AutoConfiguration(after = {HibernateJpaAutoConfiguration.class, AxonServerAutoConfiguration.class, JpaAutoConfiguration.class})
 @ConditionalOnBean({EntityManagerFactory.class, PlatformTransactionManager.class})
 @ConditionalOnMissingBean(value = {EventStore.class, EventStorageEngine.class})
 @RegisterDefaultEntities(packages = {

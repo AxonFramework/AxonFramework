@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import org.axonframework.examples.university.read.coursestats.api.CoursesQueryRe
 import org.axonframework.examples.university.read.coursestats.api.FindAllCourses;
 import org.axonframework.examples.university.read.coursestats.api.GetCourseStatsById;
 import org.axonframework.examples.university.read.coursestats.projection.CoursesStats;
-import org.axonframework.examples.university.read.coursestats.projection.CoursesStatsProjectionConfiguration;
 import org.axonframework.examples.university.shared.CourseId;
 import org.axonframework.examples.university.write.changecoursecapacity.ChangeCourseCapacity;
 import org.axonframework.examples.university.write.createcourse.CreateCourse;
@@ -39,6 +38,7 @@ import java.util.List;
 import java.util.Random;
 
 import static org.axonframework.common.ProcessUtils.executeUntilTrue;
+import static org.axonframework.examples.university.read.coursestats.projection.CoursesStatsProjectionConfiguration.PROCESSOR_NAME;
 
 /**
  * Initializer of the faculty.
@@ -67,7 +67,7 @@ public class FacultyInitializer implements ApplicationRunner {
 
     private void waitUntilReady() {
         var processor = axonConfiguration.getComponents(PooledStreamingEventProcessor.class).get(
-                "EventProcessor[" + CoursesStatsProjectionConfiguration.class.getPackageName() + "]");
+                "EventProcessor[" + PROCESSOR_NAME + "]");
         log.info("[FACULTY] Waiting for course statistics projection replay to finish...");
         executeUntilTrue(
                 () -> !processor.isReplaying(),
@@ -75,7 +75,6 @@ public class FacultyInitializer implements ApplicationRunner {
                 30
         );
         log.info("[FACULTY] Done. Course statistics is up to date.");
-
     }
 
     private void initialize() throws Exception {

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2010-2025. Axon Framework
+  ~ Copyright (c) 2010-2026. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -21,14 +21,14 @@
     <parent>
         <groupId>org.axonframework</groupId>
         <artifactId>axon</artifactId>
-        <version>5.0.2-SNAPSHOT</version>
+        <version>5.1.0-SNAPSHOT</version>
     </parent>
 
     <groupId>org.axonframework.examples</groupId>
     <artifactId>axon-framework-examples</artifactId>
     <packaging>pom</packaging>
 
-    <name>Axon Examples</name>
+    <name>Axon Framework - Examples</name>
     <description>Collection of examples used for demonstration and test purposes.</description>
 
     <dependencyManagement>

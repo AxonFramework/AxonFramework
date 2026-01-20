@@ -16,8 +16,10 @@
 
 package org.axonframework.extension.spring.config;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.configuration.Configuration;
+import org.axonframework.extension.spring.BeanDefinitionUtils;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorConfiguration;
@@ -37,7 +39,7 @@ import java.util.stream.Collectors;
 
 /**
  * Default implementation of {@link ProcessorModuleFactory} that assigns event handlers to processors using
- * {@link ProcessorDefinition}s.
+ * {@link ProcessorDefinition ProcessorDefinitions}.
  * <p>
  * This factory evaluates each event handler against the configured processor definitions. When a handler matches a
  * definition's selector, it is assigned to that processor. If no processor definition matches, the handler is assigned
@@ -49,7 +51,7 @@ import java.util.stream.Collectors;
  * @author Allard Buijze
  * @see ProcessorModuleFactory
  * @see ProcessorDefinition
- * @since 5.0.0
+ * @since 5.0.2
  */
 public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
 
@@ -62,13 +64,13 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
     /**
      * Creates a new factory with the given processor definitions, settings, and Axon configuration.
      *
-     * @param processorDefinitions the list of processor definitions that define handler assignment rules
-     * @param settings             the map of processor settings, keyed by processor name
-     * @param axonConfiguration    the Axon configuration to retrieve components from
+     * @param processorDefinitions The list of processor definitions that define handler assignment rules.
+     * @param settings             The map of processor settings, keyed by processor name.
+     * @param axonConfiguration    The Axon configuration to retrieve components from.
      */
-    public DefaultProcessorModuleFactory(List<ProcessorDefinition> processorDefinitions,
-                                         Map<String, EventProcessorSettings> settings,
-                                         Configuration axonConfiguration) {
+    public DefaultProcessorModuleFactory(@Nonnull List<ProcessorDefinition> processorDefinitions,
+                                         @Nonnull Map<String, EventProcessorSettings> settings,
+                                         @Nonnull Configuration axonConfiguration) {
         this.processorDefinitions = processorDefinitions;
         this.allSettings = settings;
         this.axonConfiguration = axonConfiguration;
@@ -78,15 +80,16 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
      * {@inheritDoc}
      * <p>
      * This implementation groups handlers by their assigned processor name (determined by
-     * {@link #resolveProcessor(ProcessorDefinition.EventHandlerDescriptor)}), then creates an
+     * {@link #assignedProcessor(ProcessorDefinition.EventHandlerDescriptor)}), then creates an
      * {@link EventProcessorModule} for each processor with its assigned handlers.
      */
+    @Nonnull
     @Override
-    public Set<EventProcessorModule> buildProcessorModules(Set<ProcessorDefinition.EventHandlerDescriptor> handlers) {
+    public Set<EventProcessorModule> buildProcessorModules(@Nonnull Set<ProcessorDefinition.EventHandlerDescriptor> handlers) {
 
         Set<EventProcessorModule> modules = new LinkedHashSet<>();
 
-        var assignments = handlers.stream().collect(Collectors.groupingBy(this::resolveProcessor));
+        var assignments = handlers.stream().collect(Collectors.groupingBy(this::assignedProcessor));
 
         for (ProcessorDefinition definition : processorDefinitions) {
             if (!assignments.containsKey(definition.name())) {
@@ -149,8 +152,8 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
      * If a processor definition exists for this processor, its configuration is applied. Otherwise, the identity
      * function is returned (no customization).
      *
-     * @param processorName the name of the processor
-     * @return a function that customizes the subscribing processor configuration
+     * @param processorName The name of the processor.
+     * @return A function that customizes the subscribing processor configuration.
      */
     @SuppressWarnings({"unchecked"})
     private <T extends EventProcessorConfiguration> UnaryOperator<T> customizeConfiguration(String processorName) {
@@ -163,17 +166,17 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
     }
 
     /**
-     * Resolves which processor the given event handler should be assigned to.
+     * Resolves the name of the processor the given event handler should be assigned to.
      * <p>
      * This method evaluates the handler against all processor definitions. If exactly one definition matches, the
      * handler is assigned to that processor. If no definitions match, the handler is assigned to a processor named
      * after its package. If multiple definitions match, an {@link AxonConfigurationException} is thrown.
      *
-     * @param handler the event handler descriptor
-     * @return the name of the processor this handler should be assigned to
-     * @throws AxonConfigurationException if multiple processor definitions match the handler
+     * @param handler The event handler descriptor.
+     * @return The name of the processor this handler should be assigned to.
+     * @throws AxonConfigurationException If multiple processor definitions match the handler.
      */
-    private String resolveProcessor(ProcessorDefinition.EventHandlerDescriptor handler) {
+    private String assignedProcessor(ProcessorDefinition.EventHandlerDescriptor handler) {
         Set<String> matches = new HashSet<>();
         for (ProcessorDefinition processorDefinition : processorDefinitions) {
             if (processorDefinition.matchesSelector(handler)) {
@@ -182,15 +185,7 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
         }
         if (matches.isEmpty()) {
             // we try to detect the package from the bean definition
-            String className = handler.beanDefinition().getBeanClassName();
-            if (className == null || className.isBlank()) {
-                return handler.beanType().getPackageName();
-            }
-            if (className.contains(".")) {
-                return className.substring(0, className.lastIndexOf('.'));
-            } else {
-                return "default";
-            }
+            return BeanDefinitionUtils.extractPackageName(handler.beanDefinition());
         }
         if (matches.size() == 1) {
             return matches.iterator().next();
@@ -203,8 +198,8 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
     /**
      * Finds the processor definition for the given processor name.
      *
-     * @param name the processor name
-     * @return an Optional containing the processor definition if found, or empty if not found
+     * @param name The processor name.
+     * @return An Optional containing the processor definition if found, or empty if not found.
      */
     private Optional<ProcessorDefinition> definitionFor(String name) {
         for (ProcessorDefinition processorDefinition : processorDefinitions) {

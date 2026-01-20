@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.eventhandling.replay.ResetContext;
 import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
 import org.junit.jupiter.api.*;
 
@@ -93,6 +94,7 @@ class SequenceOverridingEventHandlingComponentTest {
                 return Set.of();
             }
 
+            @Nonnull
             @Override
             public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
                                                        @Nonnull ProcessingContext context) {
@@ -102,6 +104,13 @@ class SequenceOverridingEventHandlingComponentTest {
             @Override
             public void describeTo(@Nonnull ComponentDescriptor descriptor) {
                 // Not important for this test to implement
+            }
+
+            @Nonnull
+            @Override
+            public MessageStream.Empty<Message> handle(@Nonnull ResetContext resetContext,
+                                                       @Nonnull ProcessingContext context) {
+                return MessageStream.empty();
             }
         };
     }

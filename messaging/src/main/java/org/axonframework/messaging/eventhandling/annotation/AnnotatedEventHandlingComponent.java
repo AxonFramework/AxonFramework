@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.annotation.AnnotatedHandlerInspector;
+import org.axonframework.messaging.core.annotation.HandlerAttributes;
 import org.axonframework.messaging.core.annotation.HandlerDefinition;
 import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
@@ -35,8 +36,11 @@ import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventSink;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.axonframework.messaging.eventhandling.replay.ResetContext;
+import org.axonframework.messaging.eventhandling.replay.ResetHandler;
 import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
 
+import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
 
@@ -90,15 +94,16 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
         this.messageTypeResolver = requireNonNull(messageTypeResolver, "The MessageTypeResolver may not be null.");
         this.converter = requireNonNull(converter, "The EventConverter may not be null.");
 
-        initializeHandlersBasedOnModel();
+        initializeEventHandlersBasedOnModel();
+        initializeResetHandlersBasedOnModel();
     }
 
-    private void initializeHandlersBasedOnModel() {
+    private void initializeEventHandlersBasedOnModel() {
         model.getUniqueHandlers(target.getClass(), EventMessage.class)
-             .forEach(handler -> registerHandler((EventHandlingMember<? super T>) handler));
+             .forEach(handler -> registerEventHandler((EventHandlingMember<? super T>) handler));
     }
 
-    private void registerHandler(EventHandlingMember<? super T> handler) {
+    private void registerEventHandler(EventHandlingMember<? super T> handler) {
         Class<?> payloadType = handler.payloadType();
         QualifiedName qualifiedName = handler.unwrap(MethodEventHandlerDefinition.MethodEventMessageHandlingMember.class)
                                              .map(EventHandlingMember::eventName)
@@ -160,6 +165,54 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
     public Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
         return handlingComponent.sequenceIdentifierFor(event, context);
     }
+
+    // region [ResetHandlers]
+    private void initializeResetHandlersBasedOnModel() {
+        model.getUniqueHandlers(target.getClass(), ResetContext.class)
+             .forEach(this::registerResetHandler);
+    }
+
+    private void registerResetHandler(MessageHandlingMember<? super T> handler) {
+        MessageHandlerInterceptorMemberChain<T> interceptorChain = model.chainedInterceptor(target.getClass());
+        handlingComponent.subscribe(constructResetHandlerFor(handler, interceptorChain));
+    }
+
+    @Nonnull
+    private ResetHandler constructResetHandlerFor(
+            MessageHandlingMember<? super T> handler,
+            MessageHandlerInterceptorMemberChain<T> interceptorChain
+    ) {
+        return (resetContext, ctx) -> interceptorChain.handle(resetContext, ctx, target, handler)
+                                                      .ignoreEntries()
+                                                      .cast();
+    }
+
+    /**
+     * @implNote This implementation will consider any class that has a single handler that accepts a replay, to support
+     * reset. If no handlers explicitly indicate whether replay is supported, the method returns {@code true}.
+     */
+    @Override
+    public boolean supportsReset() {
+        return model.getAllHandlers()
+                    .values()
+                    .stream()
+                    .flatMap(Collection::stream)
+                    .anyMatch(AnnotatedEventHandlingComponent::supportsReplay);
+    }
+
+    private static boolean supportsReplay(MessageHandlingMember<?> h) {
+        return h.attribute(HandlerAttributes.ALLOW_REPLAY)
+                .map(Boolean.TRUE::equals)
+                .orElse(Boolean.TRUE);
+    }
+
+    @Nonnull
+    @Override
+    public MessageStream.Empty<Message> handle(@Nonnull ResetContext resetContext,
+                                               @Nonnull ProcessingContext context) {
+        return handlingComponent.handle(resetContext, context);
+    }
+    // endregion
 
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
