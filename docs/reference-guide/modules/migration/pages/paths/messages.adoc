@@ -1,7 +1,7 @@
 = Message Migration
 :navtitle: Messages
 
-Axon Framework 5 introduces a more explicit way of defining and handling messages. 
+Axon Framework 5 introduces a more explicit way of defining and handling messages.
 This path covers the message-model migration from Axon Framework 4.x annotations to the new message-centric approach in AF5.
 
 == Message-specific annotations
