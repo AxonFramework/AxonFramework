@@ -326,6 +326,7 @@ The framework can handle concurrent modifications through optimistic locking.
 However, routing commands with the same routing key to the same instance avoids these conflicts in the first place.
 This is more efficient than detecting and resolving conflicts after the fact.
 
+[#configuring-routing-keys-with-command]
 === Configuring routing keys with `@Command`
 
 The simplest way to specify a routing key is using the `routingKey` attribute on the `@Command` annotation:
@@ -341,6 +342,8 @@ public record IssueCardCommand(String cardId, int amount, String shopId) {
 In this example, the `cardId` property will be extracted and used as the routing key.
 
 The framework will automatically extract the value from the specified property (field or method) and use it as the routing key when dispatching the command.
+If a method name is provided, it can be the actual method name (e.g., `getCardId`) or the property name (e.g., `cardId`).
+When using the property name for a method, the framework resolves it by looking for methods starting with `get`, `is`, or matching the name exactly.
 
 [NOTE]
 ====
