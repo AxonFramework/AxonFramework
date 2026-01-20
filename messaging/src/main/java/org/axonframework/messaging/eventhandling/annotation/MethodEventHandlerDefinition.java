@@ -17,6 +17,7 @@
 package org.axonframework.messaging.eventhandling.annotation;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.annotation.HandlerAttributes;
@@ -47,7 +48,7 @@ public class MethodEventHandlerDefinition implements HandlerEnhancerDefinition {
     public @Nonnull <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
         Optional<String> optionalEventName = original.attribute(HandlerAttributes.EVENT_NAME);
         return original.unwrap(Method.class)
-                       .filter(method -> method.isAnnotationPresent(EventHandler.class))
+                       .filter(method -> AnnotationUtils.isAnnotationPresent(method, EventHandler.class))
                        .filter(method -> optionalEventName.isPresent())
                        .map(method -> (MessageHandlingMember<T>)
                                new MethodEventHandlerDefinition.MethodEventMessageHandlingMember<>(
