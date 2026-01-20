@@ -1355,8 +1355,9 @@ class PooledStreamingEventProcessorTest {
         @Test
         void resetTokensWithDefaultFirstTokenAsStart() {
             // given
-            int expectedSegmentCount = 2;
             TrackingToken initialToken = new GlobalSequenceTrackingToken(42);
+            int expectedSegmentCount = 2;
+            TrackingToken expectedToken = ReplayToken.createReplayToken(initialToken, initialToken);
 
             AtomicBoolean resetHandlerInvoked = new AtomicBoolean(false);
             defaultEventHandlingComponent.subscribe((resetContext, ctx) -> {
@@ -1373,6 +1374,7 @@ class PooledStreamingEventProcessorTest {
             startEventProcessor();
             assertWithin(2, TimeUnit.SECONDS, () -> {
                 List<Segment> segments = joinAndUnwrap(tokenStore.fetchSegments(PROCESSOR_NAME, null));
+                assertThat(segments).isNotNull();
                 assertEquals(expectedSegmentCount, segments.size());
             });
             joinAndUnwrap(testSubject.shutdown());
@@ -1384,22 +1386,28 @@ class PooledStreamingEventProcessorTest {
             assertTrue(resetHandlerInvoked.get());
 
             // then - The token stays the same, as the original and token after reset are identical.
-            // A ReplayToken is created even when resetting to the same position (entering replay mode)
-            TrackingToken expectedToken = ReplayToken.createReplayToken(initialToken, initialToken);
             List<Segment> segments = joinAndUnwrap(tokenStore.fetchSegments(PROCESSOR_NAME, null));
-            TrackingToken token0 = joinAndUnwrap(tokenStore.fetchToken(PROCESSOR_NAME, segments.get(0).getSegmentId(), null));
-            TrackingToken token1 = joinAndUnwrap(tokenStore.fetchToken(PROCESSOR_NAME, segments.get(1).getSegmentId(), null));
+            assertThat(segments).isNotNull();
+            TrackingToken token0 = joinAndUnwrap(
+                    tokenStore.fetchToken(PROCESSOR_NAME, segments.get(0).getSegmentId(), null)
+            );
+            TrackingToken token1 = joinAndUnwrap(
+                    tokenStore.fetchToken(PROCESSOR_NAME, segments.get(1).getSegmentId(), null)
+            );
             assertEquals(expectedToken, token0);
             assertEquals(expectedToken, token1);
-            assertFalse(ReplayToken.isReplay(token0));
-            assertFalse(ReplayToken.isReplay(token1));
+            // isReplay == true since ReplayToken#createReplayToken result in a ReplayToken for same position
+            assertTrue(ReplayToken.isReplay(token0));
+            assertTrue(ReplayToken.isReplay(token1));
         }
 
         @Test
         void resetTokensFromDefaultFirstTokenWithResetContext() {
-            int expectedSegmentCount = 2;
+            // given
             TrackingToken initialToken = new GlobalSequenceTrackingToken(42);
+            int expectedSegmentCount = 2;
             String expectedContext = "my-context";
+            TrackingToken expectedToken = ReplayToken.createReplayToken(initialToken, initialToken, expectedContext);
 
             AtomicBoolean resetHandlerInvoked = new AtomicBoolean(false);
             defaultEventHandlingComponent.subscribe((resetContext, ctx) -> {
@@ -1413,30 +1421,37 @@ class PooledStreamingEventProcessorTest {
                           .initialToken(source -> CompletableFuture.completedFuture(initialToken))
             );
 
-            // Start and stop the processor to initialize the tracking tokens
+            // when - Start and stop the processor to initialize the tracking tokens
             joinAndUnwrap(testSubject.start());
             await().atMost(Duration.ofSeconds(2L)).untilAsserted(
                     () -> {
                         List<Segment> segments = joinAndUnwrap(tokenStore.fetchSegments(PROCESSOR_NAME, null));
+                        assertThat(segments).isNotNull();
                         assertEquals(expectedSegmentCount, segments.size());
                     }
             );
             joinAndUnwrap(testSubject.shutdown());
 
+            // when - Reset tokens with context
             joinAndUnwrap(testSubject.resetTokens(expectedContext));
 
+            // then - Verify reset handler was invoked
             assertTrue(resetHandlerInvoked.get());
 
-            // A ReplayToken is created even when resetting to the same position (entering replay mode)
-            TrackingToken expectedToken = ReplayToken.createReplayToken(initialToken, initialToken, expectedContext);
+            // then - The token stays the same, as the original and token after reset are identical.
             List<Segment> segments = joinAndUnwrap(tokenStore.fetchSegments(PROCESSOR_NAME, null));
-            // The token stays the same, as the original and token after reset are identical.
-            TrackingToken token0 = joinAndUnwrap(tokenStore.fetchToken(PROCESSOR_NAME, segments.get(0).getSegmentId(), null));
-            TrackingToken token1 = joinAndUnwrap(tokenStore.fetchToken(PROCESSOR_NAME, segments.get(1).getSegmentId(), null));
+            assertThat(segments).isNotNull();
+            TrackingToken token0 = joinAndUnwrap(
+                    tokenStore.fetchToken(PROCESSOR_NAME, segments.get(0).getSegmentId(), null)
+            );
+            TrackingToken token1 = joinAndUnwrap(
+                    tokenStore.fetchToken(PROCESSOR_NAME, segments.get(1).getSegmentId(), null)
+            );
             assertEquals(expectedToken, token0);
             assertEquals(expectedToken, token1);
-            assertFalse(ReplayToken.isReplay(token0));
-            assertFalse(ReplayToken.isReplay(token1));
+            // isReplay == true since ReplayToken#createReplayToken result in a ReplayToken for same position
+            assertTrue(ReplayToken.isReplay(token0));
+            assertTrue(ReplayToken.isReplay(token1));
         }
 
         @Test
