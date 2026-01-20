@@ -17,15 +17,14 @@
 package org.axonframework.messaging.eventhandling;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.eventhandling.replay.GenericResetContext;
-import org.axonframework.messaging.eventhandling.replay.ResetHandler;
-import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.eventhandling.replay.GenericResetContext;
+import org.axonframework.messaging.eventhandling.replay.ResetHandler;
 import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
 import org.junit.jupiter.api.*;
 
@@ -163,7 +162,7 @@ class SimpleEventHandlingComponentTest {
                 return MessageStream.empty();
             };
 
-            var component = new SimpleEventHandlingComponent();
+            var component = SimpleEventHandlingComponent.create("test");
             component.subscribe(resetHandler);
 
             // when
@@ -183,7 +182,7 @@ class SimpleEventHandlingComponentTest {
                 return MessageStream.empty();
             };
 
-            var component = new SimpleEventHandlingComponent();
+            var component = SimpleEventHandlingComponent.create("test");
             component.subscribe(resetHandler);
             component.subscribe(resetHandler);
 
