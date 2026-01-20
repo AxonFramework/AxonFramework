@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,8 +29,9 @@ import org.axonframework.common.configuration.Components;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.common.configuration.DecoratorDefinition;
+import org.axonframework.common.configuration.DefaultComponentRegistry;
 import org.axonframework.common.configuration.DuplicateModuleRegistrationException;
-import org.axonframework.common.configuration.HierarchicalConfiguration;
+import org.axonframework.common.configuration.HierarchicalLifecycleRegistry;
 import org.axonframework.common.configuration.LifecycleRegistry;
 import org.axonframework.common.configuration.Module;
 import org.axonframework.common.configuration.OverridePolicy;
@@ -68,6 +69,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
+
+import static org.axonframework.common.configuration.DefaultComponentRegistry.create;
 
 /**
  * A {@link ComponentRegistry} implementation that connects into Spring's ecosystem by means of being a
@@ -115,6 +118,16 @@ public class SpringComponentRegistry implements
 
     private ConfigurableListableBeanFactory beanFactory;
 
+    /**
+     * Creates a new default registry. This will include the same enhancers, disabled
+     * enhancers and decorator definitions as the original.
+     * The enhancerScanning flag is set to false.
+     *
+     * @return A new registry used for modules.
+     */
+    DefaultComponentRegistry copyWithDecoratorsAndEnhancers() {
+        return create(this.decorators, this.enhancers.values(), this.disabledEnhancers);
+    }
     /**
      * Constructs a {@code SpringComponentRegistry} with the given {@code listableBeanFactory}. The
      * {@code listableBeanFactory} is used to discover all beans of type {@link ConfigurationEnhancer}.
@@ -395,7 +408,7 @@ public class SpringComponentRegistry implements
         decorateComponents();
         registerLocalComponentsWithApplicationContext();
         scanForModules();
-        buildModules();
+        buildModules(this.configuration);
         scanForComponentFactories();
         registerFactoryShutdownHandlers();
     }
@@ -540,12 +553,18 @@ public class SpringComponentRegistry implements
      * Ensure all registered {@link Module Modules} are built too. Store their {@link Configuration} results for
      * exposure on {@link Configuration#getModuleConfigurations()}.
      */
-    private void buildModules() {
+    private void buildModules(Configuration configuration) {
         for (Module module : modules.values()) {
-            Configuration builtModule = HierarchicalConfiguration.build(
-                    lifecycleRegistry, (childLifecycleRegistry) -> module.build(configuration, childLifecycleRegistry)
+            var moduleRegistry = this.copyWithDecoratorsAndEnhancers();
+            var builtModuleConfiguration = HierarchicalLifecycleRegistry.build(
+                    lifecycleRegistry,
+                    childLifecycleRegistry -> {
+                        var local = moduleRegistry.createLocalConfiguration(configuration);
+                        var moduleConfiguration = module.build(local, childLifecycleRegistry);
+                        return moduleRegistry.buildNested(moduleConfiguration, childLifecycleRegistry);
+                    }
             );
-            moduleConfigurations.put(module.name(), builtModule);
+            moduleConfigurations.put(module.name(), builtModuleConfiguration);
         }
     }
 

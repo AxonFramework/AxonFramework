@@ -1,0 +1,363 @@
+= Advanced Testing
+:navtitle: Advanced Testing
+
+After having taken note of the xref:basic-testing.adoc[basic test] flow and the use of xref:matchers-and-field-filters.adoc[matchers and field filters], it's worth to investigate more advanced testing scenarios.
+This page covers those advanced tests, discussing <<integration_testing,integration tests>>, <<testing-with-spring-boot,testing with spring boot>>, and <<testing-with-axon-server-testcontainer,testing with Testcontainers>> to name a few.
+
+[#integration_testing]
+== Integration testing
+
+You are able to provide your entire application configuration since the `AxonTestFixture` expects the `ApplicationConfigurer` (as discussed xref:basic-testing.adoc[here]).
+Furthermore, the broad xref:basic-testing.adoc#given_execute[given-execute] and xref:basic-testing.adoc#then_expect[then-expect] operations allow you to dive into configuration and use whatever components you require for setup and validation.
+These two pointers combined make it straightforward to use Axon's test fixtures for integration testing.
+
+As such, examples of integration tests can roughly be consolidated to flows like this:
+
+[source,java]
+----
+import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.modelling.repository.Repository;
+import org.axonframework.test.fixture.AxonTestFixture;
+import org.junit.jupiter.api.*;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+
+class AccountIntegrationTest {
+
+    private AxonTestFixture fixture;
+
+    @BeforeEach
+    void setUp() {
+        // One way or another, you need access to the full ApplicationConfigurer.
+        // In this example, the ApplicationConfigurer is constructed statically and accessed as such for tests.
+        fixture = AxonTestFixture.with(MainApp.configurer());
+    }
+
+    @Test
+    void test() {
+        fixture.given()
+               .events(new AccountCreatedEvent("account-1", 1337))
+               .execute(config -> {
+                   // Retrieve components for setup
+                   var repository = config.getComponent(Repository.class);
+                   // Perform setup...
+               })
+               .when()
+               .command(new PlaceOrderCommand("order-1", "account-1"))
+               .then()
+               .expect(config -> {
+                   // Retrieve components for verification
+                   Repository repository = config.getComponent(Repository.class);
+                   // Perform verification...
+                   assertThat(repository).has(/*...*/);
+               });
+    }
+
+    @AfterEach
+    void tearDown() {
+        // Ensure to stop the fixture to cleanly close your resources
+        fixture.stop();
+    }
+}
+----
+
+When using the fully declarative configuration route, you will be aware of your `ApplicationConfigurer` already and how to use it for fixtures.
+If an autodetected flow is used, as with Spring, be sure to check out the <<testing-with-spring-boot,testing with Spring Boot>> section.
+
+[#testing-with-spring-boot]
+== Testing with Spring Boot
+
+If you are using Spring Boot, you will not construct the `ApplicationConfigurer` yourself.
+Axon Framework will take care of that for you.
+However, that does not mean the `ApplicationConfigurer` does not exist in your application.
+
+If you adjust your test case to be a Spring Boot test, you can inject the autoconfigured `ApplicationConfigurer` right in your fixture:
+
+[source,java]
+----
+import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.test.fixture.AxonTestFixture;
+import org.junit.jupiter.api.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+
+@SpringBootTest
+class AccountSpringTest {
+
+    @Autowired
+    private ApplicationConfigurer configurer;
+
+    private AxonTestFixture fixture;
+
+    @BeforeEach
+    void setUp() {
+        fixture = AxonTestFixture.with(configurer);
+    }
+
+    @Test
+    void testWithSpringConfiguration() {
+        fixture.given()
+               .event(new AccountCreatedEvent("account-1", 500.00))
+               .when()
+               .command(new WithdrawMoneyCommand("account-1", 100.00))
+               .then()
+               .success()
+               .events(new MoneyWithdrawnEvent("account-1", 100.00));
+    }
+
+    @AfterEach
+    void tearDown() {
+        fixture.stop();
+    }
+}
+----
+
+From here, it is rather straightforward to add Testcontainers into the mix, when your (integration) test requires it.
+Be sure to check out the <<testing-with-axon-server-testcontainer,tests with Testcontainers>> section for that.
+
+=== Verifying (mocked) Spring beans
+
+As suggested in the <<integration_testing,integration testing>> section, the xref:basic-testing.adoc#then_expect[then-expect] method provides access to the configuration.
+Note that this configuration includes access to **any* beans that are part of Spring application context.
+As such, by using `expect(consumer<Configuration>)`, you are able to verify if your beans executed certain operations as part of the when-phase action:
+
+[source,java]
+----
+import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.test.fixture.AxonTestFixture;
+import org.junit.jupiter.api.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+
+import static org.mockito.Mockito.*;
+
+@SpringBootTest
+class AccountSpringTest {
+
+    @Autowired
+    private ApplicationConfigurer configurer;
+
+    private AxonTestFixture fixture;
+
+    @BeforeEach
+    void setUp() {
+        fixture = AxonTestFixture.with(configurer);
+    }
+
+    @TestConfiguration
+    static class TestConfig {
+
+        @Bean
+        public MyService myService() {
+            return mock(MyService.class);
+        }
+    }
+
+    @Test
+    void testWithSpringConfigurationAndMockedBean() {
+        fixture.given()
+               .event(new AccountCreatedEvent("account-1", 500.00))
+               .when()
+               .command(new WithdrawMoneyCommand("account-1", 100.00))
+               .then()
+               .success()
+               .events(new MoneyWithdrawnEvent("account-1", 100.00))
+               .expect(config -> {
+                   MyService myService = config.getComponent(MyService.class);
+                   verify(myService).invoked();
+               });
+    }
+
+    @AfterEach
+    void tearDown() {
+        fixture.stop();
+    }
+}
+----
+
+[#testing-with-axon-server-testcontainer]
+== Tests with the Axon Server Testcontainer
+
+https://testcontainers.com/[Testcontainers] is a library that provides lightweight, throwaway instances of databases, message brokers, and other services as Docker containers.
+This makes it ideal for (integration) testing.
+Axon provides a dedicated container for Axon Server, called the `AxonServerContainer`.
+By adding this to your tests with the `@Container` annotation, it will be started automatically.
+
+However, you will be required to take the host and port of the constructed container and inject them.
+If you are using Spring Boot, be sure to jump to <<axon_server_with_spring_boot_and_serviceconnection,this>> example.
+Otherwise, here's what you need to do to use The `axon-server-connector` module provides the `AxonServerContainer` for use with Testcontainers:
+
+[source,java]
+----
+import io.axoniq.axonserver.connector.AxonServerConnection;
+import io.axoniq.axonserver.connector.AxonServerConnectionFactory;
+import io.axoniq.axonserver.connector.impl.ServerAddress;
+import jakarta.annotation.Nonnull;
+import org.axonframework.axonserver.connector.AxonServerConfiguration;
+import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.ConfigurationEnhancer;
+import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+import org.axonframework.test.fixture.AxonTestFixture;
+import org.axonframework.test.fixture.MessagesRecordingConfigurationEnhancer;
+import org.axonframework.test.server.AxonServerContainer;
+import org.junit.jupiter.api.*;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+
+@Testcontainers
+class AccountAxonServerTest {
+
+    @Container
+    static AxonServerContainer axonServer = new AxonServerContainer();
+    private static AxonServerConnection connection;
+
+    private AxonTestFixture fixture;
+
+    @BeforeAll
+    static void beforeAll() {
+        axonServer.start();
+        ServerAddress address = new ServerAddress(axonServer.getHost(), axonServer.getGrpcPort());
+        connection = AxonServerConnectionFactory.forClient("GameTest")
+                                                .routingServers(address)
+                                                .build()
+                                                .connect("default");
+    }
+
+    @BeforeEach
+    void setUp() {
+        // The MessagesRecordingConfigurationEnhancer is required to allow verification to succeed for the fixture.
+        // Will be resolved automatically by the test fixture combined with Spring soon.
+        EventSourcingConfigurer configurer =
+                EventSourcingConfigurer.create()
+                                       .registerEntity(EventSourcedEntityModule.autodetected(
+                                               String.class, Account.class
+                                       ))
+                                       .componentRegistry(registry -> registry
+                                               .registerEnhancer(new MessagesRecordingConfigurationEnhancer())
+                                               .registerEnhancer(serverConfigurationEnhancer())
+                                       );
+
+        fixture = AxonTestFixture.with(configurer);
+    }
+
+    public ConfigurationEnhancer serverConfigurationEnhancer() {
+        return new ConfigurationEnhancer() {
+            @Override
+            public void enhance(@Nonnull ComponentRegistry registry) {
+                registry.registerComponent(
+                        AxonServerConfiguration.class,
+                        c -> {
+                            AxonServerConfiguration serverConfig = new AxonServerConfiguration();
+                            serverConfig.setServers(
+                                    axonServer.getHost() + ":" + axonServer.getGrpcPort()
+                            );
+                            return serverConfig;
+                        }
+                );
+            }
+
+            @Override
+            public int order() {
+                return Integer.MIN_VALUE;
+            }
+        };
+    }
+
+    @Test
+    void testWithAxonServer() {
+        fixture.given()
+               .noPriorActivity()
+               .when()
+               .command(new CreateAccountCommand("account-1", 500.00))
+               .then()
+               .success()
+               .events(new AccountCreatedEvent("account-1", 500.00));
+    }
+
+    @AfterEach
+    void tearDown() {
+        fixture.stop();
+    }
+
+    @AfterAll
+    static void afterAll() {
+        connection.disconnect();
+        axonServer.stop();
+    }
+}
+----
+
+As shown above, we need to inject a `ConfigurationEnhancer` to enhance the `AxonServerConfiguration`.
+Axon's configuration will pick this up and make the connection to the `AxonServerContainer` for message distribution and event storage.
+
+[#axon_server_with_spring_boot_and_serviceconnection]
+=== AxonServerContainer with Spring Boot and @ServiceConnection
+
+Spring Boot has a Testcontainers specific dependency that provides the `@ServiceConnection` annotation.
+This annotation can be attached to Testcontainers, which then will automatically configure the connection properties for you.
+Thus, if we add the `@ServiceConnection` to the `AxonServerContainer` field, our test setup is greatly simplified compared to the <<testing-with-axon-server-testcontainer,declarative>> approach:
+
+[source,java]
+----
+import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.test.fixture.AxonTestFixture;
+import org.axonframework.test.fixture.MessagesRecordingConfigurationEnhancer;
+import org.axonframework.test.server.AxonServerContainer;
+import org.junit.jupiter.api.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.context.annotation.Bean;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+
+@SpringBootTest
+@Testcontainers
+class AccountAxonServerAndSpringBootTest {
+
+    @Container
+    @ServiceConnection
+    static AxonServerContainer axonServer = new AxonServerContainer();
+
+    @Autowired
+    private ApplicationConfigurer configurer;
+
+    private AxonTestFixture fixture;
+
+    @TestConfiguration
+    static class TestConfig {
+
+        @Bean
+        public MessagesRecordingConfigurationEnhancer recordingConfigurationEnhancer() {
+            return new MessagesRecordingConfigurationEnhancer();
+        }
+    }
+
+    @BeforeEach
+    void setUp() {
+        fixture = AxonTestFixture.with(configurer);
+    }
+
+    @Test
+    void testWithAxonServer() {
+        fixture.given()
+               .noPriorActivity()
+               .when()
+               .command(new CreateAccountCommand("account-1", 500.00))
+               .then()
+               .success()
+               .events(new AccountCreatedEvent("account-1", 500.00));
+    }
+
+    @AfterEach
+    void tearDown() {
+        fixture.stop();
+    }
+}
+----

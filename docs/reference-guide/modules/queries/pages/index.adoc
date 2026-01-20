@@ -1,0 +1,32 @@
+= Queries
+:page-aliases: README.adoc,query-processing.adoc
+
+Commands are messages that express the request for data.
+Any application can declare it's able to handle a query message and provide a response to it.
+
+Query handling is fully async-native, with all query dispatching operations returning `CompletableFuture` or `Publisher` types. Query handlers can return these types directly, allowing for efficient asynchronous processing. Queries are routed based on the query's `MessageType` (qualified name and version), independent of the Java class used to represent the query payload.
+
+== Types of queries
+
+There are multiple types of queries that can be distinguished:
+
+. xref:axon-framework-reference:queries:query-dispatchers.adoc#point-to-point-queries[Point-to-point queries]:
+These are routed to a single handler, which is expected to return a single result. This is the most common type of query.
+. xref:axon-framework-reference:queries:query-dispatchers.adoc#subscription-queries[Subscription queries]: These request an initial result and then continue to receive updates as long as the subscription is active. The initial result and updates are combined in a single `Publisher` stream.
+. xref:axon-framework-reference:queries:query-dispatchers.adoc#streaming-queries[Streaming queries]: These queries are used to request a stream of results as a `Publisher`, which are returned as they become available. This is ideal for large result sets.
+
+You can find more about each type of query in the xref:axon-framework-reference:queries:query-dispatchers.adoc[Query dispatchers] section.
+
+
+== Subsections
+A summary of the various sections is given below.
+
+[cols="<,<"]
+|===
+|Subsection |Purpose
+
+|xref:query-handlers.adoc[Handling] |How to write and register query handlers
+|xref:query-dispatchers.adoc[Dispatching] |How to dispatch queries from your application code
+|xref:infrastructure.adoc[Infrastructure] |Query bus implementations and other query infrastructure components
+|xref:configuration.adoc[Configuration] |Configuration concerns for Query Messages using the Axon Framework
+|===

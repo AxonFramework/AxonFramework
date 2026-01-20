@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2010-2025. Axon Framework
+  ~ Copyright (c) 2010-2026. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@
     </description>
 
     <properties>
-        <opentelemetry-api.version>1.57.0</opentelemetry-api.version>
+        <opentelemetry-api.version>1.58.0</opentelemetry-api.version>
     </properties>
 
     <dependencies>

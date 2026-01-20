@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.axonframework.update;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.annotation.RegistrationScope;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.common.lifecycle.Phase;
@@ -36,6 +37,7 @@ import static org.axonframework.common.configuration.ComponentDefinition.ofType;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
+@RegistrationScope
 @Internal
 public class UpdateCheckerConfigurationEnhancer implements ConfigurationEnhancer {
 
@@ -55,25 +57,25 @@ public class UpdateCheckerConfigurationEnhancer implements ConfigurationEnhancer
             logger.debug("Skipping AxonIQ UpdateChecker as a testsuite environment was detected.");
             return;
         }
-        componentRegistry.registerIfNotPresent(ofType(UsagePropertyProvider.class)
-                                                       .withBuilder(c -> UsagePropertyProvider.create()))
-                         .registerIfNotPresent(ofType(UpdateCheckerHttpClient.class)
-                                                       .withBuilder(c -> {
-                                                           UsagePropertyProvider propertyProvider = c.getComponent(
-                                                                   UsagePropertyProvider.class);
-                                                           return new UpdateCheckerHttpClient(propertyProvider);
-                                                       }))
-                         .registerIfNotPresent(ofType(UpdateCheckerReporter.class)
-                                                       .withBuilder(c -> new LoggingUpdateCheckerReporter())
-                         )
-                         .registerIfNotPresent(ofType(UpdateChecker.class)
-                                                       .withBuilder(c -> new UpdateChecker(
-                                                               c.getComponent(UpdateCheckerHttpClient.class),
-                                                               c.getComponent(UpdateCheckerReporter.class),
-                                                               c.getComponent(UsagePropertyProvider.class)
-                                                       ))
-                                                       .onStart(Phase.EXTERNAL_CONNECTIONS, UpdateChecker::start)
-                                                       .onShutdown(Phase.EXTERNAL_CONNECTIONS, UpdateChecker::stop));
+        componentRegistry
+                .registerIfNotPresent(
+                        ofType(UsagePropertyProvider.class).withBuilder(c -> UsagePropertyProvider.create())
+                ).registerIfNotPresent(
+                        ofType(UpdateCheckerHttpClient.class).withBuilder(c -> new UpdateCheckerHttpClient(c.getComponent(
+                                UsagePropertyProvider.class)))
+                )
+                .registerIfNotPresent(
+                        ofType(UpdateCheckerReporter.class).withBuilder(c -> new LoggingUpdateCheckerReporter())
+                )
+                .registerIfNotPresent(
+                        ofType(UpdateChecker.class).withBuilder(c -> new UpdateChecker(
+                                                           c.getComponent(UpdateCheckerHttpClient.class),
+                                                           c.getComponent(UpdateCheckerReporter.class),
+                                                           c.getComponent(UsagePropertyProvider.class)
+                                                   ))
+                                                   .onStart(Phase.EXTERNAL_CONNECTIONS, UpdateChecker::start)
+                                                   .onShutdown(Phase.EXTERNAL_CONNECTIONS, UpdateChecker::stop)
+                );
     }
 
     @Override

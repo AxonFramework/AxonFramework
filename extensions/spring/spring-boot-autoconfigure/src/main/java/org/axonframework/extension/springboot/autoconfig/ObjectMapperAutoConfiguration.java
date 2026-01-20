@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,13 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
+import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.axonframework.conversion.json.JacksonConverter;
+import org.axonframework.extension.spring.data.JacksonPageDeserializer;
 import org.axonframework.extension.springboot.ConverterProperties;
+import org.springframework.data.domain.Page;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
@@ -35,6 +39,7 @@ import org.springframework.context.annotation.Conditional;
  * {@link JacksonConverter}.
  *
  * @author Steven van Beelen
+ * @author Theo Emanuelsson
  * @since 3.4.0
  */
 @AutoConfiguration
@@ -59,6 +64,27 @@ public class ObjectMapperAutoConfiguration {
     @Conditional(JacksonConfiguredCondition.class)
     public ObjectMapper defaultAxonObjectMapper() {
         return new ObjectMapper().findAndRegisterModules();
+    }
+
+    /**
+     * Returns a Jackson {@link Module} that provides a custom deserializer for the Spring Data {@link Page} interface.
+     * <p>
+     * This {@code Module} bean is only created when the Spring Data {@link Page} interface is on the classpath
+     * <b>and</b> whenever the user specified either the {@link ConverterProperties.ConverterType#DEFAULT} or
+     * {@link ConverterProperties.ConverterType#JACKSON} {@code ConverterType}. The module deserializes {@link Page}
+     * instances into {@link org.springframework.data.domain.PageImpl PageImpl} objects.
+     *
+     * @return A Jackson {@link Module} that deserializes {@link Page} into
+     *         {@link org.springframework.data.domain.PageImpl PageImpl}.
+     * @see JacksonPageDeserializer
+     * @since 5.1.0
+     */
+    @Bean
+    @ConditionalOnClass(Page.class)
+    @Conditional(JacksonConfiguredCondition.class)
+    public Module springDataPageJacksonModule() {
+        return new SimpleModule()
+                .addDeserializer(Page.class, new JacksonPageDeserializer());
     }
 
     /**

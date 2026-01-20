@@ -1,0 +1,38 @@
+= Minor Releases
+:navtitle: Minor Releases
+
+Any patch release made for an Axon project is tailored towards resolving bugs. This page aims to provide a dedicated overview of patch releases per project.
+
+[#release_5_0]
+== Release 5.0
+
+=== Release 5.0.1
+
+==== Enhancements
+
+- Update the AF 5.0.1 branch with AF 4.12.2 link:https://github.com/AxonFramework/AxonFramework/pull/3973[#3973]
+- Feature/university example application link:https://github.com/AxonFramework/AxonFramework/pull/3969[#3969]
+- List all autoconfigurations in Meta-Inf, apply naming convention link:https://github.com/AxonFramework/AxonFramework/pull/3948[#3948]
+- Show failed message handler in logs link:https://github.com/AxonFramework/AxonFramework/pull/3913[#3913]
+- Adjust PSEP log levels link:https://github.com/AxonFramework/AxonFramework/pull/3896[#3896]
+- Default to the `AnnotationMessageTypeResolver` in annotation-specific components link:https://github.com/AxonFramework/AxonFramework/pull/3894[#3894]
+
+==== Bug fixes
+
+- Align `UpdateChecker` fixes from 4.12.2 with 5.0.1 link:https://github.com/AxonFramework/AxonFramework/pull/3985[#3985]
+- [#3982] fix(test): `Event events(`@Nonnull` List<?>... events)` - invalid usage of varargs link:https://github.com/AxonFramework/AxonFramework/pull/3984[#3984]
+- When splitting and merging tokens, update both tokens involved link:https://github.com/AxonFramework/AxonFramework/pull/3978[#3978]
+- [#3938] Fix startup of application when axon server is not available link:https://github.com/AxonFramework/AxonFramework/pull/3966[#3966]
+- ApplicationContext doesn't start properly when AxonServer is not running link:https://github.com/AxonFramework/AxonFramework/issues/3938[#3938]
+- Prevent duplicate registration of all handlers when using subtypes link:https://github.com/AxonFramework/AxonFramework/pull/3933[#3933]
+
+==== Contributors
+
+We'd like to thank all the contributors who worked on this release!
+
+- link:https://github.com/zambrovski[@zambrovski]
+- link:https://github.com/smcvb[@smcvb]
+- link:https://github.com/jangalinski[@jangalinski]
+- link:https://github.com/hjohn[@hjohn]
+- link:https://github.com/MateuszNaKodach[@MateuszNaKodach]
+- link:https://github.com/Sam-Kruglov[@Sam-Kruglov]

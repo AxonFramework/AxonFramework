@@ -1,0 +1,277 @@
+= Timeouts
+
+[WARNING]
+====
+Built-in timeout support for message handler and the processing context will be introduced in 5.2.0. As such, the description below is not complete nor finalized. For those curious, be sure to follow the link:https://github.com/AxonFramework/AxonFramework/issues/3559[issue] that will implement this functionality.
+====
+
+Axon Framework is built with asynchronous processing at its core.
+To prevent messages from being processed indefinitely, Axon provides mechanisms to set timeouts on message handler invocations and on the processing of the xref:processing-context.adoc[`ProcessingContext`] as a whole.
+
+== Overview
+
+Both timeouts work with a limit of the execution time (`timeoutMs`), and a time from which warnings will be logged (`warningThreshold`).
+When having a long-running handler or transaction, the following will happen:
+
+. After the `warningThreshold` has passed, a warning will be logged.
+. For each `warningInterval` that passes after the `warningThreshold`, another warning will be logged.
+. When the `timeoutMs` has passed, the handler or transaction will be interrupted.
+
+Both warnings and timeouts are logged at the `WARN` level.
+The message will contain:
+
+. The name of the handler with the message, or component of transaction
+. The time it has been processing so far
+. The time it has left before the timeout is reached
+. The stack trace of the handler or transaction, starting from where the timeout started
+
+For example, a warning message could look like this:
+
+[source,text]
+----
+2025-02-12T20:01:20.795Z  WARN 68040 --- [playground-correlation] [ axon-janitor-0] axon-janitor                             : Message [io.axoniq.playground.publisher.MyContinuousEvent] for handler [io.axoniq.playground.publisher.PersistentStreamEventProcessor] is taking a long time to process. Current time: [5000ms]. Will be interrupted in [5000ms].
+Stacktrace of current thread:
+java.base/java.lang.Thread.sleep0(Native Method)
+java.base/java.lang.Thread.sleep(Thread.java:509)
+io.axoniq.playground.publisher.PersistentStreamEventProcessor.handle(PersistentStreamEventProcessor.kt:16)
+java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+/** Removed some part of the stack trace for brevity **/
+org.axonframework.messaging.timeout.TimeoutWrappedMessageHandlingMember.handle(TimeoutWrappedMessageHandlingMember.java:61)
+----
+
+This is beneficial for debugging and monitoring purposes, as it allows you to see which handlers are taking a long time to process.
+Additionally, it helps prevent a broken process from blocking processing of other messages.
+Examples of this are http libraries awaiting a response, that never comes during an event handler.
+
+=== Defaults and disabling
+
+As timeouts and warnings have been introduced in a minor version (4.11), the default values have been set to a high value to not interfere with any processes that users have already built.
+
+Long-running handlers or transactions will start logging warnings after 10 seconds, and will be interrupted after 30 seconds.
+You can always change these settings to your liking, or disable the warnings completely as below.
+Note that this also disables the annotation-based timeouts.
+
+[tabs]
+======
+Configuration API::
++
+--
+To disable timeouts and warnings for non-Spring Boot applications, you only have to not register the configuration outlined on this page, as it's not activated by default.
+--
+
+Spring Boot::
++
+--
+For Spring Boot, disabling all timeouts and warnings can be done by setting the following property in your `application.properties` or `application.yml`:
+
+[source,properties]
+----
+axon.timeout.enabled=false
+----
+
+--
+======
+
+[#handler-timeouts]
+== Handler timeouts
+
+The method you define for Axon Framework to invoke is known as a message handler.
+These are the methods you annotate with `@CommandHandler`, `@EventHandler`, or `@QueryHandler`.
+
+You can set a timeout on all message handlers, with unique configuration per message type.
+
+[tabs]
+======
+Configuration API::
++
+--
+You can create a `ConfigurerModule` with the exact settings you would like.
+Without Spring Boot, no default timeouts are applied.
+
+[source,java]
+----
+public class MyTimeoutConfigurerModule implements ConfigurerModule {
+
+    @Override
+    public void configureModule(@NotNull Configurer configurer) {
+        HandlerTimeoutConfiguration config = new HandlerTimeoutConfiguration();
+        config.getEvents().setTimeoutMs(30000);
+        // Set any timeouts and warning thresholds you would like here
+        configurer.registerHandlerEnhancerDefinition(c -> new HandlerTimeoutHandlerEnhancerDefinition(config));
+    }
+}
+----
+--
+Spring Boot::
++
+--
+For Spring Boot, the defaults for all message handlers are set to a timeout of 30 seconds.
+In addition, by default, they will start warning every second after 10 seconds have passed.
+You can tweak these settings by setting the following properties in your `application.properties` or `application.yml`:
+
+[source,properties]
+----
+# For @EventHandler methods
+axon.timeout.handler.events.timeout-ms=20000
+axon.timeout.handler.events.warning-threshold-ms=5000
+axon.timeout.handler.events.warning-interval-ms=1000
+
+# For @CommandHandler methods
+axon.timeout.handler.commands.timeout-ms=20000
+axon.timeout.handler.commands.warning-threshold-ms=5000
+axon.timeout.handler.commands.warning-interval-ms=1000
+
+# For @QueryHandler methods
+axon.timeout.handler.queries.timeout-ms=20000
+axon.timeout.handler.queries.warning-threshold-ms=5000
+axon.timeout.handler.queries.warning-interval-ms=1000
+----
+--
+======
+
+In addition, you can place a `@MessageHandlerTimeout` annotation on a message handler to override the default timeout. This allows you to have a specific timeout for a message handler that that you know should be faster or slower than the global configuration.
+
+[source,java]
+----
+class MyEventProcessor {
+    @EventHandler
+    @MessageHandlerTimeout(timeoutMs = 10000, warningThresholdMs = 5000, warningIntervalMs = 1000)
+    public void handle(Object event)
+    {
+        Thread.sleep(19000);
+    }
+}
+----
+
+Setting `timeoutMs` on the global configuration and the annotation to `-1` will disable the timeout for that specific message handler.
+Similarly, setting `warningThresholdMs` to `-1` on both will disable the warning messages for that message handler.
+
+[#processing-context-timeouts]
+== Processing context timeouts
+
+The xref:processing-context.adoc[`ProcessingContext`] is the context in which messages are processed.
+While xref:#handler-timeouts[handler timeouts] only set timeouts for the invocation of handler functions, the `ProcessingContext` timeout sets a timeout for the entire processing of the message.
+This includes loading resources (such as entities for commands), invoking the handler function, and committing the processing context.
+
+You can customize timeouts for each component separately, such as the `CommandBus`, `QueryBus`, and `EventProcessor`.
+
+[tabs]
+======
+Configuration API::
++
+--
+Without Spring Boot, no default timeouts are applied.
+You can register timeout interceptors directly using the configuration API:
+
+[source,java]
+----
+public void configureTimeoutBehavior(MessagingConfigurer configurer) {
+    // Register timeout interceptor for command bus
+    configurer.registerCommandHandlerInterceptor(c -> {
+        UnitOfWorkTimeoutInterceptorBuilder builder =
+                new UnitOfWorkTimeoutInterceptorBuilder(
+                        "CommandBus",
+                        30000,  // timeout in ms
+                        25000,  // warning threshold in ms
+                        1000    // warning interval in ms
+                );
+        return builder.buildCommandInterceptor();
+    });
+
+    // Register timeout interceptor for query bus
+    configurer.registerQueryHandlerInterceptor(c -> {
+        UnitOfWorkTimeoutInterceptorBuilder builder =
+                new UnitOfWorkTimeoutInterceptorBuilder(
+                        "QueryBus",
+                        30000,  // timeout in ms
+                        25000,  // warning threshold in ms
+                        1000    // warning interval in ms
+                );
+        return builder.buildQueryInterceptor();
+    });
+
+    // Register timeout interceptor for event handlers
+    configurer.registerEventHandlerInterceptor(c -> {
+        UnitOfWorkTimeoutInterceptorBuilder builder =
+                new UnitOfWorkTimeoutInterceptorBuilder(
+                        "EventProcessor",
+                        30000,  // timeout in ms
+                        25000,  // warning threshold in ms
+                        1000    // warning interval in ms
+                );
+        return builder.buildEventInterceptor();
+    });
+}
+----
+
+For more advanced scenarios, you can implement a `ConfigurationEnhancer` to customize timeout configuration across all components:
+
+[source,java]
+----
+// Spring users can make a Spring bean of the ConfigurationEnhancer to auto inject it into Axon.
+public class TimeoutConfigurationEnhancer implements ConfigurationEnhancer {
+
+    @Override
+    public void enhance(ComponentRegistry registry) {
+        // Register decorators for handler interceptor registry
+        registry.registerDecorator(HandlerInterceptorRegistry.class, 0, (config, name, delegate) ->
+                delegate.registerCommandInterceptor(
+                                c -> new UnitOfWorkTimeoutInterceptorBuilder(
+                                        "CommandBus", 30000, 25000, 1000
+                                ).buildCommandInterceptor()
+                        )
+                        .registerQueryInterceptor(
+                                c -> new UnitOfWorkTimeoutInterceptorBuilder(
+                                        "Query", 30000, 25000, 1000
+                                ).buildQueryInterceptor()
+                        )
+                        .registerEventInterceptor(
+                                c -> new UnitOfWorkTimeoutInterceptorBuilder(
+                                        "Event", 30000, 25000, 1000
+                                ).buildEventInterceptor()
+                        )
+        );
+    }
+}
+
+// Somewhere in your configuration class...
+public void registerTimeoutEnhancer(MessagingConfigurer configurer) {
+    configurer.componentRegistry(
+            cr -> cr.registerEnhancer(new TimeoutConfigurationEnhancer())
+    );
+}
+----
+--
+
+Spring Boot::
++
+--
+For Spring Boot, the defaults for all unit of works are set to of 60 seconds.
+In addition, by default, they will start warning every second after 10 seconds have passed.
+You can tweak these settings by setting the following properties in your `application.properties` or `application.yml`:
+
+[source,properties]
+----
+# Timeout for a specific event processor
+axon.timeout.transaction.event-processor.my-processor.timeout-ms=2000
+axon.timeout.transaction.event-processor.my-processor.warning-threshold-ms=1000
+axon.timeout.transaction.event-processor.my-processor.warning-interval-ms=100
+
+# Timeout for all event processors without specific settings
+axon.timeout.transaction.event-processors.timeout-ms=20000
+axon.timeout.transaction.event-processors.warning-threshold-ms=10000
+axon.timeout.transaction.event-processors.warning-interval-ms=1000
+
+# Timeout for the command bus
+axon.timeout.transaction.command-bus.timeout-ms=20000
+axon.timeout.transaction.command-bus.warning-threshold-ms=10000
+axon.timeout.transaction.command-bus.warning-interval-ms=1000
+
+
+# Timeout for the query bus
+axon.timeout.transaction.query.timeout-ms=20000
+axon.timeout.transaction.query.warning-threshold-ms=10000
+axon.timeout.transaction.query.warning-interval-ms=1000
+----
+--
+======

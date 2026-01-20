@@ -1,1 +1,0 @@
-* xref:tracing-open-telemetry:index.adoc[]

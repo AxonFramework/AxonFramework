@@ -1,0 +1,172 @@
+= Exception Handling
+
+Exception handling is a well-known concept when developing software.
+Dealing with exceptions in a distributed application landscape is a little more challenging than we are typically used to.
+Especially when it comes to failures when handling a command or a query (messages that are intended to have a return value) we should be conscious about how we handle and report failures.
+
+== Results or exceptions
+
+In distributed systems, exceptions often lose much of their value when they cross boundaries between applications or services.
+Exception class names, stack traces, and detailed error information may not be meaningful to the receiving end, especially when:
+
+* The sender and receiver don't share the same codebase
+* Different programming languages are involved
+* The exception details expose internal implementation
+* The receiver needs structured information to make decisions
+
+For these reasons, **it's better to use result objects that can carry structured information about failures**, and reserve exceptions for truly exceptional cases.
+
+=== When to use results
+
+Use result objects for expected failure scenarios:
+
+* Validation failures (for example, "invalid email format", "amount exceeds limit")
+* Business rule violations (for example, "insufficient balance", "order already shipped")
+* Authorization failures (for example, "user lacks permission")
+* Resource not found scenarios
+
+These are not exceptional. They're expected possibilities that the caller should handle as part of normal application flow.
+Let's look at an example entity that handles the `PlaceOrderCommand`, returning a domain specific result:
+
+[source,java]
+----
+import org.axonframework.messaging.commandhandling.CommandExecutionException;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
+import org.axonframework.modelling.annotation.InjectEntity;
+
+class InventoryAutomation {
+
+    // Good: Returns a result object
+    @CommandHandler
+    public OrderResult placeOrder(PlaceOrderCommand command,
+                                  @InjectEntity Inventory inventory,
+                                  EventAppender appender) {
+        if (inventory.sufficientFor(command.productIds())) {
+            return OrderResult.failed("Insufficient balance");
+        }
+        if (!isAuthorized(command.userId())) {
+            return OrderResult.failed("User not authorized");
+        }
+        appender.append(new OrderPlacedEvent(orderId));
+        // Process order
+        return OrderResult.success(orderId);
+    }
+}
+----
+
+The result object can carry structured information about the failure that the receiver can use to make decisions or present appropriate feedback to users.
+
+=== When to use exceptions
+
+Reserve exceptions for truly exceptional circumstances:
+
+* Programming errors (for example, null pointer, illegal state)
+* Infrastructure failures (for example, database unavailable, network timeout)
+* Configuration errors (for example, missing required configuration)
+* Unexpected system errors
+
+These represent situations where normal processing cannot continue and typically require intervention.
+
+[source,java]
+----
+import org.axonframework.messaging.commandhandling.CommandExecutionException;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
+import org.axonframework.modelling.annotation.InjectEntity;
+
+class InventoryAutomation {
+
+    // Appropriate: Exception for infrastructure failure
+    @CommandHandler
+    public void handle(PlaceOrderCommand command,
+                       @InjectEntity Inventory inventory) {
+        try {
+            orderRepository.save(new Order(command.order()));
+        } catch (DatabaseUnavailableException e) {
+            // Truly exceptional - database is down
+            throw new CommandExecutionException(
+                    "Unable to process order due to system unavailability",
+                    e
+            );
+        }
+    }
+}
+----
+
+== Handler execution exceptions
+
+When decided upon that message handling should result in an exception, you can use Axon's `HandlerExecutionException`.
+The `HandlerExecutionException` marks an exception which originates from a message handling member.
+Since an xref:events:index.adoc[event] message is unidirectional, handling an event does not include any return values.
+As such, the `HandlerExecutionException` should only be returned as an exceptional result from handling a command or query.
+
+Axon provides more concrete implementations of this exception for failed command and query handling: `CommandExecutionException` and `QueryExecutionException`.
+
+=== Exception handling in distributed scenarios
+
+The usefulness of a dedicated handler execution exception becomes clearer in a distributed application environment where, for example, there is a dedicated application for dealing with commands and another application tasked with the query side.
+Due to the application division, you lose any certainty that both applications can access the same classes, which thus holds for any exception classes.
+
+To support and encourage this decoupling, Axon will generify **any** exception which is a result of command or query handling.
+When an exception is thrown in a command or query handler, Axon wraps it in a `CommandExecutionException` or `QueryExecutionException` that can be safely transmitted across boundaries.
+
+To maintain support for conditional logic dependent on the type of exception thrown in a distributed scenario, you can provide details in a `HandlerExecutionException`:
+
+[source,java]
+----
+import org.axonframework.messaging.commandhandling.CommandExecutionException;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
+import org.axonframework.modelling.annotation.InjectEntity;
+
+import java.util.Map;
+
+class InventoryAutomation {
+
+    @CommandHandler
+    public void handle(PlaceOrderCommand command,
+                       @InjectEntity Inventory inventory,
+                       EventAppender appender) {
+        if (criticalSystemError()) {
+            throw new CommandExecutionException(
+                    "System unavailable",
+                    null,
+                    // Exception details...
+                    Map.of(
+                            "errorCode", "SYSTEM_UNAVAILABLE",
+                            "retryable", "true"
+                    )
+            );
+        }
+        // Happy path, validating the inventory and publishing an event.
+    }
+}
+----
+
+The details map allows you to pass structured information about the exception that the receiver can use to make decisions about retry logic, error presentation, or recovery strategies. Note that any `Object` is supported as the details. Other reasonable options are failure objects and status enumerations, specific to the domain.
+
+[TIP]
+====
+Consider whether you really need an exception or whether a result object would serve your use case better!
+====
+
+== Interceptor-based error handling
+
+Beyond error handling within individual handlers, you can implement global error handling through xref:message-intercepting.adoc[interceptors].
+Interceptors can wrap exceptions, log errors, or transform error responses consistently across your application.
+
+This allows you to implement cross-cutting error handling concerns without modifying individual handlers, such as:
+
+* Logging all exceptions with consistent formatting.
+* Converting exceptions to appropriate result objects.
+* Adding correlation IDs to error responses.
+* Sending error notifications for critical failures.
+
+For more details on implementing interceptors, see xref:message-intercepting.adoc[Message Intercepting].
+
+== Error handling during processing
+
+When processing a message, you may need to register error handlers or cleanup actions that execute if something goes wrong.
+Axon provides hooks through the `ProcessingContext` to register such handlers.
+
+For details on registering error handlers, cleanup actions, and understanding the processing lifecycle phases, see xref:processing-context.adoc[`ProcessingContext`].

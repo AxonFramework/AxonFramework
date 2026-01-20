@@ -43,3 +43,5 @@ updates:
       versions: [ "[4.0.0,)" ]
     - dependency-name: "org.springdoc:*"
       versions: [ "[3.0.0,)" ]
+    - dependency-name: "org.springframework.data:*"
+      versions: [ "[2025.0.0,)" ]
