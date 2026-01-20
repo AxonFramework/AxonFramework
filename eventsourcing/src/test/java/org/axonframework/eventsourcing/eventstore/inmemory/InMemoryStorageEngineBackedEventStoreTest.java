@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore.inmemory;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.eventsourcing.eventstore.StorageEngineBackedEventStore;
 import org.axonframework.eventsourcing.eventstore.StorageEngineBackedEventStoreTestSuite;
 import org.axonframework.messaging.core.EmptyApplicationContext;
@@ -23,14 +24,16 @@ import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.core.unitofwork.UnitOfWork;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.*;
 
 /**
- * Test class validating the {@link StorageEngineBackedEventStore} together with the {@link InMemoryEventStorageEngine}.
+ * Test class validating the {@link StorageEngineBackedEventStore} together with the
+ * {@link InMemoryEventStorageEngine}.
  *
  * @author John Hendrikx
  */
-class InMemoryStorageEngineBackedEventStoreTest extends StorageEngineBackedEventStoreTestSuite<InMemoryEventStorageEngine> {
+class InMemoryStorageEngineBackedEventStoreTest
+        extends StorageEngineBackedEventStoreTestSuite<InMemoryEventStorageEngine> {
 
     private static final UnitOfWorkFactory FACTORY = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
 
@@ -41,11 +44,13 @@ class InMemoryStorageEngineBackedEventStoreTest extends StorageEngineBackedEvent
         engine = new InMemoryEventStorageEngine();
     }
 
+    @Nonnull
     @Override
-    protected InMemoryEventStorageEngine getStorageEngine(EventConverter converter) {
+    protected InMemoryEventStorageEngine getStorageEngine(@Nonnull EventConverter converter) {
         return engine;
     }
 
+    @Nonnull
     @Override
     protected UnitOfWork unitOfWork() {
         return FACTORY.create();
