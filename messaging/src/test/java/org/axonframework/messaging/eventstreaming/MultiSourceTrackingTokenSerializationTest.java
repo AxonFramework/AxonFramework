@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.eventhandling.processing.streaming.token;
+package org.axonframework.messaging.eventstreaming;
 
 import org.axonframework.conversion.TestConverter;
-import org.axonframework.messaging.eventstreaming.MultiSourceTrackingToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 
