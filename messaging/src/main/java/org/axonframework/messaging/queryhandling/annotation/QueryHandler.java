@@ -15,6 +15,7 @@
  */
 package org.axonframework.messaging.queryhandling.annotation;
 
+import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.annotation.MessageHandler;
 import org.axonframework.messaging.queryhandling.QueryMessage;
 
@@ -59,12 +60,14 @@ import java.lang.annotation.Target;
 public @interface QueryHandler {
 
     /**
-     * The name of the Query this handler listens to.
+     * The name of the query this handler listens to, matching to the {@link MessageType#name()} from the
+     * {@link QueryMessage#type()}.
      * <p>
-     * Defaults to the type declared by the payload type (i.e. first parameter), or its fully qualified class name, if
-     * no explicit names are declared on that payload type.
+     * When not defined the {@link org.axonframework.messaging.core.MessageTypeResolver} will derive the name based on
+     * the payload type (thus the <b>first</b> parameter) of the annotated method.
      *
-     * @return The query name.
+     * @return The name of the query this handler listens to, matching to the {@link MessageType#name()} from the
+     * {@link QueryMessage#type()}.
      */
     String queryName() default "";
 }

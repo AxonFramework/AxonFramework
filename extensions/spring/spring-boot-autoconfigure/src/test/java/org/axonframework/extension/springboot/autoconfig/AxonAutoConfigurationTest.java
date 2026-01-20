@@ -17,11 +17,7 @@
 package org.axonframework.extension.springboot.autoconfig;
 
 import org.axonframework.axonserver.connector.AxonServerConfigurationEnhancer;
-import org.axonframework.messaging.commandhandling.CommandBus;
-import org.axonframework.messaging.commandhandling.interception.InterceptingCommandBus;
-import org.axonframework.messaging.commandhandling.SimpleCommandBus;
 import org.axonframework.common.TypeReference;
-import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.common.configuration.BaseModule;
 import org.axonframework.common.configuration.Component;
@@ -34,13 +30,17 @@ import org.axonframework.common.configuration.DecoratorDefinition;
 import org.axonframework.common.configuration.InstantiatedComponentDefinition;
 import org.axonframework.common.configuration.LifecycleRegistry;
 import org.axonframework.common.configuration.Module;
-import org.axonframework.messaging.core.EmptyApplicationContext;
-import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.extension.spring.config.SpringAxonApplication;
 import org.axonframework.extension.spring.config.SpringComponentRegistry;
 import org.axonframework.extension.spring.config.SpringLifecycleRegistry;
 import org.axonframework.extension.spring.config.SpringLifecycleShutdownHandler;
 import org.axonframework.extension.spring.config.SpringLifecycleStartHandler;
+import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.commandhandling.SimpleCommandBus;
+import org.axonframework.messaging.commandhandling.interception.InterceptingCommandBus;
+import org.axonframework.messaging.core.EmptyApplicationContext;
+import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.BeanFactoryUtils;
@@ -50,7 +50,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -308,7 +307,8 @@ public class AxonAutoConfigurationTest {
         CommandBus commandBus(LifecycleRegistry lifecycleRegistry,
                               AtomicBoolean startHandlerInvoked,
                               AtomicBoolean shutdownHandlerInvoked) {
-            CommandBus simpleCommandBus = new SimpleCommandBus(new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE), Collections.emptyList());
+            CommandBus simpleCommandBus =
+                    new SimpleCommandBus(new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE));
             lifecycleRegistry.onStart(10, () -> startHandlerInvoked.set(true));
             lifecycleRegistry.onShutdown(12, () -> shutdownHandlerInvoked.set(true));
             return simpleCommandBus;

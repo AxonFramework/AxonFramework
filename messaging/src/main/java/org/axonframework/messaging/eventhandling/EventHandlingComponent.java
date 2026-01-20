@@ -17,6 +17,7 @@
 package org.axonframework.messaging.eventhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
@@ -39,7 +40,7 @@ import java.util.Set;
  * @author Steven van Beelen
  * @since 3.0.0
  */
-public interface EventHandlingComponent extends EventHandler, EventHandlerRegistry, ResetHandler, ResetHandlerRegistry {
+public interface EventHandlingComponent extends EventHandler, ResetHandler, ResetHandlerRegistry, DescribableComponent {
 
     /**
      * All supported {@link EventMessage events}, referenced through a {@link QualifiedName}.
@@ -79,7 +80,7 @@ public interface EventHandlingComponent extends EventHandler, EventHandlerRegist
      * When {@code true}, this component can participate in replay operations and its
      * {@link #handle(ResetContext, ProcessingContext)} method will be called before replay begins.
      * <p>
-     * By default reset is supported.
+     * By default, reset is supported.
      *
      * @return {@code true} if this component supports reset operations, {@code false} otherwise.
      */

@@ -16,25 +16,27 @@
 
 package org.axonframework.messaging.eventhandling.annotation;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.core.annotation.HandlerAttributes;
 import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.annotation.HandlerAttributes;
 import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.messaging.core.annotation.UnsupportedHandlerException;
 import org.axonframework.messaging.core.annotation.WrappedMessageHandlingMember;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
 
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.util.Optional;
 
-import jakarta.annotation.Nonnull;
-
 /**
- * Definition of handlers that can handle {@link EventMessage}s. These handlers are wrapped with an
- * {@link EventHandlingMember} that exposes event-specific handler information.
+ * Implementation of a {@link HandlerEnhancerDefinition} used for {@link EventHandler} annotated methods to wrap a
+ * {@link MessageHandlingMember} in a {@link EventHandlingMember} instance.
+ * <p>
+ * The {@link EventHandler#eventName()} is used to define the {@link EventHandlingMember#eventName()} without any fall
+ * back.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
@@ -70,21 +72,18 @@ public class MethodEventHandlerDefinition implements HandlerEnhancerDefinition {
 
         private MethodEventMessageHandlingMember(MessageHandlingMember<T> delegate, String eventNameAttribute) {
             super(delegate);
-
             if (delegate.unwrap(Method.class).isEmpty()) {
                 throw new UnsupportedHandlerException(
                         "@EventHandler annotation can only be put on methods.",
                         delegate.unwrap(Member.class).orElse(null)
                 );
             }
-
-            eventName = "".equals(eventNameAttribute) ? delegate.payloadType().getName() : eventNameAttribute;
+            eventName = eventNameAttribute;
         }
 
         @Override
         public boolean canHandle(@Nonnull Message message, @Nonnull ProcessingContext context) {
-            return super.canHandle(message, context) && (message instanceof EventMessage
-                    || eventName.equals(message.type().name()));
+            return super.canHandle(message, context) && message instanceof EventMessage;
         }
 
         @Override

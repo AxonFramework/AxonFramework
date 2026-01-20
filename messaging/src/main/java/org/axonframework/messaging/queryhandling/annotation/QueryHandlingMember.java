@@ -35,6 +35,9 @@ public interface QueryHandlingMember<T> extends MessageHandlingMember<T> {
 
     /**
      * Returns the name of the query the handler can handle.
+     * <p>
+     * Might be an empty {@link String} when undefined by this handling member, in which case components gathering
+     * {@code QueryHandlingMembers} should fall back to other mechanisms to define the name of a handling member.
      *
      * @return The name of the query the handler can handle.
      */

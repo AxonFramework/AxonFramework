@@ -18,8 +18,7 @@ package org.axonframework.messaging.eventhandling.processing.streaming.segmentin
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
-import org.axonframework.messaging.eventhandling.EventHandler;
-import org.axonframework.messaging.eventhandling.EventHandlerRegistry;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
@@ -97,18 +96,9 @@ public class SequenceOverridingEventHandlingComponent implements EventHandlingCo
     }
 
     @Override
-    public EventHandlerRegistry subscribe(@Nonnull QualifiedName name, @Nonnull EventHandler eventHandler) {
-        return delegate.subscribe(name, eventHandler);
-    }
-
-    @Override
-    public EventHandlerRegistry subscribe(@Nonnull Set<QualifiedName> names, @Nonnull EventHandler eventHandler) {
-        return delegate.subscribe(names, eventHandler);
-    }
-
-    @Override
-    public EventHandlerRegistry subscribe(@Nonnull EventHandlingComponent handlingComponent) {
-        return delegate.subscribe(handlingComponent);
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeWrapperOf(delegate);
+        descriptor.describeProperty("sequencingPolicy", sequencingPolicy);
     }
 
     @Nonnull

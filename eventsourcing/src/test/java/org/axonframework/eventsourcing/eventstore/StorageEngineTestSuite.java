@@ -16,6 +16,13 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import org.axonframework.conversion.json.JacksonConverter;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine.AppendTransaction;
+import org.axonframework.messaging.core.FluxUtils;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.MessageStream.Entry;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.eventhandling.TerminalEventMessage;
@@ -23,16 +30,9 @@ import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConve
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
-import org.axonframework.conversion.json.JacksonConverter;
-import org.axonframework.eventsourcing.eventstore.EventStorageEngine.AppendTransaction;
 import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.messaging.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.eventstreaming.Tag;
-import org.axonframework.messaging.core.FluxUtils;
-import org.axonframework.messaging.core.MessageStream;
-import org.axonframework.messaging.core.MessageStream.Entry;
-import org.axonframework.messaging.core.MessageType;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import reactor.test.StepVerifier;
@@ -41,6 +41,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -52,6 +53,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -81,14 +83,20 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
 
     @BeforeAll
     void beforeAll() throws Exception {
-        testSubject = buildStorageEngine();
+        testSubject = createStorageEngine();
 
         // At this time the store is empty, verify first and latest token are the same:
-        TrackingToken actualTailToken = testSubject.firstToken(processingContext()).get(5, TimeUnit.SECONDS);
-        TrackingToken actualHeadToken = testSubject.latestToken(processingContext()).get(5, TimeUnit.SECONDS);
+        TrackingToken actualTailToken = testSubject.firstToken().get(5, TimeUnit.SECONDS);
+        TrackingToken actualHeadToken = testSubject.latestToken().get(5, TimeUnit.SECONDS);
 
         assertTrue(actualHeadToken.covers(actualTailToken));
         assertTrue(actualTailToken.covers(actualHeadToken));
+    }
+
+    @AfterAll
+    void afterAll() throws Exception {
+        disposeStorageEngine(testSubject);
+        tearDownSuite();
     }
 
     @BeforeEach
@@ -103,11 +111,15 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
     }
 
     /**
-     * Constructs the {@link EventStorageEngine} used in this test suite.
+     * Creates a {@link EventStorageEngine}. This should create an engine backed
+     * by the same underlying storage to simulate multiple processes. For each
+     * call to this method, a corresponding call to {@link #disposeStorageEngine(EventStorageEngine)}
+     * will be made.
      *
      * @return The {@link EventStorageEngine} used in this test suite.
+     * @throws Exception If there was an error.
      */
-    protected abstract ESE buildStorageEngine() throws Exception;
+    protected abstract ESE createStorageEngine() throws Exception;
 
     /**
      * Returns the processing context to use for event storage engine calls.
@@ -115,6 +127,53 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
      * @return The {@link ProcessingContext}.
      */
     protected abstract ProcessingContext processingContext();
+
+    /**
+     * Called to dispose a storage engine created with {@link #createStorageEngine()}.
+     * This allows storage engine specific clean-up (like stopping monitor threads)
+     * to be performed.
+     * <p>
+     * Does nothing by default.
+     *
+     * @param engine A {@link EventStorageEngine}, never {@code null}.
+     * @throws Exception If there was an error.
+     */
+    protected void disposeStorageEngine(ESE engine) throws Exception {}
+
+    /**
+     * Called as part of the {@link AfterAll} method of the test suite, which
+     * runs <b>after</b> the subclass's {@link AfterAll}, allowing the subclass
+     * to participate in the <b>final</b> disposal of the suite after it has
+     * disposed of the storage engine.
+     * <p>
+     * This allows a correct ordering of disposal of the underlying storage
+     * (often a test container) and the engine itself. The engine should be closed
+     * first, and only then the test container should be terminated to avoid
+     * spurious exceptions.
+     * <p>
+     * Does nothing by default.
+     *
+     * @throws Exception If there was an error.
+     */
+    protected void tearDownSuite() throws Exception {}
+
+    /**
+     * Perform a commit on the given {@link ProcessingContext}.
+     * <p>
+     * Does nothing by default.
+     *
+     * @param processingContext The {@link ProcessingContext}, cannot be {@code null}.
+     */
+    protected void commit(ProcessingContext processingContext) {}
+
+    /**
+     * Perform a rollback on the given {@link ProcessingContext}.
+     * <p>
+     * Does nothing by default.
+     *
+     * @param processingContext The {@link ProcessingContext}, cannot be {@code null}.
+     */
+    protected void rollback(ProcessingContext processingContext) {}
 
     @Test
     protected void sourcingEventsReturnsMatchingAggregateEvents() throws Exception {
@@ -133,7 +192,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
 
         SourcingCondition testCondition = SourcingCondition.conditionFor(TEST_CRITERIA);
 
-        StepVerifier.create(FluxUtils.of(testSubject.source(testCondition, processingContext())))
+        StepVerifier.create(FluxUtils.of(testSubject.source(testCondition)))
                     .expectNextCount(expectedCount)
                     .verifyComplete();
     }
@@ -150,13 +209,13 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
                 taggedEventMessage("event-5", OTHER_CRITERIA_TAGS)
         );
 
-        StepVerifier.create(FluxUtils.of(testSubject.source(SourcingCondition.conditionFor(TEST_CRITERIA), processingContext())))
+        StepVerifier.create(FluxUtils.of(testSubject.source(SourcingCondition.conditionFor(TEST_CRITERIA))))
                     .assertNext(entry -> assertNull(entry.getResource(ConsistencyMarker.RESOURCE_KEY)))
                     .assertNext(entry -> assertNull(entry.getResource(ConsistencyMarker.RESOURCE_KEY)))
                     .assertNext(StorageEngineTestSuite::assertMarkerEntry)
                     .verifyComplete();
 
-        StepVerifier.create(FluxUtils.of(testSubject.source(SourcingCondition.conditionFor(OTHER_CRITERIA), processingContext())))
+        StepVerifier.create(FluxUtils.of(testSubject.source(SourcingCondition.conditionFor(OTHER_CRITERIA))))
                     .assertNext(entry -> assertNull(entry.getResource(ConsistencyMarker.RESOURCE_KEY)))
                     .assertNext(entry -> assertNull(entry.getResource(ConsistencyMarker.RESOURCE_KEY)))
                     .assertNext(entry -> assertNull(entry.getResource(ConsistencyMarker.RESOURCE_KEY)))
@@ -179,7 +238,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
         );
 
         ConsistencyMarker marker = FluxUtils
-            .of(testSubject.source(SourcingCondition.conditionFor(OTHER_CRITERIA), processingContext()))
+            .of(testSubject.source(SourcingCondition.conditionFor(OTHER_CRITERIA)))
             .collectList()
             .map(List::getLast)
             .map(entry -> entry.getResource(ConsistencyMarker.RESOURCE_KEY))
@@ -205,7 +264,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
     protected void sourcingEventsReturnsConsistencyMarkerAsSoleMessageWhenNoEventsInTheStoreForFlux() {
         SourcingCondition testCondition = SourcingCondition.conditionFor(TEST_CRITERIA);
 
-        StepVerifier.create(FluxUtils.of(testSubject.source(testCondition, processingContext())))
+        StepVerifier.create(FluxUtils.of(testSubject.source(testCondition)))
                     .assertNext(StorageEngineTestSuite::assertMarkerEntry)
                     .verifyComplete();
     }
@@ -217,7 +276,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
 
         // when
         SourcingCondition testCondition = SourcingCondition.conditionFor(TEST_CRITERIA);
-        MessageStream<EventMessage> sourcingStream = testSubject.source(testCondition, processingContext());
+        MessageStream<EventMessage> sourcingStream = testSubject.source(testCondition);
 
         // then
         StepVerifier.create(FluxUtils.of(sourcingStream))
@@ -230,7 +289,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
         AtomicBoolean completed = new AtomicBoolean(false);
         SourcingCondition testCondition = SourcingCondition.conditionFor(TEST_CRITERIA);
 
-        MessageStream<EventMessage> sourcingStream = testSubject.source(testCondition, processingContext())
+        MessageStream<EventMessage> sourcingStream = testSubject.source(testCondition)
                                                                 .onComplete(() -> completed.set(true));
         await("Await first entry availability")
                 .pollDelay(Duration.ofMillis(50))
@@ -258,13 +317,13 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
             taggedEventMessage("event-1", OTHER_CRITERIA_TAGS)
         );
 
-        ConsistencyMarker marker1 = FluxUtils.of(testSubject.source(SourcingCondition.conditionFor(TEST_CRITERIA), processingContext()))
+        ConsistencyMarker marker1 = FluxUtils.of(testSubject.source(SourcingCondition.conditionFor(TEST_CRITERIA)))
             .collectList()
             .map(List::getLast)
             .map(entry -> entry.getResource(ConsistencyMarker.RESOURCE_KEY))
             .block();
 
-        ConsistencyMarker marker2 = FluxUtils.of(testSubject.source(SourcingCondition.conditionFor(OTHER_CRITERIA), processingContext()))
+        ConsistencyMarker marker2 = FluxUtils.of(testSubject.source(SourcingCondition.conditionFor(OTHER_CRITERIA)))
             .collectList()
             .map(List::getLast)
             .map(entry -> entry.getResource(ConsistencyMarker.RESOURCE_KEY))
@@ -275,13 +334,13 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
 
     @Test
     protected void sourcingEventsShouldReturnLatestConsistencyMarkerEvenWhenStoreIsEmpty() {
-        ConsistencyMarker marker1 = FluxUtils.of(testSubject.source(SourcingCondition.conditionFor(TEST_CRITERIA), processingContext()))
+        ConsistencyMarker marker1 = FluxUtils.of(testSubject.source(SourcingCondition.conditionFor(TEST_CRITERIA)))
             .collectList()
             .map(List::getLast)
             .map(entry -> entry.getResource(ConsistencyMarker.RESOURCE_KEY))
             .block();
 
-        ConsistencyMarker marker2 = FluxUtils.of(testSubject.source(SourcingCondition.conditionFor(OTHER_CRITERIA), processingContext()))
+        ConsistencyMarker marker2 = FluxUtils.of(testSubject.source(SourcingCondition.conditionFor(OTHER_CRITERIA)))
             .collectList()
             .map(List::getLast)
             .map(entry -> entry.getResource(ConsistencyMarker.RESOURCE_KEY))
@@ -307,7 +366,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
 
         SourcingCondition testCondition = SourcingCondition.conditionFor(TEST_CRITERIA);
 
-        TrackingToken tokenOfFirstMessage = testSubject.source(testCondition, processingContext())
+        TrackingToken tokenOfFirstMessage = testSubject.source(testCondition)
             .first()
             .asCompletableFuture()
             .thenApply(r -> r.getResource(TrackingToken.RESOURCE_KEY))
@@ -318,7 +377,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
 
         SourcingCondition offsetTestCondition = SourcingCondition.conditionFor(position, TEST_CRITERIA);
 
-        StepVerifier.create(FluxUtils.of(testSubject.source(offsetTestCondition, processingContext())))
+        StepVerifier.create(FluxUtils.of(testSubject.source(offsetTestCondition)))
                     .expectNextCount(expectedCount)
                     .verifyComplete();
     }
@@ -348,26 +407,41 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
 
     @Test
     protected void transactionRejectedWhenConcurrentlyCreatedTransactionIsCommittedFirst() {
+        ProcessingContext pc1 = processingContext();
+        ProcessingContext pc2 = processingContext();
+
         AppendCondition appendCondition = AppendCondition.withCriteria(TEST_CRITERIA);
 
-        var firstTx = testSubject.appendEvents(appendCondition,
-                                               processingContext(),
-                                               taggedEventMessage("event-0", TEST_CRITERIA_TAGS));
-        var secondTx = testSubject.appendEvents(appendCondition,
-                                                processingContext(),
-                                                taggedEventMessage("event-1", TEST_CRITERIA_TAGS));
+        CompletableFuture<AppendTransaction<?>> firstTx = CompletableFuture.supplyAsync(() -> testSubject.appendEvents(
+            appendCondition, pc1, taggedEventMessage("event-0", TEST_CRITERIA_TAGS)
+        ).join());
 
-        CompletableFuture<ConsistencyMarker> firstCommit = finishTx(firstTx);
-        assertDoesNotThrow(() -> firstCommit.get(1, TimeUnit.SECONDS));
+        firstTx = firstTx.whenComplete((result, ex) -> rollbackOnException(ex, pc1));
 
-        CompletableFuture<ConsistencyMarker> secondCommit = finishTx(secondTx);
-        var actual = assertThrows(ExecutionException.class, () -> secondCommit.get(1, TimeUnit.SECONDS));
-        assertInstanceOf(AppendEventsTransactionRejectedException.class, actual.getCause());
+        CompletableFuture<AppendTransaction<?>> secondTx = CompletableFuture.supplyAsync(() -> testSubject.appendEvents(
+            appendCondition, pc2,taggedEventMessage("event-1", TEST_CRITERIA_TAGS)
+        ).join());
+
+        secondTx = secondTx.whenComplete((result, ex) -> rollbackOnException(ex, pc2));
+
+        CompletableFuture<ConsistencyMarker> firstCommit = finishTx(firstTx, pc1);
+
+        assertDoesNotThrow(() -> firstCommit.get(5, TimeUnit.SECONDS));
+
+        CompletableFuture<ConsistencyMarker> secondCommit = finishTx(secondTx, pc2);
+
+        assertThatThrownBy(() -> secondCommit.get(5, TimeUnit.SECONDS))
+            .isInstanceOf(ExecutionException.class)
+            .cause()
+            .isInstanceOf(AppendEventsTransactionRejectedException.class);
     }
 
     @RepeatedTest(5)  // repeat a few times to detect concurrency bugs earlier
     protected void concurrentTransactionsForNonOverlappingTagsBothCommitWithExpectedConsistencyMarkerResponse() throws Exception {
-        TrackingToken startToken = testSubject.latestToken(processingContext()).join();
+        ProcessingContext pc1 = processingContext();
+        ProcessingContext pc2 = processingContext();
+
+        TrackingToken startToken = testSubject.latestToken().join();
         long position = startToken.position().getAsLong();
         GlobalIndexConsistencyMarker marker1 = new GlobalIndexConsistencyMarker(position + 1);
         GlobalIndexConsistencyMarker marker2 = new GlobalIndexConsistencyMarker(position + 2);
@@ -378,19 +452,19 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
                                                          .withMarker(ConsistencyMarker.ORIGIN);
         CompletableFuture<AppendTransaction<?>> firstTx =
                 testSubject.appendEvents(firstCondition,
-                                         processingContext(),
+                                         pc1,
                                          taggedEventMessage("event-0", TEST_CRITERIA_TAGS));
         CompletableFuture<AppendTransaction<?>> secondTx =
                 testSubject.appendEvents(secondCondition,
-                                         processingContext(),
+                                         pc2,
                                          taggedEventMessage("event-0", OTHER_CRITERIA_TAGS));
 
         firstTx.get(1, TimeUnit.SECONDS);
         secondTx.get(1, TimeUnit.SECONDS);
 
         // when...
-        CompletableFuture<ConsistencyMarker> firstCommit = finishTx(firstTx);
-        CompletableFuture<ConsistencyMarker> secondCommit = finishTx(secondTx);
+        CompletableFuture<ConsistencyMarker> firstCommit = finishTx(firstTx, pc1);
+        CompletableFuture<ConsistencyMarker> secondCommit = finishTx(secondTx, pc2);
         // then...expecting an unordered set of markers, as the commit order is not consistent for an async system.
         assertDoesNotThrow(() -> firstCommit.get(5, TimeUnit.SECONDS));
         assertDoesNotThrow(() -> secondCommit.get(5, TimeUnit.SECONDS));
@@ -410,41 +484,28 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
 
     @Test
     protected void concurrentTransactionsForOverlappingTagsThrowAnAppendEventsTransactionRejectedException() throws Exception {
-        // given...
-        int exceptionCounter = 0;
-        AppendCondition firstCondition = new DefaultAppendCondition(ConsistencyMarker.ORIGIN, TEST_CRITERIA);
-        AppendCondition secondCondition = new DefaultAppendCondition(ConsistencyMarker.ORIGIN, TEST_CRITERIA);
-        CompletableFuture<AppendTransaction<?>> firstTx =
-                testSubject.appendEvents(firstCondition,
-                                         processingContext(),
-                                         taggedEventMessage("event-0", TEST_CRITERIA_TAGS));
-        CompletableFuture<AppendTransaction<?>> secondTx =
-                testSubject.appendEvents(secondCondition,
-                                         processingContext(),
-                                         taggedEventMessage("event-1", TEST_CRITERIA_TAGS));
+        AppendCondition condition = new DefaultAppendCondition(ConsistencyMarker.ORIGIN, TEST_CRITERIA);
+        List<CompletableFuture<ConsistencyMarker>> list = new ArrayList<>();
+        int taskCount = 10;
 
-        firstTx.get(1, TimeUnit.SECONDS);
-        secondTx.get(1, TimeUnit.SECONDS);
+        for (int i = 0; i < taskCount; i++) {
+            list.add(CompletableFuture.supplyAsync(
+                () -> asyncAppendEvents(condition, taggedEventMessage("event-0", TEST_CRITERIA_TAGS)).join()
+            ));
+        }
 
-        // when...
-        CompletableFuture<ConsistencyMarker> firstCommit = finishTx(firstTx);
-        CompletableFuture<ConsistencyMarker> secondCommit = finishTx(secondTx);
-        // then... try-catch for both. One should fail, but which differs, because it's an async process.
-        try {
-            firstCommit.get(5, TimeUnit.SECONDS);
-        } catch (Exception e) {
-            exceptionCounter++;
-            assertInstanceOf(AppendEventsTransactionRejectedException.class, e.getCause(),
-                             () -> "Exception [" + e.getClass() + "] is not expected. Message:" + e.getMessage());
+        CompletableFuture.allOf(list.toArray(CompletableFuture[]::new)).exceptionally(ex -> null).join();
+        int exceptionCount = 0;
+
+        for (CompletableFuture<ConsistencyMarker> cf : list) {
+            if (cf.isCompletedExceptionally()) {
+                assertThat(cf.exceptionNow()).isInstanceOf(AppendEventsTransactionRejectedException.class);
+
+                exceptionCount++;
+            }
         }
-        try {
-            secondCommit.get(5, TimeUnit.SECONDS);
-        } catch (Exception e) {
-            exceptionCounter++;
-            assertInstanceOf(AppendEventsTransactionRejectedException.class, e.getCause(),
-                             () -> "Exception [" + e.getClass() + "] is not expected. Message:" + e.getMessage());
-        }
-        assertEquals(1, exceptionCounter);
+
+        assertThat(exceptionCount).isEqualTo(taskCount - 1);  // all except one should fail
     }
 
     @Test
@@ -465,9 +526,9 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
         );
 
         MessageStream<EventMessage> result =
-                testSubject.firstToken(processingContext())
+                testSubject.firstToken()
                            .thenApply(position -> StreamingCondition.conditionFor(position, TEST_CRITERIA))
-                           .thenApply(c -> testSubject.stream(c, processingContext()))
+                           .thenApply(testSubject::stream)
                            .get(5, TimeUnit.SECONDS);
 
         StepVerifier.create(FluxUtils.of(result))
@@ -482,7 +543,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
     protected void streamingFromSpecificPositionReturnsSelectedMessages() throws Exception {
         TaggedEventMessage<EventMessage> expectedEventOne = taggedEventMessage("event-1", TEST_CRITERIA_TAGS);
         TaggedEventMessage<EventMessage> expectedEventTwo = taggedEventMessage("event-4", TEST_CRITERIA_TAGS);
-        TrackingToken startToken = testSubject.latestToken(processingContext()).join();
+        TrackingToken startToken = testSubject.latestToken().join();
 
         // Ensure there are "gaps" in the global stream based on events not matching the streaming condition
         appendEvents(
@@ -496,7 +557,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
                 taggedEventMessage("event-6", OTHER_CRITERIA_TAGS)
         );
 
-        TrackingToken tokenOfFirstMessage = testSubject.stream(StreamingCondition.startingFrom(startToken), processingContext())
+        TrackingToken tokenOfFirstMessage = testSubject.stream(StreamingCondition.startingFrom(startToken))
             .first()
             .asCompletableFuture()
             .thenApply(r -> r.getResource(TrackingToken.RESOURCE_KEY))
@@ -504,7 +565,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
 
         StreamingCondition testCondition = StreamingCondition.conditionFor(tokenOfFirstMessage, TEST_CRITERIA);
 
-        StepVerifier.create(FluxUtils.of(testSubject.stream(testCondition, processingContext())))
+        StepVerifier.create(FluxUtils.of(testSubject.stream(testCondition)))
                     // we've skipped the first one by changing the starting point
                     .assertNext(entry -> assertEvent(entry.message(), expectedEventOne.event()))
                     .assertNext(entry -> assertEvent(entry.message(), expectedEventTwo.event()))
@@ -514,7 +575,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
 
     @Test
     protected void streamingAfterLastPositionReturnsEmptyStream() throws Exception {
-        TrackingToken startToken = testSubject.latestToken(processingContext()).join();
+        TrackingToken startToken = testSubject.latestToken().join();
 
         appendEvents(
                 AppendCondition.none(),
@@ -530,7 +591,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
         StreamingCondition testCondition =
                 StreamingCondition.conditionFor(new GlobalSequenceTrackingToken(startToken.position().getAsLong() + 10), TEST_CRITERIA);
 
-        MessageStream<EventMessage> result = testSubject.stream(testCondition, processingContext());
+        MessageStream<EventMessage> result = testSubject.stream(testCondition);
 
         try {
             assertTrue(result.next().isEmpty());
@@ -541,7 +602,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
 
     @Test
     protected void eventsPublishedAreIncludedInOpenStreams() throws Exception {
-        TrackingToken startToken = testSubject.latestToken(processingContext()).join();
+        TrackingToken startToken = testSubject.latestToken().join();
 
         appendEvents(
                 AppendCondition.none(),
@@ -549,7 +610,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
                 taggedEventMessage("event-1", TEST_CRITERIA_TAGS)
         );
 
-        MessageStream<EventMessage> stream = testSubject.stream(StreamingCondition.startingFrom(startToken), processingContext());
+        MessageStream<EventMessage> stream = testSubject.stream(StreamingCondition.startingFrom(startToken));
 
         // Wait for first event...
         await().pollDelay(Duration.ofMillis(250))
@@ -586,10 +647,10 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
 
     @Test
     protected void streamReceivesEventsAppendedAfterStreamOpened() throws Exception {
-        TrackingToken startToken = testSubject.latestToken(processingContext()).join();
+        TrackingToken startToken = testSubject.latestToken().join();
 
         // given
-        MessageStream<EventMessage> stream = testSubject.stream(StreamingCondition.startingFrom(startToken), processingContext());
+        MessageStream<EventMessage> stream = testSubject.stream(StreamingCondition.startingFrom(startToken));
 
         // when
         TaggedEventMessage<EventMessage> expectedEvent1 = taggedEventMessage("event-1", TEST_CRITERIA_TAGS);
@@ -614,7 +675,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
     @Test
     protected void tailTokenReturnsFirstAppendedEvent() throws Exception {
         TaggedEventMessage<EventMessage> firstEvent = taggedEventMessage("event-0", TEST_CRITERIA_TAGS);
-        TrackingToken startToken = testSubject.latestToken(processingContext()).join();
+        TrackingToken startToken = testSubject.latestToken().join();
 
         appendEvents(
                 AppendCondition.none(),
@@ -622,7 +683,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
                 taggedEventMessage("event-1", TEST_CRITERIA_TAGS)
         );
 
-        MessageStream<EventMessage> stream = testSubject.stream(StreamingCondition.startingFrom(startToken), processingContext());
+        MessageStream<EventMessage> stream = testSubject.stream(StreamingCondition.startingFrom(startToken));
 
         Entry<EventMessage> actualEntry = stream.first()
                                                 .asCompletableFuture()
@@ -638,9 +699,9 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
                 taggedEventMessage("event-1", TEST_CRITERIA_TAGS)
         );
 
-        MessageStream<EventMessage> stream = testSubject.latestToken(processingContext())
+        MessageStream<EventMessage> stream = testSubject.latestToken()
                                                         .thenApply(StreamingCondition::startingFrom)
-                                                        .thenApply(c -> testSubject.stream(c, processingContext()))
+                                                        .thenApply(testSubject::stream)
                                                         .get(5, TimeUnit.SECONDS);
 
         await(
@@ -661,11 +722,10 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
                 taggedEventMessageAt("event-2", TEST_CRITERIA_TAGS, now.plusSeconds(10))
         );
 
-        TrackingToken actualToken = testSubject.tokenAt(now.minus(5, ChronoUnit.SECONDS), processingContext()).get(5,
-                                                                                                                   TimeUnit.SECONDS);
+        TrackingToken actualToken = testSubject.tokenAt(now.minus(5, ChronoUnit.SECONDS)).get(5, TimeUnit.SECONDS);
 
         assertNotNull(actualToken);
-        StepVerifier.create(FluxUtils.of(testSubject.stream(StreamingCondition.startingFrom(actualToken), processingContext())))
+        StepVerifier.create(FluxUtils.of(testSubject.stream(StreamingCondition.startingFrom(actualToken))))
                     .expectNextCount(2)
                     .thenCancel()
                     .verify();
@@ -680,9 +740,9 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
                 taggedEventMessage("event-2", TEST_CRITERIA_TAGS)
         );
 
-        TrackingToken tokenAt = testSubject.tokenAt(Instant.now().plus(1, ChronoUnit.DAYS), processingContext())
+        TrackingToken tokenAt = testSubject.tokenAt(Instant.now().plus(1, ChronoUnit.DAYS))
                                            .get(5, TimeUnit.SECONDS);
-        TrackingToken headToken = testSubject.latestToken(processingContext())
+        TrackingToken headToken = testSubject.latestToken()
                                              .get(5, TimeUnit.SECONDS);
 
         assertNotNull(tokenAt);
@@ -692,14 +752,12 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
 
     @Test
     protected void streamShouldBeNotifiedOfAppend() {
-        TrackingToken latest = testSubject.latestToken(null).join();
+        TrackingToken latest = testSubject.latestToken().join();
 
         // Create a stream to see what if it is notified of a new event:
-        MessageStream<EventMessage> stream = testSubject.stream(StreamingCondition.startingFrom(latest), null);
+        MessageStream<EventMessage> stream = testSubject.stream(StreamingCondition.startingFrom(latest));
 
-        finishTx(testSubject.appendEvents(AppendCondition.none(), null, List.of(
-            taggedEventMessage("Hello World", Set.of())
-        )));
+        appendEvents(AppendCondition.none(), taggedEventMessage("Hello World", Set.of()));
 
         // Assert that the event has become available:
         await().untilAsserted(() -> assertThat(stream.hasNextAvailable()).isTrue());
@@ -712,21 +770,24 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
 
     @Test
     protected void twoIndependentStorageEnginesShouldSeeEachOthersAppends() throws Exception {
-        EventStorageEngine engine1 = testSubject;
-        EventStorageEngine engine2 = buildStorageEngine();
+        ESE engine1 = testSubject;
+        ESE engine2 = createStorageEngine();
 
-        TrackingToken latest = engine1.latestToken(null).join();
+        TrackingToken latest = engine1.latestToken().join();
 
-        assertThat(latest).isEqualTo(engine2.latestToken(null).join());
+        assertThat(latest).isEqualTo(engine2.latestToken().join());
 
         // Create a stream on both engines, to see what events are being appended:
-        MessageStream<EventMessage> stream1 = engine1.stream(StreamingCondition.startingFrom(latest), null);
-        MessageStream<EventMessage> stream2 = engine1.stream(StreamingCondition.startingFrom(latest), null);
+        MessageStream<EventMessage> stream1 = engine1.stream(StreamingCondition.startingFrom(latest));
+        MessageStream<EventMessage> stream2 = engine1.stream(StreamingCondition.startingFrom(latest));
 
         // Append an event via engine 1:
-        finishTx(engine1.appendEvents(AppendCondition.none(), null, List.of(
-            taggedEventMessage("Hello From Engine 1", Set.of())
-        )));
+        finishTx(
+            engine1.appendEvents(AppendCondition.none(), null, List.of(
+                taggedEventMessage("Hello From Engine 1", Set.of())
+            )),
+            processingContext()
+        );
 
         // Assert that both engines see the event:
         await().untilAsserted(() -> {
@@ -745,9 +806,12 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
             .contains("Hello From Engine 1");
 
         // Append an event via engine 2:
-        finishTx(engine1.appendEvents(AppendCondition.none(), null, List.of(
-            taggedEventMessage("Hello From Engine 2", Set.of())
-        )));
+        finishTx(
+            engine1.appendEvents(AppendCondition.none(), null, List.of(
+                taggedEventMessage("Hello From Engine 2", Set.of())
+            )),
+            processingContext()
+        );
 
         // Assert that both engines see the event:
         await().untilAsserted(() -> {
@@ -764,6 +828,8 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
             .map(Entry::message)
             .map(em -> em.payloadAs(String.class, CONVERTER))
             .contains("Hello From Engine 2");
+
+        disposeStorageEngine(engine2);
     }
 
     @Nested
@@ -772,7 +838,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
         @Test
         protected void returnsMarkerWhenNoEventsMatchCriteria() {
             SourcingCondition condition = SourcingCondition.conditionFor(TEST_CRITERIA);
-            MessageStream<EventMessage> stream = testSubject.source(condition, processingContext());
+            MessageStream<EventMessage> stream = testSubject.source(condition);
 
             waitUntilHasNextAvailable(stream);
             Optional<Entry<EventMessage>> peeked = stream.peek();
@@ -792,7 +858,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
             );
 
             SourcingCondition condition = SourcingCondition.conditionFor(TEST_CRITERIA);
-            MessageStream<EventMessage> stream = testSubject.source(condition, processingContext());
+            MessageStream<EventMessage> stream = testSubject.source(condition);
 
             waitUntilHasNextAvailable(stream);
             Optional<Entry<EventMessage>> peeked = stream.peek();
@@ -810,7 +876,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
             appendEvents(AppendCondition.none(), expectedEvent1);
 
             SourcingCondition condition = SourcingCondition.conditionFor(TEST_CRITERIA);
-            MessageStream<EventMessage> stream = testSubject.source(condition, processingContext());
+            MessageStream<EventMessage> stream = testSubject.source(condition);
 
             waitUntilHasNextAvailable(stream);
             Optional<Entry<EventMessage>> peeked = stream.peek();
@@ -827,7 +893,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
             appendEvents(AppendCondition.none(), taggedEventMessage("event-1", TEST_CRITERIA_TAGS));
 
             SourcingCondition condition = SourcingCondition.conditionFor(TEST_CRITERIA);
-            MessageStream<EventMessage> stream = testSubject.source(condition, processingContext());
+            MessageStream<EventMessage> stream = testSubject.source(condition);
 
             waitUntilHasNextAvailable(stream);
             stream.next(); // consume event
@@ -876,22 +942,38 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
                 .until(stream::hasNextAvailable);
     }
 
-    protected final ConsistencyMarker appendEvents(AppendCondition condition, TaggedEventMessage<?>... events)
-            throws Exception {
-        return finishTx(testSubject.appendEvents(condition, processingContext(), events)).get(5, TimeUnit.SECONDS);
+    protected final ConsistencyMarker appendEvents(AppendCondition condition, TaggedEventMessage<?>... events) {
+        try {
+            ProcessingContext pc = processingContext();
+
+            return finishTx(testSubject.appendEvents(condition, pc, events), pc).get(5, TimeUnit.SECONDS);
+        }
+        catch (Exception e) {
+            throw new AssertionError(e);
+        }
     }
 
     protected final CompletableFuture<ConsistencyMarker> asyncAppendEvents(AppendCondition condition,
                                                                            TaggedEventMessage<?>... events) {
-        return finishTx(testSubject.appendEvents(condition, processingContext(), events));
+        ProcessingContext pc = processingContext();
+
+        return finishTx(testSubject.appendEvents(condition, pc, events), pc);
     }
 
-    protected final CompletableFuture<ConsistencyMarker> finishTx(CompletableFuture<AppendTransaction<?>> future) {
+    protected final CompletableFuture<ConsistencyMarker> finishTx(CompletableFuture<AppendTransaction<?>> future, ProcessingContext pc) {
         return future
+                .whenComplete((result, ex) -> rollbackOnException(ex, pc))
                 .thenApply(this::castTransaction)
-                .thenCompose(tx -> tx.commit(processingContext())
-                                     .thenCompose(r -> tx.afterCommit(r, processingContext()))
+                .thenCompose(tx -> tx.commit()
+                                     .whenComplete((v, e) -> commit(pc))
+                                     .thenCompose(r -> tx.afterCommit(r))
                 );
+    }
+
+    private void rollbackOnException(Throwable ex, ProcessingContext pc) {
+        if (ex != null) {
+            rollback(pc);
+        }
     }
 
     @SuppressWarnings("unchecked")

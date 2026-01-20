@@ -18,17 +18,17 @@ package org.axonframework.messaging.eventhandling.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.configuration.ComponentBuilder;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.eventhandling.DelegatingEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventTestUtils;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
-import org.axonframework.messaging.core.Message;
-import org.axonframework.messaging.core.MessageStream;
-import org.axonframework.messaging.core.QualifiedName;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -51,8 +51,11 @@ class DefaultEventHandlingComponentsConfigurerTest {
         @Test
         void shouldCreateSingleComponentFromEventHandlingComponent() {
             //given
-            ComponentBuilder<EventHandlingComponent> componentBuilder = cfg -> new SimpleEventHandlingComponent()
-                    .subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
+            ComponentBuilder<EventHandlingComponent> componentBuilder = cfg -> {
+                SimpleEventHandlingComponent handlingComponent = SimpleEventHandlingComponent.create("test");
+                handlingComponent.subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
+                return handlingComponent;
+            };
 
             //when
             var componentsConfigurer = new DefaultEventHandlingComponentsConfigurer().declarative(componentBuilder);
@@ -70,9 +73,12 @@ class DefaultEventHandlingComponentsConfigurerTest {
         @Test
         void shouldCreateManyComponentsFromEventHandlingComponents() {
             //given
-            ComponentBuilder<EventHandlingComponent> componentBuilder1 = cfg -> new SimpleEventHandlingComponent();
-            ComponentBuilder<EventHandlingComponent> componentBuilder2 = cfg -> new SimpleEventHandlingComponent();
-            ComponentBuilder<EventHandlingComponent> componentBuilder3 = cfg -> new SimpleEventHandlingComponent();
+            ComponentBuilder<EventHandlingComponent> componentBuilder1 =
+                    cfg -> SimpleEventHandlingComponent.create("component1");
+            ComponentBuilder<EventHandlingComponent> componentBuilder2 =
+                    cfg -> SimpleEventHandlingComponent.create("component2");
+            ComponentBuilder<EventHandlingComponent> componentBuilder3 =
+                    cfg -> SimpleEventHandlingComponent.create("component3");
 
             //when
             var componentsConfigurer = new DefaultEventHandlingComponentsConfigurer()
@@ -93,9 +99,9 @@ class DefaultEventHandlingComponentsConfigurerTest {
         @Test
         void shouldDecorateAllComponents() {
             //given
-            var component1 = new SimpleEventHandlingComponent()
-                    .subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
-            var component2 = new SimpleEventHandlingComponent();
+            var component1 = SimpleEventHandlingComponent.create("component1");
+            component1.subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
+            var component2 = SimpleEventHandlingComponent.create("component2");
             component2.subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
 
             var componentsConfigurer = new DefaultEventHandlingComponentsConfigurer()

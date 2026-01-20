@@ -18,6 +18,7 @@ package org.axonframework.messaging.queryhandling.annotation;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.util.ClasspathResolver;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.annotation.HandlerAttributes;
 import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
@@ -26,7 +27,6 @@ import org.axonframework.messaging.core.annotation.UnsupportedHandlerException;
 import org.axonframework.messaging.core.annotation.WrappedMessageHandlingMember;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.queryhandling.QueryMessage;
-import org.axonframework.common.util.ClasspathResolver;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -45,8 +45,11 @@ import static org.axonframework.common.ReflectionUtils.resolvePrimitiveWrapperTy
 import static org.axonframework.common.ReflectionUtils.unwrapIfType;
 
 /**
- * Definition of handlers that can handle {@link QueryMessage}s. These handlers are wrapped with a
- * {@link QueryHandlingMember} that exposes query-specific handler information.
+ * Implementation of a {@link HandlerEnhancerDefinition} used for {@link QueryHandler} annotated methods to wrap a
+ * {@link MessageHandlingMember} in a {@link QueryHandlingMember} instance.
+ * <p>
+ * The {@link QueryHandler#queryName()} is used to define the {@link QueryHandlingMember#queryName()} without any fall
+ * back.
  *
  * @author Allard Buijze
  * @since 3.1.0
@@ -71,12 +74,7 @@ public class MethodQueryHandlerDefinition implements HandlerEnhancerDefinition {
 
         public MethodQueryHandlingMember(MessageHandlingMember<T> original, String queryNameAttribute) {
             super(original);
-
-            if ("".equals(queryNameAttribute)) {
-                queryNameAttribute = original.payloadType().getName();
-            }
             queryName = queryNameAttribute;
-
             resultType = original.unwrap(Method.class)
                                  .map(this::queryResultType)
                                  .orElseThrow(() -> new UnsupportedHandlerException(
@@ -136,9 +134,7 @@ public class MethodQueryHandlerDefinition implements HandlerEnhancerDefinition {
 
         @Override
         public boolean canHandle(@Nonnull Message message, @Nonnull ProcessingContext context) {
-            return super.canHandle(message, context)
-                    && message instanceof QueryMessage
-                    && queryName.equals(message.type().name());
+            return super.canHandle(message, context) && message instanceof QueryMessage;
         }
 
         @Override

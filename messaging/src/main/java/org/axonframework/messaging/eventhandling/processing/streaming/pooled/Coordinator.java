@@ -52,6 +52,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -108,6 +109,8 @@ class Coordinator {
     private final Map<Integer, Integer> releasesLastBackOffSeconds = new ConcurrentHashMap<>();
     private final Queue<CoordinatorTask> coordinatorTasks = new ConcurrentLinkedQueue<>();
     private final AtomicReference<CoordinationTask> coordinationTask = new AtomicReference<>();
+    private final AtomicLong coordinationTaskGeneration = new AtomicLong(-1);
+
     private int errorWaitBackOff = 500;
 
     /**
@@ -148,7 +151,7 @@ class Coordinator {
     public void start() {
         RunState newState = this.runState.updateAndGet(RunState::attemptStart);
         if (newState.wasStarted()) {
-            logger.debug("Starting Coordinator for Processor [{}].", name);
+            logger.debug("Processor [{}]. Starting Coordinator...", name);
             try {
                 executeUntilTrue(Coordinator.this::initializeTokenStore, 100L, 30L);
                 CoordinationTask task = new CoordinationTask();
@@ -162,7 +165,8 @@ class Coordinator {
                 throw e;
             }
         } else if (!newState.isRunning) {
-            throw new IllegalStateException("Cannot start a processor while it's in process of shutting down.");
+            throw new IllegalStateException(String.format(
+                    "Cannot start a processor [%s] while it's in process of shutting down.", name));
         }
     }
 
@@ -173,11 +177,12 @@ class Coordinator {
      * @return a CompletableFuture that completes when the shutdown process is finished
      */
     public CompletableFuture<Void> stop() {
-        logger.debug("Stopping Coordinator for Processor [{}].", name);
+        logger.debug("Processor [{}]. Stopping Coordinator...", name);
         CompletableFuture<Void> handle = runState.updateAndGet(RunState::attemptStop)
                                                  .shutdownHandle();
         CoordinationTask task = coordinationTask.getAndSet(null);
         if (task != null) {
+            logger.info("Processor [{}]. Stop requested. Scheduling immediate coordination task.", name);
             task.scheduleImmediateCoordinationTask();
         }
         return handle;
@@ -200,6 +205,7 @@ class Coordinator {
     private void scheduleCoordinator() {
         CoordinationTask coordinator = coordinationTask.get();
         if (coordinator != null) {
+            logger.debug("Processor [{}]. Segment operation queued. Scheduling immediate coordination task.", name);
             coordinator.scheduleImmediateCoordinationTask();
         }
     }
@@ -318,8 +324,7 @@ class Coordinator {
                     context -> {
                         List<Segment> segments = joinAndUnwrap(tokenStore.fetchSegments(name, context));
                         if (segments.isEmpty()) {
-                            logger.info("Initializing segments for processor [{}] ({} segments)",
-                                        name, initialSegmentCount);
+                            logger.info("Processor [{}]. Initializing ({}) segments", name, initialSegmentCount);
                             joinAndUnwrap(tokenStore.initializeTokenSegments(
                                     name,
                                     initialSegmentCount,
@@ -464,11 +469,10 @@ class Coordinator {
         }
 
         /**
-         * A {@link UnitOfWorkFactory} that spawns {@link UnitOfWork} used to
-         * invoke all {@link TokenStore} operations inside a unit of work.
+         * A {@link UnitOfWorkFactory} that spawns {@link UnitOfWork} used to invoke all {@link TokenStore} operations
+         * inside a unit of work.
          *
-         * @param unitOfWorkFactory a {@link UnitOfWorkFactory} that spawns
-         *                          {@link UnitOfWork} used to invoke all
+         * @param unitOfWorkFactory a {@link UnitOfWorkFactory} that spawns {@link UnitOfWork} used to invoke all
          *                          {@link TokenStore} operations inside a unit of work
          * @return the current Builder instance, for fluent interfacing
          */
@@ -689,6 +693,11 @@ class Coordinator {
         public boolean covers(TrackingToken other) {
             return false;
         }
+
+        @Override
+        public boolean samePositionAs(TrackingToken other) {
+            return other instanceof NoToken;
+        }
     }
 
     /**
@@ -717,6 +726,7 @@ class Coordinator {
         private TrackingToken lastScheduledToken = NoToken.INSTANCE;
         private boolean availabilityCallbackSupported;
         private long unclaimedSegmentValidationThreshold;
+        private final long generation = coordinationTaskGeneration.incrementAndGet();
 
         @Override
         public void run() {
@@ -725,10 +735,20 @@ class Coordinator {
                 return;
             }
 
+            // Check if this task is stale (a newer task has been created).
+            // This prevents race conditions where an old task runs after a new one was scheduled.
+            long currentTaskGeneration = coordinationTaskGeneration.get();
+            if (generation != currentTaskGeneration) {
+                logger.debug("Processor [{}] coordination task is stale (generation {} vs current {}). Exiting.",
+                             name, generation, currentTaskGeneration);
+                return;
+            }
+
             if (!runState.get().isRunning()) {
                 logger.debug(
-                        "Stopped processing. Runnable flag is false.\nReleasing claims and closing the event stream for Processor [{}].",
-                        name);
+                        "Processor [{}] (Coordination Task [{}]). Stopped processing. Runnable flag is false. Releasing claims and closing the event stream.",
+                        name,
+                        generation);
                 abortWorkPackages(null).thenRun(() -> runState.get().shutdownHandle().complete(null));
                 closeStreamQuietly();
                 return;
@@ -740,16 +760,19 @@ class Coordinator {
                         .map(Map.Entry::getValue)
                         .forEach(workPackage -> {
                             logger.info(
-                                    "Processor [{}] was requested and will comply with releasing claim for segment {}.",
-                                    name, workPackage.segment().getSegmentId()
+                                    "Processor [{}] (Coordination Task [{}]) was requested and will comply with releasing claim for segment {}.",
+                                    name,
+                                    generation,
+                                    workPackage.segment().getSegmentId()
                             );
                             abortWorkPackage(workPackage, null);
                         });
 
             if (coordinatorExtendsClaims) {
                 logger.debug(
-                        "Processor [{}] will extend the claim of work packages that are busy processing events and have met the claim threshold.",
-                        name);
+                        "Processor [{}] (Coordination Task [{}]) will extend the claim of work packages that are busy processing events and have met the claim threshold.",
+                        name,
+                        generation);
                 // Extend the claims of each work package busy processing events.
                 // Doing so relieves this effort from the work package as an optimization.
                 workPackages.values()
@@ -760,9 +783,13 @@ class Coordinator {
                                 try {
                                     workPackage.extendClaimIfThresholdIsMet();
                                 } catch (Exception e) {
-                                    logger.warn("Error while extending claim for Work Package [{}]-[{}]. "
-                                                        + "Aborting Work Package...",
-                                                workPackage.segment().getSegmentId(), name, e);
+                                    logger.warn(
+                                            "Processor [{}] (Coordination Task [{}]). Error while extending claim for Work Package [{}]. "
+                                                    + "Aborting Work Package...",
+                                            name,
+                                            generation,
+                                            workPackage.segment().getSegmentId(),
+                                            e);
                                     workPackage.abort(e);
                                 }
                             });
@@ -771,11 +798,30 @@ class Coordinator {
             if (!coordinatorTasks.isEmpty()) {
                 // Process any available coordinator tasks.
                 CoordinatorTask task = coordinatorTasks.remove();
-                logger.debug("Processor [{}] found task [{}] to run.", name, task.getDescription());
+                logger.debug("Processor [{}] (Coordination Task [{}]) found task [{}] to run.",
+                             name,
+                             generation,
+                             task.getDescription());
                 task.run()
                     .thenRun(() -> unclaimedSegmentValidationThreshold = 0)
                     .whenComplete((result, exception) -> {
                         processingGate.set(false);
+                        if (exception != null) {
+                            logger.warn(
+                                    "Processor [{}] (Coordination Task [{}]). Task [{}] completed with error. "
+                                            + "Scheduling immediate coordination task (itself).",
+                                    name,
+                                    generation,
+                                    task.getDescription(),
+                                    exception);
+                        } else {
+                            logger.debug(
+                                    "Processor [{}] (Coordination Task [{}]). Task [{}] completed successfully. "
+                                            + "Scheduling immediate coordination task (itself).",
+                                    name,
+                                    generation,
+                                    task.getDescription());
+                        }
                         scheduleImmediateCoordinationTask();
                     });
                 return;
@@ -787,7 +833,9 @@ class Coordinator {
                 try {
                     TrackingToken streamStartPosition = lastScheduledToken;
                     if (!releaseSegmentsIfTooManyClaimed()) {
-                        logger.debug("Processor [{}] will try to claim new segments.", name);
+                        logger.debug("Processor [{}] (Coordination Task [{}]) will try to claim new segments.",
+                                     name,
+                                     generation);
                         Map<Segment, TrackingToken> newSegments = claimNewSegments();
 
                         for (Map.Entry<Segment, TrackingToken> entry : newSegments.entrySet()) {
@@ -802,15 +850,21 @@ class Coordinator {
                         }
 
                         if (logger.isInfoEnabled() && !newSegments.isEmpty()) {
-                            logger.info("Processor [{}] claimed {} new segments for processing",
-                                        name,
-                                        newSegments.size());
+                            logger.info(
+                                    "Processor [{}] (Coordination Task [{}]) claimed {} new segments for processing.",
+                                    name,
+                                    generation,
+                                    newSegments.size());
                         }
                     }
                     ensureOpenStream(streamStartPosition);
                 } catch (Exception e) {
-                    logger.warn("Exception occurred while Processor [{}] started work packages"
-                                        + " and opened the event stream.", name, e);
+                    logger.warn(
+                            "Processor [{}] (Coordination Task [{}]). Exception occurred while starting work packages"
+                                    + " and opening the event stream.",
+                            name,
+                            generation,
+                            e);
                     abortAndScheduleRetry(e);
                     return;
                 }
@@ -818,12 +872,34 @@ class Coordinator {
 
             if (workPackages.isEmpty()) {
                 // We didn't start any work packages. Retry later.
-                logger.debug("No segments claimed. Will retry in {} milliseconds.", tokenClaimInterval);
+                logger.debug(
+                        "Processor [{}] (Coordination Task [{}]). No segments claimed. "
+                                + "Scheduling delayed coordination task (itself) with delay of {}ms.",
+                        name,
+                        generation,
+                        tokenClaimInterval);
                 lastScheduledToken = NoToken.INSTANCE;
                 closeStreamQuietly();
                 eventStream = null;
                 processingGate.set(false);
                 scheduleDelayedCoordinationTask(tokenClaimInterval);
+                return;
+            }
+
+            if (eventStream == null) {
+                logger.warn(
+                        "Processor [{}] (Coordination Task [{}]) has [{}] work packages and last scheduled token [{}] but no event stream. "
+                                + "Aborting work packages and scheduling retry.",
+                        name,
+                        generation,
+                        workPackages.size(),
+                        lastScheduledToken
+                );
+                abortAndScheduleRetry(
+                        new IllegalStateException("Event stream is null with [" + workPackages.size()
+                                                          + "] active work packages and last scheduled token of ["
+                                                          + lastScheduledToken + "]")
+                );
                 return;
             }
 
@@ -840,20 +916,49 @@ class Coordinator {
                     // All work package have space available to handle events and there are still events on the stream.
                     // We should thus start this process again immediately.
                     // It will likely jump all the if-statement directly, thus initiating the reading of events ASAP.
+                    logger.debug(
+                            "Processor [{}] (Coordination Task [{}]). Space available and events pending. "
+                                    + "Scheduling immediate coordination task (itself).",
+                            name,
+                            generation);
                     scheduleImmediateCoordinationTask();
                 } else if (isSpaceAvailable()) {
                     if (!availabilityCallbackSupported) {
+                        logger.trace(
+                                "Processor [{}] (Coordination Task [{}]). Space available, no events pending, "
+                                        + "no availability callback. Scheduling coordination task (itself) with delay of 500ms.",
+                                name,
+                                generation);
                         scheduleCoordinationTask(500);
                     } else {
-                        scheduleDelayedCoordinationTask(Math.min(claimExtensionThreshold, tokenClaimInterval));
+                        long delay = Math.min(claimExtensionThreshold, tokenClaimInterval);
+                        logger.trace(
+                                "Processor [{}] (Coordination Task [{}]). Space available, no events pending. "
+                                        + "Scheduling delayed coordination task (itself) with delay of {}ms.",
+                                name,
+                                generation,
+                                delay);
+                        scheduleDelayedCoordinationTask(delay);
                     }
                 } else {
+                    logger.trace(
+                            "Processor [{}] (Coordination Task [{}]). No space available in work packages. "
+                                    + "Scheduling coordination task (itself) with delay of 100ms.",
+                            name,
+                            generation);
                     scheduleCoordinationTask(100);
                 }
             } catch (Exception e) {
-                logger.warn("Exception occurred while Processor [{}] was coordinating the work packages.", name, e);
+                logger.warn(
+                        "Processor [{}] (Coordination Task [{}]). Exception occurred while coordinating the work packages.",
+                        name,
+                        generation,
+                        e);
                 if (e instanceof InterruptedException) {
-                    logger.error("Processor [{}] was interrupted. Shutting down.", name, e);
+                    logger.error("Processor [{}] (Coordination Task [{}]) was interrupted. Shutting down.",
+                                 name,
+                                 generation,
+                                 e);
                     stop();
                     Thread.currentThread().interrupt();
                 } else {
@@ -884,8 +989,8 @@ class Coordinator {
 
         private void resetRetryExponentialBackoff(int segmentId) {
             releasesLastBackOffSeconds.compute(segmentId, (s, b) -> null);
-            logger.debug("Processor [{}] reset release deadline backoff for Segment [#{}].",
-                         name,
+            logger.debug("Processor [{}] (Coordination Task [{}]) reset release deadline backoff for Segment [#{}].",
+                         name, generation,
                          segmentId);
         }
 
@@ -908,9 +1013,13 @@ class Coordinator {
             int maxSegmentsPerNode = maxSegmentProvider.apply(name);
             boolean tooManySegmentsClaimed = workPackages.size() > maxSegmentsPerNode;
             if (tooManySegmentsClaimed) {
-                logger.info("Total segments [{}] for processor [{}] is above maxSegmentsPerNode = [{}], "
-                                    + "going to release surplus claimed segments.",
-                            workPackages.size(), name, maxSegmentsPerNode);
+                logger.info(
+                        "Processor [{}] (Coordination Task [{}]). Total segments [{}] is above maxSegmentsPerNode = [{}], "
+                                + "going to release surplus claimed segments.",
+                        name,
+                        generation,
+                        workPackages.size(),
+                        maxSegmentsPerNode);
                 workPackages.values()
                             .stream()
                             .limit(workPackages.size() - maxSegmentsPerNode)
@@ -943,10 +1052,12 @@ class Coordinator {
             for (Segment segment : unClaimedSegments) {
                 int segmentId = segment.getSegmentId();
                 if (isSegmentBlockedFromClaim(segmentId)) {
-                    logger.debug("Segment {} is still marked to not be claimed by Processor [{}] till [{}].",
-                                 segmentId,
-                                 name,
-                                 releasesDeadlines.get(segmentId));
+                    logger.debug(
+                            "Processor [{}] (Coordination Task [{}]). Segment {} is still marked to not be claimed till [{}].",
+                            name,
+                            generation,
+                            segmentId,
+                            releasesDeadlines.get(segmentId));
                     processingStatusUpdater.accept(segmentId, u -> null);
                     continue;
                 }
@@ -956,12 +1067,18 @@ class Coordinator {
                                 context -> tokenStore.fetchToken(name, segment, context)
                         ));
                         newClaims.put(segment, token);
-                        logger.info("Processor [{}] claimed the token for segment {}.", name, segmentId);
+                        logger.info("Processor [{}] (Coordination Task [{}]) claimed the token for segment {}.",
+                                    name,
+                                    generation,
+                                    segmentId);
                     } catch (UnableToClaimTokenException e) {
                         processingStatusUpdater.accept(segmentId, u -> null);
-                        logger.debug("Processor [{}] is unable to claim the token for segment {}. "
-                                             + "It is owned by another process or has been split/merged concurrently.",
-                                     name, segmentId);
+                        logger.debug(
+                                "Processor [{}] (Coordination Task [{}]) is unable to claim the token for segment {}. "
+                                        + "It is owned by another process or has been split/merged concurrently.",
+                                name,
+                                generation,
+                                segmentId);
                     }
                 }
             }
@@ -981,7 +1098,8 @@ class Coordinator {
             // We already had a stream and the token differs the last scheduled token, thus we started new WorkPackages.
             // Close old stream to start at the new position, if we have Work Packages left.
             if (eventStream != null && !Objects.equals(trackingToken, lastScheduledToken)) {
-                logger.debug("Processor [{}] will close the current stream.", name);
+                logger.debug("Processor [{}] (Coordination Task [{}]) will close the current stream.",
+                             name, generation);
                 closeStreamQuietly();
                 eventStream = null;
                 lastScheduledToken = NoToken.INSTANCE;
@@ -994,12 +1112,19 @@ class Coordinator {
                 eventStream = eventSource.open(
                         StreamingCondition.conditionFor(startStreamingFrom, eventCriteria), null
                 );
-                logger.debug("Processor [{}] opened stream with tracking token [{}] and criteria [{}].",
-                             name,
-                             trackingToken,
-                             eventCriteria);
+                logger.debug(
+                        "Processor [{}] (Coordination Task [{}]) opened stream with tracking token [{}] and criteria [{}].",
+                        name, generation, trackingToken, eventCriteria
+                );
                 availabilityCallbackSupported = true;
-                eventStream.setCallback(this::scheduleImmediateCoordinationTask);
+                eventStream.setCallback(() -> {
+                    logger.trace(
+                            "Processor [{}] (Coordination Task [{}]). Events became available (callback triggered). "
+                                    + "Scheduling immediate coordination task (itself).",
+                            name, generation
+                    );
+                    scheduleImmediateCoordinationTask();
+                });
                 lastScheduledToken = trackingToken;
             }
         }
@@ -1049,8 +1174,8 @@ class Coordinator {
          * will keep their claim on their {@link TrackingToken} even if no events have been scheduled.
          */
         private void coordinateWorkPackages() {
-            logger.debug("Processor [{}] is coordinating work to all its work packages.", name);
-
+            logger.debug("Processor [{}] (Coordination Task [{}]) is coordinating work to all its work packages.",
+                         name, generation);
             if (eventStream != null) {
                 var streamError = eventStream.error();
                 if (streamError.isPresent()) {
@@ -1133,10 +1258,22 @@ class Coordinator {
 
         private void scheduleCoordinationTask(long delay) {
             if (scheduledGate.compareAndSet(false, true)) {
+                logger.trace(
+                        "Processor [{}] (Coordination Task [{}]). Scheduled coordination task (itself) with delay of {}ms.",
+                        name,
+                        generation,
+                        delay);
                 executorService.schedule(() -> {
                     scheduledGate.set(false);
                     this.run();
                 }, delay, TimeUnit.MILLISECONDS);
+            } else {
+                logger.trace(
+                        "Processor [{}] (Coordination Task [{}]). Skipped scheduling coordination task (delay={}ms). "
+                                + "scheduledGate already set.",
+                        name,
+                        generation,
+                        delay);
             }
         }
 
@@ -1144,32 +1281,59 @@ class Coordinator {
             // We only want to schedule a delayed task if there isn't another delayed task scheduled,
             // and preferably not if a regular task has already been scheduled (hence just a get() for that flag)
             if (!scheduledGate.get() && interruptibleScheduledGate.compareAndSet(false, true)) {
+                logger.trace(
+                        "Processor [{}] (Coordination Task [{}]). Scheduled delayed coordination task (itself) with delay of {}ms.",
+                        name,
+                        generation,
+                        delay);
                 executorService.schedule(() -> {
                     interruptibleScheduledGate.set(false);
                     this.run();
                 }, delay, TimeUnit.MILLISECONDS);
+            } else {
+                logger.trace(
+                        "Processor [{}] (Coordination Task [{}]). Skipped scheduling delayed coordination task (delay={}ms). "
+                                + "scheduledGate={}, interruptibleScheduledGate={}.",
+                        name,
+                        generation,
+                        delay,
+                        scheduledGate.get(),
+                        interruptibleScheduledGate.get());
             }
         }
 
         private void abortAndScheduleRetry(Exception cause) {
-            logger.info("Processor [{}] is releasing claims and scheduling a new coordination task in {}ms",
-                        name, errorWaitBackOff);
-
             errorWaitBackOff = Math.min(errorWaitBackOff * 2, 60000);
+            logger.info(
+                    "Processor [{}] (Coordination Task [{}]) is releasing claims and scheduling a new coordination task in {}ms.",
+                    name,
+                    generation,
+                    errorWaitBackOff);
+
             abortWorkPackages(cause).whenComplete(
                     (unused, throwable) -> {
                         if (throwable != null) {
-                            logger.warn("An exception occurred during work packages abort on processor [{}].",
-                                        name, throwable);
+                            logger.warn(
+                                    "Processor [{}] (Coordination Task [{}]). An exception occurred during work packages abort.",
+                                    name,
+                                    generation,
+                                    throwable);
                         } else {
-                            logger.debug("Work packages have aborted successfully.");
+                            logger.debug(
+                                    "Processor [{}] (Coordination Task [{}]). Work packages have aborted successfully.",
+                                    name,
+                                    generation);
                         }
-                        processingGate.set(false);
-                        logger.debug("Scheduling new coordination task to run in {}ms", errorWaitBackOff);
+                        logger.debug(
+                                "Processor [{}] (Coordination Task [{}]). Scheduling new coordination task to run in {}ms.",
+                                name,
+                                generation,
+                                errorWaitBackOff);
                         // Construct a new CoordinationTask, thus abandoning the old task and it's progress entirely.
                         CoordinationTask task = new CoordinationTask();
                         executorService.schedule(task, errorWaitBackOff, TimeUnit.MILLISECONDS);
                         coordinationTask.set(task);
+                        processingGate.set(false);
                     }
             );
             closeStreamQuietly();
@@ -1180,7 +1344,8 @@ class Coordinator {
             return work.abort(cause)
                        .thenRun(() -> {
                            if (workPackages.remove(segmentId, work)) {
-                               logger.debug("Processor [{}] released claim on {}.", name, work.segment());
+                               logger.debug("Processor [{}] (Coordination Task [{}]) released claim on {}.",
+                                            name, generation, work.segment());
                            }
                        })
                        .thenRun(() -> joinAndUnwrap(unitOfWorkFactory.create().executeWithResult(
@@ -1188,8 +1353,12 @@ class Coordinator {
                                                     .thenRun(() -> segmentReleasedAction.accept(work.segment()))
                        )))
                        .exceptionally(throwable -> {
-                           logger.info("An exception occurred during the abort of work package [{}] on [{}] processor.",
-                                       segmentId, name, throwable);
+                           logger.info(
+                                   "Processor [{}] (Coordination Task [{}]). An exception occurred during the abort of work package [{}].",
+                                   name,
+                                   generation,
+                                   segmentId,
+                                   throwable);
                            return null;
                        });
         }
@@ -1208,8 +1377,9 @@ class Coordinator {
                                 ? current
                                 : nextBackOffRetry;
                         logger.debug(
-                                "Processor [{}] set release deadline claim to [{}] for Segment [#{}] using backoff of [{}] seconds.",
+                                "Processor [{}] (Coordination Task [{}]) set release deadline claim to [{}] for Segment [#{}] using backoff of [{}] seconds.",
                                 name,
+                                generation,
                                 releaseDeadline,
                                 segmentId,
                                 errorWaitTime);

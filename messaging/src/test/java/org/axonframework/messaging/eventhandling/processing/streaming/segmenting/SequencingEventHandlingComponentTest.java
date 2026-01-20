@@ -51,12 +51,14 @@ class SequencingEventHandlingComponentTest {
 
     private static final Logger logger = LoggerFactory.getLogger(SequencingEventHandlingComponentTest.class);
 
-    private RecordingEventHandlingComponent internal;
+    private SimpleEventHandlingComponent handlerRegistry;
+    private RecordingEventHandlingComponent recordingComponent;
     private ExecutorService executorService;
 
     @BeforeEach
     void setUp() {
-        internal = new RecordingEventHandlingComponent(new SimpleEventHandlingComponent());
+        handlerRegistry = SimpleEventHandlingComponent.create("test");
+        recordingComponent = new RecordingEventHandlingComponent(handlerRegistry);
         executorService = Executors.newFixedThreadPool(2);
     }
 
@@ -73,7 +75,7 @@ class SequencingEventHandlingComponentTest {
         EventHandlingComponent eventHandlingComponent = sequencingEventHandlingComponent();
 
         EventHandler eventHandler1_1 = asyncEventHandler();
-        eventHandlingComponent.subscribe(new QualifiedName(TestPayload.class), eventHandler1_1);
+        handlerRegistry.subscribe(new QualifiedName(TestPayload.class), eventHandler1_1);
 
         // when
         var event1 = testEvent("event-1_seq-A");
@@ -92,8 +94,8 @@ class SequencingEventHandlingComponentTest {
         // then
         await().atMost(Duration.ofSeconds(1))
                .pollDelay(Duration.ofMillis(100))
-               .untilAsserted(() -> assertThat(internal.recorded()).hasSameSizeAs(batch));
-        var handledEvents = internal.recorded();
+               .untilAsserted(() -> assertThat(recordingComponent.recorded()).hasSameSizeAs(batch));
+        var handledEvents = recordingComponent.recorded();
         logger.info("Handled events: {}", handledEvents.stream().map(it -> it.payload().toString()).toList());
         var seqAEvents = payloadsOfSequence(handledEvents, "A");
         var seqBEvents = payloadsOfSequence(handledEvents, "B");
@@ -112,7 +114,7 @@ class SequencingEventHandlingComponentTest {
     void whenHandlersAreSyncOrderingIsPreservedInEntireBatch() {
         // given
         EventHandlingComponent eventHandlingComponent = sequencingEventHandlingComponent();
-        eventHandlingComponent.subscribe(new QualifiedName(TestPayload.class), (event, context) -> MessageStream.empty());
+        handlerRegistry.subscribe(new QualifiedName(TestPayload.class), (event, context) -> MessageStream.empty());
 
         // when
         var event1 = testEvent("event-1_seq-A");
@@ -129,7 +131,7 @@ class SequencingEventHandlingComponentTest {
         handleEventsInUnitOfWork(eventHandlingComponent, batch);
 
         // then
-        assertThat(internal.recorded())
+        assertThat(recordingComponent.recorded())
                 .hasSize(9)
                 .extracting(EventMessage::payload)
                 .extracting("value")
@@ -152,7 +154,7 @@ class SequencingEventHandlingComponentTest {
         EventHandlingComponent eventHandlingComponent = sequencingEventHandlingComponent();
         EventHandler emptyHandler = (event, context) -> MessageStream.empty();
         QualifiedName eventType = new QualifiedName(TestPayload.class);
-        eventHandlingComponent.subscribe(eventType, emptyHandler);
+        handlerRegistry.subscribe(eventType, emptyHandler);
 
         // when & then - Should complete without issues
         assertThatNoException().isThrownBy(() -> {
@@ -174,7 +176,7 @@ class SequencingEventHandlingComponentTest {
         EventHandler failingHandler = (event, context) -> MessageStream.failed(testException);
 
         QualifiedName eventType = new QualifiedName(TestPayload.class);
-        eventHandlingComponent.subscribe(eventType, failingHandler);
+        handlerRegistry.subscribe(eventType, failingHandler);
 
         // when
         EventMessage event = testEvent("event-1_seq-A");
@@ -202,7 +204,7 @@ class SequencingEventHandlingComponentTest {
         return new SequencingEventHandlingComponent(
                 new SequenceOverridingEventHandlingComponent(
                         (event, context) -> Optional.of(sequenceOf(event)),
-                        internal
+                        recordingComponent
                 )
         );
     }

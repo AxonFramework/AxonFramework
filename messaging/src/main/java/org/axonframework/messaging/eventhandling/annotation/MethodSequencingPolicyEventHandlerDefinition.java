@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.annotation;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.annotation.HandlerAttributes;
 import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
@@ -29,11 +30,10 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Optional;
 
-import jakarta.annotation.Nonnull;
-
 /**
- * Definition of handlers that are annotated with {@link SequencingPolicy}. These handlers are wrapped with a
- * {@link SequencingPolicyEventMessageHandlingMember} that provides access to the configured sequencing policy.
+ * Definition of {@link EventHandlingMember event handlers} that are annotated with {@link SequencingPolicy}. These
+ * handlers are wrapped with a {@link SequencingPolicyEventMessageHandlingMember} that provides access to the configured
+ * sequencing policy.
  * <p>
  * The {@link SequencingPolicy} annotation can be applied either directly to the handler method or to the declaring
  * class. When applied to the class, all handler methods in that class will inherit the sequencing policy. Method-level
@@ -46,45 +46,55 @@ public class MethodSequencingPolicyEventHandlerDefinition implements HandlerEnha
 
     @Override
     public @Nonnull <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
-        if (original.attribute(HandlerAttributes.EVENT_NAME).isEmpty()) {
-            return original;
-        }
-        return original.unwrap(Method.class)
-                       .flatMap(method -> findSequencingPolicy(method).map(annotation -> (MessageHandlingMember<T>) new SequencingPolicyEventMessageHandlingMember<>(
-                               original,
-                               annotation)))
-                       .orElse(original);
+        return original instanceof EventHandlingMember<T> eventHandlingMember
+                ? eventHandlingMember.unwrap(Method.class)
+                                     .flatMap(method -> optionalSequencingAwareMember(eventHandlingMember, method))
+                                     .orElse(eventHandlingMember)
+                : original;
     }
 
-    private Optional<SequencingPolicy> findSequencingPolicy(Method method) {
+    private <T> Optional<MessageHandlingMember<T>> optionalSequencingAwareMember(
+            EventHandlingMember<T> eventHandlingMember,
+            Method method
+    ) {
         return Optional.ofNullable(method.getAnnotation(SequencingPolicy.class))
-                       .or(() -> Optional.ofNullable(method.getDeclaringClass().getAnnotation(SequencingPolicy.class)));
+                       .or(() -> Optional.ofNullable(method.getDeclaringClass().getAnnotation(SequencingPolicy.class)))
+                       .map(annotation -> new SequencingPolicyEventMessageHandlingMember<>(
+                               eventHandlingMember, annotation
+                       ));
     }
 
     /**
-     * Extracting {@link org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy} from the {@link SequencingPolicy}
-     * annotation.
+     * Extracting {@link org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy} from the
+     * {@link SequencingPolicy} annotation.
      *
      * @param <T> The type of the declaring class of the event handling method.
      */
     @Internal
     static class SequencingPolicyEventMessageHandlingMember<T>
             extends WrappedMessageHandlingMember<T>
-            implements MessageHandlingMember<T> {
+            implements EventHandlingMember<T> {
 
+        private final EventHandlingMember<T> delegate;
         private final org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy sequencingPolicy;
 
         /**
          * Constructs a new SequencingPolicyEventMessageHandlingMember by wrapping the given {@code original} handler
          * and creating a sequencing policy instance from the {@link SequencingPolicy} annotation.
          *
-         * @param original         The original message handling member to wrap
-         * @param policyAnnotation The {@link SequencingPolicy} annotation containing policy configuration
+         * @param original         The original message handling member to wrap.
+         * @param policyAnnotation The {@link SequencingPolicy} annotation containing policy configuration.
          */
-        private SequencingPolicyEventMessageHandlingMember(MessageHandlingMember<T> original,
+        private SequencingPolicyEventMessageHandlingMember(EventHandlingMember<T> original,
                                                            SequencingPolicy policyAnnotation) {
             super(original);
+            this.delegate = original;
             this.sequencingPolicy = createSequencingPolicy(policyAnnotation, original);
+        }
+
+        @Override
+        public String eventName() {
+            return delegate.eventName();
         }
 
         /**

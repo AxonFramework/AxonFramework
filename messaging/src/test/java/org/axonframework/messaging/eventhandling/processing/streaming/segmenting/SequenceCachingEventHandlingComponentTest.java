@@ -223,19 +223,6 @@ class SequenceCachingEventHandlingComponentTest {
         }
 
         @Test
-        void shouldDelegateSubscribeToDelegate() {
-            // given
-            QualifiedName eventName = new QualifiedName(String.class);
-            EventHandler handler = (e, c) -> MessageStream.empty();
-
-            // when
-            cachingComponent.subscribe(eventName, handler);
-
-            // then
-            verify(delegate).subscribe(eventName, handler);
-        }
-
-        @Test
         void shouldDelegateSupportedEventsToDelegate() {
             // when
             cachingComponent.supportedEvents();

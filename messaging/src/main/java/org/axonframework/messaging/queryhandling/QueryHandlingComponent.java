@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.queryhandling;
 
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.core.QualifiedName;
 
 import java.util.Set;
@@ -29,7 +30,7 @@ import java.util.Set;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface QueryHandlingComponent extends QueryHandler {
+public interface QueryHandlingComponent extends QueryHandler, DescribableComponent {
 
     /**
      * All supported {@link QueryMessage queries}, referenced through a {@link QualifiedName}.

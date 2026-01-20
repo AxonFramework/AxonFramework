@@ -17,15 +17,15 @@
 package org.axonframework.test.matchers;
 
 import org.axonframework.messaging.commandhandling.CommandMessage;
-import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.eventhandling.EventMessage;
 import org.hamcrest.Matcher;
 
 import java.util.List;
 import java.util.function.Predicate;
 
 /**
- * Utility class containing static methods to obtain instances of (List) Matchers.
+ * Utility class containing static methods to obtain instances of (list) {@link Matcher Matchers}.
  *
  * @author Allard Buijze
  * @since 1.1
@@ -33,31 +33,35 @@ import java.util.function.Predicate;
 public abstract class Matchers {
 
     /**
-     * Matches a list of Messages if a list containing their respective payloads matches the given
-     * {@code matcher}.
+     * Returns a {@link Matcher} that matches a list of {@link Message} if a list containing their respective payloads
+     * matches the given {@code matcher}.
      *
-     * @param matcher The mather to match against the Message payloads
-     * @return a Matcher that matches against the Message payloads
+     * @param matcher The matcher to match against {@link Message#payload() Message's payload}.
+     * @return A matcher that matches against the {@link Message#payload() Message payloads}.
      */
-    public static Matcher<List<Message>> payloadsMatching(final Matcher<? extends List<?>> matcher) {
+    public static Matcher<List<? extends Message>> payloadsMatching(final Matcher<? extends List<?>> matcher) {
         return new PayloadsMatcher(matcher);
     }
 
     /**
-     * Matches a single Message if the given {@code payloadMatcher} matches that message's payload.
+     * Returns a {@link Matcher} that matches a single {@link Message} if the given {@code payloadMatcher} matches that
+     * message's payload.
      *
-     * @param payloadMatcher The matcher to match against the Message's payload
-     * @return a Matcher that evaluates a Message's payload.
+     * @param payloadMatcher The matcher to match against the {@link Message#payload() Message's payload}.
+     * @param <T>            The generic type of {@link Message} matched on by the resulting payload matcher.
+     * @return A matcher that evaluates a the {@link Message#payload() Message payload}.
      */
-    public static Matcher<Message> messageWithPayload(Matcher<?> payloadMatcher) {
+    public static <T extends Message> Matcher<T> messageWithPayload(Matcher<?> payloadMatcher) {
         return new PayloadMatcher<>(payloadMatcher);
     }
 
     /**
-     * Matches a List where all the given matchers must match with at least one of the items in that list.
+     * Returns a {@link Matcher} that matches a List where all the given matchers must match with at least one of the
+     * items in that list.
      *
      * @param matchers the matchers that should match against one of the items in the List.
-     * @return a matcher that matches a number of matchers against a list
+     * @param <T>      The generic item type matched by the given {@code matchers}.
+     * @return A matcher that matches a number of matchers against a list.
      */
     @SafeVarargs
     public static <T> Matcher<List<T>> listWithAllOf(Matcher<T>... matchers) {
@@ -65,11 +69,12 @@ public abstract class Matchers {
     }
 
     /**
-     * Matches a List of Events where at least one of the given {@code matchers} matches any of the Events in that
-     * list.
+     * Returns a {@link Matcher} that matches a list of items of type {@code T} where at least one of the given
+     * {@code matchers} matches any of the items in that list.
      *
-     * @param matchers the matchers that should match against one of the items in the List of Events.
-     * @return a matcher that matches a number of event-matchers against a list of events
+     * @param matchers The matchers that should match against one of the items of type {@code T} in the list.
+     * @param <T>      The generic item type matched by the given {@code matchers}.
+     * @return A matcher that matches a number of generic-type-matchers against a list of objects.
      */
     @SafeVarargs
     public static <T> Matcher<List<T>> listWithAnyOf(Matcher<T>... matchers) {
@@ -77,14 +82,16 @@ public abstract class Matchers {
     }
 
     /**
-     * Matches a list of Events if each of the {@code matchers} match against an Event that comes after the Event
-     * that the previous matcher matched against. This means that the given {@code matchers} must match in order,
-     * but there may be "gaps" of unmatched events in between.
-     * <p/>
-     * To match the exact sequence of events (i.e. without gaps), use {@link #exactSequenceOf(org.hamcrest.Matcher[])}.
+     * Returns a {@link Matcher} that matches a list of items of type {@code T} if each of the {@code matchers} match
+     * against an item that comes after the item that the previous matcher matched against.
+     * <p>
+     * This means that the given {@code matchers} must match in order, but there may be "gaps" of unmatched items in
+     * between. To match the exact sequence of items (i.e. without gaps), use
+     * {@link #exactSequenceOf(org.hamcrest.Matcher[])}.
      *
-     * @param matchers the matchers to match against the list of events
-     * @return a matcher that matches a number of event-matchers against a list of events
+     * @param matchers The matchers to match against the list of items of type {@code T}.
+     * @param <T>      The generic item type matched by the given {@code matchers}.
+     * @return A matcher that matches a number of item-matchers against a list of items of type {@code T}.
      */
     @SafeVarargs
     public static <T> Matcher<List<T>> sequenceOf(Matcher<T>... matchers) {
@@ -92,19 +99,19 @@ public abstract class Matchers {
     }
 
     /**
-     * Matches a List of Events if each of the given {@code matchers} matches against the event at the respective
-     * index in the list. This means the first matcher must match the first event, the second matcher the second event,
-     * and so on.
+     * Returns a {@link Matcher} that matches a list of items of type {@code T} if each of the given {@code matchers}
+     * matches against the item at the respective index in the list.
+     * <p>
+     * This means the first matcher must match the first item, the second matcher the second item, and so on. Any excess
+     * items are ignored. If there are excess {@link Matcher Matchers}, they will be evaluated against {@code null}. To
+     * make sure the number of items matches the number of {@code Matchers}, you can append an extra
+     * {@link #andNoMore()} matcher.
      * <p/>
-     * Any excess Events are ignored. If there are excess Matchers, they will be evaluated against {@code null}.
-     * To
-     * make sure the number of Events matches the number of Matchers, you can append an extra {@link #andNoMore()}
-     * matcher.
-     * <p/>
-     * To allow "gaps" of unmatched Events, use {@link #sequenceOf(org.hamcrest.Matcher[])} instead.
+     * To allow "gaps" of unmatched items, use {@link #sequenceOf(org.hamcrest.Matcher[])} instead.
      *
-     * @param matchers the matchers to match against the list of events
-     * @return a matcher that matches a number of event-matchers against a list of events
+     * @param matchers The matchers to match against the list of items of type {@code T}.
+     * @param <T>      The generic item type matched by the given {@code matchers}.
+     * @return A matcher that matches a number of item-matchers against a list of items of type {@code T}.
      */
     @SafeVarargs
     public static <T> Matcher<List<T>> exactSequenceOf(Matcher<T>... matchers) {
@@ -112,68 +119,70 @@ public abstract class Matchers {
     }
 
     /**
-     * Returns a Matcher that matches with values defined by the given {@code predicate}.
+     * Returns a {@link Matcher} that matches with values of type {@code T} defined by the given {@code predicate}.
      * <p>
-     * This method is a synonym for {@link #predicate(Predicate)} to allow for better readability
+     * This method is a synonym for {@link #predicate(Predicate)} to allow for better readability.
      *
-     * @param predicate The predicate defining matching values
-     * @param <T>       The type of value matched against
-     * @return A Matcher that matches against values defined by the predicate
+     * @param predicate The predicate defining matching values.
+     * @param <T>       The generic item type verified by the given {@code predicate}.
+     * @return A matcher that matches against values of type {@code T} defined by the predicate.
      */
     public static <T> Matcher<T> matches(Predicate<T> predicate) {
         return predicate(predicate);
     }
 
     /**
-     * Returns a Matcher that matches with values defined by the given {@code predicate}.
+     * Returns a {@link Matcher} that matches with values of type {@code T} defined by the given {@code predicate}.
      * <p>
-     * This method is a synonym for {@link #matches(Predicate)} to allow for better readability
+     * This method is a synonym for {@link #matches(Predicate)} to allow for better readability.
      *
      * @param predicate The predicate defining matching values
-     * @param <T>       The type of value matched against
-     * @return A Matcher that matches against values defined by the predicate
+     * @param <T>       The generic item type verified by the given {@code predicate}.
+     * @return A matcher that matches against values of type {@code T} defined by the predicate.
      */
     public static <T> Matcher<T> predicate(Predicate<T> predicate) {
         return new PredicateMatcher<>(predicate);
     }
 
     /**
-     * Matches an empty List of Events.
+     * Returns a {@link Matcher} that matches an empty {@link List} of {@link EventMessage events}.
      *
-     * @return a matcher that matches an empty list of events
+     * @return A matcher that matches an empty {@link List} of {@link EventMessage events}.
      */
     public static Matcher<List<EventMessage>> noEvents() {
         return new EmptyCollectionMatcher<>("events");
     }
 
     /**
-     * Matches an empty List of Commands.
+     * Returns a {@link Matcher} that matches an empty {@link List} of {@link CommandMessage command}.
      *
-     * @return a matcher that matches an empty list of Commands
+     * @return A matcher that matches an empty {@link List} of {@link CommandMessage command}.
      */
     public static Matcher<List<CommandMessage>> noCommands() {
         return new EmptyCollectionMatcher<>("commands");
     }
 
     /**
-     * Returns a Matcher that matches with exact class type defined by the given {@code expected}.
+     * Returns a {@link Matcher} that matches with exact class type defined by the given {@code expected}.
      *
-     * @param expected The expected class
+     * @param expected The expected class.
      * @param <T>      The object type to match the given {@code expected} class with.
-     * @return a matcher that matches based on the class
+     * @return A matcher that matches based on the {@code expected} class.
      */
     public static <T> Matcher<T> exactClassOf(Class<T> expected) {
         return new ExactClassMatcher<>(expected);
     }
 
     /**
-     * Constructs a deep equals {@link Matcher}. This {@code Matcher} will first perform a regular equals check based on
-     * the given {@code expected} and {@code actual} (provided during the {@link Matcher#matches(Object)} invocation).
-     * If this fails and given type <em>does not</em> override {@link Object#equals(Object)}, this {@code Matcher} will
-     * match the fields of the given {@code expected} and {@code actual}.
+     * Constructs a deep equals {@link Matcher}.
+     * <p>
+     * This {@code Matcher} will first perform a regular equals check based on the given {@code expected} and
+     * {@code actual} (provided during the {@link Matcher#matches(Object)} invocation). If this fails and given type
+     * <em>does not</em> override {@link Object#equals(Object)}, this {@code Matcher} will match the fields of the
+     * given {@code expected} and {@code actual}.
      *
      * @param expected The object to match against.
-     * @param <T>      The type of object to match against.
+     * @param <T>      The type of the {@code expected} object to match against.
      * @return A matcher matching on {@link Object#equals(Object)} firstly, followed by field value equality if equals
      * isn't implemented.
      */
@@ -182,15 +191,17 @@ public abstract class Matchers {
     }
 
     /**
-     * Constructs a deep equals {@link Matcher}. This {@code Matcher} will first perform a regular equals check based on
-     * the given {@code expected} and {@code actual} (provided during the {@link Matcher#matches(Object)} invocation).
-     * If this fails and given type <em>does not</em> override {@link Object#equals(Object)}, this {@code Matcher} will
-     * match the fields of the given {@code expected} and {@code actual}. Fields can be in- or excluded for this last
-     * step through the {@code filter}.
+     * Constructs a deep equals {@link Matcher}.
+     * <p>
+     * This {@code Matcher} will first perform a regular equals check based on the given {@code expected} and
+     * {@code actual} (provided during the {@link Matcher#matches(Object)} invocation). If this fails and given type
+     * <em>does not</em> override {@link Object#equals(Object)}, this {@code Matcher} will match the fields of the
+     * given {@code expected} and {@code actual}. Fields can be in- or excluded for this last step through the
+     * {@code filter}.
      *
      * @param expected The object to match against.
      * @param filter   The filter describing the Fields to include in the comparison.
-     * @param <T>      The type of object to match against.
+     * @param <T>      The type of the {@code expected} object to match against.
      * @return A matcher matching on {@link Object#equals(Object)} firstly, followed by field value equality if equals
      * isn't implemented.
      */
@@ -199,20 +210,26 @@ public abstract class Matchers {
     }
 
     /**
-     * Matches against {@code null} or {@code void}. Can be used to make sure no trailing events remain when
-     * using an Exact Sequence Matcher ({@link #exactSequenceOf(org.hamcrest.Matcher[])}).
+     * Returns a {@link Matcher} that matches against {@code null} or {@code void}.
+     * <p>
+     * Can be used to make sure no trailing items remain when using an
+     * {@link #exactSequenceOf(org.hamcrest.Matcher[]) exact sequence matcher}.
      *
-     * @return a matcher that matches against "nothing".
+     * @param <T> The type of the object to match against.
+     * @return A matcher that matches against "nothing".
      */
     public static <T> Matcher<T> andNoMore() {
         return nothing();
     }
 
     /**
-     * Matches against {@code null} or {@code void}. Can be used to make sure no trailing events remain when
-     * using an Exact Sequence Matcher ({@link #exactSequenceOf(org.hamcrest.Matcher[])}).
+     * Returns a {@link Matcher} that matches against {@code null} or {@code void}.
+     * <p>
+     * Can be used to make sure no trailing items remain when using an
+     * {@link #exactSequenceOf(org.hamcrest.Matcher[]) exact sequence matcher}.
      *
-     * @return a matcher that matches against "nothing".
+     * @param <T> The type of the object to match against.
+     * @return A matcher that matches against "nothing".
      */
     public static <T> Matcher<T> nothing() {
         return new NullOrVoidMatcher<>();

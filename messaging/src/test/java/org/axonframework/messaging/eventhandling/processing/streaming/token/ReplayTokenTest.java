@@ -57,6 +57,16 @@ class ReplayTokenTest {
     }
 
     @Test
+    void replayTokenIsProvidedWhenResetAtCurrentPosition() {
+        TrackingToken token1 = new GlobalSequenceTrackingToken(2);
+        TrackingToken token2 = new GlobalSequenceTrackingToken(2);
+
+        TrackingToken actual = ReplayToken.createReplayToken(token1, token2);
+        assertInstanceOf(ReplayToken.class, actual);
+        assertTrue(ReplayToken.isReplay(actual));
+    }
+
+    @Test
     void serializationDeserialization() throws IOException {
         ObjectMapper objectMapper = new ObjectMapper();
         TrackingToken replayToken = ReplayToken.createReplayToken(innerToken);
@@ -131,5 +141,174 @@ class ReplayTokenTest {
         assertTrue(result instanceof ReplayToken);
         assertEquals(tokenAtReset, ((ReplayToken) result).getTokenAtReset());
         assertEquals(startPosition, ((ReplayToken) result).getCurrentToken());
+    }
+
+    /**
+     * Tests for {@link ReplayToken#advancedTo(TrackingToken)} with {@link GlobalSequenceTrackingToken}. These tests
+     * verify replay detection behavior with simple sequential tokens.
+     */
+    @Nested
+    class AdvancedToWithGlobalSequenceTrackingToken {
+
+        @Test
+        void eventBeforeResetPositionIsReplay() {
+            // tokenAtReset at index 7 - processor saw events 0-7 before reset
+            TrackingToken tokenAtReset = new GlobalSequenceTrackingToken(7);
+            ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
+
+            // Event at index 5 - clearly before reset position
+            TrackingToken newToken = new GlobalSequenceTrackingToken(5);
+            TrackingToken result = replayToken.advancedTo(newToken);
+
+            assertInstanceOf(ReplayToken.class, result);
+            assertTrue(ReplayToken.isReplay(result), "Event before reset position should be a replay");
+        }
+
+        @Test
+        void eventAtExactResetPositionIsReplay() {
+            // tokenAtReset at index 7
+            TrackingToken tokenAtReset = new GlobalSequenceTrackingToken(7);
+            ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
+
+            // Advance to position 6 first
+            replayToken = (ReplayToken) replayToken.advancedTo(new GlobalSequenceTrackingToken(6));
+
+            // Event at index 7 - exactly at reset position (was already processed before reset)
+            TrackingToken newToken = new GlobalSequenceTrackingToken(7);
+            TrackingToken result = replayToken.advancedTo(newToken);
+
+            assertInstanceOf(ReplayToken.class, result);
+            assertTrue(ReplayToken.isReplay(result), "Event at exact reset position should be a replay");
+        }
+
+        @Test
+        void eventAfterResetPositionEndsReplay() {
+            // tokenAtReset at index 7
+            TrackingToken tokenAtReset = new GlobalSequenceTrackingToken(7);
+            ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
+
+            // Event at index 8 - after reset position (new event, never seen before)
+            TrackingToken newToken = new GlobalSequenceTrackingToken(8);
+            TrackingToken result = replayToken.advancedTo(newToken);
+
+            // Should exit replay mode entirely
+            assertInstanceOf(GlobalSequenceTrackingToken.class, result);
+            assertFalse(ReplayToken.isReplay(result), "Event after reset position should not be a replay");
+        }
+
+        @Test
+        void replayProgressesThroughMultipleEvents() {
+            TrackingToken tokenAtReset = new GlobalSequenceTrackingToken(5);
+            TrackingToken currentToken = ReplayToken.createReplayToken(tokenAtReset, null);
+
+            // Process events 0 through 5 - all should be replays
+            for (int i = 0; i <= 5; i++) {
+                currentToken = ((ReplayToken) currentToken).advancedTo(new GlobalSequenceTrackingToken(i));
+                assertInstanceOf(ReplayToken.class, currentToken);
+                assertTrue(ReplayToken.isReplay(currentToken), "Event " + i + " should be a replay");
+            }
+
+            // Event 6 should end the replay
+            currentToken = ((ReplayToken) currentToken).advancedTo(new GlobalSequenceTrackingToken(6));
+            assertFalse(ReplayToken.isReplay(currentToken), "Event 6 should not be a replay");
+        }
+
+        @Test
+        void advancedToShouldKeepReplayWhenTokenReachesSameIndex() {
+            GlobalSequenceTrackingToken tokenAtReset = new GlobalSequenceTrackingToken(6);
+
+            TrackingToken replayToken = ReplayToken.createReplayToken(tokenAtReset, null);
+
+            // Advance to the same index as tokenAtReset
+            GlobalSequenceTrackingToken newToken = new GlobalSequenceTrackingToken(6);
+            TrackingToken advancedToken = ((ReplayToken) replayToken).advancedTo(newToken);
+
+            assertTrue(ReplayToken.isReplay(advancedToken),
+                       "Should have remained in replay mode since newToken (index 6) does not have tokenAtReset beyond its positio");
+        }
+    }
+
+    @Nested
+    class SamePositionAs {
+
+        @Test
+        void samePositionAsWithReplayTokenComparesCurrentTokens() {
+            TrackingToken tokenAtReset = new GlobalSequenceTrackingToken(10);
+            TrackingToken currentToken1 = new GlobalSequenceTrackingToken(5);
+            TrackingToken currentToken2 = new GlobalSequenceTrackingToken(5);
+
+            ReplayToken replayToken1 = new ReplayToken(tokenAtReset, currentToken1, null);
+            ReplayToken replayToken2 = new ReplayToken(tokenAtReset, currentToken2, null);
+
+            assertTrue(replayToken1.samePositionAs(replayToken2));
+            assertTrue(replayToken2.samePositionAs(replayToken1));
+        }
+
+        @Test
+        void samePositionAsWithReplayTokenReturnsFalseWhenCurrentTokensDiffer() {
+            TrackingToken tokenAtReset = new GlobalSequenceTrackingToken(10);
+            TrackingToken currentToken1 = new GlobalSequenceTrackingToken(5);
+            TrackingToken currentToken2 = new GlobalSequenceTrackingToken(6);
+
+            ReplayToken replayToken1 = new ReplayToken(tokenAtReset, currentToken1, null);
+            ReplayToken replayToken2 = new ReplayToken(tokenAtReset, currentToken2, null);
+
+            assertFalse(replayToken1.samePositionAs(replayToken2));
+            assertFalse(replayToken2.samePositionAs(replayToken1));
+        }
+
+        @Test
+        void samePositionAsWithNonReplayTokenDelegatesToCurrentToken() {
+            TrackingToken tokenAtReset = new GlobalSequenceTrackingToken(10);
+            TrackingToken currentToken = new GlobalSequenceTrackingToken(5);
+            TrackingToken otherToken = new GlobalSequenceTrackingToken(5);
+
+            ReplayToken replayToken = new ReplayToken(tokenAtReset, currentToken, null);
+
+            assertTrue(replayToken.samePositionAs(otherToken));
+        }
+
+        @Test
+        void samePositionAsWithNonReplayTokenReturnsFalseWhenDifferent() {
+            TrackingToken tokenAtReset = new GlobalSequenceTrackingToken(10);
+            TrackingToken currentToken = new GlobalSequenceTrackingToken(5);
+            TrackingToken otherToken = new GlobalSequenceTrackingToken(6);
+
+            ReplayToken replayToken = new ReplayToken(tokenAtReset, currentToken, null);
+
+            assertFalse(replayToken.samePositionAs(otherToken));
+        }
+
+        @Test
+        void samePositionAsWithNullCurrentTokenReturnsFalse() {
+            TrackingToken tokenAtReset = new GlobalSequenceTrackingToken(10);
+            ReplayToken replayToken = new ReplayToken(tokenAtReset, null, null);
+
+            TrackingToken otherToken = new GlobalSequenceTrackingToken(5);
+
+            assertFalse(replayToken.samePositionAs(otherToken));
+        }
+
+        @Test
+        void samePositionAsWithBothNullCurrentTokens() {
+            TrackingToken tokenAtReset = new GlobalSequenceTrackingToken(10);
+            ReplayToken replayToken1 = new ReplayToken(tokenAtReset, null, null);
+            ReplayToken replayToken2 = new ReplayToken(tokenAtReset, null, null);
+
+            // When both have null currentToken, samePositionAs() returns false
+            // because currentToken != null check fails
+            assertFalse(replayToken1.samePositionAs(replayToken2));
+        }
+
+        @Test
+        void samePositionAsWithGapAwareTrackingToken() {
+            TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, emptySet());
+            TrackingToken currentToken = GapAwareTrackingToken.newInstance(5, emptySet());
+            TrackingToken sameCurrentToken = GapAwareTrackingToken.newInstance(5, emptySet());
+
+            ReplayToken replayToken = new ReplayToken(tokenAtReset, currentToken, null);
+
+            assertTrue(replayToken.samePositionAs(sameCurrentToken));
+        }
     }
 }

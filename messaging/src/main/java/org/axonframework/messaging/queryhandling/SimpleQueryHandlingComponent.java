@@ -41,8 +41,7 @@ import java.util.Set;
  */
 public class SimpleQueryHandlingComponent implements
         QueryHandlingComponent,
-        QueryHandlerRegistry<SimpleQueryHandlingComponent>,
-        DescribableComponent {
+        QueryHandlerRegistry<SimpleQueryHandlingComponent> {
 
     private final String name;
     private final Map<QualifiedName, QueryHandler> queryHandlers = new HashMap<>();

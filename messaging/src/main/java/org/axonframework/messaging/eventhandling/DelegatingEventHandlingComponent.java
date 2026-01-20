@@ -17,6 +17,7 @@
 package org.axonframework.messaging.eventhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
@@ -57,25 +58,6 @@ public abstract class DelegatingEventHandlingComponent implements EventHandlingC
     }
 
     @Override
-    public DelegatingEventHandlingComponent subscribe(@Nonnull QualifiedName name, @Nonnull EventHandler eventHandler) {
-        delegate.subscribe(name, eventHandler);
-        return this;
-    }
-
-    @Override
-    public DelegatingEventHandlingComponent subscribe(@Nonnull Set<QualifiedName> names,
-                                                      @Nonnull EventHandler eventHandler) {
-        EventHandlingComponent.super.subscribe(names, eventHandler);
-        return this;
-    }
-
-    @Override
-    public EventHandlerRegistry subscribe(@Nonnull EventHandlingComponent handlingComponent) {
-        EventHandlingComponent.super.subscribe(handlingComponent);
-        return this;
-    }
-
-    @Override
     public Set<QualifiedName> supportedEvents() {
         return delegate.supportedEvents();
     }
@@ -102,5 +84,23 @@ public abstract class DelegatingEventHandlingComponent implements EventHandlingC
     @Override
     public MessageStream.Empty<Message> handle(@Nonnull ResetContext resetContext, @Nonnull ProcessingContext context) {
         return delegate.handle(resetContext, context);
+    }
+
+    @Nonnull
+    @Override
+    public DelegatingEventHandlingComponent subscribe(@Nonnull ResetHandler resetHandler) {
+        delegate.subscribe(resetHandler);
+        return this;
+    }
+
+    @Nonnull
+    @Override
+    public MessageStream.Empty<Message> handle(@Nonnull ResetContext resetContext, @Nonnull ProcessingContext context) {
+        return delegate.handle(resetContext, context);
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeWrapperOf(delegate);
     }
 }

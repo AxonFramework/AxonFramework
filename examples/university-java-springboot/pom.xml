@@ -34,6 +34,45 @@
         <testcontainers.version>2.0.3</testcontainers.version>
     </properties>
 
+    <profiles>
+        <profile>
+            <id>example-spring-boot-4</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+                <property>
+                    <name>springboot4</name>
+                </property>
+            </activation>
+            <properties>
+                <spring.boot.version>4.0.0</spring.boot.version>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-webmvc</artifactId>
+                </dependency>
+            </dependencies>
+        </profile>
+        <profile>
+            <id>example-spring-boot-3</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+                <property>
+                    <name>!springboot4</name>
+                </property>
+            </activation>
+            <properties>
+                <spring.boot.version>3.5.8</spring.boot.version>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-web</artifactId>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
+
     <dependencyManagement>
         <dependencies>
             <!-- test containers first, since spring would overwrite it otherwise -->
@@ -64,6 +103,7 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webflux</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
@@ -120,6 +160,6 @@
             <artifactId>testcontainers-junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
-
     </dependencies>
+
 </project>

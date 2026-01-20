@@ -112,9 +112,9 @@ class PooledStreamingEventProcessorTest {
         tokenStore = spy(new InMemoryTokenStore());
         coordinatorExecutor = spy(new DelegateScheduledExecutorService(Executors.newScheduledThreadPool(2)));
         workerExecutor = new DelegateScheduledExecutorService(Executors.newScheduledThreadPool(8));
-        defaultEventHandlingComponent = spy(new RecordingEventHandlingComponent(new SimpleEventHandlingComponent()));
-        defaultEventHandlingComponent.subscribe(new QualifiedName(Integer.class),
-                                                (event, ctx) -> MessageStream.empty());
+        SimpleEventHandlingComponent ehc = SimpleEventHandlingComponent.create("test");
+        ehc.subscribe(new QualifiedName(Integer.class), (event, ctx) -> MessageStream.empty());
+        defaultEventHandlingComponent = spy(new RecordingEventHandlingComponent(ehc));
         withTestSubject(List.of()); // default always applied
     }
 
@@ -190,10 +190,12 @@ class PooledStreamingEventProcessorTest {
     @Test
     void handlingEventsByMultipleEventHandlingComponents() {
         // given
-        var eventHandlingComponent1 = new RecordingEventHandlingComponent(new SimpleEventHandlingComponent());
-        eventHandlingComponent1.subscribe(new QualifiedName(String.class), (event, ctx) -> MessageStream.empty());
-        var eventHandlingComponent2 = new RecordingEventHandlingComponent(new SimpleEventHandlingComponent());
-        eventHandlingComponent2.subscribe(new QualifiedName(String.class), (event, ctx) -> MessageStream.empty());
+        SimpleEventHandlingComponent ehc1 = SimpleEventHandlingComponent.create("test");
+        ehc1.subscribe(new QualifiedName(String.class), (event, ctx) -> MessageStream.empty());
+        var eventHandlingComponent1 = new RecordingEventHandlingComponent(ehc1);
+        SimpleEventHandlingComponent ehc2 = SimpleEventHandlingComponent.create("test");
+        ehc2.subscribe(new QualifiedName(String.class), (event, ctx) -> MessageStream.empty());
+        var eventHandlingComponent2 = new RecordingEventHandlingComponent(ehc2);
 
         List<EventHandlingComponent> components = List.of(eventHandlingComponent1, eventHandlingComponent2);
         withTestSubject(components, customization -> customization.initialSegmentCount(1));
@@ -435,7 +437,7 @@ class PooledStreamingEventProcessorTest {
         void handlingEventsHaveSegmentAndTokenInProcessingContext() throws Exception {
             // given
             CountDownLatch countDownLatch = new CountDownLatch(8);
-            var eventHandlingComponent = new SimpleEventHandlingComponent();
+            var eventHandlingComponent = SimpleEventHandlingComponent.create("test");
             eventHandlingComponent.subscribe(new QualifiedName(Integer.class), (event, context) -> {
                 boolean containsSegment = Segment.fromContext(context).isPresent();
                 boolean containsToken = TrackingToken.fromContext(context).isPresent();
@@ -886,9 +888,9 @@ class PooledStreamingEventProcessorTest {
             EventCriteria stringOnlyCriteria = EventCriteria.havingAnyTag()
                                                             .andBeingOneOfTypes(new QualifiedName(String.class.getName()));
 
-            var stringEventHandlingComponent = new RecordingEventHandlingComponent(new SimpleEventHandlingComponent());
-            stringEventHandlingComponent.subscribe(new QualifiedName(String.class),
-                                                   (event, ctx) -> MessageStream.empty());
+            SimpleEventHandlingComponent ehc = SimpleEventHandlingComponent.create("test");
+            ehc.subscribe(new QualifiedName(String.class), (event, ctx) -> MessageStream.empty());
+            var stringEventHandlingComponent = new RecordingEventHandlingComponent(ehc);
             withTestSubject(
                     List.of(stringEventHandlingComponent),
                     c -> c.initialSegmentCount(1)
@@ -1247,7 +1249,7 @@ class PooledStreamingEventProcessorTest {
             // given
             var mockErrorHandler = mock(ErrorHandler.class);
             var expectedError = new RuntimeException("Simulated handling error");
-            var failingEventHandlingComponent = new SimpleEventHandlingComponent();
+            var failingEventHandlingComponent = SimpleEventHandlingComponent.create("test");
             failingEventHandlingComponent.subscribe(new QualifiedName(String.class),
                                                     (event, context) -> MessageStream.failed(expectedError));
             withTestSubject(List.of(failingEventHandlingComponent), c -> c.errorHandler(mockErrorHandler));
@@ -1354,7 +1356,7 @@ class PooledStreamingEventProcessorTest {
         void resetTokensWithDefaultFirstTokenAsStart() {
             // given
             int expectedSegmentCount = 2;
-            TrackingToken expectedToken = new GlobalSequenceTrackingToken(42);
+            TrackingToken initialToken = new GlobalSequenceTrackingToken(42);
 
             AtomicBoolean resetHandlerInvoked = new AtomicBoolean(false);
             defaultEventHandlingComponent.subscribe((resetContext, ctx) -> {
@@ -1364,7 +1366,7 @@ class PooledStreamingEventProcessorTest {
             withTestSubject(
                     List.of(),
                     c -> c.initialSegmentCount(expectedSegmentCount)
-                          .initialToken(source -> CompletableFuture.completedFuture(expectedToken))
+                          .initialToken(source -> CompletableFuture.completedFuture(initialToken))
             );
 
             // when - Start and stop the processor to initialize the tracking tokens
@@ -1382,6 +1384,8 @@ class PooledStreamingEventProcessorTest {
             assertTrue(resetHandlerInvoked.get());
 
             // then - The token stays the same, as the original and token after reset are identical.
+            // A ReplayToken is created even when resetting to the same position (entering replay mode)
+            TrackingToken expectedToken = ReplayToken.createReplayToken(initialToken, initialToken);
             List<Segment> segments = joinAndUnwrap(tokenStore.fetchSegments(PROCESSOR_NAME, null));
             TrackingToken token0 = joinAndUnwrap(tokenStore.fetchToken(PROCESSOR_NAME, segments.get(0).getSegmentId(), null));
             TrackingToken token1 = joinAndUnwrap(tokenStore.fetchToken(PROCESSOR_NAME, segments.get(1).getSegmentId(), null));
@@ -1394,7 +1398,7 @@ class PooledStreamingEventProcessorTest {
         @Test
         void resetTokensFromDefaultFirstTokenWithResetContext() {
             int expectedSegmentCount = 2;
-            TrackingToken expectedToken = new GlobalSequenceTrackingToken(42);
+            TrackingToken initialToken = new GlobalSequenceTrackingToken(42);
             String expectedContext = "my-context";
 
             AtomicBoolean resetHandlerInvoked = new AtomicBoolean(false);
@@ -1406,7 +1410,7 @@ class PooledStreamingEventProcessorTest {
             withTestSubject(
                     List.of(),
                     c -> c.initialSegmentCount(expectedSegmentCount)
-                          .initialToken(source -> CompletableFuture.completedFuture(expectedToken))
+                          .initialToken(source -> CompletableFuture.completedFuture(initialToken))
             );
 
             // Start and stop the processor to initialize the tracking tokens
@@ -1423,6 +1427,8 @@ class PooledStreamingEventProcessorTest {
 
             assertTrue(resetHandlerInvoked.get());
 
+            // A ReplayToken is created even when resetting to the same position (entering replay mode)
+            TrackingToken expectedToken = ReplayToken.createReplayToken(initialToken, initialToken, expectedContext);
             List<Segment> segments = joinAndUnwrap(tokenStore.fetchSegments(PROCESSOR_NAME, null));
             // The token stays the same, as the original and token after reset are identical.
             TrackingToken token0 = joinAndUnwrap(tokenStore.fetchToken(PROCESSOR_NAME, segments.get(0).getSegmentId(), null));

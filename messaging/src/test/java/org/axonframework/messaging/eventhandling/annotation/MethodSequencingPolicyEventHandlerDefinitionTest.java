@@ -16,11 +16,8 @@
 
 package org.axonframework.messaging.eventhandling.annotation;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.ObjectUtils;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.sequencing.MetadataSequencingPolicy;
-import org.axonframework.messaging.eventhandling.sequencing.PropertySequencingPolicy;
-import org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy;
 import org.axonframework.messaging.core.GenericMessage;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
@@ -30,8 +27,12 @@ import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.annotation.UnsupportedHandlerException;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.sequencing.MetadataSequencingPolicy;
+import org.axonframework.messaging.eventhandling.sequencing.PropertySequencingPolicy;
 import org.axonframework.messaging.eventhandling.replay.annotation.ResetHandler;
 import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
+import org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy;
 import org.junit.jupiter.api.*;
 
 import java.lang.annotation.ElementType;
@@ -42,22 +43,26 @@ import java.lang.annotation.Target;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class for {@link MethodSequencingPolicyEventHandlerDefinition} to verify proper wrapping of
- * event handlers with sequencing policy annotation.
+ * Test class for {@link MethodSequencingPolicyEventHandlerDefinition} to verify proper wrapping of event handlers with
+ * sequencing policy annotation.
  *
  * @author Mateusz Nowak
  */
 class MethodSequencingPolicyEventHandlerDefinitionTest {
 
-    private MethodSequencingPolicyEventHandlerDefinition testSubject;
     private AnnotatedMessageHandlingMemberDefinition handlerDefinition;
     private ParameterResolverFactory parameterResolver;
+    private MethodEventHandlerDefinition eventHandlerDefinition;
+
+    private MethodSequencingPolicyEventHandlerDefinition testSubject;
 
     @BeforeEach
     void setUp() {
-        parameterResolver = ClasspathParameterResolverFactory.forClass(getClass());
-        testSubject = new MethodSequencingPolicyEventHandlerDefinition();
         handlerDefinition = new AnnotatedMessageHandlingMemberDefinition();
+        parameterResolver = ClasspathParameterResolverFactory.forClass(getClass());
+        eventHandlerDefinition = new MethodEventHandlerDefinition();
+
+        testSubject = new MethodSequencingPolicyEventHandlerDefinition();
     }
 
     @Nested
@@ -218,14 +223,18 @@ class MethodSequencingPolicyEventHandlerDefinitionTest {
         return handler.sequencingPolicy();
     }
 
-    private <T> MessageHandlingMember<T> createHandler(Class<T> targetClass, String methodName, Class<?>... parameterTypes) {
+    private <T> MessageHandlingMember<T> createHandler(Class<T> targetClass, String methodName,
+                                                       Class<?>... parameterTypes) {
         try {
             return handlerDefinition.createHandler(
-                    targetClass,
-                    targetClass.getDeclaredMethod(methodName, parameterTypes),
-                    parameterResolver,
-                    MethodSequencingPolicyEventHandlerDefinitionTest::returnTypeConverter
-            ).orElseThrow(() -> new IllegalArgumentException("Handler creation failed"));
+                                            targetClass,
+                                            targetClass.getDeclaredMethod(methodName, parameterTypes),
+                                            parameterResolver,
+                                            MethodSequencingPolicyEventHandlerDefinitionTest::returnTypeConverter
+                                    )
+                                    // Wrapping in an Event Handler ensure an EventHandlingMember instance is given.
+                                    .map(member -> eventHandlerDefinition.wrapHandler(member))
+                                    .orElseThrow(() -> new IllegalArgumentException("Handler creation failed"));
         } catch (NoSuchMethodException e) {
             throw new RuntimeException("Method used to build handler does not exist: " + methodName, e);
         }
@@ -233,7 +242,8 @@ class MethodSequencingPolicyEventHandlerDefinitionTest {
 
     // Test class for method-level annotation
     static class MethodLevelPolicyTest {
-        @SuppressWarnings("unused")
+
+        @SuppressWarnings({"unused", "DefaultAnnotationParam"})
         @EventHandler
         @org.axonframework.messaging.eventhandling.annotation.SequencingPolicy(type = SequentialPolicy.class)
         void sequentialPolicyMethod(String payload) {
@@ -241,31 +251,44 @@ class MethodSequencingPolicyEventHandlerDefinitionTest {
 
         @SuppressWarnings("unused")
         @EventHandler
-        @org.axonframework.messaging.eventhandling.annotation.SequencingPolicy(type = MetadataSequencingPolicy.class, parameters = {"userId"})
+        @org.axonframework.messaging.eventhandling.annotation.SequencingPolicy(
+                type = MetadataSequencingPolicy.class,
+                parameters = {"userId"}
+        )
         void metadataPolicyMethod(TestEvent payload) {
         }
 
         @SuppressWarnings("unused")
         @EventHandler
-        @org.axonframework.messaging.eventhandling.annotation.SequencingPolicy(type = PropertySequencingPolicy.class, parameters = {"aggregateId"})
+        @org.axonframework.messaging.eventhandling.annotation.SequencingPolicy(
+                type = PropertySequencingPolicy.class,
+                parameters = {"aggregateId"}
+        )
         void propertyPolicyMethod(TestEvent payload) {
         }
 
         @SuppressWarnings("unused")
         @EventHandler
-        @org.axonframework.messaging.eventhandling.annotation.SequencingPolicy(type = MetadataSequencingPolicy.class, parameters = {"param1", "param2", "param3"})
+        @org.axonframework.messaging.eventhandling.annotation.SequencingPolicy(
+                type = MetadataSequencingPolicy.class,
+                parameters = {"param1", "param2", "param3"}
+        )
         void invalidParameterCountMethod(TestEvent payload) {
         }
 
         @SuppressWarnings("unused")
         @EventHandler
-        @org.axonframework.messaging.eventhandling.annotation.SequencingPolicy(type = InvalidClassPositionPolicy.class, parameters = {"someParameter"})
+        @org.axonframework.messaging.eventhandling.annotation.SequencingPolicy(
+                type = InvalidClassPositionPolicy.class,
+                parameters = {"someParameter"}
+        )
         void invalidClassPositionMethod(TestEvent payload) {
         }
     }
 
     // Test class for no annotation
     static class NoAnnotationTest {
+
         @SuppressWarnings("unused")
         @EventHandler
         void methodWithoutAnnotation(String payload) {
@@ -274,25 +297,29 @@ class MethodSequencingPolicyEventHandlerDefinitionTest {
 
     // Test event record with properties for PropertySequencingPolicy
     public record TestEvent(String aggregateId, String eventType, long timestamp) {
+
     }
 
     // Test policy with Class parameter in wrong position (should fail)
     static class InvalidClassPositionPolicy implements SequencingPolicy {
+
+        @SuppressWarnings("unused")
         public InvalidClassPositionPolicy(String parameter, Class<?> payloadClass) {
             // Class parameter is not first - this should cause an error
         }
 
         @Override
-        public java.util.Optional<Object> getSequenceIdentifierFor(
-                EventMessage event,
-                ProcessingContext context) {
+        public java.util.Optional<Object> getSequenceIdentifierFor(@Nonnull EventMessage event,
+                                                                   @Nonnull ProcessingContext context) {
             return java.util.Optional.of("test");
         }
     }
 
     // Test class with class-level annotation
+    @SuppressWarnings("DefaultAnnotationParam")
     @org.axonframework.messaging.eventhandling.annotation.SequencingPolicy(type = SequentialPolicy.class)
     static class ClassLevelPolicyTest {
+
         @SuppressWarnings("unused")
         @EventHandler
         void eventHandlerMethod(String payload) {
@@ -300,11 +327,16 @@ class MethodSequencingPolicyEventHandlerDefinitionTest {
     }
 
     // Test class where method overrides class-level annotation
+    @SuppressWarnings("DefaultAnnotationParam")
     @org.axonframework.messaging.eventhandling.annotation.SequencingPolicy(type = SequentialPolicy.class)
     static class MethodOverridesClassTest {
+
         @SuppressWarnings("unused")
         @EventHandler
-        @org.axonframework.messaging.eventhandling.annotation.SequencingPolicy(type = MetadataSequencingPolicy.class, parameters = {"override"})
+        @org.axonframework.messaging.eventhandling.annotation.SequencingPolicy(
+                type = MetadataSequencingPolicy.class,
+                parameters = {"override"}
+        )
         void eventHandlerMethod(String payload) {
         }
     }
@@ -312,6 +344,7 @@ class MethodSequencingPolicyEventHandlerDefinitionTest {
     // Test class with class-level SequencingPolicy and a ResetHandler - the ResetHandler should NOT be wrapped
     @org.axonframework.messaging.eventhandling.annotation.SequencingPolicy(type = SequentialPolicy.class)
     static class ClassWithResetHandler {
+
         @SuppressWarnings("unused")
         @EventHandler
         void eventHandlerMethod(String payload) {
@@ -325,6 +358,7 @@ class MethodSequencingPolicyEventHandlerDefinitionTest {
 
     // Test class with method-level SequencingPolicy on a ResetHandler - should NOT be wrapped
     static class ResetHandlerWithMethodPolicy {
+
         @SuppressWarnings("unused")
         @ResetHandler
         @org.axonframework.messaging.eventhandling.annotation.SequencingPolicy(type = SequentialPolicy.class)
@@ -335,13 +369,14 @@ class MethodSequencingPolicyEventHandlerDefinitionTest {
     // Custom annotation meta-annotated with @EventHandler
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
-    @EventHandler
-    @interface CustomEventHandler {
+    @EventHandler @interface CustomEventHandler {
+
     }
 
     // Test class with custom meta-annotation and class-level SequencingPolicy
     @org.axonframework.messaging.eventhandling.annotation.SequencingPolicy(type = SequentialPolicy.class)
     static class CustomEventHandlerWithClassPolicy {
+
         @SuppressWarnings("unused")
         @CustomEventHandler
         void handleWithCustomAnnotation(String payload) {

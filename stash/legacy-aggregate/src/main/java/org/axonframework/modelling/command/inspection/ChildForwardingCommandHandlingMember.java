@@ -18,6 +18,7 @@ package org.axonframework.modelling.command.inspection;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.StringUtils;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.annotation.CommandHandlingMember;
 import org.axonframework.messaging.core.GenericMessage;
@@ -68,7 +69,9 @@ public class ChildForwardingCommandHandlingMember<P, C> implements ForwardingCom
         this.childHandler = childHandler;
         this.childEntityResolver = childEntityResolver;
         this.commandName =
-                childHandler.unwrap(CommandHandlingMember.class).map(CommandHandlingMember::commandName)
+                childHandler.unwrap(CommandHandlingMember.class)
+                            .map(cmdh -> StringUtils.emptyOrNull(cmdh.commandName())
+                                    ? cmdh.payloadType().getName() : cmdh.commandName())
                             .orElse(null);
         this.isFactoryHandler = childHandler.unwrap(CommandHandlingMember.class)
                                             .map(CommandHandlingMember::isFactoryHandler).orElse(false);

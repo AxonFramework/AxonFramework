@@ -16,24 +16,26 @@
 
 package org.axonframework.integrationtests.commandhandling;
 
+import org.axonframework.conversion.PassThroughConverter;
+import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
+import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.StorageEngineBackedEventStore;
+import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.commandhandling.annotation.AnnotatedCommandHandlingComponent;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.annotation.AnnotationMessageTypeResolver;
+import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.core.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.eventhandling.DomainEventMessage;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericDomainEventMessage;
 import org.axonframework.messaging.eventhandling.SimpleEventBus;
 import org.axonframework.messaging.eventsourcing.LegacyEventSourcingRepository;
-import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
-import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.eventsourcing.eventstore.StorageEngineBackedEventStore;
-import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.axonframework.messaging.core.Message;
-import org.axonframework.messaging.core.MessageType;
-import org.axonframework.messaging.core.conversion.DelegatingMessageConverter;
-import org.axonframework.messaging.core.conversion.MessageConverter;
-import org.axonframework.conversion.PassThroughConverter;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -52,7 +54,9 @@ class EventPublicationOrderTest {
     @BeforeEach
     void setUp() {
         this.commandBus = aCommandBus();
-        eventStore = spy(new StorageEngineBackedEventStore(new InMemoryEventStorageEngine(), new SimpleEventBus(), new AnnotationBasedTagResolver()));
+        eventStore = spy(new StorageEngineBackedEventStore(new InMemoryEventStorageEngine(),
+                                                           new SimpleEventBus(),
+                                                           new AnnotationBasedTagResolver()));
         LegacyEventSourcingRepository<StubAggregate> repository =
                 LegacyEventSourcingRepository.builder(StubAggregate.class)
                                              .eventStore(eventStore)
@@ -60,8 +64,13 @@ class EventPublicationOrderTest {
         StubAggregateCommandHandler target = new StubAggregateCommandHandler();
 //        target.setRepository(repository);
 //        target.setEventBus(eventStore);
-        MessageConverter messageConverter = new DelegatingMessageConverter(PassThroughConverter.INSTANCE);
-        commandBus.subscribe(new AnnotatedCommandHandlingComponent<>(target, messageConverter));
+        commandBus.subscribe(new AnnotatedCommandHandlingComponent<>(
+                target,
+                ClasspathParameterResolverFactory.forClass(target.getClass()),
+                ClasspathHandlerDefinition.forClass(target.getClass()),
+                new AnnotationMessageTypeResolver(),
+                new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
+        ));
     }
 
     @Test

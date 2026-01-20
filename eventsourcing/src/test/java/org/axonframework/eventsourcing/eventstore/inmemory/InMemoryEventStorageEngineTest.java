@@ -27,7 +27,7 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 class InMemoryEventStorageEngineTest extends StorageEngineTestSuite<InMemoryEventStorageEngine> {
 
     @Override
-    protected InMemoryEventStorageEngine buildStorageEngine() {
+    protected InMemoryEventStorageEngine createStorageEngine() {
         return new InMemoryEventStorageEngine();
     }
 

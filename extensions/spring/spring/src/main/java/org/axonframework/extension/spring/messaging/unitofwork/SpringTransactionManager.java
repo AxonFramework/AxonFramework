@@ -16,7 +16,16 @@
 
 package org.axonframework.extension.spring.messaging.unitofwork;
 
-import org.axonframework.common.Assert;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.common.jdbc.ConnectionExecutor;
+import org.axonframework.common.jdbc.ConnectionProvider;
+import org.axonframework.common.jpa.EntityManagerExecutor;
+import org.axonframework.common.jpa.EntityManagerProvider;
+import org.axonframework.conversion.CachingSupplier;
+import org.axonframework.eventsourcing.eventstore.jdbc.JdbcTransactionalExecutorProvider;
+import org.axonframework.eventsourcing.eventstore.jpa.JpaTransactionalExecutorProvider;
+import org.axonframework.messaging.core.unitofwork.ProcessingLifecycle;
 import org.axonframework.messaging.core.unitofwork.transaction.Transaction;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -24,11 +33,12 @@ import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
-import jakarta.annotation.Nonnull;
+import java.util.Objects;
 
 /**
  * TransactionManager implementation that uses a {@link org.springframework.transaction.PlatformTransactionManager} as
- * underlying transaction manager.
+ * underlying transaction manager. This implementation provides a {@link ConnectionExecutor} and/or
+ * {@link EntityManagerExecutor} when attached to a processing lifecycle, if available.
  *
  * @author Allard Buijze
  * @since 2.0
@@ -36,27 +46,84 @@ import jakarta.annotation.Nonnull;
 public class SpringTransactionManager implements TransactionManager {
 
     private final PlatformTransactionManager transactionManager;
+    private final EntityManagerProvider entityManagerProvider;
+    private final ConnectionProvider connectionProvider;
     private final TransactionDefinition transactionDefinition;
 
     /**
-     * @param transactionManager    The transaction manager to use
-     * @param transactionDefinition The definition for transactions to create
+     * Constructs a new instance.
+     *
+     * @param transactionManager    The transaction manager to use.
+     * @param entityManagerProvider The optional entity manager provider to use.
+     * @param connectionProvider    The optional connection provider to use.
+     * @param transactionDefinition The optional definition for transactions to create.
      */
-    public SpringTransactionManager(PlatformTransactionManager transactionManager,
-                                    TransactionDefinition transactionDefinition) {
-        Assert.notNull(transactionManager, () -> "transactionManager may not be null");
-        this.transactionManager = transactionManager;
+    public SpringTransactionManager(@Nonnull PlatformTransactionManager transactionManager,
+                                    @Nullable EntityManagerProvider entityManagerProvider,
+                                    @Nullable ConnectionProvider connectionProvider,
+                                    @Nullable TransactionDefinition transactionDefinition) {
+        this.transactionManager = Objects.requireNonNull(transactionManager, "transactionManager");
+        this.entityManagerProvider = entityManagerProvider;
+        this.connectionProvider = connectionProvider;
         this.transactionDefinition = transactionDefinition;
+    }
+
+    /**
+     * Constructs a new instance.
+     *
+     * @param transactionManager    The transaction manager to use.
+     * @param transactionDefinition The optional definition for transactions to create.
+     */
+    public SpringTransactionManager(@Nonnull PlatformTransactionManager transactionManager,
+                                    @Nullable TransactionDefinition transactionDefinition) {
+        this(transactionManager, null, null, transactionDefinition);
     }
 
     /**
      * Initializes the SpringTransactionManager with the given {@code transactionManager} and the default
      * transaction definition.
      *
-     * @param transactionManager the transaction manager to use
+     * @param transactionManager the transaction manager to use.
+     * @param entityManagerProvider The optional entity manager provider to use.
+     * @param connectionProvider    The optional connection provider to use.
      */
-    public SpringTransactionManager(PlatformTransactionManager transactionManager) {
-        this(transactionManager, new DefaultTransactionDefinition());
+    public SpringTransactionManager(@Nonnull PlatformTransactionManager transactionManager,
+                                    @Nullable EntityManagerProvider entityManagerProvider,
+                                    @Nullable ConnectionProvider connectionProvider) {
+        this(transactionManager, entityManagerProvider, connectionProvider, new DefaultTransactionDefinition());
+    }
+
+    /**
+     * Constructs a new instance.
+     *
+     * @param transactionManager The transaction manager to use.
+     */
+    public SpringTransactionManager(@Nonnull PlatformTransactionManager transactionManager) {
+        this(transactionManager, null, null, new DefaultTransactionDefinition());
+    }
+
+    @Override
+    public void attachToProcessingLifecycle(@Nonnull ProcessingLifecycle processingLifecycle) {
+        processingLifecycle.runOnPreInvocation(pc -> {
+            Transaction transaction = startTransaction();
+
+            if (entityManagerProvider != null) {
+                pc.putResource(
+                    JpaTransactionalExecutorProvider.SUPPLIER_KEY,
+                    CachingSupplier.of(() -> new EntityManagerExecutor(entityManagerProvider))
+                );
+            }
+
+            if (connectionProvider != null) {
+                pc.putResource(
+                    JdbcTransactionalExecutorProvider.SUPPLIER_KEY,
+                    CachingSupplier.of(() -> new ConnectionExecutor(connectionProvider))
+                );
+            }
+
+            pc.runOnCommit(p -> transaction.commit());
+            pc.onError((p, phase, e) -> transaction.rollback());
+        });
     }
 
     @Nonnull

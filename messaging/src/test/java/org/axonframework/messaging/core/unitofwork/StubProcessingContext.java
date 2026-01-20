@@ -98,7 +98,7 @@ public class StubProcessingContext implements ProcessingContext {
         return false;
     }
 
-    public CompletableFuture<Object> moveToPhase(ProcessingLifecycle.Phase phase) {
+    public CompletableFuture<Object> moveToPhase(@Nonnull ProcessingLifecycle.Phase phase) {
         if (phase.isBefore(currentPhase)) {
             throw new IllegalArgumentException("Cannot move to a phase before the current phase");
         }
@@ -118,7 +118,7 @@ public class StubProcessingContext implements ProcessingContext {
     }
 
     @Override
-    public ProcessingLifecycle on(Phase phase, Function<ProcessingContext, CompletableFuture<?>> action) {
+    public ProcessingLifecycle on(@Nonnull Phase phase, @Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
         if (phase.order() <= currentPhase.order()) {
             throw new IllegalArgumentException("Cannot register an action for a phase that has already passed");
         }
@@ -127,13 +127,13 @@ public class StubProcessingContext implements ProcessingContext {
     }
 
     @Override
-    public ProcessingLifecycle onError(ErrorHandler action) {
+    public ProcessingLifecycle onError(@Nonnull ErrorHandler action) {
         logger.warn("Error handler is not yet supported in the StubProcessingContext");
         return this;
     }
 
     @Override
-    public ProcessingLifecycle whenComplete(Consumer<ProcessingContext> action) {
+    public ProcessingLifecycle whenComplete(@Nonnull Consumer<ProcessingContext> action) {
         logger.warn("Completion action is not yet supported in the StubProcessingContext");
         return this;
     }

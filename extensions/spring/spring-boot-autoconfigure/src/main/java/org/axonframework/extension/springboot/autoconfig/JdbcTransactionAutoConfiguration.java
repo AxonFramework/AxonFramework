@@ -16,38 +16,47 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
-import jakarta.persistence.EntityManagerFactory;
+import jakarta.annotation.Nullable;
+import org.axonframework.common.jdbc.ConnectionProvider;
+import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.extension.spring.messaging.unitofwork.SpringTransactionManager;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.transaction.PlatformTransactionManager;
 
+import javax.sql.DataSource;
+
 /**
  * Autoconfiguration class that registers a bean creation method for the {@link SpringTransactionManager} if a
- * {@link PlatformTransactionManager} is present.
+ * {@link PlatformTransactionManager} and a {@link DataSource} is present.
  *
- * @author Allard Buijze
- * @since 3.0.3
+ * @author John Hendrikx
+ * @since 5.0.2
  */
-@AutoConfiguration(after = HibernateJpaAutoConfiguration.class)
-@ConditionalOnBean({EntityManagerFactory.class, PlatformTransactionManager.class})
-public class TransactionAutoConfiguration {
+@AutoConfiguration
+@ConditionalOnBean({DataSource.class, PlatformTransactionManager.class})
+public class JdbcTransactionAutoConfiguration {
 
     /**
      * Bean creation method constructing a {@link SpringTransactionManager} based on the given
      * {@code transactionManager}.
      *
-     * @param transactionManager The {@code PlatformTransactionManager} used to construct a
-     *                           {@link SpringTransactionManager}.
+     * @param transactionManager    The {@code PlatformTransactionManager} used to construct a
+     *                              {@link SpringTransactionManager}.
+     * @param entityManagerProvider An optional entity manager provider.
+     * @param connectionProvider    An optional connection provider.
      * @return The {@link TransactionManager} to be used by Axon Framework.
      */
     @Bean
     @ConditionalOnMissingBean
-    public TransactionManager axonTransactionManager(PlatformTransactionManager transactionManager) {
-        return new SpringTransactionManager(transactionManager);
+    public TransactionManager axonTransactionManager(
+        PlatformTransactionManager transactionManager,
+        @Nullable EntityManagerProvider entityManagerProvider,
+        @Nullable ConnectionProvider connectionProvider
+    ) {
+        return new SpringTransactionManager(transactionManager, entityManagerProvider, connectionProvider);
     }
 }

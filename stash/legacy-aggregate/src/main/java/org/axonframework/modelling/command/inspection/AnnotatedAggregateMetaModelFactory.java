@@ -16,6 +16,7 @@
 
 package org.axonframework.modelling.command.inspection;
 
+import org.axonframework.common.StringUtils;
 import org.axonframework.messaging.commandhandling.annotation.CommandHandlingMember;
 import org.axonframework.common.IdentifierValidator;
 import org.axonframework.common.ReflectionUtils;
@@ -317,8 +318,10 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
                 List<CommandHandlingMember<? super T>> factoryCommands2 = factoryCommands(handlers.get(i + 1));
                 for (CommandHandlingMember<? super T> handler1 : factoryCommands1) {
                     for (CommandHandlingMember<? super T> handler2 : factoryCommands2) {
-                        String commandName1 = handler1.commandName();
-                        String commandName2 = handler2.commandName();
+                        String commandName1 = StringUtils.emptyOrNull(handler1.commandName())
+                                ? handler1.payloadType().getName() : handler1.commandName();
+                        String commandName2 = StringUtils.emptyOrNull(handler2.commandName())
+                                ? handler2.payloadType().getName() : handler2.commandName();
                         if (commandName1.equals(commandName2)) {
                             Class<?> declaringClass1 = handler1.declaringClass();
                             Class<?> declaringClass2 = handler2.declaringClass();

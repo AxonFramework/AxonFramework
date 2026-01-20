@@ -163,6 +163,14 @@ public class MergedTrackingToken implements TrackingToken, WrappedToken {
     }
 
     @Override
+    public boolean samePositionAs(TrackingToken other) {
+        if (lowerSegmentToken == null || upperSegmentToken == null) {
+            return other == null;
+        }
+        return lowerSegmentToken.samePositionAs(other) && upperSegmentToken.samePositionAs(other);
+    }
+
+    @Override
     public TrackingToken advancedTo(TrackingToken newToken) {
         TrackingToken newLowerSegmentToken = doAdvance(lowerSegmentToken, newToken);
         TrackingToken newUpperSegmentToken = doAdvance(upperSegmentToken, newToken);

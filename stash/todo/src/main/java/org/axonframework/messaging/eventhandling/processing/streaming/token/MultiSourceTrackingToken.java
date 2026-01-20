@@ -17,11 +17,13 @@
 package org.axonframework.messaging.eventhandling.processing.streaming.token;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.axonframework.common.Assert;
 import org.axonframework.messaging.eventhandling.processing.streaming.MultiStreamableMessageSource;
 
+import javax.annotation.Nonnull;
 import java.beans.ConstructorProperties;
 import java.util.HashMap;
 import java.util.Map;
@@ -39,6 +41,7 @@ import java.util.StringJoiner;
 public class MultiSourceTrackingToken implements TrackingToken {
 
     @JsonTypeInfo(use = JsonTypeInfo.Id.MINIMAL_CLASS)
+    @JsonInclude(value = JsonInclude.Include.ALWAYS, content = JsonInclude.Include.ALWAYS)
     private final Map<String, TrackingToken> trackingTokens;
 
     /**
@@ -63,12 +66,7 @@ public class MultiSourceTrackingToken implements TrackingToken {
      */
     @Override
     public TrackingToken lowerBound(TrackingToken other) {
-        Assert.isTrue(other instanceof MultiSourceTrackingToken, () -> "Incompatible token type provided.");
-
-        MultiSourceTrackingToken otherMultiToken = (MultiSourceTrackingToken) other;
-
-        Assert.isTrue(otherMultiToken.trackingTokens.keySet().equals(this.trackingTokens.keySet()),
-                      () -> "MultiSourceTrackingTokens contain different keys");
+        MultiSourceTrackingToken otherMultiToken = assertSameKeysMultiSourceTrackingToken(other);
 
         Map<String, TrackingToken> tokenMap = new HashMap<>();
 
@@ -92,12 +90,7 @@ public class MultiSourceTrackingToken implements TrackingToken {
      */
     @Override
     public TrackingToken upperBound(TrackingToken other) {
-        Assert.isTrue(other instanceof MultiSourceTrackingToken, () -> "Incompatible token type provided.");
-
-        MultiSourceTrackingToken otherMultiToken = (MultiSourceTrackingToken) other;
-
-        Assert.isTrue(otherMultiToken.trackingTokens.keySet().equals(this.trackingTokens.keySet()),
-                      () -> "MultiSourceTrackingTokens contain different keys");
+        MultiSourceTrackingToken otherMultiToken = assertSameKeysMultiSourceTrackingToken(other);
 
         Map<String, TrackingToken> tokenMap = new HashMap<>();
 
@@ -129,12 +122,7 @@ public class MultiSourceTrackingToken implements TrackingToken {
      */
     @Override
     public boolean covers(TrackingToken other) {
-        Assert.isTrue(other instanceof MultiSourceTrackingToken, () -> "Incompatible token type provided.");
-
-        MultiSourceTrackingToken otherMultiToken = (MultiSourceTrackingToken) other;
-
-        Assert.isTrue(otherMultiToken.trackingTokens.keySet().equals(this.trackingTokens.keySet()),
-                      () -> "MultiSourceTrackingTokens contain different keys");
+        MultiSourceTrackingToken otherMultiToken = assertSameKeysMultiSourceTrackingToken(other);
 
         //as soon as one delegated token doesn't cover return false
         for (Map.Entry<String, TrackingToken> trackingTokenEntry : trackingTokens.entrySet()) {
@@ -145,6 +133,36 @@ public class MultiSourceTrackingToken implements TrackingToken {
                     return false;
                 }
             } else if (otherConstituent != null && !constituent.covers(otherConstituent)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    @Nonnull
+    private MultiSourceTrackingToken assertSameKeysMultiSourceTrackingToken(TrackingToken other) {
+        Assert.isTrue(other instanceof MultiSourceTrackingToken, () -> "Incompatible token type provided.");
+
+        MultiSourceTrackingToken otherMultiToken = (MultiSourceTrackingToken) other;
+
+        Assert.isTrue(otherMultiToken.trackingTokens.keySet().equals(this.trackingTokens.keySet()),
+                      () -> "MultiSourceTrackingTokens contain different keys");
+        return otherMultiToken;
+    }
+
+    @Override
+    public boolean samePositionAs(TrackingToken other) {
+        MultiSourceTrackingToken otherMultiToken = assertSameKeysMultiSourceTrackingToken(other);
+
+        for (Map.Entry<String, TrackingToken> trackingTokenEntry : trackingTokens.entrySet()) {
+            TrackingToken constituent = trackingTokenEntry.getValue();
+            TrackingToken otherConstituent = otherMultiToken.trackingTokens.get(trackingTokenEntry.getKey());
+            if (constituent == null) {
+                if (otherConstituent != null) {
+                    return false;
+                }
+            } else if (otherConstituent == null || !constituent.samePositionAs(otherConstituent)) {
                 return false;
             }
         }

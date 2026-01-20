@@ -21,6 +21,8 @@ import jakarta.annotation.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.ReflectionUtils;
+import org.axonframework.common.StringUtils;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.LegacyMessageHandler;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.CommandHandler;
@@ -210,9 +212,11 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
                     case NEVER -> new AggregateCommandHandler(handler);
                 };
             }
+            String commandName = StringUtils.emptyOrNull(cmh.commandName())
+                    ? cmh.payloadType().getName() : cmh.commandName();
             handlersFound.add(messageHandler);
-            supportedCommandsByName.computeIfAbsent(cmh.commandName(), key -> new HashSet<>()).add(messageHandler);
-            supportedCommands.add(new QualifiedName(cmh.commandName()));
+            supportedCommandsByName.computeIfAbsent(commandName, key -> new HashSet<>()).add(messageHandler);
+            supportedCommands.add(new QualifiedName(commandName));
         });
     }
 
@@ -266,6 +270,11 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
     @Override
     public Set<QualifiedName> supportedCommands() {
         return Set.copyOf(supportedCommands);
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        // Unimplemented as this is legacy flow.
     }
 
     /**

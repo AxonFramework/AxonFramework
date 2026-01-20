@@ -204,13 +204,7 @@ public abstract class DeadLetteringEventIntegrationTest {
                 .workerExecutor(Executors.newSingleThreadScheduledExecutor())
                 .initialSegmentCount(1)
                 .claimExtensionThreshold(1000);
-        var eventHandlingComponent = new TracingEventHandlingComponent(
-                (event) -> configuration.spanFactory().createProcessEventSpan(true, event),
-                new InterceptingEventHandlingComponent(
-                        Collections.emptyList(),
-                        new LegacyEventHandlingComponent(deadLetteringInvoker)
-                )
-        );
+        var eventHandlingComponent = new LegacyEventHandlingComponent(deadLetteringInvoker);
         streamingProcessor = new PooledStreamingEventProcessor(
                 PROCESSING_GROUP,
                 List.of(eventHandlingComponent),

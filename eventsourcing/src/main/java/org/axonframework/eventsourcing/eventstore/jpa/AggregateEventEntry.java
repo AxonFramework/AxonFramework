@@ -74,7 +74,7 @@ public class AggregateEventEntry {
     private byte[] payload;
     @Lob
     private byte[] metadata;
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String identifier;
 
     /**

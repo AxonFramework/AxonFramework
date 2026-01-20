@@ -17,21 +17,21 @@
 package org.axonframework.integrationtests.testsuite.student;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.eventhandling.EventHandlingComponent;
-import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
-import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
-import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessor;
-import org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.integrationtests.testsuite.student.events.StudentEnrolledEvent;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.UnitOfWork;
+import org.axonframework.messaging.eventhandling.EventHandlingComponent;
+import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
+import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessor;
+import org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.configuration.StateBasedEntityModule;
 import org.axonframework.modelling.repository.InMemoryRepository;
-import org.axonframework.conversion.Converter;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -45,8 +45,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
 /**
- * Test class validating the declarative {@link PooledStreamingEventProcessor}
- * used as a projector for a read model based on {@link StateBasedEntityModule}.
+ * Test class validating the declarative {@link PooledStreamingEventProcessor} used as a projector for a read model
+ * based on {@link StateBasedEntityModule}.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
@@ -90,13 +90,14 @@ public class EventProcessingAnnotatedStateBasedPooledStreamingIT extends Abstrac
         StateBasedEntityModule<String, StudentCoursesReadModel> studentCoursesEntity =
                 StateBasedEntityModule.declarative(String.class, StudentCoursesReadModel.class)
                                       .repository(cfg -> studentCoursesRepository)
-                                      .messagingModel((configuration, builder) -> builder
-                                              .entityEvolver(readModelEvolver())
-                                              .build())
+                                      .messagingModel(
+                                              (cfg, builder) -> builder.entityEvolver(readModelEvolver())
+                                                                       .build()
+                                      )
                                       .entityIdResolver(cfg -> (message, context) -> {
                                           var payload = message.payloadAs(
                                                   StudentEnrolledEvent.class,
-                                                  context.component(Converter.class)
+                                                  context.component(EventConverter.class)
                                           );
                                           return payload.studentId();
                                       });
@@ -117,48 +118,45 @@ public class EventProcessingAnnotatedStateBasedPooledStreamingIT extends Abstrac
 
     @Nonnull
     private static EventHandlingComponent studentCoursesProjector() {
-        return new SimpleEventHandlingComponent(SequentialPolicy.INSTANCE)
-                .subscribe(
-                        new QualifiedName(StudentEnrolledEvent.class),
-                        (event, context) -> {
-                            var converter = context.component(Converter.class);
-                            var studentEnrolled = event.payloadAs(StudentEnrolledEvent.class, converter);
-                            var state = context.component(StateManager.class);
-                            var studentId = studentEnrolled.studentId();
-                            var loadedEntity = state.loadManagedEntity(
-                                    StudentCoursesReadModel.class,
-                                    studentId,
-                                    context
-                            ).join();
-                            loadedEntity.applyStateChange(e -> Optional.ofNullable(e)
-                                                                       .orElse(new StudentCoursesReadModel(studentId))
-                                                                       .evolve(studentEnrolled)
-                            );
-                            return MessageStream.empty();
-                        }
-                );
+        SimpleEventHandlingComponent studentCoursesProjector =
+                SimpleEventHandlingComponent.create("studentCoursesProjector", SequentialPolicy.INSTANCE);
+        studentCoursesProjector.subscribe(
+                new QualifiedName(StudentEnrolledEvent.class),
+                (event, context) -> {
+                    var converter = context.component(EventConverter.class);
+                    var studentEnrolled = event.payloadAs(StudentEnrolledEvent.class, converter);
+                    var state = context.component(StateManager.class);
+                    var studentId = studentEnrolled.studentId();
+                    var loadedEntity = state.loadManagedEntity(StudentCoursesReadModel.class, studentId, context)
+                                            .join();
+                    loadedEntity.applyStateChange(e -> Optional.ofNullable(e)
+                                                               .orElse(new StudentCoursesReadModel(studentId))
+                                                               .evolve(studentEnrolled)
+                    );
+                    return MessageStream.empty();
+                }
+        );
+        return studentCoursesProjector;
     }
 
     private void verifyReadModelState(String studentId, Consumer<StudentCoursesReadModel> stateVerifier) {
         await().atMost(10, TimeUnit.SECONDS)
                .untilAsserted(() -> {
                    UnitOfWork uow = unitOfWorkFactory.create();
-                   var result = uow.executeWithResult(context -> context.component(StateManager.class)
-                                                                        .repository(StudentCoursesReadModel.class,
-                                                                                    String.class)
-                                                                        .load(studentId, context)).join();
+                   var result = uow.executeWithResult(
+                           context -> context.component(StateManager.class)
+                                             .repository(StudentCoursesReadModel.class, String.class)
+                                             .load(studentId, context)
+                   ).join();
                    stateVerifier.accept(result.entity());
                });
     }
 
     private static EntityEvolver<StudentCoursesReadModel> readModelEvolver() {
         return (entity, event, context) -> {
-            var converter = context.component(Converter.class);
+            var converter = context.component(EventConverter.class);
             if (event.type().qualifiedName().equals(new QualifiedName(StudentEnrolledEvent.class))) {
-                var payload = event.payloadAs(
-                        StudentEnrolledEvent.class,
-                        converter
-                );
+                var payload = event.payloadAs(StudentEnrolledEvent.class, converter);
                 return entity.evolve(payload);
             }
             return entity;

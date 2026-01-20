@@ -24,6 +24,7 @@ import org.axonframework.messaging.eventhandling.processing.streaming.token.GapA
 import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedStorageEngineTestSuite;
+import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.messaging.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.test.server.AxonServerContainer;
@@ -33,6 +34,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -71,7 +73,7 @@ class AggregateBasedAxonServerEventStorageEngineIT extends
                 IllegalArgumentException.class,
                 () -> testSubject.stream(StreamingCondition.startingFrom(
                         new GapAwareTrackingToken(5, Collections.emptySet())
-                ), processingContext())
+                ))
         );
     }
 
@@ -86,7 +88,6 @@ class AggregateBasedAxonServerEventStorageEngineIT extends
 
     @Override
     protected ProcessingContext processingContext() {
-        // TODO implement
         return null;
     }
 
@@ -103,5 +104,16 @@ class AggregateBasedAxonServerEventStorageEngineIT extends
     @Override
     protected EventMessage convertPayload(EventMessage original) {
         return original.withConvertedPayload(String.class, converter);
+    }
+
+    @Test
+    void transactionCanBeCommitedOnlyOnce() {
+        var tx =
+                testSubject.appendEvents(AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
+                                         processingContext(),
+                                         taggedEventMessage("event-0", TEST_AGGREGATE_TAGS)).join();
+
+        assertDoesNotThrow(() -> tx.commit().get(1, TimeUnit.SECONDS));
+        assertThrows(Exception.class, () -> tx.commit().get(1, TimeUnit.SECONDS));
     }
 }

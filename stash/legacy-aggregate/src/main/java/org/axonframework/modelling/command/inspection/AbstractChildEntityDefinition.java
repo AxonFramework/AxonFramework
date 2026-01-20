@@ -16,6 +16,7 @@
 
 package org.axonframework.modelling.command.inspection;
 
+import org.axonframework.common.StringUtils;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.annotation.CommandHandlingMember;
 import org.axonframework.common.AxonConfigurationException;
@@ -143,7 +144,8 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
                                                                     .orElse(null))
                                .filter(Objects::nonNull)
                                .collect(Collectors.toMap(
-                                       CommandHandlingMember::commandName,
+                                       cmdh -> StringUtils.emptyOrNull(cmdh.commandName())
+                                               ? cmdh.payloadType().getName() : cmdh.commandName(),
                                        commandHandler -> extractCommandHandlerRoutingKey(childEntityModel,
                                                                                          commandHandler,
                                                                                          member
