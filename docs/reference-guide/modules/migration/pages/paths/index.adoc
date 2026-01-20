@@ -11,7 +11,7 @@ Whether you are performing a straightforward version bump or a deep architectura
 * Module Restructuring
 2. **Specific Migration Paths**
 * xref:migration:paths/messages.adoc[Message changes (@Event, @Command, @Query)]
-* _Aggregate to Entity (Coming soon)_
+* xref:migration:paths/aggregates.adoc[Aggregate changes]
 * _Event Processor configuration in AF5 (Coming soon)_
 * _Test fixtures (Coming soon)_
 * _Serializer to Converter configuration changes (Coming soon)_
