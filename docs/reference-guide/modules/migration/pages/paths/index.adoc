@@ -10,13 +10,13 @@ Whether you are performing a straightforward version bump or a deep architectura
 * Import and Package Changes
 * Module Restructuring
 2. **Specific Migration Paths**
-* xref:migration:paths/messages.adoc[Message changes (@Event, @Command, @Query)]
-* xref:migration:paths/aggregates.adoc[Aggregate changes]
-* _Event Processor configuration in AF5 (Coming soon)_
+* xref:migration:paths/messages.adoc[Message Migration (@Event, @Command, @Query)]
+* xref:migration:paths/aggregates.adoc[Aggregate Migration]
+* _Event Processor configuration in Axon Framework 5 (Coming soon)_
 * _Test fixtures (Coming soon)_
 * _Serializer to Converter configuration changes (Coming soon)_
 * _ConfigurerModule to ConfigurationEnhancers (Coming soon)_
-* _Message Interceptors in AF5 (Coming soon)_
+* _Message Interceptors in Axon Framework 5 (Coming soon)_
 3. **What is not yet there**
 4. **Missing a Migration Path?**
 
@@ -24,6 +24,7 @@ Whether you are performing a straightforward version bump or a deep architectura
 
 Every user migrating from Axon Framework 4.x to 5.x will encounter a set of base changes. These primarily involve package renames and module restructurings.
 
+[#import-and-package-changes]
 === Import and package changes
 
 Many classes have been moved to better align with the new modular structure. The most notable change is the move of Spring-specific and monitoring components into their own extension namespaces, and the nesting of core messaging components under the `org.axonframework.messaging` package.

@@ -1,5 +1,5 @@
-= Aggregate Changes
-:navtitle: Aggregate Changes
+= Aggregate Migration
+:navtitle: Aggregates
 
 The focus of this guide is to help you migrate your existing Axon Framework 4 aggregate-based applications to Axon Framework 5 with minimal architectural changes. While we encourage exploring the benefits of DCB for new development or significant refactorings, the following steps provide an "architecture-neutral" path to get your code running on the new version.
 
@@ -16,7 +16,7 @@ While Axon Framework 5 introduces Dynamic Consistency Boundaries (DCB) and moves
 Before diving into the specific changes, it is helpful to understand the primary components that replace the aggregate-centric API in Axon Framework 4.
 
 * **`@EventSourced`**: The replacement for `@Aggregate`. It marks a class as an event-sourced entity, signaling to the framework that its state should be managed and reconstructed from an event stream.
-* **`@EntityCreator`**: A mandatory annotation that tells Axon how to instantiate your entity. In AF4, the framework often relied on a `@CommandHandler` constructor; in AF5, the instantiation is decoupled from the command handling logic.
+* **`@EntityCreator`**: A mandatory annotation that tells Axon how to instantiate your entity. In Axon Framework 4, the framework often relied on a `@CommandHandler` constructor; in Axon Framework 5, the instantiation is decoupled from the command handling logic.
 * **`EventAppender`**: The interface that replaces `AggregateLifecycle.apply()`. It is passed as an argument to command handlers, making the side-effect of publishing events explicit and easier to test.
 * **`ProcessingContext`**: The underlying context for any message processing. While often used implicitly via `EventAppender`, it provides access to the unit of work and metadata during command execution.
 
@@ -112,18 +112,19 @@ public class GiftCard {
 <4> `EventAppender` is explicitly passed to handle event publication.
 ====
 
-== Step by Step Migration
+== Detailed Step by Step Migration
 
 The following sections detail the minimal changes required to migrate your aggregates to the new entity-based model in Axon Framework 5.
 
+
 === Removal of @AggregateIdentifier
 
-In AF4, the `@AggregateIdentifier` annotation was used on a field in the aggregate to mark it as the identifier. 
-In AF5, the identifier is typically specified during the configuration of the entity, or injected into the `@EntityCreator`.
+In Axon Framework 4, the `@AggregateIdentifier` annotation was used on a field in the aggregate to mark it as the identifier. 
+In Axon Framework 5, the identifier is typically specified during the configuration of the entity, or injected into the `@EntityCreator`.
 
 [source,java]
 ----
-// AF4
+// Axon Framework 4
 @Aggregate
 public class GiftCard {
     @AggregateIdentifier
@@ -131,7 +132,7 @@ public class GiftCard {
     // ...
 }
 
-// AF5
+// Axon Framework 5
 @EventSourced
 public class GiftCard {
     private String cardId; // No annotation needed on the field
@@ -143,13 +144,14 @@ public class GiftCard {
 ----
 <1> When using a no-arg `@EntityCreator`, the identifier is typically set in the `@EventSourcingHandler` of the creation event.
 
-=== Import Changes for Annotations
+=== Import Changes for Handlers
 
-The location of `@CommandHandler` and `@EventSourcingHandler` has changed to better reflect their role in the messaging and event sourcing modules.
+The location of `@CommandHandler` and `@EventSourcingHandler` has changed to better reflect their role in the messaging and event sourcing modules. 
+For a more comprehensive list of package changes, see the xref:migration:paths/index.adoc#import-and-package-changes[general import changes] section.
 
 [cols="1,2"]
 |===
-| AF4 Import | AF5 Import
+| Axon Framework 4 Import | Axon Framework 5 Import
 
 | `org.axonframework.modelling.command.CommandHandler`
 | `org.axonframework.messaging.commandhandling.annotation.CommandHandler`
@@ -160,12 +162,12 @@ The location of `@CommandHandler` and `@EventSourcingHandler` has changed to bet
 
 === Static Factory Methods for Creation
 
-AF4 often used constructors annotated with `@CommandHandler` to create new aggregate instances. 
-AF5 favors **static factory methods** for command handling of creation commands, combined with the `@EntityCreator` annotation for instance instantiation. This is the recommended way to migrate your creation constructors.
+Axon Framework 4 often used constructors annotated with `@CommandHandler` to create new aggregate instances.
+Axon Framework 5 favors **static factory methods** for command handling of creation commands, combined with the `@EntityCreator` annotation for instance instantiation. This is the recommended way to migrate your creation constructors.
 
 [source,java]
 ----
-// AF4
+// Axon Framework 4
 @Aggregate
 public class GiftCard {
     @CommandHandler
@@ -174,7 +176,7 @@ public class GiftCard {
     }
 }
 
-// AF5
+// Axon Framework 5
 @EventSourced
 public class GiftCard {
     @EntityCreator
@@ -193,13 +195,13 @@ The `AggregateLifecycle.apply()` method is replaced by the `EventAppender` inter
 
 [source,java]
 ----
-// AF4
+// Axon Framework 4
 @CommandHandler
 public void handle(RedeemCardCommand cmd) {
     AggregateLifecycle.apply(new CardRedeemedEvent(id, cmd.getAmount()));
 }
 
-// AF5
+// Axon Framework 5
 @CommandHandler
 public void handle(RedeemCardCommand cmd, EventAppender eventAppender) {
     eventAppender.append(new CardRedeemedEvent(id, cmd.amount()));
@@ -208,7 +210,7 @@ public void handle(RedeemCardCommand cmd, EventAppender eventAppender) {
 
 === @EntityCreator Annotation
 
-The `@EntityCreator` annotation is a **hard requirement** in AF5 for event-sourced entities. It tells Axon how to create an initial instance of the entity before applying events to it.
+The `@EntityCreator` annotation is a **hard requirement** in Axon Framework 5 for event-sourced entities. It tells Axon how to create an initial instance of the entity before applying events to it.
 
 There are three common patterns for using `@EntityCreator`:
 
@@ -219,7 +221,7 @@ There are three common patterns for using `@EntityCreator`:
 @EntityCreator
 public GiftCard() { }
 ----
-Axon creates an empty instance. The identifier and other state are then initialized in the `@EventSourcingHandler` for the first event.
+Axon creates an empty instance. The identifier and other relevant states are then initialized in the `@EventSourcingHandler` for the first event.
 
 . **Pattern 2: Identifier-only constructor**
 +
@@ -250,18 +252,18 @@ When defining child entities within an aggregate (now entity), use `@EntityMembe
 
 [source,java]
 ----
-// AF4
+// Axon Framework 4
 @AggregateMember
 private List<Transaction> transactions;
 
-// AF5
+// Axon Framework 5
 @EntityMember
 private List<Transaction> transactions;
 ----
 
 === @EventSourcedEntity instead of @AggregateRoot
 
-The `@AggregateRoot` annotation is replaced by `@EventSourcedEntity`. In AF5, this annotation (or `@EventSourced` in Spring) is a requirement for the framework to recognize and manage the entity.
+The `@AggregateRoot` annotation is replaced by `@EventSourcedEntity`. In Axon Framework 5, this annotation (or `@EventSourced` in Spring) is a requirement for the framework to recognize and manage the entity.
 
 === Removal of @CreationPolicy
 
@@ -271,11 +273,11 @@ If you need "create if missing" logic (equivalent to `CreationPolicy.CREATE_IF_M
 
 === Polymorphic Entities
 
-In AF4, polymorphic aggregates were configured using `@Aggregate` on the base class and sub-classes. In AF5, you register the hierarchy through the `EventSourcedEntityModule`.
+In Axon Framework 4, polymorphic aggregates were configured using `@Aggregate` on the base class and sub-classes. In Axon Framework 5, you register the hierarchy through the `EventSourcedEntityModule`.
 
 [source,java]
 ----
-// AF5 Configuration snippet
+// Axon Framework 5 Configuration snippet
 configurer.modelling().registerEventSourcedEntity(
     EventSourcedEntityModule.polymorphic(GiftCard.class)
                             .registerSubtype(SpecialGiftCard.class)
@@ -289,13 +291,13 @@ For Spring Boot users, the `@Aggregate` annotation is replaced by `@EventSourced
 
 [source,java]
 ----
-// AF4
+// Axon Framework 4
 @Aggregate
 public class GiftCard {
     // ...
 }
 
-// AF5
+// Axon Framework 5
 @EventSourced
 public class GiftCard {
     // ...
@@ -304,11 +306,11 @@ public class GiftCard {
 
 === EventSourcedEntityModule instead of AggregateConfigurer
 
-The declarative configuration of entities now uses the `EventSourcedEntityModule` instead of `AggregateConfigurer`. This aligns with the new modular configuration architecture of AF5.
+The declarative configuration of entities now uses the `EventSourcedEntityModule` instead of `AggregateConfigurer`. This aligns with the new modular configuration architecture of Axon Framework 5.
 
 [source,java]
 ----
-// AF5
+// Axon Framework 5
 public void configure(EventSourcingConfigurer configurer) {
     configurer.modelling().registerEventSourcedEntity(
         EventSourcedEntityModule.repository(GiftCard.class)
