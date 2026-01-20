@@ -16,7 +16,14 @@
 
 package org.axonframework.messaging.eventhandling.replay;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.conversion.PassThroughConverter;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.annotation.AnnotationMessageTypeResolver;
+import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
@@ -30,10 +37,6 @@ import org.axonframework.messaging.eventhandling.processing.streaming.token.Trac
 import org.axonframework.messaging.eventhandling.replay.annotation.AllowReplay;
 import org.axonframework.messaging.eventhandling.replay.annotation.DisallowReplay;
 import org.axonframework.messaging.eventhandling.replay.annotation.ResetHandler;
-import org.axonframework.messaging.core.MessageType;
-import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -67,10 +70,7 @@ class ReplayAwareMessageHandlerWrapperTest {
         @BeforeEach
         void setUp() {
             handler = new ClassDisallowedWithMethodAllowedHandler();
-            testSubject = new AnnotatedEventHandlingComponent<>(
-                    handler,
-                    ClasspathParameterResolverFactory.forClass(ClassDisallowedWithMethodAllowedHandler.class)
-            );
+            testSubject = createTestSubjectFor(handler, ClassDisallowedWithMethodAllowedHandler.class);
         }
 
         @Test
@@ -138,10 +138,7 @@ class ReplayAwareMessageHandlerWrapperTest {
         @BeforeEach
         void setUp() {
             handler = new MethodLevelDisallowedHandler();
-            testSubject = new AnnotatedEventHandlingComponent<>(
-                    handler,
-                    ClasspathParameterResolverFactory.forClass(MethodLevelDisallowedHandler.class)
-            );
+            testSubject = createTestSubjectFor(handler, MethodLevelDisallowedHandler.class);
         }
 
         @Test
@@ -195,10 +192,7 @@ class ReplayAwareMessageHandlerWrapperTest {
         @BeforeEach
         void setUp() {
             handler = new FullyDisallowedHandler();
-            testSubject = new AnnotatedEventHandlingComponent<>(
-                    handler,
-                    ClasspathParameterResolverFactory.forClass(FullyDisallowedHandler.class)
-            );
+            testSubject = createTestSubjectFor(handler, FullyDisallowedHandler.class);
         }
 
         @Test
@@ -244,10 +238,7 @@ class ReplayAwareMessageHandlerWrapperTest {
         @BeforeEach
         void setUp() {
             handler = new OnlyResetHandlerAllowedHandler();
-            testSubject = new AnnotatedEventHandlingComponent<>(
-                    handler,
-                    ClasspathParameterResolverFactory.forClass(OnlyResetHandlerAllowedHandler.class)
-            );
+            testSubject = createTestSubjectFor(handler, OnlyResetHandlerAllowedHandler.class);
         }
 
         @Test
@@ -308,10 +299,7 @@ class ReplayAwareMessageHandlerWrapperTest {
         @BeforeEach
         void setUp() {
             handler = new ClassAllowedWithAllMethodsDisallowedHandler();
-            testSubject = new AnnotatedEventHandlingComponent<>(
-                    handler,
-                    ClasspathParameterResolverFactory.forClass(ClassAllowedWithAllMethodsDisallowedHandler.class)
-            );
+            testSubject = createTestSubjectFor(handler, ClassAllowedWithAllMethodsDisallowedHandler.class);
         }
 
         @Test
@@ -357,10 +345,7 @@ class ReplayAwareMessageHandlerWrapperTest {
         @BeforeEach
         void setUp() {
             handler = new ClassAllowedWithSomeMethodsDisallowedHandler();
-            testSubject = new AnnotatedEventHandlingComponent<>(
-                    handler,
-                    ClasspathParameterResolverFactory.forClass(ClassAllowedWithSomeMethodsDisallowedHandler.class)
-            );
+            testSubject = createTestSubjectFor(handler, ClassAllowedWithSomeMethodsDisallowedHandler.class);
         }
 
         @Test
@@ -417,10 +402,7 @@ class ReplayAwareMessageHandlerWrapperTest {
         @BeforeEach
         void setUp() {
             handler = new NoAnnotationsHandler();
-            testSubject = new AnnotatedEventHandlingComponent<>(
-                    handler,
-                    ClasspathParameterResolverFactory.forClass(NoAnnotationsHandler.class)
-            );
+            testSubject = createTestSubjectFor(handler, NoAnnotationsHandler.class);
         }
 
         @Test
@@ -467,10 +449,7 @@ class ReplayAwareMessageHandlerWrapperTest {
         @BeforeEach
         void setUp() {
             handler = new ClassAllowedOnlyHandler();
-            testSubject = new AnnotatedEventHandlingComponent<>(
-                    handler,
-                    ClasspathParameterResolverFactory.forClass(ClassAllowedOnlyHandler.class)
-            );
+            testSubject = createTestSubjectFor(handler, ClassAllowedOnlyHandler.class);
         }
 
         @Test
@@ -515,10 +494,7 @@ class ReplayAwareMessageHandlerWrapperTest {
         void classLevelDisallowReturnsTrueIfAnyMethodAllowsReplay() {
             // given
             var handler = new ClassDisallowedWithMethodAllowedHandler();
-            var testSubject = new AnnotatedEventHandlingComponent<>(
-                    handler,
-                    ClasspathParameterResolverFactory.forClass(ClassDisallowedWithMethodAllowedHandler.class)
-            );
+            var testSubject = createTestSubjectFor(handler, ClassDisallowedWithMethodAllowedHandler.class);
 
             // when / then
             assertThat(testSubject.supportsReset()).isTrue();
@@ -528,10 +504,7 @@ class ReplayAwareMessageHandlerWrapperTest {
         void methodLevelDisallowWithoutClassLevelReturnsTrue() {
             // given
             var handler = new MethodLevelDisallowedHandler();
-            var testSubject = new AnnotatedEventHandlingComponent<>(
-                    handler,
-                    ClasspathParameterResolverFactory.forClass(MethodLevelDisallowedHandler.class)
-            );
+            var testSubject = createTestSubjectFor(handler, MethodLevelDisallowedHandler.class);
 
             // when / then
             assertThat(testSubject.supportsReset()).isTrue();
@@ -541,10 +514,7 @@ class ReplayAwareMessageHandlerWrapperTest {
         void fullyDisallowedReturnsFalse() {
             // given
             var handler = new FullyDisallowedHandler();
-            var testSubject = new AnnotatedEventHandlingComponent<>(
-                    handler,
-                    ClasspathParameterResolverFactory.forClass(FullyDisallowedHandler.class)
-            );
+            var testSubject = createTestSubjectFor(handler, FullyDisallowedHandler.class);
 
             // when / then
             assertThat(testSubject.supportsReset()).isFalse();
@@ -554,10 +524,7 @@ class ReplayAwareMessageHandlerWrapperTest {
         void classDoesNotAllowReplayWithAllMethodsDisallowedReturnsFalse() {
             // given
             var handler = new ClassAllowedWithAllMethodsDisallowedHandler();
-            var testSubject = new AnnotatedEventHandlingComponent<>(
-                    handler,
-                    ClasspathParameterResolverFactory.forClass(ClassAllowedWithAllMethodsDisallowedHandler.class)
-            );
+            var testSubject = createTestSubjectFor(handler, ClassAllowedWithAllMethodsDisallowedHandler.class);
 
             // when / then
             assertThat(testSubject.supportsReset()).isFalse();
@@ -567,10 +534,7 @@ class ReplayAwareMessageHandlerWrapperTest {
         void classAllowReplayWithSomeMethodsDisallowedReturnsTrue() {
             // given
             var handler = new ClassAllowedWithSomeMethodsDisallowedHandler();
-            var testSubject = new AnnotatedEventHandlingComponent<>(
-                    handler,
-                    ClasspathParameterResolverFactory.forClass(ClassAllowedWithSomeMethodsDisallowedHandler.class)
-            );
+            var testSubject = createTestSubjectFor(handler, ClassAllowedWithSomeMethodsDisallowedHandler.class);
 
             // when / then
             assertThat(testSubject.supportsReset()).isTrue();
@@ -580,10 +544,7 @@ class ReplayAwareMessageHandlerWrapperTest {
         void noAnnotationsReturnsTrue() {
             // given
             var handler = new NoAnnotationsHandler();
-            var testSubject = new AnnotatedEventHandlingComponent<>(
-                    handler,
-                    ClasspathParameterResolverFactory.forClass(NoAnnotationsHandler.class)
-            );
+            var testSubject = createTestSubjectFor(handler, NoAnnotationsHandler.class);
 
             // when / then
             assertThat(testSubject.supportsReset()).isTrue();
@@ -593,10 +554,7 @@ class ReplayAwareMessageHandlerWrapperTest {
         void classAllowReplayOnlyReturnsTrue() {
             // given
             var handler = new ClassAllowedOnlyHandler();
-            var testSubject = new AnnotatedEventHandlingComponent<>(
-                    handler,
-                    ClasspathParameterResolverFactory.forClass(ClassAllowedOnlyHandler.class)
-            );
+            var testSubject = createTestSubjectFor(handler, ClassAllowedOnlyHandler.class);
 
             // when / then
             assertThat(testSubject.supportsReset()).isTrue();
@@ -606,10 +564,7 @@ class ReplayAwareMessageHandlerWrapperTest {
         void onlyResetHandlerAllowedReturnsFalse() {
             // given - all event handlers are @DisallowReplay, but @ResetHandler exists with @AllowReplay
             var handler = new OnlyResetHandlerAllowedHandler();
-            var testSubject = new AnnotatedEventHandlingComponent<>(
-                    handler,
-                    ClasspathParameterResolverFactory.forClass(OnlyResetHandlerAllowedHandler.class)
-            );
+            var testSubject = createTestSubjectFor(handler, OnlyResetHandlerAllowedHandler.class);
 
             // when / then
             assertThat(testSubject.supportsReset()).isTrue();
@@ -841,5 +796,17 @@ class ReplayAwareMessageHandlerWrapperTest {
             resetInvoked = true;
             resetPayload = payload;
         }
+    }
+
+    @Nonnull
+    private <T> AnnotatedEventHandlingComponent<T> createTestSubjectFor(T annotatedHandler,
+                                                                        Class<T> annotatedHandlerClass) {
+        return new AnnotatedEventHandlingComponent<>(
+                annotatedHandler,
+                ClasspathParameterResolverFactory.forClass(annotatedHandlerClass),
+                ClasspathHandlerDefinition.forClass(annotatedHandlerClass),
+                new AnnotationMessageTypeResolver(),
+                new DelegatingEventConverter(PassThroughConverter.INSTANCE)
+        );
     }
 }
