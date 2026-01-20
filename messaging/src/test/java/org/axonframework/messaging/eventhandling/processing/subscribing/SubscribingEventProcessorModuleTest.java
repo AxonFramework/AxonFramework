@@ -564,7 +564,6 @@ class SubscribingEventProcessorModuleTest {
             );
 
             // and
-            @SuppressWarnings("unchecked")
             var module = EventProcessorModule
                     .subscribing(processorName)
                     .eventHandlingComponents(singleTestEventHandlingComponent())

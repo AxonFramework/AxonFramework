@@ -126,6 +126,7 @@ class ReplayContextParameterResolverFactoryTest {
         return new GenericEventMessage(new MessageType(Long.class), value);
     }
 
+    @SuppressWarnings("SameParameterValue")
     private TrackingToken createTrackingToken(Long position, boolean replay) {
         if (replay) {
             return ReplayToken.createReplayToken(
