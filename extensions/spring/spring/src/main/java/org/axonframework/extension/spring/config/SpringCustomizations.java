@@ -21,15 +21,16 @@ import jakarta.annotation.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.configuration.Configuration;
+import org.axonframework.messaging.core.SubscribableEventSource;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorConfiguration;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorModule;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
 import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessorConfiguration;
 import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessorModule;
 import org.axonframework.messaging.eventstreaming.StreamableEventSource;
-import org.axonframework.messaging.core.SubscribableEventSource;
 
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
 
 /**
@@ -93,7 +94,6 @@ interface SpringCustomizations {
             require(messageSource != null, "Could not find a mandatory Source with name '" + settings.source()
                     + "' for event processor '" + name + "'.");
 
-            //noinspection unchecked
             return subscribingEventProcessorConfiguration
                     .eventSource(messageSource);
         }
@@ -122,7 +122,7 @@ interface SpringCustomizations {
                 Configuration configuration,
                 PooledStreamingEventProcessorConfiguration eventProcessorConfiguration) {
             String executorName = "WorkPackage[" + name + "]";
-            var scheduledExecutorService = Executors.newScheduledThreadPool(
+            Supplier<ScheduledExecutorService> scheduledExecutorService = () -> Executors.newScheduledThreadPool(
                     settings.threadCount(),
                     new AxonThreadFactory(executorName)
             );
@@ -143,7 +143,6 @@ interface SpringCustomizations {
                     "Could not find a mandatory TokenStore with name '" + settings.tokenStore()
                             + "' for event processor '" + name + "'."
             );
-            //noinspection unchecked
             return eventProcessorConfiguration
                     .workerExecutor(scheduledExecutorService)
                     .tokenClaimInterval(settings.tokenClaimIntervalInMillis())

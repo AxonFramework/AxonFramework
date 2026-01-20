@@ -246,7 +246,7 @@ public void registerTimeoutEnhancer(MessagingConfigurer configurer) {
 Spring Boot::
 +
 --
-For Spring Boot, the defaults for all unit of works are set to of 60 seconds.
+For Spring Boot, the defaults for all Unit of Works are set to of 60 seconds.
 In addition, by default, they will start warning every second after 10 seconds have passed.
 You can tweak these settings by setting the following properties in your `application.properties` or `application.yml`:
 

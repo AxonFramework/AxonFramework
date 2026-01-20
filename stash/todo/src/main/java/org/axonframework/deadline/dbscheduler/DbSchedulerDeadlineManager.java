@@ -19,6 +19,7 @@ package org.axonframework.deadline.dbscheduler;
 import com.github.kagkarlsson.scheduler.ScheduledExecution;
 import com.github.kagkarlsson.scheduler.Scheduler;
 import com.github.kagkarlsson.scheduler.SchedulerState;
+import com.github.kagkarlsson.scheduler.exceptions.TaskInstanceNotFoundException;
 import com.github.kagkarlsson.scheduler.task.Task;
 import com.github.kagkarlsson.scheduler.task.TaskDescriptor;
 import com.github.kagkarlsson.scheduler.task.TaskInstance;
@@ -226,7 +227,15 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
     public void cancelSchedule(@Nonnull String deadlineName, @Nonnull String scheduleId) {
         Span span = spanFactory.createCancelScheduleSpan(deadlineName, scheduleId);
         runOnPrepareCommitOrNow(span.wrapRunnable(
-                () -> scheduler.cancel(new DbSchedulerDeadlineToken(scheduleId)))
+                () -> {
+                    try {
+                        scheduler.cancel(new DbSchedulerDeadlineToken(scheduleId));
+                    } catch (TaskInstanceNotFoundException e) {
+                        // handle gracefully
+                        logger.debug("Attempted to cancel task [{}] which does not exist. The task may have already " +
+                                "been canceled or the given schedule identifier is incorrect.", scheduleId);
+                    }
+                })
         );
     }
 

@@ -18,7 +18,6 @@ package org.axonframework.messaging.core.unitofwork;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.Context;
-import org.axonframework.messaging.core.unitofwork.transaction.Transaction;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
 
 import java.util.Objects;
@@ -45,8 +44,8 @@ public class TransactionalUnitOfWorkFactory implements UnitOfWorkFactory {
      * Initializes a factory with the given {@code transactionManager} and a delegate {@link UnitOfWorkFactory}. The
      * unit of work's lifecycle will be bound to transaction managed by the provided {@code transactionManager}.
      *
-     * @param transactionManager The transaction manager used to create and manage transactions for the units of work.
-     * @param delegate           The delegate factory used to create units of work.
+     * @param transactionManager the transaction manager used to create and manage transactions for the units of work
+     * @param delegate           the delegate factory used to create units of work
      */
     public TransactionalUnitOfWorkFactory(
             @Nonnull TransactionManager transactionManager,
@@ -69,7 +68,7 @@ public class TransactionalUnitOfWorkFactory implements UnitOfWorkFactory {
      * </ul>
      * The transaction is stored as a resource in the unit of work's context using a resource key with label "transaction".
      *
-     * @return A new transactional unit of work.
+     * @return a new transactional unit of work
      */
     @Nonnull
     @Override
@@ -81,19 +80,9 @@ public class TransactionalUnitOfWorkFactory implements UnitOfWorkFactory {
             customization = customization.andThen(UnitOfWorkConfiguration::forcedSameThreadInvocation);
         }
         var unitOfWork = delegate.create(identifier, customization);
-        Context.ResourceKey<Transaction> transactionResourceKey = Context.ResourceKey.withLabel("transaction");
-        unitOfWork.runOnPreInvocation(ctx -> {
-            var transaction = transactionManager.startTransaction();
-            ctx.putResource(transactionResourceKey, transaction);
-        });
-        unitOfWork.runOnCommit(ctx -> {
-            var transaction = ctx.getResource(transactionResourceKey);
-            transaction.commit();
-        });
-        unitOfWork.onError((ctx, phase, error) -> {
-            var transaction = ctx.getResource(transactionResourceKey);
-            transaction.rollback();
-        });
+
+        transactionManager.attachToProcessingLifecycle(unitOfWork);
+
         return unitOfWork;
     }
 }

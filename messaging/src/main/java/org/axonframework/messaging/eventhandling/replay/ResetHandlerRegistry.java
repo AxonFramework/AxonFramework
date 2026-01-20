@@ -21,8 +21,8 @@ import jakarta.annotation.Nonnull;
 /**
  * Registry for subscribing {@link ResetHandler} instances.
  * <p>
- * Components implementing this interface accept reset handler subscriptions, allowing dynamic
- * registration of reset behavior following the same pattern as event handler registration.
+ * Components implementing this interface accept reset handler subscriptions, allowing dynamic registration of reset
+ * behavior following the same pattern as event handler registration.
  * <p>
  * Example usage:
  * <pre>{@code
@@ -33,16 +33,16 @@ import jakarta.annotation.Nonnull;
  * });
  * }</pre>
  *
+ * @param <S> The type of the registry itself, used for fluent interfacing.
  * @author Mateusz Nowak
  * @see ResetHandler
  * @see org.axonframework.messaging.eventhandling.EventHandlingComponent
- * @since 5.0.0
+ * @since 5.1.0
  */
-public interface ResetHandlerRegistry {
+public interface ResetHandlerRegistry<S extends ResetHandlerRegistry<S>> {
 
     /**
-     * Subscribes a reset handler to this registry. The handler will be invoked when a reset
-     * operation is triggered.
+     * Subscribes a reset handler to this registry. The handler will be invoked when a reset operation is triggered.
      * <p>
      * Multiple handlers can be subscribed, and all will be invoked during reset.
      *
@@ -50,5 +50,5 @@ public interface ResetHandlerRegistry {
      * @return This registry instance for method chaining.
      */
     @Nonnull
-    ResetHandlerRegistry subscribe(@Nonnull ResetHandler resetHandler);
+    S subscribe(@Nonnull ResetHandler resetHandler);
 }

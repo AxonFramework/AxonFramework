@@ -73,3 +73,130 @@ The auto-configuration is non-intrusive and only configures components that you 
 You can override any auto-configured bean by defining your own in a `@Configuration` class.
 
 For detailed configuration options, see the specific sections in this reference guide for commands, events, queries, and entities.
+
+== Event processor configuration
+
+Spring Boot provides multiple approaches to configure event processors, ranging from simple properties-based configuration to programmatic type-safe configuration.
+
+=== Configuration approaches
+
+==== Properties-based configuration
+
+The simplest approach for basic configuration using `application.properties` or `application.yml`:
+
+[source,properties]
+----
+axon.eventhandling.processors.my-processor.mode=pooled-streaming
+axon.eventhandling.processors.my-processor.initial-segment-count=4
+axon.eventhandling.processors.my-processor.batch-size=100
+axon.eventhandling.processors.my-processor.thread-count=16
+----
+
+This approach is ideal for:
+
+* Simple processor configuration
+* Environment-specific settings (dev, test, prod)
+* Quick prototyping
+
+==== Programmatic configuration with `ProcessorDefinition`
+
+For advanced configuration and type safety, use `ProcessorDefinition` beans:
+
+[source,java]
+----
+import org.axonframework.extension.spring.config.ProcessorDefinition;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class EventProcessorConfig {
+
+    @Bean
+    public ProcessorDefinition orderProcessor() {
+        return ProcessorDefinition.pooledStreamingProcessor("order-processor")
+                .assigningHandlers(descriptor ->
+                    descriptor.beanName().startsWith("order"))
+                .withConfiguration(config -> config
+                    .initialSegmentCount(4)
+                    .batchSize(100));
+    }
+}
+----
+
+The `ProcessorDefinition` API provides:
+
+* **Type-safe configuration** - Compile-time checking of configuration options
+* **Fluent API** - Chain configuration methods for readability
+* **Handler selection** - Define which event handlers belong to each processor using predicates
+* **Full configuration access** - All processor settings available programmatically
+* **IDE support** - Better autocompletion and refactoring support
+
+===== Handler selection
+
+The `assigningHandlers()` method provides access to an `EventHandlerDescriptor` with the following properties:
+
+* `beanName()` - The Spring bean name
+* `beanType()` - The event handler class (use for package-based selection)
+* `beanDefinition()` - The Spring bean definition
+* `component()` - The component builder
+
+This allows flexible handler assignment based on naming conventions, package structure, or custom criteria:
+
+[source,java]
+----
+// By bean name prefix
+.assigningHandlers(d -> d.beanName().startsWith("order"))
+
+// By package
+.assigningHandlers(d -> d.beanType().getPackageName().startsWith("com.example.orders"))
+
+// By bean name pattern
+.assigningHandlers(d -> d.beanName().contains("Handler"))
+----
+
+===== Configuration options
+
+Use `withConfiguration()` to customize processor settings, or `withDefaultSettings()` when you only need handler assignment:
+
+[source,java]
+----
+// With custom configuration
+ProcessorDefinition.pooledStreamingProcessor("custom-processor")
+    .assigningHandlers(descriptor -> descriptor.beanName().startsWith("custom"))
+    .withConfiguration(config -> config
+        .initialSegmentCount(16)
+        .batchSize(100)
+        .tokenClaimInterval(5000));
+
+// With default settings (only handler assignment)
+ProcessorDefinition.pooledStreamingProcessor("default-processor")
+    .assigningHandlers(descriptor -> descriptor.beanName().startsWith("default"))
+    .withDefaultSettings();
+----
+
+==== Configuration precedence
+
+When using multiple configuration approaches:
+
+1. `ProcessorDefinition` beans take precedence over properties-based configuration
+2. If a handler matches multiple `ProcessorDefinition` selectors, an `AxonConfigurationException` is thrown at startup
+3. Handlers not matched by any `ProcessorDefinition` are assigned based on their package name (default behavior)
+
+To avoid conflicts, ensure each handler is matched by at most one `ProcessorDefinition` using mutually exclusive selectors.
+
+==== When to use each approach
+
+Use **properties-based configuration** when:
+
+* Configuration is simple and doesn't require custom logic
+* Settings may vary per environment
+* You're prototyping or getting started
+
+Use **ProcessorDefinition** when:
+
+* You need fine-grained control over handler assignment
+* Configuration requires conditional logic
+* Type safety and IDE support are important
+* You want to share configuration between environments programmatically
+
+For comprehensive event processor configuration examples and detailed information, see xref:events:event-processors/streaming.adoc[Event Processors].

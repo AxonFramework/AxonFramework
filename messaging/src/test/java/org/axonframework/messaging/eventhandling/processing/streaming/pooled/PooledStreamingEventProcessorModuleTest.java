@@ -77,7 +77,9 @@ class PooledStreamingEventProcessorModuleTest {
             // when
             PooledStreamingEventProcessorModule module = EventProcessorModule
                     .pooledStreaming(processorName)
-                    .eventHandlingComponents(components -> components.declarative(cfg -> new SimpleEventHandlingComponent()))
+                    .eventHandlingComponents(components -> components.declarative(
+                            cfg -> SimpleEventHandlingComponent.create("test")
+                    ))
                     .customized((cfg, c) -> c);
 
             // then
@@ -362,11 +364,11 @@ class PooledStreamingEventProcessorModuleTest {
         void shouldRegisterEventHandlingComponentsAsComponents() {
             // given
             var processorName = "testProcessor";
-            var component1 = new SimpleEventHandlingComponent();
+            var component1 = SimpleEventHandlingComponent.create("component1");
             component1.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
-            var component2 = new SimpleEventHandlingComponent();
+            var component2 = SimpleEventHandlingComponent.create("component2");
             component2.subscribe(new QualifiedName(Integer.class), (event, context) -> MessageStream.empty());
-            var component3 = new SimpleEventHandlingComponent();
+            var component3 = SimpleEventHandlingComponent.create("component3");
             component3.subscribe(new QualifiedName(Long.class), (event, context) -> MessageStream.empty());
 
             var module = EventProcessorModule
@@ -678,7 +680,7 @@ class PooledStreamingEventProcessorModuleTest {
             // given
             String processorName = "test-processor";
             AsyncInMemoryStreamableEventSource eventSource = new AsyncInMemoryStreamableEventSource();
-            var component = new SimpleEventHandlingComponent();
+            var component = SimpleEventHandlingComponent.create("test");
             var customCoordinator = new AtomicReference<ScheduledExecutorService>();
             var customWorker = new AtomicReference<ScheduledExecutorService>();
 
@@ -714,12 +716,12 @@ class PooledStreamingEventProcessorModuleTest {
             @Nonnull QualifiedName supportedEventName
     ) {
         return new RecordingEventHandlingComponent(
-                new SimpleEventHandlingComponent().subscribe(supportedEventName, (e, c) -> MessageStream.empty())
+                SimpleEventHandlingComponent.create("test")
+                                            .subscribe(supportedEventName, (e, c) -> MessageStream.empty())
         );
     }
 
     private PooledStreamingEventProcessorModule minimalProcessorModule(String processorName) {
-        //noinspection unchecked
         return EventProcessorModule
                 .pooledStreaming(processorName)
                 .eventHandlingComponents(singleTestEventHandlingComponent())
@@ -729,7 +731,7 @@ class PooledStreamingEventProcessorModuleTest {
 
     @Nonnull
     private static Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> singleTestEventHandlingComponent() {
-        var eventHandlingComponent = new SimpleEventHandlingComponent();
+        var eventHandlingComponent = SimpleEventHandlingComponent.create("test");
         eventHandlingComponent.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
         return (components) -> components.declarative(cfg -> eventHandlingComponent);
     }

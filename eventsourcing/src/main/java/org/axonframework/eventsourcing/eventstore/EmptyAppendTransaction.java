@@ -36,12 +36,12 @@ public record EmptyAppendTransaction() implements EventStorageEngine.AppendTrans
     public static final EventStorageEngine.AppendTransaction<Void> INSTANCE = new EmptyAppendTransaction();
 
     @Override
-    public CompletableFuture<Void> commit(@Nullable ProcessingContext context) {
+    public CompletableFuture<Void> commit() {
         return CompletableFuture.completedFuture(null);
     }
 
     @Override
-    public void rollback(@Nullable ProcessingContext context) {
+    public void rollback() {
         // No action needed
     }
 
@@ -53,7 +53,7 @@ public record EmptyAppendTransaction() implements EventStorageEngine.AppendTrans
      * @return An empty always a completed future with the consistency marker {@link ConsistencyMarker#ORIGIN}.
      */
     @Override
-    public CompletableFuture<ConsistencyMarker> afterCommit(@Nullable Void commitResult, @Nullable ProcessingContext context) {
+    public CompletableFuture<ConsistencyMarker> afterCommit(@Nullable Void commitResult) {
         return CompletableFuture.completedFuture(ConsistencyMarker.ORIGIN);
     }
 }

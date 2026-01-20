@@ -158,8 +158,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
      */
     public AggregateTestFixture(Class<T> aggregateType) {
 //        deadlineManager = new StubDeadlineManager();
-        commandBus = new SimpleCommandBus(new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE),
-                                          Collections.emptyList());
+        commandBus = new SimpleCommandBus(new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE));
         eventStore = new RecordingEventStore();
         resources.add(commandBus);
         resources.add(eventStore);

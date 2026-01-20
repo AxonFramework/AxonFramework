@@ -23,6 +23,7 @@ import org.axonframework.examples.university.read.coursestats.api.FindAllCourses
 import org.axonframework.examples.university.read.coursestats.api.GetCourseStatsById;
 import org.axonframework.examples.university.shared.CourseId;
 import org.axonframework.messaging.queryhandling.gateway.QueryGateway;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -41,6 +42,7 @@ import reactor.core.publisher.Mono;
 @RequestMapping("/api/courses")
 @RequiredArgsConstructor
 @Slf4j
+@Profile("!webmvc")
 public class CourseStatsController {
 
     private final QueryGateway queryGateway;

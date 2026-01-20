@@ -28,12 +28,14 @@ import org.axonframework.update.UpdateCheckerReporter;
 import org.axonframework.update.configuration.UsagePropertyProvider;
 import org.axonframework.update.detection.TestEnvironmentDetector;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
 import org.springframework.context.annotation.Conditional;
+import org.springframework.context.annotation.Primary;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 
 import static org.axonframework.common.configuration.ComponentDefinition.ofType;
@@ -60,7 +62,7 @@ public class UpdateCheckerAutoConfiguration {
     @ConditionalOnMissingBean
     @Conditional(NotTestEnvironmentCondition.class)
     public UsagePropertyProvider usagePropertyProvider(UpdateCheckerProperties properties) {
-        return UsagePropertyProvider.create(properties);
+        return UsagePropertyProvider.create(properties.get());
     }
 
     /**

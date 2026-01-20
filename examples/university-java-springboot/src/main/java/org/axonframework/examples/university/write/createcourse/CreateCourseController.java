@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.axonframework.examples.university.shared.CourseId;
 import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -36,6 +37,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/courses")
 @Slf4j
 @RequiredArgsConstructor
+@Profile("!webmvc")
 public class CreateCourseController {
 
     private final CommandGateway commandGateway;

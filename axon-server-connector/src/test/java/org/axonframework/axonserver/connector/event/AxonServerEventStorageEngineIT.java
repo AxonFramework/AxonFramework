@@ -26,7 +26,6 @@ import org.axonframework.eventsourcing.eventstore.StorageEngineTestSuite;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.conversion.ChainingContentTypeConverter;
 import org.axonframework.test.server.AxonServerContainer;
-import org.axonframework.test.server.AxonServerContainerUtils;
 import org.junit.jupiter.api.*;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -61,7 +60,7 @@ class AxonServerEventStorageEngineIT extends StorageEngineTestSuite<AxonServerEv
     }
 
     @Override
-    protected AxonServerEventStorageEngine buildStorageEngine() throws IOException {
+    protected AxonServerEventStorageEngine createStorageEngine() throws IOException {
         container.start();
         ServerAddress address = new ServerAddress(container.getHost(), container.getGrpcPort());
         connection = AxonServerConnectionFactory.forClient("AxonServerEventStorageEngineTest")
@@ -75,7 +74,6 @@ class AxonServerEventStorageEngineIT extends StorageEngineTestSuite<AxonServerEv
 
     @Override
     protected ProcessingContext processingContext() {
-        // TODO implement
         return null;
     }
 

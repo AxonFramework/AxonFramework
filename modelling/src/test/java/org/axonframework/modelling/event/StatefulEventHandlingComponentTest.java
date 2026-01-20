@@ -17,18 +17,17 @@
 package org.axonframework.modelling.event;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.eventhandling.EventHandlingComponent;
-import org.axonframework.messaging.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.eventhandling.EventHandlingComponent;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.modelling.SimpleStateManager;
 import org.axonframework.modelling.StateManager;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -54,14 +53,14 @@ class StatefulEventHandlingComponentTest {
         @Test
         void invokedRegisteredStatefulHandler() {
             // given
-            EventHandlingComponent testSubject = new SimpleEventHandlingComponent();
+            SimpleEventHandlingComponent testSubject = SimpleEventHandlingComponent.create("test");
             AtomicBoolean invoked = new AtomicBoolean();
 
             testSubject.subscribe(new QualifiedName("test-event"), (event, ctx) -> {
                 var state = ctx.component(StateManager.class);
-                state.loadEntity(Integer.class, "42", ctx).thenAccept(result -> {
-                    assertEquals(42, result);
-                }).join();
+                state.loadEntity(Integer.class, "42", ctx)
+                     .thenAccept(result -> assertEquals(42, result))
+                     .join();
                 invoked.set(true);
                 return MessageStream.empty().cast();
             });
@@ -77,7 +76,7 @@ class StatefulEventHandlingComponentTest {
         @Test
         void canRegisterNonStatefulNormalHandler() {
             // given
-            EventHandlingComponent testSubject = new SimpleEventHandlingComponent();
+            SimpleEventHandlingComponent testSubject = SimpleEventHandlingComponent.create("test");
             AtomicBoolean invoked = new AtomicBoolean();
 
             testSubject.subscribe(new QualifiedName("test-event"), (event, ctx) -> {
@@ -96,7 +95,7 @@ class StatefulEventHandlingComponentTest {
         @Test
         void exceptionWhileHandlingEventResultsInFailedStream() {
             // given
-            EventHandlingComponent testSubject = new SimpleEventHandlingComponent();
+            SimpleEventHandlingComponent testSubject = SimpleEventHandlingComponent.create("test");
             testSubject.subscribe(new QualifiedName("test-event"), (event, ctx) -> {
                 throw new RuntimeException("Faking an exception");
             });
@@ -104,7 +103,7 @@ class StatefulEventHandlingComponentTest {
             // when / then
             var exception = assertThrows(RuntimeException.class, () -> {
                 GenericEventMessage event = new GenericEventMessage(new MessageType("test-event"),
-                                                                              "my-payload");
+                                                                    "my-payload");
                 testSubject.handle(event, messageProcessingContext(event))
                            .asCompletableFuture()
                            .join();
@@ -120,7 +119,7 @@ class StatefulEventHandlingComponentTest {
         @Test
         void registeredHandlersAreListedInSupportedEvents() {
             // given
-            EventHandlingComponent testSubject = new SimpleEventHandlingComponent();
+            SimpleEventHandlingComponent testSubject = SimpleEventHandlingComponent.create("test");
 
             testSubject.subscribe(new QualifiedName("test-event"),
                                   (event, ctx) -> MessageStream.empty().cast());
@@ -139,7 +138,7 @@ class StatefulEventHandlingComponentTest {
         @Test
         void emptySupportedEventsWhenNoHandlersRegistered() {
             // given
-            EventHandlingComponent testSubject = new SimpleEventHandlingComponent();
+            EventHandlingComponent testSubject = SimpleEventHandlingComponent.create("test");
 
             // when
             Set<QualifiedName> supportedEvents = testSubject.supportedEvents();
@@ -155,7 +154,7 @@ class StatefulEventHandlingComponentTest {
         @Test
         void stateManagerIsProvidedToStatefulHandler() {
             // given
-            EventHandlingComponent testSubject = new SimpleEventHandlingComponent();
+            SimpleEventHandlingComponent testSubject = SimpleEventHandlingComponent.create("test");
             AtomicBoolean stateManagerProvided = new AtomicBoolean();
 
             testSubject.subscribe(new QualifiedName("test-event"), (event, ctx) -> {
@@ -176,7 +175,7 @@ class StatefulEventHandlingComponentTest {
         @Test
         void canLoadEntityThroughStateManager() {
             // given
-            EventHandlingComponent testSubject = new SimpleEventHandlingComponent();
+            SimpleEventHandlingComponent testSubject = SimpleEventHandlingComponent.create("test");
             AtomicBoolean entityLoaded = new AtomicBoolean();
 
             testSubject.subscribe(new QualifiedName("test-event"), (event, ctx) -> {

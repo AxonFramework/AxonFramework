@@ -22,7 +22,6 @@ import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
-import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
@@ -64,7 +63,7 @@ class ReplayBlockingEventHandlingComponentTest {
     @BeforeEach
     void setUp() {
         receivedEvents = new ArrayList<>();
-        EventHandlingComponent delegate = new SimpleEventHandlingComponent();
+        SimpleEventHandlingComponent delegate = SimpleEventHandlingComponent.create("replayBlocking");
         delegate.subscribe(
                 new QualifiedName(String.class),
                 (event, context) -> {

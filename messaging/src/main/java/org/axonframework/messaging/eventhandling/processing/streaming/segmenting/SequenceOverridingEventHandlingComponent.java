@@ -18,18 +18,15 @@ package org.axonframework.messaging.eventhandling.processing.streaming.segmentin
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
-import org.axonframework.messaging.eventhandling.EventHandler;
-import org.axonframework.messaging.eventhandling.EventHandlerRegistry;
-import org.axonframework.messaging.eventhandling.EventHandlingComponent;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.replay.ResetContext;
-import org.axonframework.messaging.eventhandling.replay.ResetHandler;
-import org.axonframework.messaging.eventhandling.replay.ResetHandlerRegistry;
-import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventHandlingComponent;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.replay.ResetContext;
+import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
 
 import java.util.Optional;
 import java.util.Set;
@@ -97,29 +94,20 @@ public class SequenceOverridingEventHandlingComponent implements EventHandlingCo
     }
 
     @Override
-    public EventHandlerRegistry subscribe(@Nonnull QualifiedName name, @Nonnull EventHandler eventHandler) {
-        return delegate.subscribe(name, eventHandler);
-    }
-
-    @Override
-    public EventHandlerRegistry subscribe(@Nonnull Set<QualifiedName> names, @Nonnull EventHandler eventHandler) {
-        return delegate.subscribe(names, eventHandler);
-    }
-
-    @Override
-    public EventHandlerRegistry subscribe(@Nonnull EventHandlingComponent handlingComponent) {
-        return delegate.subscribe(handlingComponent);
+    public boolean supportsReset() {
+        return delegate.supportsReset();
     }
 
     @Nonnull
     @Override
-    public MessageStream.Empty<Message> handle(@Nonnull ResetContext resetContext, @Nonnull ProcessingContext context) {
+    public MessageStream.Empty<Message> handle(@Nonnull ResetContext resetContext,
+                                               @Nonnull ProcessingContext context) {
         return delegate.handle(resetContext, context);
     }
 
-    @Nonnull
     @Override
-    public ResetHandlerRegistry subscribe(@Nonnull ResetHandler resetHandler) {
-        return delegate.subscribe(resetHandler);
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeWrapperOf(delegate);
+        descriptor.describeProperty("sequencingPolicy", sequencingPolicy);
     }
 }

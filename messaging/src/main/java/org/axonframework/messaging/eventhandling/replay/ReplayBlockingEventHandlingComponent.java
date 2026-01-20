@@ -19,18 +19,14 @@ package org.axonframework.messaging.eventhandling.replay;
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
-import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.DelegatingEventHandlingComponent;
-import org.axonframework.messaging.eventhandling.EventHandler;
-import org.axonframework.messaging.eventhandling.EventHandlerRegistry;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -42,21 +38,27 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * The {@link #supportsReset()} method returns {@code true} only if at least one {@link ResetHandler} has been
  * registered through {@link #subscribe(ResetHandler)}.
  *
+ * @param <E> the delegate {@link EventHandlingComponent} and {@link ResetHandlerRegistry} implementation
  * @author Mateusz Nowak
  * @see ReplayToken#isReplay(TrackingToken)
- * @since 5.0.0
+ * @since 5.1.0
  */
-public class ReplayBlockingEventHandlingComponent extends DelegatingEventHandlingComponent {
+public class ReplayBlockingEventHandlingComponent<E extends EventHandlingComponent & ResetHandlerRegistry<?>>
+        extends DelegatingEventHandlingComponent
+        implements ResetHandlerRegistry<ReplayBlockingEventHandlingComponent<E>> {
 
     private final AtomicBoolean hasResetHandler = new AtomicBoolean(false);
 
+    private final E delegateComponentAndRegistry;
+
     /**
-     * Constructs a {@link ReplayBlockingEventHandlingComponent} that wraps the given {@code delegate}.
+     * Constructs a {@code ReplayBlockingEventHandlingComponent} that wraps the given {@code delegate}.
      *
      * @param delegate The {@link EventHandlingComponent} to delegate calls to.
      */
-    public ReplayBlockingEventHandlingComponent(@Nonnull EventHandlingComponent delegate) {
+    public ReplayBlockingEventHandlingComponent(@Nonnull E delegate) {
         super(delegate);
+        this.delegateComponentAndRegistry = delegate;
     }
 
     /**
@@ -79,25 +81,6 @@ public class ReplayBlockingEventHandlingComponent extends DelegatingEventHandlin
         return super.handle(event, context);
     }
 
-    @Override
-    public ReplayBlockingEventHandlingComponent subscribe(@Nonnull EventHandlingComponent handlingComponent) {
-        super.subscribe(handlingComponent);
-        return this;
-    }
-
-    @Override
-    public ReplayBlockingEventHandlingComponent subscribe(@Nonnull Set<QualifiedName> names,
-                                                          @Nonnull EventHandler eventHandler) {
-        super.subscribe(names, eventHandler);
-        return this;
-    }
-
-    @Override
-    public DelegatingEventHandlingComponent subscribe(@Nonnull QualifiedName name, @Nonnull EventHandler eventHandler) {
-        super.subscribe(name, eventHandler);
-        return this;
-    }
-
     /**
      * Subscribes a {@link ResetHandler} and tracks that at least one reset handler has been registered.
      * <p>
@@ -108,9 +91,9 @@ public class ReplayBlockingEventHandlingComponent extends DelegatingEventHandlin
      */
     @Nonnull
     @Override
-    public ReplayBlockingEventHandlingComponent subscribe(@Nonnull ResetHandler resetHandler) {
+    public ReplayBlockingEventHandlingComponent<E> subscribe(@Nonnull ResetHandler resetHandler) {
         hasResetHandler.set(true);
-        super.subscribe(resetHandler);
+        delegateComponentAndRegistry.subscribe(resetHandler);
         return this;
     }
 

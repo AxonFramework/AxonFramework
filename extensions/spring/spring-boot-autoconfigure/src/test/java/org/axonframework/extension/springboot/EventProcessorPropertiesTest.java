@@ -16,6 +16,7 @@
 
 package org.axonframework.extension.springboot;
 
+import org.axonframework.extension.spring.config.EventProcessorSettings;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -28,88 +29,113 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * Test class validating how the
+ * {@link org.axonframework.extension.springboot.autoconfig.EventProcessingAutoConfiguration} class constructs an
+ * {@link EventProcessorSettings.MapWrapper} based on the properties set by the {@link EventProcessorSettings}.
+ *
+ * @author Simon Zambrovski
+ * @author Steven van Beelen
+ */
 class EventProcessorPropertiesTest {
 
-    @SpringBootTest(classes = MyContext.class)
+    @SpringBootTest(
+            classes = MyContext.class,
+            properties = {
+                    "axon.axonserver.enabled=false"
+            }
+    )
     @Nested
     class LoadDefaultProperties {
 
         @Autowired(required = false)
-        private EventProcessorProperties eventProcessorProperties;
+        private EventProcessorSettings.MapWrapper eventProcessorProperties;
 
         @Test
-        void noProcessors() {
+        void constructedMapWrapperOnlyContainsDefaultProperties() {
             assertThat(eventProcessorProperties).isNotNull();
-            assertThat(eventProcessorProperties.getProcessors()).isEmpty();
+            EventProcessorSettings defaultSettings = eventProcessorProperties.settings()
+                                                                             .get(EventProcessorSettings.DEFAULT);
+            assertThat(defaultSettings).isNotNull();
+            assertThat(defaultSettings.processorMode()).isEqualTo(EventProcessorSettings.ProcessorMode.POOLED);
         }
     }
 
-    @SpringBootTest(classes = MyContext.class, properties = {
-            "axon.eventhandling.processors[this.is.a.package].mode=subscribing"
-    })
+    @SpringBootTest(
+            classes = MyContext.class,
+            properties = {
+                    "axon.axonserver.enabled=false",
+                    "axon.eventhandling.processors[this.is.a.package].mode=subscribing"
+            }
+    )
     @Nested
     class LoadPropertiesForPackageBasedBinding {
 
         @Autowired(required = false)
-        private EventProcessorProperties eventProcessorProperties;
+        private EventProcessorSettings.MapWrapper eventProcessorProperties;
 
         @Test
-        void noProcessors() {
+        void constructedMapWrapperContainsDefaultAndCustomProperties() {
             assertThat(eventProcessorProperties).isNotNull();
-            assertThat(eventProcessorProperties.getProcessors()).containsKeys("this.is.a.package");
-            assertThat(eventProcessorProperties.getProcessors().get("this.is.a.package").getMode()).isEqualTo(
-                    EventProcessorProperties.Mode.SUBSCRIBING
-            );
+            assertThat(eventProcessorProperties.settings()).containsKeys("this.is.a.package");
+            assertThat(eventProcessorProperties.settings().get("this.is.a.package").processorMode())
+                    .isEqualTo(EventProcessorSettings.ProcessorMode.SUBSCRIBING);
         }
     }
 
-
-    @SpringBootTest(classes = MyContext.class, properties = {
-            "axon.eventhandling.processors.foo.batch-size=1",
-            "axon.eventhandling.processors.foo.initial-segment-count=2",
-            "axon.eventhandling.processors.foo.mode=subscribing",
-            "axon.eventhandling.processors.foo.sequencing-policy=sp",
-            "axon.eventhandling.processors.foo.source=source",
-            "axon.eventhandling.processors.foo.thread-count=3",
-            "axon.eventhandling.processors.foo.token-claim-interval=4",
-            "axon.eventhandling.processors.foo.token-claim-interval-time-unit=SECONDS",
-            "axon.eventhandling.processors.bar.initial-segment-count=77",
-    })
+    @SpringBootTest(
+            classes = MyContext.class,
+            properties = {
+                    "axon.axonserver.enabled=false",
+                    "axon.eventhandling.processors.foo.batch-size=1",
+                    "axon.eventhandling.processors.foo.initial-segment-count=2",
+                    "axon.eventhandling.processors.foo.mode=pooled",
+                    "axon.eventhandling.processors.foo.sequencing-policy=sp",
+                    "axon.eventhandling.processors.foo.source=source",
+                    "axon.eventhandling.processors.foo.thread-count=3",
+                    "axon.eventhandling.processors.foo.token-claim-interval=4",
+                    "axon.eventhandling.processors.foo.token-claim-interval-time-unit=SECONDS",
+                    "axon.eventhandling.processors.bar.initial-segment-count=77",
+            }
+    )
     @Nested
     class ConfigureProcessorsWithProperties {
 
         @Autowired(required = false)
-        private EventProcessorProperties eventProcessorProperties;
+        private EventProcessorSettings.MapWrapper eventProcessorProperties;
 
         @Test
         void processorsConfigured() {
             assertThat(eventProcessorProperties).isNotNull();
-            assertThat(eventProcessorProperties.getProcessors()).containsKeys("foo", "bar");
-            var foo = eventProcessorProperties.getProcessors().get("foo");
-            assertThat(foo).isNotNull();
-            assertThat(foo.batchSize()).isEqualTo(1);
-            assertThat(foo.initialSegmentCount()).isEqualTo(2);
-            assertThat(foo.getMode()).isEqualTo(EventProcessorProperties.Mode.SUBSCRIBING);
-            assertThat(foo.sequencingPolicy()).isEqualTo("sp");
-            assertThat(foo.source()).isEqualTo("source");
-            assertThat(foo.threadCount()).isEqualTo(3);
-            assertThat(foo.getTokenClaimInterval()).isEqualTo(4);
-            assertThat(foo.getTokenClaimIntervalTimeUnit()).isEqualTo(TimeUnit.SECONDS);
+            assertThat(eventProcessorProperties.settings()).containsKeys("foo", "bar");
+            EventProcessorSettings fooSettings = eventProcessorProperties.settings().get("foo");
+            assertThat(fooSettings).isInstanceOf(EventProcessorProperties.ProcessorSettings.class);
+            EventProcessorProperties.ProcessorSettings castedFooSettings =
+                    (EventProcessorProperties.ProcessorSettings) fooSettings;
+            assertThat(castedFooSettings).isNotNull();
+            assertThat(castedFooSettings.batchSize()).isEqualTo(1);
+            assertThat(castedFooSettings.initialSegmentCount()).isEqualTo(2);
+            assertThat(castedFooSettings.processorMode()).isEqualTo(EventProcessorSettings.ProcessorMode.POOLED);
+            assertThat(castedFooSettings.sequencingPolicy()).isEqualTo("sp");
+            assertThat(castedFooSettings.source()).isEqualTo("source");
+            assertThat(castedFooSettings.threadCount()).isEqualTo(3);
+            assertThat(castedFooSettings.getTokenClaimInterval()).isEqualTo(4);
+            assertThat(castedFooSettings.getTokenClaimIntervalTimeUnit()).isEqualTo(TimeUnit.SECONDS);
 
-            var defaultSettings = new EventProcessorProperties.ProcessorSettings();
-            var bar = eventProcessorProperties.getProcessors().get("bar");
-            assertThat(bar).isNotNull();
-            assertThat(bar.batchSize()).isEqualTo(defaultSettings.batchSize());
-
-            assertThat(bar.initialSegmentCount()).isEqualTo(77); // the only modified value
-
-            assertThat(bar.getMode()).isEqualTo(defaultSettings.getMode());
-            assertThat(bar.sequencingPolicy()).isEqualTo(defaultSettings.sequencingPolicy());
-            assertThat(bar.source()).isEqualTo(defaultSettings.source());
-            assertThat(bar.threadCount()).isEqualTo(defaultSettings.threadCount());
-            assertThat(bar.getTokenClaimInterval()).isEqualTo(defaultSettings.getTokenClaimInterval());
-            assertThat(bar.getTokenClaimIntervalTimeUnit()).isEqualTo(defaultSettings.getTokenClaimIntervalTimeUnit());
-
+            EventProcessorProperties.ProcessorSettings defaultSettings = new EventProcessorProperties.ProcessorSettings();
+            EventProcessorSettings barSettings = eventProcessorProperties.settings().get("bar");
+            assertThat(barSettings).isNotNull();
+            assertThat(barSettings).isInstanceOf(EventProcessorProperties.ProcessorSettings.class);
+            EventProcessorProperties.ProcessorSettings castedBarSettings =
+                    (EventProcessorProperties.ProcessorSettings) barSettings;
+            assertThat(castedBarSettings.batchSize()).isEqualTo(defaultSettings.batchSize());
+            assertThat(castedBarSettings.initialSegmentCount()).isEqualTo(77); // the only modified value
+            assertThat(castedBarSettings.getMode()).isEqualTo(defaultSettings.getMode());
+            assertThat(castedBarSettings.sequencingPolicy()).isEqualTo(defaultSettings.sequencingPolicy());
+            assertThat(castedBarSettings.source()).isEqualTo(defaultSettings.source());
+            assertThat(castedBarSettings.threadCount()).isEqualTo(defaultSettings.threadCount());
+            assertThat(castedBarSettings.getTokenClaimInterval()).isEqualTo(defaultSettings.getTokenClaimInterval());
+            assertThat(castedBarSettings.getTokenClaimIntervalTimeUnit()).isEqualTo(defaultSettings.getTokenClaimIntervalTimeUnit());
         }
     }
 

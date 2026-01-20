@@ -687,48 +687,5 @@
                 </plugins>
             </build>
         </profile>
-
-        <profile>
-            <id>javadoc</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>${maven-javadoc.version}</version>
-                        <executions>
-                            <execution>
-                                <id>attach-javadoc</id>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>jar</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                        <configuration>
-                            <doclint>none</doclint>
-                            <!-- These parameters are in preparation for resolution of this issue: -->
-                            <!-- https://bugs.openjdk.java.net/browse/JDK-8068562 -->
-                            <tags>
-                                <tag>
-                                    <name>apiNote</name>
-                                    <placement>a</placement>
-                                    <head>API Note:</head>
-                                </tag>
-                                <tag>
-                                    <name>implSpec</name>
-                                    <placement>a</placement>
-                                    <head>Implementation Requirements:</head>
-                                </tag>
-                                <tag>
-                                    <name>implNote</name>
-                                    <placement>a</placement>
-                                    <head>Implementation Note:</head>
-                                </tag>
-                            </tags>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
     </profiles>
 </project>

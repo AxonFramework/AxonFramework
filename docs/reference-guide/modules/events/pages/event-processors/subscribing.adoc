@@ -46,18 +46,25 @@ ____
 [[configuring]]
 == Configuring
 
-To configure a Subscribing Event Processor you have roughly two approaches:
+To configure a Subscribing Event Processor you have three main approaches:
 
-1. <<declarative_config_plain,Declarative configuration>>
-2. <<autodetected_config_spring_properties_plain,Autodetected configuration>>, like Spring
+1. <<declarative_config_plain,Declarative configuration>> - Using the Configuration API directly
+2. <<bean_based_config_spring,Bean-based configuration>> - Using `ProcessorDefinition` beans in Spring Boot
+3. <<autodetected_config_spring_properties_plain,Properties-based configuration>> - Using Spring Boot properties files
 
-Both solutions have examples drafted below, showing how to configure the "example-processor" with a specific event source.
+The examples below show how to configure the "example-processor" with a specific event source.
 For generic configuration options for any Event Processor, we refer to the xref:event-processors/index.adoc#general_processor_configuration[general processor configuration section].
 
 [#declarative_config_plain]
-=== Declarative configuration
+=== Configuration approaches
 
-When using Axon's configuration API, you should invoke the `MessagingConfigurer#eventProcessing(Consumer<EventProcessingConfigurer>)` operation.
+[tabs]
+====
+Configuration API::
++
+--
+
+When using Axon's configuration API directly, you should invoke the `MessagingConfigurer#eventProcessing(Consumer<EventProcessingConfigurer>)` operation.
 The `EventProcessingConfigurer` lambda guides users towards:
 
 1. First, selecting the Event Processor type,
@@ -99,9 +106,109 @@ public class AxonConfig {
     }
 }
 ----
+--
+
+Spring Boot::
++
+--
+
+[#bean_based_config_spring]
+When using Spring Boot, you can define `ProcessorDefinition` beans to configure subscribing event processors.
+This approach provides programmatic control over which event handlers are assigned to each processor and how each processor is configured.
+
+[source,java]
+----
+import org.axonframework.extension.spring.config.ProcessorDefinition;
+import org.axonframework.messaging.eventhandling.EventBus;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class EventProcessorConfig {
+
+    @Bean
+    public ProcessorDefinition exampleProcessorDefinition(EventBus eventBus) {
+        return ProcessorDefinition.subscribingProcessor("example-processor")
+                .assigningHandlers(descriptor ->
+                    descriptor.beanType().getPackageName()
+                              .equals("com.example.eventhandlers"))
+                .withConfiguration(config -> config
+                    .eventSource(eventBus));
+    }
+}
+----
+
+The `assigningHandlers` method receives an `EventHandlerDescriptor` that provides access to:
+
+* `beanName()` - The Spring bean name
+* `beanType()` - The event handler class
+* `beanDefinition()` - The Spring bean definition
+* `component()` - The component builder
+
+This allows flexible handler selection based on naming conventions, packages, types, or other criteria.
+
+**Handler selection examples:**
+
+[source,java]
+----
+// By bean name prefix
+.assigningHandlers(d -> d.beanName().startsWith("order"))
+
+// By package name
+.assigningHandlers(d -> d.beanType().getPackageName()
+                        .startsWith("com.example.orders"))
+
+// By custom logic
+.assigningHandlers(d -> d.beanName().contains("Subscriber"))
+----
+
+**Advanced configuration with interceptors and error handling:**
+
+[source,java]
+----
+import org.axonframework.extension.spring.config.ProcessorDefinition;
+import org.axonframework.messaging.eventhandling.EventBus;
+import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.processing.error.PropagatingErrorHandler;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class EventProcessorConfig {
+
+    @Bean
+    public ProcessorDefinition advancedProcessorDefinition(
+            EventBus eventBus,
+            MessageHandlerInterceptor<? super EventMessage> interceptor) {
+        return ProcessorDefinition.subscribingProcessor("advanced-processor")
+                .assigningHandlers(descriptor ->
+                    descriptor.beanName().startsWith("advanced"))
+                .withConfiguration(config -> config
+                    .eventSource(eventBus)
+                    .withInterceptor(interceptor)
+                    .errorHandler(PropagatingErrorHandler.INSTANCE));
+    }
+}
+----
+
+[IMPORTANT]
+====
+**Configuration precedence and handler assignment**
+
+When using multiple configuration approaches:
+
+1. `ProcessorDefinition` beans take precedence over properties-based configuration for assigned handlers
+2. If a handler matches multiple `ProcessorDefinition` selectors, an `AxonConfigurationException` is thrown
+3. Handlers not matched by any `ProcessorDefinition` are assigned to a processor named after their package
+
+The `eventSource()` configuration is **required** for subscribing processors. Without it, the processor cannot subscribe to events.
+====
+--
+====
 
 [#autodetected_config_spring_properties_plain]
-==== Autodetected configuration - Spring Boot properties file
+=== Properties-based configuration - Spring Boot properties file
 
 A properties file allows the configuration of several fields for the Subscribing Event Processor.
 If more flexibility is required, like concretely defining the event handling components to attach, we recommend use of the <<declarative_config_plain,declarative configuration>> instead.
@@ -159,7 +266,7 @@ The state of the stream is maintained in Axon Server.
 
 === Configuration
 
-For a specific Event Processor to be a Subscribing instance using a persistent stream, the <<declarative_config_plain,declarative>> or <<autodetected_config_spring_properties_plain,autodetected>> configuration can be used.
+For a specific Event Processor to be a Subscribing instance using a persistent stream, you can use the Configuration API, Spring Boot with `ProcessorDefinition`, or Spring Boot properties files.
 The event source for the event processor must be a `PersistentStreamMessageSource`.
 
 Each persistent stream must be identified by a unique name within your Axon Server environment.
@@ -195,8 +302,13 @@ This may be `PropertySequencingPolicy` to specify an expression for another payl
 In this case add the serialization type, payload type, expression and fallback policy parameters for the alternative payload type.
 
 [#declarative_config_persistent]
-==== Declarative configuration
+==== Configuration approaches for persistent streams
 
+[tabs]
+====
+Configuration API::
++
+--
 [source,java]
 ----
 import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
@@ -266,9 +378,76 @@ public class AxonConfig {
     }
 }
 ----
+--
+
+Spring Boot::
++
+--
+
+When using Spring Boot, you can define `ProcessorDefinition` beans along with a `PersistentStreamMessageSource` bean:
+
+[source,java]
+----
+import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
+import org.axonframework.axonserver.connector.event.axon.PersistentStreamMessageSource;
+import org.axonframework.axonserver.connector.event.axon.PersistentStreamSequencingPolicyProvider;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.extension.spring.config.ProcessorDefinition;
+import org.springframework.context.annotation.Bean;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Executors;
+
+@org.springframework.context.annotation.Configuration
+public class EventProcessorConfig {
+
+    @Bean
+    public PersistentStreamMessageSource persistentStreamSource(Configuration configuration) {
+        String streamName = "example-persistent-stream-name";
+        int segmentCount = 4;
+        // Not required for sequential per aggregate policy.
+        // See PersistentStreamSequencingPolicyProvider JavaDoc for other policies.
+        List<String> sequencingPolicyParameters = new ArrayList<>();
+        // Optional parameter to filter events on Axon Server's side.
+        String filter = null;
+        int batchsize = 1024;
+
+        PersistentStreamProperties persistentStreamProperties = new PersistentStreamProperties(
+                streamName,
+                segmentCount,
+                PersistentStreamSequencingPolicyProvider.SEQUENTIAL_PER_AGGREGATE_POLICY,
+                sequencingPolicyParameters,
+                PersistentStreamProperties.HEAD_POSITION,
+                filter
+        );
+
+        return new PersistentStreamMessageSource(
+                streamName,
+                configuration,
+                persistentStreamProperties,
+                Executors.newScheduledThreadPool(4),
+                batchsize
+        );
+    }
+
+    @Bean
+    public ProcessorDefinition persistentStreamProcessor(
+            PersistentStreamMessageSource persistentStreamSource) {
+        return ProcessorDefinition.subscribingProcessor("persistent-stream-processor")
+                .assigningHandlers(descriptor ->
+                    descriptor.beanType().getPackageName()
+                              .equals("com.example.streaming"))
+                .withConfiguration(config -> config
+                    .eventSource(persistentStreamSource));
+    }
+}
+----
+--
+====
 
 [#autodetected_config_spring_properties_persistent]
-==== Autodetected configuration - Spring Boot properties file
+==== Properties-based configuration - Spring Boot properties file
 
 A properties file allows the configuration of some fields on an Event Processor.
 Do note that the Java configuration provides more degrees of freedom.

@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.core.unitofwork;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.FutureUtils;
 
 import java.util.concurrent.CompletableFuture;
@@ -91,7 +92,7 @@ public interface ProcessingLifecycle {
      *               {@link CompletableFuture} for chaining purposes and to carry the action's result.
      * @return This {@link ProcessingLifecycle} instance for fluent interfacing.
      */
-    ProcessingLifecycle on(Phase phase, Function<ProcessingContext, CompletableFuture<?>> action);
+    ProcessingLifecycle on(@Nonnull Phase phase, @Nonnull Function<ProcessingContext, CompletableFuture<?>> action);
 
     /**
      * Registers the provided {@code action} to be executed in the given {@code phase}.
@@ -102,7 +103,7 @@ public interface ProcessingLifecycle {
      * @param action A {@link Consumer} that's given the active {@link ProcessingContext} to perform its action.
      * @return This {@link ProcessingLifecycle} instance for fluent interfacing.
      */
-    default ProcessingLifecycle runOn(Phase phase, Consumer<ProcessingContext> action) {
+    default ProcessingLifecycle runOn(@Nonnull Phase phase, @Nonnull Consumer<ProcessingContext> action) {
         return on(phase, c -> {
             action.accept(c);
             return FutureUtils.emptyCompletedFuture();
@@ -119,7 +120,7 @@ public interface ProcessingLifecycle {
      *               {@link CompletableFuture} for chaining purposes and to carry the action's result.
      * @return This {@link ProcessingLifecycle} instance for fluent interfacing.
      */
-    default ProcessingLifecycle onPreInvocation(Function<ProcessingContext, CompletableFuture<?>> action) {
+    default ProcessingLifecycle onPreInvocation(@Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
         return on(DefaultPhases.PRE_INVOCATION, action);
     }
 
@@ -132,7 +133,7 @@ public interface ProcessingLifecycle {
      * @param action A {@link Consumer} that's given the active {@link ProcessingContext} to perform its action.
      * @return This {@link ProcessingLifecycle} instance for fluent interfacing.
      */
-    default ProcessingLifecycle runOnPreInvocation(Consumer<ProcessingContext> action) {
+    default ProcessingLifecycle runOnPreInvocation(@Nonnull Consumer<ProcessingContext> action) {
         return runOn(DefaultPhases.PRE_INVOCATION, action);
     }
 
@@ -145,7 +146,7 @@ public interface ProcessingLifecycle {
      *               {@link CompletableFuture} for chaining purposes and to carry the action's result.
      * @return This {@link ProcessingLifecycle} instance for fluent interfacing.
      */
-    default ProcessingLifecycle onInvocation(Function<ProcessingContext, CompletableFuture<?>> action) {
+    default ProcessingLifecycle onInvocation(@Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
         return on(DefaultPhases.INVOCATION, action);
     }
 
@@ -157,7 +158,7 @@ public interface ProcessingLifecycle {
      * @param action A {@link Consumer} that's given the active {@link ProcessingContext} to perform its action.
      * @return This {@link ProcessingLifecycle} instance for fluent interfacing.
      */
-    default ProcessingLifecycle runOnInvocation(Consumer<ProcessingContext> action) {
+    default ProcessingLifecycle runOnInvocation(@Nonnull Consumer<ProcessingContext> action) {
         return runOn(DefaultPhases.INVOCATION, action);
     }
 
@@ -171,7 +172,7 @@ public interface ProcessingLifecycle {
      *               {@link CompletableFuture} for chaining purposes and to carry the action's result.
      * @return This {@link ProcessingLifecycle} instance for fluent interfacing.
      */
-    default ProcessingLifecycle onPostInvocation(Function<ProcessingContext, CompletableFuture<?>> action) {
+    default ProcessingLifecycle onPostInvocation(@Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
         return on(DefaultPhases.POST_INVOCATION, action);
     }
 
@@ -184,7 +185,7 @@ public interface ProcessingLifecycle {
      * @param action A {@link Consumer} that's given the active {@link ProcessingContext} to perform its action.
      * @return This {@link ProcessingLifecycle} instance for fluent interfacing.
      */
-    default ProcessingLifecycle runOnPostInvocation(Consumer<ProcessingContext> action) {
+    default ProcessingLifecycle runOnPostInvocation(@Nonnull Consumer<ProcessingContext> action) {
         return runOn(DefaultPhases.POST_INVOCATION, action);
     }
 
@@ -198,7 +199,7 @@ public interface ProcessingLifecycle {
      *               {@link CompletableFuture} for chaining purposes and to carry the action's result.
      * @return This {@link ProcessingLifecycle} instance for fluent interfacing.
      */
-    default ProcessingLifecycle onPrepareCommit(Function<ProcessingContext, CompletableFuture<?>> action) {
+    default ProcessingLifecycle onPrepareCommit(@Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
         return on(DefaultPhases.PREPARE_COMMIT, action);
     }
 
@@ -211,7 +212,7 @@ public interface ProcessingLifecycle {
      * @param action A {@link Consumer} that's given the active {@link ProcessingContext} to perform its action.
      * @return This {@link ProcessingLifecycle} instance for fluent interfacing.
      */
-    default ProcessingLifecycle runOnPrepareCommit(Consumer<ProcessingContext> action) {
+    default ProcessingLifecycle runOnPrepareCommit(@Nonnull Consumer<ProcessingContext> action) {
         return runOn(DefaultPhases.PREPARE_COMMIT, action);
     }
 
@@ -224,7 +225,7 @@ public interface ProcessingLifecycle {
      *               {@link CompletableFuture} for chaining purposes and to carry the action's result.
      * @return This {@link ProcessingLifecycle} instance for fluent interfacing.
      */
-    default ProcessingLifecycle onCommit(Function<ProcessingContext, CompletableFuture<?>> action) {
+    default ProcessingLifecycle onCommit(@Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
         return on(DefaultPhases.COMMIT, action);
     }
 
@@ -236,7 +237,7 @@ public interface ProcessingLifecycle {
      * @param action A {@link Consumer} that's given the active {@link ProcessingContext} to perform its action.
      * @return This {@link ProcessingLifecycle} instance for fluent interfacing.
      */
-    default ProcessingLifecycle runOnCommit(Consumer<ProcessingContext> action) {
+    default ProcessingLifecycle runOnCommit(@Nonnull Consumer<ProcessingContext> action) {
         return runOn(DefaultPhases.COMMIT, action);
     }
 
@@ -250,7 +251,7 @@ public interface ProcessingLifecycle {
      *               {@link CompletableFuture} for chaining purposes and to carry the action's result.
      * @return This {@link ProcessingLifecycle} instance for fluent interfacing.
      */
-    default ProcessingLifecycle onAfterCommit(Function<ProcessingContext, CompletableFuture<?>> action) {
+    default ProcessingLifecycle onAfterCommit(@Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
         return on(DefaultPhases.AFTER_COMMIT, action);
     }
 
@@ -263,7 +264,7 @@ public interface ProcessingLifecycle {
      * @param action A {@link Consumer} that's given the active {@link ProcessingContext} to perform its action.
      * @return This {@link ProcessingLifecycle} instance for fluent interfacing.
      */
-    default ProcessingLifecycle runOnAfterCommit(Consumer<ProcessingContext> action) {
+    default ProcessingLifecycle runOnAfterCommit(@Nonnull Consumer<ProcessingContext> action) {
         return runOn(DefaultPhases.AFTER_COMMIT, action);
     }
 
@@ -279,7 +280,7 @@ public interface ProcessingLifecycle {
      *               execution.
      * @return This {@link ProcessingLifecycle} instance for fluent interfacing.
      */
-    ProcessingLifecycle onError(ErrorHandler action);
+    ProcessingLifecycle onError(@Nonnull ErrorHandler action);
 
     /**
      * Registers the provided {@code action} to be executed when this {@link ProcessingLifecycle} completes <b>all</b>
@@ -288,7 +289,7 @@ public interface ProcessingLifecycle {
      * @param action A {@link Consumer} that's given the active {@link ProcessingContext} to perform its action.
      * @return This {@link ProcessingLifecycle} instance for fluent interfacing.
      */
-    ProcessingLifecycle whenComplete(Consumer<ProcessingContext> action);
+    ProcessingLifecycle whenComplete(@Nonnull Consumer<ProcessingContext> action);
 
     /**
      * Registers the provided {@code action} to be executed {@link #onError(ErrorHandler) on error} of <b>and</b>
@@ -300,7 +301,7 @@ public interface ProcessingLifecycle {
      * @param action A {@link Consumer} that's given the active {@link ProcessingContext} to perform its action.
      * @return This {@link ProcessingLifecycle} instance for fluent interfacing.
      */
-    default ProcessingLifecycle doFinally(Consumer<ProcessingContext> action) {
+    default ProcessingLifecycle doFinally(@Nonnull Consumer<ProcessingContext> action) {
         onError((c, p, e) -> action.accept(c));
         whenComplete(action);
         return this;
@@ -332,7 +333,7 @@ public interface ProcessingLifecycle {
          *                          to fail.
          * @param error             The exception or error describing the cause.
          */
-        void handle(ProcessingContext processingContext, Phase phase, Throwable error);
+        void handle(@Nonnull ProcessingContext processingContext, @Nonnull Phase phase, @Nonnull Throwable error);
     }
 
     /**
@@ -368,7 +369,7 @@ public interface ProcessingLifecycle {
          * @return {@code true} if the {@link Phase#order()} of {@code this Phase} is <b>smaller</b> than the order of
          * the {@code other Phase}.
          */
-        default boolean isBefore(Phase other) {
+        default boolean isBefore(@Nonnull Phase other) {
             return this.order() < other.order();
         }
 
@@ -381,7 +382,7 @@ public interface ProcessingLifecycle {
          * @return {@code true} if the {@link Phase#order()} of {@code this Phase} is <b>larger</b> than the order of
          * the {@code other Phase}.
          */
-        default boolean isAfter(Phase other) {
+        default boolean isAfter(@Nonnull Phase other) {
             return this.order() > other.order();
         }
     }

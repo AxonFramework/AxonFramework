@@ -97,6 +97,7 @@ Spring Boot users which rely on Axon Server do not have to define anything.
 The auto-configuration will automatically create a `AxonServerEventScheduler` for them.
 
 Spring Boot users who want to use the JobRunr event scheduler can add https://mvnrepository.com/artifact/org.jobrunr/jobrunr-spring-boot-starter[`jobrunr-spring-boot-starter`] as a dependency.
+When taking the Spring Boot route with JobRunr, be sure to set the `jobrunr.background-job-server.enabled` property to `true` to ensure scheduled events are published as expected.
 In addition, an `EventScheduler` bean configuration needs to be added.
 This should look like:
 

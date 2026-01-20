@@ -20,19 +20,22 @@ import org.axonframework.conversion.ConversionException;
 import org.axonframework.conversion.Converter;
 import org.axonframework.conversion.PassThroughConverter;
 import org.axonframework.conversion.json.JacksonConverter;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.annotation.AnnotationMessageTypeResolver;
+import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.eventhandling.annotation.AnnotatedEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.annotation.EventHandler;
+import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.eventhandling.replay.annotation.ReplayContext;
-import org.axonframework.messaging.core.MessageType;
-import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -45,8 +48,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test to verify that the {@link ReplayContext} parameter annotation correctly resolves
- * the reset context from a {@link ReplayToken}.
+ * Test to verify that the {@link ReplayContext} parameter annotation correctly resolves the reset context from a
+ * {@link ReplayToken}.
  * <p>
  * Tests validate:
  * <ul>
@@ -68,7 +71,10 @@ class ReplayContextParameterResolverFactoryTest {
         handler = new SomeHandler();
         testSubject = new AnnotatedEventHandlingComponent<>(
                 handler,
-                ClasspathParameterResolverFactory.forClass(SomeHandler.class)
+                ClasspathParameterResolverFactory.forClass(SomeHandler.class),
+                ClasspathHandlerDefinition.forClass(SomeHandler.class),
+                new AnnotationMessageTypeResolver(),
+                new DelegatingEventConverter(PassThroughConverter.INSTANCE)
         );
     }
 
@@ -120,6 +126,7 @@ class ReplayContextParameterResolverFactoryTest {
         return new GenericEventMessage(new MessageType(Long.class), value);
     }
 
+    @SuppressWarnings("SameParameterValue")
     private TrackingToken createTrackingToken(Long position, boolean replay) {
         if (replay) {
             return ReplayToken.createReplayToken(
@@ -173,7 +180,10 @@ class ReplayContextParameterResolverFactoryTest {
             var handler = new SomeHandler();
             var testSubject = new AnnotatedEventHandlingComponent<>(
                     handler,
-                    ClasspathParameterResolverFactory.forClass(SomeHandler.class)
+                    ClasspathParameterResolverFactory.forClass(SomeHandler.class),
+                    ClasspathHandlerDefinition.forClass(SomeHandler.class),
+                    new AnnotationMessageTypeResolver(),
+                    new DelegatingEventConverter(PassThroughConverter.INSTANCE)
             );
             var event = new GenericEventMessage(new MessageType(Long.class), 2L);
             var replayToken = ReplayToken.createReplayToken(
@@ -188,8 +198,8 @@ class ReplayContextParameterResolverFactoryTest {
             // then
             assertThat(handler.receivedLongs).containsExactly(2L);
             assertThat(handler.receivedResetContexts).hasSize(1);
-            assertThat(handler.receivedResetContexts.get(0)).isNotNull();
-            assertThat(handler.receivedResetContexts.get(0).sequences()).containsExactly(2L, 3L);
+            assertThat(handler.receivedResetContexts.getFirst()).isNotNull();
+            assertThat(handler.receivedResetContexts.getFirst().sequences()).containsExactly(2L, 3L);
         }
 
         @Test

@@ -16,14 +16,15 @@
 
 package org.axonframework.integrationtests.testsuite.student;
 
-import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
-import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
-import org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.eventhandling.EventHandlingComponent;
+import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
+import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
+import org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.test.util.MessageMonitorReport;
 import org.axonframework.test.util.RecordingMessageMonitor;
 import org.junit.jupiter.api.*;
@@ -64,13 +65,13 @@ public class MonitoringPooledEventProcessingReportIT extends AbstractStudentIT {
 
         storeEvent(UnknownEvent.class, new UnknownEvent(id), Metadata.with("id", id));
 
-        await().untilAsserted(() -> {
-            assertThat(reportedMessages.ignoredReports().stream()
-                                       .filter(it -> it.message().metadata().get("id").equals(id))
-                                       .findFirst())
-                    .as("UnknownEvent(%s) should have been reported as ignored, but wasn't.", id)
-                    .isNotEmpty();
-        });
+        await().untilAsserted(
+                () -> assertThat(reportedMessages.ignoredReports().stream()
+                                                 .filter(it -> it.message().metadata().get("id").equals(id))
+                                                 .findFirst())
+                        .as("UnknownEvent(%s) should have been reported as ignored, but wasn't.", id)
+                        .isNotEmpty()
+        );
     }
 
     @Test
@@ -94,13 +95,13 @@ public class MonitoringPooledEventProcessingReportIT extends AbstractStudentIT {
 
         storeEvent(KnownEvent.class, new KnownEvent(id), Metadata.with("id", id));
 
-        await().untilAsserted(() -> {
-            assertThat(reportedMessages.successReports().stream()
-                                       .filter(it -> it.message().metadata().get("id").equals(id))
-                                       .findFirst())
-                    .as("KnownEvent(%s) should have been reported as success, but wasn't.", id)
-                    .isNotEmpty();
-        });
+        await().untilAsserted(
+                () -> assertThat(reportedMessages.successReports().stream()
+                                                 .filter(it -> it.message().metadata().get("id").equals(id))
+                                                 .findFirst())
+                        .as("KnownEvent(%s) should have been reported as success, but wasn't.", id)
+                        .isNotEmpty()
+        );
     }
 
     @Override
@@ -108,31 +109,32 @@ public class MonitoringPooledEventProcessingReportIT extends AbstractStudentIT {
         // a noop setup that allows verification of ignored event
         configurer.messaging(mc -> mc
                 .registerMessageMonitor(c -> new RecordingMessageMonitor(reportedMessages))
-                .eventProcessing(ep -> ep.pooledStreaming(
-
-                        ps -> ps.processor(EventProcessorModule.pooledStreaming(NAME)
-                                                               .eventHandlingComponents(components -> components
-                                                                       .declarative(cfg -> new SimpleEventHandlingComponent(
-                                                                               SequentialPolicy.INSTANCE)
-                                                                               .subscribe(new QualifiedName(
-                                                                                                  KnownEvent.class),
-                                                                                          (event, context) -> {
-                                                                                              if ("ERROR".equals(event.metadata()
-                                                                                                                      .get("type"))) {
-                                                                                                  throw new RuntimeException(
-                                                                                                          "Failures are expected");
-                                                                                              }
-                                                                                              return MessageStream.empty();
-                                                                                          })
-                                                                       )
-
-                                                               )
-                                                               .customized((cfg, cust) -> cust
-                                                                       .eventCriteria((supportedTyped) -> EventCriteria.havingAnyTag())
-                                                               )
-
-                        )
-                ))
+                .eventProcessing(ep -> ep.pooledStreaming(ps -> {
+                    ps.processor(
+                            EventProcessorModule.pooledStreaming(NAME).eventHandlingComponents(
+                                                        components -> {
+                                                            SimpleEventHandlingComponent handlingComponent = SimpleEventHandlingComponent.create(
+                                                                    "test",
+                                                                    SequentialPolicy.INSTANCE
+                                                            );
+                                                            handlingComponent.subscribe(
+                                                                    new QualifiedName(KnownEvent.class),
+                                                                    (event, context) -> {
+                                                                        if ("ERROR".equals(event.metadata().get("type"))) {
+                                                                            throw new RuntimeException("Failures are expected");
+                                                                        }
+                                                                        return MessageStream.empty();
+                                                                    }
+                                                            );
+                                                            return components.declarative(cfg -> handlingComponent);
+                                                        }
+                                                )
+                                                .customized((cfg, customization) -> customization.eventCriteria(
+                                                        (supportedTyped) -> EventCriteria.havingAnyTag()
+                                                ))
+                    );
+                    return ps;
+                }))
         );
         return super.testSuiteConfigurer(configurer);
     }

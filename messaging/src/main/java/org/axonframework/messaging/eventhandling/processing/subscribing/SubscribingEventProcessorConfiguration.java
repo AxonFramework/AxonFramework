@@ -19,35 +19,29 @@ package org.axonframework.messaging.eventhandling.processing.subscribing;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.annotation.Internal;
-import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.messaging.core.MessageHandlerInterceptor;
+import org.axonframework.messaging.core.SubscribableEventSource;
+import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.axonframework.messaging.eventhandling.EventBus;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorConfiguration;
 import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorHandler;
 import org.axonframework.messaging.eventhandling.processing.errorhandling.PropagatingErrorHandler;
-import org.axonframework.messaging.eventhandling.tracing.DefaultEventProcessorSpanFactory;
-import org.axonframework.messaging.eventhandling.tracing.EventProcessorSpanFactory;
-import org.axonframework.messaging.core.MessageHandlerInterceptor;
-import org.axonframework.messaging.core.SubscribableEventSource;
-import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
-import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
-import org.axonframework.messaging.monitoring.MessageMonitor;
-import org.axonframework.messaging.monitoring.NoOpMessageMonitor;
-import org.axonframework.messaging.tracing.NoOpSpanFactory;
+
+import java.util.function.Consumer;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * Configuration class for a {@link SubscribingEventProcessor}.
  * <p>
- * {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a
- * {@link EventProcessorSpanFactory} is defaulted to a {@link DefaultEventProcessorSpanFactory} backed by a
- * {@link NoOpSpanFactory}, the {@link MessageMonitor} defaults to a
- * {@link NoOpMessageMonitor}, and the {@link UnitOfWorkFactory} defaults to the
- * {@link SimpleUnitOfWorkFactory}. The Event Processor
- * {@link SubscribableEventSource} is <b>hard requirements</b> and as such should be provided.
+ * {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler} and the {@link UnitOfWorkFactory} defaults to
+ * the {@link SimpleUnitOfWorkFactory}. The Event Processor {@link SubscribableEventSource} is <b>hard requirements</b>
+ * and as such should be provided.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
@@ -55,6 +49,8 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 public class SubscribingEventProcessorConfiguration extends EventProcessorConfiguration {
 
     private SubscribableEventSource eventSource;
+    private Consumer<? super EventMessage> ignoredMessageHandler =
+            eventMessage -> messageMonitor.onMessageIngested(eventMessage).reportIgnored();
 
     /**
      * Constructs a new {@code SubscribingEventProcessorConfiguration}.
@@ -98,32 +94,34 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
         return this;
     }
 
-    @Override
-    public SubscribingEventProcessorConfiguration messageMonitor(
-            @Nonnull MessageMonitor<? super EventMessage> messageMonitor) {
-        super.messageMonitor(messageMonitor);
-        return this;
-    }
-
-    @Override
-    public SubscribingEventProcessorConfiguration spanFactory(@Nonnull EventProcessorSpanFactory spanFactory) {
-        super.spanFactory(spanFactory);
-        return this;
-    }
-
     /**
      * Sets the {@link SubscribableEventSource} (e.g. the {@link EventBus}) to which this {@link EventProcessor}
      * implementation will subscribe itself to receive {@link EventMessage}s.
      *
      * @param eventSource The {@link SubscribableEventSource} (e.g. the {@link EventBus}) to which this
-     *                      {@link EventProcessor} implementation will subscribe itself to receive
-     *                      {@link EventMessage}s.
+     *                    {@link EventProcessor} implementation will subscribe itself to receive {@link EventMessage}s.
      * @return The current instance, for fluent interfacing.
      */
     public SubscribingEventProcessorConfiguration eventSource(
             @Nonnull SubscribableEventSource eventSource) {
         assertNonNull(eventSource, "SubscribableEventSource may not be null");
         this.eventSource = eventSource;
+        return this;
+    }
+
+    /**
+     * Sets the handler, that is invoked when the event is ignored by all
+     * {@link org.axonframework.messaging.eventhandling.EventHandlingComponent EventHandlingComponents} this
+     * {@link SubscribingEventProcessor} controls. Defaults to a no-op.
+     *
+     * @param ignoredMessageHandler The handler, that is invoked when the event is ignored by all
+     *                              {@link org.axonframework.messaging.eventhandling.EventHandlingComponent
+     *                              EventHandlingComponents} this {@link {@link SubscribingEventProcessor}} controls.
+     * @return The current Builder instance, for fluent interfacing.
+     */
+    public SubscribingEventProcessorConfiguration ignoredMessageHandler(
+            Consumer<? super EventMessage> ignoredMessageHandler) {
+        this.ignoredMessageHandler = ignoredMessageHandler;
         return this;
     }
 
@@ -169,6 +167,15 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      */
     public SubscribableEventSource eventSource() {
         return eventSource;
+    }
+
+    /**
+     * Returns the handler for ignored messages.
+     *
+     * @return The ignored message handler.
+     */
+    public Consumer<? super EventMessage> ignoredMessageHandler() {
+        return ignoredMessageHandler;
     }
 
     @Override

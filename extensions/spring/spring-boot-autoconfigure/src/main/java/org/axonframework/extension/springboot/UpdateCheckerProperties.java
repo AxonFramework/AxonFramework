@@ -19,6 +19,8 @@ package org.axonframework.extension.springboot;
 import org.axonframework.update.configuration.UsagePropertyProvider;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.util.function.Supplier;
+
 /**
  * An {@link UsagePropertyProvider} implementation that reacts to Spring Boot properties through the
  * {@link ConfigurationProperties} annotation.
@@ -30,7 +32,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @since 4.12.2
  */
 @ConfigurationProperties(prefix = "axon.update-check")
-public class UpdateCheckerProperties implements UsagePropertyProvider {
+public class UpdateCheckerProperties implements Supplier<UsagePropertyProvider> {
 
     /**
      * Indicates whether the update check should be disabled.
@@ -58,12 +60,10 @@ public class UpdateCheckerProperties implements UsagePropertyProvider {
         this.disabled = disabled;
     }
 
-    @Override
     public Boolean getDisabled() {
         return disabled;
     }
 
-    @Override
     public String getUrl() {
         return url;
     }
@@ -72,10 +72,29 @@ public class UpdateCheckerProperties implements UsagePropertyProvider {
         this.url = url;
     }
 
-    @Override
     public int priority() {
         // higher than Environment Variables, but lower than Command Line Arguments
         return Integer.MAX_VALUE - Short.MAX_VALUE;
+    }
+
+    @Override
+    public UsagePropertyProvider get() {
+        return new UsagePropertyProvider() {
+            @Override
+            public Boolean getDisabled() {
+                return UpdateCheckerProperties.this.getDisabled();
+            }
+
+            @Override
+            public String getUrl() {
+                return UpdateCheckerProperties.this.getUrl();
+            }
+
+            @Override
+            public int priority() {
+                return UpdateCheckerProperties.this.priority();
+            }
+        };
     }
 }
 

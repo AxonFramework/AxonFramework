@@ -17,6 +17,7 @@
 package org.axonframework.test.fixture;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandResultMessage;
 import org.axonframework.common.configuration.Configuration;
@@ -313,10 +314,15 @@ public interface AxonTestPhase {
          * Allows running custom setup steps (other than executing messages) on any component retrievable from the
          * {@link Configuration}.
          *
-         * @param function The function to execute on the configuration.
+         * @param consumer The consumer to execute on the configuration.
          * @return The current Given instance, for fluent interfacing.
          */
-        Given execute(@Nonnull Function<Configuration, ?> function);
+        default Given execute(@Nonnull Consumer<Configuration> consumer) {
+            return executeAsync(config -> {
+                consumer.accept(config);
+                return FutureUtils.emptyCompletedFuture();
+            });
+        }
 
         /**
          * Allows running custom setup steps (other than executing messages) on any component retrievable from the

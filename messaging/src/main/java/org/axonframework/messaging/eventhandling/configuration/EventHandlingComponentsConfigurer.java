@@ -19,9 +19,12 @@ package org.axonframework.messaging.eventhandling.configuration;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.Configuration;
+import org.axonframework.messaging.core.MessageTypeResolver;
+import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.annotation.AnnotatedEventHandlingComponent;
-import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 
 import java.util.List;
 import java.util.function.BiFunction;
@@ -42,21 +45,21 @@ public interface EventHandlingComponentsConfigurer {
     /**
      * Initial phase for specifying event handling components. At least one component must be configured.
      */
-    interface RequiredComponentPhase extends ComponentsPhase<AdditionalComponentPhase> {
+    interface RequiredComponentPhase extends ComponentsPhase {
 
     }
 
     /**
      * Additional phase for specifying optional event handling components.
      */
-    interface AdditionalComponentPhase extends ComponentsPhase<AdditionalComponentPhase>, CompletePhase {
+    interface AdditionalComponentPhase extends ComponentsPhase, CompletePhase {
 
     }
 
     /**
      * Phase that allows configuring event handling components.
      */
-    interface ComponentsPhase<T> {
+    interface ComponentsPhase {
 
         /**
          * Configures a single event handling component.
@@ -65,7 +68,9 @@ public interface EventHandlingComponentsConfigurer {
          * @return The complete phase for decoration and finalization.
          */
         @Nonnull
-        AdditionalComponentPhase declarative(@Nonnull ComponentBuilder<EventHandlingComponent> handlingComponentBuilder);
+        AdditionalComponentPhase declarative(
+                @Nonnull ComponentBuilder<EventHandlingComponent> handlingComponentBuilder
+        );
 
         /**
          * Configures an auto-detected event handling component.
@@ -78,7 +83,10 @@ public interface EventHandlingComponentsConfigurer {
             requireNonNull(handlingComponentBuilder, "The handling component builder cannot be null.");
             return declarative(c -> new AnnotatedEventHandlingComponent<>(
                     handlingComponentBuilder.build(c),
-                    c.getComponent(ParameterResolverFactory.class)
+                    c.getComponent(ParameterResolverFactory.class),
+                    ClasspathHandlerDefinition.forClass(c.getClass()),
+                    c.getComponent(MessageTypeResolver.class),
+                    c.getComponent(EventConverter.class)
             ));
         }
     }
@@ -116,8 +124,8 @@ public interface EventHandlingComponentsConfigurer {
         @Nonnull
         default List<EventHandlingComponent> build(Configuration configuration) {
             return toList().stream()
-                    .map(builder -> builder.build(configuration))
-                    .toList();
+                           .map(builder -> builder.build(configuration))
+                           .toList();
         }
     }
 }

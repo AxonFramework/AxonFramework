@@ -17,11 +17,11 @@
 package org.axonframework.messaging.eventhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
 import org.axonframework.messaging.eventhandling.replay.ResetHandler;
-import org.axonframework.messaging.eventhandling.replay.ResetHandlerRegistry;
 
 import java.util.Set;
 
@@ -31,15 +31,14 @@ import java.util.Set;
  * As such, it allows registration of {@code EventHandlers} through the {@code EventHandlerRegistry}. Besides handling
  * and registration, it specifies which {@link #supportedEvents() events} it supports.
  * <p>
- * Additionally, this component supports reset operations through the {@link ResetHandler} and
- * {@link ResetHandlerRegistry} interfaces. The {@link #supportsReset()} method indicates whether the component can
- * participate in replay operations.
+ * Additionally, this component supports reset operations through the {@link ResetHandler}. The {@link #supportsReset()}
+ * method indicates whether the component can participate in replay operations.
  *
  * @author Rene de Waele
  * @author Steven van Beelen
  * @since 3.0.0
  */
-public interface EventHandlingComponent extends EventHandler, EventHandlerRegistry, ResetHandler, ResetHandlerRegistry {
+public interface EventHandlingComponent extends EventHandler, ResetHandler, DescribableComponent {
 
     /**
      * All supported {@link EventMessage events}, referenced through a {@link QualifiedName}.
@@ -79,7 +78,7 @@ public interface EventHandlingComponent extends EventHandler, EventHandlerRegist
      * When {@code true}, this component can participate in replay operations and its
      * {@link #handle(ResetContext, ProcessingContext)} method will be called before replay begins.
      * <p>
-     * By default reset is supported.
+     * By default, reset is supported.
      *
      * @return {@code true} if this component supports reset operations, {@code false} otherwise.
      */

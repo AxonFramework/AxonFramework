@@ -24,11 +24,11 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.TypeReference;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
-import org.axonframework.common.jpa.EntityManagerProvider;
+import org.axonframework.common.tx.TransactionalExecutor;
+import org.axonframework.conversion.Converter;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarker.AggregateSequencer;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedEventStorageEngineUtils;
-import org.axonframework.conversion.Converter;
 import org.axonframework.eventsourcing.eventstore.AggregateSequenceNumberPosition;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
@@ -46,7 +46,7 @@ import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.SimpleEntry;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
+import org.axonframework.messaging.core.unitofwork.transaction.TransactionalExecutorProvider;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.eventhandling.TerminalEventMessage;
@@ -70,7 +70,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
@@ -132,8 +131,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
             WHERE e.globalIndex >= :firstGapOffset \
             AND e.globalIndex <= :maxGlobalIndex""";
 
-    private final EntityManagerProvider entityManagerProvider;
-    private final TransactionManager transactionManager;
+    private final TransactionalExecutorProvider<EntityManager> transactionalExecutorProvider;
     private final EventConverter converter;
 
     private final PersistenceExceptionResolver persistenceExceptionResolver;
@@ -144,6 +142,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     private final long lowestGlobalSequence;
 
     private final GapAwareTrackingTokenOperations tokenOperations;
+    private final Predicate<Throwable> isConflictException;
 
     /**
      * Tracks runnables for callbacks attached to streams for when new events may have become available.
@@ -155,21 +154,17 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     /**
      * Constructs an {@code AggregateBasedJpaEventStorageEngine} with the given parameters.
      *
-     * @param entityManagerProvider The {@link jakarta.persistence.EntityManager} provided for this storage solution.
-     * @param transactionManager    The transaction manager, ensuring all operations to the storage solution occur
-     *                              transactionally.
+     * @param transactionalExecutorProvider The transactional executor provider for this storage solution.
      * @param converter             The converter used to convert the {@link EventMessage#payload()} and
      *                              {@link EventMessage#metadata()} to a {@code byte[]}.
      * @param configurer            A unary operator of the {@link AggregateBasedJpaEventStorageEngineConfiguration}
      *                              that customizes the {@code AggregateBasedJpaEventStorageEngine} under construction.
      */
-    public AggregateBasedJpaEventStorageEngine(@Nonnull EntityManagerProvider entityManagerProvider,
-                                               @Nonnull TransactionManager transactionManager,
+    public AggregateBasedJpaEventStorageEngine(@Nonnull TransactionalExecutorProvider<EntityManager> transactionalExecutorProvider,
                                                @Nonnull EventConverter converter,
                                                @Nonnull UnaryOperator<AggregateBasedJpaEventStorageEngineConfiguration> configurer) {
-        this.entityManagerProvider =
-                requireNonNull(entityManagerProvider, "The entityManagerProvider may not be null.");
-        this.transactionManager = requireNonNull(transactionManager, "The transactionManager may not be null.");
+        this.transactionalExecutorProvider =
+                requireNonNull(transactionalExecutorProvider, "The transactionalExecutorProvider may not be null.");
         this.converter = requireNonNull(converter, "The converter may not be null.");
 
         var config = requireNonNull(configurer, "The configurer may not be null.")
@@ -183,17 +178,9 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
 
         this.tokenOperations = new GapAwareTrackingTokenOperations(config.gapTimeout(), logger);
         this.eventCoordinatorHandle = config.eventCoordinator().startCoordination(this::onAppendDetected);
-    }
-
-    /**
-     * Returns an {@link EntityManager} from the {@link EntityManagerProvider}.
-     * <p>
-     * Internal use only.
-     *
-     * @return An {@link EntityManager} from the {@link EntityManagerProvider}.
-     */
-    private EntityManager entityManager() {
-        return entityManagerProvider.getEntityManager();
+        this.isConflictException = t -> persistenceExceptionResolver != null
+            && t instanceof Exception ex
+            && persistenceExceptionResolver.isDuplicateKeyViolation(ex);
     }
 
     @Override
@@ -209,67 +196,43 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
             return CompletableFuture.completedFuture(EmptyAppendTransaction.INSTANCE);
         }
 
-        return CompletableFuture.completedFuture(new AppendTransaction<AggregateBasedConsistencyMarker>() {
+        return entityManagerExecutor(processingContext).apply(em -> {
+            AggregateBasedConsistencyMarker preCommitConsistencyMarker = AggregateBasedConsistencyMarker.from(condition);
 
-            private final AtomicBoolean txFinished = new AtomicBoolean(false);
-            private final AggregateBasedConsistencyMarker preCommitConsistencyMarker =
-                    AggregateBasedConsistencyMarker.from(condition);
+            try {
+                AggregateSequencer sequencer = preCommitConsistencyMarker.createSequencer();
 
-            @Override
-            public CompletableFuture<AggregateBasedConsistencyMarker> commit(@Nullable ProcessingContext context) {
-                if (txFinished.getAndSet(true)) {
-                    return CompletableFuture.failedFuture(new IllegalStateException(
-                            "Already committed or rolled back"
-                    ));
-                }
-                var aggregateSequencer = preCommitConsistencyMarker.createSequencer();
+                events.stream()
+                    .map(taggedEvent -> mapToEntry(taggedEvent, sequencer, converter))
+                    .forEach(em::persist);
 
-                CompletableFuture<Void> txResult = new CompletableFuture<>();
-                var tx = transactionManager.startTransaction();
-                try {
-                    entityManagerPersistEvents(aggregateSequencer, events);
-                    tx.commit();
-                    eventCoordinatorHandle.onEventsAppended(events);
-                    txResult.complete(null);
-                } catch (Exception e) {
-                    tx.rollback();
-                    txResult.completeExceptionally(e);
-                }
+                em.flush();  // flush so violations occur here and now, instead of in the commit phase
 
-                return txResult.exceptionallyCompose(
-                                       e -> CompletableFuture.failedFuture(translateConflictException(e))
-                               )
-                               .thenApply(v -> aggregateSequencer.toMarker());
+                return new AppendTransaction<AggregateBasedConsistencyMarker>() {
+                    @Override
+                    public CompletableFuture<AggregateBasedConsistencyMarker> commit() {
+                        // Transaction is in control of the entity manager executor, so do no work here
+                        return CompletableFuture.completedFuture(sequencer.toMarker());
+                    }
+
+                    @Override
+                    public void rollback() {
+                        // Transaction is in control of the entity manager executor, so do no work here
+                    }
+
+                    @Override
+                    public CompletableFuture<ConsistencyMarker> afterCommit(AggregateBasedConsistencyMarker marker) {
+                        eventCoordinatorHandle.onEventsAppended(events);
+
+                        return CompletableFuture.completedFuture(marker);
+                    }
+                };
             }
-
-            @Override
-            public CompletableFuture<ConsistencyMarker> afterCommit(@Nonnull AggregateBasedConsistencyMarker marker,
-                                                                    @Nullable ProcessingContext context) {
-                return CompletableFuture.completedFuture(marker);
-            }
-
-            private Throwable translateConflictException(Throwable e) {
-                Predicate<Throwable> isConflictException = (t) -> persistenceExceptionResolver != null
-                        && t instanceof Exception ex
-                        && persistenceExceptionResolver.isDuplicateKeyViolation(ex);
-                return AggregateBasedEventStorageEngineUtils
-                        .translateConflictException(preCommitConsistencyMarker, e, isConflictException);
-            }
-
-            @Override
-            public void rollback(@Nullable ProcessingContext context) {
-                txFinished.set(true);
+            catch (Exception e) {
+                throw AggregateBasedEventStorageEngineUtils
+                    .translateConflictException(preCommitConsistencyMarker, e, isConflictException);
             }
         });
-    }
-
-    private void entityManagerPersistEvents(AggregateSequencer aggregateSequencer,
-                                            List<TaggedEventMessage<?>> events) {
-        try (EntityManager entityManager = entityManager()) {
-            events.stream()
-                  .map(taggedEvent -> mapToEntry(taggedEvent, aggregateSequencer, converter))
-                  .forEach(entityManager::persist);
-        }
     }
 
     private static AggregateEventEntry mapToEntry(TaggedEventMessage<?> taggedEvent,
@@ -292,8 +255,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public MessageStream<EventMessage> source(@Nonnull SourcingCondition condition,
-                                              @Nullable ProcessingContext processingContext) {
+    public MessageStream<EventMessage> source(@Nonnull SourcingCondition condition) {
         CompletableFuture<Void> endOfStreams = new CompletableFuture<>();
         List<AggregateSource> aggregateSources = condition.criteria()
                                                           .flatten()
@@ -322,12 +284,12 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
         long firstSequenceNumber = AggregateSequenceNumberPosition.toSequenceNumber(condition.start());
         //noinspection DataFlowIssue
         StreamSpliterator<? extends AggregateEventEntry> entrySpliterator = new StreamSpliterator<>(
-                lastEntry -> transactionManager.fetchInTransaction(() -> queryEventsBy(
+                lastEntry -> queryEventsBy(
                         aggregateIdentifier,
                         lastEntry != null && lastEntry.aggregateSequenceNumber() != null
                                 ? lastEntry.aggregateSequenceNumber() + 1
                                 : firstSequenceNumber
-                )),
+                ),
                 finalBatchPredicate
         );
 
@@ -343,14 +305,14 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
         return new AggregateSource(markerReference, source);
     }
 
-    List<AggregateEventEntry> queryEventsBy(String aggregateIdentifier, long firstSequenceNumber) {
-        try (EntityManager entityManager = entityManager()) {
-            return entityManager.createQuery(EVENTS_BY_AGGREGATE_QUERY, AggregateEventEntry.class)
-                                .setParameter("id", aggregateIdentifier)
-                                .setParameter("seq", firstSequenceNumber)
-                                .setMaxResults(batchSize)
-                                .getResultList();
-        }
+    private List<AggregateEventEntry> queryEventsBy(String aggregateIdentifier, long firstSequenceNumber) {
+        return entityManagerExecutor(null).apply(em ->
+            em.createQuery(EVENTS_BY_AGGREGATE_QUERY, AggregateEventEntry.class)
+                .setParameter("id", aggregateIdentifier)
+                .setParameter("seq", firstSequenceNumber)
+                .setMaxResults(batchSize)
+                .getResultList()
+        ).join();
     }
 
     private static Context setMarkerAndBuildContext(AggregateEventEntry entry,
@@ -371,8 +333,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public MessageStream<EventMessage> stream(@Nonnull StreamingCondition condition,
-                                              @Nullable ProcessingContext processingContext) {
+    public MessageStream<EventMessage> stream(@Nonnull StreamingCondition condition) {
         GapAwareTrackingToken trackingToken = tokenOperations.assertGapAwareTrackingToken(condition.position());
 
         return new ContinuousMessageStream<TokenAndEvent>(
@@ -392,57 +353,53 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
                 () -> String.format("Token [%s] is of the wrong type. Expected [%s]",
                                     start, GapAwareTrackingToken.class.getSimpleName())
         );
-        List<TokenAndEvent> result = new ArrayList<>();
-        GapAwareTrackingToken cleanedToken = cleanedToken((GapAwareTrackingToken) start);
-        List<AggregateEventEntry> events =
-                transactionManager.fetchInTransaction(() -> queryEventsBy(cleanedToken));
 
-        GapAwareTrackingToken token = cleanedToken;
-        Instant gapTimeoutThreshold = tokenOperations.gapTimeoutThreshold();
-        for (AggregateEventEntry event : events) {
-            String type = event.aggregateType();
-            String identifier = event.aggregateIdentifier();
+        return entityManagerExecutor(null).apply(em -> {
+            List<TokenAndEvent> result = new ArrayList<>();
+            GapAwareTrackingToken cleanedToken = cleanedToken(em, (GapAwareTrackingToken) start);
+            List<AggregateEventEntry> events = queryEventsBy(em, cleanedToken);
 
-            // A null type or identifier is allowed, but those cannot form a valid tag:
-            Set<Tag> tags = type == null || identifier == null ? Set.of() : Set.of(new Tag(type, identifier));
+            GapAwareTrackingToken token = cleanedToken;
+            Instant gapTimeoutThreshold = tokenOperations.gapTimeoutThreshold();
+            for (AggregateEventEntry event : events) {
+                String type = event.aggregateType();
+                String identifier = event.aggregateIdentifier();
 
-            if (condition.matches(new QualifiedName(event.type()), tags)) {
-                token = calculateToken(token, event.globalIndex(), event.timestamp(), gapTimeoutThreshold);
-                result.add(new TokenAndEvent(token, event));
+                // A null type or identifier is allowed, but those cannot form a valid tag:
+                Set<Tag> tags = type == null || identifier == null ? Set.of() : Set.of(new Tag(type, identifier));
+
+                if (condition.matches(new QualifiedName(event.type()), tags)) {
+                    token = calculateToken(token, event.globalIndex(), event.timestamp(), gapTimeoutThreshold);
+                    result.add(new TokenAndEvent(token, event));
+                }
             }
-        }
-        return result;
+            return result;
+        }).join();
     }
 
-    private GapAwareTrackingToken cleanedToken(GapAwareTrackingToken lastToken) {
+    private GapAwareTrackingToken cleanedToken(EntityManager entityManager, GapAwareTrackingToken lastToken) {
         return lastToken != null && lastToken.getGaps().size() > gapCleaningThreshold
-                ? tokenOperations.withGapsCleaned(lastToken, indexAndTimestampBetweenGaps(lastToken))
+                ? tokenOperations.withGapsCleaned(lastToken, indexAndTimestampBetweenGaps(entityManager, lastToken))
                 : lastToken;
     }
 
-    private List<Object[]> indexAndTimestampBetweenGaps(GapAwareTrackingToken token) {
-        return transactionManager.fetchInTransaction(() -> {
-            try (EntityManager entityManager = entityManager()) {
-                return entityManager.createQuery(INDEX_AND_TIMESTAMP_QUERY, Object[].class)
-                                    .setParameter("firstGapOffset", token.getGaps().first())
-                                    .setParameter("maxGlobalIndex", token.getGaps().last() + 1L)
-                                    .getResultList();
-            }
-        });
+    private List<Object[]> indexAndTimestampBetweenGaps(EntityManager entityManager, GapAwareTrackingToken token) {
+        return entityManager.createQuery(INDEX_AND_TIMESTAMP_QUERY, Object[].class)
+                            .setParameter("firstGapOffset", token.getGaps().first())
+                            .setParameter("maxGlobalIndex", token.getGaps().last() + 1L)
+                            .getResultList();
     }
 
-    private List<AggregateEventEntry> queryEventsBy(GapAwareTrackingToken token) {
-        try (EntityManager entityManager = entityManager()) {
-            TypedQuery<AggregateEventEntry> eventsByTokenQuery =
-                    token == null || token.getGaps().isEmpty()
-                            ? entityManager.createQuery(EVENTS_BY_TOKEN_QUERY, AggregateEventEntry.class)
-                            : entityManager.createQuery(EVENTS_BY_GAPPED_TOKEN, AggregateEventEntry.class)
-                                           .setParameter("gaps", token.getGaps());
+    private List<AggregateEventEntry> queryEventsBy(EntityManager entityManager, GapAwareTrackingToken token) {
+        TypedQuery<AggregateEventEntry> eventsByTokenQuery =
+                token == null || token.getGaps().isEmpty()
+                        ? entityManager.createQuery(EVENTS_BY_TOKEN_QUERY, AggregateEventEntry.class)
+                        : entityManager.createQuery(EVENTS_BY_GAPPED_TOKEN, AggregateEventEntry.class)
+                                       .setParameter("gaps", token.getGaps());
 
-            return eventsByTokenQuery.setParameter("token", token == null ? -1L : token.getIndex())
-                                     .setMaxResults(batchSize)
-                                     .getResultList();
-        }
+        return eventsByTokenQuery.setParameter("token", token == null ? -1L : token.getIndex())
+                                 .setMaxResults(batchSize)
+                                 .getResultList();
     }
 
     private GapAwareTrackingToken calculateToken(@Nullable GapAwareTrackingToken token,
@@ -491,38 +448,36 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public CompletableFuture<TrackingToken> firstToken(@Nullable ProcessingContext processingContext) {
+    public CompletableFuture<TrackingToken> firstToken() {
         return queryToken(FIRST_TOKEN_QUERY);
     }
 
     @Override
-    public CompletableFuture<TrackingToken> latestToken(@Nullable ProcessingContext processingContext) {
+    public CompletableFuture<TrackingToken> latestToken() {
         return queryToken(LATEST_TOKEN_QUERY);
     }
 
     @Nonnull
     private CompletableFuture<TrackingToken> queryToken(String firstTokenQuery) {
-        try (EntityManager entityManager = entityManager()) {
-            long position = entityManager.createQuery(firstTokenQuery, Long.class).getSingleResult();
-            return CompletableFuture.completedFuture(new GapAwareTrackingToken(position, Set.of()));
-        }
+        return entityManagerExecutor(null).apply(entityManager -> new GapAwareTrackingToken(
+            entityManager.createQuery(firstTokenQuery, Long.class).getSingleResult(),
+            Set.of()
+        ));
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at,
-                                                    @Nullable ProcessingContext processingContext) {
-        try (EntityManager entityManager = entityManager()) {
-            long position = entityManager.createQuery(TOKEN_AT_QUERY, Long.class)
-                                         .setParameter("dateTime", formatInstant(at))
-                                         .getSingleResult();
-            return CompletableFuture.completedFuture(new GapAwareTrackingToken(position, Set.of()));
-        }
+    public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at) {
+        return entityManagerExecutor(null).apply(entityManager -> new GapAwareTrackingToken(
+            entityManager.createQuery(TOKEN_AT_QUERY, Long.class)
+                         .setParameter("dateTime", formatInstant(at))
+                         .getSingleResult(),
+            Set.of()
+        ));
     }
 
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
-        descriptor.describeProperty("entityManagerProvider", entityManagerProvider);
-        descriptor.describeProperty("transactionManager", transactionManager);
+        descriptor.describeProperty("transactionalExecutorProvider", transactionalExecutorProvider);
         descriptor.describeProperty("converter", converter);
         descriptor.describeProperty("persistenceExceptionResolver", persistenceExceptionResolver);
         descriptor.describeProperty("tokenOperations", tokenOperations);
@@ -551,6 +506,10 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
         for (Runnable callback : streamCallbacks.values()) {
             callback.run();
         }
+    }
+
+    private TransactionalExecutor<EntityManager> entityManagerExecutor(ProcessingContext processingContext) {
+        return transactionalExecutorProvider.getTransactionalExecutor(processingContext);
     }
 
     /**

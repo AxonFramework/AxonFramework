@@ -17,30 +17,31 @@
 package org.axonframework.integrationtests.testsuite.student;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.commandhandling.CommandMessage;
-import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
-import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
-import org.axonframework.messaging.eventhandling.EventHandlingComponent;
-import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
-import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
-import org.axonframework.messaging.eventhandling.gateway.EventAppender;
-import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessor;
-import org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.messaging.eventstreaming.EventCriteria;
-import org.axonframework.messaging.eventstreaming.Tag;
 import org.axonframework.integrationtests.testsuite.student.commands.SendMaxCoursesNotificationCommand;
 import org.axonframework.integrationtests.testsuite.student.events.MaxCoursesNotificationSentEvent;
 import org.axonframework.integrationtests.testsuite.student.events.StudentEnrolledEvent;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
+import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.conversion.MessageConverter;
 import org.axonframework.messaging.core.unitofwork.UnitOfWork;
+import org.axonframework.messaging.eventhandling.EventHandlingComponent;
+import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
+import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
+import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessor;
+import org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.axonframework.messaging.eventstreaming.Tag;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.configuration.EntityModule;
-import org.axonframework.conversion.Converter;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -52,9 +53,9 @@ import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the declarative {@link PooledStreamingEventProcessor}
- * used as an automation (a kind of Saga) that keeps the process state using {@link EventSourcedEntityModule} and sends
- * a {@link CommandMessage} if certain business rules are met.
+ * Test class validating the declarative {@link PooledStreamingEventProcessor} used as an automation (a kind of Saga)
+ * that keeps the process state using {@link EventSourcedEntityModule} and sends a {@link CommandMessage} if certain
+ * business rules are met.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
@@ -97,35 +98,39 @@ public class EventProcessingDeclarativeEventSourcedPooledStreamingIT extends Abs
 
     @Nonnull
     private static EventHandlingComponent whenStudentEnrolledToMaxCoursesThenSendNotificationAutomation() {
-        return new SimpleEventHandlingComponent(SequentialPolicy.INSTANCE)
-                .subscribe(
-                        new QualifiedName(StudentEnrolledEvent.class),
-                        (event, context) -> {
-                            var converter = context.component(Converter.class);
-                            var studentEnrolled = event.payloadAs(StudentEnrolledEvent.class, converter);
-                            var studentId = studentEnrolled.studentId();
-                            var state = context.component(StateManager.class);
-                            var loadedState = state.loadEntity(StudentCoursesAutomationState.class,
-                                                               studentId,
-                                                               context).join();
-                            var readModel = loadedState != null ? loadedState : new StudentCoursesAutomationState(
-                                    studentId);
-                            if (readModel.courses.size() >= 3) {
-                                var commandGateway = context.component(CommandGateway.class);
-                                commandGateway.send(new SendMaxCoursesNotificationCommand(studentId), context);
-                            }
-                            return MessageStream.empty();
-                        }
-                );
+        SimpleEventHandlingComponent handlingComponent =
+                SimpleEventHandlingComponent.create("studentEnrolledAutomation", SequentialPolicy.INSTANCE);
+        handlingComponent.subscribe(
+                new QualifiedName(StudentEnrolledEvent.class),
+                (event, context) -> {
+                    var converter = context.component(EventConverter.class);
+                    var studentEnrolled = event.payloadAs(StudentEnrolledEvent.class, converter);
+                    var studentId = studentEnrolled.studentId();
+                    var state = context.component(StateManager.class);
+                    var loadedState = state.loadEntity(StudentCoursesAutomationState.class,
+                                                       studentId,
+                                                       context).join();
+                    var readModel = loadedState != null
+                            ? loadedState
+                            : new StudentCoursesAutomationState(studentId);
+                    if (readModel.courses.size() >= 3) {
+                        var commandGateway = context.component(CommandGateway.class);
+                        commandGateway.send(new SendMaxCoursesNotificationCommand(studentId), context);
+                    }
+                    return MessageStream.empty();
+                }
+        );
+        return handlingComponent;
     }
 
     protected void verifyNotificationSentTo(String studentId) {
         UnitOfWork uow = unitOfWorkFactory.create();
-        assertTrue(uow.executeWithResult(context -> context.component(StateManager.class)
-            .repository(StudentCoursesAutomationState.class, String.class)
-            .load(studentId, context)
-            .thenApply(student -> student.entity().notified())).join()
-        );
+        assertTrue(uow.executeWithResult(
+                context -> context.component(StateManager.class)
+                                  .repository(StudentCoursesAutomationState.class, String.class)
+                                  .load(studentId, context)
+                                  .thenApply(student -> student.entity().notified())
+        ).join());
     }
 
     @Override
@@ -138,10 +143,10 @@ public class EventProcessingDeclarativeEventSourcedPooledStreamingIT extends Abs
             EventSourcingConfigurer configurer) {
         var studentRegisteredCoursesProcessor =
                 EventProcessorModule
-                .pooledStreaming("when-student-enrolled-to-max-courses-then-send-notification")
-                .eventHandlingComponents(components -> components.declarative(
-                        cfg -> whenStudentEnrolledToMaxCoursesThenSendNotificationAutomation()
-                )).notCustomized();
+                        .pooledStreaming("when-student-enrolled-to-max-courses-then-send-notification")
+                        .eventHandlingComponents(components -> components.declarative(
+                                cfg -> whenStudentEnrolledToMaxCoursesThenSendNotificationAutomation()
+                        )).notCustomized();
         return configurer.messaging(
                 messaging -> messaging.eventProcessing(
                         ep -> ep.pooledStreaming(
@@ -168,7 +173,7 @@ public class EventProcessingDeclarativeEventSourcedPooledStreamingIT extends Abs
                 .commandHandlers()
                 .commandHandler(new QualifiedName(SendMaxCoursesNotificationCommand.class), (c, ctx) -> {
                     var stateManager = ctx.component(StateManager.class);
-                    var converter = ctx.component(Converter.class);
+                    var converter = ctx.component(MessageConverter.class);
                     var command = c.payloadAs(SendMaxCoursesNotificationCommand.class, converter);
                     var studentId = command.studentId();
                     var state = stateManager.loadEntity(StudentCoursesAutomationState.class, studentId, ctx).join();
@@ -185,7 +190,7 @@ public class EventProcessingDeclarativeEventSourcedPooledStreamingIT extends Abs
 
     private static EntityEvolver<StudentCoursesAutomationState> automationStateEvolver() {
         return (entity, event, context) -> {
-            var converter = context.component(Converter.class);
+            var converter = context.component(EventConverter.class);
             if (event.type().qualifiedName().equals(new QualifiedName(StudentEnrolledEvent.class))) {
                 var payload = event.payloadAs(StudentEnrolledEvent.class, converter);
                 return entity.evolve(payload);

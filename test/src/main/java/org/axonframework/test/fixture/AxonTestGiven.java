@@ -149,12 +149,6 @@ class AxonTestGiven implements AxonTestPhase.Given {
     }
 
     @Override
-    public AxonTestPhase.Given execute(@Nonnull Function<Configuration, ?> function) {
-        function.apply(configuration);
-        return this;
-    }
-
-    @Override
     public AxonTestPhase.Given executeAsync(@Nonnull Function<Configuration, CompletableFuture<?>> function) {
         function.apply(configuration).join();
         return this;
