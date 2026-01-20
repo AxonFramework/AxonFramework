@@ -22,7 +22,6 @@ import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
 import org.axonframework.messaging.eventhandling.replay.ResetHandler;
-import org.axonframework.messaging.eventhandling.replay.ResetHandlerRegistry;
 
 import java.util.Set;
 
@@ -32,15 +31,14 @@ import java.util.Set;
  * As such, it allows registration of {@code EventHandlers} through the {@code EventHandlerRegistry}. Besides handling
  * and registration, it specifies which {@link #supportedEvents() events} it supports.
  * <p>
- * Additionally, this component supports reset operations through the {@link ResetHandler} and
- * {@link ResetHandlerRegistry} interfaces. The {@link #supportsReset()} method indicates whether the component can
- * participate in replay operations.
+ * Additionally, this component supports reset operations through the {@link ResetHandler}. The {@link #supportsReset()}
+ * method indicates whether the component can participate in replay operations.
  *
  * @author Rene de Waele
  * @author Steven van Beelen
  * @since 3.0.0
  */
-public interface EventHandlingComponent extends EventHandler, ResetHandler, ResetHandlerRegistry, DescribableComponent {
+public interface EventHandlingComponent extends EventHandler, ResetHandler, DescribableComponent {
 
     /**
      * All supported {@link EventMessage events}, referenced through a {@link QualifiedName}.

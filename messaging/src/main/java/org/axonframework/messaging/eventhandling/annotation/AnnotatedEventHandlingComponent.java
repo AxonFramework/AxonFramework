@@ -24,6 +24,7 @@ import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.annotation.AnnotatedHandlerInspector;
+import org.axonframework.messaging.core.annotation.HandlerAttributes;
 import org.axonframework.messaging.core.annotation.HandlerDefinition;
 import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
@@ -35,11 +36,11 @@ import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventSink;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
-import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
 import org.axonframework.messaging.eventhandling.replay.ResetHandler;
-import org.axonframework.messaging.eventhandling.replay.ResetHandlerRegistry;
+import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
 
+import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
 
@@ -99,10 +100,10 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
 
     private void initializeEventHandlersBasedOnModel() {
         model.getUniqueHandlers(target.getClass(), EventMessage.class)
-             .forEach(handler -> registerHandler((EventHandlingMember<? super T>) handler));
+             .forEach(handler -> registerEventHandler((EventHandlingMember<? super T>) handler));
     }
 
-    private void registerHandler(EventHandlingMember<? super T> handler) {
+    private void registerEventHandler(EventHandlingMember<? super T> handler) {
         Class<?> payloadType = handler.payloadType();
         QualifiedName qualifiedName = handler.unwrap(MethodEventHandlerDefinition.MethodEventMessageHandlingMember.class)
                                              .map(EventHandlingMember::eventName)
@@ -165,48 +166,25 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
         return handlingComponent.sequenceIdentifierFor(event, context);
     }
 
-    @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
-        descriptor.describeProperty("target", target);
-        descriptor.describeWrapperOf(handlingComponent);
-        descriptor.describeProperty("messageTypeResolver", messageTypeResolver);
-        descriptor.describeProperty("converter", converter);
-    }
-
     // region [ResetHandlers]
     private void initializeResetHandlersBasedOnModel() {
-        model.getUniqueHandlers(target.getClass(), ResetContext.class).forEach(this::registerResetHandler);
+        model.getUniqueHandlers(target.getClass(), ResetContext.class)
+             .forEach(this::registerResetHandler);
     }
 
     private void registerResetHandler(MessageHandlingMember<? super T> handler) {
         MessageHandlerInterceptorMemberChain<T> interceptorChain = model.chainedInterceptor(target.getClass());
-        delegate.subscribe(interceptedResetHandler(handler, interceptorChain));
+        handlingComponent.subscribe(constructResetHandlerFor(handler, interceptorChain));
     }
 
     @Nonnull
-    private ResetHandler interceptedResetHandler(
+    private ResetHandler constructResetHandlerFor(
             MessageHandlingMember<? super T> handler,
             MessageHandlerInterceptorMemberChain<T> interceptorChain
     ) {
-        return (resetContext, ctx) ->
-                interceptorChain.handle(
-                        resetContext,
-                        ctx,
-                        target,
-                        handler
-                ).ignoreEntries().cast();
-    }
-
-    @Nonnull
-    @Override
-    public MessageStream.Empty<Message> handle(@Nonnull ResetContext resetContext, @Nonnull ProcessingContext context) {
-        return delegate.handle(resetContext, context);
-    }
-
-    @Nonnull
-    @Override
-    public ResetHandlerRegistry subscribe(@Nonnull ResetHandler resetHandler) {
-        return delegate.subscribe(resetHandler);
+        return (resetContext, ctx) -> interceptorChain.handle(resetContext, ctx, target, handler)
+                                                      .ignoreEntries()
+                                                      .cast();
     }
 
     /**
@@ -223,7 +201,24 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
     }
 
     private static boolean supportsReplay(MessageHandlingMember<?> h) {
-        return h.attribute(HandlerAttributes.ALLOW_REPLAY).map(Boolean.TRUE::equals).orElse(Boolean.TRUE);
+        return h.attribute(HandlerAttributes.ALLOW_REPLAY)
+                .map(Boolean.TRUE::equals)
+                .orElse(Boolean.TRUE);
+    }
+
+    @Nonnull
+    @Override
+    public MessageStream.Empty<Message> handle(@Nonnull ResetContext resetContext,
+                                               @Nonnull ProcessingContext context) {
+        return handlingComponent.handle(resetContext, context);
     }
     // endregion
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("target", target);
+        descriptor.describeWrapperOf(handlingComponent);
+        descriptor.describeProperty("messageTypeResolver", messageTypeResolver);
+        descriptor.describeProperty("converter", converter);
+    }
 }

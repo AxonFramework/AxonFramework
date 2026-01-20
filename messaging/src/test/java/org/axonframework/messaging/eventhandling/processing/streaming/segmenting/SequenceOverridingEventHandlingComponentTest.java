@@ -17,11 +17,6 @@
 package org.axonframework.messaging.eventhandling.processing.streaming.segmenting;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.eventhandling.*;
-import org.axonframework.messaging.eventhandling.replay.ResetContext;
-import org.axonframework.messaging.eventhandling.replay.ResetHandler;
-import org.axonframework.messaging.eventhandling.replay.ResetHandlerRegistry;
-import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
@@ -32,6 +27,7 @@ import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.eventhandling.replay.ResetContext;
 import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
 import org.junit.jupiter.api.*;
 
@@ -115,12 +111,6 @@ class SequenceOverridingEventHandlingComponentTest {
             public MessageStream.Empty<Message> handle(@Nonnull ResetContext resetContext,
                                                        @Nonnull ProcessingContext context) {
                 return MessageStream.empty();
-            }
-
-            @Nonnull
-            @Override
-            public ResetHandlerRegistry subscribe(@Nonnull ResetHandler resetHandler) {
-                return this;
             }
         };
     }

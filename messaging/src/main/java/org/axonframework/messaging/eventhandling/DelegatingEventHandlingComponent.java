@@ -23,7 +23,6 @@ import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
-import org.axonframework.messaging.eventhandling.replay.ResetHandler;
 
 import java.util.Objects;
 import java.util.Set;
@@ -69,33 +68,20 @@ public abstract class DelegatingEventHandlingComponent implements EventHandlingC
 
     @Nonnull
     @Override
-    public Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+    public Object sequenceIdentifierFor(@Nonnull EventMessage event,
+                                        @Nonnull ProcessingContext context) {
         return delegate.sequenceIdentifierFor(event, context);
     }
 
-    @Nonnull
     @Override
-    public DelegatingEventHandlingComponent subscribe(@Nonnull ResetHandler resetHandler) {
-        delegate.subscribe(resetHandler);
-        return this;
+    public boolean supportsReset() {
+        return delegate.supportsReset();
     }
 
     @Nonnull
     @Override
-    public MessageStream.Empty<Message> handle(@Nonnull ResetContext resetContext, @Nonnull ProcessingContext context) {
-        return delegate.handle(resetContext, context);
-    }
-
-    @Nonnull
-    @Override
-    public DelegatingEventHandlingComponent subscribe(@Nonnull ResetHandler resetHandler) {
-        delegate.subscribe(resetHandler);
-        return this;
-    }
-
-    @Nonnull
-    @Override
-    public MessageStream.Empty<Message> handle(@Nonnull ResetContext resetContext, @Nonnull ProcessingContext context) {
+    public MessageStream.Empty<Message> handle(@Nonnull ResetContext resetContext,
+                                               @Nonnull ProcessingContext context) {
         return delegate.handle(resetContext, context);
     }
 

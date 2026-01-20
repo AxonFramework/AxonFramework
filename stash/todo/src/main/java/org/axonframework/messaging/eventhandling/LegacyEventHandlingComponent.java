@@ -18,14 +18,12 @@ package org.axonframework.messaging.eventhandling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
-import org.axonframework.messaging.eventhandling.replay.ResetHandler;
-import org.axonframework.messaging.eventhandling.replay.ResetHandlerRegistry;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
@@ -100,13 +98,9 @@ public class LegacyEventHandlingComponent implements EventHandlingComponent {
         };
     }
 
-    /**
-     * Returns the wrapped {@link EventHandlerInvoker}.
-     *
-     * @return The wrapped {@code EventHandlerInvoker}.
-     */
-    public EventHandlerInvoker getEventHandlerInvoker() {
-        return eventHandlerInvoker;
+    @Override
+    public boolean supportsReset() {
+        return eventHandlerInvoker.supportsReset();
     }
 
     @Override
@@ -117,21 +111,16 @@ public class LegacyEventHandlingComponent implements EventHandlingComponent {
     }
 
     @Override
-    public @NotNull ResetHandlerRegistry subscribe(@NotNull ResetHandler resetHandler) {
-        // EventHandlerInvoker doesn't support dynamic subscription
-        throw new UnsupportedOperationException(
-                "Dynamic subscription is not supported by LegacyEventHandlingComponent. " +
-                        "This is a legacy adapter for EventHandlerInvoker which doesn't support runtime registration."
-        );
-    }
-
-    @Override
-    public boolean supportsReset() {
-        return eventHandlerInvoker.supportsReset();
-    }
-
-    @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         // Unimplemented as this is legacy flow.
+    }
+
+    /**
+     * Returns the wrapped {@link EventHandlerInvoker}.
+     *
+     * @return The wrapped {@code EventHandlerInvoker}.
+     */
+    public EventHandlerInvoker getEventHandlerInvoker() {
+        return eventHandlerInvoker;
     }
 }
