@@ -18,7 +18,6 @@ package org.axonframework.messaging.eventhandling.annotation;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
-import org.axonframework.messaging.core.annotation.HandlerAttributes;
 import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.messaging.core.annotation.UnsupportedHandlerException;
