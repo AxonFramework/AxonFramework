@@ -12,16 +12,6 @@ The documentation below describes the Distributed Tracing concepts for reference
 Distributed Tracing enables you to track the path of a message through your system to see how the system behaves and performs.
 Axon Framework provides additional tracing functionality to track what takes time in your microservice, such as how long it took to load the aggregate, how long the actual command invocation took, or how long it took to publish events.
 
-____
-
-*OpenTracing deprecation warning*
-
-The xref:tracing-extension-reference::index.adoc[OpenTracing extension] works in a different way than described on this page.
-Its functionality is limited and will not be updated to include the additional functionality described on this page.
-The OpenTracing standard itself is deprecated, please consider moving to OpenTelemetry instead.
-
-____
-
 == Span factories
 
 To provide additional insights in traces, many Axon Framework components use a `SpanFactory`.
