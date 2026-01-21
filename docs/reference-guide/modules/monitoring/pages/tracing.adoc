@@ -1,6 +1,14 @@
 = Distributed Tracing
 :navtitle: Tracing
 
+[WARNING]
+.Distributed Tracing not available in Axon Framework 5.0
+====
+The Distributed Tracing feature is not yet available in Axon Framework 5.0.
+It will be reintroduced in Axon Framework soon.
+The documentation below describes the Distributed Tracing concepts for reference and future use.
+====
+
 Distributed Tracing enables you to track the path of a message through your system to see how the system behaves and performs.
 Axon Framework provides additional tracing functionality to track what takes time in your microservice, such as how long it took to load the aggregate, how long the actual command invocation took, or how long it took to publish events.
 
