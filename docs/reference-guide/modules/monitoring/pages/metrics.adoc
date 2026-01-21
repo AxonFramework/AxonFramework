@@ -2,16 +2,20 @@
 :navtitle: Metrics
 
 Interesting metrics in a message centric system come in several forms and flavors, like count, capacity, and latency for example.
-Axon Framework allows you to retrieve such measurements through the use of the `axon-metrics` or `axon-micrometer` module.
+Axon Framework allows you to retrieve such measurements through the use of the extension modules `axon-metrics-dropwizard` and `axon-metrics-micrometer`.
+
 With these modules you can register a number of `MessageMonitor` implementations to your messaging components, like the xref:commands:command-dispatchers.adoc#command-bus[`CommandBus`], xref:events:infrastructure.adoc#event_bus[`EventBus`], xref:queries:query-dispatchers.adoc#query-bus-and-gateway[`QueryBus`] and xref:events:event-processors/index.adoc[`EventProcessors`].
 
-`axon-metrics` module uses https://metrics.dropwizard.io/[Dropwizard Metrics] for registering the measurements correctly.
-That means that `MessageMonitors` are registered against the Dropwizard `MetricRegistry`.
+[[axon-metrics-dropwizard]]
+As the name suggests, the `axon-metrics-dropwizard` module uses link:https://metrics.dropwizard.io/[Dropwizard Metrics] for registering the measurements of your infrastructure components.
+Hence, the `MessageMonitors` provided by this module are registered against the Dropwizard `MetricRegistry`.
 
-`axon-micrometer` module uses https://micrometer.io/[Micrometer] which is a dimensional-first metrics collection facade whose aim is to allow you to time, count, and gauge your code with a vendor neutral API.
-That means that `MessageMonitors` are registered against the Micrometer `MeterRegistry`.
+[[axon-metrics-micrometer]]
+Furthermore, the `axon-metrics-micrometer` module uses link:https://micrometer.io/[Micrometer] for measurements.
+This is a dimensional-first metrics collection facade, whose aim is to allow you to time, count, and gauge your code with a vendor neutral API.
+Furthermore, the `MessageMonitors` provided by this module are registered against the Micrometer `MeterRegistry`.
 
-The following monitor implementations are currently provided:
+The following monitor implementations are available through **both** modules:
 
 . `CapacityMonitor` - Measures message capacity by keeping track of the total time spent on message handling compared to total time it is active.
 This returns a number between 0 and n number of threads.
@@ -20,241 +24,298 @@ Thus, if there are 4 threads working, the maximum capacity is 4 if every thread 
 Note that xref:events:event-processors/streaming.adoc#replaying-events[triggering a reset] will impact this metric!
 . `MessageCountingMonitor` - Counts the number of ingested, successful, failed, ignored and processed messages.
 . `MessageTimerMonitor` - Keeps a timer for all successful, failed and ignored messages, as well as an overall timer for all three combined.
-. `PayloadTypeMessageMonitorWrapper` - A special `MessageMonitor` implementation which allows setting a monitor per message type instead of per message publishing/handling component.
+
+The `axon-metrics-dropwizard` module has one unique `MessageMonitor`, called the `PayloadTypeMessageMonitorWrapper`. This is a `MessageMonitor` implementation that allows setting a monitor per message type instead of per message publishing/handling component. This monitor is not mandatory for `axon-metrics-micrometer` due to Micrometer's dimensional-first support. As a result, any measurement can be tagged with the payload type automatically.
 
 You are free to configure any combination of `MessageMonitors` through constructors on your messaging components, simply by using the Configuration API.
-The `GlobalMetricRegistry` contained in the `axon-metrics` and `axon-micrometer` modules provides a set of sensible defaults per type of messaging component.
+The `GlobalMetricRegistry` contained in the `axon-metrics-dropwizard` and `axon-metrics-micrometer` modules provides a set of sensible defaults per type of messaging component.
 The following example shows you how to configure default metrics for your message handling components:
 
-== Dropwizard
+== Configuring message monitors
 
-==== Axon Configuration API
+For configuring `MessageMonitors` in your application, please read the section for <<dropwizard,Dropwizard>> or <<micrometer,Micrometer>>.
 
-[source,java]
-----
-public class MetricsConfiguration {
-
-    public Configurer buildConfigurer() {
-        return DefaultConfigurer.defaultConfiguration();
-    }
-
-    // The MetricRegistry is a class from the Dropwizard Metrics framework
-    public void configureDefaultMetrics(Configurer configurer, MetricRegistry metricRegistry) {
-        GlobalMetricRegistry globalMetricRegistry = new GlobalMetricRegistry(metricRegistry);
-        // We register the default monitors to our messaging components by doing the following
-        globalMetricRegistry.registerWithConfigurer(configurer);
-    }
-}
-----
-
-==== Spring Boot auto configuration
-
+[TIP]
+.Spring Boot Property-based disabling
+====
+When using Spring Boot, you can disable metrics entirely by setting the following property:
 [source,text]
 ----
-# The default value is `true`. Thus you will have Metrics configured if `axon-metrics` and `io.dropwizard.metrics` are on your classpath.
-axon.metrics.auto-configuration.enabled=true
+axon.metrics.auto-configuration.enabled=false
 ----
 
-== Micrometer
+This property will influence both <<dropwizard,Dropwizard>> and <<micrometer,Micrometer>> metrics.
+====
 
-==== Axon Configuration API - without tags
+[#dropwizard]
+=== Dropwizard
 
+You need to include a dependency to `axon-metrics-dropwizard` to enable Dropwizard metrics:
+
+[tabs]
+====
+Maven::
++
+--
+[source,xml]
+----
+<dependency>
+    <groupId>org.axonframework.extensions.metrics</groupId>
+    <artifactId>axon-metrics-dropwizard</artifactId>
+    <version>${axon.version}</version>
+</dependency>
+----
+--
+
+Gradle::
++
+--
+[source,groovy]
+----
+implementation 'org.axonframework.extensions.metrics:axon-metrics-dropwizard:${axonVersion}'
+----
+--
+====
+
+With the dependency in place the default `MessageMonitors` will be set for all `CommandBus`, `EventSink`, `EventProcessor`, and `QueryBus` implementations present in the application.
+If you need to specify the `MetricRegistry` used, please check the following examples:
+
+[tabs]
+====
+Configuration API::
++
+--
 [source,java]
 ----
-public class MetricsConfiguration {
+import com.codahale.metrics.MetricRegistry;
+import org.axonframework.extension.metrics.dropwizard.MetricsConfigurationEnhancer;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
 
-    public Configurer buildConfigurer() {
-        return DefaultConfigurer.defaultConfiguration();
-    }
+class MetricsConfiguration {
 
-    // The MeterRegistry is a class from the Micrometer library
-    public void configureDefaultMetrics(Configurer configurer, MeterRegistry meterRegistry) {
-        GlobalMetricRegistry globalMetricRegistry = new GlobalMetricRegistry(meterRegistry);
-        globalMetricRegistry.registerWithConfigurer(configurer);
+    public void configureDefaultMetrics(MessagingConfigurer configurer,
+                                        MetricRegistry metricRegistry) {
+        configurer.componentRegistry(componentRegistry -> componentRegistry.registerEnhancer(
+                new MetricsConfigurationEnhancer(metricRegistry)
+        ));
     }
 }
 ----
+--
 
-==== Axon Configuration API - with tags
-
+Spring Boot::
++
+--
 [source,java]
 ----
-public class MetricsConfiguration {
+import com.codahale.metrics.MetricRegistry;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-    public Configurer buildConfigurer() {
-        return DefaultConfigurer.defaultConfiguration();
-    }
-
-    // The MeterRegistry is a class from the Micrometer library
-    public void configureDefaultMetrics(Configurer configurer, MeterRegistry meterRegistry) {
-        GlobalMetricRegistry globalMetricRegistry = new GlobalMetricRegistry(meterRegistry);
-        globalMetricRegistry.registerWithConfigurerWithDefaultTags(configurer);
-    }
-}
-----
-
-==== Spring Boot auto configuration - without tags
-
-[source,properties]
-----
-# The default value is `true`. 
-# Thus you will have Metrics configured if `axon-micrometer` and 
-#  appropriate metric implementation (for example: `micrometer-registry-prometheus`) are on your classpath.
-axon.metrics.auto-configuration.enabled=true
-
-# Spring Boot metrics enabled
-management.endpoint.metrics.enabled=true
-
-# Spring Boot (Prometheus) endpoint (`/actuator/prometheus`) enabled and exposed
-management.metrics.export.prometheus.enabled=true
-management.endpoint.prometheus.enabled=true
-----
-
-==== Spring Boot auto configuration - with tags
-
-[source,properties]
-----
-# The default value is `true`. 
-# Thus you will have Metrics configured if `axon-micrometer` and 
-#  appropriate metric implementation (for example: `micrometer-registry-prometheus`) are on your classpath.
-axon.metrics.auto-configuration.enabled=true
-
-# The default value is `false`. 
-# By enabling this property you will have message (event, command, query)
-#   payload type set as a micrometer tag/dimension by default. 
-# Additionally, the processor name will be a tag/dimension instead of it being part of the metric name.
-axon.metrics.micrometer.dimensional=true
-
-# Spring Boot metrics enabled
-management.endpoint.metrics.enabled=true
-
-# Spring Boot (Prometheus) endpoint (`/actuator/prometheus`) enabled and exposed
-management.metrics.export.prometheus.enabled=true
-management.endpoint.prometheus.enabled=true
-----
-
-'''
-
-The scenario might occur that more fine-grained control over which `MessageMonitor` instance are defined is necessary.
-The following snippet provides as sample if you want to have more specific metrics on any of the message handling components:
-
-[source,java]
-----
-// Java (Spring Boot Configuration) - Micrometer example
 @Configuration
-public class MetricsConfig {
+class MetricsConfiguration {
 
     @Bean
-    public ConfigurerModule metricConfigurer(MeterRegistry meterRegistry) {
-        return configurer -> {
-            instrumentEventStore(meterRegistry, configurer);
-            instrumentEventProcessors(meterRegistry, configurer);
-            instrumentCommandBus(meterRegistry, configurer);
-            instrumentQueryBus(meterRegistry, configurer);
-        };
+    public MetricRegistry metricRegistry() {
+        return new MetricRegistry();
     }
+}
+----
+--
+====
 
-    private void instrumentEventStore(MeterRegistry meterRegistry, Configurer configurer) {
-        MessageMonitorFactory messageMonitorFactory = (configuration, componentType, componentName) -> {
-            MessageCountingMonitor messageCounter = MessageCountingMonitor.buildMonitor(
-                    componentName, meterRegistry,
-                    message -> Tags.of(TagsUtil.PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName())
-                                   .and(message.getMetaData().entrySet().stream()
-                                               .map(s -> Tag.of(s.getKey(), s.getValue().toString()))
-                                               .collect(Collectors.toList()))
-            );
-            // Naming the Timer monitor/meter with the name of the component (eventStore)
-            // Registering the Timer with custom tags: payloadType.
-            MessageTimerMonitor messageTimer = MessageTimerMonitor.buildMonitor(
-                    componentName, meterRegistry,
-                    message -> Tags.of(TagsUtil.PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName())
-            );
-            return new MultiMessageMonitor<>(messageCounter, messageTimer);
-        };
-        configurer.configureMessageMonitor(EventStore.class, messageMonitorFactory);
+[#micrometer]
+=== Micrometer
+
+You need to include a dependency to `axon-metrics-micrometer` to enable Micrometer metrics:
+
+[tabs]
+====
+Maven::
++
+--
+[source,xml]
+----
+<dependency>
+    <groupId>org.axonframework.extensions.metrics</groupId>
+    <artifactId>axon-metrics-micrometer</artifactId>
+    <version>${axon.version}</version>
+</dependency>
+----
+--
+
+Gradle::
++
+--
+[source,groovy]
+----
+implementation 'org.axonframework.extensions.metrics:axon-metrics-micrometer:${axonVersion}'
+----
+--
+====
+
+With the dependency in place the default `MessageMonitors` will be set for all `CommandBus`, `EventSink`, `EventProcessor`, and `QueryBus` implementations present in the application.
+If you are using an automated configuration flow, as with Spring, be sure to set the following properties:
+
+[source,properties]
+----
+# Spring Boot metrics enabled
+management.endpoint.metrics.enabled=true
+
+# Spring Boot (Prometheus) endpoint (`/actuator/prometheus`) enabled and exposed
+management.metrics.export.prometheus.enabled=true
+management.endpoint.prometheus.enabled=true
+----
+
+Furthermore, Micrometer offers to option to enable dimensions to your measurements. This allows you to filter the measurements on, for example, the payload type of messages:
+
+[tabs]
+====
+Declarative configuration::
++
+--
+[source,java]
+----
+import io.micrometer.core.instrument.MeterRegistry;
+import org.axonframework.extension.metrics.micrometer.MetricsConfigurationEnhancer;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+
+class MetricsConfiguration {
+
+    public void configureDefaultMetrics(MessagingConfigurer configurer,
+                                        MeterRegistry meterRegistry) {
+        boolean useDimensions = true;
+        configurer.componentRegistry(componentRegistry -> componentRegistry.registerEnhancer(
+                new MetricsConfigurationEnhancer(meterRegistry, useDimensions)
+        ));
     }
+}
+----
+--
 
-    private void instrumentEventProcessors(MeterRegistry meterRegistry, Configurer configurer) {
-        MessageMonitorFactory messageMonitorFactory = (configuration, componentType, componentName) -> {
+Automated configuration - Spring Boot::
++
+--
+[source,properties]
+----
+# The default value is `false`.
+# By enabling this property you will have message (event, command, query)
+#   payload type set as a micrometer tag/dimension by default.
+# Additionally, the processor name will be a tag/dimension instead of it being part of the metric name.
+axon.metrics.micrometer.dimensional=true
+----
+--
+====
 
-            // Naming the Counter monitor/meter with the fixed name `eventProcessor`.
-            // Registering the Counter with custom tags: payloadType and processorName.
-            MessageCountingMonitor messageCounter = MessageCountingMonitor.buildMonitor(
-                    "eventProcessor", meterRegistry,
-                    message -> Tags.of(
-                            TagsUtil.PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName(),
-                            TagsUtil.PROCESSOR_NAME_TAG, componentName
-                    )
-            );
-            // Naming the Timer monitor/meter with the fixed name `eventProcessor`.
-            // Registering the Timer with custom tags: payloadType and processorName.
-            MessageTimerMonitor messageTimer = MessageTimerMonitor.buildMonitor(
-                    "eventProcessor", meterRegistry,
-                    message -> Tags.of(
-                            TagsUtil.PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName(),
-                            TagsUtil.PROCESSOR_NAME_TAG, componentName
-                    )
-            );
-            // Naming the Capacity/Gauge monitor/meter with the fixed name `eventProcessor`.
-            // Registering the Capacity/Gauge with custom tags: payloadType and processorName.
-            CapacityMonitor capacityMonitor1Minute = CapacityMonitor.buildMonitor(
-                    "eventProcessor", meterRegistry,
-                    message -> Tags.of(
-                            TagsUtil.PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName(),
-                            TagsUtil.PROCESSOR_NAME_TAG, componentName
-                    )
-            );
+Lastly, if you need to specify the `MetricRegistry` used, please check the following examples:
 
-            return new MultiMessageMonitor<>(messageCounter, messageTimer, capacityMonitor1Minute);
-        };
-        configurer.configureMessageMonitor(TrackingEventProcessor.class, messageMonitorFactory);
+[tabs]
+====
+Declarative configuration::
++
+--
+[source,java]
+----
+import io.micrometer.core.instrument.MeterRegistry;
+import org.axonframework.extension.metrics.micrometer.MetricsConfigurationEnhancer;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+
+class MetricsConfiguration {
+
+    public void configureDefaultMetrics(MessagingConfigurer configurer,
+                                        MeterRegistry meterRegistry) {
+        configurer.componentRegistry(componentRegistry -> componentRegistry.registerEnhancer(
+                new MetricsConfigurationEnhancer(meterRegistry)
+        ));
     }
+}
+----
+--
 
-    private void instrumentCommandBus(MeterRegistry meterRegistry, Configurer configurer) {
-        MessageMonitorFactory messageMonitorFactory = (configuration, componentType, componentName) -> {
-            MessageCountingMonitor messageCounter = MessageCountingMonitor.buildMonitor(
-                    componentName, meterRegistry,
-                    message -> Tags.of(
-                            TagsUtil.PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName(),
-                            "messageId", message.getIdentifier()
-                    )
-            );
-            MessageTimerMonitor messageTimer = MessageTimerMonitor.buildMonitor(
-                    componentName, meterRegistry,
-                    message -> Tags.of(TagsUtil.PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName())
-            );
+Automated configuration - Spring Boot::
++
+--
+[source,java]
+----
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-            CapacityMonitor capacityMonitor1Minute = CapacityMonitor.buildMonitor(
-                    componentName, meterRegistry,
-                    message -> Tags.of(TagsUtil.PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName())
-            );
+@Configuration
+class MetricsConfiguration {
 
-            return new MultiMessageMonitor<>(messageCounter, messageTimer, capacityMonitor1Minute);
-        };
-        configurer.configureMessageMonitor(CommandBus.class, messageMonitorFactory);
+    @Bean
+    public MeterRegistry meterRegistry() {
+        return new SimpleMeterRegistry();
     }
+}
+----
+--
+====
 
-    private void instrumentQueryBus(MeterRegistry meterRegistry, Configurer configurer) {
-        MessageMonitorFactory messageMonitorFactory = (configuration, componentType, componentName) -> {
-            MessageCountingMonitor messageCounter = MessageCountingMonitor.buildMonitor(
-                    componentName, meterRegistry,
-                    message -> Tags.of(
-                            TagsUtil.PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName(),
-                            "messageId", message.getIdentifier()
-                    )
-            );
-            MessageTimerMonitor messageTimer = MessageTimerMonitor.buildMonitor(
-                    componentName, meterRegistry,
-                    message -> Tags.of(TagsUtil.PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName())
-            );
-            CapacityMonitor capacityMonitor1Minute = CapacityMonitor.buildMonitor(
-                    componentName, meterRegistry,
-                    message -> Tags.of(TagsUtil.PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName())
-            );
+=== Configuring (custom) message monitors
 
-            return new MultiMessageMonitor<>(messageCounter, messageTimer, capacityMonitor1Minute);
-        };
-        configurer.configureMessageMonitor(QueryBus.class, messageMonitorFactory);
+The scenario might occur that more fine-grained control over which `MessageMonitor` instances are defined is necessary.
+The `MessagingConfigurer` provides dedicated methods to register monitors per message type:
+
+* `registerMessageMonitor(...)` - Registers a monitor for all message types.
+* `registerCommandMonitor(...)` - Registers a monitor specifically for command messages.
+* `registerEventMonitor(...)` - Registers a monitor specifically for event messages.
+* `registerQueryMonitor(...)` - Registers a monitor specifically for query messages.
+* `registerSubscriptionQueryUpdateMonitor(...)` - Registers a monitor for subscription query update messages.
+
+Multiple monitors can be registered for the same message type.
+When retrieving a monitor, all registered monitors are combined into a `MultiMessageMonitor`, which delegates message ingestion and callbacks to all of them.
+
+The following snippet shows how to register custom message monitors using the `MessagingConfigurer`:
+
+[source,java]
+----
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.monitoring.MessageMonitor;
+
+class MetricsConfiguration {
+
+    public void configureCustomMonitors(MessagingConfigurer configurer) {
+        // Register a monitor for all message types
+        configurer.registerMessageMonitor(config -> new MyCustomMessageMonitor());
+
+        // Register monitors for specific message types
+        configurer.registerCommandMonitor(config -> new MyCommandMonitor());
+        configurer.registerEventMonitor(config -> new MyEventMonitor());
+        configurer.registerQueryMonitor(config -> new MyQueryMonitor());
+    }
+}
+----
+
+If registering `MessageMonitors` per message type is not fine-grained enough, we recommend the registration of a component decorator. Axon's decorator registration allows you to wrap infrastructure components with custom logic, including monitoring. It is actually how Axon Framework itself attaches the `MessageMonitors` as a special type of xref:messaging-concepts:message-intercepting.adoc[interceptor] to the right infrastructure components.
+
+The following example shows how to create register a decorator specifically for an `EventSink` to include a specific `MessageMonitor`:
+
+[source,java]
+----
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.EventSink;
+import org.axonframework.messaging.eventhandling.InterceptingEventSink;
+import org.axonframework.messaging.monitoring.MessageMonitor;
+import org.axonframework.messaging.monitoring.interception.MonitoringEventDispatchInterceptor;
+
+import java.util.List;
+
+class AxonConfig {
+
+    public void registerMonitorDecorator(MessagingConfigurer configurer,
+                                         MessageMonitor<? super EventMessage> eventMonitor) {
+        configurer.componentRegistry(componentRegistry -> componentRegistry.registerDecorator(
+                EventSink.class,
+                0,
+                (config, name, delegate) -> new InterceptingEventSink(
+                        delegate,
+                        List.of(new MonitoringEventDispatchInterceptor(eventMonitor))
+                )
+        ));
     }
 }
 ----
