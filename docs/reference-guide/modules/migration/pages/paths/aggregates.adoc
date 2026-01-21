@@ -248,6 +248,11 @@ Axon uses the first event's payload to construct the initial instance directly.
 
 === @EntityMember instead of @AggregateMember
 
+TODO:
+
+- full example, not just the list
+- list and single entity only, document that map wont work anymore
+
 When defining child entities within an aggregate (now entity), use `@EntityMember` instead of `@AggregateMember`.
 
 [source,java]
@@ -270,6 +275,13 @@ The `@AggregateRoot` annotation is replaced by `@EventSourcedEntity`. In Axon Fr
 The `@CreationPolicy` annotation is removed. The recommended flow is to use a **static `@CommandHandler`** for creation. If the command should only succeed if the entity doesn't exist, the static handler naturally handles this as it is called when no instance is present. This is the direct replacement for `CreationPolicy.ALWAYS`.
 
 If you need "create if missing" logic (equivalent to `CreationPolicy.CREATE_IF_MISSING`), you can implement it within the static handler by checking for existence via the `EventCriteria` and a dispatcher, or by providing multiple handlers. However, for a standard migration, most creation logic can be moved to static methods.
+
+TODO:
+
+- check instance commandHandler and creational commandHandler
+- stateful command handlers
+- inject state / nullable to check for existence
+
 
 === Polymorphic Entities
 
