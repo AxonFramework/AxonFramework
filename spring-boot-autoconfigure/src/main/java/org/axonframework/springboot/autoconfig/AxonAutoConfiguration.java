@@ -70,6 +70,8 @@ import org.axonframework.serialization.RevisionResolver;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.avro.AvroSerializer;
 import org.axonframework.serialization.avro.AvroSerializerStrategy;
+import org.axonframework.serialization.jackson3.JacksonSerializer3;
+import org.axonframework.serialization.jackson3.JacksonSerializer3Customizer;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.spring.eventsourcing.SpringAggregateSnapshotter;
@@ -233,6 +235,16 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                                         .converter(converter)
                                         .objectMapper(objectMapper)
                                         .build();
+            case JACKSON3:
+                Map<String, JacksonSerializer3Customizer> customizerBeans = beansOfTypeIncludingAncestors(applicationContext, JacksonSerializer3Customizer.class);
+                JacksonSerializer3Customizer customizer = customizerBeans.values().stream().findFirst().orElse(null);
+                ChainingConverter converter3 = new ChainingConverter(beanClassLoader);
+
+                return JacksonSerializer3.builder()
+                                         .revisionResolver(revisionResolver)
+                                         .converter(converter3)
+                                         .jsonMapperBuilderCustomizer(customizer)
+                                         .build();
             case CBOR:
                 Map<String, CBORMapper> cborMapperBeans = beansOfTypeIncludingAncestors(applicationContext,
                                                                                         CBORMapper.class);
