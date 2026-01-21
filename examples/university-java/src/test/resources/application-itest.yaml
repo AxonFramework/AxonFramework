@@ -1,6 +1,0 @@
-spring:
-  docker:
-    compose:
-      skip:
-        in-tests: false
-      file: file:../docker-compose.yaml
