@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * JsonDeserializer implementation that deserializes MetaData instances.
+ * JsonDeserializer implementation for Jackson 2 that deserializes MetaData instances.
  *
  * @author Allard Buijze
  * @since 2.4.2
