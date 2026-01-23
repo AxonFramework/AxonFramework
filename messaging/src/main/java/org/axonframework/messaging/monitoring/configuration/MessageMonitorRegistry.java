@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,8 @@
 package org.axonframework.messaging.monitoring.configuration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.commandhandling.CommandMessage;
-import org.axonframework.common.configuration.ComponentRegistry;
-import org.axonframework.messaging.core.configuration.MessagingConfigurationDefaults;
-import org.axonframework.common.infra.DescribableComponent;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.ComponentDefinition;
 import org.axonframework.common.configuration.ComponentRegistry;
@@ -58,6 +55,7 @@ import org.axonframework.messaging.queryhandling.SubscriptionQueryUpdateMessage;
  * @author Jan Galinski
  * @since 5.0.0
  */
+@Internal
 public interface MessageMonitorRegistry extends DescribableComponent {
 
     /**

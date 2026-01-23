@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package org.axonframework.messaging.monitoring.configuration;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.TypeReference;
-import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.Component;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.ComponentDefinition;
@@ -54,6 +54,7 @@ import java.util.List;
  * @author Jan Galinski
  * @since 5.0.0
  */
+@Internal
 public class DefaultMessageMonitorRegistry implements MessageMonitorRegistry {
 
     private static final TypeReference<MessageMonitor<Message>> MONITOR_TYPE_REF = new TypeReference<>() {
