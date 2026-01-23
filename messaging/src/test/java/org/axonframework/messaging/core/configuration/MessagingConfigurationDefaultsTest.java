@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,27 +18,22 @@ package org.axonframework.messaging.core.configuration;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.configuration.DefaultAxonApplication;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.conversion.Converter;
+import org.axonframework.conversion.json.JacksonConverter;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.CommandHandler;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandPriorityCalculator;
 import org.axonframework.messaging.commandhandling.CommandResultMessage;
-import org.axonframework.messaging.commandhandling.interception.InterceptingCommandBus;
 import org.axonframework.messaging.commandhandling.RoutingStrategy;
 import org.axonframework.messaging.commandhandling.annotation.AnnotationRoutingStrategy;
 import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
 import org.axonframework.messaging.commandhandling.gateway.ConvertingCommandGateway;
-import org.axonframework.common.configuration.ApplicationConfigurer;
-import org.axonframework.common.configuration.Configuration;
-import org.axonframework.common.configuration.DefaultAxonApplication;
-import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.eventhandling.EventBus;
-import org.axonframework.messaging.eventhandling.EventSink;
-import org.axonframework.messaging.eventhandling.InterceptingEventBus;
-import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
-import org.axonframework.messaging.eventhandling.conversion.EventConverter;
-import org.axonframework.messaging.eventhandling.gateway.DefaultEventGateway;
-import org.axonframework.messaging.eventhandling.gateway.EventGateway;
+import org.axonframework.messaging.commandhandling.interception.InterceptingCommandBus;
 import org.axonframework.messaging.core.MessageDispatchInterceptor;
 import org.axonframework.messaging.core.MessageHandlerInterceptor;
 import org.axonframework.messaging.core.MessageTypeResolver;
@@ -58,13 +53,20 @@ import org.axonframework.messaging.core.interception.HandlerInterceptorRegistry;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
-import org.axonframework.messaging.queryhandling.gateway.DefaultQueryGateway;
+import org.axonframework.messaging.eventhandling.EventBus;
+import org.axonframework.messaging.eventhandling.EventSink;
+import org.axonframework.messaging.eventhandling.InterceptingEventBus;
+import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.axonframework.messaging.eventhandling.gateway.DefaultEventGateway;
+import org.axonframework.messaging.eventhandling.gateway.EventGateway;
+import org.axonframework.messaging.monitoring.configuration.DefaultMessageMonitorRegistry;
+import org.axonframework.messaging.monitoring.configuration.MessageMonitorRegistry;
 import org.axonframework.messaging.queryhandling.QueryBus;
-import org.axonframework.messaging.queryhandling.gateway.QueryGateway;
 import org.axonframework.messaging.queryhandling.QueryPriorityCalculator;
+import org.axonframework.messaging.queryhandling.gateway.DefaultQueryGateway;
+import org.axonframework.messaging.queryhandling.gateway.QueryGateway;
 import org.axonframework.messaging.queryhandling.interception.InterceptingQueryBus;
-import org.axonframework.conversion.Converter;
-import org.axonframework.conversion.json.JacksonConverter;
 import org.junit.jupiter.api.*;
 
 import java.util.List;
@@ -108,6 +110,8 @@ class MessagingConfigurationDefaultsTest {
                 .isInstanceOf(DefaultDispatchInterceptorRegistry.class);
         assertThat(resultConfig.getComponent(HandlerInterceptorRegistry.class))
                 .isInstanceOf(DefaultHandlerInterceptorRegistry.class);
+        assertThat(resultConfig.getComponent(MessageMonitorRegistry.class))
+                .isInstanceOf(DefaultMessageMonitorRegistry.class);
         assertInstanceOf(TransactionalUnitOfWorkFactory.class, resultConfig.getComponent(UnitOfWorkFactory.class));
         // Intercepting at all times, since we have a MessageOriginProvider that leads to the CorrelationDataInterceptor
         assertInstanceOf(InterceptingCommandBus.class, resultConfig.getComponent(CommandBus.class));
@@ -158,14 +162,23 @@ class MessagingConfigurationDefaultsTest {
         // Generic interception are wrapped for type safety and as such we cannot validate if the single interceptor is a CorrelationDataInterceptor
         DispatchInterceptorRegistry dispatchInterceptorRegistry =
                 resultConfig.getComponent(DispatchInterceptorRegistry.class);
-        assertThat(dispatchInterceptorRegistry.commandInterceptors(resultConfig)).size().isEqualTo(1);
-        assertThat(dispatchInterceptorRegistry.eventInterceptors(resultConfig)).size().isEqualTo(1);
-        assertThat(dispatchInterceptorRegistry.queryInterceptors(resultConfig)).size().isEqualTo(1);
+        assertThat(dispatchInterceptorRegistry.commandInterceptors(resultConfig, CommandBus.class, null))
+                .size().isEqualTo(1);
+        assertThat(dispatchInterceptorRegistry.eventInterceptors(resultConfig, EventSink.class, null))
+                .size().isEqualTo(1);
+        assertThat(dispatchInterceptorRegistry.queryInterceptors(resultConfig, QueryBus.class, null))
+                .size().isEqualTo(1);
+        assertThat(dispatchInterceptorRegistry.subscriptionQueryUpdateInterceptors(resultConfig, QueryBus.class, null))
+                .size().isEqualTo(1);
+
         HandlerInterceptorRegistry handlerInterceptorRegistry =
                 resultConfig.getComponent(HandlerInterceptorRegistry.class);
-        assertThat(handlerInterceptorRegistry.commandInterceptors(resultConfig)).size().isEqualTo(1);
-        assertThat(handlerInterceptorRegistry.eventInterceptors(resultConfig)).size().isEqualTo(1);
-        assertThat(handlerInterceptorRegistry.queryInterceptors(resultConfig)).size().isEqualTo(1);
+        assertThat(handlerInterceptorRegistry.commandInterceptors(resultConfig, CommandBus.class, null))
+                .size().isEqualTo(1);
+        assertThat(handlerInterceptorRegistry.eventInterceptors(resultConfig, EventSink.class, null))
+                .size().isEqualTo(1);
+        assertThat(handlerInterceptorRegistry.queryInterceptors(resultConfig, QueryBus.class, null))
+                .size().isEqualTo(1);
     }
 
     @Test
@@ -179,14 +192,91 @@ class MessagingConfigurationDefaultsTest {
 
         DispatchInterceptorRegistry dispatchInterceptorRegistry =
                 resultConfig.getComponent(DispatchInterceptorRegistry.class);
-        assertThat(dispatchInterceptorRegistry.commandInterceptors(resultConfig)).size().isEqualTo(0);
-        assertThat(dispatchInterceptorRegistry.eventInterceptors(resultConfig)).size().isEqualTo(0);
-        assertThat(dispatchInterceptorRegistry.queryInterceptors(resultConfig)).size().isEqualTo(0);
+        assertThat(dispatchInterceptorRegistry.commandInterceptors(resultConfig, CommandBus.class, null))
+                .size().isEqualTo(0);
+        assertThat(dispatchInterceptorRegistry.eventInterceptors(resultConfig, EventSink.class, null))
+                .size().isEqualTo(0);
+        assertThat(dispatchInterceptorRegistry.queryInterceptors(resultConfig, QueryBus.class, null))
+                .size().isEqualTo(0);
+        assertThat(dispatchInterceptorRegistry.subscriptionQueryUpdateInterceptors(resultConfig, QueryBus.class, null))
+                .size().isEqualTo(0);
+
         HandlerInterceptorRegistry handlerInterceptorRegistry =
                 resultConfig.getComponent(HandlerInterceptorRegistry.class);
-        assertThat(handlerInterceptorRegistry.commandInterceptors(resultConfig)).size().isEqualTo(0);
-        assertThat(handlerInterceptorRegistry.eventInterceptors(resultConfig)).size().isEqualTo(0);
-        assertThat(handlerInterceptorRegistry.queryInterceptors(resultConfig)).size().isEqualTo(0);
+        assertThat(handlerInterceptorRegistry.commandInterceptors(resultConfig, CommandBus.class, null))
+                .size().isEqualTo(0);
+        assertThat(handlerInterceptorRegistry.eventInterceptors(resultConfig, EventSink.class, null))
+                .size().isEqualTo(0);
+        assertThat(handlerInterceptorRegistry.queryInterceptors(resultConfig, QueryBus.class, null))
+                .size().isEqualTo(0);
+    }
+
+    @Test
+    void registersMonitorInterceptorInInterceptorRegistriesWhenSingleMessageMonitorIsPresent() {
+        ApplicationConfigurer configurer = MessagingConfigurer.enhance(new DefaultAxonApplication());
+
+        // Registers default provider registry to remove MessageOriginProvider, thus removing CorrelationDataInterceptor.
+        configurer.componentRegistry(
+                cr -> cr.registerComponent(CorrelationDataProviderRegistry.class,
+                                           c -> new DefaultCorrelationDataProviderRegistry())
+        ).componentRegistry(
+                cr -> cr.registerComponent(MessageMonitorRegistry.class,
+                                           config -> {
+                                               MessageMonitorRegistry monitorRegistry =
+                                                       new DefaultMessageMonitorRegistry();
+                                               return monitorRegistry.registerMonitor(c -> mock());
+                                           })
+        );
+        Configuration resultConfig = configurer.build();
+
+        // Generic interception are wrapped for type safety and as such we cannot validate if the single interceptor is a CorrelationDataInterceptor
+        DispatchInterceptorRegistry dispatchInterceptorRegistry =
+                resultConfig.getComponent(DispatchInterceptorRegistry.class);
+        // Ignoring command and query dispatch interceptors as those aren't monitored out of the box.
+        assertThat(dispatchInterceptorRegistry.eventInterceptors(resultConfig, EventSink.class, null))
+                .size().isEqualTo(1);
+        assertThat(dispatchInterceptorRegistry.subscriptionQueryUpdateInterceptors(resultConfig, QueryBus.class, null))
+                .size().isEqualTo(1);
+
+        HandlerInterceptorRegistry handlerInterceptorRegistry =
+                resultConfig.getComponent(HandlerInterceptorRegistry.class);
+        assertThat(handlerInterceptorRegistry.commandInterceptors(resultConfig, CommandBus.class, null))
+                .size().isEqualTo(1);
+        assertThat(handlerInterceptorRegistry.eventInterceptors(resultConfig, EventSink.class, null))
+                .size().isEqualTo(1);
+        assertThat(handlerInterceptorRegistry.queryInterceptors(resultConfig, QueryBus.class, null))
+                .size().isEqualTo(1);
+    }
+
+    @Test
+    void doesNotRegisterMonitorInterceptorInInterceptorRegistriesWhenTheAreNoMessageMonitors() {
+        ApplicationConfigurer configurer = MessagingConfigurer.enhance(new DefaultAxonApplication());
+        // Registers default provider registry to remove MessageOriginProvider, thus removing CorrelationDataInterceptor.
+        configurer.componentRegistry(
+                cr -> cr.registerComponent(CorrelationDataProviderRegistry.class,
+                                           c -> new DefaultCorrelationDataProviderRegistry())
+        ).componentRegistry(
+                cr -> cr.registerComponent(MessageMonitorRegistry.class,
+                                           c -> new DefaultMessageMonitorRegistry())
+        );
+        Configuration resultConfig = configurer.build();
+
+        DispatchInterceptorRegistry dispatchInterceptorRegistry =
+                resultConfig.getComponent(DispatchInterceptorRegistry.class);
+        // Ignoring command and query dispatch interceptors as those aren't monitored out of the box.
+        assertThat(dispatchInterceptorRegistry.eventInterceptors(resultConfig, EventSink.class, null))
+                .size().isEqualTo(0);
+        assertThat(dispatchInterceptorRegistry.subscriptionQueryUpdateInterceptors(resultConfig, QueryBus.class, null))
+                .size().isEqualTo(0);
+
+        HandlerInterceptorRegistry handlerInterceptorRegistry =
+                resultConfig.getComponent(HandlerInterceptorRegistry.class);
+        assertThat(handlerInterceptorRegistry.commandInterceptors(resultConfig, CommandBus.class, null))
+                .size().isEqualTo(0);
+        assertThat(handlerInterceptorRegistry.eventInterceptors(resultConfig, EventSink.class, null))
+                .size().isEqualTo(0);
+        assertThat(handlerInterceptorRegistry.queryInterceptors(resultConfig, QueryBus.class, null))
+                .size().isEqualTo(0);
     }
 
     @Test
