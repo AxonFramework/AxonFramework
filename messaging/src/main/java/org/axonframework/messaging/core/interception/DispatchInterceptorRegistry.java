@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,9 +60,11 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
 
     /**
      * Registers the given {@code interceptorBuilder} for a generic {@link Message} {@link MessageDispatchInterceptor}.
+     * <p>
+     * Registering an interceptor per a {@link ComponentBuilder} ensures the interceptor is only build <b>once</b>.
      *
-     * @param interceptorBuilder The generic {@link Message} {@link MessageDispatchInterceptor} builder to register.
-     * @return This {@code InterceptorRegistry}, for fluent interfacing.
+     * @param interceptorBuilder the generic {@link Message} {@link MessageDispatchInterceptor} builder to register
+     * @return this {@code InterceptorRegistry}, for fluent interfacing
      */
     @Nonnull
     DispatchInterceptorRegistry registerInterceptor(
@@ -88,10 +90,12 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
     /**
      * Registers the given {@code interceptorBuilder} for a {@link CommandMessage}-specific
      * {@link MessageDispatchInterceptor}.
+     * <p>
+     * Registering an interceptor per a {@link ComponentBuilder} ensures the interceptor is only build <b>once</b>.
      *
-     * @param interceptorBuilder The {@link CommandMessage}-specific {@link MessageDispatchInterceptor} builder to
-     *                           register.
-     * @return This {@code InterceptorRegistry}, for fluent interfacing.
+     * @param interceptorBuilder the {@link CommandMessage}-specific {@link MessageDispatchInterceptor} builder to
+     *                           register
+     * @return this {@code InterceptorRegistry}, for fluent interfacing
      */
     @Nonnull
     DispatchInterceptorRegistry registerCommandInterceptor(
@@ -120,10 +124,12 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
     /**
      * Registers the given {@code interceptorBuilder} for a {@link EventMessage}-specific
      * {@link MessageDispatchInterceptor}.
+     * <p>
+     * Registering an interceptor per a {@link ComponentBuilder} ensures the interceptor is only build <b>once</b>.
      *
-     * @param interceptorBuilder The {@link EventMessage}-specific {@link MessageDispatchInterceptor} builder to
-     *                           register.
-     * @return This {@code InterceptorRegistry}, for fluent interfacing.
+     * @param interceptorBuilder the {@link EventMessage}-specific {@link MessageDispatchInterceptor} builder to
+     *                           register
+     * @return this {@code InterceptorRegistry}, for fluent interfacing
      */
     @Nonnull
     DispatchInterceptorRegistry registerEventInterceptor(
@@ -152,10 +158,12 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
     /**
      * Registers the given {@code interceptorBuilder} for a {@link QueryMessage}-specific
      * {@link MessageDispatchInterceptor}.
+     * <p>
+     * Registering an interceptor per a {@link ComponentBuilder} ensures the interceptor is only build <b>once</b>.
      *
-     * @param interceptorBuilder The {@link QueryMessage}-specific {@link MessageDispatchInterceptor} builder to
-     *                           register.
-     * @return This {@code InterceptorRegistry}, for fluent interfacing.
+     * @param interceptorBuilder the {@link QueryMessage}-specific {@link MessageDispatchInterceptor} builder to
+     *                           register
+     * @return this {@code InterceptorRegistry}, for fluent interfacing
      */
     @Nonnull
     DispatchInterceptorRegistry registerQueryInterceptor(
@@ -184,10 +192,12 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
     /**
      * Registers the given {@code interceptorBuilder} for a {@link SubscriptionQueryUpdateMessage}-specific
      * {@link MessageDispatchInterceptor}.
+     * <p>
+     * Registering an interceptor per a {@link ComponentBuilder} ensures the interceptor is only build <b>once</b>.
      *
-     * @param interceptorBuilder The {@link SubscriptionQueryUpdateMessage}-specific {@link MessageDispatchInterceptor}
-     *                           builder to register.
-     * @return This {@code InterceptorRegistry}, for fluent interfacing.
+     * @param interceptorBuilder the {@link SubscriptionQueryUpdateMessage}-specific {@link MessageDispatchInterceptor}
+     *                           builder to register
+     * @return this {@code InterceptorRegistry}, for fluent interfacing
      */
     @Nonnull
     DispatchInterceptorRegistry registerSubscriptionQueryUpdateInterceptor(
