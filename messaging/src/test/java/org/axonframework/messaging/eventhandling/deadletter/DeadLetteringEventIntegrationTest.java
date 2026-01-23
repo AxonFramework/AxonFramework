@@ -183,7 +183,7 @@ public abstract class DeadLetteringEventIntegrationTest {
         SequencingPolicy sequencingPolicy = (event, context) ->
                 Optional.of(((DeadLetterableEvent) event.payload()).getAggregateIdentifier());
 
-        SimpleEventHandlingComponent simpleComponent = new SimpleEventHandlingComponent(sequencingPolicy);
+        SimpleEventHandlingComponent simpleComponent = SimpleEventHandlingComponent.create("component", sequencingPolicy);
         simpleComponent.subscribe(
                 new QualifiedName(DeadLetterableEvent.class),
                 eventHandler

@@ -307,7 +307,7 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
         private volatile Predicate<String> failurePredicate;
 
         FailingRecordingEventHandlingComponent(String name, Predicate<String> failurePredicate) {
-            super(SequentialPolicy.INSTANCE);
+            super(name, SequentialPolicy.INSTANCE);
             this.name = name;
             this.failurePredicate = failurePredicate;
             subscribe(new QualifiedName(StudentEnrolledEvent.class), this::handleStudentEnrolled);

@@ -94,7 +94,7 @@ public class SimpleEventHandlingComponent implements
         return new SimpleEventHandlingComponent(name, sequencingPolicy);
     }
 
-    private SimpleEventHandlingComponent(@Nonnull String name,
+    protected SimpleEventHandlingComponent(@Nonnull String name,
                                          @Nonnull SequencingPolicy sequencingPolicy) {
         this.name = Assert.nonEmpty(name, "The name may not be null or empty.");
         this.sequencingPolicy = Objects.requireNonNull(sequencingPolicy, "Sequencing Policy may not be null.");

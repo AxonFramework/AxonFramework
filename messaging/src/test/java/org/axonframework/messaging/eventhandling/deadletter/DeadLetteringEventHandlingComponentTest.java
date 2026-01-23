@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.deadletter;
 
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -959,19 +960,9 @@ class DeadLetteringEventHandlingComponentTest {
             return Collections.emptySet();
         }
 
-        @Nonnull
         @Override
-        public StubEventHandlingComponent subscribe(@Nonnull QualifiedName name,
-                                                    @Nonnull EventHandler handler) {
-            // No-op for test purposes
-            return this;
-        }
-
-        @Nonnull
-        @Override
-        public StubEventHandlingComponent subscribe(@Nonnull ResetHandler resetHandler) {
-            // No-op for test purposes
-            return this;
+        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+            // not needed
         }
     }
 }

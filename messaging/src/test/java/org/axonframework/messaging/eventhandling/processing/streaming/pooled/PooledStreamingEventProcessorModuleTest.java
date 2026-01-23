@@ -419,7 +419,7 @@ class PooledStreamingEventProcessorModuleTest {
         void shouldWrapEventHandlingComponentsWithDeadLetterProcessorWhenDlqConfigured() {
             // given
             var processorName = "testProcessor";
-            var component = new SimpleEventHandlingComponent();
+            var component = SimpleEventHandlingComponent.create("component");
             component.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
 
             var module = EventProcessorModule
@@ -447,9 +447,9 @@ class PooledStreamingEventProcessorModuleTest {
         void shouldWrapAllEventHandlingComponentsWithDeadLetterProcessorWhenDlqConfigured() {
             // given
             var processorName = "testProcessor";
-            var component0 = new SimpleEventHandlingComponent();
+            var component0 = SimpleEventHandlingComponent.create("component0");
             component0.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
-            var component1 = new SimpleEventHandlingComponent();
+            var component1 = SimpleEventHandlingComponent.create("component1");
             component1.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
 
             var module = EventProcessorModule
@@ -476,9 +476,9 @@ class PooledStreamingEventProcessorModuleTest {
         void shouldRegisterAllSequencedDeadLetterProcessorsWhenDlqConfigured() {
             // given
             var processorName = "testProcessor";
-            var component0 = new SimpleEventHandlingComponent();
+            var component0 = SimpleEventHandlingComponent.create("component0");
             component0.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
-            var component1 = new SimpleEventHandlingComponent();
+            var component1 = SimpleEventHandlingComponent.create("component1");
             component1.subscribe(new QualifiedName(Integer.class), (event, context) -> MessageStream.empty());
 
             var module = EventProcessorModule
@@ -508,7 +508,7 @@ class PooledStreamingEventProcessorModuleTest {
         void shouldNotRegisterSequencedDeadLetterProcessorsWhenDlqNotConfigured() {
             // given
             var processorName = "testProcessor";
-            var component = new SimpleEventHandlingComponent();
+            var component = SimpleEventHandlingComponent.create("component");
             component.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
 
             var module = EventProcessorModule
@@ -533,7 +533,7 @@ class PooledStreamingEventProcessorModuleTest {
         void shouldNotWrapEventHandlingComponentsWithDeadLetterProcessorWhenDlqNotConfigured() {
             // given
             var processorName = "testProcessor";
-            var component = new SimpleEventHandlingComponent();
+            var component = SimpleEventHandlingComponent.create("component");
             component.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
 
             var module = EventProcessorModule
@@ -559,9 +559,9 @@ class PooledStreamingEventProcessorModuleTest {
         void shouldNotShareSequencedDeadLetterQueueBetweenEventHandlingComponentsInSingleProcessor() {
             // given
             var processorName = "testProcessor";
-            var component0 = new SimpleEventHandlingComponent();
+            var component0 = SimpleEventHandlingComponent.create("component0");
             component0.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
-            var component1 = new SimpleEventHandlingComponent();
+            var component1 = SimpleEventHandlingComponent.create("component1");
             component1.subscribe(new QualifiedName(Integer.class), (event, context) -> MessageStream.empty());
 
             var module = EventProcessorModule
@@ -597,11 +597,11 @@ class PooledStreamingEventProcessorModuleTest {
         void shouldUseCustomDlqFactoryForProcessorWithMultipleEventHandlingComponents() {
             // given
             var processorName = "testProcessor";
-            var component0 = new SimpleEventHandlingComponent();
+            var component0 = SimpleEventHandlingComponent.create("component0");
             component0.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
-            var component1 = new SimpleEventHandlingComponent();
+            var component1 = SimpleEventHandlingComponent.create("component1");
             component1.subscribe(new QualifiedName(Integer.class), (event, context) -> MessageStream.empty());
-            var component2 = new SimpleEventHandlingComponent();
+            var component2 = SimpleEventHandlingComponent.create("component2");
             component2.subscribe(new QualifiedName(Long.class), (event, context) -> MessageStream.empty());
 
             // and - custom factory that tracks created queues
@@ -660,9 +660,9 @@ class PooledStreamingEventProcessorModuleTest {
         void shouldUseCustomDlqFactoryFromDefaults() {
             // given
             var processorName = "testProcessor";
-            var component0 = new SimpleEventHandlingComponent();
+            var component0 = SimpleEventHandlingComponent.create("component0");
             component0.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
-            var component1 = new SimpleEventHandlingComponent();
+            var component1 = SimpleEventHandlingComponent.create("component1");
             component1.subscribe(new QualifiedName(Integer.class), (event, context) -> MessageStream.empty());
 
             // and - custom factory that tracks created queues
