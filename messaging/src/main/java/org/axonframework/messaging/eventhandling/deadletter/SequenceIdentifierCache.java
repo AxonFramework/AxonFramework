@@ -22,7 +22,8 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
 import java.util.HashSet;
-import java.util.LinkedList;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -33,8 +34,9 @@ import java.util.Set;
  * The cache maintains two collections:
  * <ul>
  *     <li><b>enqueuedIdentifiers</b> - Set of identifiers known to be in the dead letter queue.</li>
- *     <li><b>nonEnqueuedIdentifiers</b> - Bounded LinkedList (LRU) of identifiers known NOT to be in the queue.
- *         Only populated when the queue started non-empty.</li>
+ *     <li><b>nonEnqueuedIdentifiers</b> - Bounded {@link LinkedHashMap} (LRU) of identifiers known NOT to be in the queue.
+ *         Only populated when the queue started non-empty. Uses insertion-order iteration with automatic eviction
+ *         of the oldest entry when the maximum size is exceeded.</li>
  * </ul>
  * <p>
  * When the queue starts empty, the cache can optimize by only tracking enqueued identifiers.
@@ -54,6 +56,7 @@ import java.util.Set;
 public class SequenceIdentifierCache {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+    private static final Boolean PRESENT = Boolean.TRUE;
 
     /**
      * Default maximum size for the non-enqueued identifiers cache.
@@ -61,8 +64,7 @@ public class SequenceIdentifierCache {
     public static final int DEFAULT_MAX_SIZE = 1024;
 
     private final boolean startedEmpty;
-    private final int maxSize;
-    private final LinkedList<Object> nonEnqueuedIdentifiers = new LinkedList<>();
+    private final LinkedHashMap<Object, Boolean> nonEnqueuedIdentifiers;
     private final Set<Object> enqueuedIdentifiers = new HashSet<>();
 
     /**
@@ -97,7 +99,12 @@ public class SequenceIdentifierCache {
      */
     public SequenceIdentifierCache(boolean startedEmpty, int maxSize) {
         this.startedEmpty = startedEmpty;
-        this.maxSize = maxSize;
+        this.nonEnqueuedIdentifiers = new LinkedHashMap<>(16, 0.75f, false) {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<Object, Boolean> eldest) {
+                return size() > maxSize;
+            }
+        };
     }
 
     /**
@@ -117,7 +124,7 @@ public class SequenceIdentifierCache {
         if (startedEmpty) {
             return false;
         }
-        return !nonEnqueuedIdentifiers.contains(sequenceIdentifier);
+        return !nonEnqueuedIdentifiers.containsKey(sequenceIdentifier);
     }
 
     /**
@@ -151,10 +158,7 @@ public class SequenceIdentifierCache {
             logger.trace("Marked sequenceIdentifier [{}] as not enqueued in the cache.", sequenceIdentifier);
         }
         if (!startedEmpty) {
-            nonEnqueuedIdentifiers.add(sequenceIdentifier);
-            if (nonEnqueuedIdentifiers.size() > maxSize) {
-                nonEnqueuedIdentifiers.removeFirst();
-            }
+            nonEnqueuedIdentifiers.put(sequenceIdentifier, PRESENT);
         }
         enqueuedIdentifiers.remove(sequenceIdentifier);
         return this;
