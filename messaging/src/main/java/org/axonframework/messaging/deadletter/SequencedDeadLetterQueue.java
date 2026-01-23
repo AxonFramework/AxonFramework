@@ -174,7 +174,7 @@ public interface SequencedDeadLetterQueue<M extends Message> {
      * Returns the number of dead letters for the sequence matching the given {@code sequenceIdentifier} contained in
      * this queue.
      * <p>
-     * Note that there's a window of opportunity where the size might exceed the maximum sequence size to accompany
+     * Note that there's a window of opportunity where the size might exceed the maximum sequence size to account for
      * concurrent usage.
      *
      * @param sequenceIdentifier The identifier of the sequence to retrieve the size from.
@@ -188,7 +188,7 @@ public interface SequencedDeadLetterQueue<M extends Message> {
      * Returns the number of unique sequences contained in this queue.
      * <p>
      * Note that there's a window of opportunity where the size might exceed the maximum amount of sequences to
-     * accompany concurrent usage of this dead letter queue.
+     * account for concurrent usage of this dead letter queue.
      *
      * @return A {@link CompletableFuture} with the number of unique sequences contained in this queue.
      */
@@ -196,9 +196,9 @@ public interface SequencedDeadLetterQueue<M extends Message> {
     CompletableFuture<Long> amountOfSequences();
 
     /**
-     * Process a sequence of enqueued {@link DeadLetter dead letters} through the given {@code processingTask} matching
-     * the {@code sequenceFilter}. Will pick the oldest available sequence based on the {@link DeadLetter#lastTouched()}
-     * field from every sequence's first entry.
+     * Process a single sequence of enqueued {@link DeadLetter dead letters} through the given {@code processingTask} matching
+     * the {@code sequenceFilter}. It will pick the oldest available sequence, determined by the {@link DeadLetter#lastTouched()}
+     * field of the first entry in each sequence.
      * <p>
      * Note that only a <em>single</em> matching sequence is processed! Furthermore, only the first dead letter is
      * validated, because it is the blocker for the processing of the rest of the sequence.
@@ -227,9 +227,9 @@ public interface SequencedDeadLetterQueue<M extends Message> {
             @Nonnull Function<DeadLetter<? extends M>, CompletableFuture<EnqueueDecision<M>>> processingTask);
 
     /**
-     * Process a sequence of enqueued {@link DeadLetter dead letters} with the given {@code processingTask}. Will pick
-     * the oldest available sequence based on the {@link DeadLetter#lastTouched()} field from every sequence's first
-     * entry.
+     * Process a single sequence of enqueued {@link DeadLetter dead letters} with the given {@code processingTask}. It will pick
+     * the oldest available sequence, determined by the {@link DeadLetter#lastTouched()} field of the first entry in each
+     * sequence.
      * <p>
      * Note that only a <em>single</em> matching sequence is processed!
      * <p>
