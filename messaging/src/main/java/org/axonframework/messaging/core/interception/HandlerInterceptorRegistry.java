@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,9 +58,11 @@ public interface HandlerInterceptorRegistry extends DescribableComponent {
     /**
      * Registers the given {@code interceptorBuilder} constructing a generic {@link Message}
      * {@link MessageHandlerInterceptor} for all handling infrastructure components.
+     * <p>
+     * Registering an interceptor per a {@link ComponentBuilder} ensures the interceptor is only build <b>once</b>.
      *
-     * @param interceptorBuilder The generic {@link Message} {@link MessageHandlerInterceptor} builder to register.
-     * @return This {@code InterceptorRegistry}, for fluent interfacing.
+     * @param interceptorBuilder the generic {@link Message} {@link MessageHandlerInterceptor} builder to register
+     * @return this {@code InterceptorRegistry}, for fluent interfacing
      */
     @Nonnull
     HandlerInterceptorRegistry registerInterceptor(
@@ -86,10 +88,12 @@ public interface HandlerInterceptorRegistry extends DescribableComponent {
     /**
      * Registers the given {@code interceptorBuilder} for a {@link CommandMessage} {@link MessageHandlerInterceptor} for
      * all command handling infrastructure components.
+     * <p>
+     * Registering an interceptor per a {@link ComponentBuilder} ensures the interceptor is only build <b>once</b>.
      *
-     * @param interceptorBuilder The {@link CommandMessage}-specific {@link MessageHandlerInterceptor} builder to
-     *                           register.
-     * @return This {@code InterceptorRegistry}, for fluent interfacing.
+     * @param interceptorBuilder the {@link CommandMessage}-specific {@link MessageHandlerInterceptor} builder to
+     *                           register
+     * @return this {@code InterceptorRegistry}, for fluent interfacing
      */
     @Nonnull
     HandlerInterceptorRegistry registerCommandInterceptor(
@@ -117,11 +121,13 @@ public interface HandlerInterceptorRegistry extends DescribableComponent {
 
     /**
      * Registers the given {@code interceptorBuilder} for a {@link EventMessage} {@link MessageHandlerInterceptor} for
-     * all event handling infrastructure components
+     * all event handling infrastructure components.
+     * <p>
+     * Registering an interceptor per a {@link ComponentBuilder} ensures the interceptor is only build <b>once</b>.
      *
-     * @param interceptorBuilder The {@link EventMessage}-specific {@link MessageHandlerInterceptor} builder to
-     *                           register.
-     * @return This {@code InterceptorRegistry}, for fluent interfacing.
+     * @param interceptorBuilder the {@link EventMessage}-specific {@link MessageHandlerInterceptor} builder to
+     *                           register
+     * @return this {@code InterceptorRegistry}, for fluent interfacing
      */
     @Nonnull
     HandlerInterceptorRegistry registerEventInterceptor(
@@ -150,10 +156,12 @@ public interface HandlerInterceptorRegistry extends DescribableComponent {
     /**
      * Registers the given {@code interceptorBuilder} for a {@link QueryMessage} {@link MessageHandlerInterceptor} for
      * all query handling infrastructure components
+     * <p>
+     * Registering an interceptor per a {@link ComponentBuilder} ensures the interceptor is only build <b>once</b>.
      *
-     * @param interceptorBuilder The {@link QueryMessage}-specific {@link MessageHandlerInterceptor} builder to
-     *                           register.
-     * @return This {@code InterceptorRegistry}, for fluent interfacing.
+     * @param interceptorBuilder the {@link QueryMessage}-specific {@link MessageHandlerInterceptor} builder to
+     *                           register
+     * @return this {@code InterceptorRegistry}, for fluent interfacing
      */
     @Nonnull
     HandlerInterceptorRegistry registerQueryInterceptor(
