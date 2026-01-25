@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.eventhandling.processing.streaming.token;
+package org.axonframework.messaging.eventstreaming;
 
+import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.junit.jupiter.api.*;
 
 import java.util.Collections;
@@ -154,8 +156,7 @@ class MultiSourceTrackingTokenTest {
         newTokens.put("token1", new GlobalSequenceTrackingToken(1));
         newTokens.put("token2", new GlobalSequenceTrackingToken(2));
 
-        MultiSourceTrackingToken newMultiToken =
-                (MultiSourceTrackingToken) testSubject.upperBound(new MultiSourceTrackingToken(newTokens));
+        MultiSourceTrackingToken newMultiToken = testSubject.upperBound(new MultiSourceTrackingToken(newTokens));
 
         assertEquals(new MultiSourceTrackingToken(newTokens), newMultiToken);
     }
@@ -172,8 +173,7 @@ class MultiSourceTrackingTokenTest {
         otherTokens.put("token1", new GlobalSequenceTrackingToken(1));
         otherTokens.put("token2", new GlobalSequenceTrackingToken(2));
 
-        MultiSourceTrackingToken result =
-                (MultiSourceTrackingToken) testSubject.upperBound(new MultiSourceTrackingToken(otherTokens));
+        MultiSourceTrackingToken result = testSubject.upperBound(new MultiSourceTrackingToken(otherTokens));
 
         assertEquals(new MultiSourceTrackingToken(otherTokens), result);
     }
@@ -195,8 +195,7 @@ class MultiSourceTrackingTokenTest {
         otherTokens.put("token1", new GlobalSequenceTrackingToken(1));
         otherTokens.put("token2", null);
 
-        MultiSourceTrackingToken result =
-                (MultiSourceTrackingToken) testSubject.upperBound(new MultiSourceTrackingToken(otherTokens));
+        MultiSourceTrackingToken result = testSubject.upperBound(new MultiSourceTrackingToken(otherTokens));
 
         assertEquals(new MultiSourceTrackingToken(expectedTokens), result);
     }
