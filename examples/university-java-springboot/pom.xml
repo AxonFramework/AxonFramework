@@ -30,7 +30,7 @@
     <description>Spring Boot Example application for demo and integration testing.</description>
 
     <properties>
-        <spring.boot.version>3.5.9</spring.boot.version>
+        <spring.boot.version>3.5.10</spring.boot.version>
         <testcontainers.version>2.0.3</testcontainers.version>
     </properties>
 
