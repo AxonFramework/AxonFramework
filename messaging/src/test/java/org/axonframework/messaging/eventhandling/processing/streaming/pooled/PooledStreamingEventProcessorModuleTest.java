@@ -530,6 +530,47 @@ class PooledStreamingEventProcessorModuleTest {
         }
 
         @Test
+        void shouldRetrieveAllDeadLetterProcessorsFromRootConfigurationAcrossAllModules() {
+            // given
+            var processor1Name = "processor1";
+            var processor2Name = "processor2";
+
+            var component1 = SimpleEventHandlingComponent.create("component1");
+            component1.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
+            var component2 = SimpleEventHandlingComponent.create("component2");
+            component2.subscribe(new QualifiedName(Integer.class), (event, context) -> MessageStream.empty());
+
+            var module1 = EventProcessorModule
+                    .pooledStreaming(processor1Name)
+                    .eventHandlingComponents(components -> components.declarative(cfg -> component1))
+                    .customized((cfg, c) -> c
+                            .eventSource(new AsyncInMemoryStreamableEventSource())
+                            .deadLetterQueue(DeadLetterQueueConfiguration::enabled));
+
+            var module2 = EventProcessorModule
+                    .pooledStreaming(processor2Name)
+                    .eventHandlingComponents(components -> components.declarative(cfg -> component2))
+                    .customized((cfg, c) -> c
+                            .eventSource(new AsyncInMemoryStreamableEventSource())
+                            .deadLetterQueue(DeadLetterQueueConfiguration::enabled));
+
+            var configurer = MessagingConfigurer.create();
+            configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps
+                    .processor(module1)
+                    .processor(module2)));
+            var configuration = configurer.build();
+
+            // when - get all processors from root configuration (should search all modules)
+            var allDeadLetterProcessors = configuration.getComponents(SequencedDeadLetterProcessor.class);
+
+            // then - should find processors from both modules
+            assertThat(allDeadLetterProcessors).hasSize(2);
+            assertThat(allDeadLetterProcessors.values()).allSatisfy(
+                    dlp -> assertThat(dlp).isInstanceOf(SequencedDeadLetterProcessor.class)
+            );
+        }
+
+        @Test
         void shouldNotWrapEventHandlingComponentsWithDeadLetterProcessorWhenDlqNotConfigured() {
             // given
             var processorName = "testProcessor";
