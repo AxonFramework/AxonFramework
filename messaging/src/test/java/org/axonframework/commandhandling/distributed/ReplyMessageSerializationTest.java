@@ -16,6 +16,8 @@
 
 package org.axonframework.commandhandling.distributed;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.messaging.RemoteHandlingException;
@@ -91,11 +93,12 @@ class ReplyMessageSerializationTest {
 
         private static final long serialVersionUID = -6583822511843818492L;
 
-        @SuppressWarnings("unused") //used for deserialization with jackson
+        @JsonCreator
         public DummyReplyMessage() {
             super();
         }
 
+        @JsonIgnore
         public DummyReplyMessage(String commandIdentifier, CommandResultMessage<?> commandResultMessage,
                                  Serializer serializer) {
             super(commandIdentifier, commandResultMessage, serializer);

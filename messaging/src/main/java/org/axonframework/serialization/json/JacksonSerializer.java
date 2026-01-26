@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ import javax.annotation.Nonnull;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
- * Serializer implementation that uses Jackson to serialize objects into a JSON format. Although the Jackson serializer
+ * Serializer implementation that uses Jackson 2 to serialize objects into a JSON format. Although the Jackson serializer
  * requires classes to be compatible with this specific serializer, it provides much more compact serialization, while
  * still being human-readable.
  *
