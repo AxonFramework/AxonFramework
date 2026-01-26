@@ -48,9 +48,9 @@ public interface SequencedDeadLetterProcessor<M extends Message> {
      * added to the context.
      *
      * @param sequenceFilter A filter for the first {@link DeadLetter dead letter} entries of each sequence.
-     * @param context        The {@link ProcessingContext} to use for processing dead letters.
-     * @return A {@link CompletableFuture} with {@code true} if at least one {@link DeadLetter dead letter} was
-     * processed successfully, {@code false} otherwise.
+     * @param context        the {@link ProcessingContext} to use for processing dead letters
+     * @return a {@link CompletableFuture} with {@code true} if at least one {@link DeadLetter dead letter} was
+     * processed successfully, {@code false} otherwise
      */
     @Nonnull
     CompletableFuture<Boolean> process(@Nonnull Predicate<DeadLetter<? extends M>> sequenceFilter,
@@ -64,9 +64,9 @@ public interface SequencedDeadLetterProcessor<M extends Message> {
      * The provided {@code context} is used for processing and will have the {@link DeadLetter} added as a resource
      * (via {@link DeadLetter#RESOURCE_KEY}) for each letter being processed.
      *
-     * @param context The {@link ProcessingContext} to use for processing dead letters.
-     * @return A {@link CompletableFuture} with {@code true} if at least one {@link DeadLetter dead letter} was
-     * processed successfully, {@code false} otherwise.
+     * @param context the {@link ProcessingContext} to use for processing dead letters
+     * @return a {@link CompletableFuture} with {@code true} if at least one {@link DeadLetter dead letter} was
+     * processed successfully, {@code false} otherwise
      */
     @Nonnull
     default CompletableFuture<Boolean> processAny(@Nonnull ProcessingContext context) {

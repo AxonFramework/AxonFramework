@@ -40,7 +40,7 @@ import jakarta.annotation.Nonnull;
  * @author Mateusz Nowak
  * @see SyncSequencedDeadLetterQueue
  * @see SequencedDeadLetterQueue
- * @since 5.0.0
+ * @since 5.1.0
  */
 public class SyncToAsyncDeadLetterQueueAdapter<M extends Message> implements SequencedDeadLetterQueue<M> {
 
