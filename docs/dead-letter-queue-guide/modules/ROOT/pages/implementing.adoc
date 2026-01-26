@@ -14,11 +14,7 @@ The `DeadLetterQueueConfiguration` class provides a fluent API to configure the 
 
 [source,java]
 ----
-import org.axonframework.messaging.core.configuration.MessagingConfigurer;
-import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
-import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorsConfigurer;
-
-public class AxonConfig {
+public class EventProcessingDlqConfig {
 
     public void configureEventProcessing(MessagingConfigurer configurer) {
         configurer.eventProcessing(eventConfigurer -> eventConfigurer.pooledStreaming(
@@ -31,7 +27,7 @@ public class AxonConfig {
     ) {
         return pooledStreamingConfigurer.processor(
                 "my-processor",
-                config -> config.eventHandlingComponents(this::configureHandlingComponent)
+                config -> config.eventHandlingComponents(/* event handling components omitted */)
                                 .customize((cfg, processorConfig) -> processorConfig
                                         .deadLetterQueue(dlq -> dlq
                                                 .enabled()
@@ -40,12 +36,6 @@ public class AxonConfig {
                                         )
                                 )
         );
-    }
-
-    private EventHandlingComponentsConfigurer.AdditionalComponentPhase configureHandlingComponent(
-            EventHandlingComponentsConfigurer.RequiredComponentPhase componentConfigurer
-    ) {
-        return componentConfigurer.autodetected(c -> new MyEventHandler());
     }
 }
 ----
@@ -58,12 +48,7 @@ To use a persistent dead-letter queue implementation (for example, JPA or JDBC-b
 
 [source,java]
 ----
-import org.axonframework.messaging.core.configuration.MessagingConfigurer;
-import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
-import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorsConfigurer;
-import org.axonframework.messaging.eventhandling.deadletter.jpa.JpaSequencedDeadLetterQueue;
-
-public class AxonConfig {
+public class EventProcessingDlqConfig {
 
     public void configureEventProcessing(MessagingConfigurer configurer) {
         configurer.eventProcessing(eventConfigurer -> eventConfigurer.pooledStreaming(
@@ -76,7 +61,7 @@ public class AxonConfig {
     ) {
         return pooledStreamingConfigurer.processor(
                 "my-processor",
-                config -> config.eventHandlingComponents(this::configureHandlingComponent)
+                config -> config.eventHandlingComponents(/* event handling components omitted */)
                                 .customize((cfg, processorConfig) -> processorConfig
                                         .deadLetterQueue(dlq -> dlq
                                                 .enabled()
@@ -92,12 +77,6 @@ public class AxonConfig {
                                         )
                                 )
         );
-    }
-
-    private EventHandlingComponentsConfigurer.AdditionalComponentPhase configureHandlingComponent(
-            EventHandlingComponentsConfigurer.RequiredComponentPhase componentConfigurer
-    ) {
-        return componentConfigurer.autodetected(c -> new MyEventHandler());
     }
 }
 ----
@@ -126,10 +105,7 @@ If you want to enable the dead-letter queue for all processors by default, you c
 
 [source,java]
 ----
-import org.axonframework.messaging.core.configuration.MessagingConfigurer;
-import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorsConfigurer;
-
-public class AxonConfig {
+public class EventProcessingDlqConfig {
 
     public void configureEventProcessing(MessagingConfigurer configurer) {
         configurer.eventProcessing(eventConfigurer -> eventConfigurer.pooledStreaming(
@@ -141,7 +117,7 @@ public class AxonConfig {
                         // Disable for a specific processor if needed
                         .processor(
                                 "no-dlq-processor",
-                                config -> config.eventHandlingComponents(this::configureHandlingComponent)
+                                config -> config.eventHandlingComponents(/* event handling components omitted */)
                                                 .customize((cfg, processorCfg) -> processorCfg
                                                         .deadLetterQueue(dlq -> dlq.disabled())
                                                 )

@@ -256,106 +256,59 @@ Returns a future completing with `true` if it processes a sequence successfully.
 If the processing of a dead letter fails, the event will be offered to the dead-letter queue again.
 How the dead-lettering process reacts to this depends on the <<Enqueue policy,enqueue policy>>.
 
-The `DeadLetteringEventHandlingComponent` implements `SequencedDeadLetterProcessor`, so you can use it to process dead letters.
-Below are a couple of examples of how to process dead-letter sequences:
+=== Getting processors and ProcessingContext
 
-[tabs]
-====
-Process the oldest dead-letter sequence matching `ErrorEvent`::
-+
---
+When you enable the dead letter queue, the framework registers `SequencedDeadLetterProcessor` instances as components.
+You can retrieve all processors using `getComponents` on the configuration.
+Dead letter processing requires a `ProcessingContext`, which you get from `UnitOfWorkFactory`:
+
 [source,java]
 ----
-import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+@Component
+public class ScheduledDeadLetterProcessor {
 
-public class DeadletterProcessor {
+    private final Configuration configuration;
+    private final UnitOfWorkFactory unitOfWorkFactory;
 
-    private final SequencedDeadLetterProcessor<EventMessage> processor;
-    private final ProcessingContext processingContext;
+    @Scheduled(fixedDelay = 30_000, initialDelay = 30_000) // <1>
+    public void processDeadLetters() {
+        configuration.getComponents(SequencedDeadLetterProcessor.class) // <2>
+                     .values()
+                     .forEach(this::processAny);
+    }
 
-    public void retryErrorEventSequence() {
-        processor.process(
-                deadLetter -> deadLetter.message().getPayload() instanceof ErrorEvent,
-                processingContext
+    @SuppressWarnings("unchecked")
+    private void processAny(SequencedDeadLetterProcessor<EventMessage> processor) {
+        UnitOfWork unitOfWork = unitOfWorkFactory.create(); // <3>
+        unitOfWork.executeWithResult(processingContext ->
+                processor.processAny(processingContext) // <4>
         ).join();
     }
 }
 ----
---
-Process the oldest dead-letter sequence in the queue::
-+
---
+
+<1> Spring-specific way to invoke the method every 30 seconds. Use a large interval to not stress the system.
+<2> Get all `SequencedDeadLetterProcessor` instances from all modules.
+<3> Create a `UnitOfWork` to get the `ProcessingContext` with proper transaction management.
+<4> The `processAny()` rotates the sequence to try based on when it was last tried.
+
+=== Processing with filtering
+
+You can filter which sequences to process using a predicate.
+Note that the predicate filters based on a sequence's _first_ entry:
+
 [source,java]
 ----
-import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-
-public class DeadletterProcessor {
-
-    private final SequencedDeadLetterProcessor<EventMessage> processor;
-    private final ProcessingContext processingContext;
-
-    public void retryAnySequence() {
-        processor.processAny(processingContext).join();
-    }
+public void retryErrorEventSequence() {
+    UnitOfWork unitOfWork = unitOfWorkFactory.create();
+    unitOfWork.executeWithResult(processingContext ->
+            processor.process(
+                    deadLetter -> deadLetter.message().getPayload() instanceof ErrorEvent,
+                    processingContext
+            )
+    ).join();
 }
 ----
---
-Process all dead-letter sequences in the queue::
-+
---
-[source,java]
-----
-import org.axonframework.messaging.deadletter.DeadLetter;
-import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
-import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-
-import java.util.Iterator;
-import java.util.concurrent.CompletableFuture;
-
-public class DeadletterProcessor {
-
-    private final SequencedDeadLetterProcessor<EventMessage> processor;
-    private final SequencedDeadLetterQueue<EventMessage> queue;
-    private final ProcessingContext processingContext;
-
-    public CompletableFuture<Void> retryAllSequences() {
-        // Retrieve all the dead lettered event sequences
-        return queue.deadLetters()
-                    .thenCompose(deadLetterSequences -> {
-                        CompletableFuture<Void> result = CompletableFuture.completedFuture(null);
-
-                        // Iterate over all sequences
-                        for (Iterable<DeadLetter<? extends EventMessage>> sequence : deadLetterSequences) {
-                            Iterator<DeadLetter<? extends EventMessage>> sequenceIterator = sequence.iterator();
-                            if (!sequenceIterator.hasNext()) {
-                                continue;
-                            }
-
-                            String firstLetterId = sequenceIterator.next()
-                                                                   .message()
-                                                                   .identifier();
-
-                            // SequencedDeadLetterProcessor#process automatically retries an entire sequence.
-                            // Hence, we only need to filter on the first entry of the sequence:
-                            result = result.thenCompose(v -> processor.process(
-                                    deadLetter -> deadLetter.message().identifier().equals(firstLetterId),
-                                    processingContext
-                            ).thenApply(ignored -> null));
-                        }
-
-                        return result;
-                    });
-    }
-}
-----
---
-====
 
 For some event handlers, it is beneficial to know if the event it is processing is dead-lettered.
 To that end, the `ProcessingContext` will contain the `DeadLetter` as a resource when processing dead letters.

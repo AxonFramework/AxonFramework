@@ -68,10 +68,7 @@ You can set a default policy for all processors and override it for specific one
 
 [source,java]
 ----
-import org.axonframework.messaging.core.configuration.MessagingConfigurer;
-import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorsConfigurer;
-
-public class AxonConfig {
+public class EventProcessingDlqConfig {
 
     public void configureEventProcessing(MessagingConfigurer configurer) {
         configurer.eventProcessing(eventConfigurer -> eventConfigurer.pooledStreaming(
@@ -104,11 +101,7 @@ When processing dead letters, the `ProcessingContext` contains the `DeadLetter` 
 
 [source,java]
 ----
-import org.axonframework.messaging.deadletter.DeadLetter;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-
-public class MyEventHandler {
+public class SampleEventHandler {
 
     public void handle(SomeEvent event, ProcessingContext context) {
         DeadLetter<EventMessage> deadLetter = context.getResource(DeadLetter.RESOURCE_KEY);

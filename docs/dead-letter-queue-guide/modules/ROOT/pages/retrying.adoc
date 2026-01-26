@@ -16,124 +16,39 @@ Both methods return a `CompletableFuture<Boolean>` indicating whether a sequence
 
 == Scheduled processing example
 
-To schedule processing dead letter sequences you can do something like:
+When you enable the dead letter queue, the framework registers `SequencedDeadLetterProcessor` instances as components.
+You can retrieve all processors using `getComponents` on the configuration.
+Dead letter processing requires a `ProcessingContext`, which you get from `UnitOfWorkFactory`:
 
 [source,java]
 ----
-import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
-
 @Component
-public class ProcessDeadLetterComponent {
+public class ScheduledDeadLetterProcessor {
 
-    private final SequencedDeadLetterProcessor<EventMessage> deadLetterProcessor; // <1>
-    private final ProcessingContext processingContext; // <2>
+    private final Configuration configuration;
+    private final UnitOfWorkFactory unitOfWorkFactory;
 
-    public ProcessDeadLetterComponent(
-            SequencedDeadLetterProcessor<EventMessage> deadLetterProcessor,
-            ProcessingContext processingContext
-    ) {
-        this.deadLetterProcessor = deadLetterProcessor;
-        this.processingContext = processingContext;
+    @Scheduled(fixedDelay = 30_000, initialDelay = 30_000) // <1>
+    public void processDeadLetters() {
+        configuration.getComponents(SequencedDeadLetterProcessor.class) // <2>
+                     .values()
+                     .forEach(this::processAny);
     }
 
-    @Scheduled(fixedDelay = 30_000, initialDelay = 30_000) // <3>
-    public void process() {
-        deadLetterProcessor.processAny(processingContext) // <4>
-                           .whenComplete((success, error) -> {
-                               if (error != null) {
-                                   // Handle error
-                               } else if (success) {
-                                   // A sequence was processed successfully
-                               }
-                           });
-    }
-}
-----
-
-<1> Inject the `SequencedDeadLetterProcessor` for your processor's event handling component.
-<2> A `ProcessingContext` is required for processing. You can obtain one from the configuration or create an appropriate implementation.
-<3> Spring-specific way to wait 30 seconds, then invoke the method every 30 seconds.
-You want a large interval to not stress the system too much.
-Especially as you don't know what's going wrong, it might be the application is already having a hard time.
-<4> The `processAny()` rotates the sequence to try based on when it was last tried.
-Once there are multiple sequences present, it might take some time before they're all processed with this approach.
-
-== Processing with filtering
-
-You can also filter which sequences to process:
-
-[source,java]
-----
-import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-
-public class DeadLetterService {
-
-    private final SequencedDeadLetterProcessor<EventMessage> processor;
-    private final ProcessingContext processingContext;
-
-    public void retryHighPriorityEvents() {
-        // Process only sequences where the first event is a HighPriorityEvent
-        processor.process(
-                deadLetter -> deadLetter.message().getPayload() instanceof HighPriorityEvent,
-                processingContext
+    @SuppressWarnings("unchecked")
+    private void processAny(SequencedDeadLetterProcessor<EventMessage> processor) {
+        UnitOfWork unitOfWork = unitOfWorkFactory.create(); // <3>
+        unitOfWork.executeWithResult(processingContext ->
+                processor.processAny(processingContext) // <4>
         ).join();
     }
 }
 ----
 
-== Processing all sequences
-
-To process all sequences in the queue:
-
-[source,java]
-----
-import org.axonframework.messaging.deadletter.DeadLetter;
-import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
-import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-
-import java.util.Iterator;
-import java.util.concurrent.CompletableFuture;
-
-public class DeadLetterService {
-
-    private final SequencedDeadLetterProcessor<EventMessage> processor;
-    private final SequencedDeadLetterQueue<EventMessage> queue;
-    private final ProcessingContext processingContext;
-
-    public CompletableFuture<Void> retryAllSequences() {
-        return queue.deadLetters()
-                    .thenCompose(deadLetterSequences -> {
-                        CompletableFuture<Void> result = CompletableFuture.completedFuture(null);
-
-                        for (Iterable<DeadLetter<? extends EventMessage>> sequence : deadLetterSequences) {
-                            Iterator<DeadLetter<? extends EventMessage>> sequenceIterator = sequence.iterator();
-                            if (!sequenceIterator.hasNext()) {
-                                continue;
-                            }
-
-                            String firstLetterId = sequenceIterator.next()
-                                                                   .message()
-                                                                   .identifier();
-
-                            result = result.thenCompose(v -> processor.process(
-                                    deadLetter -> deadLetter.message().identifier().equals(firstLetterId),
-                                    processingContext
-                            ).thenApply(ignored -> null));
-                        }
-
-                        return result;
-                    });
-    }
-}
-----
+<1> Spring-specific way to invoke the method every 30 seconds. Use a large interval to not stress the system.
+<2> Get all `SequencedDeadLetterProcessor` instances from all modules.
+<3> Create a `UnitOfWork` to get the `ProcessingContext` with proper transaction management.
+<4> The `processAny()` rotates the sequence to try based on when it was last tried.
 
 By default, the framework enqueues a letter again, unless a processor can process it successfully.
 How to change this, is part of the next section.
