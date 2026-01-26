@@ -67,7 +67,7 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
      * The cache is lazily initialized on first use by checking if the delegate queue is empty. If empty, the cache
      * operates in an optimized mode where unknown identifiers are assumed to not be present.
      *
-     * @param delegate The underlying {@link SequencedDeadLetterQueue} to delegate to.
+     * @param delegate the underlying {@link SequencedDeadLetterQueue} to delegate to
      */
     public CachingSequencedDeadLetterQueue(SequencedDeadLetterQueue<M> delegate) {
         this(delegate, SequenceIdentifierCache.DEFAULT_MAX_SIZE);
@@ -79,8 +79,8 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
      * The cache is lazily initialized on first use by checking if the delegate queue is empty. If empty, the cache
      * operates in an optimized mode where unknown identifiers are assumed to not be present.
      *
-     * @param delegate     The underlying {@link SequencedDeadLetterQueue} to delegate to.
-     * @param cacheMaxSize The maximum size of the non-enqueued identifiers cache.
+     * @param delegate     the underlying {@link SequencedDeadLetterQueue} to delegate to
+     * @param cacheMaxSize the maximum size of the non-enqueued identifiers cache
      */
     public CachingSequencedDeadLetterQueue(SequencedDeadLetterQueue<M> delegate, int cacheMaxSize) {
         this.delegate = delegate;
@@ -93,7 +93,7 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
      * The initialization checks if the delegate queue is empty. This check is performed asynchronously and the returned
      * future completes when the cache is ready.
      *
-     * @return A future that completes with the initialized cache.
+     * @return a future that completes with the initialized cache
      */
     private CompletableFuture<SequenceIdentifierCache> getOrInitializeCache() {
         SequenceIdentifierCache existingCache = cacheRef.get();
@@ -122,7 +122,7 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
     /**
      * Gets the cache if already initialized, or null if not yet initialized.
      *
-     * @return The cache if initialized, null otherwise.
+     * @return the cache if initialized, null otherwise
      */
     private SequenceIdentifierCache getInitializedCacheOrNull() {
         return cacheRef.get();
@@ -287,7 +287,7 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
     /**
      * Returns the current size of identifiers cached as enqueued.
      *
-     * @return The count of enqueued identifiers in the cache, or 0 if cache is not yet initialized.
+     * @return the count of enqueued identifiers in the cache, or 0 if cache is not yet initialized
      */
     public int cacheEnqueuedSize() {
         SequenceIdentifierCache cache = getInitializedCacheOrNull();
@@ -297,7 +297,7 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
     /**
      * Returns the current size of identifiers cached as not enqueued.
      *
-     * @return The count of non-enqueued identifiers in the cache, or 0 if cache is not yet initialized.
+     * @return the count of non-enqueued identifiers in the cache, or 0 if cache is not yet initialized
      */
     public int cacheNonEnqueuedSize() {
         SequenceIdentifierCache cache = getInitializedCacheOrNull();

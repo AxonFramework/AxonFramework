@@ -16,10 +16,10 @@
 
 package org.axonframework.messaging.deadletter;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.Metadata;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -49,11 +49,11 @@ public interface DeadLetter<M extends Message> {
      * Returns an {@link Optional} of {DeadLetter}, returning the resource keyed under the
      * {@link #RESOURCE_KEY} in the given {@code context}.
      *
-     * @param context The {@link Context} to retrieve the {@code DeadLetter} from, if present.
-     * @return An {@link Optional} of {DeadLetter}, returning the resource keyed under the
-     * {@link #RESOURCE_KEY} in the given {@code context}.
+     * @param context the {@link Context} to retrieve the {@code DeadLetter} from, if present
+     * @return an {@link Optional} of {DeadLetter}, returning the resource keyed under the
+     * {@link #RESOURCE_KEY} in the given {@code context}
      */
-    static Optional<DeadLetter<?>> fromContext(Context context) {
+    static Optional<DeadLetter<?>> fromContext(@Nonnull Context context) {
         return Optional.ofNullable(context.getResource(RESOURCE_KEY));
     }
 
