@@ -6,9 +6,18 @@ For example like this:
 
 [source,java]
 ----
-public class CustomEnqueuePolicy implements EnqueuePolicy<EventMessage<?>> {
+import org.axonframework.messaging.deadletter.DeadLetter;
+import org.axonframework.messaging.deadletter.Decisions;
+import org.axonframework.messaging.deadletter.EnqueueDecision;
+import org.axonframework.messaging.deadletter.EnqueuePolicy;
+import org.axonframework.messaging.eventhandling.EventMessage;
+
+import java.time.Duration;
+import java.time.Instant;
+
+public class CustomEnqueuePolicy implements EnqueuePolicy<EventMessage> {
     @Override
-    public EnqueueDecision<EventMessage<?>> decide(DeadLetter<? extends EventMessage<?>> letter, Throwable cause) {
+    public EnqueueDecision<EventMessage> decide(DeadLetter<? extends EventMessage> letter, Throwable cause) {
         if (cause instanceof NullPointerException) {
             return Decisions.doNotEnqueue(); // <1>
         }
@@ -30,9 +39,15 @@ Below is another example that uses the diagnostics and evicts after trying 5 tim
 
 [source,java]
 ----
-public class CustomEnqueuePolicy implements EnqueuePolicy<EventMessage<?>> {
+import org.axonframework.messaging.deadletter.DeadLetter;
+import org.axonframework.messaging.deadletter.Decisions;
+import org.axonframework.messaging.deadletter.EnqueueDecision;
+import org.axonframework.messaging.deadletter.EnqueuePolicy;
+import org.axonframework.messaging.eventhandling.EventMessage;
+
+public class RetryLimitEnqueuePolicy implements EnqueuePolicy<EventMessage> {
     @Override
-    public EnqueueDecision<EventMessage<?>> decide(DeadLetter<? extends EventMessage<?>> letter, Throwable cause) {
+    public EnqueueDecision<EventMessage> decide(DeadLetter<? extends EventMessage> letter, Throwable cause) {
         final int retries = (int) letter.diagnostics().getOrDefault("retries", -1); // <1>
         if (retries < 5) {
             return Decisions.requeue(cause, l -> l.diagnostics().and("retries", retries + 1)); // <2>
@@ -46,15 +61,65 @@ public class CustomEnqueuePolicy implements EnqueuePolicy<EventMessage<?>> {
 <2> Requeue, increasing the retries.
 <3> Once it's retried 5 times, the framework evicts the event message.
 
-You can set the policy for a specific group with something like:
+== Configuring the enqueue policy
+
+You can set the policy through the `deadLetterQueue(...)` configuration.
+You can set a default policy for all processors and override it for specific ones.
 
 [source,java]
 ----
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorsConfigurer;
+
 public class AxonConfig {
-    // omitting other configuration methods...
-    public void configureEnqueuePolicy(EventProcessingConfigurer configurer) {
-        // Replace "my-processing-group" for the processing group you want to configure the policy on.
-        configurer.registerDeadLetterPolicy("my-processing-group", config -> new CustomEnqueuePolicy());
+
+    public void configureEventProcessing(MessagingConfigurer configurer) {
+        configurer.eventProcessing(eventConfigurer -> eventConfigurer.pooledStreaming(
+                pooledStreamingConfigurer -> pooledStreamingConfigurer
+                        // Set default DLQ policy for all processors
+                        .defaults((cfg, processorConfig) -> processorConfig
+                                .deadLetterQueue(dlq -> dlq
+                                        .enabled()
+                                        .enqueuePolicy(new RetryLimitEnqueuePolicy())
+                                )
+                        )
+                        // Override policy for a specific processor
+                        .processor(
+                                "notification-processor",
+                                config -> config.eventHandlingComponents(/*components omitted*/)
+                                                .customize((cfg, processorCfg) -> processorCfg
+                                                        .deadLetterQueue(dlq -> dlq
+                                                                .enqueuePolicy(new CustomEnqueuePolicy())
+                                                        )
+                                                )
+                        )
+        ));
+    }
+}
+----
+
+== Accessing dead letter context in event handlers
+
+When processing dead letters, the `ProcessingContext` contains the `DeadLetter` as a resource:
+
+[source,java]
+----
+import org.axonframework.messaging.deadletter.DeadLetter;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+
+public class MyEventHandler {
+
+    public void handle(SomeEvent event, ProcessingContext context) {
+        DeadLetter<EventMessage> deadLetter = context.getResource(DeadLetter.RESOURCE_KEY);
+        if (deadLetter != null) {
+            // This is a dead-letter retry
+            int retries = (int) deadLetter.diagnostics().getOrDefault("retries", 0);
+            Throwable originalCause = deadLetter.cause().orElse(null);
+            // Adjust handling based on retry count or original cause
+        } else {
+            // Normal event handling
+        }
     }
 }
 ----
