@@ -32,7 +32,10 @@ import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.NoSuchDeadLetterException;
 import org.axonframework.messaging.deadletter.SyncSequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.WrongDeadLetterTypeException;
-import org.axonframework.conversion.Serializer;
+import org.axonframework.conversion.Converter;
+import org.axonframework.messaging.core.Context;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,8 +91,8 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sync
     private final int maxSequences;
     private final int maxSequenceSize;
     private final int queryPageSize;
-    private final Serializer eventSerializer;
-    private final Serializer genericSerializer;
+    private final EventConverter eventConverter;
+    private final Converter genericConverter;
     private final Duration claimDuration;
 
     /**
@@ -104,8 +107,8 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sync
         this.maxSequenceSize = builder.maxSequenceSize;
         this.entityManagerProvider = builder.entityManagerProvider;
         this.transactionManager = builder.transactionManager;
-        this.eventSerializer = builder.eventSerializer;
-        this.genericSerializer = builder.genericSerializer;
+        this.eventConverter = builder.eventConverter;
+        this.genericConverter = builder.genericConverter;
         this.converters = builder.converters;
         this.claimDuration = builder.claimDuration;
         this.queryPageSize = builder.queryPageSize;
@@ -114,8 +117,8 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sync
     /**
      * Creates a new builder, capable of building a {@link JpaSequencedDeadLetterQueue} according to the provided
      * configuration. Note that the {@link Builder#processingGroup(String)}, {@link Builder#transactionManager},
-     * {@link Builder#serializer(Serializer)} and {@link Builder#entityManagerProvider} are mandatory for the queue
-     * to be constructed.
+     * {@link Builder#eventConverter(EventConverter)}, {@link Builder#genericConverter(Converter)}, and
+     * {@link Builder#entityManagerProvider} are mandatory for the queue to be constructed.
      *
      * @param <M> An implementation of {@link Message} contained in the {@link DeadLetter dead-letters} within this queue.
      * @return The builder
@@ -147,11 +150,13 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sync
                     stringSequenceIdentifier);
         }
 
+        // Note: Context.empty() is used here as the DeadLetter interface doesn't carry context.
+        // Tracking token and domain info from context resources won't be preserved in this case.
         DeadLetterEventEntry entry = converters
                 .stream()
                 .filter(c -> c.canConvert(letter.message()))
                 .findFirst()
-                .map(c -> c.convert(letter.message(), eventSerializer, genericSerializer))
+                .map(c -> c.convert(letter.message(), Context.empty(), eventConverter, genericConverter))
                 .orElseThrow(() -> new NoJpaConverterFoundException(
                         String.format("No converter found for message of type: [%s]",
                                       letter.message().getClass().getName()))
@@ -167,7 +172,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sync
                                                              letter.lastTouched(),
                                                              letter.cause().orElse(null),
                                                              letter.diagnostics(),
-                                                             eventSerializer);
+                                                             genericConverter);
             logger.info("Storing DeadLetter (id: [{}]) for sequence [{}] with index [{}] in processing group [{}].",
                         deadLetter.getDeadLetterId(),
                         stringSequenceIdentifier,
@@ -222,7 +227,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sync
         if (letterEntity == null) {
             throw new NoSuchDeadLetterException(String.format("Can not find dead letter with id [%s] to requeue.", id));
         }
-        letterEntity.setDiagnostics(updatedLetter.diagnostics(), eventSerializer);
+        letterEntity.setDiagnostics(updatedLetter.diagnostics(), genericConverter);
         letterEntity.setLastTouched(updatedLetter.lastTouched());
         letterEntity.setCause(updatedLetter.cause().orElse(null));
         letterEntity.clearProcessingStarted();
@@ -295,6 +300,10 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sync
     /**
      * Converts a {@link DeadLetterEntry} from the database into a {@link JpaDeadLetter}, using the configured
      * {@link DeadLetterJpaConverter DeadLetterJpaConverters} to restore the original message from it.
+     * <p>
+     * The converter returns a {@link MessageStream.Entry} containing both the message and its associated context.
+     * The context includes restored resources such as tracking token and domain info (aggregate identifier, type,
+     * sequence number) that were stored when the dead letter was enqueued.
      *
      * @param entry The entry to convert.
      * @return The {@link DeadLetter} result.
@@ -309,10 +318,9 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sync
                         "No converter found to convert message of class [%s].",
                         entry.getMessage().getEventType())
                 ));
-        Metadata deserializedDiagnostics = eventSerializer.deserialize(entry.getDiagnostics());
-        return new JpaDeadLetter<>(entry,
-                                   deserializedDiagnostics,
-                                   converter.convert(entry.getMessage(), eventSerializer, genericSerializer));
+        Metadata deserializedDiagnostics = genericConverter.convert(entry.getDiagnostics(), Metadata.class);
+        MessageStream.Entry<M> messageEntry = converter.convert(entry.getMessage(), eventConverter, genericConverter);
+        return new JpaDeadLetter<>(entry, deserializedDiagnostics, messageEntry);
     }
 
     @Override
@@ -599,8 +607,9 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sync
      * <p>
      * If you have custom {@link EventMessage} to use with this queue, replace the current (or add a second) converter.
      * <p>
-     * The {@code processingGroup}, {@link EntityManagerProvider}, {@link TransactionManager} and {@link Serializer}
-     * have to be configured for the {@link JpaSequencedDeadLetterQueue} to be constructed.
+     * The {@code processingGroup}, {@link EntityManagerProvider}, {@link TransactionManager},
+     * {@link EventConverter eventConverter}, and {@link Converter genericConverter} have to be configured for the
+     * {@link JpaSequencedDeadLetterQueue} to be constructed.
      *
      * @param <T> The type of {@link Message} maintained in this {@link JpaSequencedDeadLetterQueue}.
      */
@@ -613,8 +622,8 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sync
         private int queryPageSize = 100;
         private EntityManagerProvider entityManagerProvider;
         private TransactionManager transactionManager;
-        private Serializer eventSerializer;
-        private Serializer genericSerializer;
+        private EventConverter eventConverter;
+        private Converter genericConverter;
         private Duration claimDuration = Duration.ofSeconds(30);
 
         public Builder() {
@@ -696,42 +705,28 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sync
         }
 
         /**
-         * Sets the {@link Serializer} to (de)serialize the event payload,
-         * event metadata, tracking token, and diagnostics of the {@link DeadLetter} when storing it to the database.
+         * Sets the {@link EventConverter} to convert the event payload and metadata of the {@link DeadLetter} when
+         * storing it to and retrieving it from the database.
          *
-         * @param serializer The serializer to use
+         * @param eventConverter The event converter to use for payload and metadata conversion.
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder<T> serializer(Serializer serializer) {
-            assertNonNull(serializer, "The serializer may not be null");
-            this.eventSerializer = serializer;
-            this.genericSerializer = serializer;
+        public Builder<T> eventConverter(EventConverter eventConverter) {
+            assertNonNull(eventConverter, "The eventConverter may not be null");
+            this.eventConverter = eventConverter;
             return this;
         }
 
         /**
-         * Sets the {@link Serializer} to (de)serialize the event payload,
-         * event metadata, and diagnostics of the {@link DeadLetter} when storing it to the database.
+         * Sets the {@link Converter} to convert the tracking token and diagnostics of the {@link DeadLetter} when
+         * storing it to and retrieving it from the database.
          *
-         * @param serializer The serializer to use
+         * @param genericConverter The converter to use for tracking token and diagnostics conversion.
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder<T> eventSerializer(Serializer serializer) {
-            assertNonNull(serializer, "The eventSerializer may not be null");
-            this.eventSerializer = serializer;
-            return this;
-        }
-
-        /**
-         * Sets the {@link Serializer} to (de)serialize the tracking token of the event in
-         * the {@link DeadLetter} when storing it to the database.
-         *
-         * @param serializer The serializer to use
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder<T> genericSerializer(Serializer serializer) {
-            assertNonNull(serializer, "The genericSerializer may not be null");
-            this.genericSerializer = serializer;
+        public Builder<T> genericConverter(Converter genericConverter) {
+            assertNonNull(genericConverter, "The genericConverter may not be null");
+            this.genericConverter = genericConverter;
             return this;
         }
 
@@ -809,11 +804,11 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sync
             assertNonNull(transactionManager,
                           "Must supply a TransactionManager when constructing a JpaSequencedDeadLetterQueue");
             assertNonNull(entityManagerProvider,
-                          "Must supply a EntityManagerProvider when constructing a JpaSequencedDeadLetterQueue");
-            assertNonNull(eventSerializer,
-                          "Must supply an eventSerializer when constructing a JpaSequencedDeadLetterQueue");
-            assertNonNull(genericSerializer,
-                          "Must supply an genericSerializer when constructing a JpaSequencedDeadLetterQueue");
+                          "Must supply an EntityManagerProvider when constructing a JpaSequencedDeadLetterQueue");
+            assertNonNull(eventConverter,
+                          "Must supply an eventConverter when constructing a JpaSequencedDeadLetterQueue");
+            assertNonNull(genericConverter,
+                          "Must supply a genericConverter when constructing a JpaSequencedDeadLetterQueue");
         }
     }
 }
