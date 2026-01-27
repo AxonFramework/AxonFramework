@@ -16,115 +16,132 @@
 
 package org.axonframework.messaging.eventhandling.deadletter.jpa;
 
-import org.axonframework.messaging.eventhandling.DomainEventMessage;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.GenericDomainEventMessage;
-import org.axonframework.messaging.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.eventhandling.GenericTrackedDomainEventMessage;
-import org.axonframework.messaging.eventhandling.GenericTrackedEventMessage;
-import org.axonframework.messaging.eventhandling.TrackedEventMessage;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
+import org.axonframework.common.ClassUtils;
+import org.axonframework.conversion.Converter;
+import org.axonframework.messaging.core.Context;
+import org.axonframework.messaging.core.LegacyResources;
+import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
-import org.axonframework.conversion.SerializedMessage;
-import org.axonframework.conversion.SerializedObject;
-import org.axonframework.conversion.SerializedType;
-import org.axonframework.conversion.Serializer;
+import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.core.SimpleEntry;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 
 import java.time.Instant;
-import java.util.Optional;
-import java.util.function.Supplier;
 
 /**
- * Converter responsible for converting to and from known {@link EventMessage} implementations that should be supported
- * by a {@link org.axonframework.messaging.deadletter.SequencedDeadLetterQueue} capable of storing
- * {@code EventMessages}.
+ * Converter responsible for converting to and from {@link EventMessage} implementations for storage in a
+ * {@link org.axonframework.messaging.deadletter.SequencedDeadLetterQueue}.
  * <p>
- * It rebuilds the original message implementation by checking which properties were extracted when it was originally
- * mapped. For example, if the aggregate type and token are present, it will construct a
- * {@link GenericTrackedDomainEventMessage}.
+ * In AF5, tracking tokens and domain info (aggregate identifier, type, sequence number) are stored as context resources
+ * rather than message subtypes. This converter extracts these resources from the context during serialization and
+ * restores them to the context when deserializing.
+ * <p>
+ * For backward compatibility with data stored by older versions, this converter also accepts entries with legacy event
+ * types (GenericTrackedDomainEventMessage, GenericTrackedEventMessage, GenericDomainEventMessage).
  *
  * @author Mitchell Herrijgers
  * @since 4.6.0
  */
 public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverter<EventMessage> {
 
+    /**
+     * Legacy class names for backward compatibility with entries stored in older versions.
+     */
+    private static final String LEGACY_TRACKED_DOMAIN_EVENT = "org.axonframework.messaging.eventhandling.GenericTrackedDomainEventMessage";
+    private static final String LEGACY_TRACKED_EVENT = "org.axonframework.messaging.eventhandling.GenericTrackedEventMessage";
+    private static final String LEGACY_DOMAIN_EVENT = "org.axonframework.messaging.eventhandling.GenericDomainEventMessage";
+
     @Override
     public DeadLetterEventEntry convert(EventMessage message,
-                                        Serializer eventSerializer,
-                                        Serializer genericSerializer) {
-        GenericEventMessage eventMessage = (GenericEventMessage) message;
-        Optional<TrackedEventMessage> trackedEventMessage = Optional.of(eventMessage).filter(
-                TrackedEventMessage.class::isInstance).map(TrackedEventMessage.class::cast);
-        Optional<DomainEventMessage> domainEventMessage = Optional.of(eventMessage).filter(
-                DomainEventMessage.class::isInstance).map(DomainEventMessage.class::cast);
+                                        Context context,
+                                        EventConverter eventConverter,
+                                        Converter genericConverter) {
+        // Serialize payload and metadata
+        byte[] serializedPayload = eventConverter.convert(message.payload(), byte[].class);
+        byte[] serializedMetadata = eventConverter.convert(message.metadata(), byte[].class);
 
-        // Serialize the payload with message.serializePayload to make the deserialization lazy and thus
-        // make us able to store deserialization errors as well.
-        SerializedObject<byte[]> serializedPayload = eventSerializer.serialize(message.payload(), byte[].class);
-        // For compatibility, we use the serializer directly for the metadata
-        SerializedObject<byte[]> serializedMetadata = eventSerializer.serialize(message.metadata(), byte[].class);
-        Optional<SerializedObject<byte[]>> serializedToken =
-                trackedEventMessage.map(m -> genericSerializer.serialize(m.trackingToken(), byte[].class));
+        // Extract tracking token from context (if present)
+        TrackingToken token = context.getResource(TrackingToken.RESOURCE_KEY);
+        byte[] serializedToken = null;
+        String tokenTypeName = null;
+        if (token != null) {
+            serializedToken = genericConverter.convert(token, byte[].class);
+            tokenTypeName = token.getClass().getName();
+        }
+
+        // Extract domain info from context (if present)
+        String aggregateIdentifier = context.getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY);
+        String aggregateType = context.getResource(LegacyResources.AGGREGATE_TYPE_KEY);
+        Long sequenceNumber = context.getResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY);
 
         return new DeadLetterEventEntry(
-                message.getClass().getName(),
+                GenericEventMessage.class.getName(),
                 message.identifier(),
                 message.type().toString(),
                 message.timestamp().toString(),
-                serializedPayload.getType().getName(),
-                serializedPayload.getType().getRevision(),
-                serializedPayload.getData(),
-                serializedMetadata.getData(),
-                domainEventMessage.map(DomainEventMessage::getType).orElse(null),
-                domainEventMessage.map(DomainEventMessage::getAggregateIdentifier).orElse(null),
-                domainEventMessage.map(DomainEventMessage::getSequenceNumber).orElse(null),
-                serializedToken.map(SerializedObject::getType).map(SerializedType::getName).orElse(null),
-                serializedToken.map(SerializedObject::getData).orElse(null)
+                message.payloadType().getName(),
+                null, // revision not tracked separately in AF5
+                serializedPayload,
+                serializedMetadata,
+                aggregateType,
+                aggregateIdentifier,
+                sequenceNumber,
+                tokenTypeName,
+                serializedToken
         );
     }
 
     @Override
-    public EventMessage convert(DeadLetterEventEntry entry,
-                                   Serializer eventSerializer,
-                                   Serializer genericSerializer) {
-        SerializedMessage serializedMessage = new SerializedMessage(entry.getEventIdentifier(),
-                                                                         entry.getPayload(),
-                                                                         entry.getMetadata(),
-                                                                         eventSerializer);
-        Supplier<Instant> timestampSupplier = () -> Instant.parse(entry.getTimeStamp());
-        if (entry.getTrackingToken() != null) {
-            TrackingToken trackingToken = genericSerializer.deserialize(entry.getTrackingToken());
-            if (entry.getAggregateIdentifier() != null) {
-                return new GenericTrackedDomainEventMessage(trackingToken,
-                                                              entry.getAggregateType(),
-                                                              entry.getAggregateIdentifier(),
-                                                              entry.getSequenceNumber(),
-                                                              serializedMessage,
-                                                              timestampSupplier);
-            } else {
-                return new GenericTrackedEventMessage(trackingToken, serializedMessage, timestampSupplier);
-            }
+    public MessageStream.Entry<EventMessage> convert(DeadLetterEventEntry entry,
+                                                     EventConverter eventConverter,
+                                                     Converter genericConverter) {
+        // Deserialize payload and metadata
+        Object payload = eventConverter.convert(entry.getPayload(), ClassUtils.loadClass(entry.getPayloadType()));
+        Metadata metadata = eventConverter.convert(entry.getMetadata(), Metadata.class);
+
+        // Create GenericEventMessage
+        EventMessage message = new GenericEventMessage(
+                entry.getEventIdentifier(),
+                MessageType.fromString(entry.getType()),
+                payload,
+                metadata,
+                Instant.parse(entry.getTimeStamp())
+        );
+
+        // Build context with restored resources
+        Context context = Context.empty();
+
+        // Restore tracking token (if stored)
+        if (entry.getToken() != null && entry.getTokenType() != null) {
+            TrackingToken token = genericConverter.convert(entry.getToken(), ClassUtils.loadClass(entry.getTokenType()));
+            context = context.withResource(TrackingToken.RESOURCE_KEY, token);
         }
+
+        // Restore domain info (if stored)
         if (entry.getAggregateIdentifier() != null) {
-            return new GenericDomainEventMessage(entry.getAggregateType(),
-                                                   entry.getAggregateIdentifier(),
-                                                   entry.getSequenceNumber(),
-                                                   serializedMessage.identifier(),
-                                                   MessageType.fromString(entry.getType()),
-                                                   serializedMessage.payload(),
-                                                   serializedMessage.metadata(),
-                                                   timestampSupplier.get());
-        } else {
-            return new GenericEventMessage(serializedMessage, timestampSupplier);
+            context = context.withResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY, entry.getAggregateIdentifier());
         }
+        if (entry.getAggregateType() != null) {
+            context = context.withResource(LegacyResources.AGGREGATE_TYPE_KEY, entry.getAggregateType());
+        }
+        if (entry.getSequenceNumber() != null) {
+            context = context.withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY, entry.getSequenceNumber());
+        }
+
+        return new SimpleEntry<>(message, context);
     }
 
     @Override
-    public boolean canConvert(DeadLetterEventEntry message) {
-        return message.getEventType().equals(GenericTrackedDomainEventMessage.class.getName()) ||
-                message.getEventType().equals(GenericEventMessage.class.getName()) ||
-                message.getEventType().equals(GenericDomainEventMessage.class.getName()) ||
-                message.getEventType().equals(GenericTrackedEventMessage.class.getName());
+    public boolean canConvert(DeadLetterEventEntry entry) {
+        String eventType = entry.getEventType();
+        // Support current type and legacy types for backward compatibility
+        return eventType.equals(GenericEventMessage.class.getName())
+                || eventType.equals(LEGACY_TRACKED_DOMAIN_EVENT)
+                || eventType.equals(LEGACY_TRACKED_EVENT)
+                || eventType.equals(LEGACY_DOMAIN_EVENT);
     }
 
     @Override

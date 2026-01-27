@@ -33,7 +33,9 @@ import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.SyncSequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.SyncSequencedDeadLetterQueueTest;
 import org.axonframework.messaging.deadletter.WrongDeadLetterTypeException;
-import org.axonframework.conversion.json.JacksonSerializer;
+import org.axonframework.conversion.json.JacksonConverter;
+import org.axonframework.messaging.core.Context;
+import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
 import org.junit.jupiter.api.*;
 
 import java.time.Clock;
@@ -101,7 +103,8 @@ class JpaSequencedDeadLetterQueueTest extends SyncSequencedDeadLetterQueueTest<E
                     deadLetter.lastTouched(),
                     deadLetter.cause().orElse(null),
                     deadLetter.diagnostics(),
-                    deadLetter.message()
+                    deadLetter.message(),
+                    Context.empty()
             );
         }
         throw new IllegalArgumentException("Can not map dead letter of type " + deadLetter.getClass().getName());
@@ -133,6 +136,7 @@ class JpaSequencedDeadLetterQueueTest extends SyncSequencedDeadLetterQueueTest<E
     @Override
     public SyncSequencedDeadLetterQueue<EventMessage> buildTestSubject() {
         EntityManagerProvider entityManagerProvider = new SimpleEntityManagerProvider(entityManager);
+        JacksonConverter jacksonConverter = new JacksonConverter();
         return JpaSequencedDeadLetterQueue
                 .builder()
                 .transactionManager(transactionManager)
@@ -140,8 +144,8 @@ class JpaSequencedDeadLetterQueueTest extends SyncSequencedDeadLetterQueueTest<E
                 .maxSequences(MAX_SEQUENCES_AND_SEQUENCE_SIZE)
                 .maxSequenceSize(MAX_SEQUENCES_AND_SEQUENCE_SIZE)
                 .processingGroup("my_processing_group")
-                .eventSerializer(JacksonSerializer.defaultSerializer())
-                .genericSerializer(JacksonSerializer.defaultSerializer())
+                .eventConverter(new DelegatingEventConverter(jacksonConverter))
+                .genericConverter(jacksonConverter)
                 .build();
     }
 
@@ -213,32 +217,38 @@ class JpaSequencedDeadLetterQueueTest extends SyncSequencedDeadLetterQueueTest<E
 
     @Test
     void canNotBuildWithoutProcessingGroup() {
+        JacksonConverter jacksonConverter = new JacksonConverter();
         JpaSequencedDeadLetterQueue.Builder<EventMessage> builder = JpaSequencedDeadLetterQueue
                 .builder()
                 .transactionManager(transactionManager)
                 .entityManagerProvider(() -> entityManager)
-                .serializer(JacksonSerializer.defaultSerializer());
+                .eventConverter(new DelegatingEventConverter(jacksonConverter))
+                .genericConverter(jacksonConverter);
         assertThrows(AxonConfigurationException.class, builder::build);
     }
 
     @Test
     void canNotBuildWithoutTransactionManager() {
+        JacksonConverter jacksonConverter = new JacksonConverter();
         JpaSequencedDeadLetterQueue.Builder<EventMessage> builder = JpaSequencedDeadLetterQueue
                 .builder()
                 .processingGroup("my_processing_Group")
                 .entityManagerProvider(() -> entityManager)
-                .serializer(JacksonSerializer.defaultSerializer());
+                .eventConverter(new DelegatingEventConverter(jacksonConverter))
+                .genericConverter(jacksonConverter);
 
         assertThrows(AxonConfigurationException.class, builder::build);
     }
 
     @Test
     void canNotBuildWithoutEntityManagerProvider() {
+        JacksonConverter jacksonConverter = new JacksonConverter();
         JpaSequencedDeadLetterQueue.Builder<EventMessage> builder = JpaSequencedDeadLetterQueue
                 .builder()
                 .processingGroup("my_processing_Group")
                 .transactionManager(transactionManager)
-                .serializer(JacksonSerializer.defaultSerializer());
+                .eventConverter(new DelegatingEventConverter(jacksonConverter))
+                .genericConverter(jacksonConverter);
 
         assertThrows(AxonConfigurationException.class, builder::build);
     }

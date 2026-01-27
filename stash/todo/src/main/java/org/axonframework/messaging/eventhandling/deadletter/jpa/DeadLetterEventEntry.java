@@ -20,14 +20,10 @@ import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.Lob;
-import org.axonframework.messaging.eventhandling.DomainEventMessage;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.TrackedEventMessage;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageType;
-import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
-import org.axonframework.conversion.SimpleSerializedObject;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -35,9 +31,9 @@ import java.util.Objects;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Represents an {@link EventMessage} when stored into the database. It contains all
- * properties known in the framework implementations. Based on which properties are present, the original message type
- * can be determined. For example, if an aggregate identifier is present, it was a {@link DomainEventMessage}.
+ * Represents an {@link EventMessage} when stored into the database. It contains all properties known in the framework
+ * implementations. In AF5, tracking tokens and domain info (aggregate identifier, type, sequence number) are stored as
+ * context resources and persisted separately, allowing them to be restored when processing dead letters.
  *
  * @author Mitchell Herrijgers
  * @since 4.6.0
@@ -95,10 +91,10 @@ public class DeadLetterEventEntry {
     }
 
     /**
-     * Constructs a new {@link DeadLetterEventEntry} using the provided parameters. Parameters can be null if it's not
-     * relevant for the {@code eventType}. For example, a {@link DomainEventMessage} contains an {@code aggregateType},
-     * {@code aggregateIdentifier} and {@code sequenceNumber}, but a
-     * {@link GenericEventMessage} does not.
+     * Constructs a new {@link DeadLetterEventEntry} using the provided parameters. Parameters can be null if not
+     * relevant. For example, aggregate info (type, identifier, sequence number) is stored when the event was published
+     * in an aggregate context (stored as context resources), and tracking token is stored when processing from an event
+     * stream.
      *
      * @param eventType           The event type (required).
      * @param eventIdentifier     The identifier of the message (required).
@@ -190,63 +186,86 @@ public class DeadLetterEventEntry {
     }
 
     /**
-     * Returns the original payload as a {@link SimpleSerializedObject}.
+     * Returns the serialized payload as a byte array.
      *
-     * @return The original payload.
+     * @return The serialized payload bytes.
      */
-    public SimpleSerializedObject<byte[]> getPayload() {
-        return new SimpleSerializedObject<>(payload, byte[].class, payloadType, payloadRevision);
+    public byte[] getPayload() {
+        return payload;
     }
 
     /**
-     * Returns the original metadata as a {@link SimpleSerializedObject}.
+     * Returns the payload type name.
      *
-     * @return The original metadata.
+     * @return The fully qualified class name of the payload type.
      */
-    public SimpleSerializedObject<byte[]> getMetadata() {
-        return new SimpleSerializedObject<>(metadata, byte[].class, Metadata.class.getName(), null);
+    public String getPayloadType() {
+        return payloadType;
     }
 
     /**
-     * Returns the original {@link DomainEventMessage#getType()}, if it was a {@code DomainEventMessage}.
+     * Returns the payload revision, if any.
      *
-     * @return The original aggregate type.
+     * @return The payload revision, or {@code null} if not specified.
+     */
+    public String getPayloadRevision() {
+        return payloadRevision;
+    }
+
+    /**
+     * Returns the serialized metadata as a byte array.
+     *
+     * @return The serialized metadata bytes.
+     */
+    public byte[] getMetadata() {
+        return metadata;
+    }
+
+    /**
+     * Returns the aggregate type, if the event was published in an aggregate context (stored as context resource).
+     *
+     * @return The aggregate type, or {@code null} if not available.
      */
     public String getAggregateType() {
         return aggregateType;
     }
 
     /**
-     * Returns the original {@link DomainEventMessage#getAggregateIdentifier()}, if it was a
-     * {@code DomainEventMessage}.
+     * Returns the aggregate identifier, if the event was published in an aggregate context (stored as context
+     * resource).
      *
-     * @return The original aggregate identifier.
+     * @return The aggregate identifier, or {@code null} if not available.
      */
     public String getAggregateIdentifier() {
         return aggregateIdentifier;
     }
 
     /**
-     * Returns the original {@link DomainEventMessage#getSequenceNumber()}, if it was a {@code DomainEventMessage}.
+     * Returns the aggregate sequence number, if the event was published in an aggregate context (stored as context
+     * resource).
      *
-     * @return The original aggregate sequence number.
+     * @return The aggregate sequence number, or {@code null} if not available.
      */
     public Long getSequenceNumber() {
         return sequenceNumber;
     }
 
     /**
-     * Returns the original {@link TrackedEventMessage#trackingToken()} as a
-     * {@link org.axonframework.conversion.SerializedObject}, if the original message was a
-     * {@code TrackedEventMessage}.
+     * Returns the serialized tracking token as a byte array, if the event was being processed from an event stream.
      *
-     * @return The original tracking token.
+     * @return The serialized tracking token bytes, or {@code null} if not available.
      */
-    public SimpleSerializedObject<byte[]> getTrackingToken() {
-        if (token == null) {
-            return null;
-        }
-        return new SimpleSerializedObject<>(token, byte[].class, tokenType, null);
+    public byte[] getToken() {
+        return token;
+    }
+
+    /**
+     * Returns the tracking token type name.
+     *
+     * @return The fully qualified class name of the tracking token type, or {@code null} if no token was stored.
+     */
+    public String getTokenType() {
+        return tokenType;
     }
 
     @Override
