@@ -91,6 +91,7 @@ The benefits of this architecture include:
 
 **For more info:** link:https://www.axoniq.io/blog/announcing-axon-framework-5-configuring-axon-made-easy[Configuration Blog]
 
+[#moving-away-from-aggregates]
 == Moving away from fixed aggregates to entities with tags: the Dynamic Consistency Boundary approach
 
 One of the most significant changes is how Axon Framework 5 conceptualizes event storage.
