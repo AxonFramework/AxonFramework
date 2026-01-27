@@ -23,8 +23,11 @@ Understand the "why" behind each major change.
 We walk through the application design problems that Axon Framework 5 solves, the architectural philosophy driving those solutions, and how they cascade through your codebase.
 
 Understanding the Architecture Principles of Axon Framework 5::
+Detailed explanations of how foundational components have evolved, providing a conceptual background how we adjusted the architecture principles for Axon Framework 5.
+
+Migration Paths::
 The practical heart of the guide.
-Detailed explanations of how foundational components have evolved, accompanied by side-by-side code examples showing Axon Framework 4.x patterns and their Axon Framework 5 equivalents.
+Acts as the starting point for every code migration from Axon Framework 4 to Axon Framework 5. Contains numerous subsections (or "paths") showing how Framework 4 approached things like messaging, aggregates, and testing, and how those should be tackled in Axon Framework 5.
 
 == Scope of this guide
 
