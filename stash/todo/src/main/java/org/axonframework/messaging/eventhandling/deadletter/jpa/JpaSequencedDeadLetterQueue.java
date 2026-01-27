@@ -152,10 +152,8 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sync
                     stringSequenceIdentifier);
         }
 
-        // Note: Context.empty() is used here as the DeadLetter interface doesn't carry context.
-        // Tracking token and domain info from context resources won't be preserved in this case.
         DeadLetterEventEntry entry = converter.convert(
-                letter.message(), Context.empty(), eventConverter, genericConverter
+                letter.message(), processingContext, eventConverter, genericConverter
         );
 
         transactionManager.executeInTransaction(() -> {
