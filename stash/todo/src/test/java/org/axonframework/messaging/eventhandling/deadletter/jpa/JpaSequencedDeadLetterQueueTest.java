@@ -193,14 +193,14 @@ class JpaSequencedDeadLetterQueueTest extends SyncSequencedDeadLetterQueueTest<E
     void cannotRequeueGenericDeadLetter() {
         SyncSequencedDeadLetterQueue<EventMessage> queue = buildTestSubject();
         DeadLetter<EventMessage> letter = generateInitialLetter();
-        assertThrows(WrongDeadLetterTypeException.class, () -> queue.requeue(letter, d -> d));
+        assertThrows(WrongDeadLetterTypeException.class, () -> queue.requeue(letter, d -> d, null));
     }
 
     @Test
     void cannotEvictGenericDeadLetter() {
         SyncSequencedDeadLetterQueue<EventMessage> queue = buildTestSubject();
         DeadLetter<EventMessage> letter = generateInitialLetter();
-        assertThrows(WrongDeadLetterTypeException.class, () -> queue.evict(letter));
+        assertThrows(WrongDeadLetterTypeException.class, () -> queue.evict(letter, null));
     }
 
     @Test

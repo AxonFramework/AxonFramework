@@ -16,8 +16,10 @@
 
 package org.axonframework.messaging.eventhandling.deadletter;
 
+import jakarta.annotation.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.EnqueueDecision;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
@@ -36,11 +38,11 @@ import jakarta.annotation.Nonnull;
 
 /**
  * A decorator for {@link SequencedDeadLetterQueue} that adds caching of sequence identifiers to optimize
- * {@link #contains(Object)} lookups. This is particularly important for high-throughput event processing where checking
+ * {@link #contains(Object, ProcessingContext)} lookups. This is particularly important for high-throughput event processing where checking
  * if an event's sequence is already dead-lettered should be as fast as possible.
  * <p>
  * The caching mechanism uses a {@link SequenceIdentifierCache} to track which sequence identifiers are known to be
- * enqueued or not enqueued. When {@link #contains(Object)} is called, the cache is checked first to potentially avoid a
+ * enqueued or not enqueued. When {@link #contains(Object, ProcessingContext)} is called, the cache is checked first to potentially avoid a
  * roundtrip to the underlying queue.
  * <p>
  * The cache should be cleared when a segment is released to ensure consistency. Use {@link #invalidateCache()} to clear
@@ -95,13 +97,13 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
      *
      * @return a future that completes with the initialized cache
      */
-    private CompletableFuture<SequenceIdentifierCache> getOrInitializeCache() {
+    private CompletableFuture<SequenceIdentifierCache> getOrInitializeCache(@Nullable ProcessingContext processingContext) {
         SequenceIdentifierCache existingCache = cacheRef.get();
         if (existingCache != null) {
             return CompletableFuture.completedFuture(existingCache);
         }
 
-        return delegate.amountOfSequences()
+        return delegate.amountOfSequences(processingContext)
                        .thenApply(count -> {
                            boolean startedEmpty = count == 0L;
                            SequenceIdentifierCache newCache = new SequenceIdentifierCache(startedEmpty, cacheMaxSize);
@@ -131,10 +133,11 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
     @Nonnull
     @Override
     public CompletableFuture<Void> enqueue(@Nonnull Object sequenceIdentifier,
-                                           @Nonnull DeadLetter<? extends M> letter) {
+                                           @Nonnull DeadLetter<? extends M> letter,
+                                           @Nullable ProcessingContext processingContext) {
         // Initialize cache before enqueue to ensure we track this sequence
-        return getOrInitializeCache()
-                .thenCompose(cache -> delegate.enqueue(sequenceIdentifier, letter)
+        return getOrInitializeCache(processingContext)
+                .thenCompose(cache -> delegate.enqueue(sequenceIdentifier, letter, processingContext)
                                               .whenComplete((result, error) -> {
                                                   if (error == null) {
                                                       cache.markEnqueued(sequenceIdentifier);
@@ -145,12 +148,13 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
     @Nonnull
     @Override
     public CompletableFuture<Boolean> enqueueIfPresent(@Nonnull Object sequenceIdentifier,
-                                                       @Nonnull Supplier<DeadLetter<? extends M>> letterBuilder) {
+                                                       @Nonnull Supplier<DeadLetter<? extends M>> letterBuilder,
+                                                       @Nullable ProcessingContext processingContext) {
         SequenceIdentifierCache cache = getInitializedCacheOrNull();
         if (cache != null && !cache.mightBePresent(sequenceIdentifier)) {
             return CompletableFuture.completedFuture(false);
         }
-        return delegate.enqueueIfPresent(sequenceIdentifier, letterBuilder)
+        return delegate.enqueueIfPresent(sequenceIdentifier, letterBuilder, processingContext)
                        .whenComplete((result, error) -> {
                            if (error == null) {
                                SequenceIdentifierCache c = getInitializedCacheOrNull();
@@ -167,23 +171,24 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
 
     @Nonnull
     @Override
-    public CompletableFuture<Void> evict(@Nonnull DeadLetter<? extends M> letter) {
+    public CompletableFuture<Void> evict(@Nonnull DeadLetter<? extends M> letter, @Nullable ProcessingContext processingContext) {
         // We don't have the sequence identifier here, so we cannot update the cache.
         // The cache will self-correct on the next contains() call.
-        return delegate.evict(letter);
+        return delegate.evict(letter, processingContext);
     }
 
     @Nonnull
     @Override
     public CompletableFuture<Void> requeue(@Nonnull DeadLetter<? extends M> letter,
-                                           @Nonnull UnaryOperator<DeadLetter<? extends M>> letterUpdater) {
+                                           @Nonnull UnaryOperator<DeadLetter<? extends M>> letterUpdater,
+                                           @Nullable ProcessingContext processingContext) {
         // Requeue doesn't change the presence status, so no cache update needed.
-        return delegate.requeue(letter, letterUpdater);
+        return delegate.requeue(letter, letterUpdater, processingContext);
     }
 
     @Nonnull
     @Override
-    public CompletableFuture<Boolean> contains(@Nonnull Object sequenceIdentifier) {
+    public CompletableFuture<Boolean> contains(@Nonnull Object sequenceIdentifier, @Nullable ProcessingContext processingContext) {
         // Check cache first - if initialized and we know it's not present, return false immediately
         SequenceIdentifierCache existingCache = getInitializedCacheOrNull();
         if (existingCache != null && !existingCache.mightBePresent(sequenceIdentifier)) {
@@ -194,8 +199,8 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
         }
 
         // Cache not initialized or says it might be present - initialize cache and verify with delegate
-        return getOrInitializeCache()
-                .thenCompose(cache -> delegate.contains(sequenceIdentifier)
+        return getOrInitializeCache(processingContext)
+                .thenCompose(cache -> delegate.contains(sequenceIdentifier, processingContext)
                                               .whenComplete((result, error) -> {
                                                   if (error == null) {
                                                       if (Boolean.TRUE.equals(result)) {
@@ -209,54 +214,55 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
 
     @Nonnull
     @Override
-    public CompletableFuture<Iterable<DeadLetter<? extends M>>> deadLetterSequence(@Nonnull Object sequenceIdentifier) {
-        return delegate.deadLetterSequence(sequenceIdentifier);
+    public CompletableFuture<Iterable<DeadLetter<? extends M>>> deadLetterSequence(@Nonnull Object sequenceIdentifier, @Nullable ProcessingContext processingContext) {
+        return delegate.deadLetterSequence(sequenceIdentifier, processingContext);
     }
 
     @Nonnull
     @Override
-    public CompletableFuture<Iterable<Iterable<DeadLetter<? extends M>>>> deadLetters() {
-        return delegate.deadLetters();
+    public CompletableFuture<Iterable<Iterable<DeadLetter<? extends M>>>> deadLetters(@Nullable ProcessingContext processingContext) {
+        return delegate.deadLetters(processingContext);
     }
 
     @Nonnull
     @Override
-    public CompletableFuture<Boolean> isFull(@Nonnull Object sequenceIdentifier) {
-        return delegate.isFull(sequenceIdentifier);
+    public CompletableFuture<Boolean> isFull(@Nonnull Object sequenceIdentifier, @Nullable ProcessingContext processingContext) {
+        return delegate.isFull(sequenceIdentifier, processingContext);
     }
 
     @Nonnull
     @Override
-    public CompletableFuture<Long> size() {
-        return delegate.size();
+    public CompletableFuture<Long> size(@Nullable ProcessingContext processingContext) {
+        return delegate.size(processingContext);
     }
 
     @Nonnull
     @Override
-    public CompletableFuture<Long> sequenceSize(@Nonnull Object sequenceIdentifier) {
-        return delegate.sequenceSize(sequenceIdentifier);
+    public CompletableFuture<Long> sequenceSize(@Nonnull Object sequenceIdentifier, @Nullable ProcessingContext processingContext) {
+        return delegate.sequenceSize(sequenceIdentifier, processingContext);
     }
 
     @Nonnull
     @Override
-    public CompletableFuture<Long> amountOfSequences() {
-        return delegate.amountOfSequences();
+    public CompletableFuture<Long> amountOfSequences(@Nullable ProcessingContext processingContext) {
+        return delegate.amountOfSequences(processingContext);
     }
 
     @Nonnull
     @Override
     public CompletableFuture<Boolean> process(
             @Nonnull Predicate<DeadLetter<? extends M>> sequenceFilter,
-            @Nonnull Function<DeadLetter<? extends M>, CompletableFuture<EnqueueDecision<M>>> processingTask) {
+            @Nonnull Function<DeadLetter<? extends M>, CompletableFuture<EnqueueDecision<M>>> processingTask,
+            @Nullable ProcessingContext processingContext) {
         // Processing may evict letters, but we don't know which sequences.
         // The cache will self-correct on subsequent contains() calls.
-        return delegate.process(sequenceFilter, processingTask);
+        return delegate.process(sequenceFilter, processingTask, processingContext);
     }
 
     @Nonnull
     @Override
-    public CompletableFuture<Void> clear() {
-        return delegate.clear()
+    public CompletableFuture<Void> clear(@Nullable ProcessingContext processingContext) {
+        return delegate.clear(processingContext)
                        .whenComplete((result, error) -> {
                            if (error == null) {
                                SequenceIdentifierCache cache = getInitializedCacheOrNull();

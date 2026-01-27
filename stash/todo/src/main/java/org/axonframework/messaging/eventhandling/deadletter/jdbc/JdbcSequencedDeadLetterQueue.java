@@ -16,9 +16,11 @@
 
 package org.axonframework.messaging.eventhandling.deadletter.jdbc;
 
+import jakarta.annotation.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.JdbcException;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
@@ -190,9 +192,10 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
 
     @Override
     public void enqueue(@Nonnull Object sequenceIdentifier,
-                        @Nonnull DeadLetter<? extends E> letter) throws DeadLetterQueueOverflowException {
+                        @Nonnull DeadLetter<? extends E> letter,
+                        @Nullable ProcessingContext processingContext) throws DeadLetterQueueOverflowException {
         String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
-        if (isFull(sequenceId)) {
+        if (isFull(sequenceId, processingContext)) {
             throw new DeadLetterQueueOverflowException(
                     "No room left to enqueue [" + letter.message() + "] for identifier ["
                             + sequenceId + "] since the queue is full."
@@ -242,7 +245,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
     }
 
     @Override
-    public void evict(DeadLetter<? extends E> letter) {
+    public void evict(DeadLetter<? extends E> letter, @Nullable ProcessingContext processingContext) {
         if (!(letter instanceof JdbcDeadLetter)) {
             throw new WrongDeadLetterTypeException(
                     String.format("Invoke evict with a JdbcDeadLetter instance. Instead got: [%s]",
@@ -279,7 +282,8 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
     @Override
     public void requeue(
             @Nonnull DeadLetter<? extends E> letter,
-            @Nonnull UnaryOperator<DeadLetter<? extends E>> letterUpdater
+            @Nonnull UnaryOperator<DeadLetter<? extends E>> letterUpdater,
+            @Nullable ProcessingContext processingContext
     ) throws NoSuchDeadLetterException {
         if (!(letter instanceof JdbcDeadLetter)) {
             throw new WrongDeadLetterTypeException(
@@ -321,7 +325,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
     }
 
     @Override
-    public boolean contains(@Nonnull Object sequenceIdentifier) {
+    public boolean contains(@Nonnull Object sequenceIdentifier, @Nullable ProcessingContext processingContext) {
         String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
         if (logger.isDebugEnabled()) {
             logger.debug("Validating existence of sequence identifier [{}].", sequenceId);
@@ -335,10 +339,11 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
                             CLOSE_QUIETLY);
     }
 
+    @Nonnull
     @Override
-    public Iterable<DeadLetter<? extends E>> deadLetterSequence(@Nonnull Object sequenceIdentifier) {
+    public Iterable<DeadLetter<? extends E>> deadLetterSequence(@Nonnull Object sequenceIdentifier, @Nullable ProcessingContext processingContext) {
         String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
-        if (!contains(sequenceId)) {
+        if (!contains(sequenceId, processingContext)) {
             return Collections.emptyList();
         }
 
@@ -354,8 +359,9 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
         );
     }
 
+    @Nonnull
     @Override
-    public Iterable<Iterable<DeadLetter<? extends E>>> deadLetters() {
+    public Iterable<Iterable<DeadLetter<? extends E>>> deadLetters(@Nullable ProcessingContext processingContext) {
         List<String> sequenceIdentifiers = executeQuery(
                 getConnection(),
                 connection -> statementFactory.sequenceIdentifiersStatement(connection, processingGroup),
@@ -376,21 +382,21 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
                 @Override
                 public Iterable<DeadLetter<? extends E>> next() {
                     String next = sequenceIterator.next();
-                    return deadLetterSequence(next);
+                    return deadLetterSequence(next, processingContext);
                 }
             };
         };
     }
 
     @Override
-    public boolean isFull(@Nonnull Object sequenceIdentifier) {
+    public boolean isFull(@Nonnull Object sequenceIdentifier, @Nullable ProcessingContext processingContext) {
         String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
-        long numberInSequence = sequenceSize(sequenceId);
-        return numberInSequence > 0 ? numberInSequence >= maxSequenceSize : amountOfSequences() >= maxSequences;
+        long numberInSequence = sequenceSize(sequenceId, processingContext);
+        return numberInSequence > 0 ? numberInSequence >= maxSequenceSize : amountOfSequences(processingContext) >= maxSequences;
     }
 
     @Override
-    public long size() {
+    public long size(@Nullable ProcessingContext processingContext) {
         return executeQuery(getConnection(),
                             connection -> statementFactory.sizeStatement(connection, processingGroup),
                             resultSet -> nextAndExtract(resultSet, 1, Long.class, 0L),
@@ -399,7 +405,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
     }
 
     @Override
-    public long sequenceSize(@Nonnull Object sequenceIdentifier) {
+    public long sequenceSize(@Nonnull Object sequenceIdentifier, @Nullable ProcessingContext processingContext) {
         String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
         return executeQuery(getConnection(),
                             connection -> statementFactory.sequenceSizeStatement(
@@ -414,7 +420,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
     }
 
     @Override
-    public long amountOfSequences() {
+    public long amountOfSequences(@Nullable ProcessingContext processingContext) {
         return executeQuery(getConnection(),
                             connection -> statementFactory.amountOfSequencesStatement(connection, processingGroup),
                             resultSet -> nextAndExtract(resultSet, 1, Long.class, 0L),
@@ -426,7 +432,8 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
 
     @Override
     public boolean process(@Nonnull Predicate<DeadLetter<? extends E>> sequenceFilter,
-                           @Nonnull Function<DeadLetter<? extends E>, EnqueueDecision<E>> processingTask) {
+                           @Nonnull Function<DeadLetter<? extends E>, EnqueueDecision<E>> processingTask,
+                           @Nullable ProcessingContext processingContext) {
         logger.debug("Received a request to process matching dead letters.");
 
         Iterator<? extends JdbcDeadLetter<E>> iterator = findClaimableSequences(10);
@@ -439,20 +446,20 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
         }
 
         if (claimedLetter != null) {
-            return processInitialAndSubsequent(claimedLetter, processingTask);
+            return processInitialAndSubsequent(claimedLetter, processingTask, processingContext);
         }
         logger.debug("Received a request to process dead letters but there are no matching or claimable sequences.");
         return false;
     }
 
     @Override
-    public boolean process(@Nonnull Function<DeadLetter<? extends E>, EnqueueDecision<E>> processingTask) {
+    public boolean process(@Nonnull Function<DeadLetter<? extends E>, EnqueueDecision<E>> processingTask, @Nullable ProcessingContext processingContext) {
         logger.debug("Received a request to process any dead letters.");
         Iterator<? extends JdbcDeadLetter<E>> iterator = findClaimableSequences(1);
         if (iterator.hasNext()) {
             JdbcDeadLetter<E> deadLetter = iterator.next();
             claimDeadLetter(deadLetter);
-            return processInitialAndSubsequent(deadLetter, processingTask);
+            return processInitialAndSubsequent(deadLetter, processingTask, processingContext);
         }
         logger.debug("Received a request to process dead letters but there are no claimable sequences.");
         return false;
@@ -543,7 +550,8 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
      * @return Whether processing all letters in this sequence was successful.
      */
     private boolean processInitialAndSubsequent(JdbcDeadLetter<E> initialLetter,
-                                                Function<DeadLetter<? extends E>, EnqueueDecision<E>> processingTask) {
+                                                Function<DeadLetter<? extends E>, EnqueueDecision<E>> processingTask,
+                                                @Nullable ProcessingContext processingContext) {
         JdbcDeadLetter<E> current = initialLetter;
         while (current != null) {
             logger.info("Processing dead letter with identifier [{}] at index [{}]",
@@ -558,11 +566,12 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
                 } else {
                     current = null;
                 }
-                evict(previous);
+                evict(previous, processingContext);
             } else {
                 requeue(current,
                         letter -> decision.withDiagnostics(letter)
-                                          .withCause(decision.enqueueCause().orElse(null)));
+                                          .withCause(decision.enqueueCause().orElse(null)),
+                        processingContext);
                 return false;
             }
         }
@@ -592,7 +601,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
     }
 
     @Override
-    public void clear() {
+    public void clear(@Nullable ProcessingContext processingContext) {
         Connection connection = getConnection();
         try {
             executeUpdate(connection,
