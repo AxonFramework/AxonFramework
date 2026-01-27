@@ -16,10 +16,11 @@
 
 package org.axonframework.messaging.eventhandling.deadletter.jpa;
 
-import org.axonframework.common.annotation.Internal;
+import org.axonframework.conversion.Converter;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 
 /**
  * Converter that can convert an {@link EventMessage} to a {@link DeadLetterEventEntry} and vice versa.
@@ -32,7 +33,6 @@ import org.axonframework.messaging.eventhandling.EventMessage;
  * @author Mitchell Herrijgers
  * @since 4.6.0
  */
-@Internal
 public interface DeadLetterJpaConverter<M extends EventMessage> {
 
     /**
@@ -42,11 +42,13 @@ public interface DeadLetterJpaConverter<M extends EventMessage> {
      * The context is used to extract tracking token and domain info (aggregate identifier, type, sequence number) if
      * present, as these are stored as context resources in AF5 rather than message subtypes.
      *
-     * @param message The message to convert.
-     * @param context The context containing resources such as tracking token and domain info.
+     * @param message          The message to convert.
+     * @param context          The context containing resources such as tracking token and domain info.
+     * @param eventConverter   The {@link EventConverter} for conversion of payload and metadata.
+     * @param genericConverter The {@link Converter} for conversion of the tracking token, if present.
      * @return The created {@link DeadLetterEventEntry}.
      */
-    DeadLetterEventEntry convert(M message, Context context);
+    DeadLetterEventEntry convert(M message, Context context, EventConverter eventConverter, Converter genericConverter);
 
     /**
      * Converts a {@link DeadLetterEventEntry} to a {@link MessageStream.Entry} containing the {@link EventMessage}
@@ -55,8 +57,10 @@ public interface DeadLetterJpaConverter<M extends EventMessage> {
      * The returned entry's context contains the restored tracking token and domain info (aggregate identifier, type,
      * sequence number) if they were stored when the dead letter was enqueued.
      *
-     * @param entry The database entry to convert.
+     * @param entry            The database entry to convert.
+     * @param eventConverter   The {@link EventConverter} for deserialization of payload and metadata.
+     * @param genericConverter The {@link Converter} for deserialization of the tracking token, if present.
      * @return A {@link MessageStream.Entry} containing the message and context with restored resources.
      */
-    MessageStream.Entry<M> convert(DeadLetterEventEntry entry);
+    MessageStream.Entry<M> convert(DeadLetterEventEntry entry, EventConverter eventConverter, Converter genericConverter);
 }

@@ -51,11 +51,10 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class EventMessageDeadLetterJpaConverterTest {
 
+    private final EventMessageDeadLetterJpaConverter converter = new EventMessageDeadLetterJpaConverter();
     private final JacksonConverter jacksonConverter = new JacksonConverter();
     private final EventConverter eventConverter = new DelegatingEventConverter(jacksonConverter);
     private final Converter genericConverter = jacksonConverter;
-    private final EventMessageDeadLetterJpaConverter converter =
-            new EventMessageDeadLetterJpaConverter(eventConverter, genericConverter);
     private final ConverterTestEvent event = new ConverterTestEvent("myValue");
     private final MessageType type = new MessageType("event");
     private final Metadata metadata = Metadata.from(Collections.singletonMap("myMetadataKey", "myMetadataValue"));
@@ -112,20 +111,22 @@ class EventMessageDeadLetterJpaConverterTest {
     }
 
     private void testConversion(EventMessage message, Context context) {
-        DeadLetterEventEntry deadLetterEventEntry = converter.convert(message, context);
+        DeadLetterEventEntry deadLetterEventEntry = converter.convert(message, context, eventConverter, genericConverter);
 
         assertCorrectlyMapped(message, context, deadLetterEventEntry);
 
-        MessageStream.Entry<EventMessage> restoredEntry = converter.convert(deadLetterEventEntry);
+        MessageStream.Entry<EventMessage> restoredEntry =
+                converter.convert(deadLetterEventEntry, eventConverter, genericConverter);
         assertCorrectlyRestored(message, restoredEntry.message());
     }
 
     private void testConversionWithContext(EventMessage message, Context context) {
-        DeadLetterEventEntry deadLetterEventEntry = converter.convert(message, context);
+        DeadLetterEventEntry deadLetterEventEntry = converter.convert(message, context, eventConverter, genericConverter);
 
         assertCorrectlyMapped(message, context, deadLetterEventEntry);
 
-        MessageStream.Entry<EventMessage> restoredEntry = converter.convert(deadLetterEventEntry);
+        MessageStream.Entry<EventMessage> restoredEntry =
+                converter.convert(deadLetterEventEntry, eventConverter, genericConverter);
 
         assertCorrectlyRestored(message, restoredEntry.message());
         assertContextRestored(context, restoredEntry);
