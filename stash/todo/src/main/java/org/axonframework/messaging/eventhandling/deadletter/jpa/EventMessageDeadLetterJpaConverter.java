@@ -107,7 +107,8 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
                 entry.getEventIdentifier(),
                 MessageType.fromString(entry.getType()),
                 payload,
-                metadata
+                metadata,
+                Instant.parse(entry.getTimeStamp())
         );
 
         // Build context with restored resources

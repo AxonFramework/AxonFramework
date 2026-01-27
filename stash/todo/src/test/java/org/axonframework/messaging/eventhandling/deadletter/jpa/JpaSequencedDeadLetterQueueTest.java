@@ -136,7 +136,7 @@ class JpaSequencedDeadLetterQueueTest extends SyncSequencedDeadLetterQueueTest<E
     @Override
     public SyncSequencedDeadLetterQueue<EventMessage> buildTestSubject() {
         EntityManagerProvider entityManagerProvider = new SimpleEntityManagerProvider(entityManager);
-        JacksonConverter jacksonConverter = JacksonConverter.defaultConverter();
+        JacksonConverter jacksonConverter = new JacksonConverter();
         return JpaSequencedDeadLetterQueue
                 .builder()
                 .transactionManager(transactionManager)
@@ -217,7 +217,7 @@ class JpaSequencedDeadLetterQueueTest extends SyncSequencedDeadLetterQueueTest<E
 
     @Test
     void canNotBuildWithoutProcessingGroup() {
-        JacksonConverter jacksonConverter = JacksonConverter.defaultConverter();
+        JacksonConverter jacksonConverter = new JacksonConverter();
         JpaSequencedDeadLetterQueue.Builder<EventMessage> builder = JpaSequencedDeadLetterQueue
                 .builder()
                 .transactionManager(transactionManager)
@@ -229,7 +229,7 @@ class JpaSequencedDeadLetterQueueTest extends SyncSequencedDeadLetterQueueTest<E
 
     @Test
     void canNotBuildWithoutTransactionManager() {
-        JacksonConverter jacksonConverter = JacksonConverter.defaultConverter();
+        JacksonConverter jacksonConverter = new JacksonConverter();
         JpaSequencedDeadLetterQueue.Builder<EventMessage> builder = JpaSequencedDeadLetterQueue
                 .builder()
                 .processingGroup("my_processing_Group")
@@ -242,7 +242,7 @@ class JpaSequencedDeadLetterQueueTest extends SyncSequencedDeadLetterQueueTest<E
 
     @Test
     void canNotBuildWithoutEntityManagerProvider() {
-        JacksonConverter jacksonConverter = JacksonConverter.defaultConverter();
+        JacksonConverter jacksonConverter = new JacksonConverter();
         JpaSequencedDeadLetterQueue.Builder<EventMessage> builder = JpaSequencedDeadLetterQueue
                 .builder()
                 .processingGroup("my_processing_Group")
