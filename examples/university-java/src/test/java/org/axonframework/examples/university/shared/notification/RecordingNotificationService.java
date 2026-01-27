@@ -14,23 +14,21 @@
  * limitations under the License.
  */
 
-package org.axonframework.examples.university.write.renamecourse;
+package org.axonframework.examples.university.shared.notification;
 
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.Size;
-import org.axonframework.examples.university.shared.CourseId;
-import org.axonframework.messaging.commandhandling.annotation.Command;
-import org.axonframework.modelling.annotation.TargetEntityId;
+import java.util.ArrayList;
+import java.util.List;
 
-public record RenameCourse(
-        @NotEmpty
-        @Valid
-        @TargetEntityId
-        CourseId courseId,
-        @NotEmpty
-        @Size(min = 10)
-        String name
-) {
+public class RecordingNotificationService implements NotificationService {
 
+    private final List<Notification> sent = new ArrayList<>();
+
+    @Override
+    public void sendNotification(Notification notification) {
+        sent.add(notification);
+    }
+
+    public List<Notification> sent() {
+        return sent;
+    }
 }
