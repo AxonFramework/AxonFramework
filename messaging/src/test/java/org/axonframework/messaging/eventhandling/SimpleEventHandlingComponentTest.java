@@ -17,17 +17,16 @@
 package org.axonframework.messaging.eventhandling;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.eventhandling.replay.GenericResetContext;
-import org.axonframework.messaging.eventhandling.replay.ResetHandler;
-import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.axonframework.messaging.eventhandling.replay.GenericResetContext;
+import org.axonframework.messaging.eventhandling.replay.ResetHandler;
+import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
+import org.junit.jupiter.api.*;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -55,8 +54,8 @@ class SimpleEventHandlingComponentTest {
             SequencingPolicy sequencingPolicy = (event, context) -> Optional.of(expectedIdentifier);
 
             // when
-            var component = new SimpleEventHandlingComponent(sequencingPolicy)
-                    .subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
+            var component = SimpleEventHandlingComponent.create("test", sequencingPolicy);
+            component.subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
 
             // then
             var sampleEvent = EventTestUtils.asEventMessage("sample");
@@ -74,8 +73,8 @@ class SimpleEventHandlingComponentTest {
             var expectedIdentifier = "sequenceId";
 
             // when
-            var component = new SimpleEventHandlingComponent((e, ctx) -> Optional.of(expectedIdentifier))
-                    .subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
+            var component = SimpleEventHandlingComponent.create("test", (e, ctx) -> Optional.of(expectedIdentifier));
+            component.subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
 
             // then
             var sampleEvent = EventTestUtils.asEventMessage("sample");
@@ -92,15 +91,15 @@ class SimpleEventHandlingComponentTest {
             // given
             var handler1Invoked = new AtomicBoolean();
             var handler2Invoked = new AtomicBoolean();
-            var component = new SimpleEventHandlingComponent()
-                    .subscribe(new QualifiedName(String.class), (e, c) -> {
-                        handler1Invoked.set(true);
-                        return MessageStream.empty();
-                    })
-                    .subscribe(new QualifiedName(String.class), (e, c) -> {
-                        handler2Invoked.set(true);
-                        return MessageStream.empty();
-                    });
+            var component = SimpleEventHandlingComponent.create("test")
+                                                        .subscribe(new QualifiedName(String.class), (e, c) -> {
+                                                            handler1Invoked.set(true);
+                                                            return MessageStream.empty();
+                                                        })
+                                                        .subscribe(new QualifiedName(String.class), (e, c) -> {
+                                                            handler2Invoked.set(true);
+                                                            return MessageStream.empty();
+                                                        });
 
             //  when
             EventMessage sampleMessage = EventTestUtils.asEventMessage("Message1");
@@ -119,8 +118,9 @@ class SimpleEventHandlingComponentTest {
         void shouldDecorateEventHandlingComponent() {
             // given
             SampleDecoration component = new SampleDecoration(
-                    new SimpleEventHandlingComponent()
-                            .subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty())
+                    SimpleEventHandlingComponent.create("test")
+                                                .subscribe(new QualifiedName(String.class),
+                                                           (e, c) -> MessageStream.empty())
             );
 
             // when
@@ -162,7 +162,7 @@ class SimpleEventHandlingComponentTest {
                 return MessageStream.empty();
             };
 
-            var component = new SimpleEventHandlingComponent();
+            var component = SimpleEventHandlingComponent.create("test");
             component.subscribe(resetHandler);
 
             // when
@@ -182,7 +182,7 @@ class SimpleEventHandlingComponentTest {
                 return MessageStream.empty();
             };
 
-            var component = new SimpleEventHandlingComponent();
+            var component = SimpleEventHandlingComponent.create("test");
             component.subscribe(resetHandler);
             component.subscribe(resetHandler);
 

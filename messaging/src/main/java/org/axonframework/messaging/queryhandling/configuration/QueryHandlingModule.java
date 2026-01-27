@@ -111,15 +111,13 @@ public interface QueryHandlingModule extends Module, ModuleBuilder<QueryHandling
     /**
      * The query handler configuration phase of the query handling module.
      * <p>
-     * Every registered {@link QueryHandler} will be subscribed with the
-     * {@link QueryBus} of the
+     * Every registered {@link QueryHandler} will be subscribed with the {@link QueryBus} of the
      * {@link ApplicationConfigurer} this module is given to.
      * <p>
      * Provides roughly two options for configuring query handlers. Firstly, a query handler can be registered as is,
-     * through the {@link #queryHandler(QualifiedName, QueryHandler)} method. Secondly, if the query
-     * handler provides components from the {@link Configuration}, a {@link ComponentBuilder builder} of the query
-     * handler can be registered through the {@link #queryHandler(QualifiedName, ComponentBuilder)}
-     * method.
+     * through the {@link #queryHandler(QualifiedName, QueryHandler)} method. Secondly, if the query handler provides
+     * components from the {@link Configuration}, a {@link ComponentBuilder builder} of the query handler can be
+     * registered through the {@link #queryHandler(QualifiedName, ComponentBuilder)} method.
      */
     interface QueryHandlerPhase extends ModuleBuilder<QueryHandlingModule> {
 
@@ -128,10 +126,10 @@ public interface QueryHandlingModule extends Module, ModuleBuilder<QueryHandling
          * within this module.
          * <p>
          * Use this query handler registration method when the query handler in question does not require entities or
-         * receives entities through another mechanism.
+         * receives entities through another mechanism. Using a {@link MessageTypeResolver} to derive the
+         * {@code queryName} is beneficial to ensure consistent naming across handler subscriptions.
          * <p>
-         * Once this module is finalized, the query handler will be subscribed with the
-         * {@link QueryBus} of the
+         * Once this module is finalized, the query handler will be subscribed with the {@link QueryBus} of the
          * {@link ApplicationConfigurer} the module is registered on.
          *
          * @param queryName    The qualified name of the query the given {@code queryHandler} can handle.
@@ -145,11 +143,14 @@ public interface QueryHandlingModule extends Module, ModuleBuilder<QueryHandling
         }
 
         /**
-         * Registers the given {@code queryHandlerBuilder} for the given qualified {@code queryName} within this module.
+         * Registers the given {@code queryHandlerBuilder} for the given qualified {@code queryName} within this
+         * module.
+         * <p>
+         * Using a {@link MessageTypeResolver} to derive the {@code queryName} is beneficial to ensure consistent naming
+         * across handler subscriptions.
          * <p>
          * Once this module is finalized, the query handler from the {@code queryHandlerBuilder} will be subscribed with
-         * the {@link QueryBus} of the
-         * {@link ApplicationConfigurer} the module is registered on.
+         * the {@link QueryBus} of the {@link ApplicationConfigurer} the module is registered on.
          *
          * @param queryName           The qualified name of the query the {@link QueryHandler} created by the given
          *                            {@code queryHandlerBuilder}.
@@ -169,8 +170,8 @@ public interface QueryHandlingModule extends Module, ModuleBuilder<QueryHandling
          * entities or receives entities through another mechanism.
          * <p>
          * Once this module is finalized, the resulting {@link QueryHandlingComponent} from the
-         * {@code handlingComponentBuilder} will be subscribed with the {@link QueryBus}
-         * of the {@link ApplicationConfigurer} the module is registered on.
+         * {@code handlingComponentBuilder} will be subscribed with the {@link QueryBus} of the
+         * {@link ApplicationConfigurer} the module is registered on.
          *
          * @param handlingComponentBuilder A builder of a {@link QueryHandlingComponent}. Provides the
          *                                 {@link Configuration} to retrieve components from to use during construction
@@ -186,8 +187,7 @@ public interface QueryHandlingModule extends Module, ModuleBuilder<QueryHandling
          * this module.
          * <p>
          * This will scan the given {@code handlingComponentBuilder} for methods annotated with {@link QueryHandler} and
-         * register them as query handlers for the {@link QueryBus} of the
-         * {@link ApplicationConfigurer}.
+         * register them as query handlers for the {@link QueryBus} of the {@link ApplicationConfigurer}.
          *
          * @param handlingComponentBuilder A builder of a {@link QueryHandlingComponent}. Provides the
          *                                 {@link Configuration} to retrieve components from to use during construction

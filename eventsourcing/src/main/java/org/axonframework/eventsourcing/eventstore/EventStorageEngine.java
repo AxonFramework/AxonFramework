@@ -117,11 +117,10 @@ public interface EventStorageEngine extends DescribableComponent {
      *
      * @param condition The {@link SourcingCondition} dictating the {@link MessageStream stream} of
      *                  {@link EventMessage events} to source.
-     * @param context   The current {@link ProcessingContext}, if any.
      * @return A <b>finite</b> {@link MessageStream} of {@link EventMessage events} matching the given
      * {@code condition}.
      */
-    MessageStream<EventMessage> source(@Nonnull SourcingCondition condition, @Nullable ProcessingContext context);
+    MessageStream<EventMessage> source(@Nonnull SourcingCondition condition);
 
     /**
      * Creates an <b>infinite</b> {@link MessageStream} of {@link EventMessage events} matching the given
@@ -133,44 +132,40 @@ public interface EventStorageEngine extends DescribableComponent {
      * @param condition The {@link StreamingCondition} dictating the {@link StreamingCondition#position()} to start
      *                  streaming from, as well as the {@link StreamingCondition#criteria() filter criteria} used for
      *                  the returned {@link MessageStream}.
-     * @param context   The current {@link ProcessingContext}, if any.
      * @return An <b>infinite</b> {@link MessageStream} of {@link EventMessage events} matching the given
      * {@code condition}.
      */
-    MessageStream<EventMessage> stream(@Nonnull StreamingCondition condition, @Nullable ProcessingContext context);
+    MessageStream<EventMessage> stream(@Nonnull StreamingCondition condition);
 
     /**
      * Creates a {@link TrackingToken} that is at the first position of an event stream.
      * <p>
      * In other words, a token that tracks events from the beginning of time.
      *
-     * @param context The current {@link ProcessingContext}, if any.
      * @return A {@link CompletableFuture} of a {@link TrackingToken} at the first position of an event stream.
      */
-    CompletableFuture<TrackingToken> firstToken(@Nullable ProcessingContext context);
+    CompletableFuture<TrackingToken> firstToken();
 
     /**
      * Creates a {@link TrackingToken} that is at the latest position of an event stream.
      * <p>
      * In other words, a token that tracks all <b>new</b> events from this point forward.
      *
-     * @param context The current {@link ProcessingContext}, if any.
      * @return A {@link CompletableFuture} of a {@link TrackingToken} at the latest position of an event stream.
      */
-    CompletableFuture<TrackingToken> latestToken(@Nullable ProcessingContext context);
+    CompletableFuture<TrackingToken> latestToken();
 
     /**
      * Creates a {@link TrackingToken} that tracks all {@link EventMessage events} after the given {@code at}.
      * <p>
      * If there is an event exactly at the given {@code at}, it will be tracked too.
      *
-     * @param at      The {@link Instant} determining how the {@link TrackingToken} should be created. A tracking token
-     *                should point to very first event before this {@link Instant}.
-     * @param context The current {@link ProcessingContext}, if any.
+     * @param at The {@link Instant} determining how the {@link TrackingToken} should be created. A tracking token
+     *           should point to very first event before this {@link Instant}.
      * @return A {@link CompletableFuture} of a {@link TrackingToken} at the given {@code at}, if there aren't events
      * matching this criteria {@code null} is returned
      */
-    CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at, @Nullable ProcessingContext context);
+    CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at);
 
     /**
      * Interface representing the transaction of an appendEvents invocation.
@@ -186,18 +181,15 @@ public interface EventStorageEngine extends DescribableComponent {
          * <p>
          * Called during the {@link ProcessingLifecycle.DefaultPhases#COMMIT COMMIT} phase.
          *
-         * @param context The current {@link ProcessingContext}, if any.
          * @return A {@code CompletableFuture} to complete the commit asynchrously, returning a value
          *     for {@link #afterCommit(R, ProcessingContext) afterCommit}.
          */
-        CompletableFuture<R> commit(@Nullable ProcessingContext context);
+        CompletableFuture<R> commit();
 
         /**
          * Rolls back any events that have been appended, permanently making them unavailable for consumers.
-         *
-         * @param context The current {@link ProcessingContext}, if any.
          */
-        void rollback(@Nullable ProcessingContext context);
+        void rollback();
 
         /**
          * Returns a {@code CompletableFuture} to calculate the consistency marker. This is called only after the
@@ -206,11 +198,10 @@ public interface EventStorageEngine extends DescribableComponent {
          * Called during the {@link ProcessingLifecycle.DefaultPhases#AFTER_COMMIT AFTER_COMMIT} phase.
          *
          * @param commitResult The result returned from the commit call.
-         * @param context The current {@link ProcessingContext}, if any.
          * @return A {@code CompletableFuture} that completes with the new consistency marker for the transaction. If
          *     the transaction was empty (without events to append) then returned consistency marker is always
          *     {@link ConsistencyMarker#ORIGIN}.
          */
-        CompletableFuture<ConsistencyMarker> afterCommit(R commitResult, @Nullable ProcessingContext context);
+        CompletableFuture<ConsistencyMarker> afterCommit(R commitResult);
     }
 }

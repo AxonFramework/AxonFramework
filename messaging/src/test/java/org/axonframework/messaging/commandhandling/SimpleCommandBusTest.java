@@ -19,21 +19,18 @@ package org.axonframework.messaging.commandhandling;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.StubExecutor;
 import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.common.util.MockException;
 import org.axonframework.messaging.core.EmptyApplicationContext;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.messaging.core.unitofwork.ProcessingLifecycleHandlerRegistrar;
 import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
-import org.axonframework.common.util.MockException;
 import org.junit.jupiter.api.*;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -64,8 +61,8 @@ class SimpleCommandBusTest {
     void setUp() {
         this.executor = new StubExecutor();
         this.testSubject = new SimpleCommandBus(
-                new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE, c -> c.workScheduler(executor)),
-                Collections.emptyList());
+                new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE, c -> c.workScheduler(executor))
+        );
     }
 
     @Test
@@ -229,28 +226,6 @@ class SimpleCommandBusTest {
     }
 
     @Test
-    void lifecycleHandlersAreInvokedOnEachInvocation() {
-        ProcessingLifecycleHandlerRegistrar lifecycleHandlerRegistrar = mock(ProcessingLifecycleHandlerRegistrar.class);
-        var unitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE,
-                                                            c -> c.workScheduler(executor));
-        testSubject = new SimpleCommandBus(unitOfWorkFactory, List.of(lifecycleHandlerRegistrar));
-
-        var commandHandler = new StubCommandHandler("ok");
-        CommandMessage command = TEST_COMMAND;
-        testSubject.subscribe(command.type().qualifiedName(), commandHandler);
-
-        verify(lifecycleHandlerRegistrar, never()).registerHandlers(any());
-
-        testSubject.dispatch(command, StubProcessingContext.forMessage(TEST_COMMAND));
-
-        verify(lifecycleHandlerRegistrar).registerHandlers(any());
-
-        testSubject.dispatch(command, StubProcessingContext.forMessage(TEST_COMMAND));
-
-        verify(lifecycleHandlerRegistrar, times(2)).registerHandlers(notNull());
-    }
-
-    @Test
     void duplicateRegistrationIsRejected() {
         var handler1 = mock(CommandHandler.class);
         var handler2 = mock(CommandHandler.class);
@@ -268,9 +243,8 @@ class SimpleCommandBusTest {
 
     @Test
     void describeReturnsRegisteredComponents() {
-        ProcessingLifecycleHandlerRegistrar lifecycleHandlerRegistrar = mock(ProcessingLifecycleHandlerRegistrar.class);
         UnitOfWorkFactory unitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
-        testSubject = new SimpleCommandBus(unitOfWorkFactory, List.of(lifecycleHandlerRegistrar));
+        testSubject = new SimpleCommandBus(unitOfWorkFactory);
         var handler1 = mock(CommandHandler.class);
         var handler2 = mock(CommandHandler.class);
         testSubject.subscribe(COMMAND_NAME, handler1);
@@ -281,7 +255,6 @@ class SimpleCommandBusTest {
         testSubject.describeTo(mockComponentDescriptor);
 
         verify(mockComponentDescriptor).describeProperty("unitOfWorkFactory", unitOfWorkFactory);
-        verify(mockComponentDescriptor).describeProperty("lifecycleRegistrars", List.of(lifecycleHandlerRegistrar));
         verify(mockComponentDescriptor)
                 .describeProperty("subscriptions", Map.of(COMMAND_NAME, handler1, handlerTwoName, handler2));
     }

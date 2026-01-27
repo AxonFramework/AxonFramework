@@ -17,40 +17,31 @@
 package org.axonframework.extension.spring.config;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.annotation.RegistrationScope;
-import org.axonframework.common.configuration.LazyInitializedModule;
-import org.axonframework.messaging.commandhandling.CommandMessage;
-import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.annotation.RegistrationScope;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
-import org.axonframework.common.configuration.Module;
-import org.axonframework.common.configuration.ModuleBuilder;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer.AdditionalComponentPhase;
-import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer.CompletePhase;
-import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer.RequiredComponentPhase;
-import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
+import org.axonframework.extension.spring.BeanDefinitionUtils;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.messaging.core.Message;
-import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.messaging.queryhandling.QueryMessage;
 import org.axonframework.messaging.queryhandling.configuration.QueryHandlingModule;
-import org.axonframework.extension.spring.config.EventProcessorSettings.PooledEventProcessorSettings;
-import org.axonframework.extension.spring.config.EventProcessorSettings.SubscribingEventProcessorSettings;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.beans.factory.support.AbstractBeanDefinition;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.function.Function;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -102,51 +93,19 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
     }
 
     private void configureEventHandlers(ComponentRegistry registry) {
-
-        groupNamedBeanDefinitionsByPackage().forEach((packageName, beanDefs) -> {
-
-            Function<RequiredComponentPhase, CompletePhase> componentRegistration = (RequiredComponentPhase phase) -> {
-                AdditionalComponentPhase resultOfRegistration = null;
-                for (NamedBeanDefinition namedBeanDefinition : beanDefs) {
-                    resultOfRegistration = phase.autodetected(this.createComponentBuilder(namedBeanDefinition));
-                }
-                return resultOfRegistration;
-            };
-
-            var processorName = "EventProcessor[" + packageName + "]";
-
-            Function<Configuration, ModuleBuilder<? extends Module>> moduleBuilder = (configuration) -> {
-
-                var allSettings = configuration.getComponent(EventProcessorSettings.MapWrapper.class).settings();
-                var settings = Optional.ofNullable(allSettings.get(packageName))
-                                       .orElseGet(() -> allSettings.get(EventProcessorSettings.DEFAULT));
-                return switch (settings.processorMode()) {
-                    case POOLED -> {
-                        var moduleSettings = (PooledEventProcessorSettings) settings;
-                        yield EventProcessorModule
-                                .pooledStreaming(processorName)
-                                .eventHandlingComponents(componentRegistration)
-                                .customized(SpringCustomizations.pooledStreamingCustomizations(
-                                        packageName,
-                                        moduleSettings
-                                ).andThen(c -> c.unitOfWorkFactory(configuration.getComponent(UnitOfWorkFactory.class))));
-                    }
-                    case SUBSCRIBING -> {
-                        var moduleSettings = (SubscribingEventProcessorSettings) settings;
-                        yield EventProcessorModule
-                                .subscribing(processorName)
-                                .eventHandlingComponents(componentRegistration)
-                                .customized(SpringCustomizations.subscribingCustomizations(
-                                        packageName,
-                                        moduleSettings
-                                ).andThen(c -> c.unitOfWorkFactory(configuration.getComponent(UnitOfWorkFactory.class))));
-                    }
-                };
-            };
-            registry.registerModule(
-                    new LazyInitializedModule<>("Lazy[" + processorName + "]", moduleBuilder)
-            );
-        });
+        if (handlerBeansRefs.isEmpty()) {
+            // no action needed if there are no handler beans found
+            return;
+        }
+        var beanFactory = ((ConfigurableApplicationContext) applicationContext).getBeanFactory();
+        ProcessorModuleFactory processorModuleFactory = applicationContext.getBean(ProcessorModuleFactory.class);
+        Set<ProcessorDefinition.EventHandlerDescriptor> handlers =
+                handlerBeansRefs.stream()
+                                .map(name -> new SimpleEventHandlerDescriptor(name, beanFactory))
+                                .collect(Collectors.toSet());
+        for (EventProcessorModule processorModule : processorModuleFactory.buildProcessorModules(handlers)) {
+            registry.registerModule(processorModule);
+        }
     }
 
     private void configureQueryHandlers(ComponentRegistry registry) {
@@ -156,7 +115,7 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
                     .named(moduleName)
                     .queryHandlers();
             beanDefs.forEach(namedBeanDefinition -> queryHandlingModuleBuilder.annotatedQueryHandlingComponent(
-                    this.createComponentBuilder(namedBeanDefinition)
+                    this.asComponent(namedBeanDefinition.name())
             ));
             registry.registerModule(queryHandlingModuleBuilder.build());
         });
@@ -169,13 +128,13 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
                     .named(moduleName)
                     .commandHandlers();
             beanDefs.forEach(namedBeanDefinition -> commandHandlingModuleBuilder
-                    .annotatedCommandHandlingComponent(this.createComponentBuilder(namedBeanDefinition)));
+                    .annotatedCommandHandlingComponent(this.asComponent(namedBeanDefinition.name())));
             registry.registerModule(commandHandlingModuleBuilder.build());
         });
     }
 
-    private ComponentBuilder<Object> createComponentBuilder(@Nonnull NamedBeanDefinition namedBeanDefinition) {
-        return (Configuration configuration) -> applicationContext.getBean(namedBeanDefinition.name());
+    private ComponentBuilder<Object> asComponent(String beanName) {
+        return (Configuration configuration) -> applicationContext.getBean(beanName);
     }
 
     private Map<String, List<NamedBeanDefinition>> groupNamedBeanDefinitionsByPackage() {
@@ -185,24 +144,7 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
         return handlerBeansRefs
                 .stream()
                 .map(name -> new NamedBeanDefinition(name, beanFactory.getBeanDefinition(name)))
-                .collect(Collectors.groupingBy(
-                                 nbd -> {
-                                     String className = nbd.definition().getBeanClassName();
-                                     if (className == null) {
-                                         if (nbd.definition() instanceof AbstractBeanDefinition abstractBeanDefinition) {
-                                             if (abstractBeanDefinition.hasBeanClass()) {
-                                                 className = abstractBeanDefinition.getBeanClass().getName();
-                                             } else if (nbd.definition() instanceof AnnotatedBeanDefinition annotatedBeanDefinition) {
-                                                 className = annotatedBeanDefinition.getMetadata().getClassName();
-                                             }
-                                         }
-                                     }
-                                     return (className != null && className.contains("."))
-                                             ? className.substring(0, className.lastIndexOf('.'))
-                                             : "default";
-                                 }
-                         )
-                );
+                .collect(Collectors.groupingBy(nbd -> BeanDefinitionUtils.extractPackageName(nbd.definition)));
     }
 
     @Override
@@ -254,6 +196,33 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
          */
         public Class<? extends Message> getMessageType() {
             return messageType;
+        }
+    }
+
+    private record SimpleEventHandlerDescriptor(String beanName, ConfigurableListableBeanFactory beanFactory)
+            implements ProcessorDefinition.EventHandlerDescriptor {
+
+        @Override
+        public BeanDefinition beanDefinition() {
+            return beanFactory.getBeanDefinition(beanName);
+        }
+
+        @Override
+        @Nullable
+        public Class<?> beanType() {
+            return beanFactory.getType(beanName);
+        }
+
+        @Override
+        @Nonnull
+        public Object resolveBean() {
+            return beanFactory.getBean(beanName);
+        }
+
+        @Override
+        @Nonnull
+        public ComponentBuilder<Object> component() {
+            return c -> resolveBean();
         }
     }
 }

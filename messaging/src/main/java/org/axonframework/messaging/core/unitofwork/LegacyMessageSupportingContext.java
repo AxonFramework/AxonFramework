@@ -20,7 +20,6 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.configuration.ComponentNotFoundException;
 import org.axonframework.messaging.core.Message;
-import org.axonframework.messaging.core.Message;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -77,17 +76,17 @@ public class LegacyMessageSupportingContext implements ProcessingContext {
     }
 
     @Override
-    public ProcessingLifecycle on(Phase phase, Function<ProcessingContext, CompletableFuture<?>> action) {
+    public ProcessingLifecycle on(@Nonnull Phase phase, @Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
         throw new UnsupportedOperationException(UNSUPPORTED_MESSAGE);
     }
 
     @Override
-    public ProcessingLifecycle onError(ErrorHandler action) {
+    public ProcessingLifecycle onError(@Nonnull ErrorHandler action) {
         throw new UnsupportedOperationException(UNSUPPORTED_MESSAGE);
     }
 
     @Override
-    public ProcessingLifecycle whenComplete(Consumer<ProcessingContext> action) {
+    public ProcessingLifecycle whenComplete(@Nonnull Consumer<ProcessingContext> action) {
         throw new UnsupportedOperationException(UNSUPPORTED_MESSAGE);
     }
 

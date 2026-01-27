@@ -99,7 +99,7 @@ public class StorageEngineBackedEventStore implements EventStore {
             }
             return eventStorageEngine.appendEvents(none, context, taggedEvents)
                                      .thenApply(StorageEngineBackedEventStore::castTransaction)
-                                     .thenApply(tx -> tx.commit(context).thenApply(v -> tx.afterCommit(v, context)))
+                                     .thenApply(tx -> tx.commit().thenApply(v -> tx.afterCommit(v)))
                                      .thenApply(marker -> null)
                                      .thenCompose(r -> eventBus.publish(context, events));
         } else {
@@ -124,23 +124,23 @@ public class StorageEngineBackedEventStore implements EventStore {
 
     @Override
     public CompletableFuture<TrackingToken> firstToken(@Nullable ProcessingContext context) {
-        return eventStorageEngine.firstToken(context);
+        return eventStorageEngine.firstToken();
     }
 
     @Override
     public CompletableFuture<TrackingToken> latestToken(@Nullable ProcessingContext context) {
-        return eventStorageEngine.latestToken(context);
+        return eventStorageEngine.latestToken();
     }
 
     @Override
     public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at, @Nullable ProcessingContext context) {
-        return eventStorageEngine.tokenAt(at, context);
+        return eventStorageEngine.tokenAt(at);
     }
 
     @Override
     public MessageStream<EventMessage> open(@Nonnull StreamingCondition condition,
                                             @Nullable ProcessingContext context) {
-        return eventStorageEngine.stream(condition, context);
+        return eventStorageEngine.stream(condition);
     }
 
     @Override

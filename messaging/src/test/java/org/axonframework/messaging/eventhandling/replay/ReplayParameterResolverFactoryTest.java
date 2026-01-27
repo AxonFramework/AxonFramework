@@ -17,6 +17,12 @@
 package org.axonframework.messaging.eventhandling.replay;
 
 import org.axonframework.conversion.PassThroughConverter;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.annotation.AnnotationMessageTypeResolver;
+import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
@@ -27,10 +33,6 @@ import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
-import org.axonframework.messaging.core.MessageType;
-import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -62,7 +64,10 @@ class ReplayParameterResolverFactoryTest {
         handler = new SomeHandler();
         testSubject = new AnnotatedEventHandlingComponent<>(
                 handler,
-                ClasspathParameterResolverFactory.forClass(SomeHandler.class)
+                ClasspathParameterResolverFactory.forClass(SomeHandler.class),
+                ClasspathHandlerDefinition.forClass(SomeHandler.class),
+                new AnnotationMessageTypeResolver(),
+                new DelegatingEventConverter(PassThroughConverter.INSTANCE)
         );
     }
 

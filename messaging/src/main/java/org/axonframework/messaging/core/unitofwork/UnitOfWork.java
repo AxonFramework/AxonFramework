@@ -117,18 +117,18 @@ public class UnitOfWork implements ProcessingLifecycle {
     }
 
     @Override
-    public UnitOfWork on(Phase phase, Function<ProcessingContext, CompletableFuture<?>> action) {
+    public UnitOfWork on(@Nonnull Phase phase, @Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
         context.on(phase, action);
         return this;
     }
 
     @Override
-    public ProcessingLifecycle onError(ErrorHandler action) {
+    public ProcessingLifecycle onError(@Nonnull ErrorHandler action) {
         return context.onError(action);
     }
 
     @Override
-    public ProcessingLifecycle whenComplete(Consumer<ProcessingContext> action) {
+    public ProcessingLifecycle whenComplete(@Nonnull Consumer<ProcessingContext> action) {
         return context.whenComplete(action);
     }
 
@@ -158,7 +158,7 @@ public class UnitOfWork implements ProcessingLifecycle {
      * the Unit Of Work has been committed. Or, an exceptionally completed future with the exception that caused this
      * Unit of Work to fail.
      */
-    public <R> CompletableFuture<R> executeWithResult(Function<ProcessingContext, CompletableFuture<R>> action) {
+    public <R> CompletableFuture<R> executeWithResult(@Nonnull Function<ProcessingContext, CompletableFuture<R>> action) {
         CompletableFuture<R> result = new CompletableFuture<>();
         onInvocation(processingContext -> safe(() -> action.apply(processingContext))
                 .whenComplete(FutureUtils.alsoComplete(result)));
@@ -173,7 +173,7 @@ public class UnitOfWork implements ProcessingLifecycle {
      * @return A {@link CompletableFuture} wrapping both the successful and exceptional result of the given
      * {@code action}.
      */
-    private <R> CompletableFuture<R> safe(Callable<CompletableFuture<R>> action) {
+    private <R> CompletableFuture<R> safe(@Nonnull Callable<CompletableFuture<R>> action) {
         try {
             CompletableFuture<R> result = action.call();
             if (result == null) {
@@ -243,7 +243,7 @@ public class UnitOfWork implements ProcessingLifecycle {
         }
 
         @Override
-        public ProcessingLifecycle on(Phase phase, Function<ProcessingContext, CompletableFuture<?>> action) {
+        public ProcessingLifecycle on(@Nonnull Phase phase, @Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
             var current = currentPhase.get();
             if (current != null && phase.order() <= current.order()) {
                 throw new IllegalStateException(
@@ -267,7 +267,7 @@ public class UnitOfWork implements ProcessingLifecycle {
          * {@code action}.
          */
         private Function<ProcessingContext, CompletableFuture<?>> safe(
-                Phase phase, Function<ProcessingContext, CompletableFuture<?>> action
+                @Nonnull Phase phase, @Nonnull Function<ProcessingContext, CompletableFuture<?>> action
         ) {
             return processingContext -> {
                 CompletableFuture<?> result;
@@ -287,7 +287,7 @@ public class UnitOfWork implements ProcessingLifecycle {
         }
 
         @Override
-        public ProcessingLifecycle onError(ErrorHandler action) {
+        public ProcessingLifecycle onError(@Nonnull ErrorHandler action) {
             ErrorHandler silentAction = failSilently(action);
             this.errorHandlers.add(silentAction);
             var currentStatus = status.get();
@@ -302,7 +302,7 @@ public class UnitOfWork implements ProcessingLifecycle {
             return this;
         }
 
-        private ErrorHandler failSilently(ErrorHandler action) {
+        private ErrorHandler failSilently(@Nonnull ErrorHandler action) {
             return (context, phase, exception) -> {
                 try {
                     action.handle(context, phase, exception);
@@ -313,7 +313,7 @@ public class UnitOfWork implements ProcessingLifecycle {
         }
 
         @Override
-        public ProcessingLifecycle whenComplete(Consumer<ProcessingContext> action) {
+        public ProcessingLifecycle whenComplete(@Nonnull Consumer<ProcessingContext> action) {
             Consumer<ProcessingContext> silentAction = completeSilently(action);
             this.completeHandlers.add(silentAction);
             var currentStatus = status.get();
@@ -327,7 +327,7 @@ public class UnitOfWork implements ProcessingLifecycle {
             return this;
         }
 
-        private Consumer<ProcessingContext> completeSilently(Consumer<ProcessingContext> action) {
+        private Consumer<ProcessingContext> completeSilently(@Nonnull Consumer<ProcessingContext> action) {
             return processingContext -> {
                 try {
                     action.accept(processingContext);
@@ -391,7 +391,7 @@ public class UnitOfWork implements ProcessingLifecycle {
             }
         }
 
-        private CompletableFuture<Void> runErrorHandlers(Throwable e) {
+        private CompletableFuture<Void> runErrorHandlers(@Nonnull Throwable e) {
             status.set(Status.COMPLETED_ERROR);
             CauseAndPhase recordedCause = errorCause.get();
 
@@ -527,7 +527,7 @@ public class UnitOfWork implements ProcessingLifecycle {
          *              {@code cause} was thrown.
          * @param cause The {@link Throwable} thrown in an action executed in the given {@code phase}.
          */
-        private record CauseAndPhase(Phase phase, Throwable cause) {
+        private record CauseAndPhase(@Nonnull Phase phase, @Nonnull Throwable cause) {
 
         }
     }

@@ -28,10 +28,10 @@ import org.axonframework.messaging.commandhandling.annotation.AnnotationRoutingS
 import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
 import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
 import org.axonframework.messaging.commandhandling.gateway.DefaultCommandGateway;
-import org.axonframework.messaging.core.unitofwork.transaction.Transaction;
-import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
 import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.unitofwork.transaction.Transaction;
+import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
@@ -76,7 +76,7 @@ public abstract class AbstractPolymorphicAggregateAnnotationCommandHandlerTestSu
 
         transactionManager = new EntityManagerTransactionManager(entityManager);
 
-        commandBus = new SimpleCommandBus(transactionalUnitOfWorkFactory(transactionManager), Collections.emptyList());
+        commandBus = new SimpleCommandBus(transactionalUnitOfWorkFactory(transactionManager));
         commandGateway = new DefaultCommandGateway(commandBus,
                                                    new ClassBasedMessageTypeResolver(),
                                                    CommandPriorityCalculator.defaultCalculator(),

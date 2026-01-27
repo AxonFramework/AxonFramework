@@ -43,6 +43,7 @@ class MultiSourceTrackingTokenSerializationTest {
         Map<String, TrackingToken> tokenMap = new HashMap<>();
         tokenMap.put("token1", new GlobalSequenceTrackingToken(0));
         tokenMap.put("token2", new GlobalSequenceTrackingToken(0));
+        tokenMap.put("token3", null);
         MultiSourceTrackingToken testSubject = new MultiSourceTrackingToken(tokenMap);
         assertEquals(testSubject, converter.serializeDeserialize(testSubject));
     }

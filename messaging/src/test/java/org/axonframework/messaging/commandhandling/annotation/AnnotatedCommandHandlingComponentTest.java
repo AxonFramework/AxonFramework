@@ -16,25 +16,28 @@
 
 package org.axonframework.messaging.commandhandling.annotation;
 
+import jakarta.annotation.Nonnull;
+import org.axonframework.conversion.PassThroughConverter;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.CommandMessage;
-import org.axonframework.messaging.commandhandling.interception.CommandMessageHandlerInterceptorChain;
 import org.axonframework.messaging.commandhandling.CommandResultMessage;
 import org.axonframework.messaging.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.commandhandling.NoHandlerForCommandException;
+import org.axonframework.messaging.commandhandling.interception.CommandMessageHandlerInterceptorChain;
 import org.axonframework.messaging.core.GenericMessage;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageStream.Entry;
 import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.annotation.AnnotationMessageTypeResolver;
+import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.core.interception.annotation.ExceptionHandler;
 import org.axonframework.messaging.core.interception.annotation.MessageHandlerInterceptor;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
-import org.axonframework.conversion.PassThroughConverter;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -42,6 +45,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -68,16 +73,66 @@ class AnnotatedCommandHandlingComponentTest {
 
     @BeforeEach
     void setUp() {
-        CommandBus commandBus = mock(CommandBus.class);
         annotatedCommandHandler = new MyCommandHandler();
-        ParameterResolverFactory parameterResolverFactory = ClasspathParameterResolverFactory.forClass(getClass());
+        testSubject = new AnnotatedCommandHandlingComponent<>(
+                annotatedCommandHandler,
+                ClasspathParameterResolverFactory.forClass(annotatedCommandHandler.getClass()),
+                ClasspathHandlerDefinition.forClass(annotatedCommandHandler.getClass()),
+                new AnnotationMessageTypeResolver(),
+                new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
+        );
 
-        testSubject = new AnnotatedCommandHandlingComponent<>(annotatedCommandHandler,
-                                                              parameterResolverFactory,
-                                                              new DelegatingMessageConverter(PassThroughConverter.INSTANCE));
-
+        CommandBus commandBus = mock(CommandBus.class);
         when(commandBus.subscribe(any(QualifiedName.class), any())).thenReturn(commandBus);
         when(commandBus.subscribe(anySet(), any())).thenReturn(commandBus);
+    }
+
+    @Test
+    void subscribesCommandHandlerWithCommandName() {
+        Object annotatedCommandHandler = new Object() {
+            @SuppressWarnings("unused")
+            @CommandHandler(commandName = "myCommandName")
+            public void handle(String command) {
+                // Unimportant
+            }
+        };
+        MessageTypeResolver messageTypeResolver = spy(new AnnotationMessageTypeResolver());
+        AnnotatedCommandHandlingComponent<Object> annotatedComponent = new AnnotatedCommandHandlingComponent<>(
+                annotatedCommandHandler,
+                ClasspathParameterResolverFactory.forClass(annotatedCommandHandler.getClass()),
+                ClasspathHandlerDefinition.forClass(annotatedCommandHandler.getClass()),
+                messageTypeResolver,
+                new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
+        );
+
+        Set<QualifiedName> supportedCommands = annotatedComponent.supportedCommands();
+        assertThat(supportedCommands).hasSize(1);
+        assertThat(supportedCommands).contains(new QualifiedName("myCommandName"));
+        verifyNoInteractions(messageTypeResolver);
+    }
+
+    @Test
+    void subscribesCommandHandlerThroughMessageTypeResolverWhenCommandNameIsEmpty() {
+        QualifiedName expectedName = new QualifiedName("defaultName");
+
+        Object annotatedCommandHandler = new Object() {
+            @SuppressWarnings({"unused", "DefaultAnnotationParam"})
+            @CommandHandler(commandName = "") // Deliberately empty to give control to the MessageTypeResolver
+            public void handle(String command) {
+                // Unimportant
+            }
+        };
+        AnnotatedCommandHandlingComponent<Object> annotatedComponent = new AnnotatedCommandHandlingComponent<>(
+                annotatedCommandHandler,
+                ClasspathParameterResolverFactory.forClass(annotatedCommandHandler.getClass()),
+                ClasspathHandlerDefinition.forClass(annotatedCommandHandler.getClass()),
+                payloadType -> Optional.of(new MessageType(expectedName)),
+                new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
+        );
+
+        Set<QualifiedName> supportedCommands = annotatedComponent.supportedCommands();
+        assertThat(supportedCommands).hasSize(1);
+        assertThat(supportedCommands).contains(expectedName);
     }
 
     @Test
@@ -161,11 +216,15 @@ class AnnotatedCommandHandlingComponentTest {
         CommandMessage testCommandMessage = new GenericCommandMessage(new MessageType(String.class), "");
         List<CommandMessage> withInterceptor = new ArrayList<>();
         List<CommandMessage> withoutInterceptor = new ArrayList<>();
-        annotatedCommandHandler = new MyInterceptingCommandHandler(withoutInterceptor,
-                                                                   withInterceptor,
-                                                                   new ArrayList<>());
-        testSubject = new AnnotatedCommandHandlingComponent<>(annotatedCommandHandler,
-                                                              new DelegatingMessageConverter(PassThroughConverter.INSTANCE));
+        annotatedCommandHandler =
+                new MyInterceptingCommandHandler(withoutInterceptor, withInterceptor, new ArrayList<>());
+        testSubject = new AnnotatedCommandHandlingComponent<>(
+                annotatedCommandHandler,
+                ClasspathParameterResolverFactory.forClass(annotatedCommandHandler.getClass()),
+                ClasspathHandlerDefinition.forClass(annotatedCommandHandler.getClass()),
+                new AnnotationMessageTypeResolver(),
+                new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
+        );
 
         Object result = testSubject.handle(testCommandMessage, mock(ProcessingContext.class))
                                    .first()
@@ -175,7 +234,7 @@ class AnnotatedCommandHandlingComponentTest {
                                    .payload();
 
         assertNull(result);
-        // TODO #34805 The interceptor chain is not yet implemented fully through the MessageStream.
+        // TODO #3485 The interceptor chain is not yet implemented fully through the MessageStream.
         //  Hence, this test does not end up in the message handler.
 //        assertEquals(1, annotatedCommandHandler.voidHandlerInvoked);
         assertEquals(Collections.singletonList(testCommandMessage), withInterceptor);
@@ -187,11 +246,15 @@ class AnnotatedCommandHandlingComponentTest {
     void exceptionHandlerAnnotatedMethodsAreSupportedForCommandHandlingComponents() {
         CommandMessage testCommandMessage = new GenericCommandMessage(TEST_TYPE, new ArrayList<>());
         List<Exception> interceptedExceptions = new ArrayList<>();
-        annotatedCommandHandler = new MyInterceptingCommandHandler(new ArrayList<>(),
-                                                                   new ArrayList<>(),
-                                                                   interceptedExceptions);
-        testSubject = new AnnotatedCommandHandlingComponent<>(annotatedCommandHandler,
-                                                              new DelegatingMessageConverter(PassThroughConverter.INSTANCE));
+        annotatedCommandHandler =
+                new MyInterceptingCommandHandler(new ArrayList<>(), new ArrayList<>(), interceptedExceptions);
+        testSubject = new AnnotatedCommandHandlingComponent<>(
+                annotatedCommandHandler,
+                ClasspathParameterResolverFactory.forClass(annotatedCommandHandler.getClass()),
+                ClasspathHandlerDefinition.forClass(annotatedCommandHandler.getClass()),
+                new AnnotationMessageTypeResolver(),
+                new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
+        );
 
         try {
             testSubject.handle(testCommandMessage, mock(ProcessingContext.class));
@@ -209,15 +272,20 @@ class AnnotatedCommandHandlingComponentTest {
 
     @Nested
     class GivenAnAnnotatedInterfaceMethod {
+
         interface I {
+
             @CommandHandler
             int handle(Integer event);
         }
 
         @Nested
-        class WhenImplementedByAnnotedInstanceMethod {
+        class WhenImplementedByAnnotatedInstanceMethod {
+
             class T implements I {
-                @Override @CommandHandler
+
+                @Override
+                @CommandHandler
                 public int handle(Integer event) {
                     return callCount.incrementAndGet();
                 }
@@ -230,8 +298,12 @@ class AnnotatedCommandHandlingComponentTest {
 
             @Nested
             class AndOverriddenAndAnnotatedInASubclass {
+
                 class U extends T {
-                    @Override @CommandHandler
+
+                    @SuppressWarnings("RedundantMethodOverride")
+                    @Override
+                    @CommandHandler
                     public int handle(Integer event) {
                         return callCount.incrementAndGet();
                     }
@@ -245,7 +317,9 @@ class AnnotatedCommandHandlingComponentTest {
 
             @Nested
             class AndOverriddenButNotAnnotatedInASubclass {
+
                 class U extends T {
+
                     @Override
                     public int handle(Integer event) {
                         return callCount.incrementAndGet();
@@ -260,8 +334,10 @@ class AnnotatedCommandHandlingComponentTest {
         }
 
         @Nested
-        class WhenImplementedByUnannotedInstanceMethod {
+        class WhenImplementedByUnannotatedInstanceMethod {
+
             class T implements I {
+
                 @Override
                 public int handle(Integer event) {
                     return callCount.incrementAndGet();
@@ -275,8 +351,11 @@ class AnnotatedCommandHandlingComponentTest {
 
             @Nested
             class AndOverriddenAndAnnotatedInASubclass {
+
                 class U extends T {
-                    @Override @CommandHandler
+
+                    @Override
+                    @CommandHandler
                     public int handle(Integer event) {
                         return callCount.incrementAndGet();
                     }
@@ -290,7 +369,10 @@ class AnnotatedCommandHandlingComponentTest {
 
             @Nested
             class AndOverriddenButNotAnnotatedInASubclass {
+
                 class U extends T {
+
+                    @SuppressWarnings("RedundantMethodOverride")
                     @Override
                     public int handle(Integer event) {
                         return callCount.incrementAndGet();
@@ -307,14 +389,19 @@ class AnnotatedCommandHandlingComponentTest {
 
     @Nested
     class GivenAnUnannotatedInterfaceMethod {
+
         interface I {
+
             int handle(Integer event);
         }
 
         @Nested
-        class WhenImplementedByAnnotedInstanceMethod {
+        class WhenImplementedByAnnotatedInstanceMethod {
+
             class T implements I {
-                @Override @CommandHandler
+
+                @Override
+                @CommandHandler
                 public int handle(Integer event) {
                     return callCount.incrementAndGet();
                 }
@@ -327,8 +414,12 @@ class AnnotatedCommandHandlingComponentTest {
 
             @Nested
             class AndOverriddenAndAnnotatedInASubclass {
+
                 class U extends T {
-                    @Override @CommandHandler
+
+                    @SuppressWarnings("RedundantMethodOverride")
+                    @Override
+                    @CommandHandler
                     public int handle(Integer event) {
                         return callCount.incrementAndGet();
                     }
@@ -342,7 +433,9 @@ class AnnotatedCommandHandlingComponentTest {
 
             @Nested
             class AndOverriddenButNotAnnotatedInASubclass {
+
                 class U extends T {
+
                     @Override
                     public int handle(Integer event) {
                         return callCount.incrementAndGet();
@@ -357,8 +450,10 @@ class AnnotatedCommandHandlingComponentTest {
         }
 
         @Nested
-        class WhenImplementedByUnannotedInstanceMethod {
+        class WhenImplementedByUnannotatedInstanceMethod {
+
             class T implements I {
+
                 @Override
                 public int handle(Integer event) {
                     return callCount.incrementAndGet();
@@ -372,8 +467,11 @@ class AnnotatedCommandHandlingComponentTest {
 
             @Nested
             class AndOverriddenAndAnnotatedInASubclass {
+
                 class U extends T {
-                    @Override @CommandHandler
+
+                    @Override
+                    @CommandHandler
                     public int handle(Integer event) {
                         return callCount.incrementAndGet();
                     }
@@ -387,7 +485,10 @@ class AnnotatedCommandHandlingComponentTest {
 
             @Nested
             class AndOverriddenButNotAnnotatedInASubclass {
+
                 class U extends T {
+
+                    @SuppressWarnings("RedundantMethodOverride")
                     @Override
                     public int handle(Integer event) {
                         return callCount.incrementAndGet();
@@ -404,7 +505,9 @@ class AnnotatedCommandHandlingComponentTest {
 
     @Nested
     class GivenAnAnnotatedInstanceMethod {
+
         class T {
+
             @CommandHandler
             public int handle(Integer event) {
                 return callCount.incrementAndGet();
@@ -418,8 +521,12 @@ class AnnotatedCommandHandlingComponentTest {
 
         @Nested
         class WhenOverriddenAndAnnotatedInASubclass {
+
             class U extends T {
-                @Override @CommandHandler
+
+                @SuppressWarnings("RedundantMethodOverride")
+                @Override
+                @CommandHandler
                 public int handle(Integer event) {
                     return callCount.incrementAndGet();
                 }
@@ -433,7 +540,9 @@ class AnnotatedCommandHandlingComponentTest {
 
         @Nested
         class WhenNotOverriddenInSubclass {
+
             class U extends T {
+
             }
 
             @Test
@@ -444,7 +553,9 @@ class AnnotatedCommandHandlingComponentTest {
 
         @Nested
         class WhenOverriddenButNotAnnotatedInASubclass {
+
             class U extends T {
+
                 @Override
                 public int handle(Integer event) {
                     return callCount.incrementAndGet();
@@ -460,7 +571,9 @@ class AnnotatedCommandHandlingComponentTest {
 
     @Nested
     class GivenAnUnannotatedInstanceMethod {
+
         class T {
+
             public int handle(Integer event) {
                 return callCount.incrementAndGet();
             }
@@ -473,8 +586,11 @@ class AnnotatedCommandHandlingComponentTest {
 
         @Nested
         class WhenOverriddenAndAnnotatedInASubclass {
+
             class U extends T {
-                @Override @CommandHandler
+
+                @Override
+                @CommandHandler
                 public int handle(Integer event) {
                     return callCount.incrementAndGet();
                 }
@@ -488,7 +604,10 @@ class AnnotatedCommandHandlingComponentTest {
 
         @Nested
         class WhenOverriddenButNotAnnotatedInASubclass {
+
             class U extends T {
+
+                @SuppressWarnings("RedundantMethodOverride")
                 @Override
                 public int handle(Integer event) {
                     return callCount.incrementAndGet();
@@ -504,19 +623,20 @@ class AnnotatedCommandHandlingComponentTest {
 
     private void assertCalledOnlyOnce(Object handlerInstance) {
         AnnotatedCommandHandlingComponent<?> testSubject = new AnnotatedCommandHandlingComponent<>(
-            handlerInstance,
-            ClasspathParameterResolverFactory.forClass(getClass()),
-            new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
+                handlerInstance,
+                ClasspathParameterResolverFactory.forClass(handlerInstance.getClass()),
+                ClasspathHandlerDefinition.forClass(handlerInstance.getClass()),
+                new AnnotationMessageTypeResolver(),
+                new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
         );
 
         CommandMessage testCommand = new GenericCommandMessage(new MessageType(Integer.class), 42);
-
-        int result = (int) testSubject.handle(testCommand, StubProcessingContext.forMessage(testCommand))
-            .first()
-            .asCompletableFuture()
-            .join()
-            .message()
-            .payload();
+        Integer result = testSubject.handle(testCommand, StubProcessingContext.forMessage(testCommand))
+                                    .first()
+                                    .asCompletableFuture()
+                                    .join()
+                                    .message()
+                                    .payloadAs(Integer.class);
 
         assertThat(callCount.get()).isEqualTo(1);
         assertThat(result).isEqualTo(1);
@@ -524,21 +644,23 @@ class AnnotatedCommandHandlingComponentTest {
 
     private void assertNotCalled(Object handlerInstance) {
         AnnotatedCommandHandlingComponent<?> testSubject = new AnnotatedCommandHandlingComponent<>(
-            handlerInstance,
-            ClasspathParameterResolverFactory.forClass(getClass()),
-            new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
+                handlerInstance,
+                ClasspathParameterResolverFactory.forClass(handlerInstance.getClass()),
+                ClasspathHandlerDefinition.forClass(handlerInstance.getClass()),
+                new AnnotationMessageTypeResolver(),
+                new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
         );
 
         CommandMessage testCommand = new GenericCommandMessage(new MessageType(Integer.class), 42);
 
-        CompletableFuture<Entry<CommandResultMessage>> future = testSubject.handle(testCommand, StubProcessingContext.forMessage(testCommand))
-            .first()
-            .asCompletableFuture();
+        CompletableFuture<Entry<CommandResultMessage>> future =
+                testSubject.handle(testCommand, StubProcessingContext.forMessage(testCommand))
+                           .first()
+                           .asCompletableFuture();
 
-        assertThatThrownBy(() -> future.join())
-            .isInstanceOf(CompletionException.class)
-            .cause()
-            .isInstanceOf(NoHandlerForCommandException.class);
+        assertThatThrownBy(future::join).isInstanceOf(CompletionException.class)
+                                        .cause()
+                                        .isInstanceOf(NoHandlerForCommandException.class);
 
         assertThat(callCount.get()).isEqualTo(0);
     }

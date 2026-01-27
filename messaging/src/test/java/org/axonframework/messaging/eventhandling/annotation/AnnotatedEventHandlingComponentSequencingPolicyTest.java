@@ -16,22 +16,25 @@
 
 package org.axonframework.messaging.eventhandling.annotation;
 
+import org.axonframework.conversion.Converter;
+import org.axonframework.conversion.PassThroughConverter;
+import org.axonframework.messaging.core.LegacyResources;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.core.annotation.AnnotationMessageTypeResolver;
+import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventTestUtils;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
 import org.axonframework.messaging.eventhandling.sequencing.FullConcurrencyPolicy;
 import org.axonframework.messaging.eventhandling.sequencing.MetadataSequencingPolicy;
 import org.axonframework.messaging.eventhandling.sequencing.PropertySequencingPolicy;
 import org.axonframework.messaging.eventhandling.sequencing.SequentialPerAggregatePolicy;
 import org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy;
-import org.axonframework.messaging.core.LegacyResources;
-import org.axonframework.messaging.core.MessageType;
-import org.axonframework.messaging.core.Metadata;
-import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
-import org.axonframework.conversion.Converter;
-import org.axonframework.conversion.PassThroughConverter;
 import org.junit.jupiter.api.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -68,6 +71,7 @@ class AnnotatedEventHandlingComponentSequencingPolicyTest {
             assertThat(sequenceIdentifier).isEqualTo(AGGREGATE_IDENTIFIER);
         }
 
+        @SuppressWarnings("unused")
         private static class EventHandlerWithoutPolicy {
 
             @EventHandler
@@ -156,6 +160,7 @@ class AnnotatedEventHandlingComponentSequencingPolicyTest {
             assertThat(sequenceIdentifier).isEqualTo(AGGREGATE_IDENTIFIER);
         }
 
+        @SuppressWarnings({"DefaultAnnotationParam", "unused"})
         @SequencingPolicy(type = SequentialPolicy.class)
         private static class SequentialPolicyEventHandler {
 
@@ -164,6 +169,7 @@ class AnnotatedEventHandlingComponentSequencingPolicyTest {
             }
         }
 
+        @SuppressWarnings("unused")
         @SequencingPolicy(type = FullConcurrencyPolicy.class)
         private static class FullConcurrencyPolicyEventHandler {
 
@@ -172,6 +178,7 @@ class AnnotatedEventHandlingComponentSequencingPolicyTest {
             }
         }
 
+        @SuppressWarnings("unused")
         @SequencingPolicy(type = MetadataSequencingPolicy.class, parameters = {"userId"})
         private static class MetadataSequencingPolicyEventHandler {
 
@@ -180,6 +187,7 @@ class AnnotatedEventHandlingComponentSequencingPolicyTest {
             }
         }
 
+        @SuppressWarnings("unused")
         @SequencingPolicy(type = PropertySequencingPolicy.class, parameters = {"orderId"})
         private static class PropertySequencingPolicyEventHandler {
 
@@ -188,6 +196,7 @@ class AnnotatedEventHandlingComponentSequencingPolicyTest {
             }
         }
 
+        @SuppressWarnings("unused")
         @SequencingPolicy(type = SequentialPerAggregatePolicy.class)
         private static class SequentialPerAggregatePolicyEventHandler {
 
@@ -277,14 +286,17 @@ class AnnotatedEventHandlingComponentSequencingPolicyTest {
             assertThat(sequenceIdentifier).isEqualTo(AGGREGATE_IDENTIFIER);
         }
 
+        @SuppressWarnings("unused")
         private static class MethodLevelSequentialPolicyEventHandler {
 
+            @SuppressWarnings("DefaultAnnotationParam")
             @EventHandler
             @SequencingPolicy(type = SequentialPolicy.class)
             void handle(String event) {
             }
         }
 
+        @SuppressWarnings("unused")
         private static class MethodLevelFullConcurrencyPolicyEventHandler {
 
             @EventHandler
@@ -293,6 +305,7 @@ class AnnotatedEventHandlingComponentSequencingPolicyTest {
             }
         }
 
+        @SuppressWarnings("unused")
         private static class MethodLevelMetadataSequencingPolicyEventHandler {
 
             @EventHandler
@@ -301,6 +314,7 @@ class AnnotatedEventHandlingComponentSequencingPolicyTest {
             }
         }
 
+        @SuppressWarnings("unused")
         private static class MethodLevelPropertySequencingPolicyEventHandler {
 
             @EventHandler
@@ -309,6 +323,7 @@ class AnnotatedEventHandlingComponentSequencingPolicyTest {
             }
         }
 
+        @SuppressWarnings("unused")
         private static class MethodLevelSequentialPerAggregatePolicyEventHandler {
 
             @EventHandler
@@ -352,6 +367,7 @@ class AnnotatedEventHandlingComponentSequencingPolicyTest {
             assertThat(sequenceIdentifier).isEqualTo(FULL_SEQUENTIAL_POLICY);
         }
 
+        @SuppressWarnings({"unused", "DefaultAnnotationParam"})
         @SequencingPolicy(type = SequentialPolicy.class)
         private static class MixedPolicyEventHandler {
 
@@ -387,8 +403,10 @@ class AnnotatedEventHandlingComponentSequencingPolicyTest {
             assertThat(orderSequenceId).isEqualTo(orderEvent.identifier());
         }
 
+        @SuppressWarnings("unused")
         private static class MultipleHandlersEventHandler {
 
+            @SuppressWarnings("DefaultAnnotationParam")
             @EventHandler
             @SequencingPolicy(type = SequentialPolicy.class)
             void handleString(String event) {
@@ -413,7 +431,10 @@ class AnnotatedEventHandlingComponentSequencingPolicyTest {
     private static AnnotatedEventHandlingComponent<?> annotatedEventHandlingComponent(Object eventHandler) {
         return new AnnotatedEventHandlingComponent<>(
                 eventHandler,
-                ClasspathParameterResolverFactory.forClass(eventHandler.getClass())
+                ClasspathParameterResolverFactory.forClass(eventHandler.getClass()),
+                ClasspathHandlerDefinition.forClass(eventHandler.getClass()),
+                new AnnotationMessageTypeResolver(),
+                new DelegatingEventConverter(PassThroughConverter.INSTANCE)
         );
     }
 

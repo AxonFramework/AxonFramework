@@ -22,6 +22,12 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.common.lifecycle.Phase;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.SubscribableEventSource;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.UnitOfWork;
 import org.axonframework.messaging.eventhandling.EventBus;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
@@ -30,22 +36,17 @@ import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.eventhandling.processing.ProcessorEventHandlingComponents;
 import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorContext;
 import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorHandler;
-import org.axonframework.common.lifecycle.Phase;
-import org.axonframework.messaging.core.Message;
-import org.axonframework.messaging.core.MessageStream;
-import org.axonframework.messaging.core.SubscribableEventSource;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.messaging.core.unitofwork.UnitOfWork;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 import static org.axonframework.common.BuilderUtils.assertThat;
 
 /**
- * Event processor implementation that {@link EventBus#subscribe(Consumer) subscribes} to the {@link EventBus} for
+ * Event processor implementation that {@link EventBus#subscribe(BiFunction) subscribes} to the {@link EventBus} for
  * events. Events published on the event bus are supplied to this processor in the publishing thread.
  * <p>
  *
@@ -59,6 +60,7 @@ public class SubscribingEventProcessor implements EventProcessor {
     private final SubscribableEventSource eventSource;
     private final ProcessorEventHandlingComponents eventHandlingComponents;
     private final ErrorHandler errorHandler;
+    private final Consumer<? super EventMessage> ignoredMessageHandler;
 
     private volatile Registration eventBusRegistration;
 
@@ -91,6 +93,7 @@ public class SubscribingEventProcessor implements EventProcessor {
         this.eventSource = this.configuration.eventSource();
         this.eventHandlingComponents = new ProcessorEventHandlingComponents(eventHandlingComponents);
         this.errorHandler = this.configuration.errorHandler();
+        this.ignoredMessageHandler = this.configuration.ignoredMessageHandler();
     }
 
     @Override
@@ -154,7 +157,17 @@ public class SubscribingEventProcessor implements EventProcessor {
 
     private MessageStream.Empty<Message> processWithErrorHandling(List<EventMessage> events,
                                                                   ProcessingContext context) {
-        return eventHandlingComponents.handle(events, context)
+        List<EventMessage> supportedEvents =
+                events.stream()
+                      .filter(event -> {
+                          boolean supported = eventHandlingComponents.supports(event.type().qualifiedName());
+                          if (!supported) {
+                              ignoredMessageHandler.accept(event);
+                          }
+                          return supported;
+                      })
+                      .toList();
+        return eventHandlingComponents.handle(supportedEvents, context)
                                       .onErrorContinue(ex -> {
                                           try {
                                               errorHandler.handleError(new ErrorContext(name, ex, events, context));

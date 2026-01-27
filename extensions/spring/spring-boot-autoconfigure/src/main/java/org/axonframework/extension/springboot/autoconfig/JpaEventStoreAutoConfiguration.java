@@ -22,7 +22,7 @@ import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.common.configuration.SearchScope;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
-import org.axonframework.common.jpa.EntityManagerProvider;
+import org.axonframework.common.jpa.FactoryBasedEntityManagerProvider;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurationDefaults;
 import org.axonframework.eventsourcing.eventstore.EventCoordinator;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
@@ -30,9 +30,9 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedJpaEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedJpaEventStorageEngineConfiguration;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaPollingEventCoordinator;
+import org.axonframework.eventsourcing.eventstore.jpa.JpaTransactionalExecutorProvider;
 import org.axonframework.extension.springboot.JpaEventStorageEngineConfigurationProperties;
 import org.axonframework.extension.springboot.util.RegisterDefaultEntities;
-import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -64,7 +64,7 @@ public class JpaEventStoreAutoConfiguration {
     /**
      * Creates an aggregate-based JPA event storage engine enhancer.
      *
-     * @param entityManagerProvider                        An entity manager provide to access the underlying DB.
+     * @param entityManagerFactory                         An entity manager factory to provide to access the underlying DB.
      * @param persistenceExceptionResolver                 A persistence exception resolver on duplicate errors.
      * @param jpaEventStorageEngineConfigurationProperties Spring properties to configure the JPA Event store Engine.
      * @return A configuration enhancer registering JPA Storage Engine ordered between Axon Server and In-Memory Storage
@@ -72,13 +72,13 @@ public class JpaEventStoreAutoConfiguration {
      */
     @Bean
     public ConfigurationEnhancer aggregateBasedJpaEventStorageEngine(
-            EntityManagerProvider entityManagerProvider,
+            EntityManagerFactory entityManagerFactory,
             PersistenceExceptionResolver persistenceExceptionResolver,
             JpaEventStorageEngineConfigurationProperties jpaEventStorageEngineConfigurationProperties
     ) {
         return new AggregateBasedJpaEventStorageEngineConfigurationEnhancer(
                 jpaEventStorageEngineConfigurationProperties,
-                entityManagerProvider,
+                entityManagerFactory,
                 persistenceExceptionResolver
         );
     }
@@ -88,7 +88,7 @@ public class JpaEventStoreAutoConfiguration {
      */
     public record AggregateBasedJpaEventStorageEngineConfigurationEnhancer(
             JpaEventStorageEngineConfigurationProperties properties,
-            EntityManagerProvider entityManagerProvider,
+            EntityManagerFactory factory,
             PersistenceExceptionResolver persistenceExceptionResolver
     ) implements ConfigurationEnhancer {
 
@@ -106,20 +106,20 @@ public class JpaEventStoreAutoConfiguration {
                                 properties.pollingInterval() == 0 ?
                                     EventCoordinator.SIMPLE :
                                     new JpaPollingEventCoordinator(
-                                        entityManagerProvider,
+                                        new FactoryBasedEntityManagerProvider(factory),
                                         Duration.ofMillis(properties.pollingInterval())
                                     )
                             );
 
-            registry.registerIfNotPresent(EventStorageEngine.class,
-                                          (configuration)
-                                                  -> new AggregateBasedJpaEventStorageEngine(
-                                                  entityManagerProvider,
-                                                  configuration.getComponent(TransactionManager.class),
-                                                  configuration.getComponent(EventConverter.class),
-                                                  configurer
-                                          ),
-                                          SearchScope.ALL);
+            registry.registerIfNotPresent(
+                EventStorageEngine.class,
+                configuration -> new AggregateBasedJpaEventStorageEngine(
+                    new JpaTransactionalExecutorProvider(factory),
+                    configuration.getComponent(EventConverter.class),
+                    configurer
+                ),
+                SearchScope.ALL
+            );
         }
 
         @Override

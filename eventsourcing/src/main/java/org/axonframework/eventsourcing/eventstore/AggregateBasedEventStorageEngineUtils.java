@@ -100,6 +100,39 @@ public final class AggregateBasedEventStorageEngineUtils {
      * @param isConflictException A predicate used to check if the exception is a conflict.
      * @return The translated exception.
      */
+    public static Exception translateConflictException(
+            ConsistencyMarker consistencyMarker,
+            Exception exception,
+            Predicate<Throwable> isConflictException
+    ) {
+        Throwable root = exception;
+
+        while (root != null && !isConflictException.test(root)) {
+            root = root.getCause();
+        }
+
+        if (root == null) {
+            // no conflict detected, return original exception
+            return exception;
+        }
+
+        AppendEventsTransactionRejectedException translated = conflictingEventsDetected(consistencyMarker);
+
+        translated.addSuppressed(exception);
+
+        return translated;
+    }
+
+    /**
+     * Translates the given {@code Throwable} into an {@link AppendEventsTransactionRejectedException} if it is
+     * identified as a conflict through the given {@code isConflictException} predicate. If the exception is not a
+     * conflict, it recursively checks the cause of the exception.
+     *
+     * @param consistencyMarker   The consistency marker used to identify conflicting events.
+     * @param e                   The exception to translate.
+     * @param isConflictException A predicate used to check if the exception is a conflict.
+     * @return The translated exception.
+     */
     public static Throwable translateConflictException(
             ConsistencyMarker consistencyMarker,
             Throwable e,

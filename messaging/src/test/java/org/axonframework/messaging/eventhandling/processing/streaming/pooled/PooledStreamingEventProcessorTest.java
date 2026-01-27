@@ -18,6 +18,16 @@ package org.axonframework.messaging.eventhandling.processing.streaming.pooled;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.FutureUtils;
+import org.axonframework.common.util.DelegateScheduledExecutorService;
+import org.axonframework.common.util.MockException;
+import org.axonframework.messaging.core.EmptyApplicationContext;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.eventhandling.AsyncInMemoryStreamableEventSource;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventTestUtils;
@@ -30,19 +40,9 @@ import org.axonframework.messaging.eventhandling.processing.streaming.segmenting
 import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
-import org.axonframework.messaging.eventhandling.replay.ReplayBlockingEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.inmemory.InMemoryTokenStore;
+import org.axonframework.messaging.eventhandling.replay.ReplayBlockingEventHandlingComponent;
 import org.axonframework.messaging.eventstreaming.EventCriteria;
-import org.axonframework.messaging.core.EmptyApplicationContext;
-import org.axonframework.messaging.core.MessageStream;
-import org.axonframework.messaging.core.MessageType;
-import org.axonframework.messaging.core.QualifiedName;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
-import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
-import org.axonframework.messaging.eventhandling.AsyncInMemoryStreamableEventSource;
-import org.axonframework.common.util.DelegateScheduledExecutorService;
-import org.axonframework.common.util.MockException;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 import org.slf4j.Logger;
@@ -56,13 +56,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.UnaryOperator;
@@ -74,8 +74,8 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.axonframework.common.FutureUtils.joinAndUnwrap;
-import static org.axonframework.messaging.eventhandling.EventTestUtils.createEvents;
 import static org.axonframework.common.util.AssertUtils.assertWithin;
+import static org.axonframework.messaging.eventhandling.EventTestUtils.createEvents;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -102,19 +102,21 @@ class PooledStreamingEventProcessorTest {
     private InMemoryTokenStore tokenStore;
     private ScheduledExecutorService coordinatorExecutor;
     private ScheduledExecutorService workerExecutor;
+    private SimpleEventHandlingComponent simpleEhc;
     private RecordingEventHandlingComponent defaultEventHandlingComponent;
 
     @BeforeEach
     void setUp() {
         processingContext = mock(ProcessingContext.class);
         stubMessageSource = spy(new AsyncInMemoryStreamableEventSource());
-        when(stubMessageSource.firstToken(null)).thenReturn(CompletableFuture.completedFuture(new GlobalSequenceTrackingToken(-1)));
+        when(stubMessageSource.firstToken(null))
+                .thenReturn(CompletableFuture.completedFuture(new GlobalSequenceTrackingToken(-1)));
         tokenStore = spy(new InMemoryTokenStore());
         coordinatorExecutor = spy(new DelegateScheduledExecutorService(Executors.newScheduledThreadPool(2)));
         workerExecutor = new DelegateScheduledExecutorService(Executors.newScheduledThreadPool(8));
-        defaultEventHandlingComponent = spy(new RecordingEventHandlingComponent(new SimpleEventHandlingComponent()));
-        defaultEventHandlingComponent.subscribe(new QualifiedName(Integer.class),
-                                                (event, ctx) -> MessageStream.empty());
+        simpleEhc = SimpleEventHandlingComponent.create("test");
+        simpleEhc.subscribe(new QualifiedName(Integer.class), (event, ctx) -> MessageStream.empty());
+        defaultEventHandlingComponent = spy(new RecordingEventHandlingComponent(simpleEhc));
         withTestSubject(List.of()); // default always applied
     }
 
@@ -160,20 +162,19 @@ class PooledStreamingEventProcessorTest {
         var ctx = createProcessingContext();
 
         List<Segment> createdSegments = joinAndUnwrap(tokenStore.initializeTokenSegments(
-            "test",
-            4,
-            new GlobalSequenceTrackingToken(1),
-            createProcessingContext()
+                "test",
+                4,
+                new GlobalSequenceTrackingToken(1),
+                createProcessingContext()
         ));
+        assertThat(createdSegments).isNotNull();
 
         joinAndUnwrap(
                 tokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "test", 1, ctx)
         );
 
         when(tokenStore.fetchAvailableSegments(eq(testSubject.name()), any()))
-                .thenReturn(completedFuture(
-                        Collections.singletonList(createdSegments.get(2))
-                ));
+                .thenReturn(completedFuture(Collections.singletonList(createdSegments.get(2))));
 
         startEventProcessor();
 
@@ -190,10 +191,12 @@ class PooledStreamingEventProcessorTest {
     @Test
     void handlingEventsByMultipleEventHandlingComponents() {
         // given
-        var eventHandlingComponent1 = new RecordingEventHandlingComponent(new SimpleEventHandlingComponent());
-        eventHandlingComponent1.subscribe(new QualifiedName(String.class), (event, ctx) -> MessageStream.empty());
-        var eventHandlingComponent2 = new RecordingEventHandlingComponent(new SimpleEventHandlingComponent());
-        eventHandlingComponent2.subscribe(new QualifiedName(String.class), (event, ctx) -> MessageStream.empty());
+        SimpleEventHandlingComponent ehc1 = SimpleEventHandlingComponent.create("test");
+        ehc1.subscribe(new QualifiedName(String.class), (event, ctx) -> MessageStream.empty());
+        var eventHandlingComponent1 = new RecordingEventHandlingComponent(ehc1);
+        SimpleEventHandlingComponent ehc2 = SimpleEventHandlingComponent.create("test");
+        ehc2.subscribe(new QualifiedName(String.class), (event, ctx) -> MessageStream.empty());
+        var eventHandlingComponent2 = new RecordingEventHandlingComponent(ehc2);
 
         List<EventHandlingComponent> components = List.of(eventHandlingComponent1, eventHandlingComponent2);
         withTestSubject(components, customization -> customization.initialSegmentCount(1));
@@ -267,9 +270,7 @@ class PooledStreamingEventProcessorTest {
             assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(8, testSubject.processingStatus().size()));
             assertWithin(2, TimeUnit.SECONDS, () -> {
                 long nonNullTokens = IntStream.range(0, 8)
-                                              .mapToObj(i -> tokenStore.fetchToken(PROCESSOR_NAME,
-                                                                                   i,
-                                                                                   null))
+                                              .mapToObj(i -> tokenStore.fetchToken(PROCESSOR_NAME, i, null))
                                               .filter(Objects::nonNull)
                                               .count();
                 assertEquals(8, nonNullTokens);
@@ -296,8 +297,9 @@ class PooledStreamingEventProcessorTest {
         void startFailsWhenShutdownIsInProgress() throws Exception {
             // Use CountDownLatch to block worker threads from actually doing work, and thus shutting down successfully.
             CountDownLatch latch = new CountDownLatch(1);
-            doAnswer(i -> latch.await(10, TimeUnit.MILLISECONDS)).when(defaultEventHandlingComponent)
-                                                                 .handle(any(EventMessage.class), any(ProcessingContext.class));
+            doAnswer(i -> latch.await(10, TimeUnit.MILLISECONDS))
+                    .when(defaultEventHandlingComponent)
+                    .handle(any(EventMessage.class), any(ProcessingContext.class));
 
             startEventProcessor();
 
@@ -435,7 +437,7 @@ class PooledStreamingEventProcessorTest {
         void handlingEventsHaveSegmentAndTokenInProcessingContext() throws Exception {
             // given
             CountDownLatch countDownLatch = new CountDownLatch(8);
-            var eventHandlingComponent = new SimpleEventHandlingComponent();
+            var eventHandlingComponent = SimpleEventHandlingComponent.create("test");
             eventHandlingComponent.subscribe(new QualifiedName(Integer.class), (event, context) -> {
                 boolean containsSegment = Segment.fromContext(context).isPresent();
                 boolean containsToken = TrackingToken.fromContext(context).isPresent();
@@ -725,7 +727,9 @@ class PooledStreamingEventProcessorTest {
             doReturn(MessageStream.failed(new RuntimeException("Simulating worker failure")))
                     .doReturn(MessageStream.empty())
                     .when(defaultEventHandlingComponent)
-                    .handle(ArgumentMatchers.<EventMessage>argThat(em -> em.identifier().equals(events.get(2).identifier())), any(ProcessingContext.class));
+                    .handle(ArgumentMatchers.<EventMessage>argThat(em -> em.identifier()
+                                                                           .equals(events.get(2).identifier())),
+                            any(ProcessingContext.class));
 
             startEventProcessor();
 
@@ -735,7 +739,9 @@ class PooledStreamingEventProcessorTest {
             await().pollDelay(Duration.ofMillis(50))
                    .atMost(Duration.ofSeconds(1))
                    .untilAsserted(() -> {
-                       int segmentCount = joinAndUnwrap(tokenStore.fetchSegments(PROCESSOR_NAME, null)).size();
+                       List<Segment> segments = joinAndUnwrap(tokenStore.fetchSegments(PROCESSOR_NAME, null));
+                       assertThat(segments).isNotNull();
+                       int segmentCount = segments.size();
                        assertThat(segmentCount).isEqualTo(8);
                    });
 
@@ -744,7 +750,9 @@ class PooledStreamingEventProcessorTest {
             assertWithin(1, TimeUnit.SECONDS, () -> {
                 try {
                     verify(defaultEventHandlingComponent).handle(
-                            ArgumentMatchers.<EventMessage>argThat(em -> em.identifier().equals(events.get(2).identifier())),
+                            ArgumentMatchers.<EventMessage>argThat(
+                                    em -> em.identifier().equals(events.get(2).identifier())
+                            ),
                             any()
                     );
                 } catch (Exception e) {
@@ -818,7 +826,8 @@ class PooledStreamingEventProcessorTest {
                    });
 
             // then - Verify no events were handled
-            verify(defaultEventHandlingComponent, never()).handle(any(EventMessage.class), any(ProcessingContext.class));
+            verify(defaultEventHandlingComponent, never())
+                    .handle(any(EventMessage.class), any(ProcessingContext.class));
         }
 
         @Test
@@ -844,7 +853,8 @@ class PooledStreamingEventProcessorTest {
                    });
 
             // then
-            verify(defaultEventHandlingComponent, times(1)).handle(any(EventMessage.class), any(ProcessingContext.class));
+            verify(defaultEventHandlingComponent, times(1))
+                    .handle(any(EventMessage.class), any(ProcessingContext.class));
         }
 
         @Test
@@ -873,7 +883,8 @@ class PooledStreamingEventProcessorTest {
                    });
 
             // then - Verify no events were handled (filtered out by EventCriteria)
-            verify(defaultEventHandlingComponent, never()).handle(any(EventMessage.class), any(ProcessingContext.class));
+            verify(defaultEventHandlingComponent, never())
+                    .handle(any(EventMessage.class), any(ProcessingContext.class));
 
             // then - Verify the event was tracked as ignored (even though filtered at stream level)
             assertThat(stubMessageSource.getIgnoredEvents()).hasSize(1);
@@ -886,9 +897,9 @@ class PooledStreamingEventProcessorTest {
             EventCriteria stringOnlyCriteria = EventCriteria.havingAnyTag()
                                                             .andBeingOneOfTypes(new QualifiedName(String.class.getName()));
 
-            var stringEventHandlingComponent = new RecordingEventHandlingComponent(new SimpleEventHandlingComponent());
-            stringEventHandlingComponent.subscribe(new QualifiedName(String.class),
-                                                   (event, ctx) -> MessageStream.empty());
+            SimpleEventHandlingComponent ehc = SimpleEventHandlingComponent.create("test");
+            ehc.subscribe(new QualifiedName(String.class), (event, ctx) -> MessageStream.empty());
+            var stringEventHandlingComponent = new RecordingEventHandlingComponent(ehc);
             withTestSubject(
                     List.of(stringEventHandlingComponent),
                     c -> c.initialSegmentCount(1)
@@ -954,7 +965,7 @@ class PooledStreamingEventProcessorTest {
             // given
             List<EventMessage> recordedEvents = new CopyOnWriteArrayList<>();
 
-            var eventHandlingComponent = new SimpleEventHandlingComponent();
+            var eventHandlingComponent = SimpleEventHandlingComponent.create("test");
             eventHandlingComponent.subscribe(new QualifiedName(String.class), (event, ctx) -> {
                 recordedEvents.add(event);
                 return MessageStream.empty();
@@ -1010,7 +1021,7 @@ class PooledStreamingEventProcessorTest {
             List<EventMessage> recordedEvents = new CopyOnWriteArrayList<>();
 
             // Create a component that wraps event handling with replay blocking
-            var innerComponent = new SimpleEventHandlingComponent();
+            var innerComponent = SimpleEventHandlingComponent.create("test");
             innerComponent.subscribe(new QualifiedName(String.class), (event, ctx) -> {
                 recordedEvents.add(event);
                 return MessageStream.empty();
@@ -1193,12 +1204,12 @@ class PooledStreamingEventProcessorTest {
             await().untilAsserted(() -> {
                 assertNotNull(testSubject.processingStatus().get(testSegmentId));
                 assertThat(tokenStore.fetchSegments(PROCESSOR_NAME, null).join())
-                    .containsExactlyInAnyOrder(
-                        new Segment(0, 3),
-                        new Segment(1, 3),
-                        new Segment(2, 3),
-                        new Segment(3, 3)
-                    );
+                        .containsExactlyInAnyOrder(
+                                new Segment(0, 3),
+                                new Segment(1, 3),
+                                new Segment(2, 3),
+                                new Segment(3, 3)
+                        );
             });
 
             // split segment:
@@ -1211,13 +1222,13 @@ class PooledStreamingEventProcessorTest {
                 assertNotNull(testSubject.processingStatus().get(testSegmentId));
                 assertNotNull(testSubject.processingStatus().get(splitSegmentId));
                 assertThat(tokenStore.fetchSegments(PROCESSOR_NAME, null).join())
-                    .containsExactlyInAnyOrder(
-                        new Segment(0, 3),
-                        new Segment(1, 3),
-                        new Segment(3, 3),
-                        new Segment(2, 7),
-                        new Segment(6, 7)
-                    );
+                        .containsExactlyInAnyOrder(
+                                new Segment(0, 3),
+                                new Segment(1, 3),
+                                new Segment(3, 3),
+                                new Segment(2, 7),
+                                new Segment(6, 7)
+                        );
             });
 
             // merge segment:
@@ -1229,12 +1240,12 @@ class PooledStreamingEventProcessorTest {
             await().untilAsserted(() -> {
                 assertNotNull(testSubject.processingStatus().get(1));
                 assertThat(tokenStore.fetchSegments(PROCESSOR_NAME, null).join())
-                    .containsExactlyInAnyOrder(
-                        new Segment(0, 3),
-                        new Segment(1, 1),
-                        new Segment(2, 7),
-                        new Segment(6, 7)
-                    );
+                        .containsExactlyInAnyOrder(
+                                new Segment(0, 3),
+                                new Segment(1, 1),
+                                new Segment(2, 7),
+                                new Segment(6, 7)
+                        );
             });
         }
     }
@@ -1247,7 +1258,7 @@ class PooledStreamingEventProcessorTest {
             // given
             var mockErrorHandler = mock(ErrorHandler.class);
             var expectedError = new RuntimeException("Simulated handling error");
-            var failingEventHandlingComponent = new SimpleEventHandlingComponent();
+            var failingEventHandlingComponent = SimpleEventHandlingComponent.create("test");
             failingEventHandlingComponent.subscribe(new QualifiedName(String.class),
                                                     (event, context) -> MessageStream.failed(expectedError));
             withTestSubject(List.of(failingEventHandlingComponent), c -> c.errorHandler(mockErrorHandler));
@@ -1311,8 +1322,6 @@ class PooledStreamingEventProcessorTest {
 
         @Test
         void startingAfterShutdownLetsProcessorProceed() {
-//            when(stubEventHandler.supportsReset()).thenReturn(true);
-
             startEventProcessor();
             FutureUtils.joinAndUnwrap(testSubject.shutdown());
 
@@ -1353,24 +1362,26 @@ class PooledStreamingEventProcessorTest {
         @Test
         void resetTokensWithDefaultFirstTokenAsStart() {
             // given
+            TrackingToken initialToken = new GlobalSequenceTrackingToken(42);
             int expectedSegmentCount = 2;
-            TrackingToken expectedToken = new GlobalSequenceTrackingToken(42);
+            TrackingToken expectedToken = ReplayToken.createReplayToken(initialToken, initialToken);
 
             AtomicBoolean resetHandlerInvoked = new AtomicBoolean(false);
-            defaultEventHandlingComponent.subscribe((resetContext, ctx) -> {
+            simpleEhc.subscribe((resetContext, ctx) -> {
                 resetHandlerInvoked.set(true);
                 return MessageStream.empty();
             });
             withTestSubject(
                     List.of(),
                     c -> c.initialSegmentCount(expectedSegmentCount)
-                          .initialToken(source -> CompletableFuture.completedFuture(expectedToken))
+                          .initialToken(source -> CompletableFuture.completedFuture(initialToken))
             );
 
             // when - Start and stop the processor to initialize the tracking tokens
             startEventProcessor();
             assertWithin(2, TimeUnit.SECONDS, () -> {
                 List<Segment> segments = joinAndUnwrap(tokenStore.fetchSegments(PROCESSOR_NAME, null));
+                assertThat(segments).isNotNull();
                 assertEquals(expectedSegmentCount, segments.size());
             });
             joinAndUnwrap(testSubject.shutdown());
@@ -1383,22 +1394,30 @@ class PooledStreamingEventProcessorTest {
 
             // then - The token stays the same, as the original and token after reset are identical.
             List<Segment> segments = joinAndUnwrap(tokenStore.fetchSegments(PROCESSOR_NAME, null));
-            TrackingToken token0 = joinAndUnwrap(tokenStore.fetchToken(PROCESSOR_NAME, segments.get(0).getSegmentId(), null));
-            TrackingToken token1 = joinAndUnwrap(tokenStore.fetchToken(PROCESSOR_NAME, segments.get(1).getSegmentId(), null));
+            assertThat(segments).isNotNull();
+            TrackingToken token0 = joinAndUnwrap(
+                    tokenStore.fetchToken(PROCESSOR_NAME, segments.get(0).getSegmentId(), null)
+            );
+            TrackingToken token1 = joinAndUnwrap(
+                    tokenStore.fetchToken(PROCESSOR_NAME, segments.get(1).getSegmentId(), null)
+            );
             assertEquals(expectedToken, token0);
             assertEquals(expectedToken, token1);
-            assertFalse(ReplayToken.isReplay(token0));
-            assertFalse(ReplayToken.isReplay(token1));
+            // isReplay == true since ReplayToken#createReplayToken result in a ReplayToken for same position
+            assertTrue(ReplayToken.isReplay(token0));
+            assertTrue(ReplayToken.isReplay(token1));
         }
 
         @Test
         void resetTokensFromDefaultFirstTokenWithResetContext() {
+            // given
+            TrackingToken initialToken = new GlobalSequenceTrackingToken(42);
             int expectedSegmentCount = 2;
-            TrackingToken expectedToken = new GlobalSequenceTrackingToken(42);
             String expectedContext = "my-context";
+            TrackingToken expectedToken = ReplayToken.createReplayToken(initialToken, initialToken, expectedContext);
 
             AtomicBoolean resetHandlerInvoked = new AtomicBoolean(false);
-            defaultEventHandlingComponent.subscribe((resetContext, ctx) -> {
+            simpleEhc.subscribe((resetContext, ctx) -> {
                 resetHandlerInvoked.set(true);
                 return MessageStream.empty();
             });
@@ -1406,31 +1425,40 @@ class PooledStreamingEventProcessorTest {
             withTestSubject(
                     List.of(),
                     c -> c.initialSegmentCount(expectedSegmentCount)
-                          .initialToken(source -> CompletableFuture.completedFuture(expectedToken))
+                          .initialToken(source -> CompletableFuture.completedFuture(initialToken))
             );
 
-            // Start and stop the processor to initialize the tracking tokens
+            // when - Start and stop the processor to initialize the tracking tokens
             joinAndUnwrap(testSubject.start());
             await().atMost(Duration.ofSeconds(2L)).untilAsserted(
                     () -> {
                         List<Segment> segments = joinAndUnwrap(tokenStore.fetchSegments(PROCESSOR_NAME, null));
+                        assertThat(segments).isNotNull();
                         assertEquals(expectedSegmentCount, segments.size());
                     }
             );
             joinAndUnwrap(testSubject.shutdown());
 
+            // when - Reset tokens with context
             joinAndUnwrap(testSubject.resetTokens(expectedContext));
 
+            // then - Verify reset handler was invoked
             assertTrue(resetHandlerInvoked.get());
 
+            // then - The token stays the same, as the original and token after reset are identical.
             List<Segment> segments = joinAndUnwrap(tokenStore.fetchSegments(PROCESSOR_NAME, null));
-            // The token stays the same, as the original and token after reset are identical.
-            TrackingToken token0 = joinAndUnwrap(tokenStore.fetchToken(PROCESSOR_NAME, segments.get(0).getSegmentId(), null));
-            TrackingToken token1 = joinAndUnwrap(tokenStore.fetchToken(PROCESSOR_NAME, segments.get(1).getSegmentId(), null));
+            assertThat(segments).isNotNull();
+            TrackingToken token0 = joinAndUnwrap(
+                    tokenStore.fetchToken(PROCESSOR_NAME, segments.get(0).getSegmentId(), null)
+            );
+            TrackingToken token1 = joinAndUnwrap(
+                    tokenStore.fetchToken(PROCESSOR_NAME, segments.get(1).getSegmentId(), null)
+            );
             assertEquals(expectedToken, token0);
             assertEquals(expectedToken, token1);
-            assertFalse(ReplayToken.isReplay(token0));
-            assertFalse(ReplayToken.isReplay(token1));
+            // isReplay == true since ReplayToken#createReplayToken result in a ReplayToken for same position
+            assertTrue(ReplayToken.isReplay(token0));
+            assertTrue(ReplayToken.isReplay(token1));
         }
 
         @Test
@@ -1473,7 +1501,7 @@ class PooledStreamingEventProcessorTest {
             TrackingToken expectedToken = new GlobalSequenceTrackingToken(42);
 
             AtomicBoolean resetHandlerInvoked = new AtomicBoolean(false);
-            defaultEventHandlingComponent.subscribe((resetContext, ctx) -> {
+            simpleEhc.subscribe((resetContext, ctx) -> {
                 resetHandlerInvoked.set(true);
                 return MessageStream.empty();
             });
@@ -1488,6 +1516,7 @@ class PooledStreamingEventProcessorTest {
             startEventProcessor();
             assertWithin(2, TimeUnit.SECONDS, () -> {
                 List<Segment> segments = joinAndUnwrap(tokenStore.fetchSegments(PROCESSOR_NAME, null));
+                assertThat(segments).isNotNull();
                 assertEquals(expectedSegmentCount, segments.size());
             });
             joinAndUnwrap(testSubject.shutdown());
@@ -1500,8 +1529,13 @@ class PooledStreamingEventProcessorTest {
 
             // then - Verify tokens are wrapped in ReplayToken
             List<Segment> segments = joinAndUnwrap(tokenStore.fetchSegments(PROCESSOR_NAME, null));
-            TrackingToken token0 = joinAndUnwrap(tokenStore.fetchToken(PROCESSOR_NAME, segments.get(0).getSegmentId(), null));
-            TrackingToken token1 = joinAndUnwrap(tokenStore.fetchToken(PROCESSOR_NAME, segments.get(1).getSegmentId(), null));
+            assertThat(segments).isNotNull();
+            TrackingToken token0 = joinAndUnwrap(
+                    tokenStore.fetchToken(PROCESSOR_NAME, segments.get(0).getSegmentId(), null)
+            );
+            TrackingToken token1 = joinAndUnwrap(
+                    tokenStore.fetchToken(PROCESSOR_NAME, segments.get(1).getSegmentId(), null)
+            );
             assertTrue(ReplayToken.isReplay(token0));
             assertTrue(ReplayToken.isReplay(token1));
         }
@@ -1514,7 +1548,7 @@ class PooledStreamingEventProcessorTest {
             String expectedContext = "my-context";
 
             AtomicReference<Object> capturedResetPayload = new AtomicReference<>();
-            defaultEventHandlingComponent.subscribe((resetContext, ctx) -> {
+            simpleEhc.subscribe((resetContext, ctx) -> {
                 capturedResetPayload.set(resetContext.payload());
                 return MessageStream.empty();
             });
@@ -1529,6 +1563,7 @@ class PooledStreamingEventProcessorTest {
             startEventProcessor();
             assertWithin(2, TimeUnit.SECONDS, () -> {
                 List<Segment> segments = joinAndUnwrap(tokenStore.fetchSegments(PROCESSOR_NAME, null));
+                assertThat(segments).isNotNull();
                 assertEquals(expectedSegmentCount, segments.size());
             });
             joinAndUnwrap(testSubject.shutdown());
@@ -1541,9 +1576,16 @@ class PooledStreamingEventProcessorTest {
 
             // then - Verify tokens are wrapped in ReplayToken with context
             List<Segment> segments = joinAndUnwrap(tokenStore.fetchSegments(PROCESSOR_NAME, null));
-            TrackingToken token0 = joinAndUnwrap(tokenStore.fetchToken(PROCESSOR_NAME, segments.get(0).getSegmentId(), null));
-            TrackingToken token1 = joinAndUnwrap(tokenStore.fetchToken(PROCESSOR_NAME, segments.get(1).getSegmentId(), null));
+            assertThat(segments).isNotNull();
+            TrackingToken token0 = joinAndUnwrap(
+                    tokenStore.fetchToken(PROCESSOR_NAME, segments.get(0).getSegmentId(), null)
+            );
+            TrackingToken token1 = joinAndUnwrap(
+                    tokenStore.fetchToken(PROCESSOR_NAME, segments.get(1).getSegmentId(), null)
+            );
+            assertThat(token0).isNotNull();
             assertTrue(ReplayToken.isReplay(token0));
+            assertThat(token1).isNotNull();
             assertTrue(ReplayToken.isReplay(token1));
             // Verify the reset context is stored in the ReplayToken
             assertEquals(expectedContext, ((ReplayToken) token0).context());

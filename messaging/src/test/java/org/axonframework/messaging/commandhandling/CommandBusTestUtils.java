@@ -16,11 +16,7 @@
 
 package org.axonframework.messaging.commandhandling;
 
-import org.axonframework.messaging.commandhandling.CommandBus;
-import org.axonframework.messaging.commandhandling.SimpleCommandBus;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkTestUtils;
-
-import java.util.Collections;
 
 /**
  * Test utilities when dealing with {@link CommandBus}.
@@ -33,13 +29,10 @@ public final class CommandBusTestUtils {
      * Creates a new instance of {@link SimpleCommandBus} configured with a simple
      * {@link UnitOfWorkTestUtils#SIMPLE_FACTORY} and an empty list of processing lifecycle handler registrars.
      *
-     * @return An instance of {@link SimpleCommandBus}.
+     * @return an instance of {@link SimpleCommandBus}
      */
     public static SimpleCommandBus aCommandBus() {
-        return new SimpleCommandBus(
-                UnitOfWorkTestUtils.SIMPLE_FACTORY,
-                Collections.emptyList()
-        );
+        return new SimpleCommandBus(UnitOfWorkTestUtils.SIMPLE_FACTORY);
     }
 
     private CommandBusTestUtils() {

@@ -181,8 +181,8 @@ class DefaultEventStoreTransactionTest {
             .thenApply(this::castTransaction)
             .join();
 
-            return appendTransaction.commit(processingContext)
-                .thenCompose(v -> appendTransaction.afterCommit(v, processingContext))
+            return appendTransaction.commit()
+                .thenCompose(v -> appendTransaction.afterCommit(v))
                 .join();
         }
 

@@ -106,10 +106,19 @@ public class ReplayToken implements TrackingToken, WrappedToken {
         if (tokenAtReset instanceof ReplayToken) {
             return createReplayToken(((ReplayToken) tokenAtReset).tokenAtReset, startPosition, resetContext);
         }
-        if (startPosition != null && startPosition.covers(WrappedToken.unwrapLowerBound(tokenAtReset))) {
+        if (startPosition != null && isStrictlyAfter(startPosition, tokenAtReset)) {
             return startPosition;
         }
-        return new ReplayToken(tokenAtReset, startPosition, resetContext);
+
+        boolean lastMessageWasReplay = WrappedToken.unwrapUpperBound(startPosition) == null || wasProcessedBeforeReset(
+                tokenAtReset,
+                startPosition);
+        return new ReplayToken(
+                tokenAtReset,
+                startPosition,
+                resetContext,
+                lastMessageWasReplay
+        );
     }
 
     /**
@@ -210,28 +219,69 @@ public class ReplayToken implements TrackingToken, WrappedToken {
 
     @Override
     public TrackingToken advancedTo(TrackingToken newToken) {
-        if (this.tokenAtReset == null
-                || (newToken.covers(WrappedToken.unwrapUpperBound(this.tokenAtReset))
-                && !tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken)))) {
+        if (tokenAtReset == null || isStrictlyAfter(newToken, tokenAtReset)) {
             // we're done replaying
             // if the token at reset was a wrapped token itself, we'll need to use that one to maintain progress.
             if (tokenAtReset instanceof WrappedToken) {
                 return ((WrappedToken) tokenAtReset).advancedTo(newToken);
             }
             return newToken;
-        } else if (tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken))) {
-            // we're still well behind
-            return new ReplayToken(tokenAtReset, newToken, context, true);
-        } else {
-            // we're getting an event that we didn't have before, but we haven't finished replaying either
-            if (tokenAtReset instanceof WrappedToken) {
-                return new ReplayToken(tokenAtReset.upperBound(newToken),
-                                       ((WrappedToken) tokenAtReset).advancedTo(newToken),
-                                       context,
-                                       false);
-            }
-            return new ReplayToken(tokenAtReset.upperBound(newToken), newToken, context, false);
         }
+        if (wasProcessedBeforeReset(tokenAtReset, newToken)) {
+            // we're still well behind
+            return new ReplayToken(
+                    tokenAtReset,  // we don't do upperBound here because it influences what have been seen
+                    newToken,
+                    context,
+                    true
+            );
+        }
+        // we're getting an event that we didn't have before, but we haven't finished replaying either
+        if (tokenAtReset instanceof WrappedToken) {
+            return new ReplayToken(tokenAtReset.upperBound(newToken),
+                                   ((WrappedToken) tokenAtReset).advancedTo(newToken),
+                                   context,
+                                   false);
+        }
+        return new ReplayToken(tokenAtReset.upperBound(newToken), newToken, context, false);
+    }
+
+    private static boolean isStrictlyAfter(@Nonnull TrackingToken newToken, @Nonnull TrackingToken tokenAtReset) {
+        return !newToken.samePositionAs(WrappedToken.unwrapUpperBound(tokenAtReset))
+                && newToken.covers(WrappedToken.unwrapUpperBound(tokenAtReset))
+                && !tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken));
+    }
+
+    /**
+     * Determines if the event represented by newToken was delivered before the reset occurred.
+     * <p>
+     * This method leverages the {@link TrackingToken#lowerBound(TrackingToken)} behavior to detect whether an event was
+     * already processed or was skipped (e.g., not yet committed) at reset time.
+     * <p>
+     * <b>How it works:</b>
+     * <p>
+     * The {@code lowerBound()} method computes the "earliest common position" of two tokens. When the minimum position
+     * falls on a position that was not yet seen by one of the tokens, the algorithm walks backwards to find the first
+     * position that both tokens have seen.
+     * <p>
+     * This "walk back" behavior naturally distinguishes:
+     * <ul>
+     *   <li><b>Events that were delivered:</b> {@code lowerBound} stays at the same position as newToken
+     *       → {@code combinedLowerBound.samePositionAs(newToken)} returns {@code true}</li>
+     *   <li><b>Events that were skipped:</b> {@code lowerBound} walks back past the skipped position
+     *       → {@code combinedLowerBound.samePositionAs(newToken)} returns {@code false}</li>
+     * </ul>
+     *
+     * @param tokenAtReset The token representing the position at reset
+     * @param newToken     The token representing the current event position
+     * @return {@code true} if the event was delivered before reset, {@code false} if it's a new event.
+     * @see TrackingToken#lowerBound(TrackingToken)
+     */
+    private static boolean wasProcessedBeforeReset(TrackingToken tokenAtReset, TrackingToken newToken) {
+        TrackingToken resetLowerBound = WrappedToken.unwrapLowerBound(tokenAtReset);
+        TrackingToken newTokenLowerBound = WrappedToken.unwrapLowerBound(newToken);
+        TrackingToken resetTokenLowerNewToken = resetLowerBound.lowerBound(newTokenLowerBound);
+        return resetTokenLowerNewToken.samePositionAs(newTokenLowerBound);
     }
 
     @Override
@@ -253,6 +303,14 @@ public class ReplayToken implements TrackingToken, WrappedToken {
             return currentToken != null && currentToken.covers(((ReplayToken) other).currentToken);
         }
         return currentToken != null && currentToken.covers(other);
+    }
+
+    @Override
+    public boolean samePositionAs(TrackingToken other) {
+        if (other instanceof ReplayToken) {
+            return currentToken != null && currentToken.samePositionAs(((ReplayToken) other).currentToken);
+        }
+        return currentToken != null && currentToken.samePositionAs(other);
     }
 
     private boolean isReplay() {

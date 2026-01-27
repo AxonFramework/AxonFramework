@@ -16,19 +16,24 @@
 
 package org.axonframework.extension.spring.config;
 
-import org.axonframework.common.configuration.LazyInitializedModule;
-import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.Module;
+import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
+import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorModule;
+import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessorModule;
 import org.axonframework.messaging.queryhandling.configuration.QueryHandlingModule;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.context.ConfigurableApplicationContext;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -80,14 +85,9 @@ class MessageHandlerConfigurerTest {
 
     @Test
     void detectsAndRegistersEventHandlersPerPackage() {
-        when(applicationContext.getBeansOfType(EventProcessorSettings.class)).thenReturn(Map.of(
+        var eventProcessorSettings = Map.of(
                 "my.event.packaging.custom",
-                new EventProcessorSettings.SubscribingEventProcessorSettings() {
-                    @Override
-                    public String source() {
-                        return "bean1";
-                    }
-                },
+                (EventProcessorSettings.SubscribingEventProcessorSettings) () -> "bean1",
                 "my.event.packaging",
                 new EventProcessorSettings.PooledEventProcessorSettings() {
                     @Override
@@ -116,11 +116,15 @@ class MessageHandlerConfigurerTest {
                     }
 
                     @Override
-                    public String tokenStore() {
+                    public @NonNull String tokenStore() {
                         return "bean3";
                     }
-                }
-        ));
+                },
+                EventProcessorSettings.DEFAULT,
+                (EventProcessorSettings.SubscribingEventProcessorSettings) () -> "mock"
+        );
+        when(applicationContext.getBean(ProcessorModuleFactory.class)).thenReturn(new DefaultProcessorModuleFactory(
+                Collections.emptyList(), eventProcessorSettings, mock()));
         Map<String, String> eventHandlers = new HashMap<>();
         eventHandlers.put("Handler1", "my.event.packaging.Handler1");
         eventHandlers.put("Handler2", "my.event.packaging.Handler2");
@@ -130,8 +134,9 @@ class MessageHandlerConfigurerTest {
         eventHandlers.forEach((String handlerName, String fullQualifiedHandlerName) -> {
                                   var bdmock = beanDefinitionMock(fullQualifiedHandlerName);
                                   when(beanFactory.getBeanDefinition(eq(handlerName))).thenReturn(bdmock);
+                                  //noinspection rawtypes,unchecked
+                                  when(beanFactory.getType(eq(handlerName))).thenReturn((Class) MyHandler.class);
                               }
-
         );
         MessageHandlerConfigurer configurer = new MessageHandlerConfigurer(MessageHandlerConfigurer.Type.EVENT,
                                                                            eventHandlers.keySet().stream().toList());
@@ -144,20 +149,21 @@ class MessageHandlerConfigurerTest {
         var registeredModules = moduleCaptor.getAllValues();
         assertThat(registeredModules).isNotNull();
         assertThat(registeredModules).hasSize(3);
-        assertThat(registeredModules.get(0)).isInstanceOf(LazyInitializedModule.class);
-        assertThat(registeredModules.get(1)).isInstanceOf(LazyInitializedModule.class);
-        assertThat(registeredModules.get(2)).isInstanceOf(LazyInitializedModule.class);
 
-        // since we use lazy initialization, there is no way to get the modules underneath
-        // assertThat(registeredModules.get(0)).isInstanceOf(PooledStreamingEventProcessorModule.class);
-        // assertThat(registeredModules.get(1)).isInstanceOf(SubscribingEventProcessorModule.class);
-        // assertThat(registeredModules.get(2)).isInstanceOf(PooledStreamingEventProcessorModule.class);
+        Map<String, List<Module>> modules = registeredModules.stream().collect(Collectors.groupingBy(Module::name));
 
-        assertThat(registeredModules.stream().map(Module::name)).containsExactlyInAnyOrder(
-                "Lazy[EventProcessor[my.event.packaging]]",
-                "Lazy[EventProcessor[my.event.packaging.custom]]",
-                "Lazy[EventProcessor[default]]"
+        assertThat(modules.keySet()).containsExactlyInAnyOrder(
+                "EventProcessor[my.event.packaging]",
+                "EventProcessor[my.event.packaging.custom]",
+                "EventProcessor[default]"
         );
+
+        assertThat(modules.get("EventProcessor[default]").stream().map(Object::getClass))
+                .isEqualTo(List.of(SubscribingEventProcessorModule.class));
+        assertThat(modules.get("EventProcessor[my.event.packaging.custom]").stream().map(Object::getClass))
+                .isEqualTo(List.of(SubscribingEventProcessorModule.class));
+        assertThat(modules.get("EventProcessor[my.event.packaging]").stream().map(Object::getClass))
+                .isEqualTo(List.of(PooledStreamingEventProcessorModule.class));
     }
 
     @Test

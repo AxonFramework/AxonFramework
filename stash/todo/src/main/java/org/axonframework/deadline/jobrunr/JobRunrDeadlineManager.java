@@ -139,7 +139,8 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager {
                                        .withId(deadlineId)
                                        .withName(deadlineName)
                                        .withLabels(getLabel(deadlineName), combinedLabel)
-                                       .withDetails(() -> this.execute(serializedDeadlineDetails, deadlineId.toString()))
+                                       .withDetails(() -> this.execute(serializedDeadlineDetails,
+                                                                       deadlineId.toString()))
                                        .scheduleAt(triggerDateTime);
             JobId id = jobScheduler.create(job);
             logger.debug("Job with id: [{}] was successfully created.", id);
@@ -225,8 +226,8 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager {
             if (resultMessage.isExceptional()) {
                 Throwable e = resultMessage.exceptionResult();
                 span.recordException(e);
-                logger.warn("An error occurred while triggering deadline with name [{}].",
-                            deadlineDetails.getDeadlineName());
+                logger.warn("An error occurred while triggering deadline with name [{}]. Original message: [{}]",
+                            deadlineDetails.getDeadlineName(), e.getMessage());
                 throw new DeadlineException("Failed to process", e);
             }
             */
@@ -260,8 +261,9 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager {
     /**
      * Builder class to instantiate a {@link JobRunrDeadlineManager}.
      * <p>
-     * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager} and the {@link DeadlineManagerSpanFactory}
-     * defaults to {@link DefaultDeadlineManagerSpanFactory} backed by a {@link NoOpSpanFactory}.
+     * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager} and the
+     * {@link DeadlineManagerSpanFactory} defaults to {@link DefaultDeadlineManagerSpanFactory} backed by a
+     * {@link NoOpSpanFactory}.
      * <p>
      * The {@link JobScheduler}, {@link ScopeAwareProvider} and {@link Serializer} are <b>hard requirements</b> and as
      * such should be provided.
