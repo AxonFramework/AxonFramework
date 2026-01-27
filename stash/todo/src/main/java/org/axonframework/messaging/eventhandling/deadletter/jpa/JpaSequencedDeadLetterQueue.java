@@ -152,7 +152,9 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sync
 
         // Note: Context.empty() is used here as the DeadLetter interface doesn't carry context.
         // Tracking token and domain info from context resources won't be preserved in this case.
-        DeadLetterEventEntry entry = converter.convert(letter.message(), Context.empty());
+        DeadLetterEventEntry entry = converter.convert(
+                letter.message(), Context.empty(), eventConverter, genericConverter
+        );
 
         transactionManager.executeInTransaction(() -> {
             Long sequenceIndex = getNextIndexForSequence(stringSequenceIdentifier);
@@ -306,7 +308,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sync
         Map<String, String> diagnosticsMap = genericConverter.convert(entry.getDiagnostics(), Map.class);
         Metadata deserializedDiagnostics = Metadata.from(diagnosticsMap);
         MessageStream.Entry<M> messageEntry =
-                ((DeadLetterJpaConverter<M>) converter).convert(entry.getMessage());
+                ((DeadLetterJpaConverter<M>) converter).convert(entry.getMessage(), eventConverter, genericConverter);
         return new JpaDeadLetter<>(entry, deserializedDiagnostics, messageEntry);
     }
 
@@ -608,7 +610,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sync
         private TransactionManager transactionManager;
         private EventConverter eventConverter;
         private Converter genericConverter;
-        private DeadLetterJpaConverter<EventMessage> converter;
+        private DeadLetterJpaConverter<EventMessage> converter = new EventMessageDeadLetterJpaConverter();
         private Duration claimDuration = Duration.ofSeconds(30);
 
         /**
@@ -760,9 +762,6 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sync
          * @return A {@link JpaSequencedDeadLetterQueue} as specified through this Builder.
          */
         public JpaSequencedDeadLetterQueue<T> build() {
-            if (converter == null) {
-                converter = new EventMessageDeadLetterJpaConverter(eventConverter, genericConverter);
-            }
             return new JpaSequencedDeadLetterQueue<>(this);
         }
 
