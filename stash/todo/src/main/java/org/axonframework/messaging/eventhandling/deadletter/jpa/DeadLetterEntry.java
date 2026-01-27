@@ -253,6 +253,8 @@ public class DeadLetterEntry {
 
     /**
      * Releases the message for processing by another thread or process.
+     *
+     * Note: This field is set executing sql directly in {@code JpaSequencedDeadLetterQueue}.
      */
     public void clearProcessingStarted() {
         this.processingStarted = null;
