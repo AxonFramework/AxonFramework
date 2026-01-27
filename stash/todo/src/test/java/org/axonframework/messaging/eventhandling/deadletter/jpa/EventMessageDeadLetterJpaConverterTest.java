@@ -110,91 +110,10 @@ class EventMessageDeadLetterJpaConverterTest {
         testConversionWithContext(message, context);
     }
 
-    @Test
-    void canConvertGenericEventMessage() {
-        EventMessage message = new GenericEventMessage(type, event, metadata);
-        assertTrue(converter.canConvert(message));
-    }
-
-    @Test
-    void canConvertDeadLetterEntryWithGenericEventMessageType() {
-        EventMessage message = EventTestUtils.asEventMessage(event);
-        DeadLetterEventEntry entry = converter.convert(message, Context.empty(), eventConverter, genericConverter);
-
-        assertTrue(converter.canConvert(entry));
-        assertEquals(GenericEventMessage.class.getName(), entry.getEventType());
-    }
-
-    @Test
-    void canConvertLegacyTrackedDomainEventMessageType() {
-        // Simulate a legacy entry stored with old event type
-        DeadLetterEventEntry legacyEntry = new DeadLetterEventEntry(
-                "org.axonframework.messaging.eventhandling.GenericTrackedDomainEventMessage",
-                "msg-id-123",
-                type.toString(),
-                "2024-01-01T00:00:00Z",
-                ConverterTestEvent.class.getName(),
-                null,
-                eventConverter.convert(event, byte[].class),
-                eventConverter.convert(metadata, byte[].class),
-                "AggregateType",
-                "agg-123",
-                5L,
-                GlobalSequenceTrackingToken.class.getName(),
-                genericConverter.convert(new GlobalSequenceTrackingToken(100L), byte[].class)
-        );
-
-        assertTrue(converter.canConvert(legacyEntry));
-    }
-
-    @Test
-    void canConvertLegacyTrackedEventMessageType() {
-        DeadLetterEventEntry legacyEntry = new DeadLetterEventEntry(
-                "org.axonframework.messaging.eventhandling.GenericTrackedEventMessage",
-                "msg-id-456",
-                type.toString(),
-                "2024-01-01T00:00:00Z",
-                ConverterTestEvent.class.getName(),
-                null,
-                eventConverter.convert(event, byte[].class),
-                eventConverter.convert(metadata, byte[].class),
-                null,
-                null,
-                null,
-                GlobalSequenceTrackingToken.class.getName(),
-                genericConverter.convert(new GlobalSequenceTrackingToken(200L), byte[].class)
-        );
-
-        assertTrue(converter.canConvert(legacyEntry));
-    }
-
-    @Test
-    void canConvertLegacyDomainEventMessageType() {
-        DeadLetterEventEntry legacyEntry = new DeadLetterEventEntry(
-                "org.axonframework.messaging.eventhandling.GenericDomainEventMessage",
-                "msg-id-789",
-                type.toString(),
-                "2024-01-01T00:00:00Z",
-                ConverterTestEvent.class.getName(),
-                null,
-                eventConverter.convert(event, byte[].class),
-                eventConverter.convert(metadata, byte[].class),
-                "SomeAggregate",
-                "agg-789",
-                15L,
-                null,
-                null
-        );
-
-        assertTrue(converter.canConvert(legacyEntry));
-    }
-
     private void testConversion(EventMessage message, Context context) {
-        assertTrue(converter.canConvert(message));
         DeadLetterEventEntry deadLetterEventEntry = converter.convert(message, context, eventConverter, genericConverter);
 
         assertCorrectlyMapped(message, context, deadLetterEventEntry);
-        assertTrue(converter.canConvert(deadLetterEventEntry));
 
         MessageStream.Entry<EventMessage> restoredEntry =
                 converter.convert(deadLetterEventEntry, eventConverter, genericConverter);
@@ -202,11 +121,9 @@ class EventMessageDeadLetterJpaConverterTest {
     }
 
     private void testConversionWithContext(EventMessage message, Context context) {
-        assertTrue(converter.canConvert(message));
         DeadLetterEventEntry deadLetterEventEntry = converter.convert(message, context, eventConverter, genericConverter);
 
         assertCorrectlyMapped(message, context, deadLetterEventEntry);
-        assertTrue(converter.canConvert(deadLetterEventEntry));
 
         MessageStream.Entry<EventMessage> restoredEntry =
                 converter.convert(deadLetterEventEntry, eventConverter, genericConverter);

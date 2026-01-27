@@ -43,7 +43,7 @@ import java.lang.invoke.MethodHandles;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.Map;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -66,9 +66,9 @@ import static org.axonframework.common.BuilderUtils.*;
  * configured {@code claimDuration} (30 seconds by default).
  * <p>
  * The stored {@link DeadLetterEntry entries} are converted to a {@link JpaDeadLetter} when they need to be processed or
- * filtered. In order to restore the original {@link EventMessage} a matching {@link DeadLetterJpaConverter} is used.
- * The default supports all {@code EventMessage} implementations provided by the framework. If you have a custom
- * variant, you have to build your own.
+ * filtered. In order to restore the original {@link EventMessage} the configured {@link DeadLetterJpaConverter} is
+ * used. The default {@link EventMessageDeadLetterJpaConverter} supports all {@code EventMessage} implementations
+ * provided by the framework.
  * <p>
  * {@link org.axonframework.conversion.upcasting.Upcaster upcasters} are not supported by this implementation, so
  * breaking changes for events messages stored in the queue should be avoided.
@@ -86,7 +86,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sync
 
     private final String processingGroup;
     private final EntityManagerProvider entityManagerProvider;
-    private final List<DeadLetterJpaConverter<EventMessage>> converters;
+    private final DeadLetterJpaConverter<EventMessage> converter;
     private final TransactionManager transactionManager;
     private final int maxSequences;
     private final int maxSequenceSize;
@@ -109,7 +109,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sync
         this.transactionManager = builder.transactionManager;
         this.eventConverter = builder.eventConverter;
         this.genericConverter = builder.genericConverter;
-        this.converters = builder.converters;
+        this.converter = builder.converter;
         this.claimDuration = builder.claimDuration;
         this.queryPageSize = builder.queryPageSize;
     }
@@ -152,15 +152,9 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sync
 
         // Note: Context.empty() is used here as the DeadLetter interface doesn't carry context.
         // Tracking token and domain info from context resources won't be preserved in this case.
-        DeadLetterEventEntry entry = converters
-                .stream()
-                .filter(c -> c.canConvert(letter.message()))
-                .findFirst()
-                .map(c -> c.convert(letter.message(), Context.empty(), eventConverter, genericConverter))
-                .orElseThrow(() -> new NoJpaConverterFoundException(
-                        String.format("No converter found for message of type: [%s]",
-                                      letter.message().getClass().getName()))
-                );
+        DeadLetterEventEntry entry = converter.convert(
+                letter.message(), Context.empty(), eventConverter, genericConverter
+        );
 
         transactionManager.executeInTransaction(() -> {
             Long sequenceIndex = getNextIndexForSequence(stringSequenceIdentifier);
@@ -310,16 +304,11 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sync
      */
     @SuppressWarnings("unchecked")
     private JpaDeadLetter<M> toLetter(DeadLetterEntry entry) {
-        DeadLetterJpaConverter<M> converter = (DeadLetterJpaConverter<M>) converters
-                .stream()
-                .filter(c -> c.canConvert(entry.getMessage()))
-                .findFirst()
-                .orElseThrow(() -> new NoJpaConverterFoundException(String.format(
-                        "No converter found to convert message of class [%s].",
-                        entry.getMessage().getEventType())
-                ));
-        Metadata deserializedDiagnostics = genericConverter.convert(entry.getDiagnostics(), Metadata.class);
-        MessageStream.Entry<M> messageEntry = converter.convert(entry.getMessage(), eventConverter, genericConverter);
+        @SuppressWarnings("unchecked")
+        Map<String, String> diagnosticsMap = genericConverter.convert(entry.getDiagnostics(), Map.class);
+        Metadata deserializedDiagnostics = Metadata.from(diagnosticsMap);
+        MessageStream.Entry<M> messageEntry =
+                ((DeadLetterJpaConverter<M>) converter).convert(entry.getMessage(), eventConverter, genericConverter);
         return new JpaDeadLetter<>(entry, deserializedDiagnostics, messageEntry);
     }
 
@@ -603,9 +592,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sync
      * <p>
      * The maximum number of unique sequences defaults to {@code 1024}, the maximum amount of dead letters inside a
      * unique sequence to {@code 1024}, the claim duration defaults to {@code 30} seconds, the query page size defaults
-     * to {@code 100}, and the converters default to containing a single {@link EventMessageDeadLetterJpaConverter}.
-     * <p>
-     * If you have custom {@link EventMessage} to use with this queue, replace the current (or add a second) converter.
+     * to {@code 100}, and the converter defaults to {@link EventMessageDeadLetterJpaConverter}.
      * <p>
      * The {@code processingGroup}, {@link EntityManagerProvider}, {@link TransactionManager},
      * {@link EventConverter eventConverter}, and {@link Converter genericConverter} have to be configured for the
@@ -615,7 +602,6 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sync
      */
     public static class Builder<T extends EventMessage> {
 
-        private final List<DeadLetterJpaConverter<EventMessage>> converters = new LinkedList<>();
         private String processingGroup = null;
         private int maxSequences = 1024;
         private int maxSequenceSize = 1024;
@@ -624,11 +610,8 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sync
         private TransactionManager transactionManager;
         private EventConverter eventConverter;
         private Converter genericConverter;
+        private DeadLetterJpaConverter<EventMessage> converter = new EventMessageDeadLetterJpaConverter();
         private Duration claimDuration = Duration.ofSeconds(30);
-
-        public Builder() {
-            converters.add(new EventMessageDeadLetterJpaConverter());
-        }
 
         /**
          * Sets the processing group, which is used for storing and querying which event processor the deadlettered item
@@ -731,25 +714,15 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sync
         }
 
         /**
-         * Removes all current converters currently configured, including the default
-         * {@link EventMessageDeadLetterJpaConverter}.
+         * Sets the {@link DeadLetterJpaConverter} used to convert {@link EventMessage EventMessages} to and from
+         * {@link DeadLetterEventEntry DeadLetterEventEntries}. Defaults to {@link EventMessageDeadLetterJpaConverter}.
          *
+         * @param converter The converter to use.
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder<T> clearConverters() {
-            this.converters.clear();
-            return this;
-        }
-
-        /**
-         * Adds a {@link DeadLetterJpaConverter} to the configuration, which is used to deserialize dead-letter entries
-         * from the database.
-         *
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder<T> addConverter(DeadLetterJpaConverter<EventMessage> converter) {
-            assertNonNull(converter, "Can not add a null DeadLetterJpaConverter.");
-            this.converters.add(converter);
+        public Builder<T> converter(DeadLetterJpaConverter<EventMessage> converter) {
+            assertNonNull(converter, "The DeadLetterJpaConverter may not be null.");
+            this.converter = converter;
             return this;
         }
 

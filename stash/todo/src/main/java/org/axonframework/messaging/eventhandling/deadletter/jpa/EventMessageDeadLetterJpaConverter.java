@@ -30,6 +30,7 @@ import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 
 import java.time.Instant;
+import java.util.Map;
 
 /**
  * Converter responsible for converting to and from {@link EventMessage} implementations for storage in a
@@ -38,21 +39,11 @@ import java.time.Instant;
  * In AF5, tracking tokens and domain info (aggregate identifier, type, sequence number) are stored as context resources
  * rather than message subtypes. This converter extracts these resources from the context during serialization and
  * restores them to the context when deserializing.
- * <p>
- * For backward compatibility with data stored by older versions, this converter also accepts entries with legacy event
- * types (GenericTrackedDomainEventMessage, GenericTrackedEventMessage, GenericDomainEventMessage).
  *
  * @author Mitchell Herrijgers
  * @since 4.6.0
  */
 public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverter<EventMessage> {
-
-    /**
-     * Legacy class names for backward compatibility with entries stored in older versions.
-     */
-    private static final String LEGACY_TRACKED_DOMAIN_EVENT = "org.axonframework.messaging.eventhandling.GenericTrackedDomainEventMessage";
-    private static final String LEGACY_TRACKED_EVENT = "org.axonframework.messaging.eventhandling.GenericTrackedEventMessage";
-    private static final String LEGACY_DOMAIN_EVENT = "org.axonframework.messaging.eventhandling.GenericDomainEventMessage";
 
     @Override
     public DeadLetterEventEntry convert(EventMessage message,
@@ -100,7 +91,9 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
                                                      Converter genericConverter) {
         // Deserialize payload and metadata
         Object payload = eventConverter.convert(entry.getPayload(), ClassUtils.loadClass(entry.getPayloadType()));
-        Metadata metadata = eventConverter.convert(entry.getMetadata(), Metadata.class);
+        @SuppressWarnings("unchecked")
+        Map<String, String> metadataMap = eventConverter.convert(entry.getMetadata(), Map.class);
+        Metadata metadata = Metadata.from(metadataMap);
 
         // Create GenericEventMessage
         EventMessage message = new GenericEventMessage(
@@ -132,20 +125,5 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
         }
 
         return new SimpleEntry<>(message, context);
-    }
-
-    @Override
-    public boolean canConvert(DeadLetterEventEntry entry) {
-        String eventType = entry.getEventType();
-        // Support current type and legacy types for backward compatibility
-        return eventType.equals(GenericEventMessage.class.getName())
-                || eventType.equals(LEGACY_TRACKED_DOMAIN_EVENT)
-                || eventType.equals(LEGACY_TRACKED_EVENT)
-                || eventType.equals(LEGACY_DOMAIN_EVENT);
-    }
-
-    @Override
-    public boolean canConvert(EventMessage message) {
-        return message instanceof GenericEventMessage;
     }
 }

@@ -63,20 +63,4 @@ public interface DeadLetterJpaConverter<M extends EventMessage> {
      * @return A {@link MessageStream.Entry} containing the message and context with restored resources.
      */
     MessageStream.Entry<M> convert(DeadLetterEventEntry entry, EventConverter eventConverter, Converter genericConverter);
-
-    /**
-     * Check whether this converter supports converting the given {@link DeadLetterEventEntry} back to a message.
-     *
-     * @param entry The entry to check support for.
-     * @return Whether the provided entry is supported by this converter.
-     */
-    boolean canConvert(DeadLetterEventEntry entry);
-
-    /**
-     * Check whether this converter supports converting the given {@link EventMessage} to an entry.
-     *
-     * @param message The message to check support for.
-     * @return Whether the provided message is supported by this converter.
-     */
-    boolean canConvert(M message);
 }
