@@ -17,6 +17,7 @@
 package org.axonframework.messaging.eventhandling.deadletter.jpa;
 
 import org.axonframework.common.ClassUtils;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.conversion.Converter;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.LegacyResources;
@@ -43,13 +44,25 @@ import java.util.Map;
  * @author Mitchell Herrijgers
  * @since 4.6.0
  */
+@Internal
 public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverter<EventMessage> {
 
+    private final EventConverter eventConverter;
+    private final Converter genericConverter;
+
+    /**
+     * Constructs an {@link EventMessageDeadLetterJpaConverter} using the given converters.
+     *
+     * @param eventConverter   the {@link EventConverter} for conversion of payload and metadata
+     * @param genericConverter the {@link Converter} for conversion of the tracking token, if present
+     */
+    public EventMessageDeadLetterJpaConverter(EventConverter eventConverter, Converter genericConverter) {
+        this.eventConverter = eventConverter;
+        this.genericConverter = genericConverter;
+    }
+
     @Override
-    public DeadLetterEventEntry convert(EventMessage message,
-                                        Context context,
-                                        EventConverter eventConverter,
-                                        Converter genericConverter) {
+    public DeadLetterEventEntry convert(EventMessage message, Context context) {
         // Serialize payload and metadata
         byte[] serializedPayload = eventConverter.convert(message.payload(), byte[].class);
         byte[] serializedMetadata = eventConverter.convert(message.metadata(), byte[].class);
@@ -86,9 +99,7 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
     }
 
     @Override
-    public MessageStream.Entry<EventMessage> convert(DeadLetterEventEntry entry,
-                                                     EventConverter eventConverter,
-                                                     Converter genericConverter) {
+    public MessageStream.Entry<EventMessage> convert(DeadLetterEventEntry entry) {
         // Deserialize payload and metadata
         Object payload = eventConverter.convert(entry.getPayload(), ClassUtils.loadClass(entry.getPayloadType()));
         @SuppressWarnings("unchecked")
