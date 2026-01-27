@@ -14,6 +14,7 @@ Message dispatch interceptors are invoked when a message is **dispatched/publish
 They can alter the message by adding metadata or block it by not proceeding with the chain.
 These interceptors are always invoked on the thread that dispatches the message.
 
+[[dispatch-interceptor]]
 The `MessageDispatchInterceptor` interface defines a single method:
 
 [source,java]
@@ -32,6 +33,7 @@ public interface MessageDispatchInterceptor<M extends Message> {
 In turn, message handler interceptors can take action both before and after message **handling**.
 Interceptors can even block message processing altogether, for example for security reasons.
 
+[[handler-interceptor]]
 The `MessageHandlerInterceptor` interface also defines a single method:
 
 [source,java]
