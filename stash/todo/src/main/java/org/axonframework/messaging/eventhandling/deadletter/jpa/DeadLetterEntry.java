@@ -18,11 +18,9 @@ package org.axonframework.messaging.eventhandling.deadletter.jpa;
 
 import jakarta.persistence.*;
 import org.axonframework.common.IdentifierFactory;
+import org.axonframework.conversion.Converter;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.deadletter.Cause;
-import org.axonframework.conversion.SerializedObject;
-import org.axonframework.conversion.Serializer;
-import org.axonframework.conversion.SimpleSerializedObject;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -89,14 +87,14 @@ public class DeadLetterEntry {
      *
      * @param processingGroup    The processing group this message belongs to.
      * @param sequenceIdentifier The sequence identifier this message belongs to.
-     * @param sequenceIndex              The index of this message within the sequence.
+     * @param sequenceIndex      The index of this message within the sequence.
      * @param message            An embedded {@link DeadLetterEventEntry} containing all information about the message
      *                           itself.
      * @param enqueuedAt         The time the message was enqueued.
      * @param lastTouched        The time the message has been last processed.
      * @param cause              The reason the message was enqueued.
      * @param diagnostics        The diagnostics, a map of metadata.
-     * @param serializer         The {@link Serializer } to use for the {@code diagnostics}
+     * @param converter          The {@link Converter} to use for serializing the {@code diagnostics}.
      */
     public DeadLetterEntry(String processingGroup,
                            String sequenceIdentifier,
@@ -106,7 +104,7 @@ public class DeadLetterEntry {
                            Instant lastTouched,
                            Cause cause,
                            Metadata diagnostics,
-                           Serializer serializer) {
+                           Converter converter) {
         this.deadLetterId = IdentifierFactory.getInstance().generateIdentifier();
         this.processingGroup = processingGroup;
         this.sequenceIdentifier = sequenceIdentifier;
@@ -118,7 +116,7 @@ public class DeadLetterEntry {
             this.causeType = cause.type();
             this.causeMessage = cause.message();
         }
-        this.setDiagnostics(diagnostics, serializer);
+        this.setDiagnostics(diagnostics, converter);
     }
 
     /**
@@ -224,16 +222,12 @@ public class DeadLetterEntry {
     }
 
     /**
-     * Returns the serialized diagnostics.
+     * Returns the serialized diagnostics as a byte array.
      *
-     * @return The serialized diagnostics.
+     * @return The serialized diagnostics bytes.
      */
-    public SerializedObject<byte[]> getDiagnostics() {
-        return new SimpleSerializedObject<>(
-                diagnostics,
-                byte[].class,
-                Metadata.class.getName(),
-                null);
+    public byte[] getDiagnostics() {
+        return diagnostics;
     }
 
     /**
@@ -248,14 +242,13 @@ public class DeadLetterEntry {
     }
 
     /**
-     * Sets the diagnostics, taking in a {@link Serializer} to serialize if to the correct format.
+     * Sets the diagnostics, using the given {@link Converter} to serialize to byte array format.
      *
      * @param diagnostics The new diagnostics.
-     * @param serializer  The {@link Serializer} to use.
+     * @param converter   The {@link Converter} to use for serialization.
      */
-    public void setDiagnostics(Metadata diagnostics, Serializer serializer) {
-        SerializedObject<byte[]> serializedDiagnostics = serializer.serialize(diagnostics, byte[].class);
-        this.diagnostics = serializedDiagnostics.getData();
+    public void setDiagnostics(Metadata diagnostics, Converter converter) {
+        this.diagnostics = converter.convert(diagnostics, byte[].class);
     }
 
     /**
