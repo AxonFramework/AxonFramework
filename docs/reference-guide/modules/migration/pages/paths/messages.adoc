@@ -28,10 +28,11 @@ The following table summarizes the primary annotation changes:
 | Similar to revision, routing information is now consolidated within the `@Command` annotation, making the command's intent and behavior more explicit at the class level.
 |===
 
-== Explicit Message Types
+== Explicit message types
 
-One of the most significant changes in Axon Framework 5 is the introduction of `MessageType`. 
+One of the most significant changes in Axon Framework 5 is the introduction of `MessageType`.
 It decouples the logical name and version of a message from its Java class.
+One of the most significant changes in AF5 is the introduction of xref:messaging-concepts:anatomy-message.adoc#message_type[`MessageType`], which introduces the `QualifiedName` and decouples the logical name and version of a message from its implementing class.
 
 To embrace this, you should use the `@Command`, `@Event`, and `@Query` annotations on your message classes.
 
@@ -50,6 +51,14 @@ public class MyEvent {
 
 By using these annotations, you provide Axon with the necessary information to resolve the `MessageType` without relying on fully qualified class names, which simplifies refactoring and cross-service communication.
 
+[WARNING]
+====
+Setting the `name` and `namespace` on `@Event`, will change how events are stored.
+Specifically, it influences the `payloadType` column/field, which has been renamed to `type` in Axon Framework 5 to align with the architectural shift.
+
+As a first migration step it is recommended to keep the default behavior to align with the previous implicit naming strategy.
+====
+
 If you don't specify the annotation parameters, Axon uses the following default behavior:
 
 * **`namespace`**: Defaults to the **package name** of the message class.
@@ -58,9 +67,18 @@ If you don't specify the annotation parameters, Axon uses the following default 
 
 For more details on how message types are resolved and used, see the xref:messaging-concepts:anatomy-message.adoc#message_type_resolution[Message type resolution] section in the Anatomy of a Message guide.
 
-== Routing and Identification
+[IMPORTANT]
+.Message versioning
+====
+With Axon Framework 5, the versioning strategy for messages has evolved.
+Instead of using the `@Revision` annotation, you now specify the version directly in the `@Event`, `@Command`, or `@Query` annotations.
 
-=== Target Entity Identification
+If you used `@Revision` in AF4, ensure to migrate to the new versioning approach to maintain compatibility and leverage the benefits of the new message type system and support upcasting in upcoming releases.
+====
+
+== Routing and identification
+
+=== Target entity identification
 
 When sending a command to an entity (formerly aggregate), you previously used `@TargetAggregateIdentifier`. 
 In Axon Framework 5, this is replaced by `@TargetEntityId`. This shift is part of the broader move towards Dynamic Consistency Boundaries. See the xref:migration:understanding-architecture-principles.adoc#moving-away-from-aggregates[architecture principles] for more context.
@@ -80,9 +98,9 @@ public class MarkOrderAsShippedCommand {
 }
 ----
 
-=== Command Routing
+=== Command routing
 
-For commands that require a specific routing key (e.g., for consistent hashing in a distributed command bus), the `@RoutingKey` annotation is replaced by the `routingKey` field in the `@Command` annotation.
+For commands that require a specific routing key (for example for consistent hashing in a distributed command bus), the `@RoutingKey` annotation is replaced by the `routingKey` field in the `@Command` annotation.
 
 [source,java]
 ----
@@ -100,5 +118,34 @@ public class MyCommand {
 ----
 
 Note that in Axon Framework 5, the `routingKey` property in the annotation refers to the **name of the property** (field or method) in the class that should be used for routing.
-If a method name is provided, it can be the actual method name (e.g., `getCardId`) or the property name (e.g., `cardId`).
+If a method name is provided, it can be the actual method name (`getCardId`) or the property name (`cardId`).
 For more details, see the xref:commands:command-dispatchers.adoc#configuring-routing-keys-with-command[Configuring routing keys with @Command] section in the Command Dispatching guide.
+
+=== Event tagging for aggregate identification
+
+In Axon Framework 4, events were implicitly associated with an aggregate through the aggregate identifier and the aggregate type, which were stored alongside the event in the event store.
+Axon Framework 5 moves towards a more flexible tagging system.
+
+When migrating events that were previously associated with an aggregate, you must ensure that the event's aggregate identifier field is annotated with `@EventTag`.
+The key for this tag should be the **aggregate's type** (typically the simple class name of the aggregate).
+
+[source,java]
+----
+import org.axonframework.eventsourcing.annotation.EventTag;
+
+// AF4
+public class OrderCreatedEvent {
+    private String orderId;
+    // ...
+}
+
+// AF5
+public class OrderCreatedEvent {
+    @EventTag(key = "Order") // "Order" is the aggregate type
+    private String orderId;
+    // ...
+}
+----
+
+This tagging is crucial for maintaining the link between the event and its entity, enabling correct event sourcing and consistency boundary protection in AF5.
+For more details on how tagging works, see the xref:events:event-publishing.adoc#event_tagging[Event tagging] section.
