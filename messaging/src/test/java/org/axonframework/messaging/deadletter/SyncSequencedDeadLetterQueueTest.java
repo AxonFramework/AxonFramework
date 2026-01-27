@@ -102,11 +102,11 @@ public abstract class SyncSequencedDeadLetterQueueTest<M extends Message> {
             DeadLetter<? extends M> testLetter = generateInitialLetter();
 
             // when
-            testSubject.enqueue(testId, testLetter);
+            testSubject.enqueue(testId, testLetter, null);
 
             // then
-            assertTrue(testSubject.contains(testId));
-            Iterator<DeadLetter<? extends M>> resultLetters = testSubject.deadLetterSequence(testId).iterator();
+            assertTrue(testSubject.contains(testId, null));
+            Iterator<DeadLetter<? extends M>> resultLetters = testSubject.deadLetterSequence(testId, null).iterator();
             assertTrue(resultLetters.hasNext());
             assertLetter(testLetter, resultLetters.next());
             assertFalse(resultLetters.hasNext());
@@ -118,13 +118,13 @@ public abstract class SyncSequencedDeadLetterQueueTest<M extends Message> {
             long maxSequences = maxSequences();
             assertTrue(maxSequences > 0);
             for (int i = 0; i < maxSequences; i++) {
-                testSubject.enqueue(generateId(), generateInitialLetter());
+                testSubject.enqueue(generateId(), generateInitialLetter(), null);
             }
 
             // when / then
             Object oneSequenceToMany = generateId();
             DeadLetter<M> testLetter = generateInitialLetter();
-            assertThatThrownBy(() -> testSubject.enqueue(oneSequenceToMany, testLetter))
+            assertThatThrownBy(() -> testSubject.enqueue(oneSequenceToMany, testLetter, null))
                     .isInstanceOf(DeadLetterQueueOverflowException.class);
         }
 
@@ -135,12 +135,12 @@ public abstract class SyncSequencedDeadLetterQueueTest<M extends Message> {
             long maxSequenceSize = maxSequenceSize();
             assertTrue(maxSequenceSize > 0);
             for (int i = 0; i < maxSequenceSize; i++) {
-                testSubject.enqueue(testId, generateInitialLetter());
+                testSubject.enqueue(testId, generateInitialLetter(), null);
             }
 
             // when / then
             DeadLetter<M> oneLetterToMany = generateInitialLetter();
-            assertThatThrownBy(() -> testSubject.enqueue(testId, oneLetterToMany))
+            assertThatThrownBy(() -> testSubject.enqueue(testId, oneLetterToMany, null))
                     .isInstanceOf(DeadLetterQueueOverflowException.class);
         }
     }
@@ -155,12 +155,12 @@ public abstract class SyncSequencedDeadLetterQueueTest<M extends Message> {
             long maxSequenceSize = maxSequenceSize();
             assertTrue(maxSequenceSize > 0);
             for (int i = 0; i < maxSequenceSize; i++) {
-                testSubject.enqueue(testId, generateInitialLetter());
+                testSubject.enqueue(testId, generateInitialLetter(), null);
             }
 
             // when / then
             assertThatThrownBy(() -> testSubject.enqueueIfPresent(testId,
-                    SyncSequencedDeadLetterQueueTest.this::generateFollowUpLetter))
+                    SyncSequencedDeadLetterQueueTest.this::generateFollowUpLetter, null))
                     .isInstanceOf(DeadLetterQueueOverflowException.class);
         }
 
@@ -171,28 +171,28 @@ public abstract class SyncSequencedDeadLetterQueueTest<M extends Message> {
 
             // when
             boolean result = testSubject.enqueueIfPresent(testId,
-                    SyncSequencedDeadLetterQueueTest.this::generateFollowUpLetter);
+                    SyncSequencedDeadLetterQueueTest.this::generateFollowUpLetter, null);
 
             // then
             assertFalse(result);
-            assertFalse(testSubject.contains(testId));
+            assertFalse(testSubject.contains(testId, null));
         }
 
         @Test
         void enqueueIfPresentDoesNotEnqueueForNonExistentSequenceIdentifier() {
             // given
             Object testFirstId = generateId();
-            testSubject.enqueue(testFirstId, generateInitialLetter());
+            testSubject.enqueue(testFirstId, generateInitialLetter(), null);
             Object testSecondId = generateId();
 
             // when
             boolean result = testSubject.enqueueIfPresent(testSecondId,
-                    SyncSequencedDeadLetterQueueTest.this::generateFollowUpLetter);
+                    SyncSequencedDeadLetterQueueTest.this::generateFollowUpLetter, null);
 
             // then
             assertFalse(result);
-            assertTrue(testSubject.contains(testFirstId));
-            assertFalse(testSubject.contains(testSecondId));
+            assertTrue(testSubject.contains(testFirstId, null));
+            assertFalse(testSubject.contains(testSecondId, null));
         }
 
         @Test
@@ -203,12 +203,12 @@ public abstract class SyncSequencedDeadLetterQueueTest<M extends Message> {
             DeadLetter<M> testSecondLetter = generateFollowUpLetter();
 
             // when
-            testSubject.enqueue(testId, testFirstLetter);
-            testSubject.enqueueIfPresent(testId, () -> testSecondLetter);
+            testSubject.enqueue(testId, testFirstLetter, null);
+            testSubject.enqueueIfPresent(testId, () -> testSecondLetter, null);
 
             // then
-            assertTrue(testSubject.contains(testId));
-            Iterator<DeadLetter<? extends M>> resultLetters = testSubject.deadLetterSequence(testId).iterator();
+            assertTrue(testSubject.contains(testId, null));
+            Iterator<DeadLetter<? extends M>> resultLetters = testSubject.deadLetterSequence(testId, null).iterator();
             assertTrue(resultLetters.hasNext());
             assertLetter(testFirstLetter, resultLetters.next());
             assertTrue(resultLetters.hasNext());
@@ -225,14 +225,14 @@ public abstract class SyncSequencedDeadLetterQueueTest<M extends Message> {
             // given
             Object testId = generateId();
             DeadLetter<? extends M> testLetter = generateInitialLetter();
-            testSubject.enqueue(testId, testLetter);
+            testSubject.enqueue(testId, testLetter, null);
 
             // when
-            testSubject.evict(mapToQueueImplementation(generateInitialLetter()));
+            testSubject.evict(mapToQueueImplementation(generateInitialLetter()), null);
 
             // then
-            assertTrue(testSubject.contains(testId));
-            Iterator<DeadLetter<? extends M>> resultLetters = testSubject.deadLetterSequence(testId).iterator();
+            assertTrue(testSubject.contains(testId, null));
+            Iterator<DeadLetter<? extends M>> resultLetters = testSubject.deadLetterSequence(testId, null).iterator();
             assertTrue(resultLetters.hasNext());
             assertLetter(testLetter, resultLetters.next());
             assertFalse(resultLetters.hasNext());
@@ -243,14 +243,14 @@ public abstract class SyncSequencedDeadLetterQueueTest<M extends Message> {
             // given
             Object testId = generateId();
             DeadLetter<M> testLetter = generateInitialLetter();
-            testSubject.enqueue(testId, testLetter);
+            testSubject.enqueue(testId, testLetter, null);
 
             // when
-            testSubject.evict(mapToQueueImplementation(generateInitialLetter()));
+            testSubject.evict(mapToQueueImplementation(generateInitialLetter()), null);
 
             // then
-            assertTrue(testSubject.contains(testId));
-            Iterator<DeadLetter<? extends M>> resultLetters = testSubject.deadLetterSequence(testId).iterator();
+            assertTrue(testSubject.contains(testId, null));
+            Iterator<DeadLetter<? extends M>> resultLetters = testSubject.deadLetterSequence(testId, null).iterator();
             assertTrue(resultLetters.hasNext());
             assertLetter(testLetter, resultLetters.next());
             assertFalse(resultLetters.hasNext());
@@ -261,15 +261,15 @@ public abstract class SyncSequencedDeadLetterQueueTest<M extends Message> {
             // given
             Object testId = generateId();
             DeadLetter<M> testLetter = generateInitialLetter();
-            testSubject.enqueue(testId, testLetter);
-            DeadLetter<? extends M> resultLetter = testSubject.deadLetterSequence(testId).iterator().next();
+            testSubject.enqueue(testId, testLetter, null);
+            DeadLetter<? extends M> resultLetter = testSubject.deadLetterSequence(testId, null).iterator().next();
 
             // when
-            testSubject.evict(resultLetter);
+            testSubject.evict(resultLetter, null);
 
             // then
-            assertFalse(testSubject.contains(testId));
-            assertFalse(testSubject.deadLetters().iterator().hasNext());
+            assertFalse(testSubject.contains(testId, null));
+            assertFalse(testSubject.deadLetters(null).iterator().hasNext());
         }
     }
 
@@ -282,7 +282,7 @@ public abstract class SyncSequencedDeadLetterQueueTest<M extends Message> {
             DeadLetter<M> testLetter = generateInitialLetter();
 
             // when / then
-            assertThatThrownBy(() -> testSubject.requeue(mapToQueueImplementation(testLetter), l -> l))
+            assertThatThrownBy(() -> testSubject.requeue(mapToQueueImplementation(testLetter), l -> l, null))
                     .isInstanceOf(NoSuchDeadLetterException.class);
         }
 
@@ -292,10 +292,10 @@ public abstract class SyncSequencedDeadLetterQueueTest<M extends Message> {
             Object testId = generateId();
             DeadLetter<M> testLetter = generateInitialLetter();
             DeadLetter<M> otherTestLetter = generateInitialLetter();
-            testSubject.enqueue(testId, testLetter);
+            testSubject.enqueue(testId, testLetter, null);
 
             // when / then
-            assertThatThrownBy(() -> testSubject.requeue(mapToQueueImplementation(otherTestLetter), l -> l))
+            assertThatThrownBy(() -> testSubject.requeue(mapToQueueImplementation(otherTestLetter), l -> l, null))
                     .isInstanceOf(NoSuchDeadLetterException.class);
         }
 
@@ -305,16 +305,16 @@ public abstract class SyncSequencedDeadLetterQueueTest<M extends Message> {
             Object testId = generateId();
             DeadLetter<M> testLetter = generateInitialLetter();
             Throwable testCause = generateThrowable();
-            testSubject.enqueue(testId, testLetter);
-            DeadLetter<? extends M> resultLetter = testSubject.deadLetterSequence(testId).iterator().next();
+            testSubject.enqueue(testId, testLetter, null);
+            DeadLetter<? extends M> resultLetter = testSubject.deadLetterSequence(testId, null).iterator().next();
             DeadLetter<M> expectedLetter = generateRequeuedLetter(testLetter, testCause);
 
             // when
-            testSubject.requeue(resultLetter, l -> l.withCause(testCause));
+            testSubject.requeue(resultLetter, l -> l.withCause(testCause), null);
 
             // then
-            assertTrue(testSubject.contains(testId));
-            Iterator<DeadLetter<? extends M>> resultLetters = testSubject.deadLetterSequence(testId).iterator();
+            assertTrue(testSubject.contains(testId, null));
+            Iterator<DeadLetter<? extends M>> resultLetters = testSubject.deadLetterSequence(testId, null).iterator();
             assertTrue(resultLetters.hasNext());
             assertLetter(expectedLetter, resultLetters.next());
             assertFalse(resultLetters.hasNext());
@@ -331,10 +331,10 @@ public abstract class SyncSequencedDeadLetterQueueTest<M extends Message> {
             Object otherTestId = generateId();
 
             // when / then
-            assertFalse(testSubject.contains(testId));
-            testSubject.enqueue(testId, generateInitialLetter());
-            assertTrue(testSubject.contains(testId));
-            assertFalse(testSubject.contains(otherTestId));
+            assertFalse(testSubject.contains(testId, null));
+            testSubject.enqueue(testId, generateInitialLetter(), null);
+            assertTrue(testSubject.contains(testId, null));
+            assertFalse(testSubject.contains(otherTestId, null));
         }
 
         @Test
@@ -344,12 +344,12 @@ public abstract class SyncSequencedDeadLetterQueueTest<M extends Message> {
             DeadLetter<M> expected = generateInitialLetter();
 
             // when / then
-            Iterator<DeadLetter<? extends M>> resultIterator = testSubject.deadLetterSequence(testId).iterator();
+            Iterator<DeadLetter<? extends M>> resultIterator = testSubject.deadLetterSequence(testId, null).iterator();
             assertFalse(resultIterator.hasNext());
 
-            testSubject.enqueue(testId, expected);
+            testSubject.enqueue(testId, expected, null);
 
-            resultIterator = testSubject.deadLetterSequence(testId).iterator();
+            resultIterator = testSubject.deadLetterSequence(testId, null).iterator();
             assertTrue(resultIterator.hasNext());
             assertLetter(expected, resultIterator.next());
             assertFalse(resultIterator.hasNext());
@@ -361,18 +361,18 @@ public abstract class SyncSequencedDeadLetterQueueTest<M extends Message> {
             Object testId = generateId();
             LinkedHashMap<Integer, DeadLetter<M>> enqueuedLetters = new LinkedHashMap<>();
             DeadLetter<M> initial = generateInitialLetter();
-            testSubject.enqueue(testId, initial);
+            testSubject.enqueue(testId, initial, null);
             enqueuedLetters.put(0, initial);
 
             IntStream.range(1, Long.valueOf(maxSequenceSize()).intValue())
                      .forEach(i -> {
                          DeadLetter<M> followUp = generateFollowUpLetter();
-                         testSubject.enqueue(testId, followUp);
+                         testSubject.enqueue(testId, followUp, null);
                          enqueuedLetters.put(i, followUp);
                      });
 
             // when
-            Iterator<DeadLetter<? extends M>> resultIterator = testSubject.deadLetterSequence(testId).iterator();
+            Iterator<DeadLetter<? extends M>> resultIterator = testSubject.deadLetterSequence(testId, null).iterator();
 
             // then
             for (Map.Entry<Integer, DeadLetter<M>> entry : enqueuedLetters.entrySet()) {
@@ -392,13 +392,13 @@ public abstract class SyncSequencedDeadLetterQueueTest<M extends Message> {
             DeadLetter<? extends M> thatFirstExpected = generateInitialLetter();
             DeadLetter<? extends M> thatSecondExpected = generateInitialLetter();
 
-            testSubject.enqueue(thisTestId, thisFirstExpected);
-            testSubject.enqueueIfPresent(thisTestId, () -> thisSecondExpected);
-            testSubject.enqueue(thatTestId, thatFirstExpected);
-            testSubject.enqueueIfPresent(thatTestId, () -> thatSecondExpected);
+            testSubject.enqueue(thisTestId, thisFirstExpected, null);
+            testSubject.enqueueIfPresent(thisTestId, () -> thisSecondExpected, null);
+            testSubject.enqueue(thatTestId, thatFirstExpected, null);
+            testSubject.enqueueIfPresent(thatTestId, () -> thatSecondExpected, null);
 
             // when
-            Iterator<Iterable<DeadLetter<? extends M>>> resultIterator = testSubject.deadLetters().iterator();
+            Iterator<Iterable<DeadLetter<? extends M>>> resultIterator = testSubject.deadLetters(null).iterator();
 
             // then
             assertTrue(resultIterator.hasNext());
@@ -413,11 +413,11 @@ public abstract class SyncSequencedDeadLetterQueueTest<M extends Message> {
             // given
             Object testId = generateId();
             for (int i = 0; i < maxSequences(); i++) {
-                testSubject.enqueue(generateId(), generateInitialLetter());
+                testSubject.enqueue(generateId(), generateInitialLetter(), null);
             }
 
             // when / then
-            assertTrue(testSubject.isFull(testId));
+            assertTrue(testSubject.isFull(testId, null));
         }
 
         @Test
@@ -425,28 +425,28 @@ public abstract class SyncSequencedDeadLetterQueueTest<M extends Message> {
             // given
             Object testId = generateId();
             for (int i = 0; i < maxSequenceSize(); i++) {
-                testSubject.enqueue(testId, generateInitialLetter());
+                testSubject.enqueue(testId, generateInitialLetter(), null);
             }
 
             // when / then
-            assertTrue(testSubject.isFull(testId));
+            assertTrue(testSubject.isFull(testId, null));
         }
 
         @Test
         void sizeReturnsCorrectAmount() {
             // given / when / then
-            assertEquals(0, testSubject.size());
+            assertEquals(0, testSubject.size(null));
 
-            testSubject.enqueue(generateId(), generateInitialLetter());
-            assertEquals(1, testSubject.size());
+            testSubject.enqueue(generateId(), generateInitialLetter(), null);
+            assertEquals(1, testSubject.size(null));
 
-            testSubject.enqueue(generateId(), generateInitialLetter());
-            assertEquals(2, testSubject.size());
+            testSubject.enqueue(generateId(), generateInitialLetter(), null);
+            assertEquals(2, testSubject.size(null));
 
             Object testId = generateId();
-            testSubject.enqueue(testId, generateInitialLetter());
-            testSubject.enqueueIfPresent(testId, this::generateFollowUpLetter);
-            assertEquals(4, testSubject.size());
+            testSubject.enqueue(testId, generateInitialLetter(), null);
+            testSubject.enqueueIfPresent(testId, this::generateFollowUpLetter, null);
+            assertEquals(4, testSubject.size(null));
         }
 
         @Test
@@ -455,29 +455,29 @@ public abstract class SyncSequencedDeadLetterQueueTest<M extends Message> {
             Object testId = generateId();
 
             // when / then
-            assertEquals(0, testSubject.sequenceSize(testId));
+            assertEquals(0, testSubject.sequenceSize(testId, null));
 
-            testSubject.enqueue(testId, generateInitialLetter());
-            assertEquals(1, testSubject.sequenceSize(testId));
+            testSubject.enqueue(testId, generateInitialLetter(), null);
+            assertEquals(1, testSubject.sequenceSize(testId, null));
 
-            testSubject.enqueueIfPresent(testId, this::generateFollowUpLetter);
-            testSubject.enqueueIfPresent(testId, this::generateFollowUpLetter);
-            assertEquals(3, testSubject.sequenceSize(testId));
+            testSubject.enqueueIfPresent(testId, this::generateFollowUpLetter, null);
+            testSubject.enqueueIfPresent(testId, this::generateFollowUpLetter, null);
+            assertEquals(3, testSubject.sequenceSize(testId, null));
         }
 
         @Test
         void amountOfSequencesReturnsCorrectAmount() {
             // given / when / then
-            assertEquals(0, testSubject.amountOfSequences());
+            assertEquals(0, testSubject.amountOfSequences(null));
 
             Object testId = generateId();
-            testSubject.enqueue(testId, generateInitialLetter());
-            assertEquals(1, testSubject.amountOfSequences());
-            testSubject.enqueueIfPresent(testId, this::generateFollowUpLetter);
-            assertEquals(1, testSubject.amountOfSequences());
+            testSubject.enqueue(testId, generateInitialLetter(), null);
+            assertEquals(1, testSubject.amountOfSequences(null));
+            testSubject.enqueueIfPresent(testId, this::generateFollowUpLetter, null);
+            assertEquals(1, testSubject.amountOfSequences(null));
 
-            testSubject.enqueue(generateId(), generateInitialLetter());
-            assertEquals(2, testSubject.amountOfSequences());
+            testSubject.enqueue(generateId(), generateInitialLetter(), null);
+            assertEquals(2, testSubject.amountOfSequences(null));
         }
 
         private DeadLetter<M> generateFollowUpLetter() {
@@ -498,7 +498,7 @@ public abstract class SyncSequencedDeadLetterQueueTest<M extends Message> {
             };
 
             // when
-            boolean result = testSubject.process(testTask);
+            boolean result = testSubject.process(testTask, null);
 
             // then
             assertFalse(result);
@@ -516,10 +516,10 @@ public abstract class SyncSequencedDeadLetterQueueTest<M extends Message> {
 
             Object testId = generateId();
             DeadLetter<? extends M> testLetter = generateInitialLetter();
-            testSubject.enqueue(testId, testLetter);
+            testSubject.enqueue(testId, testLetter, null);
 
             // when
-            boolean result = testSubject.process(testTask);
+            boolean result = testSubject.process(testTask, null);
 
             // then
             assertTrue(result);
@@ -537,15 +537,15 @@ public abstract class SyncSequencedDeadLetterQueueTest<M extends Message> {
 
             Object testId = generateId();
             DeadLetter<? extends M> testLetter = generateInitialLetter();
-            testSubject.enqueue(testId, testLetter);
+            testSubject.enqueue(testId, testLetter, null);
 
             // when
-            boolean result = testSubject.process(testTask);
+            boolean result = testSubject.process(testTask, null);
 
             // then
             assertTrue(result);
             assertLetter(testLetter, resultLetter.get());
-            assertFalse(testSubject.deadLetters().iterator().hasNext());
+            assertFalse(testSubject.deadLetters(null).iterator().hasNext());
         }
 
         @SuppressWarnings("ConstantConditions")
@@ -565,20 +565,20 @@ public abstract class SyncSequencedDeadLetterQueueTest<M extends Message> {
 
             Object testId = generateId();
             DeadLetter<? extends M> firstTestLetter = generateInitialLetter();
-            testSubject.enqueue(testId, firstTestLetter);
+            testSubject.enqueue(testId, firstTestLetter, null);
             setAndGetTime(Instant.now());
             DeadLetter<? extends M> secondTestLetter = generateFollowUpLetter();
-            testSubject.enqueueIfPresent(testId, () -> secondTestLetter);
+            testSubject.enqueueIfPresent(testId, () -> secondTestLetter, null);
             setAndGetTime(Instant.now());
             DeadLetter<? extends M> thirdTestLetter = generateFollowUpLetter();
-            testSubject.enqueueIfPresent(testId, () -> thirdTestLetter);
+            testSubject.enqueueIfPresent(testId, () -> thirdTestLetter, null);
 
             // Advance time so the extra sequence has a later timestamp and won't be processed first
             setAndGetTime(Instant.now().plus(1, ChronoUnit.HOURS));
-            testSubject.enqueue(generateId(), generateInitialLetter());
+            testSubject.enqueue(generateId(), generateInitialLetter(), null);
 
             // when
-            boolean result = testSubject.process(testTask);
+            boolean result = testSubject.process(testTask, null);
 
             // then
             assertTrue(result);
@@ -600,21 +600,21 @@ public abstract class SyncSequencedDeadLetterQueueTest<M extends Message> {
             Object idTwo = generateId();
             Object idThree = generateId();
 
-            testSubject.enqueue(idOne, generateInitialLetter());
-            testSubject.enqueue(idTwo, generateInitialLetter());
-            testSubject.enqueue(idThree, generateInitialLetter());
+            testSubject.enqueue(idOne, generateInitialLetter(), null);
+            testSubject.enqueue(idTwo, generateInitialLetter(), null);
+            testSubject.enqueue(idThree, generateInitialLetter(), null);
 
-            assertTrue(testSubject.contains(idOne));
-            assertTrue(testSubject.contains(idTwo));
-            assertTrue(testSubject.contains(idThree));
+            assertTrue(testSubject.contains(idOne, null));
+            assertTrue(testSubject.contains(idTwo, null));
+            assertTrue(testSubject.contains(idThree, null));
 
             // when
-            testSubject.clear();
+            testSubject.clear(null);
 
             // then
-            assertFalse(testSubject.contains(idOne));
-            assertFalse(testSubject.contains(idTwo));
-            assertFalse(testSubject.contains(idThree));
+            assertFalse(testSubject.contains(idOne, null));
+            assertFalse(testSubject.contains(idTwo, null));
+            assertFalse(testSubject.contains(idThree, null));
         }
     }
 
