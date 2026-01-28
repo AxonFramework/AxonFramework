@@ -31,7 +31,7 @@ import org.axonframework.messaging.core.MessageDispatchInterceptor;
  *
  * @param <M> the type of {@link Message} the resulting {@link MessageDispatchInterceptor} will intercept
  * @author Steven van Beelen
- * @since 5.1.0
+ * @since 5.0.3
  */
 @FunctionalInterface
 public interface DispatchInterceptorBuilder<M extends Message> {
