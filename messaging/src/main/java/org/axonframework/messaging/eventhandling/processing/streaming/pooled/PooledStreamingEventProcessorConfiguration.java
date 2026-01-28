@@ -105,6 +105,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
     private boolean coordinatorExtendsClaims = false;
     private Function<Set<QualifiedName>, EventCriteria> eventCriteriaProvider =
             (supportedEvents) -> EventCriteria.havingAnyTag().andBeingOneOfTypes(supportedEvents);
+    private List<MessageHandlerInterceptor<? super EventMessage>> psepInterceptors;
     private Consumer<? super EventMessage> ignoredMessageHandler =
             eventMessage -> monitorBuilder.apply(PooledStreamingEventProcessor.class, processorName)
                                           .onMessageIngested(eventMessage).reportIgnored();
@@ -639,10 +640,12 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * add to the {@link PooledStreamingEventProcessor} under construction with this configuration implementation.
      */
     public List<MessageHandlerInterceptor<? super EventMessage>> interceptors() {
-        List<MessageHandlerInterceptor<? super EventMessage>> interceptors = new ArrayList<>();
-        interceptors.addAll(super.interceptorBuilder.apply(PooledStreamingEventProcessor.class, processorName));
-        interceptors.addAll(super.interceptors);
-        return interceptors;
+        if (psepInterceptors == null) {
+            psepInterceptors = new ArrayList<>();
+            psepInterceptors.addAll(super.interceptorBuilder.apply(PooledStreamingEventProcessor.class, processorName));
+            psepInterceptors.addAll(super.interceptors);
+        }
+        return new ArrayList<>(psepInterceptors);
     }
 
     /**

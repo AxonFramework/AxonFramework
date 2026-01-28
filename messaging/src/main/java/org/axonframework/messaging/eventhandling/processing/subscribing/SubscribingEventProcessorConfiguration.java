@@ -31,6 +31,7 @@ import org.axonframework.messaging.eventhandling.configuration.EventProcessorCon
 import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorHandler;
 import org.axonframework.messaging.eventhandling.processing.errorhandling.PropagatingErrorHandler;
+import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,6 +55,7 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
     private Consumer<? super EventMessage> ignoredMessageHandler =
             eventMessage -> monitorBuilder.apply(SubscribingEventProcessor.class, processorName)
                                           .onMessageIngested(eventMessage).reportIgnored();
+    private List<MessageHandlerInterceptor<? super EventMessage>> sepInterceptors;
 
     /**
      * Constructs a new {@code SubscribingEventProcessorConfiguration}.
@@ -180,10 +182,12 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      * add to the {@link SubscribingEventProcessor} under construction with this configuration implementation.
      */
     public List<MessageHandlerInterceptor<? super EventMessage>> interceptors() {
-        List<MessageHandlerInterceptor<? super EventMessage>> interceptors = new ArrayList<>();
-        interceptors.addAll(super.interceptorBuilder.apply(SubscribingEventProcessor.class, processorName));
-        interceptors.addAll(super.interceptors);
-        return interceptors;
+        if (sepInterceptors == null) {
+            sepInterceptors = new ArrayList<>();
+            sepInterceptors.addAll(super.interceptorBuilder.apply(PooledStreamingEventProcessor.class, processorName));
+            sepInterceptors.addAll(super.interceptors);
+        }
+        return new ArrayList<>(sepInterceptors);
     }
 
     /**
