@@ -50,10 +50,10 @@ import java.util.Set;
  * @author Gerard Klijs
  * @author Mateusz Nowak
  * @see CachingSequencedDeadLetterQueue
- * @since 5.0.0
+ * @since 4.9.0
  */
 @Internal
-public class SequenceIdentifierCache {
+class SequenceIdentifierCache {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
     private static final Boolean PRESENT = Boolean.TRUE;

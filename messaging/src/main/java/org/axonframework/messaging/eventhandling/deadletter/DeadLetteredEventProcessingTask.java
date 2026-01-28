@@ -42,7 +42,7 @@ import java.util.concurrent.CompletableFuture;
  * @author Steven van Beelen
  * @author Mitchell Herrijgers
  * @author Mateusz Nowak
- * @since 5.0.0
+ * @since 4.6.0
  */
 @Internal
 class DeadLetteredEventProcessingTask {

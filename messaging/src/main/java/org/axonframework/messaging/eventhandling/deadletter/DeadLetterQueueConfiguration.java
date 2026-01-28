@@ -59,7 +59,7 @@ import static org.axonframework.messaging.deadletter.ThrowableCause.truncated;
  * @author Mateusz Nowak
  * @see EnqueuePolicy
  * @see CachingSequencedDeadLetterQueue
- * @since 5.0.0
+ * @since 5.1.0
  */
 public class DeadLetterQueueConfiguration implements DescribableComponent {
 
