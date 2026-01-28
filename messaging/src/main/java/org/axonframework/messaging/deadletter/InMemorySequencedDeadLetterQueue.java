@@ -114,68 +114,65 @@ public class InMemorySequencedDeadLetterQueue<M extends Message> implements Sequ
     @Override
     public CompletableFuture<Void> enqueue(@Nonnull Object sequenceIdentifier,
                                            @Nonnull DeadLetter<? extends M> letter) {
-        try {
-            if (isFullSync(sequenceIdentifier)) {
-                return CompletableFuture.failedFuture(new DeadLetterQueueOverflowException(sequenceIdentifier));
-            }
+        return isFull(sequenceIdentifier)
+                .thenCompose(full -> {
+                    if (full) {
+                        return CompletableFuture.failedFuture(
+                                new DeadLetterQueueOverflowException(sequenceIdentifier));
+                    }
 
-            if (logger.isDebugEnabled()) {
-                Optional<Cause> optionalCause = letter.cause();
-                if (optionalCause.isPresent()) {
-                    logger.debug("Adding dead letter with message id [{}] because [{}].",
-                                 letter.message().identifier(),
-                                 optionalCause.get().type());
-                } else {
-                    logger.debug(
-                            "Adding dead letter with message id [{}] because the sequence identifier [{}] is already present.",
-                            letter.message().identifier(),
-                            sequenceIdentifier);
-                }
-            }
+                    if (logger.isDebugEnabled()) {
+                        Optional<Cause> optionalCause = letter.cause();
+                        if (optionalCause.isPresent()) {
+                            logger.debug("Adding dead letter with message id [{}] because [{}].",
+                                         letter.message().identifier(),
+                                         optionalCause.get().type());
+                        } else {
+                            logger.debug(
+                                    "Adding dead letter with message id [{}] because the sequence identifier [{}] is already present.",
+                                    letter.message().identifier(),
+                                    sequenceIdentifier);
+                        }
+                    }
 
-            synchronized (deadLetters) {
-                deadLetters.computeIfAbsent(toIdentifier(sequenceIdentifier), id -> new ConcurrentLinkedDeque<>())
-                           .addLast(letter);
-            }
-            return FutureUtils.emptyCompletedFuture();
-        } catch (Exception e) {
-            return CompletableFuture.failedFuture(e);
-        }
+                    synchronized (deadLetters) {
+                        deadLetters.computeIfAbsent(toIdentifier(sequenceIdentifier),
+                                                    id -> new ConcurrentLinkedDeque<>())
+                                   .addLast(letter);
+                    }
+                    return FutureUtils.emptyCompletedFuture();
+                });
     }
 
     @Nonnull
     @Override
     public CompletableFuture<Void> evict(@Nonnull DeadLetter<? extends M> letter) {
         try {
-            evictSync(letter);
+            Optional<Map.Entry<String, Deque<DeadLetter<? extends M>>>> optionalSequence =
+                    deadLetters.entrySet()
+                               .stream()
+                               .filter(sequence -> sequence.getValue().remove(letter))
+                               .findFirst();
+
+            if (optionalSequence.isPresent()) {
+                synchronized (deadLetters) {
+                    String sequenceId = optionalSequence.get().getKey();
+                    if (deadLetters.get(sequenceId).isEmpty()) {
+                        logger.trace("Sequence with id [{}] is empty and will be removed.", sequenceId);
+                        deadLetters.remove(sequenceId);
+                    }
+                    if (logger.isTraceEnabled()) {
+                        logger.trace("Evicted letter with message id [{}] for sequence id [{}].",
+                                     letter.message().identifier(), sequenceId);
+                    }
+                }
+            } else if (logger.isDebugEnabled()) {
+                logger.debug("Cannot evict letter with message id [{}] as it could not be found in this queue.",
+                             letter.message().identifier());
+            }
             return FutureUtils.emptyCompletedFuture();
         } catch (Exception e) {
             return CompletableFuture.failedFuture(e);
-        }
-    }
-
-    private void evictSync(DeadLetter<? extends M> letter) {
-        Optional<Map.Entry<String, Deque<DeadLetter<? extends M>>>> optionalSequence =
-                deadLetters.entrySet()
-                           .stream()
-                           .filter(sequence -> sequence.getValue().remove(letter))
-                           .findFirst();
-
-        if (optionalSequence.isPresent()) {
-            synchronized (deadLetters) {
-                String sequenceId = optionalSequence.get().getKey();
-                if (deadLetters.get(sequenceId).isEmpty()) {
-                    logger.trace("Sequence with id [{}] is empty and will be removed.", sequenceId);
-                    deadLetters.remove(sequenceId);
-                }
-                if (logger.isTraceEnabled()) {
-                    logger.trace("Evicted letter with message id [{}] for sequence id [{}].",
-                                 letter.message().identifier(), sequenceId);
-                }
-            }
-        } else if (logger.isDebugEnabled()) {
-            logger.debug("Cannot evict letter with message id [{}] as it could not be found in this queue.",
-                         letter.message().identifier());
         }
     }
 
@@ -184,49 +181,46 @@ public class InMemorySequencedDeadLetterQueue<M extends Message> implements Sequ
     public CompletableFuture<Void> requeue(@Nonnull DeadLetter<? extends M> letter,
                                            @Nonnull UnaryOperator<DeadLetter<? extends M>> letterUpdater) {
         try {
-            requeueSync(letter, letterUpdater);
-            return FutureUtils.emptyCompletedFuture();
+            Optional<Map.Entry<String, Deque<DeadLetter<? extends M>>>> optionalSequence =
+                    deadLetters.entrySet()
+                               .stream()
+                               .filter(sequence -> sequence.getValue().remove(letter))
+                               .findFirst();
+
+            if (optionalSequence.isPresent()) {
+                synchronized (deadLetters) {
+                    String sequenceId = optionalSequence.get().getKey();
+                    deadLetters.get(sequenceId)
+                               .addFirst(letterUpdater.apply(letter.markTouched()));
+                    if (logger.isTraceEnabled()) {
+                        logger.trace("Requeued letter [{}] for sequence [{}].",
+                                     letter.message().identifier(), sequenceId);
+                    }
+                }
+                return FutureUtils.emptyCompletedFuture();
+            } else {
+                return CompletableFuture.failedFuture(new NoSuchDeadLetterException(
+                        "Cannot requeue [" + letter.message().identifier()
+                                + "] since there is not matching entry in this queue."
+                ));
+            }
         } catch (Exception e) {
             return CompletableFuture.failedFuture(e);
-        }
-    }
-
-    private void requeueSync(DeadLetter<? extends M> letter,
-                             UnaryOperator<DeadLetter<? extends M>> letterUpdater) {
-        Optional<Map.Entry<String, Deque<DeadLetter<? extends M>>>> optionalSequence =
-                deadLetters.entrySet()
-                           .stream()
-                           .filter(sequence -> sequence.getValue().remove(letter))
-                           .findFirst();
-
-        if (optionalSequence.isPresent()) {
-            synchronized (deadLetters) {
-                String sequenceId = optionalSequence.get().getKey();
-                deadLetters.get(sequenceId)
-                           .addFirst(letterUpdater.apply(letter.markTouched()));
-                if (logger.isTraceEnabled()) {
-                    logger.trace("Requeued letter [{}] for sequence [{}].",
-                                 letter.message().identifier(), sequenceId);
-                }
-            }
-        } else {
-            throw new NoSuchDeadLetterException(
-                    "Cannot requeue [" + letter.message().identifier()
-                            + "] since there is not matching entry in this queue."
-            );
         }
     }
 
     @Nonnull
     @Override
     public CompletableFuture<Boolean> contains(@Nonnull Object sequenceIdentifier) {
-        try {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Validating existence of sequence identifier [{}].", sequenceIdentifier);
-            }
-            return CompletableFuture.completedFuture(containsSync(toIdentifier(sequenceIdentifier)));
-        } catch (Exception e) {
-            return CompletableFuture.failedFuture(e);
+        return CompletableFuture.completedFuture(containsSync(sequenceIdentifier));
+    }
+
+    private boolean containsSync(@Nonnull Object sequenceIdentifier) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Validating existence of sequence identifier [{}].", sequenceIdentifier);
+        }
+        synchronized (deadLetters) {
+            return deadLetters.containsKey(toIdentifier(sequenceIdentifier));
         }
     }
 
@@ -234,46 +228,27 @@ public class InMemorySequencedDeadLetterQueue<M extends Message> implements Sequ
     @Override
     public CompletableFuture<Iterable<DeadLetter<? extends M>>> deadLetterSequence(
             @Nonnull Object sequenceIdentifier) {
-        try {
-            String identifier = toIdentifier(sequenceIdentifier);
-            Iterable<DeadLetter<? extends M>> result = containsSync(identifier)
+        String identifier = toIdentifier(sequenceIdentifier);
+        synchronized (deadLetters) {
+            Iterable<DeadLetter<? extends M>> result = deadLetters.containsKey(identifier)
                     ? new ArrayList<>(deadLetters.get(identifier))
                     : Collections.emptyList();
             return CompletableFuture.completedFuture(result);
-        } catch (Exception e) {
-            return CompletableFuture.failedFuture(e);
-        }
-    }
-
-    private boolean containsSync(String identifier) {
-        synchronized (deadLetters) {
-            return deadLetters.containsKey(identifier);
         }
     }
 
     @Nonnull
     @Override
     public CompletableFuture<Iterable<Iterable<DeadLetter<? extends M>>>> deadLetters() {
-        try {
-            return CompletableFuture.completedFuture(new ArrayList<>(deadLetters.values()));
-        } catch (Exception e) {
-            return CompletableFuture.failedFuture(e);
-        }
+        return CompletableFuture.completedFuture(new ArrayList<>(deadLetters.values()));
     }
 
     @Nonnull
     @Override
     public CompletableFuture<Boolean> isFull(@Nonnull Object sequenceIdentifier) {
-        try {
-            return CompletableFuture.completedFuture(isFullSync(sequenceIdentifier));
-        } catch (Exception e) {
-            return CompletableFuture.failedFuture(e);
-        }
-    }
-
-    private boolean isFullSync(Object sequenceIdentifier) {
         String identifier = toIdentifier(sequenceIdentifier);
-        return maximumNumberOfSequencesReached(identifier) || maximumSequenceSizeReached(identifier);
+        boolean full = maximumNumberOfSequencesReached(identifier) || maximumSequenceSizeReached(identifier);
+        return CompletableFuture.completedFuture(full);
     }
 
     private boolean maximumNumberOfSequencesReached(String identifier) {
@@ -287,26 +262,20 @@ public class InMemorySequencedDeadLetterQueue<M extends Message> implements Sequ
     @Nonnull
     @Override
     public CompletableFuture<Long> size() {
-        try {
-            long result = deadLetters.values()
-                                     .stream()
-                                     .mapToLong(Deque::size)
-                                     .sum();
-            return CompletableFuture.completedFuture(result);
-        } catch (Exception e) {
-            return CompletableFuture.failedFuture(e);
-        }
+        long result = deadLetters.values()
+                                 .stream()
+                                 .mapToLong(Deque::size)
+                                 .sum();
+        return CompletableFuture.completedFuture(result);
     }
 
     @Nonnull
     @Override
     public CompletableFuture<Long> sequenceSize(@Nonnull Object sequenceIdentifier) {
-        try {
-            String identifier = toIdentifier(sequenceIdentifier);
-            long result = containsSync(identifier) ? deadLetters.get(identifier).size() : 0L;
+        String identifier = toIdentifier(sequenceIdentifier);
+        synchronized (deadLetters) {
+            long result = deadLetters.containsKey(identifier) ? deadLetters.get(identifier).size() : 0L;
             return CompletableFuture.completedFuture(result);
-        } catch (Exception e) {
-            return CompletableFuture.failedFuture(e);
         }
     }
 
@@ -319,11 +288,7 @@ public class InMemorySequencedDeadLetterQueue<M extends Message> implements Sequ
     @Nonnull
     @Override
     public CompletableFuture<Long> amountOfSequences() {
-        try {
-            return CompletableFuture.completedFuture((long) deadLetters.size());
-        } catch (Exception e) {
-            return CompletableFuture.failedFuture(e);
-        }
+        return CompletableFuture.completedFuture((long) deadLetters.size());
     }
 
     @Nonnull
@@ -331,57 +296,63 @@ public class InMemorySequencedDeadLetterQueue<M extends Message> implements Sequ
     public CompletableFuture<Boolean> process(
             @Nonnull Predicate<DeadLetter<? extends M>> sequenceFilter,
             @Nonnull Function<DeadLetter<? extends M>, CompletableFuture<EnqueueDecision<M>>> processingTask) {
-        try {
-            if (deadLetters.isEmpty()) {
-                logger.debug("Received a request to process dead letters but there are none.");
-                return CompletableFuture.completedFuture(false);
-            }
-            logger.debug("Received a request to process matching dead letters.");
-
-            Map<String, DeadLetter<? extends M>> sequenceIdsToLetter =
-                    deadLetters.entrySet()
-                               .stream()
-                               .filter(entry -> !takenSequences.contains(entry.getKey()))
-                               .filter(sequence -> sequenceFilter.test(sequence.getValue().getFirst()))
-                               .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getFirst()));
-
-            if (sequenceIdsToLetter.isEmpty()) {
-                logger.debug("Received a request to process dead letters but there are no sequences matching the filter.");
-                return CompletableFuture.completedFuture(false);
-            }
-
-            String sequenceId = getLastTouchedSequence(sequenceIdsToLetter);
-            boolean freshlyTaken = takenSequences.add(sequenceId);
-            while (sequenceId != null && !freshlyTaken) {
-                sequenceIdsToLetter.remove(sequenceId);
-                sequenceId = getLastTouchedSequence(sequenceIdsToLetter);
-                freshlyTaken = takenSequences.add(sequenceId);
-            }
-
-            if (StringUtils.emptyOrNull(sequenceId)) {
-                logger.debug("Received a request to process dead letters but there are none left to process.");
-                return CompletableFuture.completedFuture(false);
-            }
-
-            try {
-                while (deadLetters.get(sequenceId) != null && !deadLetters.get(sequenceId).isEmpty()) {
-                    DeadLetter<? extends M> letter = deadLetters.get(sequenceId).getFirst();
-                    EnqueueDecision<M> decision = processingTask.apply(letter).join();
-
-                    if (decision.shouldEnqueue()) {
-                        requeueSync(letter, l -> decision.withDiagnostics(l).withCause(decision.enqueueCause().orElse(null)));
-                        return CompletableFuture.completedFuture(false);
-                    } else {
-                        evictSync(letter);
-                    }
-                }
-                return CompletableFuture.completedFuture(true);
-            } finally {
-                takenSequences.remove(sequenceId);
-            }
-        } catch (Exception e) {
-            return CompletableFuture.failedFuture(e);
+        if (deadLetters.isEmpty()) {
+            logger.debug("Received a request to process dead letters but there are none.");
+            return CompletableFuture.completedFuture(false);
         }
+        logger.debug("Received a request to process matching dead letters.");
+
+        Map<String, DeadLetter<? extends M>> sequenceIdsToLetter =
+                deadLetters.entrySet()
+                           .stream()
+                           .filter(entry -> !takenSequences.contains(entry.getKey()))
+                           .filter(sequence -> sequenceFilter.test(sequence.getValue().getFirst()))
+                           .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getFirst()));
+
+        if (sequenceIdsToLetter.isEmpty()) {
+            logger.debug("Received a request to process dead letters but there are no sequences matching the filter.");
+            return CompletableFuture.completedFuture(false);
+        }
+
+        String sequenceId = getLastTouchedSequence(sequenceIdsToLetter);
+        boolean freshlyTaken = takenSequences.add(sequenceId);
+        while (sequenceId != null && !freshlyTaken) {
+            sequenceIdsToLetter.remove(sequenceId);
+            sequenceId = getLastTouchedSequence(sequenceIdsToLetter);
+            freshlyTaken = takenSequences.add(sequenceId);
+        }
+
+        if (StringUtils.emptyOrNull(sequenceId)) {
+            logger.debug("Received a request to process dead letters but there are none left to process.");
+            return CompletableFuture.completedFuture(false);
+        }
+
+        String claimedSequenceId = sequenceId;
+        return processSequence(claimedSequenceId, processingTask)
+                .whenComplete((result, error) -> takenSequences.remove(claimedSequenceId));
+    }
+
+    private CompletableFuture<Boolean> processSequence(
+            String sequenceId,
+            Function<DeadLetter<? extends M>, CompletableFuture<EnqueueDecision<M>>> processingTask) {
+        Deque<DeadLetter<? extends M>> sequence = deadLetters.get(sequenceId);
+        if (sequence == null || sequence.isEmpty()) {
+            return CompletableFuture.completedFuture(true);
+        }
+
+        DeadLetter<? extends M> letter = sequence.getFirst();
+        return processingTask.apply(letter)
+                             .thenCompose(decision -> {
+                                 if (decision.shouldEnqueue()) {
+                                     return requeue(letter,
+                                                    l -> decision.withDiagnostics(l)
+                                                                 .withCause(decision.enqueueCause().orElse(null)))
+                                             .thenApply(v -> false);
+                                 } else {
+                                     return evict(letter)
+                                             .thenCompose(v -> processSequence(sequenceId, processingTask));
+                                 }
+                             });
     }
 
     private String getLastTouchedSequence(Map<String, DeadLetter<? extends M>> sequenceIdsToLetter) {
@@ -404,18 +375,14 @@ public class InMemorySequencedDeadLetterQueue<M extends Message> implements Sequ
     @Nonnull
     @Override
     public CompletableFuture<Void> clear() {
-        try {
-            List<String> sequencesToClear = new ArrayList<>(deadLetters.keySet());
+        List<String> sequencesToClear = new ArrayList<>(deadLetters.keySet());
 
-            sequencesToClear.forEach(sequenceId -> {
-                deadLetters.get(sequenceId).clear();
-                deadLetters.remove(sequenceId);
-                logger.info("Cleared out all dead letters for sequence [{}].", sequenceId);
-            });
-            return FutureUtils.emptyCompletedFuture();
-        } catch (Exception e) {
-            return CompletableFuture.failedFuture(e);
-        }
+        sequencesToClear.forEach(sequenceId -> {
+            deadLetters.get(sequenceId).clear();
+            deadLetters.remove(sequenceId);
+            logger.info("Cleared out all dead letters for sequence [{}].", sequenceId);
+        });
+        return FutureUtils.emptyCompletedFuture();
     }
 
     /**
