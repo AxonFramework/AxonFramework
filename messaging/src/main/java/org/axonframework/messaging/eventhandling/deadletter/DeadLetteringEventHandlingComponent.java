@@ -125,8 +125,7 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
                                                                       .thenApply(isDeadLettered -> {
                                                                           if (isDeadLettered) {
                                                                               return handleAlreadyDeadLettered(event,
-                                                                                                               sequenceIdentifier,
-                                                                                                               context);
+                                                                                                               sequenceIdentifier);
                                                                           }
                                                                           return handle(event,
                                                                                         context,
@@ -138,40 +137,22 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
 
     /**
      * Handles an event whose sequence is already dead-lettered by enqueueing it as a follow-up.
-     * <p>
-     * If the sequence is no longer present (e.g., was evicted between the initial {@code contains()} check
-     * and this enqueue attempt), the event will be handled normally through the delegate.
      *
      * @param event              The event to enqueue.
      * @param sequenceIdentifier The sequence identifier.
-     * @param context            The processing context.
-     * @return A stream that completes after enqueueing or handling.
+     * @return A stream that completes after enqueueing.
      */
-    private MessageStream<Message> handleAlreadyDeadLettered(EventMessage event,
-                                                              Object sequenceIdentifier,
-                                                              ProcessingContext context) {
+    private MessageStream<Message> handleAlreadyDeadLettered(EventMessage event, Object sequenceIdentifier) {
+        if (logger.isInfoEnabled()) {
+            logger.info("Event with id [{}] is added to the dead-letter queue "
+                                + "since its sequence id [{}] is already present.",
+                        event.identifier(), sequenceIdentifier);
+        }
+
         CompletableFuture<MessageStream<Message>> enqueueFuture = queue.enqueueIfPresent(
                 sequenceIdentifier,
                 () -> new GenericDeadLetter<>(sequenceIdentifier, event)
-        ).thenApply(enqueued -> {
-            if (enqueued) {
-                if (logger.isInfoEnabled()) {
-                    logger.info("Event with id [{}] is added to the dead-letter queue "
-                                        + "since its sequence id [{}] is already present.",
-                                event.identifier(), sequenceIdentifier);
-                }
-                return MessageStream.<Message>empty();
-            } else {
-                // The sequence was evicted between the initial contains() check and this enqueue attempt.
-                // Handle the event normally to avoid losing it.
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Event with id [{}] could not be enqueued because sequence [{}] "
-                                         + "is no longer present. Handling normally.",
-                                 event.identifier(), sequenceIdentifier);
-                }
-                return handle(event, context, sequenceIdentifier);
-            }
-        });
+        ).thenApply(enqueued -> MessageStream.empty());
 
         return DelayedMessageStream.create(enqueueFuture);
     }
@@ -260,7 +241,6 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
     @Override
     public CompletableFuture<Boolean> process(@Nonnull Predicate<DeadLetter<? extends EventMessage>> sequenceFilter,
                                               @Nonnull ProcessingContext context) {
-        // todo: wrap delegate into
         DeadLetteredEventProcessingTask processingTask = new DeadLetteredEventProcessingTask(
                 delegate, enqueuePolicy
         );
