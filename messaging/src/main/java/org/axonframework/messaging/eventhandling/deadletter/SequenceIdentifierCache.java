@@ -21,10 +21,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A cache for sequence identifiers used to optimize {@link org.axonframework.messaging.deadletter.SequencedDeadLetterQueue}
@@ -64,8 +65,8 @@ class SequenceIdentifierCache {
     public static final int DEFAULT_MAX_SIZE = 1024;
 
     private final boolean startedEmpty;
-    private final LinkedHashMap<Object, Boolean> nonEnqueuedIdentifiers;
-    private final Set<Object> enqueuedIdentifiers = new HashSet<>();
+    private final Map<Object, Boolean> nonEnqueuedIdentifiers;
+    private final Set<Object> enqueuedIdentifiers = ConcurrentHashMap.newKeySet();
 
     /**
      * Constructs a {@link SequenceIdentifierCache} that started with an empty queue.
@@ -99,12 +100,12 @@ class SequenceIdentifierCache {
      */
     public SequenceIdentifierCache(boolean startedEmpty, int maxSize) {
         this.startedEmpty = startedEmpty;
-        this.nonEnqueuedIdentifiers = new LinkedHashMap<>(16, 0.75f, false) {
+        this.nonEnqueuedIdentifiers = Collections.synchronizedMap(new LinkedHashMap<>(16, 0.75f, false) {
             @Override
             protected boolean removeEldestEntry(Map.Entry<Object, Boolean> eldest) {
                 return size() > maxSize;
             }
-        };
+        });
     }
 
     /**
