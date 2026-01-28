@@ -31,7 +31,10 @@ import org.axonframework.messaging.eventhandling.configuration.EventProcessorCon
 import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorHandler;
 import org.axonframework.messaging.eventhandling.processing.errorhandling.PropagatingErrorHandler;
+import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessor;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -50,7 +53,9 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
 
     private SubscribableEventSource eventSource;
     private Consumer<? super EventMessage> ignoredMessageHandler =
-            eventMessage -> messageMonitor.onMessageIngested(eventMessage).reportIgnored();
+            eventMessage -> monitorBuilder.apply(SubscribingEventProcessor.class, processorName)
+                                          .onMessageIngested(eventMessage).reportIgnored();
+    private List<MessageHandlerInterceptor<? super EventMessage>> sepInterceptors;
 
     /**
      * Constructs a new {@code SubscribingEventProcessorConfiguration}.
@@ -167,6 +172,22 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      */
     public SubscribableEventSource eventSource() {
         return eventSource;
+    }
+
+    /**
+     * Returns the list of {@link EventMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors} to
+     * add to the {@link SubscribingEventProcessor} under construction with this configuration implementation.
+     *
+     * @return The list of {@link EventMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors} to
+     * add to the {@link SubscribingEventProcessor} under construction with this configuration implementation.
+     */
+    public List<MessageHandlerInterceptor<? super EventMessage>> interceptors() {
+        if (sepInterceptors == null) {
+            sepInterceptors = new ArrayList<>();
+            sepInterceptors.addAll(super.interceptorBuilder.apply(PooledStreamingEventProcessor.class, processorName));
+            sepInterceptors.addAll(super.interceptors);
+        }
+        return new ArrayList<>(sepInterceptors);
     }
 
     /**

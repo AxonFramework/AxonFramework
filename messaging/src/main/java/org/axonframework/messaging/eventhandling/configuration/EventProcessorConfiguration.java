@@ -17,6 +17,7 @@
 package org.axonframework.messaging.eventhandling.configuration;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.Configuration;
@@ -39,6 +40,7 @@ import org.axonframework.messaging.monitoring.configuration.MessageMonitorRegist
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.BiFunction;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -53,10 +55,14 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  */
 public class EventProcessorConfiguration implements DescribableComponent {
 
+    protected String processorName;
     protected ErrorHandler errorHandler = PropagatingErrorHandler.INSTANCE;
-    protected MessageMonitor<? super EventMessage> messageMonitor = NoOpMessageMonitor.INSTANCE;
     protected UnitOfWorkFactory unitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
     protected List<MessageHandlerInterceptor<? super EventMessage>> interceptors = new ArrayList<>();
+    protected BiFunction<Class<? extends EventProcessor>, String, List<MessageHandlerInterceptor<? super EventMessage>>> interceptorBuilder =
+            (processorType, name) -> new ArrayList<>();
+    protected BiFunction<Class<? extends EventProcessor>, String, MessageMonitor<? super EventMessage>> monitorBuilder =
+            (processorType, name) -> NoOpMessageMonitor.INSTANCE;
 
     /**
      * Constructs a new {@code EventProcessorConfiguration} with just default values. Do not retrieve any global default
@@ -69,30 +75,34 @@ public class EventProcessorConfiguration implements DescribableComponent {
     /**
      * Constructs a new {@code EventProcessorConfiguration} with default values and retrieve global default values.
      *
-     * @param configuration The configuration, used to retrieve global default values, like
-     *                      {@link MessageHandlerInterceptor MessageHandlerInterceptors}, from.
+     * @param processorName the name of the processor this configuration is for
+     * @param config        the config, used to retrieve global default values, like
+     *                      {@link MessageHandlerInterceptor MessageHandlerInterceptors}, from
      */
     @Internal
-    public EventProcessorConfiguration(@Nonnull Configuration configuration) {
-        this.interceptors = configuration.getComponent(HandlerInterceptorRegistry.class)
-                                         .eventInterceptors(configuration);
-        this.messageMonitor = configuration.getComponent(MessageMonitorRegistry.class)
-                                           .eventMonitor(configuration);
+    public EventProcessorConfiguration(@Nonnull String processorName,
+                                       @Nonnull Configuration config) {
+        this.processorName = Assert.nonEmpty(processorName, "The processor name cannot be null or empty.");
+        this.interceptorBuilder = (procType, procName) -> config.getComponent(HandlerInterceptorRegistry.class)
+                                                                .eventInterceptors(config, procType, procName);
+        this.monitorBuilder = (procType, procName) -> config.getComponent(MessageMonitorRegistry.class)
+                                                            .eventMonitor(config, procType, procName);
     }
 
     /**
      * Constructs a new {@code EventProcessorConfiguration} copying properties from the given configuration.
      *
-     * @param base The {@code EventProcessorConfiguration} to copy properties from.
+     * @param base the {@code EventProcessorConfiguration} to copy properties from
      */
     @Internal
     public EventProcessorConfiguration(@Nonnull EventProcessorConfiguration base) {
         Objects.requireNonNull(base, "Base configuration may not be null");
-        assertNonNull(base, "Base configuration may not be null");
+        this.processorName = base.processorName;
         this.errorHandler = base.errorHandler();
         this.unitOfWorkFactory = base.unitOfWorkFactory();
-        this.interceptors = base.interceptors();
-        this.messageMonitor = base.messageMonitor;
+        this.interceptors = new ArrayList<>(base.interceptors);
+        this.interceptorBuilder = base.interceptorBuilder;
+        this.monitorBuilder = base.monitorBuilder;
     }
 
     /**
@@ -147,17 +157,6 @@ public class EventProcessorConfiguration implements DescribableComponent {
      */
     public UnitOfWorkFactory unitOfWorkFactory() {
         return unitOfWorkFactory;
-    }
-
-    /**
-     * Returns the list of {@link EventMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors} to
-     * add to the {@link EventProcessor} under construction with this configuration implementation.
-     *
-     * @return The list of {@link EventMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors} to
-     * add to the {@link EventProcessor} under construction with this configuration implementation.
-     */
-    public List<MessageHandlerInterceptor<? super EventMessage>> interceptors() {
-        return new ArrayList<>(interceptors);
     }
 
     /**
