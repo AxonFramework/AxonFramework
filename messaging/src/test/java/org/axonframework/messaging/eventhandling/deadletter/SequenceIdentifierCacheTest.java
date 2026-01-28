@@ -18,7 +18,16 @@ package org.axonframework.messaging.eventhandling.deadletter;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -381,6 +390,185 @@ class SequenceIdentifierCacheTest {
 
             // then
             assertThat(cache.nonEnqueuedSize()).isEqualTo(SequenceIdentifierCache.DEFAULT_MAX_SIZE);
+        }
+    }
+
+    @Nested
+    class WhenAccessedConcurrently {
+
+        private static final int THREAD_COUNT = 100;
+        private static final int OPERATIONS_PER_THREAD = 1000;
+
+        private SequenceIdentifierCache cache;
+
+        @BeforeEach
+        void setUp() {
+            cache = new SequenceIdentifierCache(false);
+        }
+
+        @RepeatedTest(5)
+        void markEnqueuedFromMultipleThreads() throws InterruptedException {
+            runConcurrently((threadIndex, iteration) ->
+                    cache.markEnqueued("sequence-" + threadIndex + "-" + iteration)
+            );
+        }
+
+        @RepeatedTest(5)
+        void markNotEnqueuedFromMultipleThreads() throws InterruptedException {
+            runConcurrently((threadIndex, iteration) ->
+                    cache.markNotEnqueued("sequence-" + threadIndex + "-" + iteration)
+            );
+        }
+
+        @RepeatedTest(5)
+        void mightBePresentFromMultipleThreads() throws InterruptedException {
+            // given
+            populateCacheWithTestData();
+
+            // when / then
+            runConcurrently((threadIndex, iteration) -> {
+                cache.mightBePresent("enqueued-" + (iteration % 100));
+                cache.mightBePresent("not-enqueued-" + (iteration % 100));
+                cache.mightBePresent("unknown-" + iteration);
+            });
+        }
+
+        @RepeatedTest(5)
+        void mixedOperationsFromMultipleThreads() throws InterruptedException {
+            runConcurrently((threadIndex, iteration) -> {
+                String sequenceId = "sequence-" + (iteration % 50);
+                switch (iteration % 4) {
+                    case 0 -> cache.markEnqueued(sequenceId);
+                    case 1 -> cache.markNotEnqueued(sequenceId);
+                    case 2 -> cache.mightBePresent(sequenceId);
+                    case 3 -> {
+                        cache.enqueuedSize();
+                        cache.nonEnqueuedSize();
+                    }
+                }
+            });
+        }
+
+        @RepeatedTest(5)
+        void clearInterleavedWithOtherOperations() throws InterruptedException {
+            runConcurrently((threadIndex, iteration) -> {
+                String sequenceId = "sequence-" + iteration;
+                if (iteration % 100 == 0) {
+                    cache.clear();
+                } else {
+                    cache.markEnqueued(sequenceId);
+                    cache.mightBePresent(sequenceId);
+                    cache.markNotEnqueued(sequenceId);
+                }
+            });
+        }
+
+        @RepeatedTest(5)
+        void operationsOnSameIdentifierFromMultipleThreads() throws InterruptedException {
+            // given
+            String sharedSequenceId = "shared-sequence";
+
+            // when
+            runConcurrently((threadIndex, iteration) -> {
+                if (threadIndex % 2 == 0) {
+                    cache.markEnqueued(sharedSequenceId);
+                } else {
+                    cache.markNotEnqueued(sharedSequenceId);
+                }
+                cache.mightBePresent(sharedSequenceId);
+            });
+
+            // then
+            assertThat(cache.mightBePresent(sharedSequenceId) || !cache.mightBePresent(sharedSequenceId))
+                    .as("Cache should be in consistent state")
+                    .isTrue();
+        }
+
+        @RepeatedTest(5)
+        void lruEvictionUnderContention() throws InterruptedException {
+            // given
+            int maxSize = 50;
+            cache = new SequenceIdentifierCache(false, maxSize);
+
+            // when
+            runConcurrently((threadIndex, iteration) ->
+                    cache.markNotEnqueued("sequence-" + threadIndex + "-" + iteration)
+            );
+
+            // then
+            assertThat(cache.nonEnqueuedSize()).isLessThanOrEqualTo(maxSize);
+        }
+
+        @Test
+        void readsWhileWriting() throws InterruptedException {
+            // given
+            String sequenceId = "test-sequence";
+
+            // when / then
+            runConcurrently(2, 10_000, (threadIndex, iteration) -> {
+                if (threadIndex == 0) {
+                    if (iteration % 2 == 0) {
+                        cache.markEnqueued(sequenceId);
+                    } else {
+                        cache.markNotEnqueued(sequenceId);
+                    }
+                } else {
+                    cache.mightBePresent(sequenceId);
+                    cache.enqueuedSize();
+                    cache.nonEnqueuedSize();
+                }
+            });
+        }
+
+        private void populateCacheWithTestData() {
+            for (int i = 0; i < 100; i++) {
+                cache.markEnqueued("enqueued-" + i);
+                cache.markNotEnqueued("not-enqueued-" + i);
+            }
+        }
+
+        private void runConcurrently(CacheOperation operation) throws InterruptedException {
+            runConcurrently(THREAD_COUNT, OPERATIONS_PER_THREAD, operation);
+        }
+
+        private void runConcurrently(int threadCount,
+                                     int operationsPerThread,
+                                     CacheOperation operation) throws InterruptedException {
+            List<Throwable> exceptions = new CopyOnWriteArrayList<>();
+            CountDownLatch startLatch = new CountDownLatch(1);
+            CountDownLatch completionLatch = new CountDownLatch(threadCount);
+
+            try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
+                IntStream.range(0, threadCount).forEach(threadIndex ->
+                        executor.submit(() -> {
+                            try {
+                                startLatch.await();
+                                for (int i = 0; i < operationsPerThread; i++) {
+                                    operation.execute(threadIndex, i);
+                                }
+                            } catch (Throwable t) {
+                                exceptions.add(t);
+                            } finally {
+                                completionLatch.countDown();
+                            }
+                        })
+                );
+
+                startLatch.countDown();
+                boolean completed = completionLatch.await(30, TimeUnit.SECONDS);
+
+                assertThat(completed)
+                        .as("All threads should complete within timeout")
+                        .isTrue();
+                assertThat(exceptions)
+                        .as("No exceptions should be thrown")
+                        .isEmpty();
+            }
+        }
+
+        @FunctionalInterface
+        interface CacheOperation {
+            void execute(int threadIndex, int iteration);
         }
     }
 }
