@@ -47,6 +47,7 @@ public class Transaction {
     private String transactionId; // <3>
     private int amount;
 
+    @EntityCreator // <4>
     public Transaction(String transactionId, int amount) {
         this.transactionId = transactionId;
         this.amount = amount;
@@ -56,6 +57,7 @@ public class Transaction {
 <1> `@EntityMember` replaces `@AggregateMember`.
 <2> The pattern for managing child entities in `@EventSourcingHandler` remains the same.
 <3> No specific annotation is required on the field if it's managed via the constructor or sourcing handlers.
+<4> `@EntityCreator` is also recommended for child entities to clarify how they are instantiated.
 
 Axon Framework 4::
 +
@@ -110,3 +112,10 @@ public class Transaction {
 
 The `@EntityMember` annotation in Axon Framework 5 supports `List<Value>` only. If you need to model child entities identified by a key, consider using a `List<Value>` and managing the identification logic within the entity itself or through a custom resolver.
 ====
+
+== See also
+
+For more detailed information on modeling multi-entity aggregates in Axon Framework 5, refer to the xref:commands:modeling/multi-entity-aggregates.adoc[Multi-Entity Aggregates] documentation.
+
+
+

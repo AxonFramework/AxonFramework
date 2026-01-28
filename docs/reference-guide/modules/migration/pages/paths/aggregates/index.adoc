@@ -136,6 +136,7 @@ Before diving into the specific changes, it is helpful to understand the primary
 * **`@EntityCreator`**: A mandatory annotation that tells Axon how to instantiate your entity. In Axon Framework 4, the framework often relied on a `@CommandHandler` constructor; in Axon Framework 5, the instantiation is decoupled from the command handling logic.
 * **`EventAppender`**: The interface that replaces `AggregateLifecycle.apply()`. It is passed as an argument to command handlers, making the side-effect of publishing events explicit and easier to test.
 * **`@EntityMember`**: The replacement for `@AggregateMember`. It is used to mark fields or collections that contain child entities within a larger entity (aggregate) structure.
+* **`ProcessingContext`**: The underlying context for any message processing. While often used implicitly via `EventAppender`, it provides access to the unit of work and metadata during command execution.
 
 
 [#import-and-package-changes]
@@ -165,6 +166,9 @@ to
 
 [#static-factory-methods-for-creation]
 == `@EntityCreator` and static factory methods
+
+In Axon Framework 4, the `@AggregateIdentifier` annotation was used on a field to mark it as the aggregate's identifier.
+Creation was typically handled by constructors annotated with `@CommandHandler`.
 
 Axon Framework 5 removes `@AggregateIdentifier` and favors **static factory methods** for command handling of creation commands.
 These methods are combined with the [anchor=entitycreator-annotation]#@EntityCreator# annotation, which is a **hard requirement** for instance instantiation. It tells Axon how to create an initial instance of the entity before applying events to it.
