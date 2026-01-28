@@ -335,24 +335,26 @@ public class InMemorySequencedDeadLetterQueue<M extends Message> implements Sequ
     private CompletableFuture<Boolean> processSequence(
             String sequenceId,
             Function<DeadLetter<? extends M>, CompletableFuture<EnqueueDecision<M>>> processingTask) {
-        Deque<DeadLetter<? extends M>> sequence = deadLetters.get(sequenceId);
-        if (sequence == null || sequence.isEmpty()) {
+        try {
+            Deque<DeadLetter<? extends M>> sequence = deadLetters.get(sequenceId);
+            while (sequence != null && !sequence.isEmpty()) {
+                DeadLetter<? extends M> letter = sequence.getFirst();
+                EnqueueDecision<M> decision = processingTask.apply(letter).join();
+                if (decision.shouldEnqueue()) {
+                    FutureUtils.joinAndUnwrap(
+                            requeue(letter,
+                                    l -> decision.withDiagnostics(l)
+                                                 .withCause(decision.enqueueCause().orElse(null)))
+                    );
+                    return CompletableFuture.completedFuture(false);
+                } else {
+                    FutureUtils.joinAndUnwrap(evict(letter));
+                }
+            }
             return CompletableFuture.completedFuture(true);
+        } catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
         }
-
-        DeadLetter<? extends M> letter = sequence.getFirst();
-        return processingTask.apply(letter)
-                             .thenCompose(decision -> {
-                                 if (decision.shouldEnqueue()) {
-                                     return requeue(letter,
-                                                    l -> decision.withDiagnostics(l)
-                                                                 .withCause(decision.enqueueCause().orElse(null)))
-                                             .thenApply(v -> false);
-                                 } else {
-                                     return evict(letter)
-                                             .thenCompose(v -> processSequence(sequenceId, processingTask));
-                                 }
-                             });
     }
 
     private String getLastTouchedSequence(Map<String, DeadLetter<? extends M>> sequenceIdsToLetter) {
