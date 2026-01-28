@@ -746,5 +746,8 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
         descriptor.describeProperty("coordinatorExtendsClaims", coordinatorExtendsClaims);
         descriptor.describeProperty("eventCriteriaProvider", eventCriteriaProvider);
         descriptor.describeProperty("deadLetterQueue", deadLetterQueue());
+        descriptor.describeProperty("segmentReleasedAction", segmentReleasedAction);
+        descriptor.describeProperty("schedulingProcessingContextProvider", schedulingProcessingContextProvider);
+        descriptor.describeProperty("ignoredMessageHandler", ignoredMessageHandler);
     }
 }

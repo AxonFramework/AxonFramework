@@ -42,25 +42,11 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * retrieving configuration-dependent factories like those from {@link DeadLetterQueueConfiguration}.
  *
  * @author Mateusz Nowak
- * @since 5.0.0
+ * @since 5.1.0
  */
 public class SequencedDeadLetterQueueFactory implements ComponentFactory<SequencedDeadLetterQueue<EventMessage>> {
 
     private final BiFunction<String, Configuration, SequencedDeadLetterQueue<EventMessage>> factoryFn;
-
-    /**
-     * Constructs a factory with a custom factory function.
-     *
-     * @param factoryFn The function that creates a {@link SequencedDeadLetterQueue} for a given name.
-     * @deprecated Use {@link #SequencedDeadLetterQueueFactory(BiFunction)} instead to access the configuration.
-     */
-    @Deprecated(forRemoval = true, since = "5.0.0")
-    public SequencedDeadLetterQueueFactory(
-            @Nonnull Function<String, SequencedDeadLetterQueue<EventMessage>> factoryFn
-    ) {
-        assertNonNull(factoryFn, "Factory function may not be null");
-        this.factoryFn = (name, config) -> factoryFn.apply(name);
-    }
 
     /**
      * Constructs a factory with a custom factory function that has access to the configuration.

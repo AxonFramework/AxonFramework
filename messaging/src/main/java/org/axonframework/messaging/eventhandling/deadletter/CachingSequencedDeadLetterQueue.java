@@ -50,7 +50,7 @@ import jakarta.annotation.Nonnull;
  * @author Mateusz Nowak
  * @see SequenceIdentifierCache
  * @see SequencedDeadLetterQueue
- * @since 5.0.0
+ * @since 5.1.0
  */
 @Internal
 public class CachingSequencedDeadLetterQueue<M extends Message> implements SequencedDeadLetterQueue<M> {
