@@ -280,7 +280,7 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
             if (logger.isDebugEnabled()) {
                 logger.debug("Segment released. Clearing sequence identifier cache.");
             }
-            cache.clear(); // fixme: the invalidation should be just for certain sequence / segment!!!!?
+            cache.clear();
         }
     }
 
