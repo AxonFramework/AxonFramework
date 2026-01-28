@@ -1,0 +1,62 @@
+= Polymorphic Aggregate Migration
+:navtitle: Polymorphic Migration
+
+Polymorphic aggregates allow you to define a hierarchy where subtypes inherit command and event sourcing handlers from their superclasses.
+For a detailed guide on how to model these, please refer to the xref:commands:modeling/aggregate-polymorphism.adoc[modeling section].
+
+Let's take a look at the following example:
+
+[source,java]
+----
+public abstract class Card {}
+
+public class GiftCard extends Card {}
+
+public class OpenLoopGiftCard extends GiftCard {}
+public class RechargeableGiftCard extends GiftCard {}
+----
+
+In Axon Framework 4, polymorphic aggregates were often configured using Spring's `@Aggregate` annotation on both the base and subclasses.
+When using the manual configuration API, you would use `AggregateConfigurer`.
+
+In Axon Framework 5, you register the hierarchy through the `EventSourcingConfigurer`.
+
+[tabs]
+====
+Axon Framework 4::
++
+[source,java]
+----
+public class AxonConfig {
+    // ...
+    public void configure(Configurer configurer) {
+        Set<Class<? extends GiftCard>> subtypes = Set.of(
+            OpenLoopGiftCard.class,
+            RechargeableGiftCard.class
+        );
+
+        configurer.configureAggregate(
+            AggregateConfigurer.defaultConfiguration(GiftCard.class)
+                               .withSubtypes(subtypes)
+        );
+    }
+}
+----
+
+Axon Framework 5::
++
+[source,java]
+----
+public class AxonConfig {
+    // ...
+    public void configure(EventSourcingConfigurer configurer) {
+        configurer.registerEntity(
+            EventSourcedEntityModule.declarative(String.class, GiftCard.class)
+                                    .messagingModel(PolymorphicEntityMetamodel.forSuperType(GiftCard.class)
+                                                                              .addConcreteType(AnnotatedEntityMetamodel.forType(OpenLoopGiftCard.class))
+                                                                              .addConcreteType(AnnotatedEntityMetamodel.forType(RechargeableGiftCard.class))
+                                                                              .build())
+                                    // other phases (factory, etc.) omitted for brevity
+        );
+====
+
