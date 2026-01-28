@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,21 @@
 package org.axonframework.messaging.core.configuration;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.common.configuration.AxonConfiguration;
+import org.axonframework.common.configuration.Component;
+import org.axonframework.common.configuration.ComponentBuilder;
+import org.axonframework.common.configuration.ComponentDecorator;
+import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.configuration.ConfigurationEnhancer;
+import org.axonframework.common.configuration.DefaultAxonApplication;
+import org.axonframework.common.configuration.LifecycleRegistry;
+import org.axonframework.common.configuration.Module;
+import org.axonframework.common.configuration.ModuleBuilder;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
-import org.axonframework.common.configuration.*;
-import org.axonframework.common.configuration.Module;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.EventSink;
-import org.axonframework.messaging.eventhandling.configuration.EventProcessingConfigurer;
-import org.axonframework.messaging.eventhandling.configuration.EventBusConfigurationDefaults;
-import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageDispatchInterceptor;
 import org.axonframework.messaging.core.MessageHandlerInterceptor;
@@ -37,7 +42,13 @@ import org.axonframework.messaging.core.correlation.CorrelationDataProviderRegis
 import org.axonframework.messaging.core.interception.DispatchInterceptorRegistry;
 import org.axonframework.messaging.core.interception.HandlerInterceptorRegistry;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.EventSink;
+import org.axonframework.messaging.eventhandling.configuration.EventBusConfigurationDefaults;
+import org.axonframework.messaging.eventhandling.configuration.EventProcessingConfigurer;
+import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.monitoring.MessageMonitor;
+import org.axonframework.messaging.monitoring.configuration.MessageMonitorBuilder;
 import org.axonframework.messaging.monitoring.configuration.MessageMonitorRegistry;
 import org.axonframework.messaging.queryhandling.QueryBus;
 import org.axonframework.messaging.queryhandling.QueryMessage;
@@ -46,6 +57,7 @@ import org.axonframework.messaging.queryhandling.configuration.QueryHandlingModu
 
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 
 import static java.util.Objects.requireNonNull;
 import static org.axonframework.messaging.core.configuration.reflection.ParameterResolverFactoryUtils.registerToComponentRegistry;
@@ -478,92 +490,176 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     }
 
     /**
-     * Registers a message monitor for the messaging components in the configuration. Multiple {@link MessageMonitor}s
-     * are possible via {@link MessageMonitorRegistry}.
+     * Registers a {@link MessageMonitor} builder for any type of messaging component in this configuration.
+     * <p>
+     * If more fine-grained control is needed how and when a monitor should be created, use the
+     * {@link #registerMessageMonitor(MessageMonitorBuilder)} operation instead.
      *
-     * @param messageMonitorBuilder A builder for creating a {@link MessageMonitor} instance to monitor messages.
-     * @return The current instance of the {@code Configurer} for a fluent API
+     * @param monitorBuilder a builder for creating a {@link MessageMonitor} instance to monitor messages.
+     * @return the current instance of the {@code Configurer} for a fluent API
      */
     public MessagingConfigurer registerMessageMonitor(
-            @Nonnull ComponentBuilder<MessageMonitor<Message>> messageMonitorBuilder) {
-        delegate.componentRegistry(cr -> cr.registerDecorator(
-                MessageMonitorRegistry.class,
-                0,
-                (config, name, delegate) -> delegate.registerMonitor(messageMonitorBuilder)
-        ));
-        return this;
+            @Nonnull ComponentBuilder<MessageMonitor<Message>> monitorBuilder
+    ) {
+        return registerWithRegistry(registry -> registry.registerMonitor(monitorBuilder));
     }
 
     /**
-     * Registers a command monitor using the given message monitor builder.
-     * This method allows customization of the monitoring logic for command messages
-     * by providing a component builder that creates a message monitor for commands.
+     * Registers a {@link MessageMonitorBuilder message monitor builder} for any type of messaging component in this
+     * configuration.
+     * <p>
+     * The monitor builder provides the component's type and name for which it is invoked, ensuring unique
+     * {@link MessageMonitor MessageMonitors} can be constructed for the component at hand.
      *
-     * @param messageMonitorBuilder the builder for creating a message monitor
-     *                              to monitor command messages; it must not be null
-     * @return The current instance of the {@code Configurer} for a fluent API
+     * @param monitorBuilder a builder for creating a {@link MessageMonitor} instance to monitor messages
+     * @return the current instance of the {@code Configurer} for a fluent API
+     */
+    public MessagingConfigurer registerMessageMonitor(
+            @Nonnull MessageMonitorBuilder<Message> monitorBuilder
+    ) {
+        return registerWithRegistry(registry -> registry.registerMonitor(monitorBuilder));
+    }
+
+    /**
+     * Registers a {@link CommandMessage command} {@link MessageMonitor} builder for all command-specific infrastructure
+     * components component in this configuration.
+     * <p>
+     * If more fine-grained control is needed how and when a monitor should be created, use the
+     * {@link #registerCommandMonitor(MessageMonitorBuilder)} operation instead.
+     *
+     * @param monitorBuilder a builder for creating a {@link CommandMessage command-specific} {@link MessageMonitor}
+     *                       instance
+     * @return the current instance of the {@code Configurer} for a fluent API
      */
     public MessagingConfigurer registerCommandMonitor(
-            @Nonnull ComponentBuilder<MessageMonitor<? super CommandMessage>> messageMonitorBuilder) {
-
-        delegate.componentRegistry(cr -> cr.registerDecorator(
-                MessageMonitorRegistry.class,
-                0,
-                (config, name, delegate) -> delegate.registerCommandMonitor(messageMonitorBuilder)
-        ));
-        return this;
+            @Nonnull ComponentBuilder<MessageMonitor<? super CommandMessage>> monitorBuilder
+    ) {
+        return registerWithRegistry(registry -> registry.registerCommandMonitor(monitorBuilder));
     }
 
     /**
-     * Registers a component builder to configure the {@link MessageMonitor} used for monitoring {@link EventMessage}.
+     * Registers a {@link MessageMonitorBuilder message monitor builder} for {@link CommandMessage command-specific}
+     * infrastructure components in this configuration.
+     * <p>
+     * The monitor builder provides the component's type and name for which it is invoked, ensuring unique
+     * {@link MessageMonitor MessageMonitors} can be constructed for the component at hand.
      *
-     * @param messageMonitorBuilder the {@link ComponentBuilder} for constructing the {@link MessageMonitor}
-     *                              to be registered for monitoring EventMessages.
-     * @return The current instance of the {@code Configurer} for a fluent API
+     * @param monitorBuilder a builder for creating a {@link CommandMessage command-specific} {@link MessageMonitor}
+     *                       instance
+     * @return the current instance of the {@code Configurer} for a fluent API
+     */
+    public MessagingConfigurer registerCommandMonitor(
+            @Nonnull MessageMonitorBuilder<? super CommandMessage> monitorBuilder
+    ) {
+        return registerWithRegistry(registry -> registry.registerCommandMonitor(monitorBuilder));
+    }
+
+    /**
+     * Registers a {@link EventMessage event} {@link MessageMonitor} builder for all event-specific infrastructure
+     * components component in this configuration.
+     * <p>
+     * If more fine-grained control is needed how and when a monitor should be created, use the
+     * {@link #registerEventMonitor(MessageMonitorBuilder)} operation instead.
+     *
+     * @param monitorBuilder a builder for creating a {@link EventMessage event-specific} {@link MessageMonitor}
+     *                       instance
+     * @return the current instance of the {@code Configurer} for a fluent API
      */
     public MessagingConfigurer registerEventMonitor(
-            @Nonnull ComponentBuilder<MessageMonitor<? super EventMessage>> messageMonitorBuilder) {
-
-        delegate.componentRegistry(cr -> cr.registerDecorator(
-                MessageMonitorRegistry.class,
-                0,
-                (config, name, delegate) -> delegate.registerEventMonitor(messageMonitorBuilder)
-        ));
-        return this;
+            @Nonnull ComponentBuilder<MessageMonitor<? super EventMessage>> monitorBuilder
+    ) {
+        return registerWithRegistry(registry -> registry.registerEventMonitor(monitorBuilder));
     }
 
     /**
-     * Registers a query monitor using the specified {@code messageMonitorBuilder}.
+     * Registers a {@link MessageMonitorBuilder message monitor builder} for {@link EventMessage event-specific}
+     * infrastructure components in this configuration.
+     * <p>
+     * The monitor builder provides the component's type and name for which it is invoked, ensuring unique
+     * {@link MessageMonitor MessageMonitors} can be constructed for the component at hand.
      *
-     * @param messageMonitorBuilder The builder for a {@link MessageMonitor}
-     *                              specifically designed to monitor {@link QueryMessage} messages.
-     * @return The current instance of the {@code Configurer} for a fluent API
+     * @param monitorBuilder a builder for creating a {@link EventMessage event-specific} {@link MessageMonitor}
+     *                       instance
+     * @return the current instance of the {@code Configurer} for a fluent API
+     */
+    public MessagingConfigurer registerEventMonitor(
+            @Nonnull MessageMonitorBuilder<? super EventMessage> monitorBuilder
+    ) {
+        return registerWithRegistry(registry -> registry.registerEventMonitor(monitorBuilder));
+    }
+
+    /**
+     * Registers a query monitor using the specified {@code monitorBuilder}.
+     * <p>
+     * If more fine-grained control is needed how and when a monitor should be created, use the
+     * {@link #registerQueryMonitor(MessageMonitorBuilder)} operation instead.
+     *
+     * @param monitorBuilder a builder for creating a {@link QueryMessage query-specific} {@link MessageMonitor}
+     *                       instance
+     * @return the current instance of the {@code Configurer} for a fluent API
      */
     public MessagingConfigurer registerQueryMonitor(
-            @Nonnull ComponentBuilder<MessageMonitor<? super QueryMessage>> messageMonitorBuilder) {
-
-        delegate.componentRegistry(cr -> cr.registerDecorator(
-                MessageMonitorRegistry.class,
-                0,
-                (config, name, delegate) -> delegate.registerQueryMonitor(messageMonitorBuilder)
-        ));
-        return this;
+            @Nonnull ComponentBuilder<MessageMonitor<? super QueryMessage>> monitorBuilder
+    ) {
+        return registerWithRegistry(registry -> registry.registerQueryMonitor(monitorBuilder));
     }
 
     /**
-     * Registers a subscription query update monitor using the specified {@code messageMonitorBuilder}.
+     * Registers a {@link MessageMonitorBuilder message monitor builder} for {@link QueryMessage query-specific}
+     * infrastructure components in this configuration.
+     * <p>
+     * The monitor builder provides the component's type and name for which it is invoked, ensuring unique
+     * {@link MessageMonitor MessageMonitors} can be constructed for the component at hand.
      *
-     * @param messageMonitorBuilder The builder for a {@link MessageMonitor}
-     *                              specifically designed to monitor {@link SubscriptionQueryUpdateMessage} messages.
-     * @return The current instance of the {@code Configurer} for a fluent API
+     * @param monitorBuilder a builder for creating a {@link QueryMessage query-specific} {@link MessageMonitor}
+     *                       instance
+     * @return the current instance of the {@code Configurer} for a fluent API
+     */
+    public MessagingConfigurer registerQueryMonitor(
+            @Nonnull MessageMonitorBuilder<? super QueryMessage> monitorBuilder
+    ) {
+        return registerWithRegistry(registry -> registry.registerQueryMonitor(monitorBuilder));
+    }
+
+    /**
+     * Registers a subscription query update monitor using the specified {@code monitorBuilder}.
+     * <p>
+     * If more fine-grained control is needed how and when a monitor should be created, use the
+     * {@link #registerSubscriptionQueryUpdateMonitor(MessageMonitorBuilder)} operation instead.
+     *
+     * @param monitorBuilder a builder for creating a
+     *                       {@link SubscriptionQueryUpdateMessage subscription-update-specific} {@link MessageMonitor}
+     *                       instance
+     * @return the current instance of the {@code Configurer} for a fluent API
      */
     public MessagingConfigurer registerSubscriptionQueryUpdateMonitor(
-            @Nonnull ComponentBuilder<MessageMonitor<? super SubscriptionQueryUpdateMessage>> messageMonitorBuilder) {
+            @Nonnull ComponentBuilder<MessageMonitor<? super SubscriptionQueryUpdateMessage>> monitorBuilder
+    ) {
+        return registerWithRegistry(registry -> registry.registerSubscriptionQueryUpdateMonitor(monitorBuilder));
+    }
 
+    /**
+     * Registers a {@link MessageMonitorBuilder message monitor builder} for
+     * {@link SubscriptionQueryUpdateMessage subscription-update-specific} infrastructure components in this
+     * configuration.
+     * <p>
+     * The monitor builder provides the component's type and name for which it is invoked, ensuring unique
+     * {@link MessageMonitor MessageMonitors} can be constructed for the component at hand.
+     *
+     * @param monitorBuilder a builder for creating a
+     *                       {@link SubscriptionQueryUpdateMessage subscription-update-specific} {@link MessageMonitor}
+     *                       instance
+     * @return the current instance of the {@code Configurer} for a fluent API
+     */
+    public MessagingConfigurer registerSubscriptionQueryUpdateMonitor(
+            @Nonnull MessageMonitorBuilder<? super SubscriptionQueryUpdateMessage> monitorBuilder
+    ) {
+        return registerWithRegistry(registry -> registry.registerSubscriptionQueryUpdateMonitor(monitorBuilder));
+    }
+
+    private MessagingConfigurer registerWithRegistry(UnaryOperator<MessageMonitorRegistry> registration) {
         delegate.componentRegistry(cr -> cr.registerDecorator(
-                MessageMonitorRegistry.class,
-                0,
-                (config, name, delegate) -> delegate.registerSubscriptionQueryUpdateMonitor(messageMonitorBuilder)
+                MessageMonitorRegistry.class, 0, (config, name, delegate) -> registration.apply(delegate)
         ));
         return this;
     }
