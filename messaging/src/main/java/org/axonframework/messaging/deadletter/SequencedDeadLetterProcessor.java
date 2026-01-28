@@ -17,7 +17,6 @@
 package org.axonframework.messaging.deadletter;
 
 import org.axonframework.messaging.core.Message;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
@@ -30,6 +29,10 @@ import jakarta.annotation.Nonnull;
  * are kept in sequence. Thus processed in order through this component.
  * <p>
  * All methods in this interface return {@link CompletableFuture} to support asynchronous processing.
+ * <p>
+ * Implementations are responsible for creating the appropriate processing context (e.g., a {@code UnitOfWork}) for each
+ * dead letter being processed. The {@link DeadLetter} and its message will be added as resources to the processing
+ * context via {@link DeadLetter#RESOURCE_KEY} and {@link Message#RESOURCE_KEY} respectively.
  *
  * @param <M> An implementation of {@link Message} contained in the processed {@link DeadLetter dead letters}.
  * @author Steven van Beelen
@@ -43,33 +46,31 @@ public interface SequencedDeadLetterProcessor<M extends Message> {
      * Note that only a <em>single</em> matching sequence is processed! Furthermore, the {@code sequenceFilter} is
      * <em>only</em> invoked for the first letter of a sequence, as the first entry blocks the entire sequence.
      * <p>
-     * The provided {@code context} is used for processing and will have the {@link DeadLetter} added as a resource
-     * (via {@link DeadLetter#RESOURCE_KEY}) for each letter being processed. The message from the dead letter is also
-     * added to the context.
+     * Each dead letter is processed in its own processing context (typically a {@code UnitOfWork}), which will have the
+     * {@link DeadLetter} added as a resource (via {@link DeadLetter#RESOURCE_KEY}). The message from the dead letter is
+     * also added to the context via {@link Message#RESOURCE_KEY}.
      *
      * @param sequenceFilter A filter for the first {@link DeadLetter dead letter} entries of each sequence.
-     * @param context        the {@link ProcessingContext} to use for processing dead letters
      * @return a {@link CompletableFuture} with {@code true} if at least one {@link DeadLetter dead letter} was
      * processed successfully, {@code false} otherwise
      */
     @Nonnull
-    CompletableFuture<Boolean> process(@Nonnull Predicate<DeadLetter<? extends M>> sequenceFilter,
-                                       @Nonnull ProcessingContext context);
+    CompletableFuture<Boolean> process(@Nonnull Predicate<DeadLetter<? extends M>> sequenceFilter);
 
     /**
      * Process any sequence of {@link DeadLetter dead letters} belonging to this component.
      * <p>
      * Note that only a <em>single</em> matching sequence is processed!
      * <p>
-     * The provided {@code context} is used for processing and will have the {@link DeadLetter} added as a resource
-     * (via {@link DeadLetter#RESOURCE_KEY}) for each letter being processed.
+     * Each dead letter is processed in its own processing context (typically a {@code UnitOfWork}), which will have the
+     * {@link DeadLetter} added as a resource (via {@link DeadLetter#RESOURCE_KEY}). The message from the dead letter is
+     * also added to the context via {@link Message#RESOURCE_KEY}.
      *
-     * @param context the {@link ProcessingContext} to use for processing dead letters
      * @return a {@link CompletableFuture} with {@code true} if at least one {@link DeadLetter dead letter} was
      * processed successfully, {@code false} otherwise
      */
     @Nonnull
-    default CompletableFuture<Boolean> processAny(@Nonnull ProcessingContext context) {
-        return process(letter -> true, context);
+    default CompletableFuture<Boolean> processAny() {
+        return process(letter -> true);
     }
 }

@@ -21,6 +21,7 @@ import org.axonframework.messaging.core.DelayedMessageStream;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.Decisions;
 import org.axonframework.messaging.deadletter.EnqueueDecision;
@@ -36,6 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 
@@ -49,9 +51,10 @@ import static org.axonframework.messaging.deadletter.ThrowableCause.truncated;
  * {@link SequencedDeadLetterQueue#enqueue(Object, DeadLetter) enqueued}. Subsequent events belonging to an already
  * enqueued "sequence identifier" are also enqueued to maintain event ordering in the face of failures.
  * <p>
- * This component provides operations to {@link #processAny(ProcessingContext)} {@link DeadLetter dead letters} it has
- * enqueued through the {@link SequencedDeadLetterProcessor} contract. It ensures the same delegate
- * {@link EventHandlingComponent} is used when processing dead letters as with regular event handling.
+ * This component provides operations to {@link #processAny()} {@link DeadLetter dead letters} it has enqueued through
+ * the {@link SequencedDeadLetterProcessor} contract. It ensures the same delegate {@link EventHandlingComponent} is
+ * used when processing dead letters as with regular event handling. Each dead letter is processed in its own
+ * {@link org.axonframework.messaging.core.unitofwork.UnitOfWork UnitOfWork}, providing proper transaction boundaries.
  * <p>
  *
  * @author Steven van Beelen
@@ -79,40 +82,50 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
     private final SequencedDeadLetterQueue<EventMessage> queue;
     private final EnqueuePolicy<EventMessage> enqueuePolicy;
     private final boolean allowReset;
+    private final UnitOfWorkFactory unitOfWorkFactory;
 
     /**
-     * Instantiate a {@link DeadLetteringEventHandlingComponent} with the given {@code delegate} and {@code queue},
-     * using the default {@link EnqueuePolicy} and allowing reset.
+     * Instantiate a {@link DeadLetteringEventHandlingComponent} with the given {@code delegate}, {@code queue}, and
+     * {@code unitOfWorkFactory}, using the default {@link EnqueuePolicy} and allowing reset.
      * <p>
      * The default policy returns {@link Decisions#enqueue(Throwable)} that truncates the
      * {@link Throwable#getMessage()} size to {@code 1024} characters when invoked for any dead letter.
      *
-     * @param delegate The {@link EventHandlingComponent} to delegate event handling to.
-     * @param queue    The {@link SequencedDeadLetterQueue} to store dead letters in.
+     * @param delegate          The {@link EventHandlingComponent} to delegate event handling to.
+     * @param queue             The {@link SequencedDeadLetterQueue} to store dead letters in.
+     * @param unitOfWorkFactory The {@link UnitOfWorkFactory} to create
+     *                          {@link org.axonframework.messaging.core.unitofwork.UnitOfWork UnitOfWork} instances for
+     *                          processing dead letters.
      */
     public DeadLetteringEventHandlingComponent(@Nonnull EventHandlingComponent delegate,
-                                               @Nonnull SequencedDeadLetterQueue<EventMessage> queue) {
-        this(delegate, queue, DEFAULT_ENQUEUE_POLICY, true);
+                                               @Nonnull SequencedDeadLetterQueue<EventMessage> queue,
+                                               @Nonnull UnitOfWorkFactory unitOfWorkFactory) {
+        this(delegate, queue, DEFAULT_ENQUEUE_POLICY, true, unitOfWorkFactory);
     }
 
     /**
      * Instantiate a {@link DeadLetteringEventHandlingComponent} with the given {@code delegate}, {@code queue},
-     * custom {@link EnqueuePolicy}, and reset behavior.
+     * custom {@link EnqueuePolicy}, reset behavior, and {@code unitOfWorkFactory}.
      *
-     * @param delegate      The {@link EventHandlingComponent} to delegate event handling to.
-     * @param queue         The {@link SequencedDeadLetterQueue} to store dead letters in.
-     * @param enqueuePolicy The {@link EnqueuePolicy} to decide whether a failed event should be dead-lettered.
-     * @param allowReset    Whether to clear the queue on reset. If {@code true},
-     *                      {@link SequencedDeadLetterQueue#clear()} will be invoked upon a reset.
+     * @param delegate          The {@link EventHandlingComponent} to delegate event handling to.
+     * @param queue             The {@link SequencedDeadLetterQueue} to store dead letters in.
+     * @param enqueuePolicy     The {@link EnqueuePolicy} to decide whether a failed event should be dead-lettered.
+     * @param allowReset        Whether to clear the queue on reset. If {@code true},
+     *                          {@link SequencedDeadLetterQueue#clear()} will be invoked upon a reset.
+     * @param unitOfWorkFactory The {@link UnitOfWorkFactory} to create
+     *                          {@link org.axonframework.messaging.core.unitofwork.UnitOfWork UnitOfWork} instances for
+     *                          processing dead letters.
      */
     public DeadLetteringEventHandlingComponent(@Nonnull EventHandlingComponent delegate,
                                                @Nonnull SequencedDeadLetterQueue<EventMessage> queue,
                                                @Nonnull EnqueuePolicy<EventMessage> enqueuePolicy,
-                                               boolean allowReset) {
+                                               boolean allowReset,
+                                               @Nonnull UnitOfWorkFactory unitOfWorkFactory) {
         super(delegate);
         this.queue = queue;
         this.enqueuePolicy = enqueuePolicy;
         this.allowReset = allowReset;
+        this.unitOfWorkFactory = Objects.requireNonNull(unitOfWorkFactory, "UnitOfWorkFactory may not be null");
     }
 
     @Nonnull
@@ -221,11 +234,10 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
 
     @Nonnull
     @Override
-    public CompletableFuture<Boolean> process(@Nonnull Predicate<DeadLetter<? extends EventMessage>> sequenceFilter,
-                                              @Nonnull ProcessingContext context) {
+    public CompletableFuture<Boolean> process(@Nonnull Predicate<DeadLetter<? extends EventMessage>> sequenceFilter) {
         DeadLetteredEventProcessingTask processingTask = new DeadLetteredEventProcessingTask(
-                delegate, enqueuePolicy
+                delegate, enqueuePolicy, unitOfWorkFactory
         );
-        return queue.process(sequenceFilter, letter -> processingTask.process(letter, context));
+        return queue.process(sequenceFilter, processingTask::process);
     }
 }

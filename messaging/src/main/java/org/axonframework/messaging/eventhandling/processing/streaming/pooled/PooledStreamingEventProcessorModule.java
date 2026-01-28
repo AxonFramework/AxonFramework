@@ -246,8 +246,8 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
                 cr.registerDecorator(EventHandlingComponent.class, componentName,
                                      DeadLetteringEventHandlingComponent.DECORATION_ORDER,
                                      (config, name, delegate) -> {
-                                         var dlqConfig = config.getComponent(PooledStreamingEventProcessorConfiguration.class)
-                                                               .deadLetterQueue();
+                                         var processorConfig = config.getComponent(PooledStreamingEventProcessorConfiguration.class);
+                                         var dlqConfig = processorConfig.deadLetterQueue();
                                          // Check if DLQ is enabled first
                                          if (!dlqConfig.isEnabled()) {
                                              return delegate;
@@ -263,7 +263,8 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
                                                  delegate,
                                                  cachingDlq,
                                                  dlqConfig.enqueuePolicy(),
-                                                 dlqConfig.clearOnReset()
+                                                 dlqConfig.clearOnReset(),
+                                                 processorConfig.unitOfWorkFactory()
                                          );
                                      });
                 // Register the decorated component also as SequencedDeadLetterProcessor when DLQ is enabled
