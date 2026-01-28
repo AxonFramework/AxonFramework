@@ -74,11 +74,11 @@ class DeadLetteredEventProcessingTask {
     /**
      * Processes the given {@code letter} through this task's delegate {@link EventHandlingComponent}.
      * <p>
-     * Each dead letter is processed in its own {@link UnitOfWork}, which provides proper transaction boundaries. Returns
-     * an {@link EnqueueDecision} to
-     * {@link org.axonframework.messaging.deadletter.SequencedDeadLetterQueue#evict(DeadLetter) evict} the {@code letter}
-     * on successful handling. On unsuccessful event handling, the configured {@link EnqueuePolicy} is used to decide
-     * what to do with the {@code letter}.
+     * Each dead letter is processed in its own {@link UnitOfWork}, which provides proper transaction boundaries.
+     * Returns an {@link EnqueueDecision} to
+     * {@link org.axonframework.messaging.deadletter.SequencedDeadLetterQueue#evict(DeadLetter) evict} the
+     * {@code letter} on successful handling. On unsuccessful event handling, the configured {@link EnqueuePolicy} is
+     * used to decide what to do with the {@code letter}.
      * <p>
      * The dead letter is added to the {@link UnitOfWork}'s {@link ProcessingContext} as a resource (via
      * {@link DeadLetter#RESOURCE_KEY}) so that parameter resolvers can access it during processing. The message from
@@ -94,23 +94,15 @@ class DeadLetteredEventProcessingTask {
             logger.debug("Start evaluation of dead letter with message id [{}].", message.identifier());
         }
 
-        UnitOfWork unitOfWork = unitOfWorkFactory.create(message.identifier());
-
+        UnitOfWork unitOfWork = unitOfWorkFactory.create();
         return unitOfWork.executeWithResult(context -> {
-            ProcessingContext enrichedContext = context
-                    .withResource(DeadLetter.RESOURCE_KEY, letter)
-                    .withResource(Message.RESOURCE_KEY, message);
-
-            MessageStream.Empty<Message> result = delegate.handle(message, enrichedContext);
+            MessageStream.Empty<Message> result = delegate.handle(
+                    message,
+                    context.withResource(DeadLetter.RESOURCE_KEY, letter).withResource(Message.RESOURCE_KEY, message)
+            );
 
             return result.asCompletableFuture()
-                         .handle((ignored, error) -> {
-                             if (error != null) {
-                                 return onError(letter, error);
-                             } else {
-                                 return onSuccess(letter);
-                             }
-                         });
+                         .handle((ignored, error) -> error == null ? onSuccess(letter) : onError(letter, error));
         });
     }
 
