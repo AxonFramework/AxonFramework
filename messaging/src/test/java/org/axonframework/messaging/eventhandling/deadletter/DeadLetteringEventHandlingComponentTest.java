@@ -195,7 +195,7 @@ class DeadLetteringEventHandlingComponentTest {
             // given
             RuntimeException enqueueException = new RuntimeException("queue failure");
             SequencedDeadLetterQueue<EventMessage> failingQueue = mock(SequencedDeadLetterQueue.class);
-            when(failingQueue.contains(any())).thenReturn(CompletableFuture.completedFuture(false));
+            when(failingQueue.enqueueIfPresent(any(), any())).thenReturn(CompletableFuture.completedFuture(false));
             when(failingQueue.enqueue(any(), any())).thenReturn(CompletableFuture.failedFuture(enqueueException));
 
             testSubject = new DeadLetteringEventHandlingComponent(delegate, failingQueue, enqueuePolicy, true);
