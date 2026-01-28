@@ -47,6 +47,19 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>
  * The cache should be cleared when a segment is released to ensure consistency, as the state
  * of the queue may have changed while the segment was held by another processor.
+ * <p>
+ * <b>Thread Safety Note:</b> This class provides relaxed consistency guarantees suitable for its role
+ * as a cache optimization. Individual operations on the underlying collections are thread-safe, but compound
+ * operations (such as {@link #markEnqueued(Object)} and {@link #markNotEnqueued(Object)}) are not atomic.
+ * During concurrent modifications, a sequence identifier may temporarily appear in both collections or neither.
+ * This is acceptable because {@link #mightBePresent(Object)} is designed to return {@code true} when uncertain
+ * (favoring false positives over false negatives), which simply triggers a lookup to the underlying queue.
+ * The {@link #clear()} method also has relaxed atomicity - concurrent modifications during clear may result
+ * in partial state until the clear completes.
+ * <p>
+ * This relaxed consistency approach is intentional - avoiding synchronization on compound operations
+ * provides better performance and reduces contention in high-throughput scenarios, which is preferable
+ * for a cache whose purpose is to optimize performance in the first place.
  *
  * @author Gerard Klijs
  * @author Mateusz Nowak
