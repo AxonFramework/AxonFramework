@@ -16,12 +16,13 @@
 
 package org.axonframework.messaging.deadletter;
 
+import jakarta.annotation.Nonnull;
+import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.Metadata;
 
 import java.time.Instant;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 /**
@@ -29,7 +30,7 @@ import java.util.function.UnaryOperator;
  * <p>
  * The time of storing the {@link #message()} is kept through {@link #enqueuedAt()}. The last time this letter was
  * accessed on either {@link SequencedDeadLetterQueue#requeue(DeadLetter, UnaryOperator)} or
- * {@link SequencedDeadLetterQueue#process(Function) processing}, is kept in {@link #lastTouched()}. Additional
+ * {@link SequencedDeadLetterQueue#process(java.util.function.Predicate, java.util.function.Function) processing}, is kept in {@link #lastTouched()}. Additional
  * information on why the letter is enqueued can be found in the {@link #diagnostics() diagnostics}.
  *
  * @param <M> The type of {@link Message} represented by this interface.
@@ -38,6 +39,23 @@ import java.util.function.UnaryOperator;
  * @since 4.6.0
  */
 public interface DeadLetter<M extends Message> {
+
+    /**
+     * The {@link Context.ResourceKey} used whenever a {@link Context} would contain a {@link DeadLetter}.
+     */
+    Context.ResourceKey<DeadLetter<?>> RESOURCE_KEY = Context.ResourceKey.withLabel("deadLetter");
+
+    /**
+     * Returns an {@link Optional} of {DeadLetter}, returning the resource keyed under the
+     * {@link #RESOURCE_KEY} in the given {@code context}.
+     *
+     * @param context the {@link Context} to retrieve the {@code DeadLetter} from, if present
+     * @return an {@link Optional} of {DeadLetter}, returning the resource keyed under the
+     * {@link #RESOURCE_KEY} in the given {@code context}
+     */
+    static Optional<DeadLetter<?>> fromContext(@Nonnull Context context) {
+        return Optional.ofNullable(context.getResource(RESOURCE_KEY));
+    }
 
     /**
      * The {@link Message} of type {@code M} contained in this letter.

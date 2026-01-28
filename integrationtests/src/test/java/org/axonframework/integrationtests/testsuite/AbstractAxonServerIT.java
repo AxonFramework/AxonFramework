@@ -26,6 +26,7 @@ import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.Random;
 
 /**
@@ -83,5 +84,22 @@ public abstract class AbstractAxonServerIT {
 
     protected static String createId(String prefix) {
         return prefix + "-" + RND.nextInt(Integer.MAX_VALUE);
+    }
+
+    /**
+     * Purges all events from the AxonServer event storage. This method can be called before tests to ensure a clean
+     * state, preventing events from previous test runs from affecting the current test.
+     */
+    protected void purgeEventStorage() {
+        try {
+            AxonServerContainerUtils.purgeEventsFromAxonServer(
+                    container.getHost(),
+                    container.getHttpPort(),
+                    "default",
+                    AxonServerContainerUtils.DCB_CONTEXT
+            );
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to purge event storage", e);
+        }
     }
 }

@@ -38,6 +38,8 @@ import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorH
 import org.axonframework.messaging.eventhandling.processing.errorhandling.PropagatingErrorHandler;
 import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
+import org.axonframework.messaging.eventhandling.deadletter.CachingSequencedDeadLetterQueue;
+import org.axonframework.messaging.eventhandling.deadletter.DeadLetterQueueConfiguration;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
@@ -53,6 +55,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertStrictPositive;
@@ -107,6 +110,9 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
             eventMessage -> messageMonitor.onMessageIngested(eventMessage).reportIgnored();
     private Supplier<ProcessingContext> schedulingProcessingContextProvider =
             () -> new EventSchedulingProcessingContext(EmptyApplicationContext.INSTANCE);
+    private Consumer<Segment> segmentReleasedAction = segment -> {
+    };
+    private UnaryOperator<DeadLetterQueueConfiguration> deadLetterQueueCustomization = UnaryOperator.identity();
 
     /**
      * Constructs a new {@code PooledStreamingEventProcessorConfiguration} with just default values. Do not retrieve any
@@ -487,6 +493,60 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
         return this;
     }
 
+    /**
+     * Registers an action to perform when a segment is released. This action is invoked when a segment's claim is
+     * released, either due to shutdown, rebalancing, or explicit release.
+     * <p>
+     * Defaults to a no-op.
+     *
+     * @param segmentReleasedAction The action to perform when a segment is released.
+     * @return The current instance, for fluent interfacing.
+     */
+    public PooledStreamingEventProcessorConfiguration segmentReleasedAction(
+            @Nonnull Consumer<Segment> segmentReleasedAction
+    ) {
+        assertNonNull(segmentReleasedAction, "Segment released action may not be null");
+        this.segmentReleasedAction = segmentReleasedAction;
+        return this;
+    }
+
+    /**
+     * Configures the Dead Letter Queue (DLQ) for this processor using a customization function.
+     * <p>
+     * The DLQ allows failed events to be stored for later processing or manual inspection. This method
+     * accepts a customization function that modifies a {@link DeadLetterQueueConfiguration}.
+     * <p>
+     * This method supports natural merging with defaults. When combining multiple customizations
+     * (e.g., defaults with processor-specific settings), each customization is applied in sequence.
+     * Later customizations can override earlier settings while preserving others.
+     * <p>
+     * The queue will be automatically wrapped with a {@link CachingSequencedDeadLetterQueue} to optimize
+     * {@code contains()} lookups. The cache is cleared when segments are released to ensure consistency.
+     * <p>
+     * Example usage:
+     * <pre>{@code
+     * config.deadLetterQueue(dlq -> dlq
+     *     .queue(InMemorySequencedDeadLetterQueue.defaultQueue())
+     *     .enqueuePolicy((letter, cause) -> Decisions.enqueue(cause))
+     *     .clearOnReset(false)
+     *     .cacheMaxSize(2048)
+     * )
+     * }</pre>
+     *
+     * @param customization A function that customizes the {@link DeadLetterQueueConfiguration}.
+     * @return The current instance, for fluent interfacing.
+     * @see DeadLetterQueueConfiguration
+     * @see CachingSequencedDeadLetterQueue
+     */
+    public PooledStreamingEventProcessorConfiguration deadLetterQueue(
+            @Nonnull UnaryOperator<DeadLetterQueueConfiguration> customization
+    ) {
+        assertNonNull(customization, "DLQ customization may not be null");
+        var previous = this.deadLetterQueueCustomization;
+        this.deadLetterQueueCustomization = config -> customization.apply(previous.apply(config));
+        return this;
+    }
+
     @Override
     protected void validate() throws AxonConfigurationException {
         super.validate();
@@ -648,6 +708,27 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
         return schedulingProcessingContextProvider;
     }
 
+    /**
+     * Returns the action to perform when a segment is released.
+     *
+     * @return The segment released action.
+     */
+    public Consumer<Segment> segmentReleasedAction() {
+        return segmentReleasedAction;
+    }
+
+    /**
+     * Returns the merged {@link DeadLetterQueueConfiguration} by applying all customizations.
+     * <p>
+     * This method creates a new configuration instance and applies the accumulated customizations.
+     * Use {@link DeadLetterQueueConfiguration#isEnabled()} to check if a queue is configured.
+     *
+     * @return The merged dead letter queue configuration.
+     */
+    public DeadLetterQueueConfiguration deadLetterQueue() {
+        return deadLetterQueueCustomization.apply(new DeadLetterQueueConfiguration());
+    }
+
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         super.describeTo(descriptor);
@@ -664,5 +745,9 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
         descriptor.describeProperty("clock", clock);
         descriptor.describeProperty("coordinatorExtendsClaims", coordinatorExtendsClaims);
         descriptor.describeProperty("eventCriteriaProvider", eventCriteriaProvider);
+        descriptor.describeProperty("deadLetterQueue", deadLetterQueue());
+        descriptor.describeProperty("segmentReleasedAction", segmentReleasedAction);
+        descriptor.describeProperty("schedulingProcessingContextProvider", schedulingProcessingContextProvider);
+        descriptor.describeProperty("ignoredMessageHandler", ignoredMessageHandler);
     }
 }

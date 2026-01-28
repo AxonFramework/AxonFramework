@@ -28,7 +28,7 @@ import org.axonframework.messaging.deadletter.DeadLetterQueueOverflowException;
 import org.axonframework.messaging.deadletter.EnqueueDecision;
 import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.NoSuchDeadLetterException;
-import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
+import org.axonframework.messaging.deadletter.SyncSequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.WrongDeadLetterTypeException;
 import org.axonframework.conversion.Serializer;
 import org.slf4j.Logger;
@@ -54,9 +54,9 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.common.jdbc.JdbcUtils.*;
 
 /**
- * A JDBC-based implementation of the {@link SequencedDeadLetterQueue}, used for storing dead letters containing
+ * A JDBC-based implementation of the {@link SyncSequencedDeadLetterQueue}, used for storing dead letters containing
  * {@link EventMessage event messages} durably. Use the {@link #createSchema(DeadLetterTableFactory)} operation to build
- * the table and indices required by this {@code SequencedDeadLetterQueue}, providing the desired
+ * the table and indices required by this {@code SyncSequencedDeadLetterQueue}, providing the desired
  * {@link DeadLetterTableFactory}. The {@link java.sql.PreparedStatement statements} used by this queues methods can be
  * optimized by providing a custom {@link DeadLetterStatementFactory}.
  * <p>
@@ -81,7 +81,7 @@ import static org.axonframework.common.jdbc.JdbcUtils.*;
  * @author Steven van Beelen
  * @since 4.8.0
  */
-public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements SequencedDeadLetterQueue<E> {
+public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements SyncSequencedDeadLetterQueue<E> {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -99,7 +99,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
     private final Duration claimDuration;
 
     /**
-     * Instantiate a JDBC-based {@link SequencedDeadLetterQueue} through the given {@link Builder builder}.
+     * Instantiate a JDBC-based {@link SyncSequencedDeadLetterQueue} through the given {@link Builder builder}.
      * <p>
      * Will validate whether the {@link Builder#processingGroup(String) processing group},
      * {@link Builder#connectionProvider(ConnectionProvider) ConnectionProvider},

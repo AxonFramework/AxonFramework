@@ -30,7 +30,7 @@ import org.axonframework.messaging.deadletter.DeadLetterQueueOverflowException;
 import org.axonframework.messaging.deadletter.EnqueueDecision;
 import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.NoSuchDeadLetterException;
-import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
+import org.axonframework.messaging.deadletter.SyncSequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.WrongDeadLetterTypeException;
 import org.axonframework.conversion.Serializer;
 import org.slf4j.Logger;
@@ -51,7 +51,7 @@ import jakarta.annotation.Nonnull;
 import static org.axonframework.common.BuilderUtils.*;
 
 /**
- * JPA-backed implementation of the {@link SequencedDeadLetterQueue}, used for storing dead letters containing
+ * JPA-backed implementation of the {@link SyncSequencedDeadLetterQueue}, used for storing dead letters containing
  * {@link EventMessage Eventmessages} durably as a {@link DeadLetterEntry}.
  * <p>
  * Keeps the insertion order intact by saving an incremented index within each unique sequence, backed by the
@@ -74,7 +74,7 @@ import static org.axonframework.common.BuilderUtils.*;
  * @author Mitchell Herrijgers
  * @since 4.6.0
  */
-public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements SequencedDeadLetterQueue<M> {
+public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements SyncSequencedDeadLetterQueue<M> {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -93,7 +93,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
     private final Duration claimDuration;
 
     /**
-     * Instantiate a JPA {@link SequencedDeadLetterQueue} based on the given {@link Builder builder}.
+     * Instantiate a JPA {@link SyncSequencedDeadLetterQueue} based on the given {@link Builder builder}.
      *
      * @param builder The {@link Builder} used to instantiate a {@link JpaSequencedDeadLetterQueue} instance.
      */

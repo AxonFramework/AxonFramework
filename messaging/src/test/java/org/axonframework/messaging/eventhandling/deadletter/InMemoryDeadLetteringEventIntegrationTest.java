@@ -16,30 +16,24 @@
 
 package org.axonframework.messaging.eventhandling.deadletter;
 
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.deadletter.InMemorySequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
-import org.junit.jupiter.api.*;
+import org.axonframework.messaging.eventhandling.EventMessage;
 
 /**
- * An implementation of the {@link DeadLetteringEventIntegrationTest} validating the
- * {@link InMemorySequencedDeadLetterQueue} with an {@link EventProcessor} and
- * {@link DeadLetteringEventHandlerInvoker}. It also overwrites {@link #identifierCacheEnabled()} to enable the sequence
- * identifier cache.
+ * Integration test for {@link DeadLetteringEventHandlingComponent} using an {@link InMemorySequencedDeadLetterQueue}.
  *
- * @author Gerard Klijs
+ * @author Steven van Beelen
+ * @author Mateusz Nowak
+ * @since 5.0.0
  */
-@Disabled("TODO #3517 - Support dead lettering with EventHandlingComponent instead of EventHandlerInvoker")
-class InMemoryWithCacheDeadLetteringIntegrationTest extends DeadLetteringEventIntegrationTest {
+class InMemoryDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegrationTest {
 
     @Override
     protected SequencedDeadLetterQueue<EventMessage> buildDeadLetterQueue() {
-        return InMemorySequencedDeadLetterQueue.defaultQueue();
-    }
-
-    @Override
-    protected boolean identifierCacheEnabled() {
-        return true;
+        return InMemorySequencedDeadLetterQueue.<EventMessage>builder()
+                                               .maxSequences(1024)
+                                               .maxSequenceSize(1024)
+                                               .build();
     }
 }

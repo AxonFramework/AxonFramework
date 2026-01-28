@@ -120,7 +120,8 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
      *
      * @param name                    A {@link String} defining this {@link EventProcessor} instance.
      * @param eventHandlingComponents The {@link EventHandlingComponent}s which will handle all the individual
-     *                                {@link EventMessage}s.
+     *                                {@link EventMessage}s. These components should already be wrapped with
+     *                                any decorations (such as dead-lettering support) at the module level.
      * @param configuration           The {@link PooledStreamingEventProcessorConfiguration} used to configure a
      *                                {@code PooledStreamingEventProcessor} instance.
      */
@@ -136,14 +137,15 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         this.eventSource = configuration.eventSource();
         this.tokenStore = configuration.tokenStore();
         this.unitOfWorkFactory = configuration.unitOfWorkFactory();
+        this.workerExecutor = configuration.workerExecutor();
 
         this.eventHandlingComponents = new ProcessorEventHandlingComponents(eventHandlingComponents);
+
         this.workPackageEventFilter = new DefaultWorkPackageEventFilter(
                 this.name,
                 this.eventHandlingComponents,
                 configuration.errorHandler()
         );
-        this.workerExecutor = configuration.workerExecutor();
         var supportedEvents = this.eventHandlingComponents.supportedEvents();
         this.eventCriteria = Objects.requireNonNull(
                 configuration.eventCriteriaProvider().apply(supportedEvents),
@@ -167,7 +169,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
                                       .initialToken(configuration.initialToken())
                                       .coordinatorClaimExtension(configuration.coordinatorExtendsClaims())
                                       .eventCriteria(eventCriteria)
-                                      // .segmentReleasedAction(segment -> eventHandlerInvoker().segmentReleased(segment)) // TODO #3304 - Integrate event replay logic into Event Handling Component
+                                      .segmentReleasedAction(configuration.segmentReleasedAction())
                                       .build();
     }
 
