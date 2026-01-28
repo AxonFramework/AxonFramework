@@ -121,40 +121,22 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
                                                @Nonnull ProcessingContext context) {
         Object sequenceIdentifier = sequenceIdentifierFor(event, context);
 
-        CompletableFuture<MessageStream<Message>> resultFuture = queue.contains(sequenceIdentifier)
-                                                                      .thenApply(isDeadLettered -> {
-                                                                          if (isDeadLettered) {
-                                                                              return handleAlreadyDeadLettered(event,
-                                                                                                               sequenceIdentifier);
-                                                                          }
-                                                                          return handle(event,
-                                                                                        context,
-                                                                                        sequenceIdentifier);
-                                                                      });
-
-        return DelayedMessageStream.create(resultFuture).ignoreEntries().cast();
-    }
-
-    /**
-     * Handles an event whose sequence is already dead-lettered by enqueueing it as a follow-up.
-     *
-     * @param event              The event to enqueue.
-     * @param sequenceIdentifier The sequence identifier.
-     * @return A stream that completes after enqueueing.
-     */
-    private MessageStream<Message> handleAlreadyDeadLettered(EventMessage event, Object sequenceIdentifier) {
-        if (logger.isInfoEnabled()) {
-            logger.info("Event with id [{}] is added to the dead-letter queue "
-                                + "since its sequence id [{}] is already present.",
-                        event.identifier(), sequenceIdentifier);
-        }
-
-        CompletableFuture<MessageStream<Message>> enqueueFuture = queue.enqueueIfPresent(
+        CompletableFuture<MessageStream<Message>> resultFuture = queue.enqueueIfPresent(
                 sequenceIdentifier,
                 () -> new GenericDeadLetter<>(sequenceIdentifier, event)
-        ).thenApply(enqueued -> MessageStream.empty());
+        ).thenCompose(wasEnqueued -> {
+            if (wasEnqueued) {
+                if (logger.isInfoEnabled()) {
+                    logger.info("Event with id [{}] is added to the dead-letter queue "
+                                        + "since its sequence id [{}] is already present.",
+                                event.identifier(), sequenceIdentifier);
+                }
+                return CompletableFuture.completedFuture(MessageStream.empty());
+            }
+            return CompletableFuture.completedFuture(handle(event, context, sequenceIdentifier));
+        });
 
-        return DelayedMessageStream.create(enqueueFuture);
+        return DelayedMessageStream.create(resultFuture).ignoreEntries().cast();
     }
 
     /**
