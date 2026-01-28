@@ -28,7 +28,7 @@ import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
-import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.Decisions;
@@ -189,8 +189,9 @@ public abstract class DeadLetteringEventIntegrationTest {
                 eventHandler
         );
 
+        UnitOfWorkFactory unitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
         deadLetteringComponent = new DeadLetteringEventHandlingComponent(
-                simpleComponent, deadLetterQueue, enqueuePolicy, true
+                simpleComponent, deadLetterQueue, enqueuePolicy, true, unitOfWorkFactory
         );
 
         eventSource = new AsyncInMemoryStreamableEventSource();
@@ -243,10 +244,10 @@ public abstract class DeadLetteringEventIntegrationTest {
 
     /**
      * Process any sequence of {@link DeadLetter dead letters}. Uses the
-     * {@link DeadLetteringEventHandlingComponent#processAny(ProcessingContext)} operation for this.
+     * {@link DeadLetteringEventHandlingComponent#processAny()} operation for this.
      */
     private void processAnyDeadLetter() {
-        deadLetteringComponent.processAny(new StubProcessingContext()).join();
+        deadLetteringComponent.processAny().join();
     }
 
     /**
@@ -380,7 +381,7 @@ public abstract class DeadLetteringEventIntegrationTest {
             assertTrue(deadLetterQueue.contains(aggregateId).join());
 
             // when
-            deadLetteringComponent.process(deadLetter -> true, new StubProcessingContext()).join();
+            deadLetteringComponent.process(deadLetter -> true).join();
 
             // then
             assertWithin(1, TimeUnit.SECONDS,
@@ -438,7 +439,7 @@ public abstract class DeadLetteringEventIntegrationTest {
             assertTrue(deadLetterQueue.contains(aggregateId).join());
 
             // when
-            deadLetteringComponent.process(deadLetter -> true, new StubProcessingContext()).join();
+            deadLetteringComponent.process(deadLetter -> true).join();
 
             // then
             assertWithin(1, TimeUnit.SECONDS,

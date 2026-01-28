@@ -24,7 +24,6 @@ import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.messaging.core.unitofwork.UnitOfWork;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
@@ -289,9 +288,7 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
     }
 
     private void processDeadLetters(int componentIndex) {
-        UnitOfWork uow = unitOfWorkFactory.create();
-        uow.runOnInvocation(context -> getDeadLetterProcessor(componentIndex).processAny(context));
-        uow.execute().join();
+        getDeadLetterProcessor(componentIndex).processAny().join();
     }
 
     // --- Test Event Handling Component ---
