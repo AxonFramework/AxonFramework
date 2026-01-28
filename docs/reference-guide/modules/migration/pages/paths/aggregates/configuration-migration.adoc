@@ -1,0 +1,57 @@
+= Aggregate Configuration Migration
+:navtitle: Configuration Migration
+
+When migrating from Axon Framework 4 to Axon Framework 5, the configuration of aggregates has undergone significant changes to align with the new entity-based modeling approach. The following sections outline the key changes required to update your aggregate configurations.
+
+== EventSourcedEntityModule instead of AggregateConfigurer
+
+The declarative configuration of entities now uses the `EventSourcedEntityModule` instead of `AggregateConfigurer`. This aligns with the new modular configuration architecture of Axon Framework 5.
+
+[source,java]
+----
+// Axon Framework 5
+public void configure(EventSourcingConfigurer configurer) {
+    configurer.modelling().registerEventSourcedEntity(
+        EventSourcedEntityModule.repository(GiftCard.class)
+                                .entityIdResolver(new MyCustomIdResolver())
+    );
+}
+----
+
+== Spring Boot
+
+If you have been using Spring Boot with Axon Framework 4, you will need to adjust your aggregate annotations and configuration to comply with the new standards in Axon Framework 5. The automatic detection and configuration of aggregates remains as before.
+
+Most significant, the `@Aggregate` annotation is replaced by `@EventSourced`.
+
+[#event-sourced-instead-of-aggregate-spring]
+=== @EventSourced instead of @Aggregate (Spring)
+
+[source,java]
+----
+// Axon Framework 4
+@Aggregate
+public class GiftCard {
+    // ...
+}
+
+// Axon Framework 5
+@EventSourced
+public class GiftCard {
+    // ...
+}
+----
+
+Also, `@AggregateMember` is replaced by `@EntityMember` for child entities within an aggregate, see the xref:migration:paths/aggregates/multi-entity-migration.adoc[multi-entity migration] section for more details.
+
+The `@EventSourced` annotation in Axon Framework 5 maintains full compatibility with the attributes previously available in the `@Aggregate` annotation. All configuration options you might have used in AF4 are still present and function similarly:
+
+* `type`: Used to specify the aggregate type name (defaults to the class name).
+* `idType`: Defines the class of the aggregate identifier.
+* `tagKey`: The key used for event criteria when resolving the aggregate state.
+* `concreteTypes`: Specifies concrete implementations for polymorphic aggregates.
+* `criteriaResolverDefinition`: Customizes how event criteria are resolved.
+* `entityFactoryDefinition`: Overrides the default entity factory behavior.
+* `entityIdResolverDefinition`: Defines a custom strategy for resolving the entity ID from commands.
+
+These attributes are now internally aliased to the `@EventSourcedEntity` meta-annotation, ensuring a seamless transition for Spring-based configurations.
