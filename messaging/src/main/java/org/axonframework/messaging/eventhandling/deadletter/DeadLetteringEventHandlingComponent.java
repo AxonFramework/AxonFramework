@@ -60,7 +60,7 @@ import static org.axonframework.messaging.deadletter.ThrowableCause.truncated;
  * @see SequencedDeadLetterQueue
  * @see SequencedDeadLetterProcessor
  * @see EnqueuePolicy
- * @since 5.0.0
+ * @since 4.6.0
  */
 public class DeadLetteringEventHandlingComponent extends DelegatingEventHandlingComponent
         implements SequencedDeadLetterProcessor<EventMessage> {
@@ -127,9 +127,9 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
                                                                               return handleAlreadyDeadLettered(event,
                                                                                                                sequenceIdentifier);
                                                                           }
-                                                                          return handleNormally(event,
-                                                                                                context,
-                                                                                                sequenceIdentifier);
+                                                                          return handle(event,
+                                                                                        context,
+                                                                                        sequenceIdentifier);
                                                                       });
 
         return DelayedMessageStream.create(resultFuture).ignoreEntries().cast();
@@ -165,9 +165,9 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
      * @param sequenceIdentifier The sequence identifier.
      * @return A stream representing the handling result with error handling.
      */
-    private MessageStream<Message> handleNormally(EventMessage event,
-                                                  ProcessingContext context,
-                                                  Object sequenceIdentifier) {
+    private MessageStream<Message> handle(EventMessage event,
+                                          ProcessingContext context,
+                                          Object sequenceIdentifier) {
         if (logger.isTraceEnabled()) {
             logger.trace("Event [{}] with sequence id [{}] is not present in the dead-letter queue. "
                                  + "Handle operation is delegated to the wrapped EventHandlingComponent.",
