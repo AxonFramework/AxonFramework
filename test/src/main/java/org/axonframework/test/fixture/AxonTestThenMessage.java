@@ -96,7 +96,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
 
     @Override
     public T events(@Nonnull Object... expectedEvents) {
-        var publishedEvents = eventSink.recorded();
+        var publishedEvents = eventSink.recorded().join();
 
         if (expectedEvents.length != publishedEvents.size()) {
             reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
@@ -116,7 +116,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     public T events(@Nonnull EventMessage... expectedEvents) {
         this.events(Stream.of(expectedEvents).map(Message::payload).toArray());
 
-        var publishedEvents = eventSink.recorded();
+        var publishedEvents = eventSink.recorded().join();
         Iterator<EventMessage> iterator = publishedEvents.iterator();
         for (EventMessage expectedEvent : expectedEvents) {
             EventMessage actualEvent = iterator.next();
@@ -132,7 +132,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     @Override
     public T eventsSatisfy(@Nonnull Consumer<List<EventMessage>> consumer) {
         Objects.requireNonNull(consumer, "The consumer may not be null.");
-        var publishedEvents = eventSink.recorded();
+        var publishedEvents = eventSink.recorded().join();
         try {
             consumer.accept(publishedEvents);
         } catch (AssertionError e) {
@@ -144,7 +144,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     @Override
     public T eventsMatch(@Nonnull Predicate<List<EventMessage>> predicate) {
         Objects.requireNonNull(predicate, "The predicate may not be null.");
-        var publishedEvents = eventSink.recorded();
+        var publishedEvents = eventSink.recorded().join();
         var result = predicate.test(publishedEvents);
         if (!result) {
             throw new AxonAssertionError("Events does not satisfy the predicate");

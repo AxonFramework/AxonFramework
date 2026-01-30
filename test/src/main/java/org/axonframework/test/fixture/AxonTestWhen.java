@@ -201,7 +201,7 @@ class AxonTestWhen implements AxonTestPhase.When {
         @Override
         public AxonTestPhase.Then.Command then() {
             logger.debug("Command.then() called - transitioning to THEN phase, recorded events: {} on thread {}",
-                         eventSink.recorded().size(),
+                         eventSink.recorded().join().size(),
                          Thread.currentThread().getName());
             return new AxonTestThenCommand(
                     configuration,
@@ -219,7 +219,7 @@ class AxonTestWhen implements AxonTestPhase.When {
         @Override
         public AxonTestPhase.Then.Event then() {
             logger.debug("Event.then() called - transitioning to THEN phase, recorded events: {} on thread {}",
-                         eventSink.recorded().size(),
+                         eventSink.recorded().join().size(),
                          Thread.currentThread().getName());
             return new AxonTestThenEvent(
                     configuration,

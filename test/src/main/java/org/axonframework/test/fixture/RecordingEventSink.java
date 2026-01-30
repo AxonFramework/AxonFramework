@@ -51,6 +51,7 @@ public class RecordingEventSink implements EventSink {
     private static final Logger logger = LoggerFactory.getLogger(RecordingEventSink.class);
 
     private final List<EventMessage> recorded = new CopyOnWriteArrayList<>();
+    private final Set<CompletableFuture<Void>> pendingPublishes = ConcurrentHashMap.newKeySet();
     protected final EventSink delegate;
 
     /**
@@ -72,30 +73,43 @@ public class RecordingEventSink implements EventSink {
                      delegate.getClass().getSimpleName(),
                      Thread.currentThread().getName());
 
-        return delegate.publish(context, events)
-                       .thenRun(() -> {
-                           recorded.addAll(events);
-                           logger.debug(
-                                   "publish() - thenRun completed, recorded {} event(s), total recorded: {} on thread {}",
-                                   events.size(),
-                                   recorded.size(),
-                                   Thread.currentThread().getName());
-                       });
+        var publishFuture = delegate.publish(context, events)
+                                      .thenRun(() -> {
+                                          recorded.addAll(events);
+                                          logger.debug(
+                                                  "publish() - thenRun completed, recorded {} event(s): {}, total recorded: {} event(s): {} on thread {}",
+                                                  events.size(),
+                                                  events.stream().map(e -> e.payloadType().getSimpleName() + "[" + e.identifier() + "]").toList(),
+                                                  recorded.size(),
+                                                  recorded.stream().map(e -> e.payloadType().getSimpleName() + "[" + e.identifier() + "]").toList(),
+                                                  Thread.currentThread().getName());
+                                      });
+        pendingPublishes.add(publishFuture);
+        return publishFuture.whenComplete((result, error) -> pendingPublishes.remove(publishFuture));
     }
 
     /**
-     * Returns a copied list of all the {@link EventMessage EventMessages}
-     * {@link #publish(ProcessingContext, List) published}.
+     * Returns a {@link CompletableFuture} that completes with a copied list of all the
+     * {@link EventMessage EventMessages} {@link #publish(ProcessingContext, List) published}.
+     * <p>
+     * This method waits for all pending publish operations to complete before returning the recorded events,
+     * ensuring that no events are missed due to asynchronous publish completion.
      *
-     * @return A copied list of all the {@link EventMessage EventMessages}
-     * {@link #publish(ProcessingContext, List) published}.
+     * @return A {@link CompletableFuture} that completes with a copied list of all the {@link EventMessage
+     * EventMessages} {@link #publish(ProcessingContext, List) published}.
      */
-    public List<EventMessage> recorded() {
-        logger.debug("recorded() called, returning {} event(s): {} on thread {}",
-                     recorded.size(),
-                     recorded.stream().map(e -> e.payloadType().getSimpleName() + "[" + e.identifier() + "]").toList(),
+    public CompletableFuture<List<EventMessage>> recorded() {
+        logger.debug("recorded() called, waiting for {} pending publish(es) on thread {}",
+                     pendingPublishes.size(),
                      Thread.currentThread().getName());
-        return List.copyOf(recorded);
+        return CompletableFuture.allOf(pendingPublishes.toArray(new CompletableFuture[0]))
+                                .thenApply(ignored -> {
+                                    logger.debug("recorded() - all publishes completed, returning {} event(s): {} on thread {}",
+                                                 recorded.size(),
+                                                 recorded.stream().map(e -> e.payloadType().getSimpleName() + "[" + e.identifier() + "]").toList(),
+                                                 Thread.currentThread().getName());
+                                    return List.copyOf(recorded);
+                                });
     }
 
     /**
@@ -104,8 +118,9 @@ public class RecordingEventSink implements EventSink {
      * @return This recording {@link EventSink}, for fluent interfacing.
      */
     public RecordingEventSink reset() {
-        logger.debug("reset() called, clearing {} recorded event(s) on thread {}",
+        logger.debug("reset() called, clearing {} recorded event(s): {} on thread {}",
                      recorded.size(),
+                     recorded.stream().map(e -> e.payloadType().getSimpleName() + "[" + e.identifier() + "]").toList(),
                      Thread.currentThread().getName());
         this.recorded.clear();
         return this;
