@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,83 +19,64 @@ package org.axonframework.extension.springboot;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * Properties describing the settings for Metrics.
+ * Properties describing the settings for metrics.
  *
  * @author Steven van Beelen
- * @since 3.2
+ * @since 3.2.0
  */
 @ConfigurationProperties("axon.metrics")
 public class MetricsProperties {
 
-    private AutoConfiguration autoConfiguration = new AutoConfiguration();
+    /**
+     * Indicates whether the metrics are enabled, defaulting to {@code true}.
+     */
+    private boolean enabled = true;
+
+    /**
+     * Properties specific for use with Micrometer.
+     */
     private Micrometer micrometer = new Micrometer();
 
     /**
-     * Retrieves the AutoConfiguration settings for Metrics
+     * Indicates whether the auto-configuration of metrics is enabled.
      *
-     * @return the AutoConfiguration settings for Metrics
+     * @return {@code true} if the auto-configuration of metrics is enabled, {@code false} if otherwise
      */
-    public AutoConfiguration getAutoConfiguration() {
-        return autoConfiguration;
+    public boolean isEnabled() {
+        return enabled;
     }
 
     /**
-     * Defines the AutoConfiguration settings for Metrics.
+     * Enables (if {@code true}, default) or disables (if {@code false}) the auto-configuration of metrics within the
+     * application context.
      *
-     * @param autoConfiguration the AutoConfiguration settings for Metrics.
+     * @param enabled whether to enable metrics autoconfiguration
      */
-    public void setAutoConfiguration(AutoConfiguration autoConfiguration) {
-        this.autoConfiguration = autoConfiguration;
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 
     /**
-     * Retrieves the Micrometer specific settings for Metrics
+     * Retrieves the Micrometer specific settings for metrics.
      *
-     * @return the Micrometer settings for Metrics
+     * @return the Micrometer settings for metrics
      */
     public Micrometer getMicrometer() {
         return micrometer;
     }
 
     /**
-     * Defines the Micrometer settings for Metrics.
+     * Defines the Micrometer settings for metrics.
      *
-     * @param micrometer the Micrometer settings for Metrics.
+     * @param micrometer the Micrometer settings for metrics
      */
     public void setMicrometer(Micrometer micrometer) {
         this.micrometer = micrometer;
     }
 
     /**
-     * Auto configuration specific properties around Metrics.
+     * Properties specific for usage with Micrometer.
      */
-    public static class AutoConfiguration {
-
-        /**
-         * Enables Metrics auto configuration for this application
-         */
-        private boolean enabled = true;
-
-        /**
-         * Indicates whether the auto-configuration of Metrics is enabled
-         *
-         * @return true if the auto-configuration of Metrics is enabled, false if otherwise
-         */
-        public boolean isEnabled() {
-            return enabled;
-        }
-
-        /**
-         * Enables (if {@code true}, default) or disables (if {@code false}) the auto-configuration of Metrics within
-         * the application context.
-         *
-         * @param enabled whether to enable Metrics auto configuration
-         */
-        public void setEnabled(boolean enabled) {
-            this.enabled = enabled;
-        }
-    }
-
     public static class Micrometer {
 
         /**
@@ -104,18 +85,18 @@ public class MetricsProperties {
         private boolean dimensional = false;
 
         /**
-         * Indicates whether the Micrometer Tags/Dimensions will be used
+         * Indicates whether the Micrometer tags/dimensions will be used
          *
-         * @return true if the Micrometer Tags/Dimensions will be used, false if otherwise
+         * @return {@code true} if the Micrometer tags/dimensions will be used, {@code false} if otherwise
          */
         public boolean isDimensional() {
             return dimensional;
         }
 
         /**
-         * Disables (if {@code false}, default) or enables (if {@code true}) the usage of Micrometer Tags/Dimensions
+         * Disables (if {@code false}, default) or enables (if {@code true}) the usage of Micrometer tags/dimensions.
          *
-         * @param dimensional whether the Micrometer Tags/Dimensions will be used
+         * @param dimensional whether the Micrometer tags/dimensions will be used
          */
         public void setDimensional(boolean dimensional) {
             this.dimensional = dimensional;
