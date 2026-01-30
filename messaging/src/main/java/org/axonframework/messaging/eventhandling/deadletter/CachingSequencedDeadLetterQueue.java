@@ -259,6 +259,21 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
         return delegate.process(sequenceFilter, processingTask);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Clears both the delegate queue and the local cache. This method is intended to be called during event processor
+     * reset when processing has been stopped.
+     * <p>
+     * <b>Thread-safety note:</b> The caller must ensure that no concurrent modifying operations (such as {@link #enqueue},
+     * {@link #enqueueIfPresent}, or {@link #evict}) are in progress when this method is called. Since the cache clear
+     * happens asynchronously after the delegate clear completes, concurrent modifications could result in an
+     * inconsistent cache state. In the context of event processor reset, this is guaranteed because the processor is
+     * stopped before reset is invoked.
+     * <p>
+     * This cache instance should not be shared across multiple event processors to avoid interference during clear
+     * operations.
+     */
     @Nonnull
     @Override
     public CompletableFuture<Void> clear() {
