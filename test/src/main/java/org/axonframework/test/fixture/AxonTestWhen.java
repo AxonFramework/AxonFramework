@@ -102,14 +102,16 @@ class AxonTestWhen implements AxonTestPhase.When {
             var messageType = messageTypeResolver.resolveOrThrow(payload);
             message = new GenericCommandMessage(messageType, payload, metadata);
         }
-        logger.debug("command() - dispatching command: {} on thread {}",
+        logger.debug("command() - dispatching command: {}[{}] on thread {}",
                      message.payloadType().getSimpleName(),
+                     message.identifier(),
                      Thread.currentThread().getName());
         inUnitOfWorkOnInvocation(processingContext ->
                                          commandBus.dispatch(message, processingContext)
                                                    .whenComplete((r, e) -> {
-                                                       logger.debug("command() - whenComplete callback fired, result: {}, exception: {} on thread {}",
+                                                       logger.debug("command() - whenComplete callback fired, result: {}[{}], exception: {} on thread {}",
                                                                     r != null ? r.payloadType().getSimpleName() : "null",
+                                                                    r != null ? r.identifier() : "null",
                                                                     e != null ? e.getClass().getSimpleName() : "null",
                                                                     Thread.currentThread().getName());
                                                        if (e == null) {
@@ -158,7 +160,7 @@ class AxonTestWhen implements AxonTestPhase.When {
     public Event events(@Nonnull EventMessage... messages) {
         logger.debug("events() called with {} event(s): {} on thread {}",
                      messages.length,
-                     Arrays.stream(messages).map(e -> e.payloadType().getSimpleName()).toList(),
+                     Arrays.stream(messages).map(e -> e.payloadType().getSimpleName() + "[" + e.identifier() + "]").toList(),
                      Thread.currentThread().getName());
         inUnitOfWorkOnInvocation(processingContext -> eventSink.publish(processingContext, messages));
         logger.debug("events() - completed, returning Event phase on thread {}",

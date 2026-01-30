@@ -67,7 +67,7 @@ public class RecordingEventSink implements EventSink {
                                            @Nonnull List<EventMessage> events) {
         logger.debug("publish() called with {} event(s): {}",
                      events.size(),
-                     events.stream().map(e -> e.payloadType().getSimpleName()).toList());
+                     events.stream().map(e -> e.payloadType().getSimpleName() + "[" + e.identifier() + "]").toList());
         logger.debug("publish() - delegating to {} on thread {}",
                      delegate.getClass().getSimpleName(),
                      Thread.currentThread().getName());
@@ -93,7 +93,7 @@ public class RecordingEventSink implements EventSink {
     public List<EventMessage> recorded() {
         logger.debug("recorded() called, returning {} event(s): {} on thread {}",
                      recorded.size(),
-                     recorded.stream().map(e -> e.payloadType().getSimpleName()).toList(),
+                     recorded.stream().map(e -> e.payloadType().getSimpleName() + "[" + e.identifier() + "]").toList(),
                      Thread.currentThread().getName());
         return List.copyOf(recorded);
     }

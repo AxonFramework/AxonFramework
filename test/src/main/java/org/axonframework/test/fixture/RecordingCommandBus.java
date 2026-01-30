@@ -65,8 +65,9 @@ public class RecordingCommandBus implements CommandBus {
     @Override
     public CompletableFuture<CommandResultMessage> dispatch(@Nonnull CommandMessage command,
                                                             @Nullable ProcessingContext processingContext) {
-        logger.debug("dispatch() called for command: {} on thread {}",
+        logger.debug("dispatch() called for command: {}[{}] on thread {}",
                      command.payloadType().getSimpleName(),
+                     command.identifier(),
                      Thread.currentThread().getName());
         recorded.put(command, null);
         logger.debug("dispatch() - delegating to {} on thread {}",
@@ -75,9 +76,11 @@ public class RecordingCommandBus implements CommandBus {
         var commandResult = delegate.dispatch(command, processingContext);
         return commandResult.thenApply(result -> {
             recorded.put(command, result);
-            logger.debug("dispatch() - thenApply completed for command: {}, result: {}, total recorded: {} on thread {}",
+            logger.debug("dispatch() - thenApply completed for command: {}[{}], result: {}[{}], total recorded: {} on thread {}",
                          command.payloadType().getSimpleName(),
+                         command.identifier(),
                          result != null ? result.payloadType().getSimpleName() : "null",
+                         result != null ? result.identifier() : "null",
                          recorded.size(),
                          Thread.currentThread().getName());
             return result;
@@ -114,7 +117,7 @@ public class RecordingCommandBus implements CommandBus {
     public List<CommandMessage> recordedCommands() {
         logger.debug("recordedCommands() called, returning {} command(s): {} on thread {}",
                      recorded.size(),
-                     recorded.keySet().stream().map(c -> c.payloadType().getSimpleName()).toList(),
+                     recorded.keySet().stream().map(c -> c.payloadType().getSimpleName() + "[" + c.identifier() + "]").toList(),
                      Thread.currentThread().getName());
         return List.copyOf(recorded.keySet());
     }
