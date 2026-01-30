@@ -17,16 +17,22 @@
 package org.axonframework.messaging.eventhandling.deadletter;
 
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.deadletter.Decisions;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
+import org.axonframework.messaging.deadletter.InMemorySequencedDeadLetterQueue;
+import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.UnaryOperator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 /**
  * Tests for {@link DeadLetterQueueConfiguration}.
@@ -288,6 +294,115 @@ class DeadLetterQueueConfigurationTest {
             assertThat(config.isEnabled()).isTrue();
             assertThat(config.clearOnReset()).isFalse();
             assertThat(config.cacheMaxSize()).isEqualTo(512);
+        }
+    }
+
+    @Nested
+    class WhenConfiguringFactory {
+
+        @Test
+        void hasDefaultFactoryThatCreatesInMemoryQueue() {
+            // given
+            DeadLetterQueueConfiguration config = new DeadLetterQueueConfiguration();
+
+            // when
+            SequencedDeadLetterQueue<EventMessage> queue = config.factory().apply("test-component");
+
+            // then
+            assertThat(queue).isNotNull();
+            assertThat(queue).isInstanceOf(InMemorySequencedDeadLetterQueue.class);
+        }
+
+        @Test
+        void setsCustomFactory() {
+            // given
+            DeadLetterQueueConfiguration config = new DeadLetterQueueConfiguration();
+            SequencedDeadLetterQueue<EventMessage> customQueue = InMemorySequencedDeadLetterQueue.defaultQueue();
+
+            // when
+            config.factory(name -> customQueue);
+
+            // then
+            assertThat(config.factory().apply("any-name")).isSameAs(customQueue);
+        }
+
+        @Test
+        void rejectsNullFactory() {
+            // given
+            DeadLetterQueueConfiguration config = new DeadLetterQueueConfiguration();
+
+            // when / then
+            assertThatThrownBy(() -> config.factory(null))
+                    .isInstanceOf(AxonConfigurationException.class)
+                    .hasMessageContaining("may not be null");
+        }
+
+        @Test
+        void factoryReceivesComponentName() {
+            // given
+            DeadLetterQueueConfiguration config = new DeadLetterQueueConfiguration();
+            AtomicReference<String> capturedName = new AtomicReference<>();
+            config.factory(name -> {
+                capturedName.set(name);
+                return InMemorySequencedDeadLetterQueue.defaultQueue();
+            });
+
+            // when
+            config.factory().apply("my-processor-dlq");
+
+            // then
+            assertThat(capturedName.get()).isEqualTo("my-processor-dlq");
+        }
+    }
+
+    @Nested
+    class WhenDisabling {
+
+        @Test
+        void disablesConfiguration() {
+            // given
+            DeadLetterQueueConfiguration config = new DeadLetterQueueConfiguration().enabled();
+            assertThat(config.isEnabled()).isTrue();
+
+            // when
+            config.disabled();
+
+            // then
+            assertThat(config.isEnabled()).isFalse();
+        }
+
+        @Test
+        void disableOverridesEnabled() {
+            // given
+            DeadLetterQueueConfiguration config = new DeadLetterQueueConfiguration();
+
+            // when
+            config.enabled().disabled();
+
+            // then
+            assertThat(config.isEnabled()).isFalse();
+        }
+    }
+
+    @Nested
+    class WhenDescribingComponent {
+
+        @Test
+        void describeToAddsAllProperties() {
+            // given
+            DeadLetterQueueConfiguration config = new DeadLetterQueueConfiguration()
+                    .enabled()
+                    .clearOnReset(false)
+                    .cacheMaxSize(2048);
+            ComponentDescriptor mockDescriptor = mock(ComponentDescriptor.class);
+
+            // when
+            config.describeTo(mockDescriptor);
+
+            // then
+            verify(mockDescriptor).describeProperty("enabled", true);
+            verify(mockDescriptor).describeProperty("clearOnReset", false);
+            verify(mockDescriptor).describeProperty("cacheMaxSize", 2048);
         }
     }
 }

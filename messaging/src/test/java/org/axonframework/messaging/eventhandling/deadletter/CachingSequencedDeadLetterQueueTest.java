@@ -306,4 +306,36 @@ class CachingSequencedDeadLetterQueueTest {
             assertThat(cachingQueue.cacheNonEnqueuedSize()).isEqualTo(customMaxSize);
         }
     }
+
+    @Nested
+    class WhenCacheIsNotYetInitialized {
+
+        @Test
+        void cacheEnqueuedSizeReturnsZeroBeforeInit() {
+            // given
+            delegate = InMemorySequencedDeadLetterQueue.defaultQueue();
+            cachingQueue = new CachingSequencedDeadLetterQueue<>(delegate);
+            // Cache is lazily initialized - no operations have been performed yet
+
+            // when
+            int size = cachingQueue.cacheEnqueuedSize();
+
+            // then
+            assertThat(size).isZero();
+        }
+
+        @Test
+        void cacheNonEnqueuedSizeReturnsZeroBeforeInit() {
+            // given
+            delegate = InMemorySequencedDeadLetterQueue.defaultQueue();
+            cachingQueue = new CachingSequencedDeadLetterQueue<>(delegate);
+            // Cache is lazily initialized - no operations have been performed yet
+
+            // when
+            int size = cachingQueue.cacheNonEnqueuedSize();
+
+            // then
+            assertThat(size).isZero();
+        }
+    }
 }

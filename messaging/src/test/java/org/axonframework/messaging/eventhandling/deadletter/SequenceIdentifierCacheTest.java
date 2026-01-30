@@ -383,4 +383,38 @@ class SequenceIdentifierCacheTest {
             assertThat(cache.nonEnqueuedSize()).isEqualTo(SequenceIdentifierCache.DEFAULT_MAX_SIZE);
         }
     }
+
+    @Nested
+    class WhenMarkingIdentifiersRepeatedly {
+
+        @Test
+        void markingEnqueuedMultipleTimesDoesNotDuplicate() {
+            // given
+            SequenceIdentifierCache cache = new SequenceIdentifierCache();
+
+            // when
+            cache.markEnqueued(SEQUENCE_ID_1);
+            cache.markEnqueued(SEQUENCE_ID_1);
+            cache.markEnqueued(SEQUENCE_ID_1);
+
+            // then
+            assertThat(cache.enqueuedSize()).isEqualTo(1);
+            assertThat(cache.mightBePresent(SEQUENCE_ID_1)).isTrue();
+        }
+
+        @Test
+        void markingNotEnqueuedMultipleTimesDoesNotDuplicate() {
+            // given
+            SequenceIdentifierCache cache = new SequenceIdentifierCache(false);
+
+            // when
+            cache.markNotEnqueued(SEQUENCE_ID_1);
+            cache.markNotEnqueued(SEQUENCE_ID_1);
+            cache.markNotEnqueued(SEQUENCE_ID_1);
+
+            // then
+            assertThat(cache.nonEnqueuedSize()).isEqualTo(1);
+            assertThat(cache.mightBePresent(SEQUENCE_ID_1)).isFalse();
+        }
+    }
 }
