@@ -63,11 +63,10 @@ public class RecordingCommandBus implements CommandBus {
                                                             @Nullable ProcessingContext processingContext) {
         recorded.put(command, null);
         var commandResult = delegate.dispatch(command, processingContext);
-        commandResult.thenApply(result -> {
+        return commandResult.thenApply(result -> {
             recorded.put(command, result);
             return result;
         });
-        return commandResult;
     }
 
     @Override
