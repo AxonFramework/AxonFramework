@@ -40,6 +40,7 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -765,6 +766,33 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
             // then
             assertFalse(result);
             assertFalse(releasedLetter.get());
+        }
+
+        @Test
+        void processWithNoMatchingSequencesReturnsFalseAndPreservesLetters() {
+            // given
+            AtomicInteger taskInvocations = new AtomicInteger(0);
+            Function<DeadLetter<? extends M>, CompletableFuture<EnqueueDecision<M>>> testTask = letter -> {
+                taskInvocations.incrementAndGet();
+                return CompletableFuture.completedFuture(Decisions.evict());
+            };
+
+            Object idOne = generateId();
+            Object idTwo = generateId();
+            testSubject.enqueue(idOne, generateInitialLetter()).join();
+            testSubject.enqueue(idTwo, generateInitialLetter()).join();
+
+            // when
+            // Filter rejects all letters - no sequences match
+            boolean result = testSubject.process(letter -> false, testTask).join();
+
+            // then
+            assertFalse(result);
+            assertEquals(0, taskInvocations.get());
+            // Verify letters are still in the queue (not evicted)
+            assertTrue(testSubject.contains(idOne).join());
+            assertTrue(testSubject.contains(idTwo).join());
+            assertEquals(2, testSubject.amountOfSequences().join());
         }
 
         @Test
