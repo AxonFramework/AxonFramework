@@ -94,7 +94,7 @@ class SequenceIdentifierCache {
     /**
      * Constructs a {@link SequenceIdentifierCache} with the specified initial state and default max size.
      *
-     * @param startedEmpty Whether the dead letter queue was empty when this cache was created.
+     * @param startedEmpty whether the dead letter queue was empty when this cache was created.
      *                     If {@code true}, only enqueued identifiers are tracked.
      *                     If {@code false}, non-enqueued identifiers are also tracked.
      */
@@ -105,11 +105,11 @@ class SequenceIdentifierCache {
     /**
      * Constructs a {@link SequenceIdentifierCache} with the specified initial state and max size.
      *
-     * @param startedEmpty Whether the dead letter queue was empty when this cache was created.
+     * @param startedEmpty whether the dead letter queue was empty when this cache was created.
      *                     If {@code true}, only enqueued identifiers are tracked.
      *                     If {@code false}, non-enqueued identifiers are also tracked.
-     * @param maxSize      The maximum size of the non-enqueued identifiers cache.
-     *                     When exceeded, the oldest entry is removed (LRU eviction).
+     * @param maxSize      the maximum size of the non-enqueued identifiers cache.
+     *                     When exceeded, the oldest entry is removed (LRU eviction)
      */
     public SequenceIdentifierCache(boolean startedEmpty, int maxSize) {
         this.startedEmpty = startedEmpty;
@@ -128,8 +128,8 @@ class SequenceIdentifierCache {
      * non-empty and the identifier is not in the non-enqueued set. Returns {@code false} only
      * when we are certain the identifier is not in the queue.
      *
-     * @param sequenceIdentifier The sequence identifier to check.
-     * @return {@code true} if the identifier might be present, {@code false} if it's definitely not present.
+     * @param sequenceIdentifier the sequence identifier to check
+     * @return {@code true} if the identifier might be present, {@code false} if it's definitely not present
      */
     public boolean mightBePresent(Object sequenceIdentifier) {
         if (enqueuedIdentifiers.contains(sequenceIdentifier)) {
@@ -146,8 +146,8 @@ class SequenceIdentifierCache {
      * <p>
      * This removes the identifier from the non-enqueued set (if present) and adds it to the enqueued set.
      *
-     * @param sequenceIdentifier The sequence identifier to mark as enqueued.
-     * @return This cache instance for method chaining.
+     * @param sequenceIdentifier the sequence identifier to mark as enqueued
+     * @return this cache instance for method chaining
      */
     public SequenceIdentifierCache markEnqueued(Object sequenceIdentifier) {
         if (logger.isTraceEnabled()) {
@@ -164,8 +164,8 @@ class SequenceIdentifierCache {
      * This removes the identifier from the enqueued set (if present). If the queue started non-empty,
      * the identifier is also added to the non-enqueued set with LRU eviction when full.
      *
-     * @param sequenceIdentifier The sequence identifier to mark as not enqueued.
-     * @return This cache instance for method chaining.
+     * @param sequenceIdentifier the sequence identifier to mark as not enqueued
+     * @return this cache instance for method chaining
      */
     public SequenceIdentifierCache markNotEnqueued(Object sequenceIdentifier) {
         if (logger.isTraceEnabled()) {
@@ -185,7 +185,7 @@ class SequenceIdentifierCache {
      * when the segment is claimed again. The cache state may be stale after a segment
      * is released because another processor instance may have modified the queue.
      *
-     * @return This cache instance for method chaining.
+     * @return this cache instance for method chaining
      */
     public SequenceIdentifierCache clear() {
         if (logger.isDebugEnabled()) {
@@ -200,7 +200,7 @@ class SequenceIdentifierCache {
     /**
      * Returns the number of identifiers marked as enqueued.
      *
-     * @return The count of enqueued identifiers.
+     * @return the count of enqueued identifiers
      */
     public int enqueuedSize() {
         return enqueuedIdentifiers.size();
@@ -209,7 +209,7 @@ class SequenceIdentifierCache {
     /**
      * Returns the number of identifiers marked as not enqueued.
      *
-     * @return The count of non-enqueued identifiers.
+     * @return the count of non-enqueued identifiers
      */
     public int nonEnqueuedSize() {
         return nonEnqueuedIdentifiers.size();

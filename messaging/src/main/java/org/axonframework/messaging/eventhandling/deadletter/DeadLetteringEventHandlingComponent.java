@@ -81,51 +81,32 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
 
     private final SequencedDeadLetterQueue<EventMessage> queue;
     private final EnqueuePolicy<EventMessage> enqueuePolicy;
-    private final boolean allowReset;
     private final UnitOfWorkFactory unitOfWorkFactory;
+    private final boolean allowReset;
 
     /**
-     * Instantiate a {@link DeadLetteringEventHandlingComponent} with the given {@code delegate}, {@code queue}, and
-     * {@code unitOfWorkFactory}, using the default {@link EnqueuePolicy} and allowing reset.
-     * <p>
-     * The default policy returns {@link Decisions#enqueue(Throwable)} that truncates the
-     * {@link Throwable#getMessage()} size to {@code 1024} characters when invoked for any dead letter.
-     *
-     * @param delegate          The {@link EventHandlingComponent} to delegate event handling to.
-     * @param queue             The {@link SequencedDeadLetterQueue} to store dead letters in.
-     * @param unitOfWorkFactory The {@link UnitOfWorkFactory} to create
-     *                          {@link org.axonframework.messaging.core.unitofwork.UnitOfWork UnitOfWork} instances for
-     *                          processing dead letters.
-     */
-    public DeadLetteringEventHandlingComponent(@Nonnull EventHandlingComponent delegate,
-                                               @Nonnull SequencedDeadLetterQueue<EventMessage> queue,
-                                               @Nonnull UnitOfWorkFactory unitOfWorkFactory) {
-        this(delegate, queue, DEFAULT_ENQUEUE_POLICY, true, unitOfWorkFactory);
-    }
-
-    /**
-     * Instantiate a {@link DeadLetteringEventHandlingComponent} with the given {@code delegate}, {@code queue},
-     * custom {@link EnqueuePolicy}, reset behavior, and {@code unitOfWorkFactory}.
+     * Instantiate a {@link DeadLetteringEventHandlingComponent} with the given {@code delegate}, {@code queue}, custom
+     * {@link EnqueuePolicy}, reset behavior, and {@code unitOfWorkFactory}.
      *
      * @param delegate          The {@link EventHandlingComponent} to delegate event handling to.
      * @param queue             The {@link SequencedDeadLetterQueue} to store dead letters in.
      * @param enqueuePolicy     The {@link EnqueuePolicy} to decide whether a failed event should be dead-lettered.
-     * @param allowReset        Whether to clear the queue on reset. If {@code true},
-     *                          {@link SequencedDeadLetterQueue#clear()} will be invoked upon a reset.
      * @param unitOfWorkFactory The {@link UnitOfWorkFactory} to create
      *                          {@link org.axonframework.messaging.core.unitofwork.UnitOfWork UnitOfWork} instances for
      *                          processing dead letters.
+     * @param allowReset        Whether to clear the queue on reset. If {@code true},
+     *                          {@link SequencedDeadLetterQueue#clear()} will be invoked upon a reset.
      */
     public DeadLetteringEventHandlingComponent(@Nonnull EventHandlingComponent delegate,
                                                @Nonnull SequencedDeadLetterQueue<EventMessage> queue,
                                                @Nonnull EnqueuePolicy<EventMessage> enqueuePolicy,
-                                               boolean allowReset,
-                                               @Nonnull UnitOfWorkFactory unitOfWorkFactory) {
+                                               @Nonnull UnitOfWorkFactory unitOfWorkFactory,
+                                               boolean allowReset) {
         super(delegate);
-        this.queue = queue;
-        this.enqueuePolicy = enqueuePolicy;
-        this.allowReset = allowReset;
+        this.queue = Objects.requireNonNull(queue, "SequencedDeadLetterQueue may not be null");
+        this.enqueuePolicy = Objects.requireNonNull(enqueuePolicy, "EnqueuePolicy may not be null");
         this.unitOfWorkFactory = Objects.requireNonNull(unitOfWorkFactory, "UnitOfWorkFactory may not be null");
+        this.allowReset = allowReset;
     }
 
     @Nonnull

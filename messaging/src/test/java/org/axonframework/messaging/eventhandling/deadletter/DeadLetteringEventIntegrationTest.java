@@ -191,7 +191,7 @@ public abstract class DeadLetteringEventIntegrationTest {
 
         UnitOfWorkFactory unitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
         deadLetteringComponent = new DeadLetteringEventHandlingComponent(
-                simpleComponent, deadLetterQueue, enqueuePolicy, true, unitOfWorkFactory
+                simpleComponent, deadLetterQueue, enqueuePolicy, unitOfWorkFactory, true
         );
 
         eventSource = new AsyncInMemoryStreamableEventSource();

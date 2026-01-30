@@ -30,13 +30,11 @@ import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.InMemorySequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
-import org.axonframework.messaging.eventhandling.EventHandler;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventTestUtils;
 import org.axonframework.messaging.eventhandling.replay.GenericResetContext;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
-import org.axonframework.messaging.eventhandling.replay.ResetHandler;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.QualifiedName;
 import org.junit.jupiter.api.BeforeEach;
@@ -86,7 +84,7 @@ class DeadLetteringEventHandlingComponentTest {
         enqueuePolicy = (letter, cause) -> Decisions.enqueue(cause);
         unitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
 
-        testSubject = new DeadLetteringEventHandlingComponent(delegate, queue, enqueuePolicy, true, unitOfWorkFactory);
+        testSubject = new DeadLetteringEventHandlingComponent(delegate, queue, enqueuePolicy, unitOfWorkFactory, true);
     }
 
     @Nested
@@ -154,7 +152,7 @@ class DeadLetteringEventHandlingComponentTest {
         void enqueuesWhenPolicyDecidesToIgnore() {
             // given - Ignore means "use default behavior" which is to enqueue
             testSubject = new DeadLetteringEventHandlingComponent(
-                    delegate, queue, (letter, cause) -> Decisions.ignore(), true, unitOfWorkFactory
+                    delegate, queue, (letter, cause) -> Decisions.ignore(), unitOfWorkFactory, true
             );
 
             RuntimeException testException = new RuntimeException("test failure");
@@ -176,7 +174,7 @@ class DeadLetteringEventHandlingComponentTest {
         void doesNotEnqueueWhenPolicyDecidesToDoNotEnqueue() {
             // given
             testSubject = new DeadLetteringEventHandlingComponent(
-                    delegate, queue, (letter, cause) -> Decisions.doNotEnqueue(), true, unitOfWorkFactory
+                    delegate, queue, (letter, cause) -> Decisions.doNotEnqueue(), unitOfWorkFactory, true
             );
 
             RuntimeException testException = new RuntimeException("test failure");
@@ -204,7 +202,7 @@ class DeadLetteringEventHandlingComponentTest {
             when(failingQueue.enqueue(any(), any())).thenReturn(CompletableFuture.failedFuture(enqueueException));
 
             testSubject = new DeadLetteringEventHandlingComponent(
-                    delegate, failingQueue, enqueuePolicy, true, unitOfWorkFactory
+                    delegate, failingQueue, enqueuePolicy, unitOfWorkFactory, true
             );
 
             RuntimeException handlerException = new RuntimeException("handler failure");
@@ -230,7 +228,7 @@ class DeadLetteringEventHandlingComponentTest {
                                                any())).thenReturn(CompletableFuture.failedFuture(enqueueException));
 
             testSubject = new DeadLetteringEventHandlingComponent(
-                    delegate, failingQueue, enqueuePolicy, true, unitOfWorkFactory
+                    delegate, failingQueue, enqueuePolicy, unitOfWorkFactory, true
             );
 
             EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
@@ -251,7 +249,7 @@ class DeadLetteringEventHandlingComponentTest {
         void clearsQueueWhenAllowResetIsTrue() {
             // given
             testSubject = new DeadLetteringEventHandlingComponent(
-                    delegate, queue, enqueuePolicy, true, unitOfWorkFactory
+                    delegate, queue, enqueuePolicy, unitOfWorkFactory, true
             );
 
             EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
@@ -274,7 +272,7 @@ class DeadLetteringEventHandlingComponentTest {
         void doesNotClearQueueWhenAllowResetIsFalse() {
             // given
             testSubject = new DeadLetteringEventHandlingComponent(
-                    delegate, queue, enqueuePolicy, false, unitOfWorkFactory
+                    delegate, queue, enqueuePolicy, unitOfWorkFactory, false
             );
 
             EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
@@ -345,7 +343,7 @@ class DeadLetteringEventHandlingComponentTest {
                 }
             };
             testSubject = new DeadLetteringEventHandlingComponent(
-                    delegate, queue, enqueuePolicy, true, unitOfWorkFactory
+                    delegate, queue, enqueuePolicy, unitOfWorkFactory, true
             );
 
             queue.enqueue(TEST_SEQUENCE_ID, new GenericDeadLetter<>(TEST_SEQUENCE_ID, testEvent1)).join();
@@ -397,7 +395,7 @@ class DeadLetteringEventHandlingComponentTest {
 
                 // Decisions.enqueue() without cause means "use the original error from the dead letter"
                 testSubject = new DeadLetteringEventHandlingComponent(
-                        delegate, queue, (letter, cause) -> Decisions.enqueue(), true, unitOfWorkFactory
+                        delegate, queue, (letter, cause) -> Decisions.enqueue(), unitOfWorkFactory, true
                 );
 
                 RuntimeException testException = new RuntimeException("original failure");
@@ -424,7 +422,7 @@ class DeadLetteringEventHandlingComponentTest {
                 GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
 
                 testSubject = new DeadLetteringEventHandlingComponent(
-                        delegate, queue, (letter, cause) -> Decisions.enqueue(cause), true, unitOfWorkFactory
+                        delegate, queue, (letter, cause) -> Decisions.enqueue(cause), unitOfWorkFactory, true
                 );
 
                 RuntimeException testException = new RuntimeException("specific failure reason");
@@ -456,8 +454,7 @@ class DeadLetteringEventHandlingComponentTest {
                                 cause,
                                 l -> l.diagnostics().and("custom-key", "custom-value")
                         ),
-                        true,
-                        unitOfWorkFactory
+                        unitOfWorkFactory, true
                 );
 
                 RuntimeException testException = new RuntimeException("test failure");
@@ -480,7 +477,7 @@ class DeadLetteringEventHandlingComponentTest {
             void evictDecisionDoesNotEnqueue() {
                 // given
                 testSubject = new DeadLetteringEventHandlingComponent(
-                        delegate, queue, (letter, cause) -> Decisions.evict(), true, unitOfWorkFactory
+                        delegate, queue, (letter, cause) -> Decisions.evict(), unitOfWorkFactory, true
                 );
 
                 RuntimeException testException = new RuntimeException("test failure");
@@ -510,7 +507,7 @@ class DeadLetteringEventHandlingComponentTest {
                 };
 
                 testSubject = new DeadLetteringEventHandlingComponent(
-                        delegate, queue, exceptionTypePolicy, true, unitOfWorkFactory
+                        delegate, queue, exceptionTypePolicy, unitOfWorkFactory, true
                 );
 
                 IllegalArgumentException expectedEnqueue = new IllegalArgumentException("should enqueue");
@@ -542,7 +539,7 @@ class DeadLetteringEventHandlingComponentTest {
                 };
 
                 testSubject = new DeadLetteringEventHandlingComponent(
-                        delegate, queue, exceptionTypePolicy, true, unitOfWorkFactory
+                        delegate, queue, exceptionTypePolicy, unitOfWorkFactory, true
                 );
 
                 RuntimeException notExpectedEnqueue = new RuntimeException("should not enqueue");
@@ -573,7 +570,7 @@ class DeadLetteringEventHandlingComponentTest {
                 };
 
                 testSubject = new DeadLetteringEventHandlingComponent(
-                        delegate, queue, messageInspectingPolicy, true, unitOfWorkFactory
+                        delegate, queue, messageInspectingPolicy, unitOfWorkFactory, true
                 );
 
                 RuntimeException testException = new RuntimeException("test failure");
@@ -603,7 +600,7 @@ class DeadLetteringEventHandlingComponentTest {
                 };
 
                 testSubject = new DeadLetteringEventHandlingComponent(
-                        delegate, queue, messageInspectingPolicy, true, unitOfWorkFactory
+                        delegate, queue, messageInspectingPolicy, unitOfWorkFactory, true
                 );
 
                 RuntimeException testException = new RuntimeException("test failure");
@@ -632,7 +629,7 @@ class DeadLetteringEventHandlingComponentTest {
                 EnqueuePolicy<EventMessage> evictOnFailurePolicy = (letter, cause) -> Decisions.doNotEnqueue();
 
                 testSubject = new DeadLetteringEventHandlingComponent(
-                        delegate, queue, evictOnFailurePolicy, true, unitOfWorkFactory
+                        delegate, queue, evictOnFailurePolicy, unitOfWorkFactory, true
                 );
 
                 EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
@@ -657,7 +654,7 @@ class DeadLetteringEventHandlingComponentTest {
                 EnqueuePolicy<EventMessage> evictPolicy = (letter, cause) -> Decisions.evict();
 
                 testSubject = new DeadLetteringEventHandlingComponent(
-                        delegate, queue, evictPolicy, true, unitOfWorkFactory
+                        delegate, queue, evictPolicy, unitOfWorkFactory, true
                 );
 
                 EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
@@ -682,7 +679,7 @@ class DeadLetteringEventHandlingComponentTest {
                 EnqueuePolicy<EventMessage> requeuePolicy = (letter, cause) -> Decisions.requeue(cause);
 
                 testSubject = new DeadLetteringEventHandlingComponent(
-                        delegate, queue, requeuePolicy, true, unitOfWorkFactory
+                        delegate, queue, requeuePolicy, unitOfWorkFactory, true
                 );
 
                 EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
@@ -711,7 +708,7 @@ class DeadLetteringEventHandlingComponentTest {
                 EnqueuePolicy<EventMessage> alwaysRequeuePolicy = (letter, cause) -> Decisions.requeue(cause);
 
                 testSubject = new DeadLetteringEventHandlingComponent(
-                        delegate, queue, alwaysRequeuePolicy, true, unitOfWorkFactory
+                        delegate, queue, alwaysRequeuePolicy, unitOfWorkFactory, true
                 );
 
                 EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
@@ -746,7 +743,7 @@ class DeadLetteringEventHandlingComponentTest {
                 };
 
                 testSubject = new DeadLetteringEventHandlingComponent(
-                        delegate, queue, retryLimitPolicy, true, unitOfWorkFactory
+                        delegate, queue, retryLimitPolicy, unitOfWorkFactory, true
                 );
 
                 EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
@@ -784,7 +781,7 @@ class DeadLetteringEventHandlingComponentTest {
                 };
 
                 testSubject = new DeadLetteringEventHandlingComponent(
-                        delegate, queue, retryLimitPolicy, true, unitOfWorkFactory
+                        delegate, queue, retryLimitPolicy, unitOfWorkFactory, true
                 );
 
                 EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
@@ -822,7 +819,7 @@ class DeadLetteringEventHandlingComponentTest {
                 };
 
                 testSubject = new DeadLetteringEventHandlingComponent(
-                        delegate, queue, causeMessagePolicy, true, unitOfWorkFactory
+                        delegate, queue, causeMessagePolicy, unitOfWorkFactory, true
                 );
 
                 RuntimeException transientException = new RuntimeException("transient error");
@@ -854,7 +851,7 @@ class DeadLetteringEventHandlingComponentTest {
                 };
 
                 testSubject = new DeadLetteringEventHandlingComponent(
-                        delegate, queue, causeMessagePolicy, true, unitOfWorkFactory
+                        delegate, queue, causeMessagePolicy, unitOfWorkFactory, true
                 );
 
                 RuntimeException permanentException = new RuntimeException("permanent error");
@@ -884,7 +881,7 @@ class DeadLetteringEventHandlingComponentTest {
                 };
 
                 testSubject = new DeadLetteringEventHandlingComponent(
-                        delegate, queue, nullSafePolicy, true, unitOfWorkFactory
+                        delegate, queue, nullSafePolicy, unitOfWorkFactory, true
                 );
 
                 RuntimeException testException = new RuntimeException("test failure");

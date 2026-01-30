@@ -263,8 +263,7 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
                                                  delegate,
                                                  cachingDlq,
                                                  dlqConfig.enqueuePolicy(),
-                                                 dlqConfig.clearOnReset(),
-                                                 processorConfig.unitOfWorkFactory()
+                                                 processorConfig.unitOfWorkFactory(), dlqConfig.clearOnReset()
                                          );
                                      });
                 // Register the decorated component also as SequencedDeadLetterProcessor when DLQ is enabled
