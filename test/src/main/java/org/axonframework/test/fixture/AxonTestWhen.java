@@ -198,10 +198,6 @@ class AxonTestWhen implements AxonTestPhase.When {
 
         @Override
         public AxonTestPhase.Then.Command then() {
-            // Wait for any pending event recordings to complete.
-            // This is essential when using Axon Server where event publishing is asynchronous.
-            eventSink.awaitPendingRecordings();
-
             logger.debug("Command.then() called - transitioning to THEN phase, recorded events: {} on thread {}",
                          eventSink.recorded().size(),
                          Thread.currentThread().getName());
@@ -220,10 +216,6 @@ class AxonTestWhen implements AxonTestPhase.When {
 
         @Override
         public AxonTestPhase.Then.Event then() {
-            // Wait for any pending event recordings to complete.
-            // This is essential when using Axon Server where event publishing is asynchronous.
-            eventSink.awaitPendingRecordings();
-
             logger.debug("Event.then() called - transitioning to THEN phase, recorded events: {} on thread {}",
                          eventSink.recorded().size(),
                          Thread.currentThread().getName());
