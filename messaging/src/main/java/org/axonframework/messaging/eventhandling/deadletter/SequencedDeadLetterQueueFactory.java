@@ -23,13 +23,12 @@ import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.InstantiatedComponentDefinition;
 import org.axonframework.common.configuration.LifecycleRegistry;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.deadletter.InMemorySequencedDeadLetterQueue;
+import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.eventhandling.EventMessage;
 
 import java.util.Optional;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -46,6 +45,9 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  */
 public class SequencedDeadLetterQueueFactory implements ComponentFactory<SequencedDeadLetterQueue<EventMessage>> {
 
+    private static final TypeReference<SequencedDeadLetterQueue<EventMessage>> TYPE_REF = new TypeReference<>() {
+    };
+
     private final BiFunction<String, Configuration, SequencedDeadLetterQueue<EventMessage>> factoryFn;
 
     /**
@@ -60,11 +62,10 @@ public class SequencedDeadLetterQueueFactory implements ComponentFactory<Sequenc
         this.factoryFn = factoryFn;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     @Nonnull
     public Class<SequencedDeadLetterQueue<EventMessage>> forType() {
-        return (Class<SequencedDeadLetterQueue<EventMessage>>) (Class<?>) SequencedDeadLetterQueue.class;
+        return TYPE_REF.getTypeAsClass();
     }
 
     @Override

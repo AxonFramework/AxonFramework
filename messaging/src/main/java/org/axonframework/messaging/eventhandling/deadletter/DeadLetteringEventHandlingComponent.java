@@ -73,7 +73,7 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
             (letter, cause) -> Decisions.enqueue(truncated(cause));
 
     /**
-     * The order for decorating {@link EventHandlingComponent}s with dead-lettering support.
+     * The order for decorating {@link EventHandlingComponent EventHandlingComponents} with dead-lettering support.
      * <p>
      * This order is applied after interceptors to ensure dead-lettering wraps the fully decorated component.
      */
@@ -88,14 +88,14 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
      * Instantiate a {@link DeadLetteringEventHandlingComponent} with the given {@code delegate}, {@code queue}, custom
      * {@link EnqueuePolicy}, reset behavior, and {@code unitOfWorkFactory}.
      *
-     * @param delegate          The {@link EventHandlingComponent} to delegate event handling to.
-     * @param queue             The {@link SequencedDeadLetterQueue} to store dead letters in.
-     * @param enqueuePolicy     The {@link EnqueuePolicy} to decide whether a failed event should be dead-lettered.
-     * @param unitOfWorkFactory The {@link UnitOfWorkFactory} to create
+     * @param delegate          the {@link EventHandlingComponent} to delegate event handling to
+     * @param queue             the {@link SequencedDeadLetterQueue} to store dead letters in
+     * @param enqueuePolicy     the {@link EnqueuePolicy} to decide whether a failed event should be dead-lettered
+     * @param unitOfWorkFactory the {@link UnitOfWorkFactory} to create
      *                          {@link org.axonframework.messaging.core.unitofwork.UnitOfWork UnitOfWork} instances for
-     *                          processing dead letters.
-     * @param allowReset        Whether to clear the queue on reset. If {@code true},
-     *                          {@link SequencedDeadLetterQueue#clear()} will be invoked upon a reset.
+     *                          processing dead letters
+     * @param allowReset        whether to clear the queue on reset. If {@code true},
+     *                          {@link SequencedDeadLetterQueue#clear()} will be invoked upon a reset
      */
     public DeadLetteringEventHandlingComponent(@Nonnull EventHandlingComponent delegate,
                                                @Nonnull SequencedDeadLetterQueue<EventMessage> queue,
@@ -136,10 +136,10 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
     /**
      * Handles an event normally through the delegate, with dead-lettering on failure.
      *
-     * @param event              The event to handle.
-     * @param context            The processing context.
-     * @param sequenceIdentifier The sequence identifier.
-     * @return A stream representing the handling result with error handling.
+     * @param event              the event to handle
+     * @param context            the processing context
+     * @param sequenceIdentifier the sequence identifier
+     * @return a stream representing the handling result with error handling
      */
     private MessageStream<Message> handle(EventMessage event,
                                           ProcessingContext context,
@@ -161,10 +161,10 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
      * is considered "handled" by being dead-lettered or evicted, and is not propagated to the processor. This allows
      * the processor to continue with the next event rather than aborting the work package.
      *
-     * @param event              The event that failed.
-     * @param sequenceIdentifier The sequence identifier.
-     * @param error              The error that occurred.
-     * @return A stream that completes after the error is handled (either enqueued or evicted).
+     * @param event              the event that failed
+     * @param sequenceIdentifier the sequence identifier
+     * @param error              the error that occurred
+     * @return a stream that completes after the error is handled (either enqueued or evicted)
      */
     private MessageStream<Message> handleError(EventMessage event, Object sequenceIdentifier, Throwable error) {
         DeadLetter<EventMessage> letter = new GenericDeadLetter<>(sequenceIdentifier, event, error);

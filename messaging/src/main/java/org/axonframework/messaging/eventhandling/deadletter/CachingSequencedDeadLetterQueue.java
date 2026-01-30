@@ -45,6 +45,12 @@ import jakarta.annotation.Nonnull;
  * <p>
  * The cache should be cleared when a segment is released to ensure consistency. Use {@link #invalidateCache()} to clear
  * the cache when segment ownership changes.
+ * <p>
+ * <b>Thread-safety note:</b> This class is not thread-safe when performing operations for the same sequence identifier
+ * concurrently. It is designed for internal use by {@link DeadLetteringEventHandlingComponent}, where operations on a
+ * given sequence identifier are already serialized by the upstream
+ * {@link org.axonframework.messaging.eventhandling.SequencingEventHandlingComponent}. External synchronization must be
+ * provided if this class is used in other contexts where concurrent access to the same sequence identifier is possible.
  *
  * @param <M> The type of {@link Message} contained in the {@link DeadLetter dead letters} within this queue.
  * @author Mateusz Nowak
