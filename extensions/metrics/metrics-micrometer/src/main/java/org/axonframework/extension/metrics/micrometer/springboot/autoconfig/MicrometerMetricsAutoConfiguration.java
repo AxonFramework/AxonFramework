@@ -14,15 +14,18 @@
  * limitations under the License.
  */
 
-package org.axonframework.extension.springboot.autoconfig;
+package org.axonframework.extension.metrics.micrometer.springboot.autoconfig;
 
-import com.codahale.metrics.MetricRegistry;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
-import org.axonframework.extension.metrics.dropwizard.MetricsConfigurationEnhancer;
+import org.axonframework.extension.metrics.micrometer.MetricsConfigurationEnhancer;
 import org.axonframework.extension.springboot.MetricsProperties;
+import org.axonframework.extension.springboot.autoconfig.AxonAutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -31,38 +34,48 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 
 /**
- * Autoconfiguration to set up metrics for the infrastructure components.
+ * Autoconfiguration to set up Micrometer Metrics for the infrastructure components.
  *
  * @author Steven van Beelen
- * @since 3.2.0
+ * @author Marijn van Zelst
+ * @since 4.1.0
  */
 @AutoConfiguration
-@AutoConfigureBefore(AxonAutoConfiguration.class)
-@ConditionalOnMissingBean(MicrometerMetricsAutoConfiguration.class)
-@ConditionalOnClass(name = "com.codahale.metrics.MetricRegistry")
+@AutoConfigureBefore(value = AxonAutoConfiguration.class)
+@AutoConfigureAfter(name = {
+        "org.springframework.boot.actuate.autoconfigure.metrics.CompositeMeterRegistryAutoConfiguration",
+        "org.springframework.boot.actuate.autoconfigure.metrics.export.simple.SimpleMetricsExportAutoConfiguration"
+})
+@ConditionalOnClass(name = {
+        "org.axonframework.extension.springboot.autoconfig.AxonAutoConfiguration",
+        "io.micrometer.core.instrument.MeterRegistry"
+})
 @EnableConfigurationProperties(MetricsProperties.class)
-public class DropwizardMetricsAutoConfiguration {
+public class MicrometerMetricsAutoConfiguration {
 
     /**
-     * Bean creation method constructing a Dropwizard {@link MetricRegistry} for the
+     * Bean creation method constructing a Micrometer {@link MeterRegistry} for the
      * {@link MetricsConfigurationEnhancer}.
      *
-     * @return a Dropwizard {@link MetricRegistry} to be used by the {@link MetricsConfigurationEnhancer}
+     * @return a Micrometer {@link MeterRegistry} to be used by the {@link MetricsConfigurationEnhancer}
      */
     @Bean
-    @ConditionalOnMissingBean(MetricRegistry.class)
+    @ConditionalOnMissingBean(MeterRegistry.class)
     @ConditionalOnProperty(value = "axon.metrics.enabled", havingValue = "true")
-    public MetricRegistry metricRegistry() {
-        return new MetricRegistry();
+    public MeterRegistry meterRegistry() {
+        return new SimpleMeterRegistry();
     }
 
     /**
-     * Bean creation method constructing a {@link MetricsConfigurationEnhancer} with the given {@code registry}, which
-     * will attach a default set of {@link org.axonframework.messaging.monitoring.MessageMonitor MessageMonitors} to
-     * Axon's infrastructure components.
+     * Bean creation method constructing a {@link MetricsConfigurationEnhancer} with the given {@code registry} and
+     * {@code properties}, which will attach a default set of
+     * {@link org.axonframework.messaging.monitoring.MessageMonitor MessageMonitors} to Axon's infrastructure
+     * components.
      *
-     * @param registry the {@code MetricRegistry} to be used by the {@link MetricsConfigurationEnhancer} to register
-     *                 metrics with
+     * @param registry   the {@code MeterRegistry} to be used by the {@link MetricsConfigurationEnhancer} to register
+     *                   metrics with
+     * @param properties the {@code MetricProperties}, used to deduce whether Micrometer should be set to
+     *                   {@link MetricsProperties.Micrometer#isDimensional() dimensional} metrics
      * @return a {@link MetricsConfigurationEnhancer} that will attach a default set of
      * {@link org.axonframework.messaging.monitoring.MessageMonitor MessageMonitors} to Axon's infrastructure
      * components
@@ -70,8 +83,9 @@ public class DropwizardMetricsAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnProperty(value = "axon.metrics.enabled", havingValue = "true")
-    public MetricsConfigurationEnhancer metricsConfigurationEnhancer(MetricRegistry registry) {
-        return new MetricsConfigurationEnhancer(registry);
+    public MetricsConfigurationEnhancer metricsConfigurationEnhancer(MeterRegistry registry,
+                                                                     MetricsProperties properties) {
+        return new MetricsConfigurationEnhancer(registry, properties.getMicrometer().isDimensional());
     }
 
     /**
