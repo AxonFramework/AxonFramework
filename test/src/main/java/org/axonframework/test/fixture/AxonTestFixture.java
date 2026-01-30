@@ -89,20 +89,6 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
 
         this.messageTypeResolver = configuration.getComponent(MessageTypeResolver.class);
         this.unitOfWorkFactory = configuration.getComponent(UnitOfWorkFactory.class);
-
-        // Reset recording components to ensure a clean state for each test.
-        // This is essential in Spring environments where recording components are singleton beans
-        // shared across tests. Without this reset, events from previous tests may leak into subsequent tests.
-        resetRecordingComponents();
-    }
-
-    private void resetRecordingComponents() {
-        // First, wait for any pending async operations from previous tests to complete.
-        // This ensures we don't lose events that are still being recorded asynchronously.
-        eventSink.awaitPendingRecordings();
-        // Then clear all recorded messages to start fresh.
-        commandBus.reset();
-        eventSink.reset();
     }
 
     /**
@@ -273,7 +259,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
          * @return True if Axon Server is disabled, false otherwise.
          */
         public boolean axonServerDisabled() {
-            return !axonServerEnabled;
+            return! axonServerEnabled;
         }
     }
 }

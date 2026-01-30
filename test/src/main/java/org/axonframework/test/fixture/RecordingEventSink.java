@@ -112,8 +112,11 @@ public class RecordingEventSink implements EventSink {
      * Awaits completion of all pending publish operations with a custom timeout.
      * <p>
      * This method handles the case where event publishing happens asynchronously
-     * (e.g., when using Axon Server). It continuously polls for events to appear
-     * and waits for any pending publish operations to complete.
+     * (e.g., when using Axon Server). It waits for either:
+     * <ul>
+     *     <li>New events to appear in the recorded list, or</li>
+     *     <li>Pending publish operations to appear and complete</li>
+     * </ul>
      *
      * @param timeout The maximum time to wait for pending recordings to complete.
      */
@@ -126,51 +129,19 @@ public class RecordingEventSink implements EventSink {
 
         long deadlineMillis = System.currentTimeMillis() + timeout.toMillis();
 
-        // Continuously poll until we have events or timeout
-        // This handles the race condition where command dispatch completes before
-        // the command handler has even started (common with Axon Server)
-        while (System.currentTimeMillis() < deadlineMillis) {
-            // Check if new events have been recorded
-            if (recorded.size() > initialRecordedCount) {
-                logger.debug("awaitPendingRecordings() - {} new event(s) recorded, total: {}",
-                            recorded.size() - initialRecordedCount,
-                            recorded.size());
-                // Events arrived - wait for any remaining pending publishes and return
-                waitForPendingPublishes(deadlineMillis);
-                return;
-            }
-
-            // Check if there are pending publishes to wait for
-            if (!pendingPublishes.isEmpty()) {
-                logger.debug("awaitPendingRecordings() - {} pending publish(es) found, waiting for completion",
-                            pendingPublishes.size());
-                waitForPendingPublishes(deadlineMillis);
-                // After waiting, check if events arrived
-                if (recorded.size() > initialRecordedCount) {
-                    logger.debug("awaitPendingRecordings() - events arrived after waiting for pending publishes");
-                    return;
-                }
-                // No events yet - continue polling
-            }
-
-            try {
-                Thread.sleep(10); // Small sleep to avoid busy-waiting
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                break;
-            }
+        // If events are already recorded (arrived before we started waiting), we're done.
+        // This handles the case where async events arrived between command dispatch and then() call.
+        if (initialRecordedCount > 0) {
+            logger.debug("awaitPendingRecordings() - events already recorded, skipping wait");
+        } else if (pendingPublishes.isEmpty()) {
+            // No events yet and no pending publishes - wait for async event publishing.
+            // This handles the race condition where then() is called before publish() on async systems.
+            waitForEventsOrPendingPublishes(deadlineMillis, initialRecordedCount);
         }
 
-        logger.debug("awaitPendingRecordings() completed (timeout), {} event(s) recorded on thread {}",
-                     recorded.size(),
-                     Thread.currentThread().getName());
-    }
-
-    /**
-     * Waits for all pending publish operations to complete.
-     */
-    private void waitForPendingPublishes(long deadlineMillis) {
+        // Now wait for any pending publishes to complete
         while (!pendingPublishes.isEmpty() && System.currentTimeMillis() < deadlineMillis) {
+            // Take a snapshot of current pending futures
             CompletableFuture<?>[] pending = pendingPublishes.toArray(new CompletableFuture[0]);
             if (pending.length == 0) {
                 break;
@@ -191,6 +162,43 @@ public class RecordingEventSink implements EventSink {
                 // Continue - the publish might have failed but we should still check for more
             }
         }
+
+        logger.debug("awaitPendingRecordings() completed, {} event(s) recorded on thread {}",
+                     recorded.size(),
+                     Thread.currentThread().getName());
+    }
+
+    /**
+     * Waits for events to be recorded or pending publishes to appear.
+     * This handles the case where the command handler hasn't started publishing yet,
+     * or events arrived before we started waiting.
+     */
+    private void waitForEventsOrPendingPublishes(long deadlineMillis, int initialRecordedCount) {
+        while (System.currentTimeMillis() < deadlineMillis) {
+            // Check if new events have been recorded since we started waiting
+            if (recorded.size() > initialRecordedCount) {
+                logger.debug("awaitPendingRecordings() - {} new event(s) recorded, total: {}",
+                            recorded.size() - initialRecordedCount,
+                            recorded.size());
+                return;
+            }
+
+            // Check if there are pending publishes to wait for
+            if (!pendingPublishes.isEmpty()) {
+                logger.debug("awaitPendingRecordings() - {} pending publish(es) appeared",
+                            pendingPublishes.size());
+                return;
+            }
+
+            try {
+                Thread.sleep(10); // Small sleep to avoid busy-waiting
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+
+        logger.debug("awaitPendingRecordings() - timeout waiting for events, recorded: {}", recorded.size());
     }
 
     /**
