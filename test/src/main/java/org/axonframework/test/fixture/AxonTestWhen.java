@@ -31,7 +31,10 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.UnitOfWork;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.axonframework.messaging.eventhandling.EventSink;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
@@ -43,6 +46,8 @@ import java.util.function.Function;
  * @since 5.0.0
  */
 class AxonTestWhen implements AxonTestPhase.When {
+
+    private static final Logger logger = LoggerFactory.getLogger(AxonTestWhen.class);
 
     private final AxonConfiguration configuration;
     private final AxonTestFixture.Customization customization;
@@ -87,6 +92,9 @@ class AxonTestWhen implements AxonTestPhase.When {
 
     @Override
     public Command command(@Nonnull Object payload, @Nonnull Metadata metadata) {
+        logger.debug("command() called with payload: {} on thread {}",
+                     payload.getClass().getSimpleName(),
+                     Thread.currentThread().getName());
         CommandMessage message;
         if (payload instanceof CommandMessage commandMessage) {
             message = commandMessage.andMetadata(metadata);
@@ -94,9 +102,16 @@ class AxonTestWhen implements AxonTestPhase.When {
             var messageType = messageTypeResolver.resolveOrThrow(payload);
             message = new GenericCommandMessage(messageType, payload, metadata);
         }
+        logger.debug("command() - dispatching command: {} on thread {}",
+                     message.payloadType().getSimpleName(),
+                     Thread.currentThread().getName());
         inUnitOfWorkOnInvocation(processingContext ->
                                          commandBus.dispatch(message, processingContext)
                                                    .whenComplete((r, e) -> {
+                                                       logger.debug("command() - whenComplete callback fired, result: {}, exception: {} on thread {}",
+                                                                    r != null ? r.payloadType().getSimpleName() : "null",
+                                                                    e != null ? e.getClass().getSimpleName() : "null",
+                                                                    Thread.currentThread().getName());
                                                        if (e == null) {
                                                            actualResult = r;
                                                            actualException = null;
@@ -106,6 +121,8 @@ class AxonTestWhen implements AxonTestPhase.When {
                                                        }
                                                    })
         );
+        logger.debug("command() - completed, returning Command phase on thread {}",
+                     Thread.currentThread().getName());
         return new Command();
     }
 
@@ -139,20 +156,39 @@ class AxonTestWhen implements AxonTestPhase.When {
 
     @Override
     public Event events(@Nonnull EventMessage... messages) {
+        logger.debug("events() called with {} event(s): {} on thread {}",
+                     messages.length,
+                     Arrays.stream(messages).map(e -> e.payloadType().getSimpleName()).toList(),
+                     Thread.currentThread().getName());
         inUnitOfWorkOnInvocation(processingContext -> eventSink.publish(processingContext, messages));
+        logger.debug("events() - completed, returning Event phase on thread {}",
+                     Thread.currentThread().getName());
         return new Event();
     }
 
     private void inUnitOfWorkOnInvocation(Function<ProcessingContext, CompletableFuture<?>> action) {
+        logger.debug("inUnitOfWorkOnInvocation() - creating unit of work on thread {}",
+                     Thread.currentThread().getName());
         var unitOfWork = unitOfWorkFactory.create();
         unitOfWork.onInvocation(action);
+        logger.debug("inUnitOfWorkOnInvocation() - executing unit of work on thread {}",
+                     Thread.currentThread().getName());
         awaitCompletion(unitOfWork.execute());
+        logger.debug("inUnitOfWorkOnInvocation() - unit of work completed on thread {}",
+                     Thread.currentThread().getName());
     }
 
     private void awaitCompletion(CompletableFuture<?> completion) {
+        logger.debug("awaitCompletion() - waiting for completion on thread {}",
+                     Thread.currentThread().getName());
         try {
             completion.join();
+            logger.debug("awaitCompletion() - completion.join() returned successfully on thread {}",
+                         Thread.currentThread().getName());
         } catch (Exception e) {
+            logger.debug("awaitCompletion() - completion.join() threw exception: {} on thread {}",
+                         e.getClass().getSimpleName(),
+                         Thread.currentThread().getName());
             this.actualResult = null;
             this.actualException = e.getCause();
         }
@@ -162,6 +198,13 @@ class AxonTestWhen implements AxonTestPhase.When {
 
         @Override
         public AxonTestPhase.Then.Command then() {
+            // Wait for any pending event recordings to complete.
+            // This is essential when using Axon Server where event publishing is asynchronous.
+            eventSink.awaitPendingRecordings();
+
+            logger.debug("Command.then() called - transitioning to THEN phase, recorded events: {} on thread {}",
+                         eventSink.recorded().size(),
+                         Thread.currentThread().getName());
             return new AxonTestThenCommand(
                     configuration,
                     customization,
@@ -177,6 +220,13 @@ class AxonTestWhen implements AxonTestPhase.When {
 
         @Override
         public AxonTestPhase.Then.Event then() {
+            // Wait for any pending event recordings to complete.
+            // This is essential when using Axon Server where event publishing is asynchronous.
+            eventSink.awaitPendingRecordings();
+
+            logger.debug("Event.then() called - transitioning to THEN phase, recorded events: {} on thread {}",
+                         eventSink.recorded().size(),
+                         Thread.currentThread().getName());
             return new AxonTestThenEvent(
                     configuration,
                     customization,

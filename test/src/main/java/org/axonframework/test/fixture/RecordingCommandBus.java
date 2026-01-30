@@ -27,6 +27,8 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.List;
@@ -45,6 +47,8 @@ import java.util.concurrent.CompletableFuture;
 @Internal
 public class RecordingCommandBus implements CommandBus {
 
+    private static final Logger logger = LoggerFactory.getLogger(RecordingCommandBus.class);
+
     private final CommandBus delegate;
     private final Map<CommandMessage, Message> recorded = new HashMap<>();
 
@@ -61,10 +65,21 @@ public class RecordingCommandBus implements CommandBus {
     @Override
     public CompletableFuture<CommandResultMessage> dispatch(@Nonnull CommandMessage command,
                                                             @Nullable ProcessingContext processingContext) {
+        logger.debug("dispatch() called for command: {} on thread {}",
+                     command.payloadType().getSimpleName(),
+                     Thread.currentThread().getName());
         recorded.put(command, null);
+        logger.debug("dispatch() - delegating to {} on thread {}",
+                     delegate.getClass().getSimpleName(),
+                     Thread.currentThread().getName());
         var commandResult = delegate.dispatch(command, processingContext);
         return commandResult.thenApply(result -> {
             recorded.put(command, result);
+            logger.debug("dispatch() - thenApply completed for command: {}, result: {}, total recorded: {} on thread {}",
+                         command.payloadType().getSimpleName(),
+                         result != null ? result.payloadType().getSimpleName() : "null",
+                         recorded.size(),
+                         Thread.currentThread().getName());
             return result;
         });
     }
@@ -85,6 +100,9 @@ public class RecordingCommandBus implements CommandBus {
      * @return A map of all the {@link CommandMessage CommandMessages} dispatched, and their corresponding results.
      */
     public Map<CommandMessage, Message> recorded() {
+        logger.debug("recorded() called, returning {} command(s) on thread {}",
+                     recorded.size(),
+                     Thread.currentThread().getName());
         return Map.copyOf(recorded);
     }
 
@@ -94,6 +112,10 @@ public class RecordingCommandBus implements CommandBus {
      * @return The commands that have been dispatched to this {@link CommandBus}
      */
     public List<CommandMessage> recordedCommands() {
+        logger.debug("recordedCommands() called, returning {} command(s): {} on thread {}",
+                     recorded.size(),
+                     recorded.keySet().stream().map(c -> c.payloadType().getSimpleName()).toList(),
+                     Thread.currentThread().getName());
         return List.copyOf(recorded.keySet());
     }
 
@@ -115,6 +137,9 @@ public class RecordingCommandBus implements CommandBus {
      * @return This recording {@link CommandBus}, for fluent interfacing.
      */
     public RecordingCommandBus reset() {
+        logger.debug("reset() called, clearing {} recorded command(s) on thread {}",
+                     recorded.size(),
+                     Thread.currentThread().getName());
         recorded.clear();
         return this;
     }

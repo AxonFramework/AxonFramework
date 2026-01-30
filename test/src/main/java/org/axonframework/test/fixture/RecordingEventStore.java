@@ -29,6 +29,8 @@ import org.axonframework.messaging.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.List;
@@ -49,6 +51,8 @@ import java.util.function.BiFunction;
 @Internal
 public class RecordingEventStore extends RecordingEventSink implements EventStore {
 
+    private static final Logger logger = LoggerFactory.getLogger(RecordingEventStore.class);
+
     private final EventStore eventStore;
 
     /**
@@ -63,6 +67,7 @@ public class RecordingEventStore extends RecordingEventSink implements EventStor
 
     @Override
     public EventStoreTransaction transaction(@NotNull ProcessingContext processingContext) {
+        logger.debug("transaction() called on thread {}", Thread.currentThread().getName());
         return eventStore.transaction(processingContext);
     }
 
@@ -74,6 +79,9 @@ public class RecordingEventStore extends RecordingEventSink implements EventStor
     @Override
     public MessageStream<EventMessage> open(@Nonnull StreamingCondition condition,
                                             @Nullable ProcessingContext context) {
+        logger.debug("open() called with condition: {} on thread {}",
+                     condition,
+                     Thread.currentThread().getName());
         return eventStore.open(condition, context);
     }
 
