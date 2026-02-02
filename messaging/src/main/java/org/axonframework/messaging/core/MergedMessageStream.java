@@ -19,6 +19,7 @@ package org.axonframework.messaging.core;
 import org.jspecify.annotations.NonNull;
 
 import java.util.Comparator;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -38,7 +39,7 @@ import java.util.Optional;
  *
  * @param <M> The type of {@link Message} in the stream
  * @author Allard Buijze
- * @since 5.0
+ * @since 5.1.0
  */
 public class MergedMessageStream<M extends Message> implements MessageStream<M> {
 
@@ -47,18 +48,19 @@ public class MergedMessageStream<M extends Message> implements MessageStream<M> 
     private final Comparator<Entry<M>> comparator;
 
     /**
-     * Constructs a {@link MergedMessageStream} that merges two message streams based on the given comparator.
+     * Constructs a {@code MergedMessageStream} that merges two message streams based on the given comparator.
      *
      * @param comparator The comparator used to determine the order in which messages from the two streams are
      *                   consumed. A result of {@code <= 0} means the message from the first stream is consumed first.
      * @param first      The first message stream to merge.
      * @param second     The second message stream to merge.
      */
-    public MergedMessageStream(Comparator<Entry<M>> comparator, MessageStream<M> first,
-                               MessageStream<M> second) {
-        this.comparator = comparator;
-        this.first = first;
-        this.second = second;
+    public MergedMessageStream(@NonNull Comparator<Entry<M>> comparator,
+                               @NonNull MessageStream<M> first,
+                               @NonNull MessageStream<M> second) {
+        this.comparator = Objects.requireNonNull(comparator, "comparator must not be null");
+        this.first = Objects.requireNonNull(first, "first must not be null");
+        this.second = Objects.requireNonNull(second, "second must not be null");
     }
 
     @Override

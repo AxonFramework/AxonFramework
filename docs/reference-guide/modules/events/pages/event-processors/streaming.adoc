@@ -1683,7 +1683,7 @@ public class AxonConfig {
 }
 ----
 
-Assuming a `buildMultiStreamableEventSource(...)` method is present, we can use the outcome to register a processor with the configuring `EventProcessingConfigurer`:
+Assuming a `buildMultiStreamableEventSource(...)` method is present, we can use the outcome to register a processor with the `PooledStreamingEventProcessorsConfigurer`:
 
 [tabs]
 ====
@@ -1695,9 +1695,15 @@ Configuration API::
 ----
 public class AxonConfig {
     // omitting other configuration methods...
-    public void configurePooledStreamingProcessor(EventProcessingConfigurer processingConfigurer) {
-        processingConfigurer.registerPooledStreamingEventProcessor(
-                "example-processor", config -> buildMultiStreamableEventSource(/*...*/)
+    private PooledStreamingEventProcessorsConfigurer configurePooledStreamingProcessor(
+            PooledStreamingEventProcessorsConfigurer pooledStreamingConfigurer
+    ) {
+        return pooledStreamingConfigurer.processor(
+                "example-processor",
+                config -> config.eventHandlingComponents(this::configureHandlingComponent)
+                                .customize((c, pooledStreamingConfig) -> pooledStreamingConfig
+                                        .eventSource(buildMultiStreamableEventSource(/*...*/))
+                                )
         );
     }
 }

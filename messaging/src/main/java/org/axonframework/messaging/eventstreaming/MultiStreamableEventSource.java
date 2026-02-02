@@ -51,19 +51,24 @@ import java.util.function.Function;
  * the event's timestamp). Each source is tracked independently using a {@link MultiSourceTrackingToken}, which maintains
  * the position for each individual source.
  *
- * @author Allard Buijze
- * @since 5.0
+ * @author Allard Buijze, Greg Woods
+ * @since 5.1.0
  */
 public class MultiStreamableEventSource implements StreamableEventSource {
 
     private final Map<String, StreamableEventSource> eventSources;
     private final Comparator<MessageStream.Entry<EventMessage>> eventComparator;
-    private final Context.ResourceKey<String> SOURCE_ID_RESOURCE = Context.ResourceKey.withLabel("SourceId");
+    /**
+     * Resource key used to identify which source an event originated from. This key can be accessed in the
+     * {@code eventComparator} to determine the source of an event and apply custom ordering logic, such as giving
+     * precedence to events from a specific source.
+     */
+    public final Context.ResourceKey<String> SOURCE_ID_RESOURCE = Context.ResourceKey.withLabel("SourceId");
 
     /**
      * Instantiate a MultiStreamableEventSource based on the fields contained in the {@link Builder}.
      *
-     * @param builder The {@link Builder} used to instantiate a {@link MultiStreamableEventSource} instance.
+     * @param builder The {@link Builder} used to instantiate a {@code MultiStreamableEventSource} instance.
      */
     protected MultiStreamableEventSource(Builder builder) {
         this.eventSources = builder.eventSourceMap;
@@ -71,11 +76,11 @@ public class MultiStreamableEventSource implements StreamableEventSource {
     }
 
     /**
-     * Instantiate a Builder to be able to create a {@link MultiStreamableEventSource}. The configurable field
+     * Instantiate a Builder to be able to create a {@code MultiStreamableEventSource}. The configurable field
      * {@code eventComparator}, which decides which message to process first if there is a choice, defaults to the
      * oldest message available (using the event's timestamp).
      *
-     * @return A Builder to be able to create a {@link MultiStreamableEventSource}.
+     * @return A Builder to be able to create a {@code MultiStreamableEventSource}.
      */
     public static Builder builder() {
         return new Builder();
@@ -89,8 +94,8 @@ public class MultiStreamableEventSource implements StreamableEventSource {
             // Start from the beginning
             return DelayedMessageStream.create(createToken(m -> m.firstToken(context))
                                                        .thenApply(s -> open(s, condition, context)));
-        } else if (trackingToken instanceof MultiSourceTrackingToken) {
-            return open((MultiSourceTrackingToken) trackingToken, condition, context);
+        } else if (trackingToken instanceof MultiSourceTrackingToken multiSourceToken) {
+            return open(multiSourceToken, condition, context);
         }
         throw new IllegalArgumentException(
                 "Incompatible token type provided. Expected MultiSourceTrackingToken but got: "
@@ -161,6 +166,12 @@ public class MultiStreamableEventSource implements StreamableEventSource {
         private final Map<String, StreamableEventSource> eventSourceMap = new LinkedHashMap<>();
         private Comparator<MessageStream.Entry<EventMessage>> eventComparator =
                 Comparator.comparing(entry -> entry.message().timestamp());
+
+        /**
+         * Constructs a new Builder instance with default values.
+         */
+        protected Builder() {
+        }
 
         /**
          * Adds an event source to the list of sources.

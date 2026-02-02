@@ -36,7 +36,7 @@ import java.util.StringJoiner;
  * several event sources at once, like the {@link MultiStreamableEventSource}.
  *
  * @author Greg Woods
- * @since 5.0
+ * @since 4.2
  */
 public class MultiSourceTrackingToken implements TrackingToken {
 
@@ -45,9 +45,9 @@ public class MultiSourceTrackingToken implements TrackingToken {
     private final Map<String, TrackingToken> trackingTokens;
 
     /**
-     * Construct a new {@link MultiSourceTrackingToken} from a map of existing tokens.
+     * Construct a new {@code MultiSourceTrackingToken} from a map of existing tokens.
      *
-     * @param trackingTokens the map of tokens which make up the {@link MultiSourceTrackingToken}
+     * @param trackingTokens the map of tokens which make up the {@code MultiSourceTrackingToken}
      */
     @JsonCreator
     @ConstructorProperties({"trackingTokens"})
@@ -58,8 +58,8 @@ public class MultiSourceTrackingToken implements TrackingToken {
     /**
      * Compares this token to {@code other} by comparing each member token with its counterpart in the {@code other}
      * token. If the two tokens contain different number of constituent tokens, or have the same number but
-     * different names, then these two {@link MultiSourceTrackingToken}s must be tracking different
-     * {@code MultiStreamableEventSource}s.
+     * different names, then these two {@code MultiSourceTrackingToken}s must be tracking different
+     * {@link MultiStreamableEventSource MultiStreamableEventSources}.
      *
      * @param other The token to compare to this one
      * @return token representing the lower bound of both tokens
@@ -82,8 +82,8 @@ public class MultiSourceTrackingToken implements TrackingToken {
     /**
      * Compares this token to {@code other} by comparing each member token with its counterpart in the {@code other}
      * token. If the two tokens contain different number of constituent tokens, or have the same number but
-     * different names, then these two {@link MultiSourceTrackingToken}s must be tracking different
-     * {@code MultiStreamableEventSource}s.
+     * different names, then these two {@code MultiSourceTrackingToken}s must be tracking different
+     * {@link MultiStreamableEventSource MultiStreamableEventSources}.
      *
      * @param other The token to compare this token to
      * @return a token that represents the furthest position of this or the other streams
@@ -114,8 +114,8 @@ public class MultiSourceTrackingToken implements TrackingToken {
     /**
      * Compares this token to {@code other} checking each member token with its counterpart to see if they are covered
      * in the {@code other} token. If the two tokens contain different number of constituent tokens, or have the same number but
-     * different names, then these two {@link MultiSourceTrackingToken}s must be tracking different
-     * {@code MultiStreamableEventSource}s.
+     * different names, then these two {@code MultiSourceTrackingToken}s must be tracking different
+     * {@link MultiStreamableEventSource MultiStreamableEventSources}.
      *
      * @param other The token to compare to this one
      * @return {@code true} if this token covers the other, otherwise {@code false}
