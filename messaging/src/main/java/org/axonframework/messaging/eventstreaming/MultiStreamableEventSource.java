@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging.eventstreaming;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.Assert;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.DelayedMessageStream;
@@ -24,14 +26,13 @@ import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
@@ -87,7 +88,7 @@ public class MultiStreamableEventSource implements StreamableEventSource {
     }
 
     @Override
-    public MessageStream<EventMessage> open(@NonNull StreamingCondition condition,
+    public MessageStream<EventMessage> open(@Nonnull StreamingCondition condition,
                                             @Nullable ProcessingContext context) {
         TrackingToken trackingToken = condition.position();
         if (trackingToken == null) {
@@ -141,7 +142,7 @@ public class MultiStreamableEventSource implements StreamableEventSource {
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tokenAt(@NonNull Instant at, @Nullable ProcessingContext context) {
+    public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at, @Nullable ProcessingContext context) {
         return createToken(s -> s.tokenAt(at, context)).thenApply(t -> t);
     }
 
@@ -239,7 +240,7 @@ public class MultiStreamableEventSource implements StreamableEventSource {
         }
 
         @Override
-        public void setCallback(@NonNull Runnable callback) {
+        public void setCallback(@Nonnull Runnable callback) {
             delegate.setCallback(callback);
         }
 

@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging.eventstreaming;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.AsyncInMemoryStreamableEventSource;
@@ -23,8 +25,6 @@ import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventTestUtils;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.*;
 
 import java.time.Instant;
@@ -332,7 +332,7 @@ class MultiStreamableEventSourceTest {
         AtomicBoolean streamOpened = new AtomicBoolean(false);
         StreamableEventSource source1 = new AsyncInMemoryStreamableEventSource() {
             @Override
-            public MessageStream<EventMessage> open(@NonNull StreamingCondition condition,
+            public MessageStream<EventMessage> open(@Nonnull StreamingCondition condition,
                                                     @Nullable ProcessingContext context) {
                 if (streamOpened.compareAndSet(false, true)) {
                     return super.open(condition, context).onClose(() -> streamClosed.set(true));
@@ -342,7 +342,7 @@ class MultiStreamableEventSourceTest {
         };
         StreamableEventSource source2 = new AsyncInMemoryStreamableEventSource() {
             @Override
-            public MessageStream<EventMessage> open(@NonNull StreamingCondition condition,
+            public MessageStream<EventMessage> open(@Nonnull StreamingCondition condition,
                                                     @Nullable ProcessingContext context) {
                 if (streamOpened.compareAndSet(false, true)) {
                     return super.open(condition, context).onClose(() -> streamClosed.set(true));
