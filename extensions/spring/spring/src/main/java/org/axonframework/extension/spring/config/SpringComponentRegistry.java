@@ -319,6 +319,8 @@ public class SpringComponentRegistry implements
                                                  @Nonnull String beanName) throws BeansException {
         // Ensure this ComponentRegistry is fully initialized, as this may set additional components and decorators.
         initialize();
+        // Check for late-discovered ConfigurationEnhancer beans that weren't available during initialize()
+//        processLateDiscoveredEnhancers();
         if (!beanFactory.containsBeanDefinition(beanName)) {
             logger.debug("Will not post process bean with name [{}] since we cannot define a Component Identifier.",
                          beanName);
@@ -474,6 +476,44 @@ public class SpringComponentRegistry implements
                 invokedEnhancers.add(enhancer.getClass());
             }
             processedEnhancerKeys.add(key);
+        }
+    }
+
+    /**
+     * Checks for {@link ConfigurationEnhancer} beans that were created after {@link #initialize()} ran.
+     * This handles the case where enhancer beans from {@code @TestConfiguration} or other late-loading
+     * configurations weren't available during the initial {@link #invokeEnhancers()} call.
+     * <p>
+     * Any newly discovered enhancers are registered, invoked, and their decorators are sorted into the
+     * existing decorator list.
+     */
+    private void processLateDiscoveredEnhancers() {
+        Map<String, ConfigurationEnhancer> currentEnhancerBeans =
+                listableBeanFactory.getBeansOfType(ConfigurationEnhancer.class);
+
+        List<ConfigurationEnhancer> newEnhancers = new ArrayList<>();
+        for (Map.Entry<String, ConfigurationEnhancer> entry : currentEnhancerBeans.entrySet()) {
+            if (!enhancers.containsKey(entry.getKey()) &&
+                    !disabledEnhancers.contains(entry.getValue().getClass())) {
+                doRegisterEnhancer(entry.getKey(), entry.getValue());
+                newEnhancers.add(entry.getValue());
+            }
+        }
+
+        if (!newEnhancers.isEmpty()) {
+            logger.debug("Found {} late-discovered ConfigurationEnhancer bean(s), invoking them now.", newEnhancers.size());
+            // Invoke new enhancers in order
+            newEnhancers.stream()
+                        .sorted(Comparator.comparingInt(ConfigurationEnhancer::order))
+                        .forEach(enhancer -> {
+                            if (!invokedEnhancers.contains(enhancer.getClass())) {
+                                logger.debug("Invoking late-discovered enhancer: {}", enhancer.getClass().getName());
+                                enhancer.enhance(this);
+                                invokedEnhancers.add(enhancer.getClass());
+                            }
+                        });
+            // Re-sort decorators after new ones may have been added
+            decorators.sort(Comparator.comparingInt(DecoratorDefinition.CompletedDecoratorDefinition::order));
         }
     }
 
