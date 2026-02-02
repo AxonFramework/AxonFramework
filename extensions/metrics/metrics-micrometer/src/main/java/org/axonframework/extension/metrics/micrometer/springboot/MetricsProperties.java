@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.extension.springboot;
+package org.axonframework.extension.metrics.micrometer.springboot;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

@@ -14,4 +14,4 @@
 # limitations under the License.
 #
 
-org.axonframework.extension.metrics.dropwizard.springboot.autoconfig.DropwizardMetricsAutoConfiguration
+org.axonframework.extension.metrics.dropwizard.springboot.DropwizardMetricsAutoConfiguration

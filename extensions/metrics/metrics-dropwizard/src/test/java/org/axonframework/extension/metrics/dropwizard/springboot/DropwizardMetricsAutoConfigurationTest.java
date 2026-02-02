@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package org.axonframework.extension.metrics.micrometer.springboot.autoconfig;
+package org.axonframework.extension.metrics.dropwizard.springboot;
 
-import io.micrometer.core.instrument.MeterRegistry;
-import org.axonframework.extension.metrics.micrometer.MetricsConfigurationEnhancer;
+import com.codahale.metrics.MetricRegistry;
+import org.axonframework.extension.metrics.dropwizard.MetricsConfigurationEnhancer;
+import org.axonframework.extension.metrics.dropwizard.springboot.DropwizardMetricsAutoConfiguration;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -26,11 +27,11 @@ import org.springframework.context.annotation.Configuration;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Test class validating the {@link MicrometerMetricsAutoConfiguration}.
+ * Test class validating the {@link DropwizardMetricsAutoConfiguration}.
  *
  * @author Steven van Beelen
  */
-class MicrometerMetricsAutoConfigurationTest {
+class DropwizardMetricsAutoConfigurationTest {
 
     private ApplicationContextRunner testContext;
 
@@ -46,7 +47,7 @@ class MicrometerMetricsAutoConfigurationTest {
                            "axon.metrics.enabled=true"
                    )
                    .run(context -> {
-                       assertThat(context).hasSingleBean(MeterRegistry.class);
+                       assertThat(context).hasSingleBean(MetricRegistry.class);
                        assertThat(context).hasSingleBean(MetricsConfigurationEnhancer.class);
                    });
     }
@@ -58,7 +59,7 @@ class MicrometerMetricsAutoConfigurationTest {
                            "axon.metrics.enabled=false"
                    )
                    .run(context -> {
-                       assertThat(context).doesNotHaveBean(MeterRegistry.class);
+                       assertThat(context).doesNotHaveBean(MetricRegistry.class);
                        assertThat(context).doesNotHaveBean(MetricsConfigurationEnhancer.class);
                    });
     }

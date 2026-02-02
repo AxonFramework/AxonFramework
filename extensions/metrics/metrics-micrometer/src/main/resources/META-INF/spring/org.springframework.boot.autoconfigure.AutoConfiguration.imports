@@ -14,4 +14,4 @@
 # limitations under the License.
 #
 
-org.axonframework.extension.metrics.micrometer.springboot.autoconfig.MicrometerMetricsAutoConfiguration
+org.axonframework.extension.metrics.micrometer.springboot.MicrometerMetricsAutoConfiguration

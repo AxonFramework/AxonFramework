@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package org.axonframework.extension.metrics.dropwizard.springboot.autoconfig;
+package org.axonframework.extension.metrics.dropwizard.springboot;
 
 import com.codahale.metrics.MetricRegistry;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.extension.metrics.dropwizard.MetricsConfigurationEnhancer;
-import org.axonframework.extension.springboot.MetricsProperties;
 import org.axonframework.extension.springboot.autoconfig.AxonAutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
