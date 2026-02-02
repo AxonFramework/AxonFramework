@@ -114,3 +114,19 @@ Specific Axon (Spring) component configurations will be explained in detail in t
 
 When using Spring to automatically wire everything, sometimes there is a need to know when all the (Command, Event and Query) handlers have been registered to their respective buses.
 To support this an `AxonStartedEvent` Spring event is published when the Configuration module has fully started.
+
+=== Customizing the `Jackson3Serializer`
+
+To customize the `ObjectMapper` used by the `Jackson3Serializer`, `AxonAutoConfiguration` will look for a bean of type `Jackson3SerializerCustomizer`. When found, it is given the `Builder` used to construct the `ObjectMapper` allowing you to customize it before it is constructed. For example:
+
+[source,java]
+----
+public class SerializerConfiguration {
+    @Bean
+    public Jackson3SerializerCustomizer customizer() {
+        return builder -> {
+            builder.enable(StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION);
+        };
+    }
+}
+----
