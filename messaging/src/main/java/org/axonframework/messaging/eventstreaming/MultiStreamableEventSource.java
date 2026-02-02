@@ -67,24 +67,42 @@ public class MultiStreamableEventSource implements StreamableEventSource {
     public final Context.ResourceKey<String> SOURCE_ID_RESOURCE = Context.ResourceKey.withLabel("SourceId");
 
     /**
-     * Instantiate a MultiStreamableEventSource based on the fields contained in the {@link Builder}.
+     * Constructs a MultiStreamableEventSource from the collected sources and comparator.
      *
-     * @param builder The {@link Builder} used to instantiate a {@code MultiStreamableEventSource} instance.
+     * @param eventSources    The map of event sources, keyed by their unique names.
+     * @param eventComparator The comparator to use when deciding which message to process first.
      */
-    protected MultiStreamableEventSource(Builder builder) {
-        this.eventSources = builder.eventSourceMap;
-        this.eventComparator = builder.eventComparator;
+    protected MultiStreamableEventSource(Map<String, StreamableEventSource> eventSources,
+                                         Comparator<MessageStream.Entry<EventMessage>> eventComparator) {
+        this.eventSources = Collections.unmodifiableMap(new LinkedHashMap<>(eventSources));
+        this.eventComparator = eventComparator;
     }
 
     /**
-     * Instantiate a Builder to be able to create a {@code MultiStreamableEventSource}. The configurable field
-     * {@code eventComparator}, which decides which message to process first if there is a choice, defaults to the
-     * oldest message available (using the event's timestamp).
+     * Creates a new MultiStreamableEventSource by combining multiple event sources.
+     * This is the starting point for the fluent builder API.
+     * <p>
+     * Example usage:
+     * <pre>{@code
+     * // With default timestamp-based comparison
+     * MultiStreamableEventSource source = MultiStreamableEventSource
+     *     .combining("eventStore1", eventSource1)
+     *     .and("eventStore2", eventSource2)
+     *     .comparingTimestamps();
      *
-     * @return A Builder to be able to create a {@code MultiStreamableEventSource}.
+     * // With custom comparator
+     * MultiStreamableEventSource source = MultiStreamableEventSource
+     *     .combining("eventStore1", eventSource1)
+     *     .and("eventStore2", eventSource2)
+     *     .comparingUsing(customComparator);
+     * }</pre>
+     *
+     * @param sourceName A unique name identifying the first source.
+     * @param source     The first event source to include.
+     * @return A SourceCollector for adding more sources and configuring the comparator.
      */
-    public static Builder builder() {
-        return new Builder();
+    public static SourceCollector combining(@Nonnull String sourceName, @Nonnull StreamableEventSource source) {
+        return new SourceCollectorImpl(sourceName, source);
     }
 
     @Override
@@ -146,6 +164,16 @@ public class MultiStreamableEventSource implements StreamableEventSource {
         return createToken(s -> s.tokenAt(at, context)).thenApply(t -> t);
     }
 
+    /**
+     * Returns the map of event sources managed by this MultiStreamableEventSource.
+     * Package-private for testing purposes.
+     *
+     * @return An unmodifiable map of source names to their corresponding event sources.
+     */
+    Map<String, StreamableEventSource> sources() {
+        return eventSources;
+    }
+
     private CompletableFuture<MultiSourceTrackingToken> createToken(
             Function<StreamableEventSource, CompletableFuture<TrackingToken>> tokenProvider) {
         CompletableFuture<MultiSourceTrackingToken> combinedToken = CompletableFuture.completedFuture(new MultiSourceTrackingToken(
@@ -158,56 +186,82 @@ public class MultiStreamableEventSource implements StreamableEventSource {
     }
 
     /**
-     * Builder class to instantiate a {@link MultiStreamableEventSource}. The configurable field
-     * {@code eventComparator}, which decides which message to process first if there is a choice, defaults to the
-     * oldest message available (using the event's timestamp).
+     * Intermediate builder for collecting event sources before creating a MultiStreamableEventSource.
+     * Allows adding multiple sources and provides terminal operations for creating the final instance.
      */
-    public static class Builder {
-
-        private final Map<String, StreamableEventSource> eventSourceMap = new LinkedHashMap<>();
-        private Comparator<MessageStream.Entry<EventMessage>> eventComparator =
-                Comparator.comparing(entry -> entry.message().timestamp());
+    public interface SourceCollector {
 
         /**
-         * Constructs a new Builder instance with default values.
+         * Adds another event source to the collection.
+         *
+         * @param sourceName A unique name identifying the source.
+         * @param source     The event source to add.
+         * @return This SourceCollector for fluent chaining.
+         * @throws IllegalArgumentException if the sourceName is already used.
          */
-        protected Builder() {
+        SourceCollector and(@Nonnull String sourceName, @Nonnull StreamableEventSource source);
+
+        /**
+         * Creates a MultiStreamableEventSource using timestamp-based comparison (oldest event first). This is the
+         * default behavior, comparing events based on their timestamp.
+         *
+         * @return A configured MultiStreamableEventSource instance.
+         */
+        MultiStreamableEventSource comparingTimestamps();
+
+        /**
+         * Creates a MultiStreamableEventSource using a custom comparator.
+         *
+         * @param comparator The comparator to use when deciding which message to process first.
+         *                   A result of {@code <= 0} means the message from the first stream
+         *                   is consumed first.
+         * @return A configured MultiStreamableEventSource instance.
+         */
+        MultiStreamableEventSource comparingUsing(@Nonnull Comparator<MessageStream.Entry<EventMessage>> comparator);
+    }
+
+    /**
+     * Implementation of the SourceCollector that collects event sources and creates the final instance.
+     */
+    private static class SourceCollectorImpl implements SourceCollector {
+
+        private final Map<String, StreamableEventSource> eventSourceMap;
+
+        /**
+         * Creates a new SourceCollectorImpl with the initial source.
+         *
+         * @param initialName   The name of the first source.
+         * @param initialSource The first source.
+         */
+        SourceCollectorImpl(String initialName, StreamableEventSource initialSource) {
+            this.eventSourceMap = new LinkedHashMap<>();
+            addSource(initialName, initialSource);
         }
 
-        /**
-         * Adds an event source to the list of sources.
-         *
-         * @param eventSourceId A unique name identifying the source.
-         * @param eventSource   The event source to be added.
-         * @return The current Builder instance, for fluent interfacing.
-         */
-        public Builder addEventSource(String eventSourceId, StreamableEventSource eventSource) {
-            Assert.isFalse(eventSourceMap.containsKey(eventSourceId),
-                           () -> "The event source name must be unique");
-            eventSourceMap.put(eventSourceId, eventSource);
+        @Override
+        public SourceCollector and(@Nonnull String sourceName, @Nonnull StreamableEventSource source) {
+            addSource(sourceName, source);
             return this;
         }
 
-        /**
-         * Overrides the default eventComparator. The default eventComparator returns the oldest event available:
-         * {@code Comparator.comparing(entry -> entry.message().timestamp())}.
-         *
-         * @param eventComparator The comparator to use when deciding on which message to return.
-         * @return The current Builder instance, for fluent interfacing.
-         */
-        public Builder eventComparator(
-                Comparator<MessageStream.Entry<EventMessage>> eventComparator) {
-            this.eventComparator = eventComparator;
-            return this;
+        private void addSource(String name, StreamableEventSource source) {
+            Objects.requireNonNull(name, "sourceName must not be null");
+            Objects.requireNonNull(source, "source must not be null");
+            Assert.isFalse(eventSourceMap.containsKey(name),
+                           () -> "Source name '" + name + "' is already used. Source names must be unique.");
+            eventSourceMap.put(name, source);
         }
 
-        /**
-         * Initializes a {@link MultiStreamableEventSource} as specified through this Builder.
-         *
-         * @return a {@link MultiStreamableEventSource} as specified through this Builder.
-         */
-        public MultiStreamableEventSource build() {
-            return new MultiStreamableEventSource(this);
+        @Override
+        public MultiStreamableEventSource comparingTimestamps() {
+            return comparingUsing(Comparator.comparing(entry -> entry.message().timestamp()));
+        }
+
+        @Override
+        public MultiStreamableEventSource comparingUsing(
+                @Nonnull Comparator<MessageStream.Entry<EventMessage>> comparator) {
+            Objects.requireNonNull(comparator, "comparator must not be null");
+            return new MultiStreamableEventSource(eventSourceMap, comparator);
         }
     }
 

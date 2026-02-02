@@ -33,9 +33,11 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 class MultiStreamableEventSourceTest {
 
@@ -48,10 +50,9 @@ class MultiStreamableEventSourceTest {
         eventSourceA = new AsyncInMemoryStreamableEventSource();
         eventSourceB = new AsyncInMemoryStreamableEventSource();
 
-        testSubject = MultiStreamableEventSource.builder()
-                                                .addEventSource("sourceA", eventSourceA)
-                                                .addEventSource("sourceB", eventSourceB)
-                                                .build();
+        testSubject = MultiStreamableEventSource.combining("sourceA", eventSourceA)
+                                                .and("sourceB", eventSourceB)
+                                                .comparingTimestamps();
     }
 
     @Test
@@ -124,14 +125,12 @@ class MultiStreamableEventSourceTest {
         // Create a comparator that prioritizes sourceB
         Comparator<MessageStream.Entry<EventMessage>> customComparator =
                 Comparator.comparing((MessageStream.Entry<EventMessage> entry) ->
-                                             !entry.message().payload().toString().contains("B"))
+                                             !Objects.toString(entry.message().payload()).contains("B"))
                           .thenComparing(entry -> entry.message().timestamp());
 
-        testSubject = MultiStreamableEventSource.builder()
-                                                .addEventSource("sourceA", eventSourceA)
-                                                .addEventSource("sourceB", eventSourceB)
-                                                .eventComparator(customComparator)
-                                                .build();
+        testSubject = MultiStreamableEventSource.combining("sourceA", eventSourceA)
+                                                .and("sourceB", eventSourceB)
+                                                .comparingUsing(customComparator);
 
         eventSourceA.publishMessage(EventTestUtils.asEventMessage("EventA"));
         eventSourceB.publishMessage(EventTestUtils.asEventMessage("EventB"));
@@ -319,10 +318,9 @@ class MultiStreamableEventSourceTest {
     @Test
     void builderRejectsNonUniqueSourceIds() {
         assertThrows(Exception.class, () ->
-                MultiStreamableEventSource.builder()
-                                          .addEventSource("source", eventSourceA)
-                                          .addEventSource("source", eventSourceB)
-                                          .build()
+                MultiStreamableEventSource.combining("source", eventSourceA)
+                                          .and("source", eventSourceB)
+                                          .comparingTimestamps()
         );
     }
 
@@ -351,10 +349,9 @@ class MultiStreamableEventSourceTest {
             }
         };
 
-        testSubject = MultiStreamableEventSource.builder()
-                                                .addEventSource("source1", source1)
-                                                .addEventSource("source2", source2)
-                                                .build();
+        testSubject = MultiStreamableEventSource.combining("source1", source1)
+                                                .and("source2", source2)
+                                                .comparingTimestamps();
 
         // Create a MultiSourceTrackingToken with both source tokens
         Map<String, TrackingToken> tokenMap = new HashMap<>();
@@ -400,5 +397,173 @@ class MultiStreamableEventSourceTest {
 
         stream1.close();
         stream2.close();
+    }
+
+    @Nested
+    class BuilderApiTest {
+
+        @Test
+        void combiningWithTimestampComparison() {
+            // given
+            StreamableEventSource source1 = mock(StreamableEventSource.class);
+            StreamableEventSource source2 = mock(StreamableEventSource.class);
+
+            // when
+            MultiStreamableEventSource result = MultiStreamableEventSource
+                    .combining("source1", source1)
+                    .and("source2", source2)
+                    .comparingTimestamps();
+
+            // then
+            assertNotNull(result);
+            assertEquals(2, result.sources().size());
+            assertEquals(source1, result.sources().get("source1"));
+            assertEquals(source2, result.sources().get("source2"));
+        }
+
+        @Test
+        void combiningWithCustomComparator() {
+            // given
+            StreamableEventSource source1 = mock(StreamableEventSource.class);
+            @SuppressWarnings("unchecked")
+            Comparator<MessageStream.Entry<EventMessage>> comparator = mock(Comparator.class);
+
+            // when
+            MultiStreamableEventSource result = MultiStreamableEventSource
+                    .combining("source1", source1)
+                    .comparingUsing(comparator);
+
+            // then
+            assertNotNull(result);
+            assertEquals(1, result.sources().size());
+            assertEquals(source1, result.sources().get("source1"));
+        }
+
+        @Test
+        void combiningSingleSource() {
+            // given
+            StreamableEventSource source1 = mock(StreamableEventSource.class);
+
+            // when
+            MultiStreamableEventSource result = MultiStreamableEventSource
+                    .combining("source1", source1)
+                    .comparingTimestamps();
+
+            // then
+            assertNotNull(result);
+            assertEquals(1, result.sources().size());
+            assertEquals(source1, result.sources().get("source1"));
+        }
+
+        @Test
+        void combiningMultipleSources() {
+            // given
+            StreamableEventSource source1 = mock(StreamableEventSource.class);
+            StreamableEventSource source2 = mock(StreamableEventSource.class);
+            StreamableEventSource source3 = mock(StreamableEventSource.class);
+
+            // when
+            MultiStreamableEventSource result = MultiStreamableEventSource
+                    .combining("source1", source1)
+                    .and("source2", source2)
+                    .and("source3", source3)
+                    .comparingTimestamps();
+
+            // then
+            assertNotNull(result);
+            assertEquals(3, result.sources().size());
+            assertEquals(source1, result.sources().get("source1"));
+            assertEquals(source2, result.sources().get("source2"));
+            assertEquals(source3, result.sources().get("source3"));
+        }
+
+        @Test
+        void combiningRejectsDuplicateSourceNames() {
+            // given
+            StreamableEventSource source1 = mock(StreamableEventSource.class);
+            StreamableEventSource source2 = mock(StreamableEventSource.class);
+
+            // when/then
+            assertThrows(IllegalArgumentException.class, () ->
+                    MultiStreamableEventSource
+                            .combining("source1", source1)
+                            .and("source1", source2) // duplicate name
+                            .comparingTimestamps()
+            );
+        }
+
+        @Test
+        void combiningRejectsNullSourceName() {
+            // when/then
+            //noinspection DataFlowIssue
+            assertThrows(NullPointerException.class, () ->
+                    MultiStreamableEventSource.combining(null, mock(StreamableEventSource.class))
+            );
+        }
+
+        @Test
+        void combiningRejectsNullSource() {
+            // when/then
+            //noinspection DataFlowIssue
+            assertThrows(NullPointerException.class, () ->
+                    MultiStreamableEventSource.combining("source1", null)
+            );
+        }
+
+        @Test
+        void andRejectsNullSourceName() {
+            // given
+            StreamableEventSource source1 = mock(StreamableEventSource.class);
+
+            // when/then
+            //noinspection DataFlowIssue
+            assertThrows(NullPointerException.class, () ->
+                    MultiStreamableEventSource
+                            .combining("source1", source1)
+                            .and(null, mock(StreamableEventSource.class))
+            );
+        }
+
+        @Test
+        void andRejectsNullSource() {
+            // given
+            StreamableEventSource source1 = mock(StreamableEventSource.class);
+
+            // when/then
+            //noinspection DataFlowIssue
+            assertThrows(NullPointerException.class, () ->
+                    MultiStreamableEventSource
+                            .combining("source1", source1)
+                            .and("source2", null)
+            );
+        }
+
+        @Test
+        void comparingUsingRejectsNullComparator() {
+            // given
+            StreamableEventSource source1 = mock(StreamableEventSource.class);
+
+            // when/then
+            //noinspection DataFlowIssue
+            assertThrows(NullPointerException.class, () ->
+                    MultiStreamableEventSource
+                            .combining("source1", source1)
+                            .comparingUsing(null)
+            );
+        }
+
+        @Test
+        void sourcesReturnsUnmodifiableMap() {
+            // given
+            StreamableEventSource source1 = mock(StreamableEventSource.class);
+            MultiStreamableEventSource result = MultiStreamableEventSource
+                    .combining("source1", source1)
+                    .comparingTimestamps();
+
+            // when/then
+            assertThrows(UnsupportedOperationException.class, () ->
+                    result.sources().put("newSource", mock(StreamableEventSource.class))
+            );
+        }
     }
 }

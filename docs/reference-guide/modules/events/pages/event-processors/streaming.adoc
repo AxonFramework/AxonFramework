@@ -1674,13 +1674,22 @@ public class AxonConfig {
             StreamableEventSource eventSourceB,
             Comparator<MessageStream.Entry<EventMessage>> priorityA
     ) {
-        return MultiStreamableEventSource.builder()
-                                           .addEventSource("eventSourceA", eventSourceA)
-                                           .addEventSource("eventSourceB", eventSourceB)
-                                           .eventComparator(priorityA) // Where 'priorityA' is a comparator prioritizing events from eventSourceA
-                                           .build();
+        return MultiStreamableEventSource.combining("eventSourceA", eventSourceA)
+                                           .and("eventSourceB", eventSourceB)
+                                           .comparingUsing(priorityA); // Where 'priorityA' is a comparator prioritizing events from eventSourceA
     }
 }
+----
+
+For simple cases using the default timestamp-based comparison, you can use the `comparingTimestamps()` method:
+
+[source,java]
+----
+// Simple case using default timestamp comparison
+MultiStreamableEventSource source = MultiStreamableEventSource
+    .combining("localEventStore", localEventStore)
+    .and("remoteEventStore", remoteEventStore)
+    .comparingTimestamps();
 ----
 
 Assuming a `buildMultiStreamableEventSource(...)` method is present, we can use the outcome to register a processor with the `PooledStreamingEventProcessorsConfigurer`:
@@ -1732,10 +1741,9 @@ public class EventProcessorConfig {
             StreamableEventSource eventSourceA,
             StreamableEventSource eventSourceB
     ) {
-        return MultiStreamableEventSource.builder()
-                .addEventSource("eventSourceA", eventSourceA)
-                .addEventSource("eventSourceB", eventSourceB)
-                .build();
+        return MultiStreamableEventSource.combining("eventSourceA", eventSourceA)
+                .and("eventSourceB", eventSourceB)
+                .comparingTimestamps();
     }
 
     @Bean
@@ -1777,11 +1785,9 @@ public class AxonConfig {
             StreamableEventSource eventSourceB,
             Comparator<MessageStream.Entry<EventMessage>> priorityA
     ) {
-        return MultiStreamableEventSource.builder()
-                                           .addEventSource("eventSourceA", eventSourceA)
-                                           .addEventSource("eventSourceB", eventSourceB)
-                                           .eventComparator(priorityA)
-                                           .build();
+        return MultiStreamableEventSource.combining("eventSourceA", eventSourceA)
+                                           .and("eventSourceB", eventSourceB)
+                                           .comparingUsing(priorityA);
     }
 }
 ----
