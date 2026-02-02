@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -172,7 +172,7 @@ public class EventProcessingAnnotatedEventSourcedPooledStreamingIT extends Abstr
         CommandHandlingModule sendMaxCoursesNotificationCommandHandler = CommandHandlingModule
                 .named("send-max-courses-notification-command-handler")
                 .commandHandlers()
-                .annotatedCommandHandlingComponent(cfg -> new SendMaxCoursesNotificationCommandHandler()).build();
+                .autodetectedCommandHandlingComponent(cfg -> new SendMaxCoursesNotificationCommandHandler()).build();
 
         configurer.registerCommandHandlingModule(sendMaxCoursesNotificationCommandHandler);
     }
