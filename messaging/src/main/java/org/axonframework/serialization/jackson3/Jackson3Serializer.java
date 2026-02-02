@@ -31,18 +31,19 @@ import org.axonframework.serialization.SimpleSerializedObject;
 import org.axonframework.serialization.SimpleSerializedType;
 import org.axonframework.serialization.UnknownSerializedType;
 import tools.jackson.core.JacksonException;
+import tools.jackson.databind.DefaultTyping;
 import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.ObjectReader;
 import tools.jackson.databind.ObjectWriter;
 import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 import tools.jackson.databind.module.SimpleModule;
 import tools.jackson.databind.type.TypeFactory;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.function.Consumer;
 
 import javax.annotation.Nonnull;
 
@@ -102,6 +103,14 @@ public class Jackson3Serializer implements Serializer {
             jmb.enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
             jmb.enable(DeserializationFeature.UNWRAP_SINGLE_VALUE_ARRAYS);
             jmb.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        }
+
+        if (builder.defaultTyping) {
+            BasicPolymorphicTypeValidator typeValidator = BasicPolymorphicTypeValidator.builder()
+                .allowIfBaseType(Object.class)
+                .build();
+
+            jmb.activateDefaultTyping(typeValidator, DefaultTyping.NON_CONCRETE_AND_ARRAYS);
         }
 
         jmb.typeFactory(builder.classLoader == null
@@ -279,6 +288,7 @@ public class Jackson3Serializer implements Serializer {
         private Converter converter = new ChainingConverter();
         private Jackson3SerializerCustomizer customizer;
         private boolean lenientDeserialization = false;
+        private boolean defaultTyping;
         private ClassLoader classLoader;
         private boolean cacheUnknownClasses = true;
 
@@ -362,6 +372,26 @@ public class Jackson3Serializer implements Serializer {
          */
         public Builder disableCachingOfUnknownClasses() {
             this.cacheUnknownClasses = false;
+            return this;
+        }
+
+        /**
+         * Configures the underlying {@link ObjectMapper} to include type information when serializing Java objects
+         * into JSON by activating default typing.
+         * <p>
+         * Specifically, it uses {@link ObjectMapper#activateDefaultTyping(PolymorphicTypeValidator, ObjectMapper.DefaultTyping)}
+         * with {@link ObjectMapper.DefaultTyping#NON_CONCRETE_AND_ARRAYS}. To comply with Jackson 3 security
+         * requirements, this enables a {@link com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator}
+         * that allows all subtypes (via {@code Object.class} base type validation).
+         * <p>
+         * This allows {@link java.util.Collection}s and other non-concrete types to include type information
+         * automatically without requiring {@link com.fasterxml.jackson.annotation.JsonTypeInfo} annotations
+         * on the classes themselves.
+         *
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder defaultTyping() {
+            defaultTyping = true;
             return this;
         }
 
