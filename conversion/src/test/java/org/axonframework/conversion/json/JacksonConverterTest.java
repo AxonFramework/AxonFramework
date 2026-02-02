@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,42 +55,6 @@ class JacksonConverterTest extends ConverterTestSuite<JacksonConverter> {
     @Override
     protected JacksonConverter buildConverter() {
         return new JacksonConverter(OBJECT_MAPPER);
-    }
-
-    @Override
-    protected Stream<Arguments> specificSupportedConversions() {
-        return Stream.of(
-                // Convert from concrete type:
-                arguments(SomeInput.class, JsonNode.class),
-                arguments(SomeInput.class, ObjectNode.class),
-                arguments(SOME_INPUT_LIST_TYPE_REF.getType(), JsonNode.class),
-                // Convert to concrete type:
-                arguments(JsonNode.class, SomeInput.class),
-                arguments(ObjectNode.class, SomeInput.class),
-                arguments(JsonNode.class, SOME_INPUT_LIST_TYPE_REF.getType()),
-                // Convert from another concrete type:
-                arguments(SomeOtherInput.class, JsonNode.class),
-                arguments(SomeOtherInput.class, ObjectNode.class),
-                arguments(SOME_OTHER_INPUT_MAP_TYPE_REF.getType(), ObjectNode.class),
-                arguments(ObjectNode.class, SOME_OTHER_INPUT_MAP_TYPE_REF.getType()),
-                // Intermediate conversion levels:
-                arguments(String.class, JsonNode.class),
-                arguments(JsonNode.class, String.class),
-                arguments(ObjectNode.class, JsonNode.class),
-                arguments(ObjectNode.class, String.class),
-                arguments(JsonNode.class, ObjectNode.class),
-                arguments(String.class, ObjectNode.class),
-                arguments(byte[].class, ObjectNode.class),
-                arguments(ObjectNode.class, byte[].class),
-                // Same type:
-                arguments(JsonNode.class, JsonNode.class),
-                arguments(ObjectNode.class, ObjectNode.class)
-        );
-    }
-
-    @Override
-    protected Stream<Arguments> specificUnsupportedConversions() {
-        return Stream.empty();
     }
 
     @Override
