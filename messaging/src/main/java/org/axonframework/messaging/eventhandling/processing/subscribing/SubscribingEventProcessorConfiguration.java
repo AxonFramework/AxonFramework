@@ -184,7 +184,7 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
     public List<MessageHandlerInterceptor<? super EventMessage>> interceptors() {
         if (sepInterceptors == null) {
             sepInterceptors = new ArrayList<>();
-            sepInterceptors.addAll(super.interceptorBuilder.apply(PooledStreamingEventProcessor.class, processorName));
+            sepInterceptors.addAll(super.interceptorBuilder.apply(SubscribingEventProcessor.class, processorName));
             sepInterceptors.addAll(super.interceptors);
         }
         return new ArrayList<>(sepInterceptors);
