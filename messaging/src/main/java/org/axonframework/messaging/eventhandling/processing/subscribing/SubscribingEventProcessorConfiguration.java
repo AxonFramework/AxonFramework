@@ -31,7 +31,6 @@ import org.axonframework.messaging.eventhandling.configuration.EventProcessorCon
 import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorHandler;
 import org.axonframework.messaging.eventhandling.processing.errorhandling.PropagatingErrorHandler;
-import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,19 +55,6 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
     private List<MessageHandlerInterceptor<? super EventMessage>> sepInterceptors;
 
     /**
-     * Constructs a new {@code SubscribingEventProcessorConfiguration}.
-     * <p>
-     * This configuration will not have any of the default {@link MessageHandlerInterceptor MessageHandlerInterceptors}
-     * for events. Please use
-     * {@link #SubscribingEventProcessorConfiguration(EventProcessorConfiguration, Configuration)} when those are
-     * desired.
-     */
-    @Internal
-    public SubscribingEventProcessorConfiguration() {
-        super();
-    }
-
-    /**
      * Constructs a new {@code SubscribingEventProcessorConfiguration} copying properties from the given configuration.
      *
      * @param base The {@link EventProcessorConfiguration} to copy properties from.
@@ -82,6 +68,7 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      * Constructs a new {@code SubscribingEventProcessorConfiguration} with default values and retrieve global default
      * values.
      *
+     * @param base          The {@link EventProcessorConfiguration} to copy properties from.
      * @param configuration The configuration, used to retrieve global default values, like
      *                      {@link MessageHandlerInterceptor MessageHandlerInterceptors}, from.
      */
@@ -105,8 +92,7 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      *                    {@link EventProcessor} implementation will subscribe itself to receive {@link EventMessage}s.
      * @return The current instance, for fluent interfacing.
      */
-    public SubscribingEventProcessorConfiguration eventSource(
-            @Nonnull SubscribableEventSource eventSource) {
+    public SubscribingEventProcessorConfiguration eventSource(@Nonnull SubscribableEventSource eventSource) {
         assertNonNull(eventSource, "SubscribableEventSource may not be null");
         this.eventSource = eventSource;
         return this;

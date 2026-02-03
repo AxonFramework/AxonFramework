@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ import org.axonframework.messaging.eventhandling.SimpleEventBus;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
+import org.axonframework.messaging.eventhandling.configuration.EventProcessorConfiguration;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
@@ -426,13 +427,11 @@ class SubscribingEventProcessorModuleTest {
             SimpleEventBus typeMessageSource = new SimpleEventBus();
             ErrorHandler typeErrorHandler = exception -> {
             };
-            configurer.eventProcessing(ep ->
-                                               ep.subscribing(sp -> sp.defaults(
-                                                       d -> d.unitOfWorkFactory(typeUnitOfWorkFactory)
-                                                             .eventSource(typeMessageSource)
-                                                             .errorHandler(typeErrorHandler))
-                                               )
-            );
+            configurer.eventProcessing(ep -> ep.subscribing(sp -> sp.defaults(
+                    d -> d.unitOfWorkFactory(typeUnitOfWorkFactory)
+                          .eventSource(typeMessageSource)
+                          .errorHandler(typeErrorHandler))
+            ));
 
             // and - instance-specific customization
             ErrorHandler instanceErrorHandler = exception -> {
@@ -440,9 +439,11 @@ class SubscribingEventProcessorModuleTest {
             var module = EventProcessorModule
                     .subscribing(processorName)
                     .eventHandlingComponents(singleTestEventHandlingComponent())
-                    .customized((__, p) -> new SubscribingEventProcessorConfiguration().eventSource(p.eventSource())
-                                                                                       .errorHandler(
-                                                                                               instanceErrorHandler));
+                    .customized((__, p) -> new SubscribingEventProcessorConfiguration(
+                                        new EventProcessorConfiguration(processorName, null)
+                                ).eventSource(p.eventSource())
+                                 .errorHandler(instanceErrorHandler)
+                    );
             configurer.eventProcessing(ep -> ep.subscribing(sp -> sp.processor(module)));
 
             // when

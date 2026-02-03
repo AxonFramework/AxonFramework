@@ -111,20 +111,6 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
             () -> new EventSchedulingProcessingContext(EmptyApplicationContext.INSTANCE);
 
     /**
-     * Constructs a new {@code PooledStreamingEventProcessorConfiguration} with just default values. Do not retrieve any
-     * global default values.
-     * <p>
-     * This configuration will not have any of the default {@link MessageHandlerInterceptor MessageHandlerInterceptors}
-     * for events. Please use
-     * {@link #PooledStreamingEventProcessorConfiguration(EventProcessorConfiguration, Configuration)} when those are
-     * desired.
-     */
-    @Internal
-    public PooledStreamingEventProcessorConfiguration() {
-        super();
-    }
-
-    /**
      * Constructs a new {@code PooledStreamingEventProcessorConfiguration} copying properties from the given
      * configuration.
      *
