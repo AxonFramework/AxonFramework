@@ -166,9 +166,6 @@ to
 [#static-factory-methods-for-creation]
 == `@EntityCreator` and static factory methods
 
-In Axon Framework 4, the `@AggregateIdentifier` annotation was used on a field to mark it as the aggregate's identifier.
-Creation was typically handled by constructors annotated with `@CommandHandler`.
-
 Axon Framework 5 removes `@AggregateIdentifier` and favors **static factory methods** for command handling of creation commands.
 These methods are combined with the [anchor=entitycreator-annotation]#@EntityCreator# annotation, which is a **hard requirement** for instance instantiation. It tells Axon how to create an initial instance of the entity before applying events to it.
 
