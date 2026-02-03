@@ -1,11 +1,6 @@
-= Message Changes
-:navtitle: Message Changes
-
 = Message Migration
 :navtitle: Messages
 
-Axon Framework 5 introduces a more explicit way of defining and handling messages.
-This path covers the migration from Axon Framework 4.x annotations to the new message-centric approach in AF5.
 Axon Framework 5 introduces a more explicit way of defining and handling messages.
 This path covers the message-model migration from Axon Framework 4.x annotations to the new message-centric approach in AF5.
 
@@ -130,8 +125,10 @@ In Axon Framework 4, events were implicitly associated with an aggregate through
 Axon Framework 5 moves towards a more flexible tagging system.
 
 When migrating events that were previously associated with an aggregate, you must ensure that the event's aggregate identifier field is annotated with `@EventTag`.
+
 The key for this tag should reflect the **aggregate's type** (typically the simple class name of the aggregate).
-This ensure compatibility with an aggregate-based storage solution, wherein events are stored with an aggregate `type` column.
+
+This ensures compatibility with an aggregate-based storage solution, wherein events are stored with an aggregate `type` column.
 
 [source,java]
 ----
