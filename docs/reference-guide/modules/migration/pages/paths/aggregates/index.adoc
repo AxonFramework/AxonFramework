@@ -76,7 +76,7 @@ public class GiftCard {
 <1> `@EventSourcedEntity` replaces `@Aggregate` (or `@AggregateRoot`).
 <2> `@EntityCreator` is mandatory and replaces the `@CommandHandler` constructor for instantiation.
 <3> Command Handlers that create a new instance are now **static** and use `EventAppender` to publish the initial event.
-<4> Command Handlers for existing instances now accept an `EventAppender` parameter to publish events.
+<4> Command Handlers now accept an `EventAppender` parameter to publish events.
 <5> `@EventSourcingHandler` remains the way to update the entity state from events, keeping the logic encapsulated.
 <6> State updates are performed by applying events, ensuring the entity can be reconstructed from its history.
 
