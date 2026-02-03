@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,21 +17,19 @@
 package org.axonframework.modelling.entity.domain.development;
 
 import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
-import org.axonframework.messaging.commandhandling.annotation.RoutingKey;
 import org.axonframework.messaging.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 import org.axonframework.modelling.entity.domain.development.commands.ChangeDeveloperGithubUsername;
 import org.axonframework.modelling.entity.domain.development.events.DeveloperGithubUsernameChanged;
 
 public record Developer(
-        @RoutingKey
         String email,
         String githubUsername
 ) {
 
     @CommandHandler
     public void handle(ChangeDeveloperGithubUsername command, EventAppender appender) {
-        if(githubUsername.equals(command.githubUsername())) {
+        if (githubUsername.equals(command.githubUsername())) {
             return;
         }
         appender.append(new DeveloperGithubUsernameChanged(

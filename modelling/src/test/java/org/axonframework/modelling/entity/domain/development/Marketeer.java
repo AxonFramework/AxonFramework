@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,9 @@ import org.axonframework.modelling.entity.domain.development.commands.ChangeMark
 import org.axonframework.modelling.entity.domain.development.events.MarketeerHubspotUsernameChanged;
 
 public class Marketeer {
+
     private final String email;
     private String hubspotUsername;
-
 
     public Marketeer(String email, String hubspotUsername) {
         this.email = email;
