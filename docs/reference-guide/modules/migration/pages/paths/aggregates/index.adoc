@@ -67,7 +67,7 @@ public class GiftCard {
         this.remainingValue = event.amount();
     }
 
-    @EventSourcingHandler // <6>
+    @EventSourcingHandler
     public void on(CardRedeemedEvent event) {
         this.remainingValue -= event.amount();
     }
@@ -78,7 +78,6 @@ public class GiftCard {
 <3> Command Handlers that create a new instance are now **static** and use `EventAppender` to publish the initial event.
 <4> Command Handlers now accept an `EventAppender` parameter to publish events.
 <5> `@EventSourcingHandler` remains the way to update the entity state from events, keeping the logic encapsulated.
-<6> State updates are performed by applying events, ensuring the entity can be reconstructed from its history.
 
 Axon Framework 4::
 +
@@ -166,9 +165,6 @@ to
 
 [#static-factory-methods-for-creation]
 == `@EntityCreator` and static factory methods
-
-In Axon Framework 4, the `@AggregateIdentifier` annotation was used on a field to mark it as the aggregate's identifier.
-Creation was typically handled by constructors annotated with `@CommandHandler`.
 
 Axon Framework 5 removes `@AggregateIdentifier` and favors **static factory methods** for command handling of creation commands.
 These methods are combined with the [anchor=entitycreator-annotation]#@EntityCreator# annotation, which is a **hard requirement** for instance instantiation. It tells Axon how to create an initial instance of the entity before applying events to it.
