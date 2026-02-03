@@ -184,7 +184,6 @@ public abstract class MessageStreamTest<M extends Message> {
     }
 
     @Test
-    @Disabled("Doesn't work for all streams, but probably should")  // TODO #3853 - Setting a callback on a MessageStream which throws an error during callback should result in the stream completing with that error
     void shouldCloseStreamWithErrorIfCallbackFails() {
         MessageStream<M> testSubject = completedTestSubject(List.of(createRandomMessage()));
 
