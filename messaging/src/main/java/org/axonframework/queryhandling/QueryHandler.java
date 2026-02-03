@@ -17,24 +17,31 @@ package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.annotation.MessageHandler;
 
-import java.lang.annotation.*;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Marker annotation to mark any method on an object as being a QueryHandler. Use the {@link
- * org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter AnnotationQueryHandlerAdapter} to subscribe
- * the annotated class to the query bus.
+ * Marker annotation to mark any method on an object as being a QueryHandler. Use the
+ * {@link org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter AnnotationQueryHandlerAdapter} to
+ * subscribe the annotated class to the query bus.
  * <p>
- * The annotated method's first parameter is the query handled by that method. Optionally, the query handler may
- * specify a second parameter of type {@link org.axonframework.messaging.MetaData}. The active MetaData will be
- * passed if that parameter is supplied.
+ * The annotated method's first parameter is the query handled by that method. Optionally, the query handler may specify
+ * a second parameter of type {@link org.axonframework.messaging.MetaData}. The active MetaData will be passed if that
+ * parameter is supplied.
  *
  * @author Marc Gathier
  * @since 3.1
+ * @deprecated In favor of {@code org.axonframework.messaging.queryhandling.annotation.QueryHandler}, as a preparation
+ * of the file move performed in Axon Framework 5.
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
 @MessageHandler(messageType = QueryMessage.class)
+@Deprecated
 public @interface QueryHandler {
 
     /**
@@ -44,5 +51,4 @@ public @interface QueryHandler {
      * @return The query name
      */
     String queryName() default "";
-
 }

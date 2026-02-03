@@ -21,7 +21,11 @@ import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.MessageHandler;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
-import java.lang.annotation.*;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * Annotation to be placed on methods that can handle events. The parameters of the annotated method are resolved using
@@ -36,13 +40,13 @@ import java.lang.annotation.*;
  * <li>Parameters of type {@link MetaData} will have the entire Meta Data of an Event Message
  * injected.</li>
  * <li>Parameters of type {@link java.time.Instant} annotated with
- * {@link org.axonframework.eventhandling.Timestamp @Timestamp} will resolve to the timestamp of
- * the EventMessage. This is the time at which the Event was generated.</li>
+ * {@link org.axonframework.eventhandling.Timestamp @Timestamp} will resolve to the timestamp of the EventMessage. This
+ * is the time at which the Event was generated.</li>
  * <li>Parameters assignable to {@link Message} will have the entire {@link
- * EventMessage} injected (if the message is assignable to that parameter). If the first
- * parameter is of type message, it effectively matches an Event of any type, even if generic parameters would suggest
- * otherwise. Due to type erasure, Axon cannot detect what parameter is expected. In such case, it is best to declare a
- * parameter of the payload type, followed by a parameter of type Message.</li>
+ * EventMessage} injected (if the message is assignable to that parameter). If the first parameter is of type message,
+ * it effectively matches an Event of any type, even if generic parameters would suggest otherwise. Due to type erasure,
+ * Axon cannot detect what parameter is expected. In such case, it is best to declare a parameter of the payload type,
+ * followed by a parameter of type Message.</li>
  * <li>When using Spring and {@code &lt;axon:annotation-config/&gt;} is declared, any other parameters will
  * resolve to autowired beans, if exactly one autowire candidate is available in the application context. This allows
  * you to inject resources directly into {@code @EventHandler} annotated methods.</li>
@@ -53,11 +57,9 @@ import java.lang.annotation.*;
  * searched <li>If a method is found with a parameter that the domain event can be assigned to, it is marked as
  * eligible
  * <li>After a class  has been evaluated (but before any super class), the most specific event handler method is
- * called.
- * That means that if an event handler for a class A and one for a class B are eligible, and B is a subclass of A, then
- * the method with a parameter of type B will be chosen<li>If no method is found in the actual class, its super class
- * is
- * evaluated. <li>If still no method is found, the event listener ignores the event </ol>
+ * called. That means that if an event handler for a class A and one for a class B are eligible, and B is a subclass of
+ * A, then the method with a parameter of type B will be chosen<li>If no method is found in the actual class, its super
+ * class is evaluated. <li>If still no method is found, the event listener ignores the event </ol>
  * <p>
  * If you do not want any events to be ignored, but rather have some logging of the fact that an unhandled event came
  * by, make an abstract superclass that contains an event handler method that accepts any {@code Object}.
@@ -68,11 +70,14 @@ import java.lang.annotation.*;
  * @see AnnotationEventHandlerAdapter
  * @see ParameterResolverFactory
  * @since 0.1
+ * @deprecated In favor of {@code org.axonframework.messaging.eventhandling.annotation.EventHandler}, as a preparation
+ * of the file move performed in Axon Framework 5.
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
 @MessageHandler(messageType = EventMessage.class)
+@Deprecated
 public @interface EventHandler {
 
     /**
