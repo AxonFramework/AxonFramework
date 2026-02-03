@@ -136,7 +136,6 @@ Before diving into the specific changes, it is helpful to understand the primary
 * **`@EntityCreator`**: A mandatory annotation that tells Axon how to instantiate your entity. In Axon Framework 4, the framework often relied on a `@CommandHandler` constructor; in Axon Framework 5, the instantiation is decoupled from the command handling logic.
 * **`EventAppender`**: The interface that replaces `AggregateLifecycle.apply()`. It is passed as an argument to command handlers, making the side-effect of publishing events explicit and easier to test.
 * **`@EntityMember`**: The replacement for `@AggregateMember`. It is used to mark fields or collections that contain child entities within a larger entity (aggregate) structure.
-* **`ProcessingContext`**: The underlying context for any message processing. While often used implicitly via `EventAppender`, it provides access to the unit of work and metadata during command execution.
 
 
 [#import-and-package-changes]
