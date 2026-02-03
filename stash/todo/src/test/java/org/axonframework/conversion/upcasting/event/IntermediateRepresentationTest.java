@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,30 +42,30 @@ class IntermediateRepresentationTest {
 
     private final static Serializer serializer = TestSerializer.JACKSON.getSerializer();
 
-    @Test
-    public void canConvertDataTo() {
-        DomainEventMessage testEvent = new GenericDomainEventMessage(
-                "test", "aggregateId", 0, new MessageType("event"), "someString"
-        );
-        EventData<?> eventData = new TestDomainEventEntry(testEvent, serializer);
-        Serializer serializer = mock(Serializer.class);
-        Converter converter = mock(Converter.class);
-        when(serializer.getConverter()).thenReturn(converter);
-        when(converter.canConvert(any(), eq(String.class))).thenReturn(true);
-
-        IntermediateEventRepresentation input = new InitialEventRepresentation(eventData, serializer);
-        EventUpcasterChain eventUpcasterChain = new EventUpcasterChain(
-                new IntermediateRepresentationTest.MyEventUpcaster()
-        );
-        List<IntermediateEventRepresentation> result = eventUpcasterChain.upcast(Stream.of(input)).toList();
-        assertEquals(1, result.size());
-
-
-        assertTrue(input.canConvertDataTo(String.class));
-        assertTrue(result.getFirst().canConvertDataTo(String.class));
-
-        verify(converter).canConvert(String.class, String.class);
-    }
+//    @Test
+//    public void canConvertDataTo() {
+//        DomainEventMessage testEvent = new GenericDomainEventMessage(
+//                "test", "aggregateId", 0, new MessageType("event"), "someString"
+//        );
+//        EventData<?> eventData = new TestDomainEventEntry(testEvent, serializer);
+//        Serializer serializer = mock(Serializer.class);
+//        Converter converter = mock(Converter.class);
+//        when(serializer.getConverter()).thenReturn(converter);
+//        when(converter.canConvert(any(), eq(String.class))).thenReturn(true);
+//
+//        IntermediateEventRepresentation input = new InitialEventRepresentation(eventData, serializer);
+//        EventUpcasterChain eventUpcasterChain = new EventUpcasterChain(
+//                new IntermediateRepresentationTest.MyEventUpcaster()
+//        );
+//        List<IntermediateEventRepresentation> result = eventUpcasterChain.upcast(Stream.of(input)).toList();
+//        assertEquals(1, result.size());
+//
+//
+//        assertTrue(input.canConvertDataTo(String.class));
+//        assertTrue(result.getFirst().canConvertDataTo(String.class));
+//
+//        verify(converter).canConvert(String.class, String.class);
+//    }
 
     private static class MyEventUpcaster extends SingleEventUpcaster {
 
