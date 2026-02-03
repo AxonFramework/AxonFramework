@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.commandhandling.annotation;
 
+import org.axonframework.messaging.core.annotation.AggregateType;
 import org.junit.jupiter.api.*;
 
 import java.lang.annotation.ElementType;
@@ -28,20 +29,23 @@ import java.util.Optional;
 import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class AnnotationUtilsTest {
+/**
+ * Test class validating the {@link org.axonframework.common.annotation.AnnotationUtils}.
+ *
+ * @author Simon Zambrovski
+ */
+class AnnotationUtilsTest {
 
     @Test
     void findAttributesOnNonExistentAnnotation() throws NoSuchMethodException {
         Optional<Map<String, Object>> result =
-                findAnnotationAttributes(getClass().getDeclaredMethod("dynamicallyOverridden"), RoutingKey.class);
+                findAnnotationAttributes(getClass().getDeclaredMethod("dynamicallyOverridden"), AggregateType.class);
         assertFalse(result.isPresent(), "Didn't expect attributes to be found for non-existent annotation");
     }
-
 
     @DynamicOverrideAnnotated(property = "dynamic-override")
     public void dynamicallyOverridden() {
     }
-
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ElementType.ANNOTATION_TYPE, ElementType.METHOD})
@@ -63,6 +67,4 @@ public class AnnotationUtilsTest {
 
         String value() default "value()";
     }
-
-
 }
